@@ -8,6 +8,9 @@ on:
       - "v*"
   workflow_dispatch:
 
+env:
+  GOPRIVATE: github.com/turbot/*
+
 jobs:
   golangci:
     name: Lint
