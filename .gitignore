@@ -19,3 +19,10 @@
 
 # Go workspace file
 go.work
+
+# IDE
+.idea/
+.run
+.vscode/
+
+.DS_Store
