@@ -1,0 +1,47 @@
+name: Go Lint
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - main
+      - "v*"
+  workflow_dispatch:
+
+env:
+  GOPRIVATE: github.com/turbot/*
+
+jobs:
+  golangci:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pipe-fittings repository
+        uses: actions/checkout@v3
+
+      - name: Add SSH Go Module Private Key
+        env:
+            SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            ssh-agent -a $SSH_AUTH_SOCK > /dev/null	
+            ssh-add - <<< "${{ secrets.GO_MODULE_PRIVATE_KEY }}"
+            echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV  
+
+      - name: Setup access for private go modules
+        run: |
+              git config --global url."ssh://git@github.com/".insteadOf https://github.com/
+
+
+      # this is required, check golangci-lint-action docs
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: false # setup-go v4 caches by default, do not change this parameter, check golangci-lint-action doc: https://github.com/golangci/golangci-lint-action/pull/704
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54.1
+          args: --timeout=15m
