@@ -13,8 +13,6 @@ import (
 // we need this to detect the underlying architecture to install the correct FDW package
 func UnderlyingArch() (string, error) {
 
-	fmt.Println("bad stuff here")
-
 	cmd := exec.Command("uname", "-m")
 	stdout, err := cmd.Output()
 	if err != nil {
