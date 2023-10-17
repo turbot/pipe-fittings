@@ -43,6 +43,7 @@ const (
 	BlockTypePipelineOutput    = "output"
 	BlockTypeTrigger           = "trigger"
 	BlockTypePipelineBasicAuth = "basic_auth"
+	BlockTypeIntegration       = "integration"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
@@ -244,6 +245,7 @@ var ValidResourceItemTypes = []string{
 	BlockTypePipeline,
 	BlockTypeTrigger,
 	BlockTypeWith,
+	BlockTypeIntegration,
 	// local is not an actual block name but is a resource type
 	"local",
 	// references

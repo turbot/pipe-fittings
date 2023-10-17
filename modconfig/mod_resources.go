@@ -44,8 +44,9 @@ type ResourceMaps struct {
 	Variables map[string]*Variable
 
 	// flowpipe
-	Pipelines map[string]*Pipeline
-	Triggers  map[string]*Trigger
+	Pipelines    map[string]*Pipeline
+	Triggers     map[string]*Trigger
+	Integrations map[string]*Integration
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -478,6 +479,8 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Pipelines[longName]
 	case schema.BlockTypeTrigger:
 		resource, found = m.Triggers[longName]
+	case schema.BlockTypeIntegration:
+		resource, found = m.Integrations[longName]
 	}
 	return resource, found
 }
