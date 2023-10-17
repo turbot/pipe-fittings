@@ -134,42 +134,42 @@ func setDirectoryDefaultsFromEnv() {
 	}
 }
 
-// set default values from env vars
-func SetDefaultsFromEnv() {
-	// NOTE: EnvWorkspaceProfile has already been set as a viper default as we have already loaded workspace profiles
-	// (EnvInstallDir has already been set at same time but we set it again to make sure it has the correct precedence)
-
-	// a map of known environment variables to map to viper keys
-	envMappings := map[string]envMapping{
-		constants.EnvInstallDir:           {[]string{constants.ArgInstallDir}, cmdconfig.String},
-		constants.EnvWorkspaceChDir:       {[]string{constants.ArgModLocation}, cmdconfig.String},
-		constants.EnvModLocation:          {[]string{constants.ArgModLocation}, cmdconfig.String},
-		constants.EnvIntrospection:        {[]string{constants.ArgIntrospection}, cmdconfig.String},
-		constants.EnvTelemetry:            {[]string{constants.ArgTelemetry}, cmdconfig.String},
-		constants.EnvUpdateCheck:          {[]string{constants.ArgUpdateCheck}, cmdconfig.Bool},
-		constants.EnvCloudHost:            {[]string{constants.ArgCloudHost}, cmdconfig.String},
-		constants.EnvCloudToken:           {[]string{constants.ArgCloudToken}, cmdconfig.String},
-		constants.EnvSnapshotLocation:     {[]string{constants.ArgSnapshotLocation}, cmdconfig.String},
-		constants.EnvWorkspaceDatabase:    {[]string{constants.ArgWorkspaceDatabase}, cmdconfig.String},
-		constants.EnvServicePassword:      {[]string{constants.ArgServicePassword}, cmdconfig.String},
-		constants.EnvCheckDisplayWidth:    {[]string{constants.ArgCheckDisplayWidth}, cmdconfig.Int},
-		constants.EnvMaxParallel:          {[]string{constants.ArgMaxParallel}, cmdconfig.Int},
-		constants.EnvQueryTimeout:         {[]string{constants.ArgDatabaseQueryTimeout}, cmdconfig.Int},
-		constants.EnvDatabaseStartTimeout: {[]string{constants.ArgDatabaseStartTimeout}, cmdconfig.Int},
-		constants.EnvCacheTTL:             {[]string{constants.ArgCacheTtl}, cmdconfig.Int},
-		constants.EnvCacheMaxTTL:          {[]string{constants.ArgCacheMaxTtl}, cmdconfig.Int},
-
-		// we need this value to go into different locations
-		constants.EnvCacheEnabled: {[]string{
-			constants.ArgClientCacheEnabled,
-			constants.ArgServiceCacheEnabled,
-		}, cmdconfig.Bool},
-	}
-
-	for envVar, v := range envMappings {
-		setConfigFromEnv(envVar, v.configVar, v.varType)
-	}
-}
+//// set default values from env vars
+//func SetDefaultsFromEnv() {
+//	// NOTE: EnvWorkspaceProfile has already been set as a viper default as we have already loaded workspace profiles
+//	// (EnvInstallDir has already been set at same time but we set it again to make sure it has the correct precedence)
+//
+//	// a map of known environment variables to map to viper keys
+//	envMappings := map[string]envMapping{
+//		constants.EnvInstallDir:           {[]string{constants.ArgInstallDir}, cmdconfig.String},
+//		constants.EnvWorkspaceChDir:       {[]string{constants.ArgModLocation}, cmdconfig.String},
+//		constants.EnvModLocation:          {[]string{constants.ArgModLocation}, cmdconfig.String},
+//		constants.EnvIntrospection:        {[]string{constants.ArgIntrospection}, cmdconfig.String},
+//		constants.EnvTelemetry:            {[]string{constants.ArgTelemetry}, cmdconfig.String},
+//		constants.EnvUpdateCheck:          {[]string{constants.ArgUpdateCheck}, cmdconfig.Bool},
+//		constants.EnvCloudHost:            {[]string{constants.ArgCloudHost}, cmdconfig.String},
+//		constants.EnvCloudToken:           {[]string{constants.ArgCloudToken}, cmdconfig.String},
+//		constants.EnvSnapshotLocation:     {[]string{constants.ArgSnapshotLocation}, cmdconfig.String},
+//		constants.EnvWorkspaceDatabase:    {[]string{constants.ArgWorkspaceDatabase}, cmdconfig.String},
+//		constants.EnvServicePassword:      {[]string{constants.ArgServicePassword}, cmdconfig.String},
+//		constants.EnvCheckDisplayWidth:    {[]string{constants.ArgCheckDisplayWidth}, cmdconfig.Int},
+//		constants.EnvMaxParallel:          {[]string{constants.ArgMaxParallel}, cmdconfig.Int},
+//		constants.EnvQueryTimeout:         {[]string{constants.ArgDatabaseQueryTimeout}, cmdconfig.Int},
+//		constants.EnvDatabaseStartTimeout: {[]string{constants.ArgDatabaseStartTimeout}, cmdconfig.Int},
+//		constants.EnvCacheTTL:             {[]string{constants.ArgCacheTtl}, cmdconfig.Int},
+//		constants.EnvCacheMaxTTL:          {[]string{constants.ArgCacheMaxTtl}, cmdconfig.Int},
+//
+//		// we need this value to go into different locations
+//		constants.EnvCacheEnabled: {[]string{
+//			constants.ArgClientCacheEnabled,
+//			constants.ArgServiceCacheEnabled,
+//		}, cmdconfig.Bool},
+//	}
+//
+//	for envVar, v := range envMappings {
+//		setConfigFromEnv(envVar, v.configVar, v.varType)
+//	}
+//}
 
 func setConfigFromEnv(envVar string, configs []string, varType cmdconfig.EnvVarType) {
 	for _, configVar := range configs {

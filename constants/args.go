@@ -66,6 +66,12 @@ const (
 	ArgDatabaseStartTimeout    = "database-start-timeout"
 	ArgMemoryMaxMb             = "memory-max-mb"
 	ArgMemoryMaxMbPlugin       = "memory-max-mb-plugin"
+
+	ArgGitUrlMode  = "git-url-mode"
+	ArgOutputDir   = "output-dir"
+	ArgLogDir      = "log-dir"
+	ArgFunctions   = "functions"
+	ArgNoScheduler = "no-scheduler"
 )
 
 // metaquery mode arguments

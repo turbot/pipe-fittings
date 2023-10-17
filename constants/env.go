@@ -1,5 +1,6 @@
 package constants
 
+// TODO remove - these are all steampipe specific
 // Environment Variables
 const (
 	AppName            = "steampipe"

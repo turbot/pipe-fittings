@@ -27,7 +27,7 @@ func (d *Database) ConfigMap() map[string]interface{} {
 		res[constants.ArgDatabasePort] = d.Port
 	}
 	if d.Listen != nil {
-		res[constants.ArgListenAddress] = d.Listen
+		res[constants.ArgDatabaseListenAddresses] = d.Listen
 	}
 	if d.SearchPath != nil {
 		// convert from string to array
