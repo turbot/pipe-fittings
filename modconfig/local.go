@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/schema"
@@ -44,20 +45,20 @@ func (l *Local) CtyValue() (cty.Value, error) {
 	return l.Value, nil
 }
 
-// func (l *Local) Diff(other *Local) *DashboardTreeItemDiffs {
-// 	res := &DashboardTreeItemDiffs{
-// 		Item: l,
-// 		Name: l.Name(),
-// 	}
+func (l *Local) Diff(other *Local) *DashboardTreeItemDiffs {
+	res := &DashboardTreeItemDiffs{
+		Item: l,
+		Name: l.Name(),
+	}
 
-// 	if !utils.SafeStringsEqual(l.FullName, other.FullName) {
-// 		res.AddPropertyDiff("Name")
-// 	}
+	if !utils.SafeStringsEqual(l.FullName, other.FullName) {
+		res.AddPropertyDiff("Name")
+	}
 
-// 	if !utils.SafeStringsEqual(l.Value, other.Value) {
-// 		res.AddPropertyDiff("Value")
-// 	}
+	if !utils.SafeStringsEqual(l.Value, other.Value) {
+		res.AddPropertyDiff("Value")
+	}
 
-// 	res.populateChildDiffs(l, other)
-// 	return res
-// }
+	res.populateChildDiffs(l, other)
+	return res
+}

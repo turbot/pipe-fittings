@@ -3,6 +3,7 @@ package misc
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"os"
 	"path/filepath"
 
@@ -82,7 +83,7 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 			Include: []string{"**/" + fileName},
 		})
 
-	mod, errorsAndWarnings := LoadModWithFileName(modDir, modFileNameToLoad, parseCtx)
+	mod, errorsAndWarnings := load_mod.LoadModWithFileName(modDir, modFileNameToLoad, parseCtx)
 
 	var pipelines map[string]*modconfig.Pipeline
 	var triggers map[string]*modconfig.Trigger

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -184,36 +185,36 @@ func (c *Control) GetType() string {
 }
 
 // TODO: commented out: dashboard
-// func (c *Control) Diff(other *Control) *DashboardTreeItemDiffs {
-// 	res := &DashboardTreeItemDiffs{
-// 		Item: c,
-// 		Name: c.Name(),
-// 	}
+func (c *Control) Diff(other *Control) *DashboardTreeItemDiffs {
+	res := &DashboardTreeItemDiffs{
+		Item: c,
+		Name: c.Name(),
+	}
 
-// 	if !utils.SafeStringsEqual(c.Description, other.Description) {
-// 		res.AddPropertyDiff("Description")
-// 	}
-// 	if !utils.SafeStringsEqual(c.Documentation, other.Documentation) {
-// 		res.AddPropertyDiff("Documentation")
-// 	}
-// 	if !utils.SafeStringsEqual(c.Severity, other.Severity) {
-// 		res.AddPropertyDiff("Severity")
-// 	}
-// 	if len(c.Tags) != len(other.Tags) {
-// 		res.AddPropertyDiff("Tags")
-// 	} else {
-// 		for k, v := range c.Tags {
-// 			if otherVal := other.Tags[k]; v != otherVal {
-// 				res.AddPropertyDiff("Tags")
-// 			}
-// 		}
-// 	}
+	if !utils.SafeStringsEqual(c.Description, other.Description) {
+		res.AddPropertyDiff("Description")
+	}
+	if !utils.SafeStringsEqual(c.Documentation, other.Documentation) {
+		res.AddPropertyDiff("Documentation")
+	}
+	if !utils.SafeStringsEqual(c.Severity, other.Severity) {
+		res.AddPropertyDiff("Severity")
+	}
+	if len(c.Tags) != len(other.Tags) {
+		res.AddPropertyDiff("Tags")
+	} else {
+		for k, v := range c.Tags {
+			if otherVal := other.Tags[k]; v != otherVal {
+				res.AddPropertyDiff("Tags")
+			}
+		}
+	}
 
-// 	res.dashboardLeafNodeDiff(c, other)
-// 	res.queryProviderDiff(c, other)
+	res.dashboardLeafNodeDiff(c, other)
+	res.queryProviderDiff(c, other)
 
-// 	return res
-// }
+	return res
+}
 
 // CtyValue implements CtyValueProvider
 func (c *Control) CtyValue() (cty.Value, error) {

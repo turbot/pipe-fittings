@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"log"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/inputvars"
-	"github.com/turbot/pipe-fittings/misc"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/statushooks"
 	"github.com/turbot/terraform-components/terraform"
@@ -26,7 +26,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error
 	if errAndWarnings.GetError() == nil {
 		return w, errAndWarnings
 	}
-	missingVariablesError, ok := errAndWarnings.GetError().(*misc.MissingVariableError)
+	missingVariablesError, ok := errAndWarnings.GetError().(*load_mod.MissingVariableError)
 	// if there was an error which is NOT a MissingVariableError, return it
 	if !ok {
 		return nil, errAndWarnings

@@ -59,11 +59,11 @@ type RuntimeDependencyProvider interface {
 	GetRuntimeDependencies() map[string]*RuntimeDependency
 }
 
-// type WithProvider interface {
-// 	AddWith(with *DashboardWith) hcl.Diagnostics
-// 	GetWiths() []*DashboardWith
-// 	GetWith(string) (*DashboardWith, bool)
-// }
+type WithProvider interface {
+	AddWith(with *DashboardWith) hcl.Diagnostics
+	GetWiths() []*DashboardWith
+	GetWith(string) (*DashboardWith, bool)
+}
 
 // QueryProvider must be implemented by resources which have query/sql
 type QueryProvider interface {
@@ -117,11 +117,11 @@ type ResourceMapsProvider interface {
 // TODO [node_reuse] add NodeAndEdgeProviderImpl https://github.com/turbot/steampipe/issues/2918
 type NodeAndEdgeProvider interface {
 	QueryProvider
-	// WithProvider
-	// GetEdges() DashboardEdgeList
-	// SetEdges(DashboardEdgeList)
-	// GetNodes() DashboardNodeList
-	// SetNodes(DashboardNodeList)
-	// AddCategory(category *DashboardCategory) hcl.Diagnostics
+	WithProvider
+	GetEdges() DashboardEdgeList
+	SetEdges(DashboardEdgeList)
+	GetNodes() DashboardNodeList
+	SetNodes(DashboardNodeList)
+	AddCategory(category *DashboardCategory) hcl.Diagnostics
 	AddChild(child HclResource) hcl.Diagnostics
 }

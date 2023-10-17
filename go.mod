@@ -2,6 +2,8 @@ module github.com/turbot/pipe-fittings
 
 go 1.21.0
 
+replace github.com/turbot/terraform-components => /Users/kai/Dev/github/turbot/terraform-components
+
 require (
 	github.com/Machiel/slugify v1.0.1
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -14,14 +16,14 @@ require (
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/google/uuid v1.3.1
-	github.com/hashicorp/hcl/v2 v2.18.0
+	github.com/hashicorp/hcl/v2 v2.18.1
 	github.com/jackc/pgconn v1.14.1
 	github.com/karrick/gows v0.3.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-isatty v0.0.19
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/opencontainers/image-spec v1.1.0-rc4
+	github.com/opencontainers/image-spec v1.1.0-rc5
 	github.com/oras-project/oras-credentials-go v0.3.0
 	github.com/otiai10/copy v1.14.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -32,11 +34,13 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.17.0
 	github.com/stevenle/topsort v0.2.0
-	github.com/turbot/go-kit v0.8.1
+	github.com/turbot/go-kit v0.9.0-rc.1
+	github.com/turbot/steampipe v0.21.1
+	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.6.2
 	github.com/turbot/terraform-components v0.0.0-20230904000149-70ed428b19d7
 	github.com/xlab/treeprint v1.2.0
-	github.com/zclconf/go-cty v1.14.0
+	github.com/zclconf/go-cty v1.14.1
 	github.com/zclconf/go-cty-yaml v1.0.3
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	oras.land/oras-go/v2 v2.3.0
@@ -61,7 +65,7 @@ require (
 	github.com/allegro/bigcache/v3 v3.1.0 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
-	github.com/aws/aws-sdk-go v1.44.122 // indirect
+	github.com/aws/aws-sdk-go v1.44.183 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
@@ -84,6 +88,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-redis/redis/v8 v8.11.5 // indirect
@@ -105,6 +110,7 @@ require (
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/hashicorp/terraform v0.15.1 // indirect
 	github.com/hashicorp/terraform-registry-address v0.2.1 // indirect
 	github.com/hashicorp/terraform-svchost v0.1.1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
@@ -144,14 +150,18 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
+	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/skeema/knownhosts v1.2.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/tkrajina/go-reflector v0.5.6 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel v1.17.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.17.0 // indirect

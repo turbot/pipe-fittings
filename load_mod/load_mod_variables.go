@@ -1,7 +1,8 @@
-package misc
+package load_mod
 
 import (
 	"context"
+	"github.com/turbot/terraform-components/terraform"
 	"sort"
 
 	"github.com/spf13/viper"
@@ -36,13 +37,13 @@ func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, var
 	inputValues, errorsAndWarnings := getInputVariables(ctx, parseCtx, variableMap, validate)
 	if errorsAndWarnings.Error == nil {
 		// now update the variables map with the input values
-		inputValues.SetVariableValues(variableMap)
+		inputvars.SetVariableValues(inputValues, variableMap)
 	}
 
 	return variableMap, errorsAndWarnings
 }
 
-func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (inputvars.InputValues, *error_helpers.ErrorAndWarnings) {
+func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, *error_helpers.ErrorAndWarnings) {
 	variableFileArgs := viper.GetStringSlice(constants.ArgVarFile)
 	variableArgs := viper.GetStringSlice(constants.ArgVariable)
 
@@ -100,7 +101,7 @@ func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *m
 	rootName := variableMap.Mod.ShortName
 	topLevelModLookup := map[DependencyPathKey]struct{}{DependencyPathKey(rootName): {}}
 	for dep := range parseCtx.WorkspaceLock.InstallCache {
-		depPathKey := newDependencyPathKey(rootName, dep)
+		depPathKey := NewDependencyPathKey(rootName, dep)
 		topLevelModLookup[depPathKey] = struct{}{}
 	}
 	for depPath, missingVars := range missingVarsMap {
@@ -140,7 +141,7 @@ func identifyMissingVariablesForDependencies(workspaceLock *versionmap.Workspace
 	//  handle root variables
 	missingVariables := identifyMissingVariables(variableMap.RootVariables, variableValueLookup)
 	if len(missingVariables) > 0 {
-		res[newDependencyPathKey(dependencyPath...)] = missingVariables
+		res[NewDependencyPathKey(dependencyPath...)] = missingVariables
 	}
 
 	// now iterate through all the dependency variable maps

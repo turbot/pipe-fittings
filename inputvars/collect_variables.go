@@ -2,6 +2,7 @@ package inputvars
 
 import (
 	"fmt"
+	"github.com/turbot/terraform-components/terraform"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -51,7 +52,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 			ret[name] = unparsedVariableValueString{
 				str:        rawVal,
 				name:       name,
-				sourceType: ValueFromEnvVar,
+				sourceType: terraform.ValueFromEnvVar,
 			}
 		}
 	}
@@ -62,7 +63,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 	// ending in .auto.spvars.
 	defaultVarsPath := filepaths.DefaultVarsFilePath(workspacePath)
 	if _, err := os.Stat(defaultVarsPath); err == nil {
-		diags := addVarsFromFile(defaultVarsPath, ValueFromAutoFile, ret)
+		diags := addVarsFromFile(defaultVarsPath, terraform.ValueFromAutoFile, ret)
 		if diags.HasErrors() {
 			return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", defaultVarsPath), diags)
 		}
@@ -78,7 +79,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 			if !isAutoVarFile(name) {
 				continue
 			}
-			diags := addVarsFromFile(filepath.Join(defaultVarsDir, name), ValueFromAutoFile, ret)
+			diags := addVarsFromFile(filepath.Join(defaultVarsDir, name), terraform.ValueFromAutoFile, ret)
 			if diags.HasErrors() {
 				return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", name), diags)
 			}
@@ -93,7 +94,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 			if !isAutoVarFile(name) {
 				continue
 			}
-			diags := addVarsFromFile(name, ValueFromAutoFile, ret)
+			diags := addVarsFromFile(name, terraform.ValueFromAutoFile, ret)
 			if diags.HasErrors() {
 				return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", name), diags)
 			}
@@ -104,7 +105,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 	// Finally we process values given explicitly on the command line, either
 	// as individual literal settings or as additional files to read.
 	for _, fileArg := range variableFileArgs {
-		diags := addVarsFromFile(fileArg, ValueFromNamedFile, ret)
+		diags := addVarsFromFile(fileArg, terraform.ValueFromNamedFile, ret)
 		if diags.HasErrors() {
 			return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", fileArg), diags)
 		}
@@ -131,7 +132,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 		ret[name] = unparsedVariableValueString{
 			str:        rawVal,
 			name:       name,
-			sourceType: ValueFromCLIArg,
+			sourceType: terraform.ValueFromCLIArg,
 		}
 	}
 
@@ -175,7 +176,7 @@ func transformVarNames(rawValues map[string]UnparsedVariableValue, workspaceModN
 	return ret
 }
 
-func addVarsFromFile(filename string, sourceType ValueSourceType, to map[string]UnparsedVariableValue) tfdiags.Diagnostics {
+func addVarsFromFile(filename string, sourceType terraform.ValueSourceType, to map[string]UnparsedVariableValue) tfdiags.Diagnostics {
 	var diags tfdiags.Diagnostics
 
 	src, err := os.ReadFile(filename)
@@ -289,17 +290,17 @@ func sanitiseVariableNames(src []byte) ([]byte, map[string]string) {
 // intended to deal with expressions inside "tfvars" files.
 type unparsedVariableValueExpression struct {
 	expr       hcl.Expression
-	sourceType ValueSourceType
+	sourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueExpression) ParseVariableValue(mode var_config.VariableParsingMode) (*InputValue, tfdiags.Diagnostics) {
+func (v unparsedVariableValueExpression) ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 	val, hclDiags := v.expr.Value(nil) // nil because no function calls or variable references are allowed here
 	diags = diags.Append(hclDiags)
 
 	rng := tfdiags.SourceRangeFromHCL(v.expr.Range())
 
-	return &InputValue{
+	return &terraform.InputValue{
 		Value:       val,
 		SourceType:  v.sourceType,
 		SourceRange: rng,
@@ -313,16 +314,16 @@ func (v unparsedVariableValueExpression) ParseVariableValue(mode var_config.Vari
 type unparsedVariableValueString struct {
 	str        string
 	name       string
-	sourceType ValueSourceType
+	sourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueString) ParseVariableValue(mode var_config.VariableParsingMode) (*InputValue, tfdiags.Diagnostics) {
+func (v unparsedVariableValueString) ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 
 	val, hclDiags := mode.Parse(v.name, v.str)
 	diags = diags.Append(hclDiags)
 
-	return &InputValue{
+	return &terraform.InputValue{
 		Value:      val,
 		SourceType: v.sourceType,
 	}, diags

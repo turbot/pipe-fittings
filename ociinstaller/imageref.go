@@ -6,8 +6,7 @@ import (
 )
 
 const (
-	SteampipeHubOCIBase = "hub.steampipe.io/"
-
+	SteampipeHubOCIBase        = "hub.steampipe.io/"
 	DefaultImageTag            = "latest"
 	DefaultImageRepoActualURL  = "us-docker.pkg.dev/steampipe"
 	DefaultImageRepoDisplayURL = "hub.steampipe.io"
@@ -16,12 +15,12 @@ const (
 	DefaultImageType = "plugins"
 )
 
-// SteampipeImageRef :: a ref to an OCI image
+// SteampipeImageRef a struct encapsulating a ref to an OCI image
 type SteampipeImageRef struct {
 	requestedRef string
 }
 
-// NewSteampipeImageRef :: creates and returns a New SteampipeImageRef
+// NewSteampipeImageRef creates and returns a New SteampipeImageRef
 func NewSteampipeImageRef(ref string) *SteampipeImageRef {
 	ref = sanitizeRefStream(ref)
 	return &SteampipeImageRef{
@@ -29,7 +28,7 @@ func NewSteampipeImageRef(ref string) *SteampipeImageRef {
 	}
 }
 
-// ActualImageRef :: returns the actual, physical full image ref
+// ActualImageRef returns the actual, physical full image ref
 // (us-docker.pkg.dev/steampipe/plugins/turbot/aws:1.0.0)
 func (r *SteampipeImageRef) ActualImageRef() string {
 	ref := r.requestedRef
@@ -47,7 +46,7 @@ func (r *SteampipeImageRef) ActualImageRef() string {
 	return fullRef
 }
 
-// DisplayImageRef :: returns the "friendly" user-facing full image ref
+// DisplayImageRef returns the "friendly" user-facing full image ref
 // (hub.steampipe.io/plugins/turbot/aws@1.0.0)
 func (r *SteampipeImageRef) DisplayImageRef() string {
 	fullRef := r.ActualImageRef()
@@ -84,8 +83,7 @@ func sanitizeRefStream(ref string) string {
 	return ref
 }
 
-// GetOrgNameAndStream :: splits the full image reference into
-// (org, name, stream)
+// GetOrgNameAndStream splits the full image reference into (org, name, stream)
 func (r *SteampipeImageRef) GetOrgNameAndStream() (string, string, string) {
 	// plugin.Name looks like `hub.steampipe.io/plugins/turbot/aws@latest`
 	split := strings.Split(r.DisplayImageRef(), "/")
@@ -94,6 +92,39 @@ func (r *SteampipeImageRef) GetOrgNameAndStream() (string, string, string) {
 		return split[len(split)-2], pluginNameAndStream[0], pluginNameAndStream[1]
 	}
 	return strings.Join(split[0:len(split)-2], "/"), pluginNameAndStream[0], pluginNameAndStream[1]
+}
+
+// GetFriendlyName returns the minimum friendly name so that the original name can be rebuilt using preset defaults:
+// hub.steampipe.io/plugins/turbot/aws@1.0.0    => aws@1.0.0
+// hub.steampipe.io/plugins/turbot/aws@latest   => aws
+// hub.steampipe.io/plugins/otherOrg/aws@latest => otherOrg/aws
+// hub.steampipe.io/plugins/otherOrg/aws@1.0.0  => otherOrg/aws@1.0.0
+// differentRegistry.com/otherOrg/aws@latest    => differentRegistry.com/otherOrg/aws@latest
+// differentRegistry.com/otherOrg/aws@1.0.0     => differentRegistry.com/otherOrg/aws@1.0.0
+func (r *SteampipeImageRef) GetFriendlyName() string {
+	return getCondensedImageRef(r.DisplayImageRef())
+}
+
+func getCondensedImageRef(imageRef string) string {
+	// if this is not from the default steampipe registry - DO NOT CONDENSE - return as is
+	// (we are not aware of any conventions in the registry)
+	if !strings.HasPrefix(imageRef, DefaultImageRepoDisplayURL) {
+		return imageRef
+	}
+
+	// So this is an image reference from the Steampipe HUB registry
+	// remove the registry URL
+	ref := strings.TrimPrefix(imageRef, DefaultImageRepoDisplayURL)
+	// remove the 'plugins' namespace where steampipe hub keeps the images
+	ref = strings.TrimPrefix(ref, "/plugins/")
+	// remove the default organization - "turbot"
+	ref = strings.TrimPrefix(ref, DefaultImageOrg)
+	// remove any leading '/'
+	ref = strings.TrimPrefix(ref, "/")
+	// remove the '@latest' tag (not others)
+	ref = strings.TrimSuffix(ref, fmt.Sprintf("@%s", DefaultImageTag))
+
+	return ref
 }
 
 // possible formats include

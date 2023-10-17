@@ -12,6 +12,8 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
+// TODO not used currently
+
 var GlobalWorkspaceProfile *modconfig.WorkspaceProfile
 
 type WorkspaceProfileLoader struct {

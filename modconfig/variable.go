@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -132,23 +133,23 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	return nil
 }
 
-// func (v *Variable) Diff(other *Variable) *DashboardTreeItemDiffs {
-// 	res := &DashboardTreeItemDiffs{
-// 		Item: v,
-// 		Name: v.Name(),
-// 	}
+func (v *Variable) Diff(other *Variable) *DashboardTreeItemDiffs {
+	res := &DashboardTreeItemDiffs{
+		Item: v,
+		Name: v.Name(),
+	}
 
-// 	if !utils.SafeStringsEqual(v.FullName, other.FullName) {
-// 		res.AddPropertyDiff("Name")
-// 	}
+	if !utils.SafeStringsEqual(v.FullName, other.FullName) {
+		res.AddPropertyDiff("Name")
+	}
 
-// 	if !utils.SafeStringsEqual(v.Value, other.Value) {
-// 		res.AddPropertyDiff("Value")
-// 	}
+	if !utils.SafeStringsEqual(v.Value, other.Value) {
+		res.AddPropertyDiff("Value")
+	}
 
-// 	res.populateChildDiffs(v, other)
-// 	return res
-// }
+	res.populateChildDiffs(v, other)
+	return res
+}
 
 // CtyValue implements CtyValueProvider
 func (v *Variable) CtyValue() (cty.Value, error) {

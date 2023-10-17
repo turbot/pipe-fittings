@@ -2,6 +2,7 @@ package inputvars
 
 import (
 	"fmt"
+	"github.com/turbot/terraform-components/terraform"
 	"strings"
 
 	"github.com/zclconf/go-cty/cty"
@@ -24,7 +25,7 @@ type UnparsedVariableValue interface {
 	//
 	// If error diagnostics are returned, the resulting value may be invalid
 	// or incomplete.
-	ParseVariableValue(mode var_config.VariableParsingMode) (*InputValue, tfdiags.Diagnostics)
+	ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics)
 }
 
 // ParseVariableValues processes a map of unparsed variable values by
@@ -43,10 +44,10 @@ type UnparsedVariableValue interface {
 // InputValues may be incomplete but will include the subset of variables
 // that were successfully processed, allowing for careful analysis of the
 // partial result.
-func ParseVariableValues(inputValuesUnparsed map[string]UnparsedVariableValue, variablesMap *modconfig.ModVariableMap, validate bool) (InputValues, tfdiags.Diagnostics) {
+func ParseVariableValues(inputValuesUnparsed map[string]UnparsedVariableValue, variablesMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, tfdiags.Diagnostics) {
 
 	var diags tfdiags.Diagnostics
-	ret := make(InputValues, len(inputValuesUnparsed))
+	ret := make(terraform.InputValues, len(inputValuesUnparsed))
 
 	publicVariables := variablesMap.PublicVariables
 
@@ -73,7 +74,7 @@ func ParseVariableValues(inputValuesUnparsed map[string]UnparsedVariableValue, v
 
 		if !declared {
 			switch val.SourceType {
-			case ValueFromConfig, ValueFromAutoFile, ValueFromNamedFile:
+			case terraform.ValueFromConfig, terraform.ValueFromAutoFile, terraform.ValueFromNamedFile:
 				// We allow undeclared names for variable values from files and warn in case
 				// users have forgotten a variable {} declaration or have a typo in their var name.
 				// Some users will actively ignore this warning because they use a .tfvars file
@@ -87,12 +88,12 @@ func ParseVariableValues(inputValuesUnparsed map[string]UnparsedVariableValue, v
 				}
 				seenUndeclaredInFile++
 
-			case ValueFromEnvVar:
+			case terraform.ValueFromEnvVar:
 				// We allow and ignore undeclared names for environment
 				// variables, because users will often set these globally
 				// when they are used across many (but not necessarily all)
 				// configurations.
-			case ValueFromCLIArg:
+			case terraform.ValueFromCLIArg:
 				diags = diags.Append(tfdiags.Sourceless(
 					tfdiags.Error,
 					"Value for undeclared variable",
@@ -138,9 +139,9 @@ func ParseVariableValues(inputValuesUnparsed map[string]UnparsedVariableValue, v
 			// result is complete for any calling code that wants to cautiously
 			// analyze it for diagnostic purposes. Since our diagnostics now
 			// includes an error, normal processing will ignore this result.
-			ret[name] = &InputValue{
+			ret[name] = &terraform.InputValue{
 				Value:       cty.DynamicVal,
-				SourceType:  ValueFromConfig,
+				SourceType:  terraform.ValueFromConfig,
 				SourceRange: tfdiags.SourceRangeFromHCL(vc.DeclRange),
 			}
 
@@ -155,9 +156,9 @@ func ParseVariableValues(inputValuesUnparsed map[string]UnparsedVariableValue, v
 			}
 		} else {
 			// not required - use default
-			ret[name] = &InputValue{
+			ret[name] = &terraform.InputValue{
 				Value:       vc.Default,
-				SourceType:  ValueFromConfig,
+				SourceType:  terraform.ValueFromConfig,
 				SourceRange: tfdiags.SourceRangeFromHCL(vc.DeclRange),
 			}
 		}
@@ -195,15 +196,15 @@ type UnparsedInteractiveVariableValue struct {
 
 //var _ UnparsedVariableValue = UnparsedInteractiveVariableValue{}
 
-func (v UnparsedInteractiveVariableValue) ParseVariableValue(mode var_config.VariableParsingMode) (*InputValue, tfdiags.Diagnostics) {
+func (v UnparsedInteractiveVariableValue) ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 	val, valDiags := mode.Parse(v.Name, v.RawValue)
 	diags = diags.Append(valDiags)
 	if diags.HasErrors() {
 		return nil, diags
 	}
-	return &InputValue{
+	return &terraform.InputValue{
 		Value:      val,
-		SourceType: ValueFromInput,
+		SourceType: terraform.ValueFromInput,
 	}, diags
 }

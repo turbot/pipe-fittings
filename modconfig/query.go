@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -174,18 +175,18 @@ func (q *Query) CtyValue() (cty.Value, error) {
 	return GetCtyValue(q)
 }
 
-// func (q *Query) Diff(other *Query) *DashboardTreeItemDiffs {
-// 	res := &DashboardTreeItemDiffs{
-// 		Item: q,
-// 		Name: q.Name(),
-// 	}
+func (q *Query) Diff(other *Query) *DashboardTreeItemDiffs {
+	res := &DashboardTreeItemDiffs{
+		Item: q,
+		Name: q.Name(),
+	}
 
-// 	if !utils.SafeStringsEqual(q.FullName, other.FullName) {
-// 		res.AddPropertyDiff("Name")
-// 	}
+	if !utils.SafeStringsEqual(q.FullName, other.FullName) {
+		res.AddPropertyDiff("Name")
+	}
 
-// 	res.populateChildDiffs(q, other)
-// 	res.queryProviderDiff(q, other)
+	res.populateChildDiffs(q, other)
+	res.queryProviderDiff(q, other)
 
-// 	return res
-// }
+	return res
+}

@@ -1,12 +1,12 @@
-package misc
+package load_mod
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"sort"
 	"strings"
 
 	"github.com/gertd/go-pluralize"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/tfdiags"
 )

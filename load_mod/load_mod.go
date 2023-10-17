@@ -1,4 +1,4 @@
-package misc
+package load_mod
 
 import (
 	"fmt"

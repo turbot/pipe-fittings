@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 	"sort"
 	"strings"
 
@@ -134,50 +135,50 @@ func (b *Benchmark) GetUnqualifiedName() string {
 }
 
 // TODO: commented out: dashboard
-// func (b *Benchmark) Diff(other *Benchmark) *DashboardTreeItemDiffs {
-// 	res := &DashboardTreeItemDiffs{
-// 		Item: b,
-// 		Name: b.Name(),
-// 	}
+func (b *Benchmark) Diff(other *Benchmark) *DashboardTreeItemDiffs {
+	res := &DashboardTreeItemDiffs{
+		Item: b,
+		Name: b.Name(),
+	}
 
-// 	if !utils.SafeStringsEqual(b.Description, other.Description) {
-// 		res.AddPropertyDiff("Description")
-// 	}
-// 	if !utils.SafeStringsEqual(b.Documentation, other.Documentation) {
-// 		res.AddPropertyDiff("Documentation")
-// 	}
-// 	if !utils.SafeStringsEqual(b.Title, other.Title) {
-// 		res.AddPropertyDiff("Title")
-// 	}
-// 	if len(b.Tags) != len(other.Tags) {
-// 		res.AddPropertyDiff("Tags")
-// 	} else {
-// 		for k, v := range b.Tags {
-// 			if otherVal := other.Tags[k]; v != otherVal {
-// 				res.AddPropertyDiff("Tags")
-// 			}
-// 		}
-// 	}
+	if !utils.SafeStringsEqual(b.Description, other.Description) {
+		res.AddPropertyDiff("Description")
+	}
+	if !utils.SafeStringsEqual(b.Documentation, other.Documentation) {
+		res.AddPropertyDiff("Documentation")
+	}
+	if !utils.SafeStringsEqual(b.Title, other.Title) {
+		res.AddPropertyDiff("Title")
+	}
+	if len(b.Tags) != len(other.Tags) {
+		res.AddPropertyDiff("Tags")
+	} else {
+		for k, v := range b.Tags {
+			if otherVal := other.Tags[k]; v != otherVal {
+				res.AddPropertyDiff("Tags")
+			}
+		}
+	}
 
-// 	if !utils.SafeStringsEqual(b.Type, other.Type) {
-// 		res.AddPropertyDiff("Type")
-// 	}
+	if !utils.SafeStringsEqual(b.Type, other.Type) {
+		res.AddPropertyDiff("Type")
+	}
 
-// 	if len(b.ChildNameStrings) != len(other.ChildNameStrings) {
-// 		res.AddPropertyDiff("Childen")
-// 	} else {
-// 		myChildNames := b.ChildNameStrings
-// 		sort.Strings(myChildNames)
-// 		otherChildNames := other.ChildNameStrings
-// 		sort.Strings(otherChildNames)
-// 		if strings.Join(myChildNames, ",") != strings.Join(otherChildNames, ",") {
-// 			res.AddPropertyDiff("Childen")
-// 		}
-// 	}
+	if len(b.ChildNameStrings) != len(other.ChildNameStrings) {
+		res.AddPropertyDiff("Childen")
+	} else {
+		myChildNames := b.ChildNameStrings
+		sort.Strings(myChildNames)
+		otherChildNames := other.ChildNameStrings
+		sort.Strings(otherChildNames)
+		if strings.Join(myChildNames, ",") != strings.Join(otherChildNames, ",") {
+			res.AddPropertyDiff("Childen")
+		}
+	}
 
-// 	res.dashboardLeafNodeDiff(b, other)
-// 	return res
-// }
+	res.dashboardLeafNodeDiff(b, other)
+	return res
+}
 
 func (b *Benchmark) WalkResources(resourceFunc func(resource ModTreeItem) (bool, error)) error {
 	for _, child := range b.children {

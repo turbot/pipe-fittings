@@ -3,6 +3,7 @@ package parse
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/terraform-components/terraform"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -577,7 +578,7 @@ func (m *ModParseContext) loadModRequireArgs() error {
 		return err
 	}
 	// now update the variables map with the input values
-	depModVarValues.SetVariableValues(m.Variables)
+	inputvars.SetVariableValues(depModVarValues, m.Variables)
 
 	// now add  overridden variables into eval context - in case the root mod references any dependency variable values
 	m.AddVariablesToEvalContext()
@@ -585,7 +586,7 @@ func (m *ModParseContext) loadModRequireArgs() error {
 	return nil
 }
 
-func (m *ModParseContext) validateModRequireValues(depModVarValues inputvars.InputValues) error {
+func (m *ModParseContext) validateModRequireValues(depModVarValues terraform.InputValues) error {
 	if len(depModVarValues) == 0 {
 		return nil
 	}

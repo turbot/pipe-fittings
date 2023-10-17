@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/turbot/steampipe/pkg/db/db_common"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,9 +16,10 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modinstaller"
 	"github.com/turbot/pipe-fittings/parse"
@@ -26,6 +28,7 @@ import (
 	"github.com/turbot/pipe-fittings/versionmap"
 )
 
+// TODO this is out of date with steampipe
 type Workspace struct {
 	Path                string
 	ModInstallationPath string
@@ -35,7 +38,7 @@ type Workspace struct {
 	// the input variables used in the parse
 	VariableValues map[string]string
 	// TODO: pipes
-	// CloudMetadata  *steampipeconfig.CloudMetadata
+	CloudMetadata *modconfig.CloudMetadata
 
 	// source snapshot paths
 	// if this is set, no other mod resources are loaded and
@@ -55,13 +58,13 @@ type Workspace struct {
 	watcherError            error
 	// event handlers
 	// TODO: dashboard
-	// dashboardEventHandlers []dashboardevents.DashboardEventHandler
+	dashboardEventHandlers []dashboardevents.DashboardEventHandler
 	// callback function called when there is a file watcher event
 	onFileWatcherEventMessages func()
 	loadPseudoResources        bool
 	// channel used to send dashboard events to the handleDashboardEvent goroutine
 	// TODO: dashboard
-	// dashboardEventChan chan dashboardevents.DashboardEvent
+	dashboardEventChan chan dashboardevents.DashboardEvent
 }
 
 func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []string) (*Workspace, *error_helpers.ErrorAndWarnings) {
@@ -147,10 +150,10 @@ func LoadResourceNames(ctx context.Context, workspacePath string) (*modconfig.Wo
 	return workspace.loadWorkspaceResourceName(ctx)
 }
 
-func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
+func (w *Workspace) SetupWatcher(ctx context.Context, client db_common.Client, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: []string{w.Path},
-		Include:     filehelpers.InclusionsFromExtensions(misc.GetModFileExtensions()),
+		Include:     filehelpers.InclusionsFromExtensions(load_mod.GetModFileExtensions()),
 		Exclude:     w.exclusions,
 		ListFlag:    w.ListFlag,
 		EventMask:   fsnotify.Create | fsnotify.Remove | fsnotify.Rename | fsnotify.Write,
@@ -159,7 +162,7 @@ func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.
 		// decide how to handle them
 		// OnError: errCallback,
 		OnChange: func(events []fsnotify.Event) {
-			w.handleFileWatcherEvent(ctx, events)
+			w.handleFileWatcherEvent(ctx, client, events)
 		},
 	}
 	watcher, err := filewatcher.NewWatcher(watcherOptions)
@@ -280,7 +283,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
 
 	// load the workspace mod
-	m, otherErrorAndWarning := misc.LoadMod(w.Path, parseCtx)
+	m, otherErrorAndWarning := load_mod.LoadMod(w.Path, parseCtx)
 	errorsAndWarnings.Merge(otherErrorAndWarning)
 	if errorsAndWarnings.Error != nil {
 		return errorsAndWarnings
@@ -314,12 +317,12 @@ func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool)
 
 func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, *error_helpers.ErrorAndWarnings) {
 	// load variable definitions
-	variableMap, err := misc.LoadVariableDefinitions(w.Path, variablesParseCtx)
+	variableMap, err := load_mod.LoadVariableDefinitions(w.Path, variablesParseCtx)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// get the values
-	return misc.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
+	return load_mod.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
 }
 
 // build options used to load workspace
@@ -412,7 +415,7 @@ func (w *Workspace) loadWorkspaceResourceName(ctx context.Context) (*modconfig.W
 		return nil, err
 	}
 
-	workspaceResourceNames, err := misc.LoadModResourceNames(w.Mod, parseCtx)
+	workspaceResourceNames, err := load_mod.LoadModResourceNames(w.Mod, parseCtx)
 	if err != nil {
 		return nil, err
 	}
