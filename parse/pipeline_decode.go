@@ -461,6 +461,20 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline) hcl.Diagnosti
 		}
 	}
 
+	for _, outputConfig := range pipelineHcl.OutputConfig {
+		dependsOn := outputConfig.DependsOn
+
+		for _, dep := range dependsOn {
+			if !helpers.StringSliceContains(stepRegisters, dep) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("invalid depends_on '%s' - does not exist for pipeline %s", dep, pipelineHcl.Name()),
+					Detail:   fmt.Sprintf("valid steps are: %s", strings.Join(stepRegisters, ", ")),
+				})
+			}
+		}
+	}
+
 	return diags
 }
 
