@@ -23,6 +23,57 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 	},
 }
 
+var IntegrationSlackBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeToken,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeSigningSecret,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeWebhookUrl,
+			Required: false,
+		},
+	},
+}
+
+var IntegrationEmailBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+	},
+}
+
+var IntegrationTeamsBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+	},
+}
+
 var TriggerScheduleBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{

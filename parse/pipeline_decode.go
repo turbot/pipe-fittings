@@ -40,14 +40,9 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		}}
 	}
 
-	stepOptions, rest, diags := block.Body.PartialContent(pipelineStepBlockSchema)
+	stepOptions, diags := block.Body.Content(pipelineStepBlockSchema)
 
 	if diags.HasErrors() {
-		return nil, diags
-	}
-
-	diags = gohcl.DecodeBody(rest, parseCtx.EvalCtx, step)
-	if len(diags) > 0 {
 		return nil, diags
 	}
 
@@ -180,6 +175,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 }
 
 func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
+
 	o := &modconfig.PipelineParam{
 		Name: block.Labels[0],
 	}
@@ -293,7 +289,68 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 	return o, diags
 }
 
+func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Integration, *DecodeResult) {
+
+	res := newDecodeResult()
+
+	if len(block.Labels) != 2 {
+		res.handleDecodeDiags(hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid integration block - expected 2 labels, found %d", len(block.Labels)),
+				Subject:  &block.DefRange,
+			},
+		})
+		return nil, res
+	}
+
+	integrationType := block.Labels[0]
+
+	integration := modconfig.NewIntegration(mod, block)
+	if integration == nil {
+		res.handleDecodeDiags(hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid integration type '%s'", integrationType),
+				Subject:  &block.DefRange,
+			},
+		})
+		return nil, res
+	}
+
+	integrationSchema := GetIntegrationBlockSchema(integration.IntegrationType)
+	if integrationSchema == nil {
+		res.handleDecodeDiags(hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "invalid integration type: " + integration.IntegrationType,
+				Subject:  &block.DefRange,
+			},
+		})
+		return integration, res
+	}
+
+	integrationOptions, diags := block.Body.Content(integrationSchema)
+
+	if diags.HasErrors() {
+		res.handleDecodeDiags(diags)
+		return integration, res
+	}
+
+	diags = integration.Config.SetAttributes(mod, integration, integrationOptions.Attributes, parseCtx.EvalCtx)
+	if len(diags) > 0 {
+		res.handleDecodeDiags(diags)
+		return integration, res
+	}
+
+	moreDiags := parseCtx.AddIntegration(integration)
+	res.addDiags(moreDiags)
+
+	return integration, res
+}
+
 func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Trigger, *DecodeResult) {
+
 	res := newDecodeResult()
 
 	if len(block.Labels) != 2 {
@@ -532,6 +589,19 @@ func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 		return modconfig.TriggerQueryBlockSchema
 	case schema.TriggerTypeHttp:
 		return modconfig.TriggerHttpBlockSchema
+	default:
+		return nil
+	}
+}
+
+func GetIntegrationBlockSchema(triggerType string) *hcl.BodySchema {
+	switch triggerType {
+	case schema.IntegrationTypeSlack:
+		return modconfig.IntegrationSlackBlockSchema
+	case schema.IntegrationTypeEmail:
+		return modconfig.IntegrationEmailBlockSchema
+	case schema.IntegrationTypeTeams:
+		return modconfig.IntegrationTeamsBlockSchema
 	default:
 		return nil
 	}

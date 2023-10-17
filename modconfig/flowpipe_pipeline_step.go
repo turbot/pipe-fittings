@@ -1071,10 +1071,6 @@ func (p *PipelineStepContainer) SetBlockConfig(block hcl.Blocks, evalContext *hc
 	return nil
 }
 
-func (p *PipelineStepInput) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
 type PipelineStepEmail struct {
 	PipelineStepBase
 	To               []string `json:"to"`
@@ -2212,6 +2208,8 @@ func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalC
 
 type PipelineStepInput struct {
 	PipelineStepBase
+
+	Prompt string `json:"prompt"`
 }
 
 func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
@@ -2237,6 +2235,14 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 
 	for name, attr := range hclAttributes {
 		switch name {
+		case schema.AttributeTypePrompt:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+			if val != cty.NilVal {
+				p.Prompt = val.AsString()
+			}
 
 		default:
 			if !p.IsBaseAttribute(name) {
@@ -2250,6 +2256,10 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	}
 
 	return diags
+}
+
+func (p *PipelineStepInput) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	return nil
 }
 
 type PipelineStepContainer struct {
