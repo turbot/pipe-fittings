@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - "v*"
+      - pp
   workflow_dispatch:
 
 env:
