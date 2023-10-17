@@ -17,7 +17,6 @@ import (
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
 )
@@ -75,11 +74,12 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		return nil, err
 	}
 
-	installedPlugins, err := plugin.GetInstalledPlugins()
-	if err != nil {
-		return nil, err
-	}
-	i.installedPlugins = installedPlugins
+	// TODO hack to make pp mod install work for now
+	// installedPlugins, err := plugin.GetInstalledPlugins()
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// i.installedPlugins = installedPlugins
 
 	// load lock file
 	workspaceLock, err := versionmap.LoadWorkspaceLock(i.workspacePath)
