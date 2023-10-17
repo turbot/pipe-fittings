@@ -55,7 +55,7 @@ func moveFileWithinPartition(sourcePath, destPath string) error {
 
 // moves a folder within an fs partition. panics if movement is attempted between partitions
 // this is done separately to achieve performance benefits of os.Rename over reading and writing content
-func moveFolderWithinPartition(sourcePath, destPath string) error {
+func MoveFolderWithinPartition(sourcePath, destPath string) error {
 	sourceinfo, err := os.Stat(sourcePath)
 	if err != nil {
 		return err

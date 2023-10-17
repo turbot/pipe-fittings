@@ -149,7 +149,7 @@ func installPluginDocs(image *SteampipeImage, tempdir string) error {
 	if fileExists(destPath) {
 		os.RemoveAll(destPath)
 	}
-	if err := moveFolderWithinPartition(sourcePath, destPath); err != nil {
+	if err := MoveFolderWithinPartition(sourcePath, destPath); err != nil {
 		return fmt.Errorf("could not copy %s to %s", sourcePath, destPath)
 	}
 	return nil
