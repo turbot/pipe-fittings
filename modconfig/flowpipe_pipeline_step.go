@@ -1594,7 +1594,7 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 	for _, traversals := range expr.Variables() {
 		if traversals.RootName() == "param" {
 			p.AddUnresolvedAttribute(attr.Name, expr)
-			return cty.NilVal, hcl.Diagnostics{}
+			// Don't return here because there may be other dependencies to be created below
 		}
 	}
 
