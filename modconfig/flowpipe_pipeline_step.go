@@ -2228,8 +2228,9 @@ type PipelineStepInput struct {
 	ResponseUrl string `json:"response_url" cty:"response_url"`
 
 	// slack
-	Token   string `json:"token"`
-	Channel string `json:"channel"`
+	Token     string `json:"token"`
+	Channel   string `json:"channel"`
+	SlackType string `json:"slack_type"`
 
 	// type
 	Type string `json:"type" cty:"type"`
@@ -2255,13 +2256,15 @@ func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
 	return map[string]interface{}{
-		"username":     p.Username,
-		"password":     p.Password,
-		"smtp_server":  p.SmtpServer,
-		"token":        p.Token,
-		"channel":      p.Channel,
-		"type":         p.Type,
-		"response_url": p.ResponseUrl,
+		schema.AttributeTypeUsername:    p.Username,
+		schema.AttributeTypePassword:    p.Password,
+		schema.AttributeTypeSmtpServer:  p.SmtpServer,
+		schema.AttributeTypeToken:       p.Token,
+		schema.AttributeTypeChannel:     p.Channel,
+		schema.AttributeTypeType:        p.Type,
+		schema.AttributeTypeSlackType:   p.SlackType,
+		schema.AttributeTypePrompt:      p.Prompt,
+		schema.AttributeTypeResponseUrl: p.ResponseUrl,
 	}, nil
 }
 
@@ -2279,7 +2282,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Prompt = val.AsString()
 			}
-		case "username":
+		case schema.AttributeTypeUsername:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2288,7 +2291,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Username = val.AsString()
 			}
-		case "password":
+		case schema.AttributeTypePassword:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2297,7 +2300,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Password = val.AsString()
 			}
-		case "smtp_server":
+		case schema.AttributeTypeSmtpServer:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2307,7 +2310,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.SmtpServer = val.AsString()
 			}
-		case "response_url":
+		case schema.AttributeTypeResponseUrl:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2317,7 +2320,16 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.ResponseUrl = val.AsString()
 			}
-		case "token":
+		case schema.AttributeTypeType:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				p.Type = val.AsString()
+			}
+		case schema.AttributeTypeToken:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2326,7 +2338,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Token = val.AsString()
 			}
-		case "channel":
+		case schema.AttributeTypeChannel:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2335,14 +2347,14 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Channel = val.AsString()
 			}
-		case "type":
+		case schema.AttributeTypeSlackType:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
 			if val != cty.NilVal {
-				p.Type = val.AsString()
+				p.SlackType = val.AsString()
 			}
 
 			// default:

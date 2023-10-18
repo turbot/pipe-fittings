@@ -676,6 +676,18 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeResponseUrl,
 		},
+		{
+			Name: schema.AttributeTypePrompt,
+		},
+		{
+			Name: schema.AttributeTypeChannel,
+		},
+		{
+			Name: schema.AttributeTypeSlackType,
+		},
+		{
+			Name: schema.AttributeTypeToken,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
