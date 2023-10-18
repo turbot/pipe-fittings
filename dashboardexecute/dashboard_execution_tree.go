@@ -7,9 +7,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/db_common"
+	"github.com/turbot/pipe-fittings/initialisation"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
@@ -23,7 +26,10 @@ type DashboardExecutionTree struct {
 
 	dashboardName string
 	sessionId     string
-	client        db_common.Client
+	// map of clients, keyed by connection string
+	clients                 map[string]db_common.Client
+	clientsMut              sync.RWMutex
+	defaultConnectionString string
 	// map of executing runs, keyed by full name
 	runs        map[string]dashboardtypes.DashboardTreeRun
 	workspace   *workspace.Workspace
@@ -36,16 +42,18 @@ type DashboardExecutionTree struct {
 	id          string
 }
 
-func NewDashboardExecutionTree(rootName string, sessionId string, client db_common.Client, workspace *workspace.Workspace) (*DashboardExecutionTree, error) {
+func NewDashboardExecutionTree(rootName string, sessionId string, clients map[string]db_common.Client, workspace *workspace.Workspace) (*DashboardExecutionTree, error) {
 	// now populate the DashboardExecutionTree
 	executionTree := &DashboardExecutionTree{
-		dashboardName: rootName,
-		sessionId:     sessionId,
-		client:        client,
-		runs:          make(map[string]dashboardtypes.DashboardTreeRun),
-		workspace:     workspace,
-		runComplete:   make(chan dashboardtypes.DashboardTreeRun, 1),
-		inputValues:   make(map[string]any),
+		dashboardName:           rootName,
+		sessionId:               sessionId,
+		// TODO KAI pass in default connection string?
+		defaultConnectionString: viper.GetString(constants.ArgWorkspaceDatabase),
+		clients:                 clients,
+		runs:                    make(map[string]dashboardtypes.DashboardTreeRun),
+		workspace:               workspace,
+		runComplete:             make(chan dashboardtypes.DashboardTreeRun, 1),
+		inputValues:             make(map[string]any),
 	}
 	executionTree.id = fmt.Sprintf("%p", executionTree)
 
@@ -124,7 +132,8 @@ func (e *DashboardExecutionTree) createRootItem(rootName string) (dashboardtypes
 func (e *DashboardExecutionTree) Execute(ctx context.Context) {
 	startTime := time.Now()
 
-	searchPath := e.client.GetRequiredSessionSearchPath()
+	// TODO KAI WHAT DO WE DO HERE
+	searchPath := e.defaultClient().GetRequiredSessionSearchPath()
 
 	// store context
 	cancelCtx, cancel := context.WithCancel(ctx)
@@ -345,4 +354,26 @@ func (*DashboardExecutionTree) AsTreeNode() *dashboardtypes.SnapshotTreeNode {
 
 func (*DashboardExecutionTree) GetResource() modconfig.DashboardLeafNode {
 	panic("should never call for DashboardExecutionTree")
+}
+
+func (e *DashboardExecutionTree) defaultClient() db_common.Client {
+	return e.clients[e.defaultConnectionString]
+}
+
+func (e *DashboardExecutionTree) getClient(ctx context.Context, connectionString string) (db_common.Client, error) {
+	e.clientsMut.RLock()
+	client := e.clients[connectionString]
+	e.clientsMut.RUnlock()
+
+	if client != nil {
+		return client, nil
+	}
+	e.clientsMut.Lock()
+	defer e.clientsMut.Unlock()
+
+	client, errorsAndWarnings := initialisation.GetDbClient(ctx, constants.InvokerDashboard, connectionString, nil)
+	if errorsAndWarnings.Error != nil {
+		return nil, errorsAndWarnings.Error
+	}
+	return client, nil
 }

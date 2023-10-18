@@ -264,7 +264,8 @@ func (s *Server) HandleDashboardEvent(ctx context.Context, event dashboardevents
 			sessionMap := s.getDashboardClients()
 			for sessionId, dashboardClientInfo := range sessionMap {
 				if typeHelpers.SafeString(dashboardClientInfo.Dashboard) == changedDashboardName {
-					_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, changedDashboardName, dashboardClientInfo.DashboardInputs, s.workspace, s.dbClient)
+					clientMap := map[string]db_common.Client{s.dbClient.GetConnectionString(): s.dbClient}
+					_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, changedDashboardName, dashboardClientInfo.DashboardInputs, s.workspace, clientMap)
 				}
 			}
 		}
@@ -283,7 +284,8 @@ func (s *Server) HandleDashboardEvent(ctx context.Context, event dashboardevents
 		for _, newDashboardName := range newDashboardNames {
 			for sessionId, dashboardClientInfo := range sessionMap {
 				if typeHelpers.SafeString(dashboardClientInfo.Dashboard) == newDashboardName {
-					_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, newDashboardName, dashboardClientInfo.DashboardInputs, s.workspace, s.dbClient)
+					clientMap := map[string]db_common.Client{s.dbClient.GetConnectionString(): s.dbClient}
+					_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, newDashboardName, dashboardClientInfo.DashboardInputs, s.workspace, clientMap)
 				}
 			}
 		}
@@ -356,7 +358,9 @@ func (s *Server) handleMessageFunc(ctx context.Context) func(session *melody.Ses
 			_ = session.Write(payload)
 		case "select_dashboard":
 			s.setDashboardForSession(sessionId, request.Payload.Dashboard.FullName, request.Payload.InputValues)
-			_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, request.Payload.Dashboard.FullName, request.Payload.InputValues, s.workspace, s.dbClient)
+			clientMap := map[string]db_common.Client{s.dbClient.GetConnectionString(): s.dbClient}
+			_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, request.Payload.Dashboard.FullName, request.Payload.InputValues, s.workspace, clientMap)
+
 		case "select_snapshot":
 			snapshotName := request.Payload.Dashboard.FullName
 			s.setDashboardForSession(sessionId, snapshotName, request.Payload.InputValues)

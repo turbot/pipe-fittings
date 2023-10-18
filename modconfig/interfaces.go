@@ -67,6 +67,7 @@ type QueryProvider interface {
 	GetParams() []*ParamDef
 	GetSQL() *string
 	GetQuery() *Query
+	GetConnectionString() *string
 	SetArgs(*QueryArgs)
 	SetParams([]*ParamDef)
 	GetResolvedQuery(*QueryArgs) (*ResolvedQuery, error)

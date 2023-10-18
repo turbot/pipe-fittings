@@ -177,6 +177,10 @@ func (c *DbClient) GetConnectionString() string {
 	return c.connectionString
 }
 
+func (c *DbClient) GetConnectionString() string {
+	return c.connectionString
+}
+
 // RegisterNotificationListener has an empty implementation
 // NOTE: we do not (currently) support notifications from remote connections
 func (c *DbClient) RegisterNotificationListener(func(notification *pgconn.Notification)) {}

@@ -37,7 +37,7 @@ func newDashboardExecutor() *DashboardExecutor {
 
 var Executor = newDashboardExecutor()
 
-func (e *DashboardExecutor) ExecuteDashboard(ctx context.Context, sessionId, dashboardName string, inputs map[string]any, workspace *workspace.Workspace, client db_common.Client) (err error) {
+func (e *DashboardExecutor) ExecuteDashboard(ctx context.Context, sessionId, dashboardName string, inputs map[string]any, workspace *workspace.Workspace, clients map[string]db_common.Client) (err error) {
 	var executionTree *DashboardExecutionTree
 	defer func() {
 		if err != nil && ctx.Err() != nil {
@@ -58,7 +58,7 @@ func (e *DashboardExecutor) ExecuteDashboard(ctx context.Context, sessionId, das
 	e.CancelExecutionForSession(ctx, sessionId)
 
 	// now create a new execution
-	executionTree, err = NewDashboardExecutionTree(dashboardName, sessionId, client, workspace)
+	executionTree, err = NewDashboardExecutionTree(dashboardName, sessionId, clients, workspace)
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func (e *DashboardExecutor) OnInputChanged(ctx context.Context, sessionId string
 			executionTree.dashboardName,
 			inputs,
 			executionTree.workspace,
-			executionTree.client)
+			executionTree.clients)
 	}
 
 	// set the inputs

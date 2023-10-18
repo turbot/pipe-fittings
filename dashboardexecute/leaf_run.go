@@ -15,7 +15,8 @@ import (
 type LeafRun struct {
 	// all RuntimeDependencySubscribers are also publishers as they have args/params
 	RuntimeDependencySubscriberImpl
-	Resource modconfig.DashboardLeafNode `json:"properties,omitempty"`
+	Resource         modconfig.DashboardLeafNode `json:"properties,omitempty"`
+	ConnectionString string                      `json:"connection_string,omitempty"`
 
 	Data         *dashboardtypes.LeafData  `json:"data,omitempty"`
 	TimingResult *queryresult.TimingResult `json:"-"`
@@ -34,6 +35,13 @@ func (r *LeafRun) AsTreeNode() *dashboardtypes.SnapshotTreeNode {
 func NewLeafRun(resource modconfig.DashboardLeafNode, parent dashboardtypes.DashboardParent, executionTree *DashboardExecutionTree, opts ...LeafRunOption) (*LeafRun, error) {
 	r := &LeafRun{
 		Resource: resource,
+	}
+	// get the connection string from the QueryProvider
+	if qp, ok := resource.(modconfig.QueryProvider); ok {
+		r.ConnectionString = executionTree.defaultConnectionString
+		if queryConnectionString := qp.GetConnectionString(); queryConnectionString != nil {
+			r.ConnectionString = *queryConnectionString
+		}
 	}
 
 	// create RuntimeDependencySubscriberImpl- this handles 'with' run creation and resolving runtime dependency resolution
@@ -178,7 +186,13 @@ func (*LeafRun) IsSnapshotPanel() {}
 func (r *LeafRun) executeQuery(ctx context.Context) error {
 	log.Printf("[TRACE] LeafRun '%s' SQL resolved, executing", r.resource.Name())
 
-	queryResult, err := r.executionTree.client.ExecuteSync(ctx, r.executeSQL, r.Args...)
+	// get the client for this connection string
+	client, err := r.executionTree.getClient(ctx, r.ConnectionString)
+	if err != nil {
+		return err
+	}
+
+	queryResult, err := client.ExecuteSync(ctx, r.executeSQL, r.Args...)
 	if err != nil {
 		log.Printf("[TRACE] LeafRun '%s' query failed: %s", r.resource.Name(), err.Error())
 		return err

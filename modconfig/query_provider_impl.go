@@ -13,11 +13,12 @@ type QueryProviderImpl struct {
 	RuntimeDependencyProviderImpl
 	QueryProviderRemain hcl.Body `hcl:",remain" json:"-"`
 
-	SQL       *string     `cty:"sql" hcl:"sql" column:"sql,text" json:"-"`
-	Query     *Query      `cty:"query" hcl:"query" json:"-"`
-	Args      *QueryArgs  `cty:"args" column:"args,jsonb" json:"-"`
-	Params    []*ParamDef `cty:"params" column:"params,jsonb" json:"-"`
-	QueryName *string     `column:"query,text" json:"-"`
+	SQL              *string     `cty:"sql" hcl:"sql" column:"sql,text" json:"-"`
+	Query            *Query      `cty:"query" hcl:"query" json:"-"`
+	ConnectionString *string     `cty:"connection_string" hcl:"connection_string" json:"-"`
+	Args             *QueryArgs  `cty:"args" column:"args,jsonb" json:"-"`
+	Params           []*ParamDef `cty:"params" column:"params,jsonb" json:"-"`
+	QueryName        *string     `column:"query,text" json:"-"`
 
 	withs               []*DashboardWith
 	disableCtySerialise bool
@@ -40,6 +41,11 @@ func (q *QueryProviderImpl) GetArgs() *QueryArgs {
 // GetSQL implements QueryProvider
 func (q *QueryProviderImpl) GetSQL() *string {
 	return q.SQL
+}
+
+// GetConnectionString implements QueryProvider
+func (q *QueryProviderImpl) GetConnectionString() *string {
+	return q.ConnectionString
 }
 
 // GetQuery implements QueryProvider
