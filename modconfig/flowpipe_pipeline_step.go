@@ -2272,40 +2272,40 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 
 	var from *string
-	if p.UnresolvedAttributes[schema.AttributeTypeFrom] == nil {
+	if p.UnresolvedAttributes[schema.AttributeTypeUsername] == nil {
 		from = p.Username
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeFrom], evalContext, &from)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeUsername], evalContext, &from)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
 
 	var senderCredential *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSenderCredential] == nil {
-		senderCredential = p.Username
+	if p.UnresolvedAttributes[schema.AttributeTypePassword] == nil {
+		senderCredential = p.Password
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSenderCredential], evalContext, &senderCredential)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePassword], evalContext, &senderCredential)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
 
 	var host *string
-	if p.UnresolvedAttributes[schema.AttributeTypeHost] == nil {
+	if p.UnresolvedAttributes[schema.AttributeTypeSmtpServer] == nil {
 		host = p.SmtpServer
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeHost], evalContext, &host)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSmtpServer], evalContext, &host)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
 
 	var port *int64
-	if p.UnresolvedAttributes[schema.AttributeTypePort] == nil {
+	if p.UnresolvedAttributes[schema.AttributeTypeSmtpPort] == nil {
 		port = p.SmtpPort
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePort], evalContext, &port)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSmtpPort], evalContext, &port)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
@@ -2401,6 +2401,16 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
+	var responseUrl *string
+	if p.UnresolvedAttributes[schema.AttributeTypeResponseUrl] == nil {
+		responseUrl = p.ResponseUrl
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeResponseUrl], evalContext, &responseUrl)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
 	results := map[string]interface{}{}
 
 	if to != nil {
@@ -2459,6 +2469,10 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeOptions] = options
 	}
 
+	if responseUrl != nil {
+		results[schema.AttributeTypeResponseUrl] = *responseUrl
+	}
+
 	return results, nil
 }
 
@@ -2512,7 +2526,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Summary:  "Unable to parse " + schema.AttributeTypePassword + " attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
