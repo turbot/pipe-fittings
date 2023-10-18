@@ -13,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/db_client/backend"
 	"github.com/turbot/pipe-fittings/db_common"
+	"github.com/turbot/pipe-fittings/serversettings"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"golang.org/x/sync/semaphore"
