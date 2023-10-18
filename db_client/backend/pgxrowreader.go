@@ -12,61 +12,69 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-// PgxRowReader is a RowReader implementation for the pgx database/sql driver
-type PgxRowReader struct{}
+func NewPgxRowReader() *pgxRowReader {
+	return &pgxRowReader{
+		genericSQLRowReader: genericSQLRowReader{
+			CellReader: pgxReadCell,
+		},
+	}
+}
 
-func (r *PgxRowReader) Read(columnValues []any, cols []*queryresult.ColumnDef) ([]any, error) {
-	result := make([]any, len(columnValues))
-	for i, columnValue := range columnValues {
-		if columnValue != nil {
-			result[i] = columnValue
-			switch cols[i].DataType {
-			case "_TEXT":
-				if arr, ok := columnValue.([]interface{}); ok {
-					elements := utils.Map(arr, func(e interface{}) string { return e.(string) })
-					result[i] = strings.Join(elements, ",")
-				}
-			case "INET":
-				if inet, ok := columnValue.(netip.Prefix); ok {
-					result[i] = strings.TrimSuffix(inet.String(), "/32")
-				}
-			case "UUID":
-				if bytes, ok := columnValue.([16]uint8); ok {
-					if u, err := uuid.FromBytes(bytes[:]); err == nil {
-						result[i] = u
-					}
-				}
-			case "TIME":
-				if t, ok := columnValue.(pgtype.Time); ok {
-					result[i] = time.UnixMicro(t.Microseconds).UTC().Format("15:04:05")
-				}
-			case "INTERVAL":
-				if interval, ok := columnValue.(pgtype.Interval); ok {
-					var sb strings.Builder
-					years := interval.Months / 12
-					months := interval.Months % 12
-					if years > 0 {
-						sb.WriteString(fmt.Sprintf("%d %s ", years, utils.Pluralize("year", int(years))))
-					}
-					if months > 0 {
-						sb.WriteString(fmt.Sprintf("%d %s ", months, utils.Pluralize("mon", int(months))))
-					}
-					if interval.Days > 0 {
-						sb.WriteString(fmt.Sprintf("%d %s ", interval.Days, utils.Pluralize("day", int(interval.Days))))
-					}
-					if interval.Microseconds > 0 {
-						d := time.Duration(interval.Microseconds) * time.Microsecond
-						formatStr := time.Unix(0, 0).UTC().Add(d).Format("15:04:05")
-						sb.WriteString(formatStr)
-					}
-					result[i] = sb.String()
-				}
+// pgxRowReader is a RowReader implementation for the pgx database/sql driver
+type pgxRowReader struct {
+	genericSQLRowReader
+}
 
-			case "NUMERIC":
-				if numeric, ok := columnValue.(pgtype.Numeric); ok {
-					if f, err := numeric.Float64Value(); err == nil {
-						result[i] = f.Float64
-					}
+func pgxReadCell(columnValue any, col *queryresult.ColumnDef) (any, error) {
+	var result any
+	if columnValue != nil {
+		result = columnValue
+		switch col.DataType {
+		case "_TEXT":
+			if arr, ok := columnValue.([]interface{}); ok {
+				elements := utils.Map(arr, func(e interface{}) string { return e.(string) })
+				result = strings.Join(elements, ",")
+			}
+		case "INET":
+			if inet, ok := columnValue.(netip.Prefix); ok {
+				result = strings.TrimSuffix(inet.String(), "/32")
+			}
+		case "UUID":
+			if bytes, ok := columnValue.([16]uint8); ok {
+				if u, err := uuid.FromBytes(bytes[:]); err == nil {
+					result = u
+				}
+			}
+		case "TIME":
+			if t, ok := columnValue.(pgtype.Time); ok {
+				result = time.UnixMicro(t.Microseconds).UTC().Format("15:04:05")
+			}
+		case "INTERVAL":
+			if interval, ok := columnValue.(pgtype.Interval); ok {
+				var sb strings.Builder
+				years := interval.Months / 12
+				months := interval.Months % 12
+				if years > 0 {
+					sb.WriteString(fmt.Sprintf("%d %s ", years, utils.Pluralize("year", int(years))))
+				}
+				if months > 0 {
+					sb.WriteString(fmt.Sprintf("%d %s ", months, utils.Pluralize("mon", int(months))))
+				}
+				if interval.Days > 0 {
+					sb.WriteString(fmt.Sprintf("%d %s ", interval.Days, utils.Pluralize("day", int(interval.Days))))
+				}
+				if interval.Microseconds > 0 {
+					d := time.Duration(interval.Microseconds) * time.Microsecond
+					formatStr := time.Unix(0, 0).UTC().Add(d).Format("15:04:05")
+					sb.WriteString(formatStr)
+				}
+				result = sb.String()
+			}
+
+		case "NUMERIC":
+			if numeric, ok := columnValue.(pgtype.Numeric); ok {
+				if f, err := numeric.Float64Value(); err == nil {
+					result = f.Float64
 				}
 			}
 		}

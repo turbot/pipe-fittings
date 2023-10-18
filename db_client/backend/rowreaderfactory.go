@@ -12,10 +12,10 @@ func RowReaderFactory(backend DBClientBackendType) RowReader {
 	var reader RowReader
 	switch backend {
 	case PostgresDBClientBackend:
-		reader = &PgxRowReader{}
-	case SqliteDBClientBackend:
-		reader = &SqliteRowReader{}
+		// we have special handing of a few types for postgres
+		reader = NewPgxRowReader()
 	default:
+		reader = NewGenericSQLRowReader()
 
 	}
 	return reader
