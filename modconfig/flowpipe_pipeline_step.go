@@ -2391,6 +2391,16 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
+	var options []string
+	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil {
+		options = p.Options
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &options)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
 	results := map[string]interface{}{}
 
 	if to != nil {
@@ -2443,6 +2453,10 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	if prompt != nil {
 		results[schema.AttributeTypePrompt] = *prompt
+	}
+
+	if options != nil {
+		results[schema.AttributeTypeOptions] = options
 	}
 
 	return results, nil
