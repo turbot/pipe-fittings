@@ -2398,19 +2398,19 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 
 	if from != nil {
-		results[schema.AttributeTypeFrom] = *from
+		results[schema.AttributeTypeUsername] = *from
 	}
 
 	if senderCredential != nil {
-		results[schema.AttributeTypeSenderCredential] = *senderCredential
+		results[schema.AttributeTypePassword] = *senderCredential
 	}
 
 	if host != nil {
-		results[schema.AttributeTypeHost] = *host
+		results[schema.AttributeTypeSmtpServer] = *host
 	}
 
 	if port != nil {
-		results[schema.AttributeTypePort] = *port
+		results[schema.AttributeTypeSmtpPort] = *port
 	}
 
 	if senderName != nil {
