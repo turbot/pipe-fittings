@@ -16,6 +16,61 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeTrigger,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeIntegration,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+	},
+}
+
+var IntegrationSlackBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeToken,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeSigningSecret,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeWebhookUrl,
+			Required: false,
+		},
+	},
+}
+
+var IntegrationEmailBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+	},
+}
+
+var IntegrationTeamsBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
 	},
 }
 
@@ -614,6 +669,20 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeNotify,
+		},
+	},
+}
+
+var PipelineStepInputNotifyBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name: schema.AttributeTypeIntegration,
+		},
+		{
+			Name: schema.AttributeTypeChannel,
 		},
 	},
 }

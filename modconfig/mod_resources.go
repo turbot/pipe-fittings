@@ -44,8 +44,9 @@ type ResourceMaps struct {
 	Variables map[string]*Variable
 
 	// flowpipe
-	Pipelines map[string]*Pipeline
-	Triggers  map[string]*Trigger
+	Pipelines    map[string]*Pipeline
+	Triggers     map[string]*Trigger
+	Integrations map[string]*Integration
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -88,8 +89,9 @@ func emptyModResources() *ResourceMaps {
 		Variables:  make(map[string]*Variable),
 
 		// Flowpipe
-		Pipelines: make(map[string]*Pipeline),
-		Triggers:  make(map[string]*Trigger),
+		Pipelines:    make(map[string]*Pipeline),
+		Triggers:     make(map[string]*Trigger),
+		Integrations: make(map[string]*Integration),
 	}
 }
 
@@ -478,6 +480,8 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Pipelines[longName]
 	case schema.BlockTypeTrigger:
 		resource, found = m.Triggers[longName]
+	case schema.BlockTypeIntegration:
+		resource, found = m.Integrations[longName]
 	}
 	return resource, found
 }
@@ -921,6 +925,14 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 			break
 		}
 		m.Triggers[name] = r
+
+	case *Integration:
+		name := r.Name()
+		if existing, ok := m.Integrations[name]; ok {
+			diags = append(diags, checkForDuplicate(existing, item)...)
+			break
+		}
+		m.Integrations[name] = r
 	}
 
 	return diags

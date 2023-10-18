@@ -43,6 +43,8 @@ const (
 	BlockTypePipelineOutput    = "output"
 	BlockTypeTrigger           = "trigger"
 	BlockTypePipelineBasicAuth = "basic_auth"
+	BlockTypeIntegration       = "integration"
+	BlockTypeNotify            = "notify"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
@@ -106,6 +108,13 @@ const (
 	AttributeTypeSubject          = "subject"
 	AttributeTypeTo               = "to"
 
+	AttributeTypeToken         = "token"
+	AttributeTypeSigningSecret = "signing_secret"
+	AttributeTypeWebhookUrl    = "webhook_url"
+
+	AttributeTypeIntegration = "integration"
+	AttributeTypeChannel     = "channel"
+
 	// Used by sleep step
 	AttributeTypeDuration = "duration"
 
@@ -143,16 +152,24 @@ const (
 	AttributeTypeImage = "image"
 	AttributeTypeCmd   = "cmd"
 
-	// All possible trigger attributes
+	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
 	AttributeTypePrimaryKey = "primary_key"
 	AttributeTypeEvents     = "events"
+
+	// Input step attributes
+	AttributeTypePrompt = "prompt"
 
 	// All Possible Trigger Types
 	TriggerTypeSchedule = "schedule"
 	TriggerTypeInterval = "interval"
 	TriggerTypeQuery    = "query"
 	TriggerTypeHttp     = "http"
+
+	// Integration Types
+	IntegrationTypeSlack = "slack"
+	IntegrationTypeEmail = "email"
+	IntegrationTypeTeams = "teams"
 
 	LabelName = "name"
 	LabelType = "type"
@@ -244,6 +261,7 @@ var ValidResourceItemTypes = []string{
 	BlockTypePipeline,
 	BlockTypeTrigger,
 	BlockTypeWith,
+	BlockTypeIntegration,
 	// local is not an actual block name but is a resource type
 	"local",
 	// references
