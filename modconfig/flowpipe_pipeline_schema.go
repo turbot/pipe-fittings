@@ -661,6 +661,21 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeIf,
 		},
+		{
+			Name: schema.AttributeTypeType,
+		},
+		{
+			Name: schema.AttributeTypeUsername,
+		},
+		{
+			Name: schema.AttributeTypePassword,
+		},
+		{
+			Name: schema.AttributeTypeSmtpServer,
+		},
+		{
+			Name: schema.AttributeTypeResponseUrl,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{

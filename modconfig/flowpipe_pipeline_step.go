@@ -2222,16 +2222,17 @@ type PipelineStepInput struct {
 	// Temporary setup for Integrated 2023 - will need to move to Notify block
 
 	// email
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	SmtpServer string
+	Username    string `json:"username" cty:"username"`
+	Password    string `json:"password" cty:"password"`
+	SmtpServer  string `json:"smtp_server" cty:"smtp_server"`
+	ResponseUrl string `json:"response_url" cty:"response_url"`
 
 	// slack
 	Token   string `json:"token"`
 	Channel string `json:"channel"`
 
 	// type
-	Type string `json:"type"`
+	Type string `json:"type" cty:"type"`
 
 	// end Integrated 2023 temporary setup
 	// Notify *PipelineStepInputNotify
@@ -2254,12 +2255,13 @@ func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
 	return map[string]interface{}{
-		"username":    p.Username,
-		"password":    p.Password,
-		"smtp_server": p.SmtpServer,
-		"token":       p.Token,
-		"channel":     p.Channel,
-		"type":        p.Type,
+		"username":     p.Username,
+		"password":     p.Password,
+		"smtp_server":  p.SmtpServer,
+		"token":        p.Token,
+		"channel":      p.Channel,
+		"type":         p.Type,
+		"response_url": p.ResponseUrl,
 	}, nil
 }
 
@@ -2277,7 +2279,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Prompt = val.AsString()
 			}
-		case "Username":
+		case "username":
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2286,7 +2288,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Username = val.AsString()
 			}
-		case "Password":
+		case "password":
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2295,7 +2297,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Password = val.AsString()
 			}
-		case "SmtpServer":
+		case "smtp_server":
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2305,7 +2307,17 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.SmtpServer = val.AsString()
 			}
-		case "Token":
+		case "response_url":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				p.ResponseUrl = val.AsString()
+			}
+		case "token":
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2314,7 +2326,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Token = val.AsString()
 			}
-		case "Channel":
+		case "channel":
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2323,7 +2335,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if val != cty.NilVal {
 				p.Channel = val.AsString()
 			}
-		case "Type":
+		case "type":
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2333,14 +2345,14 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				p.Type = val.AsString()
 			}
 
-		default:
-			if !p.IsBaseAttribute(name) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Function Step: " + attr.Name,
-					Subject:  &attr.Range,
-				})
-			}
+			// default:
+			// 	if !p.IsBaseAttribute(name) {
+			// 		diags = append(diags, &hcl.Diagnostic{
+			// 			Severity: hcl.DiagError,
+			// 			Summary:  "Unsupported attribute for Function Step: " + attr.Name,
+			// 			Subject:  &attr.Range,
+			// 		})
+			// 	}
 		}
 	}
 
