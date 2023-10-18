@@ -534,7 +534,7 @@ func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, valu
 
 	parts := strings.Split(key, ".")
 	if len(parts) == 2 {
-		variablesForSubType := variablesForType[key]
+		variablesForSubType := variablesForType[parts[0]]
 		if variablesForSubType == cty.NilVal {
 			variablesForSubType = cty.ObjectVal(map[string]cty.Value{})
 		}
