@@ -3,16 +3,15 @@ package cloud
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/export"
-	"github.com/turbot/pipe-fittings/misc"
 	"log"
 	"path"
 	"strings"
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/dashboardtypes"
-
+	"github.com/turbot/pipe-fittings/dashboard/dashboardtypes"
+	"github.com/turbot/pipe-fittings/export"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
@@ -25,7 +24,7 @@ func PublishSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnap
 	}
 
 	// if snapshot location is a workspace handle, upload it
-	if misc.IsCloudWorkspaceIdentifier(snapshotLocation) {
+	if steampipeconfig.IsCloudWorkspaceIdentifier(snapshotLocation) {
 		url, err := uploadSnapshot(ctx, snapshot, share)
 		if err != nil {
 			return "", sperr.Wrap(err)
