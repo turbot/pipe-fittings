@@ -303,11 +303,8 @@ func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
 }
 
 type PipelineStepInputNotify struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
-
-	Channel     *string       `json:"channel,omitempty" hcl:"channel"`
-	Integration *IIntegration `hcl:"integration"`
+	Channel     *string   `json:"channel,omitempty" hcl:"channel,optional" cty:"channel"`
+	Integration cty.Value `json:"-" hcl:"integration,optional" cty:"integration"`
 }
 
 // A common base struct that all pipeline steps must embed
@@ -2242,7 +2239,7 @@ type PipelineStepInput struct {
 	Type *string `json:"type" cty:"type"`
 
 	// end Integrated 2023 temporary setup
-	// Notify *PipelineStepInputNotify
+	Notify *PipelineStepInputNotify
 }
 
 func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
@@ -2765,9 +2762,29 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
-func (p *PipelineStepInput) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
 
-	return nil
+	for _, b := range blocks {
+		switch b.Type {
+		case schema.BlockTypeNotify:
+			notify := PipelineStepInputNotify{}
+			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &notify)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			p.Notify = &notify
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unsupported block type for Input Step: " + b.Type,
+				Subject:  &b.DefRange,
+			})
+		}
+	}
+
+	return diags
 }
 
 type PipelineStepContainer struct {

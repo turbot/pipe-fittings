@@ -527,6 +527,29 @@ func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, valu
 		variablesForType = make(map[string]cty.Value)
 	}
 
+	// some flowpipe items has 4 parts on it:
+	// mod_name.integration.slack.my_slack_app
+	//
+	// this means the name needs to be broken into 2 parts to allow automatic references/hcl expresion valuation to work
+
+	parts := strings.Split(key, ".")
+	if len(parts) == 2 {
+		variablesForSubType := variablesForType[key]
+		if variablesForSubType == cty.NilVal {
+			variablesForSubType = cty.ObjectVal(map[string]cty.Value{})
+		}
+
+		mapValue := variablesForSubType.AsValueMap()
+		if mapValue == nil {
+			mapValue = make(map[string]cty.Value)
+		}
+
+		mapValue[parts[1]] = value
+
+		variablesForSubType = cty.ObjectVal(mapValue)
+		variablesForType[parts[0]] = variablesForSubType
+	}
+
 	// DO NOT update the cached cty values if the value already exists
 	// this can happen in the case of variables where we initialise the context with values read from file
 	// or passed on the command line,	// does this item exist in the map
@@ -714,8 +737,17 @@ func (m *ModParseContext) AddPipeline(pipelineHcl *modconfig.Pipeline) hcl.Diagn
 	// pipelineNameOnly := parts[len(parts)-1]
 
 	// m.PipelineHcls[pipelineNameOnly] = pipelineHcl
+	pCty, err := pipelineHcl.CtyValue()
+	if err != nil {
+		return hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("failed to convert pipeline '%s' to its cty value", pipelineHcl.Name()),
+			Detail:   err.Error(),
+			Subject:  pipelineHcl.GetDeclRange(),
+		}}
+	}
 
-	diags := m.addReferenceValue(pipelineHcl, pipelineHcl.AsCtyValue())
+	diags := m.addReferenceValue(pipelineHcl, pCty)
 	if diags.HasErrors() {
 		return diags
 	}

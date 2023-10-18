@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type IIntegration interface {
@@ -22,6 +23,10 @@ type SlackIntegration struct {
 	Token         *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 	SigningSecret *string `json:"signing_secret,omitempty" cty:"signing_secret" hcl:"signing_secret,optional"`
 	WebhookUrl    *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
+}
+
+func (i *SlackIntegration) CtyValue() (cty.Value, error) {
+	return GetCtyValue(i)
 }
 
 func (i *SlackIntegration) GetType() string {
@@ -148,6 +153,8 @@ func NewIntegration(mod *Mod, block *hcl.Block) IIntegration {
 	integrationType := block.Labels[0]
 	integrationName := block.Labels[1]
 
+	integrationName = integrationType + "." + integrationName
+
 	// TODO: rethink this area, we need to be able to handle pipelines that are not in a mod
 	// TODO: we're trying to integrate the pipeline & trigger functionality into the mod system, so it will look
 	// TODO: like a clutch for now
@@ -166,7 +173,7 @@ func NewIntegration(mod *Mod, block *hcl.Block) IIntegration {
 			HclResourceImpl: HclResourceImpl{
 				// The FullName is the full name of the resource, including the mod name
 				FullName:        integrationName,
-				UnqualifiedName: "pipeline." + block.Labels[0],
+				UnqualifiedName: "trigger." + integrationName,
 				DeclRange:       block.DefRange,
 				blockType:       block.Type,
 			},
