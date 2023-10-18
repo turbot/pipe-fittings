@@ -280,7 +280,7 @@ func GetModFileExtensions() []string {
 // build list of all filepaths we need to parse/load the mod
 // this will include hcl files (with .sp extension)
 // as well as any other files with extensions that have been registered for pseudo resource creation
-// (see steampipeconfig/modconfig/resource_type_map.go)
+// (see modconfig/resource_type_map.go)
 func getSourcePaths(modPath string, listOpts *filehelpers.ListOptions) ([]string, error) {
 	sourcePaths, err := filehelpers.ListFiles(modPath, listOpts)
 	if err != nil {

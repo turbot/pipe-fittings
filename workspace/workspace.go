@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/turbot/steampipe/pkg/db/db_common"
+	"github.com/turbot/pipe-fittings/db/db_common"
 	"log"
 	"os"
 	"path/filepath"

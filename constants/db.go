@@ -14,10 +14,12 @@ const (
 	MaxBackups = 100
 )
 
+// TODO IS THIS NEEDED
 // DatabaseListenAddresses is an arrays is listen addresses which Steampipe accepts
 var DatabaseListenAddresses = []string{"localhost", "127.0.0.1"}
 
 const (
+	DatabaseDefaultListenAddresses   = "localhost"
 	DatabaseDefaultPort              = 9193
 	DatabaseDefaultCheckQueryTimeout = 240
 	DatabaseSuperUser                = "root"
@@ -30,7 +32,7 @@ const (
 // constants for installing db and fdw images
 const (
 	DatabaseVersion = "14.2.0"
-	FdwVersion      = "1.7.2"
+	FdwVersion      = "1.9.0"
 
 	// PostgresImageRef is the OCI Image ref for the database binaries
 	PostgresImageRef    = "us-docker.pkg.dev/steampipe/steampipe/db:14.2.0"
@@ -52,8 +54,17 @@ const (
 	// also used to send commands to the FDW
 	InternalSchema = "steampipe_internal"
 
-	// ConnectionStateTable is the table used to store steampipe connection state
-	ConnectionStateTable             = "steampipe_connection_state"
+	// ServerSettingsTable is the table used to store steampipe service configuration
+	ServerSettingsTable = "steampipe_server_settings"
+
+	// RateLimiterDefinitionTable is the table used to store rate limiters defined in the config
+	RateLimiterDefinitionTable = "steampipe_plugin_limiter"
+	// PluginInstanceTable is the table used to store plugin configs
+	PluginInstanceTable = "steampipe_plugin"
+
+	// ConnectionTable is the table used to store steampipe connection state
+	LegacyConnectionStateTable       = "steampipe_connection_state"
+	ConnectionTable                  = "steampipe_connection"
 	ConnectionStatePending           = "pending"
 	ConnectionStatePendingIncomplete = "incomplete"
 	ConnectionStateReady             = "ready"
@@ -71,8 +82,9 @@ const (
 	ForeignTableSettingsCacheTtlKey       = "cache_ttl"
 	ForeignTableSettingsCacheClearTimeKey = "cache_clear_time"
 
-	FunctionCacheSet    = "meta_cache"
-	FunctionCacheSetTtl = "meta_cache_ttl"
+	FunctionCacheSet             = "meta_cache"
+	FunctionConnectionCacheClear = "meta_connection_cache_clear"
+	FunctionCacheSetTtl          = "meta_cache_ttl"
 
 	// legacy
 	LegacyCommandSchema = "steampipe_command"
@@ -88,7 +100,6 @@ const (
 
 // ConnectionStates is a handy array of all states
 var ConnectionStates = []string{
-	ConnectionStateTable,
 	ConnectionStatePending,
 	ConnectionStateReady,
 	ConnectionStateUpdating,
@@ -121,6 +132,10 @@ const (
 	IntrospectionTableDashboardText      = "steampipe_dashboard_text"
 	IntrospectionTableVariable           = "steampipe_variable"
 	IntrospectionTableReference          = "steampipe_reference"
+)
+
+const (
+	RuntimeParamsKeyApplicationName = "application_name"
 )
 
 // Invoker is a pseudoEnum for the command/operation which starts the service

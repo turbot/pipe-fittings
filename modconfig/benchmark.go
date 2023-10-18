@@ -2,15 +2,15 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
 	"sort"
 	"strings"
 
-	"github.com/zclconf/go-cty/cty"
-
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Benchmark is a struct representing the Benchmark resource
@@ -33,6 +33,23 @@ type Benchmark struct {
 	Display *string    `cty:"display" hcl:"display" json:"-"`
 }
 
+func NewRootBenchmarkWithChildren(mod *Mod, children []ModTreeItem) HclResource {
+	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, "benchmark", "root")
+	benchmark := &Benchmark{
+		ModTreeItemImpl: ModTreeItemImpl{
+			HclResourceImpl: HclResourceImpl{
+				ShortName:       "root",
+				FullName:        fullName,
+				UnqualifiedName: fmt.Sprintf("%s.%s", "benchmark", "root"),
+				blockType:       "benchmark",
+			},
+			Mod: mod,
+		},
+	}
+	benchmark.children = append(benchmark.children, children...)
+	return benchmark
+}
+
 func NewBenchmark(block *hcl.Block, mod *Mod, shortName string) HclResource {
 	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
 	benchmark := &Benchmark{
@@ -41,7 +58,7 @@ func NewBenchmark(block *hcl.Block, mod *Mod, shortName string) HclResource {
 				ShortName:       shortName,
 				FullName:        fullName,
 				UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-				DeclRange:       block.DefRange,
+				DeclRange:       hcl_helpers.BlockRange(block),
 				blockType:       block.Type,
 			},
 			Mod: mod,
@@ -52,16 +69,11 @@ func NewBenchmark(block *hcl.Block, mod *Mod, shortName string) HclResource {
 }
 
 func (b *Benchmark) Equals(other *Benchmark) bool {
-	return other != nil
+	if other == nil {
+		return false
+	}
 
-	// TODO: commented out: dashboard
-	// if other == nil {
-	// 	return false
-	// }
-	// return true
-
-	// TODO: commented out: dashboard
-	// return !b.Diff(other).HasChanges()
+	return !b.Diff(other).HasChanges()
 }
 
 // OnDecoded implements HclResource
@@ -134,7 +146,6 @@ func (b *Benchmark) GetUnqualifiedName() string {
 	return b.UnqualifiedName
 }
 
-// TODO: commented out: dashboard
 func (b *Benchmark) Diff(other *Benchmark) *DashboardTreeItemDiffs {
 	res := &DashboardTreeItemDiffs{
 		Item: b,

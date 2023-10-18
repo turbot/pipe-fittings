@@ -3,7 +3,6 @@ package constants
 // TODO remove - these are all steampipe specific
 // Environment Variables
 const (
-	AppName            = "steampipe"
 	EnvUpdateCheck     = "STEAMPIPE_UPDATE_CHECK"
 	EnvInstallDir      = "STEAMPIPE_INSTALL_DIR"
 	EnvInstallDatabase = "STEAMPIPE_INITDB_DATABASE_NAME"
