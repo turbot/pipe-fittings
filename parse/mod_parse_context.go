@@ -46,7 +46,7 @@ type ModParseContext struct {
 
 	// PipelineHcls map[string]*modconfig.Pipeline
 	TriggerHcls     map[string]*modconfig.Trigger
-	IntegrationHcls map[string]*modconfig.Integration
+	IntegrationHcls map[string]modconfig.IIntegration
 
 	// the mod which is currently being parsed
 	CurrentMod *modconfig.Mod
@@ -95,7 +95,7 @@ func NewModParseContext(runContext context.Context, workspaceLock *versionmap.Wo
 		// TODO: temporary mapping until we sort out merging Flowpipe and Steampipe
 		// PipelineHcls: make(map[string]*modconfig.Pipeline),
 		TriggerHcls:     make(map[string]*modconfig.Trigger),
-		IntegrationHcls: make(map[string]*modconfig.Integration),
+		IntegrationHcls: make(map[string]modconfig.IIntegration),
 
 		Flags:         flags,
 		WorkspaceLock: workspaceLock,
@@ -743,7 +743,7 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 	return nil
 }
 
-func (m *ModParseContext) AddIntegration(integration *modconfig.Integration) hcl.Diagnostics {
+func (m *ModParseContext) AddIntegration(integration modconfig.IIntegration) hcl.Diagnostics {
 
 	// Split and get the last part for pipeline name
 	parts := strings.Split(integration.Name(), ".")

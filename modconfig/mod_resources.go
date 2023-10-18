@@ -46,7 +46,7 @@ type ResourceMaps struct {
 	// flowpipe
 	Pipelines    map[string]*Pipeline
 	Triggers     map[string]*Trigger
-	Integrations map[string]*Integration
+	Integrations map[string]IIntegration
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -91,7 +91,7 @@ func emptyModResources() *ResourceMaps {
 		// Flowpipe
 		Pipelines:    make(map[string]*Pipeline),
 		Triggers:     make(map[string]*Trigger),
-		Integrations: make(map[string]*Integration),
+		Integrations: make(map[string]IIntegration),
 	}
 }
 
@@ -926,7 +926,7 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 		}
 		m.Triggers[name] = r
 
-	case *Integration:
+	case IIntegration:
 		name := r.Name()
 		if existing, ok := m.Integrations[name]; ok {
 			diags = append(diags, checkForDuplicate(existing, item)...)

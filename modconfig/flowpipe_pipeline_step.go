@@ -306,8 +306,8 @@ type PipelineStepInputNotify struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
-	Channel     *string      `json:"channel,omitempty" hcl:"channel"`
-	Integration *Integration `hcl:"integration"`
+	Channel     *string       `json:"channel,omitempty" hcl:"channel"`
+	Integration *IIntegration `hcl:"integration"`
 }
 
 // A common base struct that all pipeline steps must embed

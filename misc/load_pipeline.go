@@ -30,6 +30,23 @@ func ToError(val interface{}) error {
 // We can potentially remove this function, but we have to refactor all our test cases
 func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfig.Pipeline, map[string]*modconfig.Trigger, error) {
 
+	mod, err := LoadPipelinesReturningItsMod(ctx, configPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var pipelines map[string]*modconfig.Pipeline
+	var triggers map[string]*modconfig.Trigger
+
+	if mod != nil && mod.ResourceMaps != nil {
+		pipelines = mod.ResourceMaps.Pipelines
+		triggers = mod.ResourceMaps.Triggers
+	}
+
+	return pipelines, triggers, err
+}
+
+func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modconfig.Mod, error) {
 	var modDir string
 	var fileName string
 	var modFileNameToLoad string
@@ -38,9 +55,9 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 	info, err := os.Stat(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return map[string]*modconfig.Pipeline{}, map[string]*modconfig.Trigger{}, nil
+			return nil, nil
 		}
-		return nil, nil, err
+		return nil, err
 	}
 
 	// Check if it's a regular file
@@ -69,7 +86,7 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 		}
 		modFileNameToLoad = fileName
 	} else {
-		return nil, nil, perr.BadRequestWithMessage("invalid path")
+		return nil, perr.BadRequestWithMessage("invalid path")
 	}
 
 	parseCtx := parse.NewModParseContext(
@@ -84,12 +101,9 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 
 	mod, errorsAndWarnings := LoadModWithFileName(modDir, modFileNameToLoad, parseCtx)
 
-	var pipelines map[string]*modconfig.Pipeline
-	var triggers map[string]*modconfig.Trigger
-
-	if mod != nil && mod.ResourceMaps != nil {
-		pipelines = mod.ResourceMaps.Pipelines
-		triggers = mod.ResourceMaps.Triggers
+	if errorsAndWarnings.Error != nil {
+		return nil, errorsAndWarnings.Error
 	}
-	return pipelines, triggers, errorsAndWarnings.Error
+
+	return mod, nil
 }

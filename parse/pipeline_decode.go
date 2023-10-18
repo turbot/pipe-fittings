@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/ext/typeexpr"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -289,7 +290,7 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 	return o, diags
 }
 
-func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Integration, *DecodeResult) {
+func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.IIntegration, *DecodeResult) {
 
 	res := newDecodeResult()
 
@@ -317,34 +318,17 @@ func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseC
 		})
 		return nil, res
 	}
-
-	integrationSchema := GetIntegrationBlockSchema(integration.IntegrationType)
-	if integrationSchema == nil {
-		res.handleDecodeDiags(hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "invalid integration type: " + integration.IntegrationType,
-				Subject:  &block.DefRange,
-			},
-		})
-		return integration, res
-	}
-
-	integrationOptions, diags := block.Body.Content(integrationSchema)
-
-	if diags.HasErrors() {
-		res.handleDecodeDiags(diags)
-		return integration, res
-	}
-
-	diags = integration.Config.SetAttributes(mod, integration, integrationOptions.Attributes, parseCtx.EvalCtx)
+	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		return nil, res
+	}
+	body := r.(*hclsyntax.Body)
+	res.handleDecodeDiags(diags)
+
+	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, integration)
+	if len(diags) > 0 {
 		return integration, res
 	}
-
-	moreDiags := parseCtx.AddIntegration(integration)
-	res.addDiags(moreDiags)
 
 	return integration, res
 }
