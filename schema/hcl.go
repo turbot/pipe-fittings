@@ -142,6 +142,8 @@ const (
 	// Used by input step
 	AttributeTypeResponseUrl = "response_url"
 	AttributeTypeSmtpServer  = "smtp_server"
+	AttributeTypeSmtpPort    = "smtp_port"
+	AttributeTypeOptions     = "options"
 
 	AttributeTypeMessage = "message"
 

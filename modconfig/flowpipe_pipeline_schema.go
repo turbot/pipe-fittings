@@ -677,6 +677,24 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeResponseUrl,
 		},
 		{
+			Name: schema.AttributeTypeTo,
+		},
+		{
+			Name: schema.AttributeTypeSmtpPort,
+		},
+		{
+			Name: schema.AttributeTypeSubject,
+		},
+		{
+			Name: schema.AttributeTypeBody,
+		},
+		{
+			Name: schema.AttributeTypeSenderName,
+		},
+		{
+			Name: schema.AttributeTypeOptions,
+		},
+		{
 			Name: schema.AttributeTypePrompt,
 		},
 		{

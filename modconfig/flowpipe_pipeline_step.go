@@ -2217,23 +2217,29 @@ func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalC
 type PipelineStepInput struct {
 	PipelineStepBase
 
-	Prompt string `json:"prompt"`
+	Prompt *string `json:"prompt"`
 
 	// Temporary setup for Integrated 2023 - will need to move to Notify block
 
 	// email
-	Username    string `json:"username" cty:"username"`
-	Password    string `json:"password" cty:"password"`
-	SmtpServer  string `json:"smtp_server" cty:"smtp_server"`
-	ResponseUrl string `json:"response_url" cty:"response_url"`
+	Username    *string  `json:"username" cty:"username"`
+	Password    *string  `json:"password" cty:"password"`
+	SmtpServer  *string  `json:"smtp_server" cty:"smtp_server"`
+	ResponseUrl *string  `json:"response_url" cty:"response_url"`
+	To          []string `json:"to" cty:"to"`
+	SmtpPort    *int64   `json:"smtp_port" cty:"smtp_port"`
+	Subject     *string  `json:"subject" cty:"subject"`
+	Body        *string  `json:"body" cty:"body"`
+	SenderName  *string  `json:"sender_name" cty:"sender_name"`
+	Options     []string `json:"options" cty:"options"`
 
 	// slack
-	Token     string `json:"token"`
-	Channel   string `json:"channel"`
-	SlackType string `json:"slack_type"`
+	Token     *string `json:"token"`
+	Channel   *string `json:"channel"`
+	SlackType *string `json:"slack_type"`
 
 	// type
-	Type string `json:"type" cty:"type"`
+	Type *string `json:"type" cty:"type"`
 
 	// end Integrated 2023 temporary setup
 	// Notify *PipelineStepInputNotify
@@ -2255,17 +2261,121 @@ func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
 
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
-	return map[string]interface{}{
-		schema.AttributeTypeUsername:    p.Username,
-		schema.AttributeTypePassword:    p.Password,
-		schema.AttributeTypeSmtpServer:  p.SmtpServer,
-		schema.AttributeTypeToken:       p.Token,
-		schema.AttributeTypeChannel:     p.Channel,
-		schema.AttributeTypeType:        p.Type,
-		schema.AttributeTypeSlackType:   p.SlackType,
-		schema.AttributeTypePrompt:      p.Prompt,
-		schema.AttributeTypeResponseUrl: p.ResponseUrl,
-	}, nil
+	var to []string
+	if p.UnresolvedAttributes[schema.AttributeTypeTo] == nil {
+		to = p.To
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTo], evalContext, &to)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var from *string
+	if p.UnresolvedAttributes[schema.AttributeTypeFrom] == nil {
+		from = p.Username
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeFrom], evalContext, &from)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var senderCredential *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSenderCredential] == nil {
+		senderCredential = p.Username
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSenderCredential], evalContext, &senderCredential)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var host *string
+	if p.UnresolvedAttributes[schema.AttributeTypeHost] == nil {
+		host = p.SmtpServer
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeHost], evalContext, &host)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var port *int64
+	if p.UnresolvedAttributes[schema.AttributeTypePort] == nil {
+		port = p.SmtpPort
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePort], evalContext, &port)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var senderName *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSenderName] == nil {
+		senderName = p.SenderName
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSenderName], evalContext, &senderName)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var body *string
+	if p.UnresolvedAttributes[schema.AttributeTypeBody] == nil {
+		body = p.Body
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeBody], evalContext, &body)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var subject *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSubject] == nil {
+		subject = p.Subject
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSubject], evalContext, &subject)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	results := map[string]interface{}{}
+
+	if to != nil {
+		results[schema.AttributeTypeTo] = to
+	}
+
+	if from != nil {
+		results[schema.AttributeTypeFrom] = *from
+	}
+
+	if senderCredential != nil {
+		results[schema.AttributeTypeSenderCredential] = *senderCredential
+	}
+
+	if host != nil {
+		results[schema.AttributeTypeHost] = *host
+	}
+
+	if port != nil {
+		results[schema.AttributeTypePort] = *port
+	}
+
+	if senderName != nil {
+		results[schema.AttributeTypeSenderName] = *senderName
+	}
+
+	if body != nil {
+		results[schema.AttributeTypeBody] = *body
+	}
+
+	if subject != nil {
+		results[schema.AttributeTypeSubject] = *subject
+	}
+
+	return results, nil
 }
 
 func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -2280,7 +2390,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.Prompt = val.AsString()
+				prompt, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Prompt = &prompt
 			}
 		case schema.AttributeTypeUsername:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2289,7 +2407,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.Username = val.AsString()
+				username, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Username = &username
 			}
 		case schema.AttributeTypePassword:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2298,7 +2424,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.Password = val.AsString()
+				password, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Password = &password
 			}
 		case schema.AttributeTypeSmtpServer:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2306,9 +2440,16 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				diags = append(diags, stepDiags...)
 				continue
 			}
-
 			if val != cty.NilVal {
-				p.SmtpServer = val.AsString()
+				server, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.SmtpServer = &server
 			}
 		case schema.AttributeTypeResponseUrl:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2316,10 +2457,133 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				diags = append(diags, stepDiags...)
 				continue
 			}
+			if val != cty.NilVal {
+				responseUrl, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.ResponseUrl = &responseUrl
+			}
+		case schema.AttributeTypeTo:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
 
 			if val != cty.NilVal {
-				p.ResponseUrl = val.AsString()
+				emailRecipients, ctyErr := hclhelpers.CtyToGoStringSlice(val, val.Type())
+				if ctyErr != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeTo + " attribute to string slice",
+						Detail:   ctyErr.Error(),
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.To = emailRecipients
 			}
+
+		case schema.AttributeTypeSmtpPort:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				port, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to convert port into integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.SmtpPort = port
+			}
+
+		case schema.AttributeTypeSubject:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				subject, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Subject = &subject
+			}
+
+		case schema.AttributeTypeBody:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				body, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Body = &body
+			}
+
+		case schema.AttributeTypeSenderName:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				sender, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.SenderName = &sender
+			}
+
+		case schema.AttributeTypeOptions:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				options, ctyErr := hclhelpers.CtyToGoStringSlice(val, val.Type())
+				if ctyErr != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeTo + " attribute to string slice",
+						Detail:   ctyErr.Error(),
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Options = options
+			}
+
 		case schema.AttributeTypeType:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -2327,7 +2591,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.Type = val.AsString()
+				intType, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Type = &intType
 			}
 		case schema.AttributeTypeToken:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2336,7 +2608,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.Token = val.AsString()
+				token, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Token = &token
 			}
 		case schema.AttributeTypeChannel:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2345,7 +2625,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.Channel = val.AsString()
+				channel, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Channel = &channel
 			}
 		case schema.AttributeTypeSlackType:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -2354,7 +2642,15 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 			if val != cty.NilVal {
-				p.SlackType = val.AsString()
+				slackType, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.SlackType = &slackType
 			}
 
 			// default:
