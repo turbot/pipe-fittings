@@ -1,33 +1,24 @@
 package db_client
 
-import (
-	"strconv"
-	"strings"
+// // ColumnTypeDatabaseTypeName returns the database system type name. If the name is unknown the OID is returned.
+// func columnTypeDatabaseTypeName(field pgconn.FieldDescription, connection *pgx.Conn) (typeName string) {
+// 	if dt, ok := connection.TypeMap().TypeForOID(field.DataTypeOID); ok {
+// 		return strings.ToUpper(dt.Name)
+// 	}
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/turbot/pipe-fittings/queryresult"
-)
+// 	return strconv.FormatInt(int64(field.DataTypeOID), 10)
+// }
 
-// ColumnTypeDatabaseTypeName returns the database system type name. If the name is unknown the OID is returned.
-func columnTypeDatabaseTypeName(field pgconn.FieldDescription, connection *pgx.Conn) (typeName string) {
-	if dt, ok := connection.TypeMap().TypeForOID(field.DataTypeOID); ok {
-		return strings.ToUpper(dt.Name)
-	}
+// func fieldDescriptionsToColumns(fieldDescriptions []pgconn.FieldDescription, connection *pgx.Conn) []*queryresult.ColumnDef {
+// 	cols := make([]*queryresult.ColumnDef, len(fieldDescriptions))
 
-	return strconv.FormatInt(int64(field.DataTypeOID), 10)
-}
+// 	for i, f := range fieldDescriptions {
+// 		typeName := columnTypeDatabaseTypeName(f, connection)
 
-func fieldDescriptionsToColumns(fieldDescriptions []pgconn.FieldDescription, connection *pgx.Conn) []*queryresult.ColumnDef {
-	cols := make([]*queryresult.ColumnDef, len(fieldDescriptions))
-
-	for i, f := range fieldDescriptions {
-		typeName := columnTypeDatabaseTypeName(f, connection)
-
-		cols[i] = &queryresult.ColumnDef{
-			Name:     string(f.Name),
-			DataType: typeName,
-		}
-	}
-	return cols
-}
+// 		cols[i] = &queryresult.ColumnDef{
+// 			Name:     string(f.Name),
+// 			DataType: typeName,
+// 		}
+// 	}
+// 	return cols
+// }

@@ -2,20 +2,19 @@ package db_client
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"log"
 	"strings"
 	"sync"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/db_client/backend"
 	"github.com/turbot/pipe-fittings/db_common"
-	"github.com/turbot/pipe-fittings/serversettings"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -24,13 +23,14 @@ type DbClient struct {
 	connectionString string
 
 	// connection userPool for user initiated queries
-	userPool *pgxpool.Pool
+	userPool *sql.DB
 
 	// connection used to run system/plumbing queries (connection state, server settings)
-	managementPool *pgxpool.Pool
+	managementPool *sql.DB
 
 	// the settings of the server that this client is connected to
-	serverSettings *db_common.ServerSettings
+	// TODO KAI this should only be in SteampipeDbClient
+	//serverSettings *db_common.ServerSettings
 
 	// this flag is set if the service that this client
 	// is connected to is running in the same physical system
@@ -57,23 +57,22 @@ type DbClient struct {
 	// (cached to avoid concurrent access error on viper)
 	showTimingFlag bool
 	// disable timing - set whilst in process of querying the timing
-	disableTiming        bool
-	onConnectionCallback DbConnectionCallback
+	disableTiming bool
+
+	// the backend type of the dbclient backend
+	backend backend.DBClientBackendType
+
+	// a reader which can be used to read rows from a pgx.Rows object
+	rowReader backend.RowReader
 }
 
-func NewDbClient(ctx context.Context, connectionString string, onConnectionCallback DbConnectionCallback, opts ...ClientOption) (_ *DbClient, err error) {
+func NewDbClient(ctx context.Context, connectionString string, opts ...ClientOption) (_ *DbClient, err error) {
 	utils.LogTime("db_client.NewDbClient start")
 	defer utils.LogTime("db_client.NewDbClient end")
 
-	wg := &sync.WaitGroup{}
-	// wrap onConnectionCallback to use wait group
-	var wrappedOnConnectionCallback DbConnectionCallback
-	if onConnectionCallback != nil {
-		wrappedOnConnectionCallback = func(ctx context.Context, conn *pgx.Conn) error {
-			wg.Add(1)
-			defer wg.Done()
-			return onConnectionCallback(ctx, conn)
-		}
+	backendType, err := backend.GetBackendFromConnectionString(ctx, connectionString)
+	if err != nil {
+		return nil, err
 	}
 
 	client := &DbClient{
@@ -82,9 +81,9 @@ func NewDbClient(ctx context.Context, connectionString string, onConnectionCallb
 		parallelSessionInitLock: semaphore.NewWeighted(constants.MaxParallelClientInits),
 		sessions:                make(map[uint32]*db_common.DatabaseSession),
 		sessionsMutex:           &sync.Mutex{},
-		// store the callback
-		onConnectionCallback: wrappedOnConnectionCallback,
-		connectionString:     connectionString,
+		connectionString:        connectionString,
+		backend:                 backendType,
+		rowReader:               backend.RowReaderFactory(backendType),
 	}
 
 	defer func() {
@@ -104,19 +103,19 @@ func NewDbClient(ctx context.Context, connectionString string, onConnectionCallb
 	}
 
 	// load up the server settings
-	if err := client.loadServerSettings(ctx); err != nil {
-		return nil, err
-	}
+	// if err := client.loadServerSettings(ctx); err != nil {
+	// 	return nil, err
+	// }
 
-	// set user search path
-	if err := client.LoadUserSearchPath(ctx); err != nil {
-		return nil, err
-	}
+	// // set user search path
+	// if err := client.LoadUserSearchPath(ctx); err != nil {
+	// 	return nil, err
+	// }
 
-	// populate customSearchPath
-	if err := client.SetRequiredSessionSearchPath(ctx); err != nil {
-		return nil, err
-	}
+	// // populate customSearchPath
+	// if err := client.SetRequiredSessionSearchPath(ctx); err != nil {
+	// 	return nil, err
+	// }
 
 	return client, nil
 }
@@ -130,22 +129,24 @@ func (c *DbClient) closePools() {
 	}
 }
 
-func (c *DbClient) loadServerSettings(ctx context.Context) error {
-	serverSettings, err := serversettings.Load(ctx, c.managementPool)
-	if err != nil {
-		if notFound := db_common.IsRelationNotFoundError(err); notFound {
-			// when connecting to pre-0.21.0 services, the steampipe_server_settings table will not be available.
-			// this is expected and not an error
-			// code which uses steampipe_server_settings should handle this
-			log.Printf("[TRACE] could not find %s.%s table. skipping\n", constants.InternalSchema, constants.ServerSettingsTable)
-			return nil
-		}
-		return err
-	}
-	c.serverSettings = serverSettings
-	log.Println("[TRACE] loaded server settings:", serverSettings)
-	return nil
-}
+// TODO KAI this should only be in SteampipeDbClient
+//
+//func (c *DbClient) loadServerSettings(ctx context.Context) error {
+//	serverSettings, err := serversettings.Load(ctx, c.managementPool)
+//	if err != nil {
+//		if notFound := db_common.IsRelationNotFoundError(err); notFound {
+//			// when connecting to pre-0.21.0 services, the steampipe_server_settings table will not be available.
+//			// this is expected and not an error
+//			// code which uses steampipe_server_settings should handle this
+//			log.Printf("[TRACE] could not find %s.%s table. skipping\n", constants.InternalSchema, constants.ServerSettingsTable)
+//			return nil
+//		}
+//		return err
+//	}
+//	c.serverSettings = serverSettings
+//	log.Println("[TRACE] loaded server settings:", serverSettings)
+//	return nil
+//}
 
 func (c *DbClient) setShouldShowTiming(ctx context.Context, session *db_common.DatabaseSession) {
 	currentShowTimingFlag := viper.GetBool(constants.ArgTiming)
@@ -163,12 +164,17 @@ func (c *DbClient) shouldShowTiming() bool {
 	return c.showTimingFlag && !c.disableTiming
 }
 
-// ServerSettings returns the settings of the steampipe service that this DbClient is connected to
-//
-// Keep in mind that when connecting to pre-0.21.x servers, the server_settings data is not available. This is expected.
-// Code which read server_settings should take this into account.
-func (c *DbClient) ServerSettings() *db_common.ServerSettings {
-	return c.serverSettings
+// TODO KAI this should only be in SteampipeDbClient
+//// ServerSettings returns the settings of the steampipe service that this DbClient is connected to
+////
+//// Keep in mind that when connecting to pre-0.21.x servers, the server_settings data is not available. This is expected.
+//// Code which read server_settings should take this into account.
+//func (c *DbClient) ServerSettings() *db_common.ServerSettings {
+//	return c.serverSettings
+//}
+
+func (c *DbClient) GetConnectionString() string {
+	return c.connectionString
 }
 
 // RegisterNotificationListener has an empty implementation
@@ -193,11 +199,11 @@ func (c *DbClient) Close(context.Context) error {
 // connections backed by distinct plugins and then fanning back out.
 func (c *DbClient) GetSchemaFromDB(ctx context.Context) (*db_common.SchemaMetadata, error) {
 	log.Printf("[INFO] DbClient GetSchemaFromDB")
-	mgmtConn, err := c.managementPool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer mgmtConn.Release()
+	// mgmtConn, err := c.managementPool.Acquire(ctx)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer mgmtConn.Release()
 
 	// TODO KAI not needed for powerpipe
 	return nil, sperr.New("not supported in Powerpipe")
@@ -247,21 +253,21 @@ func (c *DbClient) GetSchemaFromDB(ctx context.Context) (*db_common.SchemaMetada
 	//return metadata, nil
 }
 
-func (c *DbClient) GetSchemaFromDBLegacy(ctx context.Context, conn *pgxpool.Conn) (*db_common.SchemaMetadata, error) {
+func (c *DbClient) GetSchemaFromDBLegacy(ctx context.Context, conn *sql.Conn) (*db_common.SchemaMetadata, error) {
 	// build a query to retrieve these schemas
 	query := c.buildSchemasQueryLegacy()
 
 	// build schema metadata from query result
-	return db_common.LoadSchemaMetadata(ctx, conn.Conn(), query)
+	return db_common.LoadSchemaMetadata(ctx, conn, query)
 }
 
-// refreshDbClient terminates the current connection and opens up a new connection to the service.
+// Unimplemented (sql.DB does not have a mechanism to reset pools) - refreshDbClient terminates the current connection and opens up a new connection to the service.
 func (c *DbClient) ResetPools(ctx context.Context) {
 	log.Println("[TRACE] db_client.ResetPools start")
 	defer log.Println("[TRACE] db_client.ResetPools end")
 
-	c.userPool.Reset()
-	c.managementPool.Reset()
+	// c.userPool.Reset()
+	// c.managementPool.Reset()
 }
 
 func (c *DbClient) buildSchemasQuery(schemas ...string) string {

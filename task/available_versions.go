@@ -2,22 +2,20 @@ package task
 
 import (
 	"fmt"
-	"os"
-	"sort"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/ociinstaller/versionfile"
-	"github.com/turbot/pipe-fittings/plugin"
+	"os"
+	//"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
+// TODO KAI REMOVE PLUGIN
 type AvailableVersionCache struct {
-	StructVersion uint32                               `json:"struct_version"`
-	CliCache      *CLIVersionCheckResponse             `json:"cli_version"`
-	PluginCache   map[string]plugin.VersionCheckReport `json:"plugin_version"`
+	StructVersion uint32                   `json:"struct_version"`
+	CliCache      *CLIVersionCheckResponse `json:"cli_version"`
+	//PluginCache   map[string]plugin.VersionCheckReport `json:"plugin_version"`
 }
 
 func (av *AvailableVersionCache) asTable() (*tablewriter.Table, error) {
@@ -48,10 +46,13 @@ func (av *AvailableVersionCache) buildNotification() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	pluginLines := av.pluginNotificationMessage()
-	// convert notificationLines into an array of arrays
-	// since that's what our table renderer expects
-	return append(cliLines, pluginLines...), nil
+	return cliLines, nil
+	// TODO KAI REMOVE PLUGIN
+
+	//pluginLines := av.pluginNotificationMessage()
+	//// convert notificationLines into an array of arrays
+	//// since that's what our table renderer expects
+	//return append(cliLines, pluginLines...), nil
 }
 
 func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
@@ -88,77 +89,80 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 	return nil, nil
 }
 
-func (av *AvailableVersionCache) pluginNotificationMessage() []string {
-	var pluginsToUpdate []plugin.VersionCheckReport
+// TODO KAI REMOVE PLUGIN
 
-	for _, r := range av.PluginCache {
-		v, err := versionfile.LoadPluginVersionFile()
-		if err != nil {
-			continue
-		}
-		installedVersion := v.Plugins[r.Plugin.Name]
-		skip, _ := plugin.SkipUpdate(r)
-		if !skip && installedVersion.ImageDigest != r.CheckResponse.Digest {
-			pluginsToUpdate = append(pluginsToUpdate, r)
-		}
-	}
-	notificationLines := []string{}
-	if len(pluginsToUpdate) > 0 {
-		notificationLines = av.getPluginNotificationLines(pluginsToUpdate)
-	}
-	return notificationLines
-}
-
-func (av *AvailableVersionCache) getPluginNotificationLines(reports []plugin.VersionCheckReport) []string {
-	var notificationLines = []string{
-		"",
-		"Updated versions of the following plugins are available:",
-		"",
-	}
-	longestNameLength := 0
-	for _, report := range reports {
-		thisName := report.ShortName()
-		if len(thisName) > longestNameLength {
-			longestNameLength = len(thisName)
-		}
-	}
-
-	// sort alphabetically
-	sort.Slice(reports, func(i, j int) bool {
-		return reports[i].ShortName() < reports[j].ShortName()
-	})
-
-	for _, report := range reports {
-		thisName := report.ShortName()
-		line := ""
-		if len(report.Plugin.Version) == 0 {
-			format := fmt.Sprintf("  %%-%ds @ %%-10s  →  %%10s", longestNameLength)
-			line = fmt.Sprintf(
-				format,
-				thisName,
-				report.CheckResponse.Stream,
-				constants.Bold(report.CheckResponse.Version),
-			)
-		} else {
-			version := report.CheckResponse.Version
-			format := fmt.Sprintf("  %%-%ds @ %%-10s       %%10s → %%-10s", longestNameLength)
-			// an arm64 binary of the plugin might exist for the same version
-			if report.Plugin.Version == report.CheckResponse.Version {
-				version = fmt.Sprintf("%s (arm64)", version)
-			}
-			line = fmt.Sprintf(
-				format,
-				thisName,
-				report.CheckResponse.Stream,
-				constants.Bold(report.Plugin.Version),
-				constants.Bold(version),
-			)
-		}
-		notificationLines = append(notificationLines, line)
-	}
-	notificationLines = append(notificationLines, "")
-	notificationLines = append(notificationLines, fmt.Sprintf("You can update by running %s", constants.Bold("steampipe plugin update --all")))
-	notificationLines = append(notificationLines, "")
-
-	return notificationLines
-}
+//
+//func (av *AvailableVersionCache) pluginNotificationMessage() []string {
+//	var pluginsToUpdate []plugin.VersionCheckReport
+//
+//	for _, r := range av.PluginCache {
+//		v, err := versionfile.LoadPluginVersionFile()
+//		if err != nil {
+//			continue
+//		}
+//		installedVersion := v.Plugins[r.Plugin.Name]
+//		skip, _ := plugin.SkipUpdate(r)
+//		if !skip && installedVersion.ImageDigest != r.CheckResponse.Digest {
+//			pluginsToUpdate = append(pluginsToUpdate, r)
+//		}
+//	}
+//	notificationLines := []string{}
+//	if len(pluginsToUpdate) > 0 {
+//		notificationLines = av.getPluginNotificationLines(pluginsToUpdate)
+//	}
+//	return notificationLines
+//}
+//
+//func (av *AvailableVersionCache) getPluginNotificationLines(reports []plugin.VersionCheckReport) []string {
+//	var notificationLines = []string{
+//		"",
+//		"Updated versions of the following plugins are available:",
+//		"",
+//	}
+//	longestNameLength := 0
+//	for _, report := range reports {
+//		thisName := report.ShortName()
+//		if len(thisName) > longestNameLength {
+//			longestNameLength = len(thisName)
+//		}
+//	}
+//
+//	// sort alphabetically
+//	sort.Slice(reports, func(i, j int) bool {
+//		return reports[i].ShortName() < reports[j].ShortName()
+//	})
+//
+//	for _, report := range reports {
+//		thisName := report.ShortName()
+//		line := ""
+//		if len(report.Plugin.Version) == 0 {
+//			format := fmt.Sprintf("  %%-%ds @ %%-10s  →  %%10s", longestNameLength)
+//			line = fmt.Sprintf(
+//				format,
+//				thisName,
+//				report.CheckResponse.Stream,
+//				constants.Bold(report.CheckResponse.Version),
+//			)
+//		} else {
+//			version := report.CheckResponse.Version
+//			format := fmt.Sprintf("  %%-%ds @ %%-10s       %%10s → %%-10s", longestNameLength)
+//			// an arm64 binary of the plugin might exist for the same version
+//			if report.Plugin.Version == report.CheckResponse.Version {
+//				version = fmt.Sprintf("%s (arm64)", version)
+//			}
+//			line = fmt.Sprintf(
+//				format,
+//				thisName,
+//				report.CheckResponse.Stream,
+//				constants.Bold(report.Plugin.Version),
+//				constants.Bold(version),
+//			)
+//		}
+//		notificationLines = append(notificationLines, line)
+//	}
+//	notificationLines = append(notificationLines, "")
+//	notificationLines = append(notificationLines, fmt.Sprintf("You can update by running %s", constants.Bold("steampipe plugin update --all")))
+//	notificationLines = append(notificationLines, "")
+//
+//	return notificationLines
+//}

@@ -2,6 +2,7 @@ package misc
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"log"
 	"os"
 
@@ -21,7 +22,7 @@ func Viper() *viper.Viper {
 }
 
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
-func BootstrapViper(loader *WorkspaceProfileLoader, cmd *cobra.Command) error {
+func BootstrapViper(loader *steampipeconfig.WorkspaceProfileLoader, cmd *cobra.Command) error {
 	if loader == nil {
 		return perr.BadRequestWithMessage("workspace profile loader cannot be nil")
 	}

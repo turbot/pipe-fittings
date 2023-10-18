@@ -3,6 +3,7 @@ package task
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/logs"
 	"log"
 	"os"
 	"sync"
@@ -10,11 +11,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/db_local"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/installationstate"
-	"github.com/turbot/pipe-fittings/plugin"
+	//"github.com/turbot/pipe-fittings/installationstate"
+	//"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -90,7 +91,9 @@ func (r *Runner) run(ctx context.Context) {
 	defer utils.LogTime("task.Runner.Run end")
 
 	var availableCliVersion *CLIVersionCheckResponse
-	var availablePluginVersions map[string]plugin.VersionCheckReport
+
+	// TODO KAI REMOVE PLUGIN
+	//var availablePluginVersions map[string]plugin.VersionCheckReport
 
 	waitGroup := sync.WaitGroup{}
 
@@ -100,14 +103,17 @@ func (r *Runner) run(ctx context.Context) {
 			availableCliVersion, _ = fetchAvailableCLIVerion(ctx, r.currentState.InstallationID)
 		}, &waitGroup)
 
+		// TODO KAI REMOVE PLUGIN
+
 		// check whether an updated version is available
-		r.runJobAsync(ctx, func(c context.Context) {
-			availablePluginVersions = plugin.GetAllUpdateReport(c, r.currentState.InstallationID)
-		}, &waitGroup)
+		//r.runJobAsync(ctx, func(c context.Context) {
+		//	availablePluginVersions = plugin.GetAllUpdateReport(c, r.currentState.InstallationID)
+		//}, &waitGroup)
 	}
 
+	// TODO KAI find a home for TrimLogs
 	// remove log files older than 7 days
-	r.runJobAsync(ctx, func(_ context.Context) { db_local.TrimLogs() }, &waitGroup)
+	r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)
 
 	// wait for all jobs to complete
 	waitGroup.Wait()
@@ -119,7 +125,7 @@ func (r *Runner) run(ctx context.Context) {
 	}
 
 	// save the notifications, if any
-	if err := r.saveAvailableVersions(availableCliVersion, availablePluginVersions); err != nil {
+	if err := r.saveAvailableVersions(availableCliVersion); err != nil {
 		error_helpers.ShowWarning(fmt.Sprintf("Regular task runner failed to save pending notifications: %s", err))
 	}
 

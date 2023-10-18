@@ -2,10 +2,10 @@ package db_client
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/sethvargo/go-retry"
 	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/statushooks"
@@ -13,7 +13,7 @@ import (
 
 // execute query - if it fails with a "relation not found" error, determine whether this is because the required schema
 // has not yet loaded and if so, wait for it to load and retry
-func (c *DbClient) startQueryWithRetries(ctx context.Context, session *db_common.DatabaseSession, query string, args ...any) (pgx.Rows, error) {
+func (c *DbClient) startQueryWithRetries(ctx context.Context, session *db_common.DatabaseSession, query string, args ...any) (*sql.Rows, error) {
 	log.Println("[TRACE] DbClient.startQueryWithRetries start")
 	defer log.Println("[TRACE] DbClient.startQueryWithRetries end")
 
@@ -22,9 +22,9 @@ func (c *DbClient) startQueryWithRetries(ctx context.Context, session *db_common
 	backoffInterval := 250 * time.Millisecond
 	backoff := retry.NewConstant(backoffInterval)
 
-	conn := session.Connection.Conn()
+	conn := session.Connection
 
-	var res pgx.Rows
+	var res *sql.Rows
 	count := 0
 	err := retry.Do(ctx, retry.WithMaxDuration(maxDuration, backoff), func(ctx context.Context) error {
 		count++

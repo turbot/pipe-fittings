@@ -10,13 +10,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fatih/color"
 	"github.com/fsnotify/fsnotify"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
-	"github.com/turbot/pipe-fittings/cmdconfig"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/db_common"
@@ -26,10 +23,8 @@ import (
 	"github.com/turbot/pipe-fittings/modinstaller"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
-	"github.com/turbot/pipe-fittings/task"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 type Workspace struct {
@@ -256,32 +251,12 @@ func HomeDirectoryModfileCheck(ctx context.Context, workspacePath string) error 
 		return nil
 	}
 	// get the cmd and home dir
-	cmd := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command)
 	home, _ := os.UserHomeDir()
 	_, err := os.Stat(filepaths.ModFilePath(workspacePath))
 	modFileExists := !os.IsNotExist(err)
 
 	// check if your workspace path is home dir and if modfile exists
 	if workspacePath == home && modFileExists {
-
-		// for interactive query - ask for confirmation to continue
-		if cmd.Name() == "query" && viper.GetBool(constants.ConfigKeyInteractive) {
-			confirm, err := utils.UserConfirmation(ctx, fmt.Sprintf("%s: You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nDo you still want to continue? (y/n)", color.YellowString("Warning")))
-			if err != nil {
-				return err
-			}
-			if !confirm {
-				return sperr.New("failed to load workspace: execution cancelled")
-			}
-			return nil
-		}
-
-		// for batch query mode - if output is table, just warn
-		if task.IsBatchQueryCmd(cmd, viper.GetStringSlice(constants.ConfigKeyActiveCommandArgs)) && cmdconfig.Viper().GetString(constants.ArgOutput) == constants.OutputFormatTable {
-			error_helpers.ShowWarning("You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nHit Ctrl+C to stop.\n")
-			return nil
-		}
-
 		// for other cmds - if home dir has modfile, just warn
 		error_helpers.ShowWarning("You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nHit Ctrl+C to stop.\n")
 	}

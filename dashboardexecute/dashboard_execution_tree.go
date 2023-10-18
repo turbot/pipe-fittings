@@ -3,17 +3,16 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/workspace"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/turbot/pipe-fittings/connection_sync"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/workspace"
 
 	"golang.org/x/exp/maps"
 )
@@ -65,7 +64,10 @@ func (e *DashboardExecutionTree) createRootItem(rootName string) (dashboardtypes
 	if err != nil {
 		return nil, err
 	}
-	fullName := parsedName.ToFullName()
+	fullName, err := parsedName.ToFullName()
+	if err != nil {
+		return nil, err
+	}
 
 	if parsedName.ItemType == "" {
 		return nil, fmt.Errorf("root item is not valid named resource")
@@ -136,14 +138,15 @@ func (e *DashboardExecutionTree) Execute(ctx context.Context) {
 		return
 	}
 
+	// TODO KAI HOW TO HANDLE SEARCH PATHS?
 	// TODO should we always wait even with non custom search path?
 	// if there is a custom search path, wait until the first connection of each plugin has loaded
-	if customSearchPath := e.client.GetCustomSearchPath(); customSearchPath != nil {
-		if err := connection_sync.WaitForSearchPathSchemas(ctx, e.client, customSearchPath); err != nil {
-			e.Root.SetError(ctx, err)
-			return
-		}
-	}
+	//if customSearchPath := e.client.GetCustomSearchPath(); customSearchPath != nil {
+	//	if err := connection_sync.WaitForSearchPathSchemas(ctx, e.client, customSearchPath); err != nil {
+	//		e.Root.SetError(ctx, err)
+	//		return
+	//	}
+	//}
 
 	panels := e.BuildSnapshotPanels()
 	// build map of those variables referenced by the dashboard run

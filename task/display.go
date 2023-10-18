@@ -10,7 +10,6 @@ import (
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -18,11 +17,12 @@ const (
 	AvailableVersionsCacheStructVersion = 20230117
 )
 
-func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse, plugin map[string]plugin.VersionCheckReport) error {
+// TODO KAI REMOVED PLUGIN
+func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin map[string]plugin.VersionCheckReport*/) error {
 	utils.LogTime("Runner.saveAvailableVersions start")
 	defer utils.LogTime("Runner.saveAvailableVersions end")
 
-	if cli == nil && len(plugin) == 0 {
+	if cli == nil /*&& len(plugin) == 0 */ {
 		// nothing to save
 		return nil
 	}
@@ -30,7 +30,7 @@ func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse, plugin map[
 	notifs := &AvailableVersionCache{
 		StructVersion: AvailableVersionsCacheStructVersion,
 		CliCache:      cli,
-		PluginCache:   plugin,
+		//PluginCache:   plugin,
 	}
 	// create the file - if it exists, it will be truncated by os.Create
 	f, err := os.Create(filepaths.AvailableVersionsFilePath())

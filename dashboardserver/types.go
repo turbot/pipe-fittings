@@ -2,7 +2,7 @@ package dashboardserver
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"time"
 
 	"github.com/turbot/pipe-fittings/controlstatus"
@@ -164,7 +164,7 @@ type DashboardMetadata struct {
 	Mod           *ModDashboardMetadata           `json:"mod,omitempty"`
 	InstalledMods map[string]ModDashboardMetadata `json:"installed_mods,omitempty"`
 	CLI           DashboardCLIMetadata            `json:"cli"`
-	Cloud         *modconfig.CloudMetadata        `json:"cloud,omitempty"`
+	Cloud         *steampipeconfig.CloudMetadata  `json:"cloud,omitempty"`
 	Telemetry     string                          `json:"telemetry"`
 }
 

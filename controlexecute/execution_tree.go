@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/connection_sync"
+	//"github.com/turbot/pipe-fittings/connection_sync"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlstatus"
 	"github.com/turbot/pipe-fittings/db_common"
@@ -123,13 +123,14 @@ func (e *ExecutionTree) Execute(ctx context.Context) error {
 		e.Progress.Finish(ctx)
 	}()
 
-	// TODO should we always wait even with non custom search path?
-	// if there is a custom search path, wait until the first connection of each plugin has loaded
-	if customSearchPath := e.client.GetCustomSearchPath(); customSearchPath != nil {
-		if err := connection_sync.WaitForSearchPathSchemas(ctx, e.client, customSearchPath); err != nil {
-			return err
-		}
-	}
+	//TODO KAI what about search paths
+	//// TODO should we always wait even with non custom search path?
+	//// if there is a custom search path, wait until the first connection of each plugin has loaded
+	//if customSearchPath := e.client.GetCustomSearchPath(); customSearchPath != nil {
+	//	if err := connection_sync.WaitForSearchPathSchemas(ctx, e.client, customSearchPath); err != nil {
+	//		return err
+	//	}
+	//}
 
 	// the number of goroutines parallel to start
 	var maxParallelGoRoutines int64 = constants.DefaultMaxConnections
