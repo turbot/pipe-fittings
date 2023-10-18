@@ -14,7 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/db/db_common"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/powerpipe/internal/workspace"
+	"github.com/turbot/pipe-fittings/workspace"
 )
 
 type DashboardExecutor struct {

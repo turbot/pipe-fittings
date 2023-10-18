@@ -17,8 +17,7 @@ import (
 	"github.com/turbot/pipe-fittings/db/db_common"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/powerpipe/internal/workspace"
-	"gopkg.in/olahol/melody.v1"
+	"github.com/turbot/pipe-fittings/workspace"
 )
 
 type Server struct {

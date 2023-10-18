@@ -14,7 +14,7 @@ import (
 	"github.com/shirou/gopsutil/process"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/dashboard/dashboardassets"
+	"github.com/turbot/pipe-fittings/dashboardassets"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/utils"

@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/query/queryresult"
+	"github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/utils"
 )
 

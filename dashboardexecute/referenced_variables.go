@@ -6,7 +6,7 @@ import (
 
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/powerpipe/internal/workspace"
+	"github.com/turbot/pipe-fittings/workspace"
 )
 
 // GetReferencedVariables builds map of variables values containing only those mod variables which are referenced
