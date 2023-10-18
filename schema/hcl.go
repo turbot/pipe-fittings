@@ -130,6 +130,9 @@ const (
 	// Used byy Pipeline step
 	AttributeTypePipeline = "pipeline"
 
+	// Used by input step
+	AttributeTypeResponseUrl = "response_url"
+
 	AttributeTypeMessage = "message"
 
 	// Functions attributes
