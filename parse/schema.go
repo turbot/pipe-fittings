@@ -152,6 +152,10 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeTrigger,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeIntegration,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
 	},
 }
 

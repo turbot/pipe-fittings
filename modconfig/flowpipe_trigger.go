@@ -225,7 +225,7 @@ func (t *TriggerInterval) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.Schedule = val.AsString()
 
 			if !helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
@@ -267,7 +267,7 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.Schedule = val.AsString()
 
 			// validate cron format
@@ -281,16 +281,16 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 				})
 			}
 		case schema.AttributeTypeSql:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.Sql = val.AsString()
 		case schema.AttributeTypeConnectionString:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.ConnectionString = val.AsString()
 		case schema.AttributeTypePrimaryKey:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.PrimaryKey = val.AsString()
 		case schema.AttributeTypeEvents:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			var err error
 			t.Events, err = hclhelpers.CtyTupleToArrayOfStrings(val)
 			if err != nil {

@@ -45,7 +45,8 @@ type ModParseContext struct {
 	ParseContext
 
 	// PipelineHcls map[string]*modconfig.Pipeline
-	TriggerHcls map[string]*modconfig.Trigger
+	TriggerHcls     map[string]*modconfig.Trigger
+	IntegrationHcls map[string]*modconfig.Integration
 
 	// the mod which is currently being parsed
 	CurrentMod *modconfig.Mod
@@ -93,7 +94,8 @@ func NewModParseContext(runContext context.Context, workspaceLock *versionmap.Wo
 		// TODO: fix this issue
 		// TODO: temporary mapping until we sort out merging Flowpipe and Steampipe
 		// PipelineHcls: make(map[string]*modconfig.Pipeline),
-		TriggerHcls: make(map[string]*modconfig.Trigger),
+		TriggerHcls:     make(map[string]*modconfig.Trigger),
+		IntegrationHcls: make(map[string]*modconfig.Integration),
 
 		Flags:         flags,
 		WorkspaceLock: workspaceLock,
@@ -731,10 +733,26 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 	parts := strings.Split(trigger.Name(), ".")
 	triggerNameOnly := parts[len(parts)-1]
 
+	// we don't add the trigger in the reference values unlike pipeline, but this seems to work?
 	m.TriggerHcls[triggerNameOnly] = trigger
 
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, trigger.Name())
+
+	m.buildEvalContext()
+	return nil
+}
+
+func (m *ModParseContext) AddIntegration(integration *modconfig.Integration) hcl.Diagnostics {
+
+	// Split and get the last part for pipeline name
+	parts := strings.Split(integration.Name(), ".")
+	integrationNameOnly := parts[len(parts)-1]
+
+	m.IntegrationHcls[integrationNameOnly] = integration
+
+	// remove this resource from unparsed blocks
+	delete(m.UnresolvedBlocks, integration.Name())
 
 	m.buildEvalContext()
 	return nil
