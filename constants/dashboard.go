@@ -14,6 +14,7 @@ const (
 	DashboardAssetsImageRefFormat = "us-docker.pkg.dev/steampipe/steampipe/assets:%s"
 )
 
+// TODO KAI MOVE TO POWERPIPE - remove version from pipe-fittings
 var (
 	DashboardAssetsImageRef = fmt.Sprintf(DashboardAssetsImageRefFormat, version.VersionString)
 )
