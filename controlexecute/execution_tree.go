@@ -9,7 +9,6 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/helpers"
-	//"github.com/turbot/pipe-fittings/connection_sync"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlstatus"
 	"github.com/turbot/pipe-fittings/db_common"
