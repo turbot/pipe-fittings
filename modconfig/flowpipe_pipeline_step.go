@@ -2331,6 +2331,56 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
+	var stepInputType *string
+	if p.UnresolvedAttributes[schema.AttributeTypeType] == nil {
+		stepInputType = p.Type
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeType], evalContext, &stepInputType)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var token *string
+	if p.UnresolvedAttributes[schema.AttributeTypeToken] == nil {
+		token = p.Token
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeToken], evalContext, &token)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var channel *string
+	if p.UnresolvedAttributes[schema.AttributeTypeChannel] == nil {
+		channel = p.Channel
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeChannel], evalContext, &channel)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var slackType *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSlackType] == nil {
+		slackType = p.SlackType
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSlackType], evalContext, &slackType)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var prompt *string
+	if p.UnresolvedAttributes[schema.AttributeTypePrompt] == nil {
+		prompt = p.Prompt
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePrompt], evalContext, &prompt)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
 	var subject *string
 	if p.UnresolvedAttributes[schema.AttributeTypeSubject] == nil {
 		subject = p.Subject
@@ -2373,6 +2423,26 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	if subject != nil {
 		results[schema.AttributeTypeSubject] = *subject
+	}
+
+	if stepInputType != nil {
+		results[schema.AttributeTypeType] = *stepInputType
+	}
+
+	if token != nil {
+		results[schema.AttributeTypeToken] = *token
+	}
+
+	if channel != nil {
+		results[schema.AttributeTypeChannel] = *channel
+	}
+
+	if slackType != nil {
+		results[schema.AttributeTypeSlackType] = *slackType
+	}
+
+	if prompt != nil {
+		results[schema.AttributeTypePrompt] = *prompt
 	}
 
 	return results, nil
