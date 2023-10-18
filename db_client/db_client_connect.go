@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/turbot/pipe-fittings/db_common"
-
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -19,12 +18,11 @@ const (
 
 func getDriverNameFromConnectionString(connStr string) string {
 	if isPostgresConnectionString(connStr) {
-		return "pgx"
+		return "postgres"
 	} else if isSqliteConnectionString(connStr) {
 		return "sqlite3"
-	} else {
-		return ""
 	}
+	return "unknown"
 }
 
 type DbConnectionCallback func(context.Context, *sql.Conn) error
