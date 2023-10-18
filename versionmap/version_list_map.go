@@ -11,7 +11,7 @@ import (
 type VersionListMap map[string]semver.Collection
 
 func (m VersionListMap) Add(name string, version *semver.Version) {
-	versions := append(m[name], version) //nolint:gocritic // TODO: potential bug here?
+	versions := append(m[name], version)
 	// reverse sort the versions
 	sort.Sort(sort.Reverse(versions))
 	m[name] = versions

@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -20,7 +19,7 @@ type QueryProviderImpl struct {
 	Params    []*ParamDef `cty:"params" column:"params,jsonb" json:"-"`
 	QueryName *string     `column:"query,text" json:"-"`
 
-	// withs               []*DashboardWith
+	withs               []*DashboardWith
 	disableCtySerialise bool
 	// flags to indicate if params and args were inherited from base resource
 	argsInheritedFromBase   bool
@@ -67,7 +66,7 @@ func (q *QueryProviderImpl) ValidateQuery() hcl.Diagnostics {
 	// only used as base for a nested resource.
 	// Therefore only nested resources, controls and queries MUST have sql or a query defined
 	queryRequired := !q.IsTopLevel() ||
-		helpers.StringSliceContains([]string{schema.BlockTypeQuery, schema.BlockTypeControl}, q.BlockType())
+		helpers.StringSliceContains([]string{BlockTypeQuery, BlockTypeControl}, q.BlockType())
 
 	if !queryRequired {
 		return nil

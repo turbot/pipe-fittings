@@ -3,7 +3,6 @@ package workspace
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"log"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/statushooks"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/terraform-components/terraform"
 )
 
@@ -26,7 +26,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error
 	if errAndWarnings.GetError() == nil {
 		return w, errAndWarnings
 	}
-	missingVariablesError, ok := errAndWarnings.GetError().(*load_mod.MissingVariableError)
+	missingVariablesError, ok := errAndWarnings.GetError().(*steampipeconfig.MissingVariableError)
 	// if there was an error which is NOT a MissingVariableError, return it
 	if !ok {
 		return nil, errAndWarnings
@@ -51,8 +51,8 @@ func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error
 }
 
 func promptForMissingVariables(ctx context.Context, missingVariables []*modconfig.Variable, workspacePath string) error {
-	fmt.Println()                                       //nolint:forbidigo // TODO: check this lint issue
-	fmt.Println("Variables defined with no value set.") //nolint:forbidigo // TODO: check this lint issue
+	fmt.Println()
+	fmt.Println("Variables defined with no value set.")
 	for _, v := range missingVariables {
 		variableName := v.ShortName
 		variableDisplayName := fmt.Sprintf("var.%s", v.ShortName)

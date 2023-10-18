@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -67,7 +68,7 @@ func (m *ModParseContext) cacheBlockName(block *hcl.Block, shortName string) {
 }
 
 func (m *ModParseContext) blockHash(block *hcl.Block) string {
-	return helpers.GetMD5Hash(block.DefRange.String())
+	return helpers.GetMD5Hash(hcl_helpers.BlockRange(block).String())
 }
 
 // getUniqueName returns a name unique within the scope of this execution tree
@@ -85,7 +86,7 @@ func (m *ModParseContext) getUniqueName(blockType string, parent string) string 
 			childCount++
 		}
 	}
-	sanitisedParentName := strings.ReplaceAll(parent, ".", "_")
+	sanitisedParentName := strings.Replace(parent, ".", "_", -1)
 	return fmt.Sprintf("%s_anonymous_%s_%d", sanitisedParentName, blockType, childCount)
 }
 

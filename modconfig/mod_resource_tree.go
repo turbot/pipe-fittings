@@ -50,7 +50,7 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod) error {
 			// NOTE: add resource into _our_ resource tree, i.e. mod 'm'
 			if err = m.addItemIntoResourceTree(treeItem); err != nil {
 				// stop walking
-				return false, err
+				return false, nil
 			}
 			if len(treeItem.GetChildren()) == 0 {
 				leafNodes = append(leafNodes, treeItem)
@@ -61,10 +61,7 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod) error {
 	}
 
 	// iterate through all resources in source mod
-	err = sourceMod.WalkResources(resourceFunc)
-	if err != nil {
-		return err
-	}
+	sourceMod.WalkResources(resourceFunc)
 
 	// now initialise all Paths properties
 	for _, l := range leafNodes {

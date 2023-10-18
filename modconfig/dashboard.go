@@ -2,16 +2,16 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/stevenle/topsort"
-	"github.com/turbot/go-kit/hcl_helpers"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
-	"strings"
 )
 
 const rootRuntimeDependencyNode = "rootRuntimeDependencyNode"
@@ -66,7 +66,10 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	if err != nil {
 		return nil, err
 	}
-	fullName := parsedName.ToFullName()
+	fullName, err := parsedName.ToFullName()
+	if err != nil {
+		return nil, err
+	}
 
 	// for query dashboard use generated title, for control use original title
 	if qp.BlockType() != BlockTypeQuery {

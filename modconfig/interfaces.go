@@ -37,19 +37,14 @@ type HclResource interface {
 // i.e. Control, Benchmark, Dashboard
 type ModTreeItem interface {
 	HclResource
-	ModItem
-
 	AddParent(ModTreeItem) error
 	GetParents() []ModTreeItem
 	GetChildren() []ModTreeItem
 	// GetPaths returns an array resource paths
 	GetPaths() []NodePath
 	SetPaths()
-	GetModTreeItemImpl() *ModTreeItemImpl
-}
-
-type ModItem interface {
 	GetMod() *Mod
+	GetModTreeItemImpl() *ModTreeItemImpl
 }
 
 // RuntimeDependencyProvider is implemented by all QueryProviders and Dashboard

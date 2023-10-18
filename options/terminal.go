@@ -7,7 +7,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
-// Terminal
 type Terminal struct {
 	Output           *string `hcl:"output"`
 	Separator        *string `hcl:"separator"`

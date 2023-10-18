@@ -7,7 +7,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
-// General
 type General struct {
 	UpdateCheck *string `hcl:"update_check"`
 	MaxParallel *int    `hcl:"max_parallel"`
@@ -39,7 +38,7 @@ func (g *General) ConfigMap() map[string]interface{} {
 	return res
 }
 
-// Merge :: merge other options over the the top of this options object
+// Merge merges other options over the top of this options object
 // i.e. if a property is set in otherOptions, it takes precedence
 func (g *General) Merge(otherOptions Options) {
 	switch o := otherOptions.(type) {

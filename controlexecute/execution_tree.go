@@ -12,7 +12,7 @@ import (
 	"github.com/turbot/pipe-fittings/connection_sync"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlstatus"
-	"github.com/turbot/pipe-fittings/db/db_common"
+	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/statushooks"

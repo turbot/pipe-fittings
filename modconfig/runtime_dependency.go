@@ -32,31 +32,31 @@ func (d *RuntimeDependency) String() string {
 	return fmt.Sprintf("%s.%s->%s", d.ParentPropertyName, *d.TargetPropertyName, d.PropertyPath.String())
 }
 
-// func (d *RuntimeDependency) ValidateSource(dashboard *Dashboard, workspace ResourceMapsProvider) error {
-// TODO  [node_reuse] re-add parse time validation https://github.com/turbot/steampipe/issues/2925
-//resourceName := d.PropertyPath.ToResourceName()
-//var found bool
-////var sourceResource HclResource
-//switch d.PropertyPath.ItemType {
-//// if this is a 'with' resolve from the parent resource
-//case BlockTypeParam:
-//	_, found = d.ParentResource.ResolveWithFromTree(resourceName)
-//case BlockTypeWith:
-//	_, found = d.ParentResource.ResolveWithFromTree(resourceName)
-//// if this dependency has a 'self' prefix, resolve from the current dashboard container
-//case BlockTypeInput:
-//	_, found = dashboard.GetInput(resourceName)
-//
-//	//default:
-//	//	// otherwise, resolve from the global inputs
-//	//	_, found = workspace.GetResourceMaps().GlobalDashboardInputs[resourceName]
-//}
-//if !found {
-//	return fmt.Errorf("could not resolve runtime dependency resource %s", d.PropertyPath)
-//}
+func (d *RuntimeDependency) ValidateSource(dashboard *Dashboard, workspace ResourceMapsProvider) error {
+	// TODO  [node_reuse] re-add parse time validation https://github.com/turbot/steampipe/issues/2925
+	//resourceName := d.PropertyPath.ToResourceName()
+	//var found bool
+	////var sourceResource HclResource
+	//switch d.PropertyPath.ItemType {
+	//// if this is a 'with' resolve from the parent resource
+	//case BlockTypeParam:
+	//	_, found = d.ParentResource.ResolveWithFromTree(resourceName)
+	//case BlockTypeWith:
+	//	_, found = d.ParentResource.ResolveWithFromTree(resourceName)
+	//// if this dependency has a 'self' prefix, resolve from the current dashboard container
+	//case BlockTypeInput:
+	//	_, found = dashboard.GetInput(resourceName)
+	//
+	//	//default:
+	//	//	// otherwise, resolve from the global inputs
+	//	//	_, found = workspace.GetResourceMaps().GlobalDashboardInputs[resourceName]
+	//}
+	//if !found {
+	//	return fmt.Errorf("could not resolve runtime dependency resource %s", d.PropertyPath)
+	//}
 
-// 	return nil
-// }
+	return nil
+}
 
 func (d *RuntimeDependency) Equals(other *RuntimeDependency) bool {
 	// TargetPropertyPath

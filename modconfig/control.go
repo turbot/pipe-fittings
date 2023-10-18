@@ -2,12 +2,13 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -41,7 +42,7 @@ func NewControl(block *hcl.Block, mod *Mod, shortName string) HclResource {
 						FullName:        fullName,
 						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
 						ShortName:       shortName,
-						DeclRange:       block.DefRange,
+						DeclRange:       hcl_helpers.BlockRange(block),
 						blockType:       block.Type,
 					},
 					Mod: mod,
@@ -184,7 +185,6 @@ func (c *Control) GetType() string {
 	return typehelpers.SafeString(c.Type)
 }
 
-// TODO: commented out: dashboard
 func (c *Control) Diff(other *Control) *DashboardTreeItemDiffs {
 	res := &DashboardTreeItemDiffs{
 		Item: c,

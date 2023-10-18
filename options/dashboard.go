@@ -81,7 +81,7 @@ func (d *GlobalDashboard) ConfigMap() map[string]interface{} {
 	if d.StartTimeout != nil {
 		res[constants.ArgDashboardStartTimeout] = d.StartTimeout
 	} else {
-		res[constants.ArgDashboardStartTimeout] = constants.DashboardServiceStartTimeout.Seconds()
+		res[constants.ArgDashboardStartTimeout] = constants.DashboardStartTimeout.Seconds()
 	}
 	return res
 }

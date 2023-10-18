@@ -15,7 +15,7 @@ import (
 	typeHelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardexecute"
-	"github.com/turbot/pipe-fittings/db/db_common"
+	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/workspace"

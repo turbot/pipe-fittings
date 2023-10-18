@@ -11,7 +11,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -77,18 +76,11 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 
 // getInstalledMods returns a map installed mods, and the versions installed for each
 func (l *WorkspaceLock) getInstalledMods() error {
-
-	var includes []string
-	for _, file := range filepaths.PipesComponentValidModFiles {
-		includes = append(includes, "**/"+file)
-	}
-
 	// recursively search for all the mod.sp files under the .steampipe/mods folder, then build the mod name from the file path
 	modFiles, err := filehelpers.ListFiles(l.ModInstallationPath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesRecursive,
-		Include: includes,
+		Include: []string{"**/mod.sp"},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -99,7 +91,7 @@ func (l *WorkspaceLock) getInstalledMods() error {
 	var errors []error
 
 	for _, modfilePath := range modFiles {
-		// try to parse the mod name and version form the parent folder of the modfile
+		// try to parse the mon name and version form the parent folder of the modfile
 		modDependencyName, version, err := l.parseModPath(modfilePath)
 		if err != nil {
 			// if we fail to parse, just ignore this modfile
@@ -186,14 +178,15 @@ func (l *WorkspaceLock) parseModPath(modfilePath string) (modDependencyName stri
 
 func (l *WorkspaceLock) Save() error {
 	if len(l.InstallCache) == 0 {
-		l.Delete() //nolint:errcheck // ignore error
+		// ignore error
+		l.Delete()
 		return nil
 	}
 	content, err := json.MarshalIndent(l.InstallCache, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepaths.WorkspaceLockPath(l.WorkspacePath), content, 0644) //nolint:gosec // TODO: check file permission
+	return os.WriteFile(filepaths.WorkspaceLockPath(l.WorkspacePath), content, 0644)
 }
 
 // Delete deletes the lock file
@@ -343,5 +336,5 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 		return dependencyFilepath, nil
 	}
 
-	return "", fmt.Errorf("dependency mod '%s' is not installed - run '"+constants.PipesComponentAppName+" mod install'", modDependency.DependencyPath())
+	return "", fmt.Errorf("dependency mod '%s' is not installed - run 'steampipe mod install'", modDependency.DependencyPath())
 }

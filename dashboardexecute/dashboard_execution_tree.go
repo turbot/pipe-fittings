@@ -11,7 +11,7 @@ import (
 	"github.com/turbot/pipe-fittings/connection_sync"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
-	"github.com/turbot/pipe-fittings/db/db_common"
+	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 

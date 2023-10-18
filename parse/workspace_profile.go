@@ -1,8 +1,8 @@
 package parse
 
 import (
-	"context"
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"log"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,11 +12,10 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/options"
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
-func LoadWorkspaceProfiles(ctx context.Context, workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
+func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -58,7 +57,7 @@ func LoadWorkspaceProfiles(ctx context.Context, workspaceProfilePath string) (pr
 		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
 	}
 
-	parseCtx := NewWorkspaceProfileParseContext(ctx, workspaceProfilePath)
+	parseCtx := NewWorkspaceProfileParseContext(workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)
 
 	// build parse context
@@ -112,7 +111,7 @@ func decodeWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string
 	parseCtx.ClearDependencies()
 
 	for _, block := range blocksToDecode {
-		if block.Type == schema.BlockTypeWorkspaceProfile {
+		if block.Type == modconfig.BlockTypeWorkspaceProfile {
 			workspaceProfile, res := decodeWorkspaceProfile(block, parseCtx)
 
 			if res.Success() {
@@ -160,7 +159,7 @@ func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseCon
 				// fail
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Subject:  &block.DefRange,
+					Subject:  hcl_helpers.BlockRangePointer(block),
 					Summary:  fmt.Sprintf("Duplicate options type '%s'", optionsBlockType),
 				})
 			}
@@ -179,7 +178,7 @@ func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseCon
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  fmt.Sprintf("invalid block type '%s' - only 'options' blocks are supported for workspace profiles", block.Type),
-				Subject:  &block.DefRange,
+				Subject:  hcl_helpers.BlockRangePointer(block),
 			})
 		}
 	}

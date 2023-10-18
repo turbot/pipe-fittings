@@ -2,15 +2,15 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/version"
+	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 // Require is a struct representing mod dependencies
@@ -63,10 +63,10 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 	diags = append(diags, moreDiags...)
 
 	// find the require block
-	requireBlock := hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeRequire)
+	requireBlock := hcl_helpers.FindFirstChildBlock(modBlock, BlockTypeRequire)
 	if requireBlock == nil {
 		// was this the legacy 'requires' block?
-		requireBlock = hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeLegacyRequires)
+		requireBlock = hcl_helpers.FindFirstChildBlock(modBlock, BlockTypeLegacyRequires)
 	}
 	if requireBlock == nil {
 		// nothing else to populate
@@ -74,12 +74,12 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 	}
 
 	// set our Ranges
-	r.DeclRange = requireBlock.DefRange
+	r.DeclRange = hcl_helpers.BlockRange(requireBlock)
 	r.BodyRange = requireBlock.Body.(*hclsyntax.Body).SrcRange
 
 	// build maps of plugin and mod blocks
-	pluginBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypePlugin))
-	modBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypeMod))
+	pluginBlockMap := hcl_helpers.BlocksToMap(hcl_helpers.FindChildBlocks(requireBlock, BlockTypePlugin))
+	modBlockMap := hcl_helpers.BlocksToMap(hcl_helpers.FindChildBlocks(requireBlock, BlockTypeMod))
 
 	if r.Steampipe != nil {
 		moreDiags := r.Steampipe.initialise(requireBlock)
@@ -169,7 +169,7 @@ func (r *Require) searchInstalledPluginForRequirement(modName string, requiremen
 		}
 	}
 	// validation failed - return error
-	return fmt.Errorf("could not find plugin which satisfies requirement '%s@%s' - required by '%s'", requirement.RawName, requirement.MinVersionString, modName)
+	return sperr.New("could not find plugin which satisfies requirement '%s@%s' - required by '%s'", requirement.RawName, requirement.MinVersionString, modName)
 }
 
 // AddModDependencies adds all the mod in newModVersions to our list of mods, using the following logic

@@ -3,6 +3,7 @@ package dashboardserver
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 
 	"github.com/spf13/viper"
 	typeHelpers "github.com/turbot/go-kit/types"
@@ -13,7 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/version"
 )
 
-func buildDashboardMetadataPayload(workspaceResources *modconfig.ResourceMaps, cloudMetadata *modconfig.CloudMetadata) ([]byte, error) {
+func buildDashboardMetadataPayload(workspaceResources *modconfig.ResourceMaps, cloudMetadata *steampipeconfig.CloudMetadata) ([]byte, error) {
 	installedMods := make(map[string]ModDashboardMetadata)
 	for _, mod := range workspaceResources.Mods {
 		// Ignore current mod

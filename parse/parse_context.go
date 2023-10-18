@@ -1,29 +1,21 @@
 package parse
 
 import (
-	"context"
 	"fmt"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stevenle/topsort"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
+	"strings"
 )
 
 type ParseContext struct {
-	// This is the running application context
-	RunCtx           context.Context
 	UnresolvedBlocks map[string]*unresolvedBlock
 	FileData         map[string][]byte
-
 	// the eval context used to decode references in HCL
 	EvalCtx *hcl.EvalContext
-
-	Diags hcl.Diagnostics
 
 	RootEvalPath string
 
@@ -36,11 +28,10 @@ type ParseContext struct {
 	blocks          hcl.Blocks
 }
 
-func NewParseContext(runContext context.Context, rootEvalPath string) ParseContext {
+func NewParseContext(rootEvalPath string) ParseContext {
 	c := ParseContext{
 		UnresolvedBlocks: make(map[string]*unresolvedBlock),
 		RootEvalPath:     rootEvalPath,
-		RunCtx:           runContext,
 	}
 	// add root node - this will depend on all other nodes
 	c.dependencyGraph = c.newDependencyGraph()
@@ -63,19 +54,8 @@ func (r *ParseContext) ClearDependencies() {
 // 2) add dependencies to our tree of dependencies
 func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-
-	if r.UnresolvedBlocks[name] != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("duplicate unresolved block name '%s'", name),
-			Detail:   fmt.Sprintf("block '%s' already exists. This could mean that there are unresolved duplicate resources,", name),
-			Subject:  &block.DefRange,
-		})
-		return diags
-	}
-
 	// store unresolved block
-	r.UnresolvedBlocks[name] = &unresolvedBlock{Name: name, Block: block, Dependencies: dependencies}
+	r.UnresolvedBlocks[name] = newUnresolvedBlock(block, name, dependencies)
 
 	// store dependency in tree - d
 	if !r.dependencyGraph.ContainsNode(name) {
@@ -86,23 +66,19 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "failed to add root dependency to graph",
-			Detail:   err.Error(),
-			Subject:  &block.DefRange,
-		})
+			Detail:   err.Error()})
 	}
 
 	for _, dep := range dependencies {
 		// each dependency object may have multiple traversals
 		for _, t := range dep.Traversals {
-			parsedPropertyPath, err := modconfig.ParseResourcePropertyPath(hclhelpers.TraversalAsString(t))
+			parsedPropertyPath, err := modconfig.ParseResourcePropertyPath(hcl_helpers.TraversalAsString(t))
 
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "failed to parse dependency",
-					Detail:   err.Error(),
-					Subject:  &block.DefRange,
-				})
+					Detail:   err.Error()})
 				continue
 
 			}
@@ -116,9 +92,7 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "failed to add dependency to graph",
-					Detail:   err.Error(),
-					Subject:  &block.DefRange,
-				})
+					Detail:   err.Error()})
 			}
 		}
 	}
@@ -145,10 +119,10 @@ func (r *ParseContext) BlocksToDecode() (hcl.Blocks, error) {
 		// depOrder is all the blocks required to resolve dependencies.
 		// if this one is unparsed, added to list
 		block, ok := r.UnresolvedBlocks[name]
-		if ok && !blocksMap[block.Block.DefRange.String()] {
+		if ok && !blocksMap[block.DeclRange.String()] && ok {
 			blocksToDecode = append(blocksToDecode, block.Block)
 			// add to map
-			blocksMap[block.Block.DefRange.String()] = true
+			blocksMap[block.DeclRange.String()] = true
 		}
 	}
 	return blocksToDecode, nil
@@ -230,12 +204,12 @@ func (r *ParseContext) getDependencyOrder() ([]string, error) {
 }
 
 // eval functions
-func (r *ParseContext) BuildEvalContext(variables map[string]cty.Value) {
+func (r *ParseContext) buildEvalContext(variables map[string]cty.Value) {
 
 	// create evaluation context
 	r.EvalCtx = &hcl.EvalContext{
 		Variables: variables,
 		// use the mod path as the file root for functions
-		Functions: funcs.ContextFunctions(r.RootEvalPath),
+		Functions: ContextFunctions(r.RootEvalPath),
 	}
 }

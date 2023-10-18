@@ -74,7 +74,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		return nil, err
 	}
 
-	// TODO hack to make pp mod install work for now
+	// TODO KAI hack to make pp mod install work for now
 	// installedPlugins, err := plugin.GetInstalledPlugins()
 	// if err != nil {
 	// 	return nil, err

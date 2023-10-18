@@ -93,8 +93,7 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 	// so there was an error
 	return hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
-		Summary:  "invalid mod version " + m.VersionString,
-		Detail:   "invalid mod version " + m.VersionString,
+		Summary:  fmt.Sprintf("invalid mod version %s", m.VersionString),
 		Subject:  &m.DefRange,
 	}}
 

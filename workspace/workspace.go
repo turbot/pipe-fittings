@@ -4,31 +4,34 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/db/db_common"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/fatih/color"
 	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
+	"github.com/turbot/pipe-fittings/cmdconfig"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardevents"
+	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modinstaller"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/task"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-// TODO this is out of date with steampipe
 type Workspace struct {
 	Path                string
 	ModInstallationPath string
@@ -37,8 +40,7 @@ type Workspace struct {
 	Mods map[string]*modconfig.Mod
 	// the input variables used in the parse
 	VariableValues map[string]string
-	// TODO: pipes
-	CloudMetadata *modconfig.CloudMetadata
+	CloudMetadata  *steampipeconfig.CloudMetadata
 
 	// source snapshot paths
 	// if this is set, no other mod resources are loaded and
@@ -49,29 +51,25 @@ type Workspace struct {
 	loadLock    sync.Mutex
 	exclusions  []string
 	modFilePath string
-
 	// should we load/watch files recursively
-	ListFlag       filehelpers.ListFlag
-	FileInclusions []string
-
+	listFlag                filehelpers.ListFlag
 	fileWatcherErrorHandler func(context.Context, error)
 	watcherError            error
 	// event handlers
-	// TODO: dashboard
 	dashboardEventHandlers []dashboardevents.DashboardEventHandler
 	// callback function called when there is a file watcher event
 	onFileWatcherEventMessages func()
 	loadPseudoResources        bool
 	// channel used to send dashboard events to the handleDashboardEvent goroutine
-	// TODO: dashboard
 	dashboardEventChan chan dashboardevents.DashboardEvent
 }
 
-func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+// Load creates a Workspace and loads the workspace mod
+func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.Load start")
 	defer utils.LogTime("workspace.Load end")
 
-	workspace, err := createShellWorkspace(workspacePath, fileInclusions)
+	workspace, err := createShellWorkspace(workspacePath)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -81,19 +79,14 @@ func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []
 	return workspace, errAndWarnings
 }
 
-// Load creates a Workspace and loads the workspace mod
-func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	return LoadWithParams(ctx, workspacePath, []string{constants.ModDataExtension})
-}
-
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
 // this is use for the variable list command
-func LoadVariables(ctx context.Context, workspacePath string, fileInclusions []string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
+func LoadVariables(ctx context.Context, workspacePath string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.LoadVariables start")
 	defer utils.LogTime("workspace.LoadVariables end")
 
 	// create shell workspace
-	workspace, err := createShellWorkspace(workspacePath, fileInclusions)
+	workspace, err := createShellWorkspace(workspacePath)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -109,12 +102,11 @@ func LoadVariables(ctx context.Context, workspacePath string, fileInclusions []s
 	return variableMap.ToArray(), errorAndWarnings
 }
 
-func createShellWorkspace(workspacePath string, fileInclusions []string) (*Workspace, error) {
+func createShellWorkspace(workspacePath string) (*Workspace, error) {
 	// create shell workspace
 	workspace := &Workspace{
 		Path:           workspacePath,
 		VariableValues: make(map[string]string),
-		FileInclusions: fileInclusions,
 	}
 
 	// check whether the workspace contains a modfile
@@ -153,9 +145,9 @@ func LoadResourceNames(ctx context.Context, workspacePath string) (*modconfig.Wo
 func (w *Workspace) SetupWatcher(ctx context.Context, client db_common.Client, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: []string{w.Path},
-		Include:     filehelpers.InclusionsFromExtensions(load_mod.GetModFileExtensions()),
+		Include:     filehelpers.InclusionsFromExtensions(steampipeconfig.GetModFileExtensions()),
 		Exclude:     w.exclusions,
-		ListFlag:    w.ListFlag,
+		ListFlag:    w.listFlag,
 		EventMask:   fsnotify.Create | fsnotify.Remove | fsnotify.Rename | fsnotify.Write,
 		// we should look into passing the callback function into the underlying watcher
 		// we need to analyze the kind of errors that come out from the watcher and
@@ -178,6 +170,7 @@ func (w *Workspace) SetupWatcher(ctx context.Context, client db_common.Client, e
 	w.fileWatcherErrorHandler = errorHandler
 	if w.fileWatcherErrorHandler == nil {
 		w.fileWatcherErrorHandler = func(ctx context.Context, err error) {
+			fmt.Println()
 			error_helpers.ShowErrorWithMessage(ctx, err, "failed to reload mod from file watcher")
 		}
 	}
@@ -196,13 +189,12 @@ func (w *Workspace) Close() {
 	if w.watcher != nil {
 		w.watcher.Close()
 	}
-	// TODO: dashboard
-	// if ch := w.dashboardEventChan; ch != nil {
-	// 	// NOTE: set nil first
-	// 	w.dashboardEventChan = nil
-	// 	log.Printf("[TRACE] closing dashboardEventChan")
-	// 	close(ch)
-	// }
+	if ch := w.dashboardEventChan; ch != nil {
+		// NOTE: set nil first
+		w.dashboardEventChan = nil
+		log.Printf("[TRACE] closing dashboardEventChan")
+		close(ch)
+	}
 }
 
 func (w *Workspace) ModfileExists() bool {
@@ -212,13 +204,13 @@ func (w *Workspace) ModfileExists() bool {
 // check  whether the workspace contains a modfile
 // this will determine whether we load files recursively, and create pseudo resources for sql files
 func (w *Workspace) setModfileExists() {
-	modFile, err := w.findModFilePath(w.Path)
+	modFile, err := FindModFilePath(w.Path)
 	modFileExists := err != ErrorNoModDefinition
 
 	if modFileExists {
 		log.Printf("[TRACE] modfile exists in workspace folder - creating pseudo-resources and loading files recursively ")
 		// only load/watch recursively if a mod sp file exists in the workspace folder
-		w.ListFlag = filehelpers.FilesRecursive
+		w.listFlag = filehelpers.FilesRecursive
 		w.loadPseudoResources = true
 		w.modFilePath = modFile
 
@@ -227,12 +219,13 @@ func (w *Workspace) setModfileExists() {
 		w.Path = filepath.Dir(modFile)
 	} else {
 		log.Printf("[TRACE] no modfile exists in workspace folder - NOT creating pseudoresources and only loading resource files from top level folder")
-		w.ListFlag = filehelpers.Files
+		w.listFlag = filehelpers.Files
 		w.loadPseudoResources = false
 	}
 }
 
-func (w *Workspace) findModFilePath(folder string) (string, error) {
+// TODO comment
+func FindModFilePath(folder string) (string, error) {
 	folder, err := filepath.Abs(folder)
 	if err != nil {
 		return "", err
@@ -251,12 +244,57 @@ func (w *Workspace) findModFilePath(folder string) (string, error) {
 			// this typically means that we are already in the root directory
 			return "", ErrorNoModDefinition
 		}
-		return w.findModFilePath(filepath.Dir(folder))
+		return FindModFilePath(filepath.Dir(folder))
 	}
 	return modFilePath, nil
 }
 
+func HomeDirectoryModfileCheck(ctx context.Context, workspacePath string) error {
+	// bypass all the checks if ConfigKeyBypassHomeDirModfileWarning is set - it means home dir modfile check
+	// has already happened before
+	if viper.GetBool(constants.ConfigKeyBypassHomeDirModfileWarning) {
+		return nil
+	}
+	// get the cmd and home dir
+	cmd := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command)
+	home, _ := os.UserHomeDir()
+	_, err := os.Stat(filepaths.ModFilePath(workspacePath))
+	modFileExists := !os.IsNotExist(err)
+
+	// check if your workspace path is home dir and if modfile exists
+	if workspacePath == home && modFileExists {
+
+		// for interactive query - ask for confirmation to continue
+		if cmd.Name() == "query" && viper.GetBool(constants.ConfigKeyInteractive) {
+			confirm, err := utils.UserConfirmation(ctx, fmt.Sprintf("%s: You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nDo you still want to continue? (y/n)", color.YellowString("Warning")))
+			if err != nil {
+				return err
+			}
+			if !confirm {
+				return sperr.New("failed to load workspace: execution cancelled")
+			}
+			return nil
+		}
+
+		// for batch query mode - if output is table, just warn
+		if task.IsBatchQueryCmd(cmd, viper.GetStringSlice(constants.ConfigKeyActiveCommandArgs)) && cmdconfig.Viper().GetString(constants.ArgOutput) == constants.OutputFormatTable {
+			error_helpers.ShowWarning("You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nHit Ctrl+C to stop.\n")
+			return nil
+		}
+
+		// for other cmds - if home dir has modfile, just warn
+		error_helpers.ShowWarning("You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nHit Ctrl+C to stop.\n")
+	}
+
+	return nil
+}
+
 func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAndWarnings {
+	// check if your workspace path is home dir and if modfile exists - if yes then warn and ask user to continue or not
+	if err := HomeDirectoryModfileCheck(ctx, w.Path); err != nil {
+		return error_helpers.NewErrorsAndWarning(err)
+	}
+
 	// resolve values of all input variables
 	// we WILL validate missing variables when loading
 	validateMissing := true
@@ -280,10 +318,10 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 	// add evaluated variables to the context
 	parseCtx.AddInputVariableValues(inputVariables)
 	// do not reload variables as we already have them
-	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
+	parseCtx.BlockTypeExclusions = []string{modconfig.BlockTypeVariable}
 
 	// load the workspace mod
-	m, otherErrorAndWarning := load_mod.LoadMod(w.Path, parseCtx)
+	m, otherErrorAndWarning := steampipeconfig.LoadMod(ctx, w.Path, parseCtx)
 	errorsAndWarnings.Merge(otherErrorAndWarning)
 	if errorsAndWarnings.Error != nil {
 		return errorsAndWarnings
@@ -317,12 +355,12 @@ func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool)
 
 func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, *error_helpers.ErrorAndWarnings) {
 	// load variable definitions
-	variableMap, err := load_mod.LoadVariableDefinitions(w.Path, variablesParseCtx)
+	variableMap, err := steampipeconfig.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// get the values
-	return load_mod.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
+	return steampipeconfig.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
 }
 
 // build options used to load workspace
@@ -337,16 +375,15 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 		return nil, err
 	}
 	parseCtx := parse.NewModParseContext(
-		ctx,
 		workspaceLock,
 		w.Path,
 		parseFlag,
 		&filehelpers.ListOptions{
 			// listFlag specifies whether to load files recursively
-			Flags:   w.ListFlag,
+			Flags:   w.listFlag,
 			Exclude: w.exclusions,
 			// only load .sp files
-			Include: filehelpers.InclusionsFromExtensions(w.FileInclusions),
+			Include: filehelpers.InclusionsFromExtensions([]string{constants.ModDataExtension}),
 		})
 
 	return parseCtx, nil
@@ -380,7 +417,7 @@ func (w *Workspace) loadExclusions() error {
 		fmt.Sprintf("%s/.*/**", w.Path),
 	}
 
-	ignorePath := filepath.Join(w.Path, filepaths.PipesComponentWorkspaceIgnoreFiles)
+	ignorePath := filepath.Join(w.Path, filepaths.WorkspaceIgnoreFile)
 	file, err := os.Open(ignorePath)
 	if err != nil {
 		// if file does not exist, just return
@@ -415,7 +452,7 @@ func (w *Workspace) loadWorkspaceResourceName(ctx context.Context) (*modconfig.W
 		return nil, err
 	}
 
-	workspaceResourceNames, err := load_mod.LoadModResourceNames(w.Mod, parseCtx)
+	workspaceResourceNames, err := steampipeconfig.LoadModResourceNames(ctx, w.Mod, parseCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -424,11 +461,10 @@ func (w *Workspace) loadWorkspaceResourceName(ctx context.Context) (*modconfig.W
 }
 
 func (w *Workspace) verifyResourceRuntimeDependencies() error {
-	// TODO: dashboard
-	// for _, d := range w.Mod.ResourceMaps.Dashboards {
-	// 	if err := d.ValidateRuntimeDependencies(w); err != nil {
-	// 		return err
-	// 	}
-	// }
+	for _, d := range w.Mod.ResourceMaps.Dashboards {
+		if err := d.ValidateRuntimeDependencies(w); err != nil {
+			return err
+		}
+	}
 	return nil
 }

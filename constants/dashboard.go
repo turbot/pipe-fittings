@@ -3,7 +3,7 @@ package constants
 import (
 	"fmt"
 
-	"github.com/turbot/steampipe/pkg/version"
+	"github.com/turbot/pipe-fittings/version"
 )
 
 // DashboardListenAddresses is an arrays is listen addresses which Steampipe accepts

@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/dashboard/dashboardtypes"
+	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/export"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"

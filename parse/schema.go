@@ -2,28 +2,38 @@ package parse
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 // cache resource schemas
 var resourceSchemaCache = make(map[string]*hcl.BodySchema)
 
-// TODO  [node_reuse] Replace all block type with consts https://github.com/turbot/steampipe/issues/2922
-
 var ConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
-			Type:       "connection",
+			Type:       modconfig.BlockTypeConnection,
 			LabelNames: []string{"name"},
 		},
-
 		{
-			Type:       "options",
+			Type:       modconfig.BlockTypePlugin,
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       modconfig.BlockTypeOptions,
 			LabelNames: []string{"type"},
 		},
 		{
-			Type:       "workspace",
+			Type:       modconfig.BlockTypeWorkspaceProfile,
+			LabelNames: []string{"name"},
+		},
+	},
+}
+var PluginBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       modconfig.BlockTypeRateLimiter,
 			LabelNames: []string{"name"},
 		},
 	},
@@ -68,89 +78,79 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
-			Type:       string(schema.BlockTypeMod),
+			Type:       string(modconfig.BlockTypeMod),
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeVariable,
+			Type:       modconfig.BlockTypeVariable,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeQuery,
+			Type:       modconfig.BlockTypeQuery,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeControl,
+			Type:       modconfig.BlockTypeControl,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeBenchmark,
+			Type:       modconfig.BlockTypeBenchmark,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeDashboard,
+			Type:       modconfig.BlockTypeDashboard,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeCard,
+			Type:       modconfig.BlockTypeCard,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeChart,
+			Type:       modconfig.BlockTypeChart,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeFlow,
+			Type:       modconfig.BlockTypeFlow,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeGraph,
+			Type:       modconfig.BlockTypeGraph,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeHierarchy,
+			Type:       modconfig.BlockTypeHierarchy,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeImage,
+			Type:       modconfig.BlockTypeImage,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeInput,
+			Type:       modconfig.BlockTypeInput,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeTable,
+			Type:       modconfig.BlockTypeTable,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeText,
+			Type:       modconfig.BlockTypeText,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeNode,
+			Type:       modconfig.BlockTypeNode,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeEdge,
+			Type:       modconfig.BlockTypeEdge,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type: schema.BlockTypeLocals,
+			Type: modconfig.BlockTypeLocals,
 		},
 		{
-			Type:       schema.BlockTypeCategory,
+			Type:       modconfig.BlockTypeCategory,
 			LabelNames: []string{"name"},
-		},
-
-		// Flowpipe
-		{
-			Type:       schema.BlockTypePipeline,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeTrigger,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
 	},
 }
@@ -159,48 +159,48 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 var DashboardBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
-			Type:       schema.BlockTypeInput,
+			Type:       modconfig.BlockTypeInput,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeParam,
+			Type:       modconfig.BlockTypeParam,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type: schema.BlockTypeWith,
+			Type: modconfig.BlockTypeWith,
 		},
 		{
-			Type: schema.BlockTypeContainer,
+			Type: modconfig.BlockTypeContainer,
 		},
 		{
-			Type: schema.BlockTypeCard,
+			Type: modconfig.BlockTypeCard,
 		},
 		{
-			Type: schema.BlockTypeChart,
+			Type: modconfig.BlockTypeChart,
 		},
 		{
-			Type: schema.BlockTypeBenchmark,
+			Type: modconfig.BlockTypeBenchmark,
 		},
 		{
-			Type: schema.BlockTypeControl,
+			Type: modconfig.BlockTypeControl,
 		},
 		{
-			Type: schema.BlockTypeFlow,
+			Type: modconfig.BlockTypeFlow,
 		},
 		{
-			Type: schema.BlockTypeGraph,
+			Type: modconfig.BlockTypeGraph,
 		},
 		{
-			Type: schema.BlockTypeHierarchy,
+			Type: modconfig.BlockTypeHierarchy,
 		},
 		{
-			Type: schema.BlockTypeImage,
+			Type: modconfig.BlockTypeImage,
 		},
 		{
-			Type: schema.BlockTypeTable,
+			Type: modconfig.BlockTypeTable,
 		},
 		{
-			Type: schema.BlockTypeText,
+			Type: modconfig.BlockTypeText,
 		},
 	},
 }
@@ -209,45 +209,45 @@ var DashboardBlockSchema = &hcl.BodySchema{
 var DashboardContainerBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
-			Type:       schema.BlockTypeInput,
+			Type:       modconfig.BlockTypeInput,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type:       schema.BlockTypeParam,
+			Type:       modconfig.BlockTypeParam,
 			LabelNames: []string{"name"},
 		},
 		{
-			Type: schema.BlockTypeContainer,
+			Type: modconfig.BlockTypeContainer,
 		},
 		{
-			Type: schema.BlockTypeCard,
+			Type: modconfig.BlockTypeCard,
 		},
 		{
-			Type: schema.BlockTypeChart,
+			Type: modconfig.BlockTypeChart,
 		},
 		{
-			Type: schema.BlockTypeBenchmark,
+			Type: modconfig.BlockTypeBenchmark,
 		},
 		{
-			Type: schema.BlockTypeControl,
+			Type: modconfig.BlockTypeControl,
 		},
 		{
-			Type: schema.BlockTypeFlow,
+			Type: modconfig.BlockTypeFlow,
 		},
 		{
-			Type: schema.BlockTypeGraph,
+			Type: modconfig.BlockTypeGraph,
 		},
 		{
-			Type: schema.BlockTypeHierarchy,
+			Type: modconfig.BlockTypeHierarchy,
 		},
 		{
-			Type: schema.BlockTypeImage,
+			Type: modconfig.BlockTypeImage,
 		},
 		{
-			Type: schema.BlockTypeTable,
+			Type: modconfig.BlockTypeTable,
 		},
 		{
-			Type: schema.BlockTypeText,
+			Type: modconfig.BlockTypeText,
 		},
 	},
 }
@@ -306,10 +306,10 @@ var NodeAndEdgeProviderSchema = &hcl.BodySchema{
 			LabelNames: []string{"name"},
 		},
 		{
-			Type: schema.BlockTypeNode,
+			Type: modconfig.BlockTypeNode,
 		},
 		{
-			Type: schema.BlockTypeEdge,
+			Type: modconfig.BlockTypeEdge,
 		},
 	},
 }

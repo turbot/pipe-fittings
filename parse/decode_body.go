@@ -1,16 +1,14 @@
 package parse
 
 import (
-	"reflect"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/schema"
+	"reflect"
+	"strings"
 )
 
 func decodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceMapsProvider, resource modconfig.HclResource) (diags hcl.Diagnostics) {
@@ -100,29 +98,29 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 
 	// special cases for manually parsed attributes and blocks
 	switch resource.BlockType() {
-	case schema.BlockTypeMod:
-		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeRequire})
-	case schema.BlockTypeDashboard, schema.BlockTypeContainer:
+	case modconfig.BlockTypeMod:
+		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: modconfig.BlockTypeRequire})
+	case modconfig.BlockTypeDashboard, modconfig.BlockTypeContainer:
 		res.Blocks = append(res.Blocks,
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeControl},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeBenchmark},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeCard},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeChart},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeContainer},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeFlow},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeGraph},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeHierarchy},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeImage},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeInput},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeTable},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeText},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeWith},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeControl},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeBenchmark},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeCard},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeChart},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeContainer},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeFlow},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeGraph},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeHierarchy},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeImage},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeInput},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeTable},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeText},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeWith},
 		)
-	case schema.BlockTypeQuery:
+	case modconfig.BlockTypeQuery:
 		// remove `Query` from attributes
 		var querySchema = &hcl.BodySchema{}
 		for _, a := range res.Attributes {
-			if a.Name != schema.AttributeQuery {
+			if a.Name != modconfig.AttributeQuery {
 				querySchema.Attributes = append(querySchema.Attributes, a)
 			}
 		}
@@ -130,22 +128,21 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 	}
 
 	if _, ok := resource.(modconfig.QueryProvider); ok {
-		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeParam})
+		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: modconfig.BlockTypeParam})
 		// if this is NOT query, add args
-		if resource.BlockType() != schema.BlockTypeQuery {
-			res.Attributes = append(res.Attributes, hcl.AttributeSchema{Name: schema.AttributeTypeArgs})
+		if resource.BlockType() != modconfig.BlockTypeQuery {
+			res.Attributes = append(res.Attributes, hcl.AttributeSchema{Name: modconfig.AttributeArgs})
 		}
 	}
 	if _, ok := resource.(modconfig.NodeAndEdgeProvider); ok {
 		res.Blocks = append(res.Blocks,
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeCategory},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeNode},
-			hcl.BlockHeaderSchema{Type: schema.BlockTypeEdge})
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeCategory},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeNode},
+			hcl.BlockHeaderSchema{Type: modconfig.BlockTypeEdge})
 	}
-	// TODO: dashbaord related (WithProvider)
-	// if _, ok := resource.(modconfig.WithProvider); ok {
-	// 	res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeWith})
-	// }
+	if _, ok := resource.(modconfig.WithProvider); ok {
+		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: modconfig.BlockTypeWith})
+	}
 	return res
 }
 
@@ -212,7 +209,7 @@ func resolveReferences(body hcl.Body, resourceMapsProvider modconfig.ResourceMap
 			if _, ok := v.(modconfig.HclResource); ok {
 				if hclVal, ok := attributes[hclAttribute]; ok {
 					if scopeTraversal, ok := hclVal.Expr.(*hclsyntax.ScopeTraversalExpr); ok {
-						path := hclhelpers.TraversalAsString(scopeTraversal.Traversal)
+						path := hcl_helpers.TraversalAsString(scopeTraversal.Traversal)
 						if parsedName, err := modconfig.ParseResourceName(path); err == nil {
 							if r, ok := resourceMapsProvider.GetResource(parsedName); ok {
 								f := rv.FieldByName(field.Name)

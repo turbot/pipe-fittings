@@ -1,8 +1,9 @@
 package var_config
 
-// github.com/hashicorp/terraform/configs/parser_config.go
+// github.com/turbot/terraform-components/configs/parser_config.go
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"unicode"
 
 	"github.com/hashicorp/hcl/v2"
@@ -35,7 +36,7 @@ type Variable struct {
 func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bool) (*Variable, hcl.Diagnostics) {
 	v := &Variable{
 		Name:      block.Labels[0],
-		DeclRange: block.DefRange,
+		DeclRange: hcl_helpers.BlockRange(block),
 	}
 	var diags hcl.Diagnostics
 

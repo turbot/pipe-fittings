@@ -1,13 +1,13 @@
 package modconfig
 
 import (
+	"github.com/turbot/go-kit/type_conversion"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-// ModVariableMap is a struct containing maps of variable definitions
+// ModVariableMap is a struct containins maps of variable definitions
 type ModVariableMap struct {
 	// which mod have these variables been loaded for?
 	Mod *Mod
@@ -98,7 +98,7 @@ func (m *ModVariableMap) GetPublicVariableValues() (map[string]string, error) {
 	res := make(map[string]string, len(m.PublicVariables))
 	for k, v := range m.PublicVariables {
 		// TODO investigate workspace usage of value string and determine whether we can simply format ValueGo
-		valueString, err := hclhelpers.CtyToString(v.Value)
+		valueString, err := type_conversion.CtyToString(v.Value)
 		if err != nil {
 			return nil, err
 		}

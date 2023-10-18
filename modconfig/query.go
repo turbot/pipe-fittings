@@ -2,18 +2,18 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/zclconf/go-cty/cty"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/zclconf/go-cty/cty"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 // Query is a struct representing the Query resource
@@ -39,7 +39,7 @@ func NewQuery(block *hcl.Block, mod *Mod, shortName string) HclResource {
 						ShortName:       shortName,
 						FullName:        fullName,
 						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-						DeclRange:       block.DefRange,
+						DeclRange:       hcl_helpers.BlockRange(block),
 						blockType:       block.Type,
 					},
 					Mod: mod,

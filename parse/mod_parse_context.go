@@ -1,8 +1,8 @@
 package parse
 
 import (
-	"context"
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/terraform-components/terraform"
 	"strings"
 
@@ -10,11 +10,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/zclconf/go-cty/cty"
@@ -27,7 +24,6 @@ type ParseModFlag uint32
 const (
 	CreateDefaultMod ParseModFlag = 1 << iota
 	CreatePseudoResources
-	CreateTransientLocalMod
 )
 
 /*
@@ -44,10 +40,6 @@ type ReferenceTypeValueMap map[string]map[string]cty.Value
 
 type ModParseContext struct {
 	ParseContext
-
-	// PipelineHcls map[string]*modconfig.Pipeline
-	TriggerHcls map[string]*modconfig.Trigger
-
 	// the mod which is currently being parsed
 	CurrentMod *modconfig.Mod
 	// the workspace lock data
@@ -85,17 +77,10 @@ type ModParseContext struct {
 	DependencyConfig *ModDependencyConfig
 }
 
-func NewModParseContext(runContext context.Context, workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, flags ParseModFlag, listOptions *filehelpers.ListOptions) *ModParseContext {
-
-	parseContext := NewParseContext(runContext, rootEvalPath)
+func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, flags ParseModFlag, listOptions *filehelpers.ListOptions) *ModParseContext {
+	parseContext := NewParseContext(rootEvalPath)
 	c := &ModParseContext{
-		ParseContext: parseContext,
-
-		// TODO: fix this issue
-		// TODO: temporary mapping until we sort out merging Flowpipe and Steampipe
-		// PipelineHcls: make(map[string]*modconfig.Pipeline),
-		TriggerHcls: make(map[string]*modconfig.Trigger),
-
+		ParseContext:  parseContext,
 		Flags:         flags,
 		WorkspaceLock: workspaceLock,
 		ListOptions:   listOptions,
@@ -118,7 +103,6 @@ func NewModParseContext(runContext context.Context, workspaceLock *versionmap.Wo
 func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.ResolvedVersionConstraint, rootEvalPath string) *ModParseContext {
 	// create a child run context
 	child := NewModParseContext(
-		parent.RunCtx,
 		parent.WorkspaceLock,
 		rootEvalPath,
 		parent.Flags,
@@ -146,9 +130,7 @@ func (m *ModParseContext) EnsureWorkspaceLock(mod *modconfig.Mod) error {
 	// if the mod has dependencies, there must a workspace lock object in the run context
 	// (mod MUST be the workspace mod, not a dependency, as we would hit this error as soon as we parse it)
 	if mod.HasDependentMods() && (m.WorkspaceLock.Empty() || m.WorkspaceLock.Incomplete()) {
-		// logger := fplog.Logger(m.RunCtx)
-		// logger.Error("mod has dependencies but no workspace lock file found", "mod", mod.Name(), "m.HasDependentMods()", mod.HasDependentMods(), "m.WorkspaceLock.Empty()", m.WorkspaceLock.Empty(), "m.WorkspaceLock.Incomplete()", m.WorkspaceLock.Incomplete())
-		return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run 'steampipe mod install'")
+		return fmt.Errorf("not all dependencies are installed - run 'steampipe mod install'")
 	}
 
 	return nil
@@ -237,8 +219,8 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	// do not add variables (as they have already been added)
 	// if the resource is for a dependency mod, do not add locals
 	shouldAdd := func(item modconfig.HclResource) bool {
-		if item.BlockType() == schema.BlockTypeVariable ||
-			item.BlockType() == schema.BlockTypeLocals && item.(modconfig.ModItem).GetMod().ShortName != m.CurrentMod.ShortName {
+		if item.BlockType() == modconfig.BlockTypeVariable ||
+			item.BlockType() == modconfig.BlockTypeLocals && item.(modconfig.ModTreeItem).GetMod().ShortName != m.CurrentMod.ShortName {
 			return false
 		}
 		return true
@@ -253,15 +235,7 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 		// continue walking
 		return true, nil
 	}
-	err := mod.WalkResources(resourceFunc)
-	if err != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "error walking mod resources",
-			Detail:   err.Error(),
-		})
-		return diags
-	}
+	mod.WalkResources(resourceFunc)
 
 	// rebuild the eval context
 	m.buildEvalContext()
@@ -293,10 +267,6 @@ func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, depende
 // ShouldCreateDefaultMod returns whether the flag is set to create a default mod if no mod definition exists
 func (m *ModParseContext) ShouldCreateDefaultMod() bool {
 	return m.Flags&CreateDefaultMod == CreateDefaultMod
-}
-
-func (m *ModParseContext) ShouldCreateCreateTransientLocalMod() bool {
-	return m.Flags&CreateTransientLocalMod == CreateTransientLocalMod
 }
 
 // CreatePseudoResources returns whether the flag is set to create pseudo resources
@@ -364,7 +334,6 @@ func (m *ModParseContext) buildEvalContext() {
 
 	// now for each mod add all the values
 	for mod, modMap := range m.referenceValues {
-		// TODO: this code is from steampipe, looks like there's a special treatment if the mod is named "local"?
 		if mod == "local" {
 			for k, v := range modMap {
 				referenceValues[k] = cty.ObjectVal(v)
@@ -375,7 +344,6 @@ func (m *ModParseContext) buildEvalContext() {
 		// mod map is map[string]map[string]cty.Value
 		// for each element (i.e. map[string]cty.Value) convert to cty object
 		refTypeMap := make(map[string]cty.Value)
-		// TODO: this code is from steampipe, looks like there's a special treatment if the mod is named "local"?
 		if mod == "local" {
 			for k, v := range modMap {
 				referenceValues[k] = cty.ObjectVal(v)
@@ -390,7 +358,7 @@ func (m *ModParseContext) buildEvalContext() {
 	}
 
 	// rebuild the eval context
-	m.ParseContext.BuildEvalContext(referenceValues)
+	m.ParseContext.buildEvalContext(referenceValues)
 }
 
 // store the resource as a cty value in the reference valuemap
@@ -500,7 +468,7 @@ func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, valu
 
 	// most resources will have a mod property - use this if available
 	var mod *modconfig.Mod
-	if modTreeItem, ok := resource.(modconfig.ModItem); ok {
+	if modTreeItem, ok := resource.(modconfig.ModTreeItem); ok {
 		mod = modTreeItem.GetMod()
 	}
 	// fall back to current mod
@@ -678,7 +646,7 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 				return "", fmt.Errorf("failed to get args details for %s", parsedVarName.ToResourceName())
 			}
 			// ok we have the expression - build the error string
-			exprString := hclhelpers.TraversalAsString(expr.Traversal)
+			exprString := hcl_helpers.TraversalAsString(expr.Traversal)
 			r := expr.Range()
 			sourceRange := fmt.Sprintf("%s:%d", r.Filename, r.Start.Line)
 			res := fmt.Sprintf("\"%s = %s\" (%s %s)",
@@ -695,50 +663,10 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 
 func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
 	for _, b := range m.CurrentMod.ResourceWithMetadataBaseRemain.(*hclsyntax.Body).Blocks {
-		if b.Type == schema.BlockTypeRequire {
+		if b.Type == modconfig.BlockTypeRequire {
 			return b
 		}
 	}
 	return nil
 
 }
-
-// TODO: transition period
-// AddPipeline stores this resource as a variable to be added to the eval context. It alse
-func (m *ModParseContext) AddPipeline(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
-
-	// Split and get the last part for pipeline name
-	// pipelineFullName := pipelineHcl.Name()
-	// parts := strings.Split(pipelineFullName, ".")
-	// pipelineNameOnly := parts[len(parts)-1]
-
-	// m.PipelineHcls[pipelineNameOnly] = pipelineHcl
-
-	diags := m.addReferenceValue(pipelineHcl, pipelineHcl.AsCtyValue())
-	if diags.HasErrors() {
-		return diags
-	}
-
-	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, pipelineHcl.Name())
-
-	m.buildEvalContext()
-	return nil
-}
-
-func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics {
-
-	// Split and get the last part for pipeline name
-	parts := strings.Split(trigger.Name(), ".")
-	triggerNameOnly := parts[len(parts)-1]
-
-	m.TriggerHcls[triggerNameOnly] = trigger
-
-	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, trigger.Name())
-
-	m.buildEvalContext()
-	return nil
-}
-
-// TODO: transition period

@@ -12,7 +12,7 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
-	"github.com/turbot/pipe-fittings/db/db_common"
+	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
 )

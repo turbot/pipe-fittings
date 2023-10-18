@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +14,6 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -71,7 +71,7 @@ func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 				FullName:        name,
 				UnqualifiedName: name,
 				DeclRange:       defRange,
-				blockType:       schema.BlockTypeMod,
+				blockType:       BlockTypeMod,
 			},
 		},
 		ModPath: modPath,
@@ -155,11 +155,11 @@ func (m *Mod) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostic
 	if m.LegacyRequire != nil && !m.LegacyRequire.Empty() {
 		// ensure that both 'require' and 'requires' were not set
 		for _, b := range block.Body.(*hclsyntax.Body).Blocks {
-			if b.Type == schema.BlockTypeRequire {
+			if b.Type == BlockTypeRequire {
 				return hcl.Diagnostics{&hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "Both 'require' and legacy 'requires' blocks are defined",
-					Subject:  &block.DefRange,
+					Subject:  hcl_helpers.BlockRangePointer(block),
 				}}
 			}
 		}
@@ -292,7 +292,7 @@ func (m *Mod) Save() error {
 		return err
 	}
 	modData := append(f.Bytes(), nonModData...)
-	return os.WriteFile(filepaths.ModFilePath(m.ModPath), modData, 0644) //nolint:gosec // TODO: check this gosec lint issue
+	return os.WriteFile(filepaths.ModFilePath(m.ModPath), modData, 0644)
 }
 
 func (m *Mod) HasDependentMods() bool {

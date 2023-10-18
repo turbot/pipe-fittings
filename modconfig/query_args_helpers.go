@@ -2,10 +2,10 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/type_conversion"
 	"log"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -76,7 +76,7 @@ func ResolveArgs(qp QueryProvider, runtimeArgs *QueryArgs) ([]any, error) {
 
 	// convert any array args into a strongly typed array
 	for i, v := range argVals {
-		argVals[i] = hclhelpers.AnySliceToTypedSlice(v)
+		argVals[i] = type_conversion.AnySliceToTypedSlice(v)
 	}
 
 	// success!

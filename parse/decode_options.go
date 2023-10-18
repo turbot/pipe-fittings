@@ -2,9 +2,9 @@ package parse
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/pipe-fittings/options"
 )
 
@@ -21,7 +21,7 @@ func DecodeOptions(block *hcl.Block, overrides ...BlockMappingOverride) (options
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("Unexpected options type '%s'", block.Labels[0]),
-			Subject:  &block.DefRange,
+			Subject:  hcl_helpers.BlockRangePointer(block),
 		})
 		return nil, diags
 	}
@@ -45,6 +45,7 @@ func defaultOptionsBlockMapping() OptionsBlockMapping {
 		options.QueryBlock:      &options.Query{},
 		options.CheckBlock:      &options.Check{},
 		options.DashboardBlock:  &options.GlobalDashboard{},
+		options.PluginBlock:     &options.Plugin{},
 	}
 	return mapping
 }

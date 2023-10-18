@@ -2,12 +2,11 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/schema"
 )
 
 type SteampipeRequire struct {
@@ -18,13 +17,13 @@ type SteampipeRequire struct {
 
 func (r *SteampipeRequire) initialise(requireBlock *hcl.Block) hcl.Diagnostics {
 	// find the steampipe block
-	steampipeBlock := hclhelpers.FindFirstChildBlock(requireBlock, schema.BlockTypeSteampipe)
+	steampipeBlock := hcl_helpers.FindFirstChildBlock(requireBlock, BlockTypeSteampipe)
 	if steampipeBlock == nil {
 		// can happen if there is a legacy property - just use the parent block
 		steampipeBlock = requireBlock
 	}
 	// set DeclRange
-	r.DeclRange = steampipeBlock.DefRange
+	r.DeclRange = hcl_helpers.BlockRange(steampipeBlock)
 
 	if r.MinVersionString == "" {
 		return nil

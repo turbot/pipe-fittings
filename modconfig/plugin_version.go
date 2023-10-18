@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -12,7 +13,7 @@ import (
 type PluginVersion struct {
 	// the plugin name, as specified in the mod requires block. , e.g. turbot/mod1, aws
 	RawName string `cty:"name" hcl:"name,label"`
-	// Deprecated: use MinVersionString
+	// deprecated: use MinVersionString
 	VersionString string `cty:"version" hcl:"version,optional"`
 	// the minumum version which satisfies the requirement
 	MinVersionString string `cty:"min_version" hcl:"min_version,optional"`
@@ -41,7 +42,7 @@ func (p *PluginVersion) String() string {
 // Initialise parses the version and name properties
 func (p *PluginVersion) Initialise(block *hcl.Block) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-	p.DeclRange = block.DefRange
+	p.DeclRange = hcl_helpers.BlockRange(block)
 	// handle deprecation warnings/errors
 	if p.VersionString != "" {
 		if p.MinVersionString != "" {

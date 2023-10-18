@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string) (*modconfig.CloudMetadata, error) {
+func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string) (*steampipeconfig.CloudMetadata, error) {
 	client := newSteampipeCloudClient(token)
 
 	parts := strings.Split(workspaceDatabaseString, "/")
@@ -56,17 +56,17 @@ func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string
 
 	connectionString := fmt.Sprintf("postgresql://%s:%s@%s-%s.%s:9193/%s", actor.Handle, password.Password, identityHandle, workspaceHandle, workspaceHost, databaseName)
 
-	cloudMetadata := &modconfig.CloudMetadata{
-		Actor: &modconfig.ActorMetadata{
+	cloudMetadata := &steampipeconfig.CloudMetadata{
+		Actor: &steampipeconfig.ActorMetadata{
 			Id:     actor.Id,
 			Handle: actor.Handle,
 		},
-		Identity: &modconfig.IdentityMetadata{
+		Identity: &steampipeconfig.IdentityMetadata{
 			Id:     cloudWorkspace.IdentityId,
 			Type:   identity.Type,
 			Handle: identityHandle,
 		},
-		WorkspaceDatabase: &modconfig.WorkspaceMetadata{
+		WorkspaceDatabase: &steampipeconfig.WorkspaceMetadata{
 			Id:     cloudWorkspace.Id,
 			Handle: cloudWorkspace.Handle,
 		},

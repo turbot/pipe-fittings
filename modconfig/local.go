@@ -2,10 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -17,7 +16,7 @@ type Local struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	Value    cty.Value
-	metadata *ResourceMetadata //nolint:unused // TODO check this unused variable
+	metadata *ResourceMetadata
 }
 
 func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local {
@@ -30,7 +29,7 @@ func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local 
 				UnqualifiedName: fmt.Sprintf("local.%s", name),
 				FullName:        fullName,
 				DeclRange:       declRange,
-				blockType:       schema.BlockTypeLocals,
+				blockType:       BlockTypeLocals,
 				// disable cty serialisation of base properties
 				disableCtySerialise: true,
 			},

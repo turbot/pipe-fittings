@@ -2,21 +2,19 @@ package inputvars
 
 import (
 	"fmt"
-	"github.com/turbot/terraform-components/terraform"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/terraform-components/tfdiags"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
+	"github.com/turbot/terraform-components/terraform"
+	"github.com/turbot/terraform-components/tfdiags"
 )
 
 // CollectVariableValues inspects the various places that configuration input variable
@@ -35,10 +33,10 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 	{
 		env := os.Environ()
 		for _, raw := range env {
-			if !strings.HasPrefix(raw, constants.PipesComponentEnvInputVarPrefix) {
+			if !strings.HasPrefix(raw, constants.EnvInputVarPrefix) {
 				continue
 			}
-			raw = raw[len(constants.PipesComponentEnvInputVarPrefix):] // trim the prefix
+			raw = raw[len(constants.EnvInputVarPrefix):] // trim the prefix
 
 			eq := strings.Index(raw, "=")
 			if eq == -1 {
@@ -68,23 +66,6 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 			return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", defaultVarsPath), diags)
 		}
 
-	}
-
-	// get the *.auto.vars (or *.auto.spvars) from the same directory as the defaultVarsPath
-	defaultVarsDir := filepath.Dir(defaultVarsPath)
-	if infos, err := os.ReadDir(defaultVarsDir); err == nil {
-		// "infos" is already sorted by name, so we just need to filter it here.
-		for _, info := range infos {
-			name := info.Name()
-			if !isAutoVarFile(name) {
-				continue
-			}
-			diags := addVarsFromFile(filepath.Join(defaultVarsDir, name), terraform.ValueFromAutoFile, ret)
-			if diags.HasErrors() {
-				return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", name), diags)
-			}
-
-		}
 	}
 
 	if infos, err := os.ReadDir("."); err == nil {
@@ -137,7 +118,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 	}
 
 	if diags.HasErrors() {
-		return nil, error_helpers.DiagsToError("failed to evaluate var args:", diags)
+		return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to evaluate var args:"), diags)
 	}
 
 	// check viper for any interactively added variables
@@ -268,7 +249,7 @@ func sanitiseVariableNames(src []byte) ([]byte, map[string]string) {
 
 		r := regexp.MustCompile(`^ ?(([a-z0-9\-_]+)\.([a-z0-9\-_]+)) ?=`)
 		captureGroups := r.FindStringSubmatch(line)
-		if len(captureGroups) == 4 {
+		if captureGroups != nil && len(captureGroups) == 4 {
 			fullVarName := captureGroups[1]
 			mod := captureGroups[2]
 			varName := captureGroups[3]
@@ -331,5 +312,5 @@ func (v unparsedVariableValueString) ParseVariableValue(mode var_config.Variable
 
 // isAutoVarFile determines if the file ends with .auto.spvars or .auto.spvars.json
 func isAutoVarFile(path string) bool {
-	return strings.HasSuffix(path, constants.PipesComponentAutoVariablesExtension)
+	return strings.HasSuffix(path, constants.AutoVariablesExtension)
 }

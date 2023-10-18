@@ -15,11 +15,10 @@ import (
 	"sync/atomic"
 	"unicode"
 
-	"github.com/turbot/terraform-components/terraform"
-
 	"github.com/bgentry/speakeasy"
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/colorstring"
+	"github.com/turbot/terraform-components/terraform"
 )
 
 var defaultInputReader io.Reader
@@ -120,7 +119,6 @@ func (i *UIInput) Input(ctx context.Context, opts *terraform.InputOpts) (string,
 	buf.WriteString("  [bold]Enter a value:[reset] ")
 
 	// Ask the user for their input
-	//nolint:forbidigo // TODO: check this lint issue
 	if _, err := fmt.Fprint(w, i.Colorize.Color(buf.String())); err != nil {
 		return "", err
 	}
@@ -142,7 +140,7 @@ func (i *UIInput) Input(ctx context.Context, opts *terraform.InputOpts) (string,
 			line, err = buf.ReadString('\n')
 		}
 		if err != nil {
-			i.err <- err.Error()
+			i.err <- string(err.Error())
 		} else {
 			i.result <- strings.TrimRightFunc(line, unicode.IsSpace)
 		}
@@ -153,7 +151,7 @@ func (i *UIInput) Input(ctx context.Context, opts *terraform.InputOpts) (string,
 		return "", errors.New(err)
 
 	case line := <-i.result:
-		fmt.Fprint(w, "\n") //nolint:forbidigo // TODO: check this lint issue
+		fmt.Fprint(w, "\n")
 
 		if line == "" {
 			line = opts.Default
@@ -161,17 +159,17 @@ func (i *UIInput) Input(ctx context.Context, opts *terraform.InputOpts) (string,
 
 		return line, nil
 	case <-ctx.Done():
-		fmt.Printf("ctx.Done()\n") //nolint:forbidigo // TODO: check this lint issue
+		fmt.Printf("ctx.Done()\n")
 		// Print a newline so that any further output starts properly
 		// on a new line.
-		fmt.Fprintln(w) //nolint:forbidigo // TODO: check this lint issue
+		fmt.Fprintln(w)
 
 		return "", ctx.Err()
 	case <-sigCh:
-		fmt.Printf("SIG\n") //nolint:forbidigo // TODO: check this lint issue
+		fmt.Printf("SIG\n")
 		// Print a newline so that any further output starts properly
 		// on a new line.
-		fmt.Fprintln(w) //nolint:forbidigo // TODO: check this lint issue
+		fmt.Fprintln(w)
 
 		// Mark that we were interrupted so future Ask calls fail.
 		i.interrupted = true

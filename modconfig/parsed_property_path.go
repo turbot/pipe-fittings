@@ -1,10 +1,8 @@
 package modconfig
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/schema"
 )
 
 type ParsedPropertyPath struct {
@@ -47,19 +45,22 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 
 	parts := strings.Split(propertyPath, ".")
 	if len(parts) < 2 {
-		return nil, perr.BadRequestWithMessage("invalid property path passed to ParseResourcePropertyPath: " + propertyPath)
+		return nil, fmt.Errorf("invalid property path '%s' passed to ParseResourcePropertyPath", propertyPath)
 	}
 
 	// special case handling for runtime dependencies which may have use the "self" qualifier
-	// const RuntimeDependencyDashboardScope = "self"
-	if parts[0] == "self" {
+	if parts[0] == RuntimeDependencyDashboardScope {
 		res.Scope = parts[0]
 		parts = parts[1:]
 	}
 
-	if schema.IsValidResourceItemType(parts[0]) {
-		// put empty mod as first part
+	if IsValidResourceItemType(parts[0]) {
+		// put empty mod as first part - so we can assume always that the first part is mod
 		parts = append([]string{""}, parts...)
+	}
+	// at this point the length of property path must be at least 3 (i.e.<mod>.<resource>.<name>)
+	if len(parts) < 3 {
+		return nil, fmt.Errorf("invalid property path '%s' passed to ParseResourcePropertyPath", propertyPath)
 	}
 	switch len(parts) {
 	case 3:
@@ -74,8 +75,8 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		res.PropertyPath = parts[3:]
 	}
 
-	if !schema.IsValidResourceItemType(res.ItemType) {
-		return nil, perr.BadRequestWithMessage("invalid resource item type passed to ParseResourcePropertyPath: " + propertyPath)
+	if !IsValidResourceItemType(res.ItemType) {
+		return nil, fmt.Errorf("invalid property path '%s' passed to ParseResourcePropertyPath", propertyPath)
 	}
 
 	return res, nil

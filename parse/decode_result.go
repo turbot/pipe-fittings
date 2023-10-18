@@ -1,9 +1,8 @@
 package parse
 
 import (
-	"slices"
-
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
@@ -48,7 +47,7 @@ func (p *DecodeResult) handleDecodeDiags(diags hcl.Diagnostics) {
 
 // determine whether the diag is a dependency error, and if so, return a dependency object
 func diagsToDependency(diag *hcl.Diagnostic) *modconfig.ResourceDependency {
-	if slices.Contains[[]string, string](missingVariableErrors, diag.Summary) {
+	if helpers.StringSliceContains(missingVariableErrors, diag.Summary) {
 		return &modconfig.ResourceDependency{Range: diag.Expression.Range(), Traversals: diag.Expression.Variables()}
 	}
 	return nil

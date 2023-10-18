@@ -12,10 +12,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/hcl/v2/json"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"sigs.k8s.io/yaml"
 )
@@ -85,7 +83,7 @@ func buildOrderedFileNameList(fileData map[string][]byte) []string {
 
 // ModfileExists returns whether a mod file exists at the specified path
 func ModfileExists(modPath string) bool {
-	modFilePath := filepath.Join(modPath, filepaths.PipesComponentModsFileName)
+	modFilePath := filepath.Join(modPath, "mod.sp")
 	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
 		return false
 	}
@@ -129,24 +127,22 @@ func parseYamlFile(filename string) (*hcl.File, hcl.Diagnostics) {
 	return json.Parse(jsonData, filename)
 }
 
-func addPseudoResourcesToMod(pseudoResources []modconfig.MappableResource, hclResources map[string]bool, mod *modconfig.Mod) {
-	var duplicates []string
+func addPseudoResourcesToMod(pseudoResources []modconfig.MappableResource, hclResources map[string]bool, mod *modconfig.Mod) *error_helpers.ErrorAndWarnings {
+	res := error_helpers.EmptyErrorsAndWarning()
 	for _, r := range pseudoResources {
 		// is there a hcl resource with the same name as this pseudo resource - it takes precedence
 		name := r.GetUnqualifiedName()
 		if _, ok := hclResources[name]; ok {
-			duplicates = append(duplicates, r.GetDeclRange().Filename)
+			res.AddWarning(fmt.Sprintf("%s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename))
+			log.Printf("[TRACE] %s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename)
 			continue
 		}
 		// add pseudo resource to mod
-		mod.AddResource(r.(modconfig.HclResource)) //nolint:errcheck // TODO: handle error
+		mod.AddResource(r.(modconfig.HclResource))
 		// add to map of existing resources
 		hclResources[name] = true
 	}
-	numDupes := len(duplicates)
-	if numDupes > 0 {
-		log.Printf("[TRACE] %d %s  not converted into resources as hcl resources of same name are defined: %v", numDupes, utils.Pluralize("file", numDupes), duplicates)
-	}
+	return res
 }
 
 // get names of all resources defined in hcl which may also be created as pseudo resources
@@ -157,7 +153,7 @@ func loadMappableResourceNames(content *hcl.BodyContent) (map[string]bool, error
 	for _, block := range content.Blocks {
 		// if this is a mod, build a shell mod struct (with just the name populated)
 		switch block.Type {
-		case schema.BlockTypeQuery:
+		case modconfig.BlockTypeQuery:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			hclResources[name] = true
@@ -185,15 +181,15 @@ func ParseModResourceNames(fileData map[string][]byte) (*modconfig.WorkspaceReso
 		// if this is a mod, build a shell mod struct (with just the name populated)
 		switch block.Type {
 
-		case schema.BlockTypeQuery:
+		case modconfig.BlockTypeQuery:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			resources.Query[name] = true
-		case schema.BlockTypeControl:
+		case modconfig.BlockTypeControl:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			resources.Control[name] = true
-		case schema.BlockTypeBenchmark:
+		case modconfig.BlockTypeBenchmark:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			resources.Benchmark[name] = true

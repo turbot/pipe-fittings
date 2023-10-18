@@ -2,14 +2,13 @@ package parse
 
 import (
 	"fmt"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
-	"github.com/turbot/pipe-fittings/schema"
 )
 
 // A consistent detail message for all "not a valid identifier" diagnostics.
@@ -40,7 +39,7 @@ func decode(parseCtx *ModParseContext) hcl.Diagnostics {
 	parseCtx.ClearDependencies()
 
 	for _, block := range blocks {
-		if block.Type == schema.BlockTypeLocals {
+		if block.Type == modconfig.BlockTypeLocals {
 			resources, res := decodeLocalsBlock(block, parseCtx)
 			if !res.Success() {
 				diags = append(diags, res.Diags...)
@@ -74,21 +73,19 @@ func addResourceToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx
 }
 
 func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) bool {
-	return true
-	// TODO: commented out due to dashboard
-	// switch resource.(type) {
-	// // do not add mods, withs
-	// case *modconfig.Mod, *modconfig.DashboardWith:
-	// 	return false
+	switch resource.(type) {
+	// do not add mods, withs
+	case *modconfig.Mod, *modconfig.DashboardWith:
+		return false
 
-	// case *modconfig.DashboardCategory, *modconfig.DashboardInput:
-	// 	// if this is a dashboard category or dashboard input, only add top level blocks
-	// 	// this is to allow nested categories/inputs to have the same name as top level categories
-	// 	// (nested inputs are added by Dashboard.InitInputs)
-	// 	return parseCtx.IsTopLevelBlock(block)
-	// default:
-	// 	return true
-	// }
+	case *modconfig.DashboardCategory, *modconfig.DashboardInput:
+		// if this is a dashboard category or dashboard input, only add top level blocks
+		// this is to allow nested categories/inputs to have the same name as top level categories
+		// (nested inputs are added by Dashboard.InitInputs)
+		return parseCtx.IsTopLevelBlock(block)
+	default:
+		return true
+	}
 }
 
 // special case decode logic for locals
@@ -146,40 +143,32 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 
 	// now do the actual decode
 	switch {
-	case helpers.StringSliceContains(schema.NodeAndEdgeProviderBlocks, block.Type):
+	case helpers.StringSliceContains(modconfig.NodeAndEdgeProviderBlocks, block.Type):
 		resource, res = decodeNodeAndEdgeProvider(block, parseCtx)
-	case helpers.StringSliceContains(schema.QueryProviderBlocks, block.Type):
+	case helpers.StringSliceContains(modconfig.QueryProviderBlocks, block.Type):
 		resource, res = decodeQueryProvider(block, parseCtx)
 	default:
 		switch block.Type {
-		case schema.BlockTypeMod:
+		case modconfig.BlockTypeMod:
 			// decodeMode has slightly different args as this code is shared with ParseModDefinition
 			resource, res = decodeMod(block, parseCtx.EvalCtx, parseCtx.CurrentMod)
-		// TODO: commented out: dashboard
-		// case schema.BlockTypeDashboard:
-		// 	resource, res = decodeDashboard(block, parseCtx)
-		// case schema.BlockTypeContainer:
-		// 	resource, res = decodeDashboardContainer(block, parseCtx)
-		case schema.BlockTypeVariable:
+		case modconfig.BlockTypeDashboard:
+			resource, res = decodeDashboard(block, parseCtx)
+		case modconfig.BlockTypeContainer:
+			resource, res = decodeDashboardContainer(block, parseCtx)
+		case modconfig.BlockTypeVariable:
 			resource, res = decodeVariable(block, parseCtx)
-		case schema.BlockTypeBenchmark:
+		case modconfig.BlockTypeBenchmark:
 			resource, res = decodeBenchmark(block, parseCtx)
-		case schema.BlockTypePipeline:
-			resource, res = decodePipeline(parseCtx.CurrentMod, block, parseCtx)
-		case schema.BlockTypeTrigger:
-			resource, res = decodeTrigger(parseCtx.CurrentMod, block, parseCtx)
 		default:
 			// all other blocks are treated the same:
 			resource, res = decodeResource(block, parseCtx)
 		}
 	}
 
-	// Note that an interface value that holds a nil concrete value is itself non-nil.
-	if !helpers.IsNil(resource) {
-		// handle the result
-		// - if there are dependencies, add to run context
-		handleModDecodeResult(resource, res, block, parseCtx)
-	}
+	// handle the result
+	// - if there are dependencies, add to run context
+	handleModDecodeResult(resource, res, block, parseCtx)
 
 	return resource, res
 }
@@ -218,25 +207,25 @@ func resourceForBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.Hc
 
 	factoryFuncs := map[string]func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource{
 		// for block type mod, just use the current mod
-		schema.BlockTypeMod:   func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource { return mod },
-		schema.BlockTypeQuery: modconfig.NewQuery,
-		// schema.BlockTypeControl:   modconfig.NewControl,
-		// schema.BlockTypeBenchmark: modconfig.NewBenchmark,
-		// schema.BlockTypeDashboard: modconfig.NewDashboard,
-		// schema.BlockTypeContainer: modconfig.NewDashboardContainer,
-		// schema.BlockTypeChart:     modconfig.NewDashboardChart,
-		// schema.BlockTypeCard:      modconfig.NewDashboardCard,
-		// schema.BlockTypeFlow:      modconfig.NewDashboardFlow,
-		// schema.BlockTypeGraph:     modconfig.NewDashboardGraph,
-		// schema.BlockTypeHierarchy: modconfig.NewDashboardHierarchy,
-		// schema.BlockTypeImage:     modconfig.NewDashboardImage,
-		// schema.BlockTypeInput:     modconfig.NewDashboardInput,
-		// schema.BlockTypeTable:     modconfig.NewDashboardTable,
-		// schema.BlockTypeText:      modconfig.NewDashboardText,
-		// schema.BlockTypeNode:      modconfig.NewDashboardNode,
-		// schema.BlockTypeEdge:      modconfig.NewDashboardEdge,
-		// schema.BlockTypeCategory:  modconfig.NewDashboardCategory,
-		// schema.BlockTypeWith:      modconfig.NewDashboardWith,
+		modconfig.BlockTypeMod:       func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource { return mod },
+		modconfig.BlockTypeQuery:     modconfig.NewQuery,
+		modconfig.BlockTypeControl:   modconfig.NewControl,
+		modconfig.BlockTypeBenchmark: modconfig.NewBenchmark,
+		modconfig.BlockTypeDashboard: modconfig.NewDashboard,
+		modconfig.BlockTypeContainer: modconfig.NewDashboardContainer,
+		modconfig.BlockTypeChart:     modconfig.NewDashboardChart,
+		modconfig.BlockTypeCard:      modconfig.NewDashboardCard,
+		modconfig.BlockTypeFlow:      modconfig.NewDashboardFlow,
+		modconfig.BlockTypeGraph:     modconfig.NewDashboardGraph,
+		modconfig.BlockTypeHierarchy: modconfig.NewDashboardHierarchy,
+		modconfig.BlockTypeImage:     modconfig.NewDashboardImage,
+		modconfig.BlockTypeInput:     modconfig.NewDashboardInput,
+		modconfig.BlockTypeTable:     modconfig.NewDashboardTable,
+		modconfig.BlockTypeText:      modconfig.NewDashboardText,
+		modconfig.BlockTypeNode:      modconfig.NewDashboardNode,
+		modconfig.BlockTypeEdge:      modconfig.NewDashboardEdge,
+		modconfig.BlockTypeCategory:  modconfig.NewDashboardCategory,
+		modconfig.BlockTypeWith:      modconfig.NewDashboardWith,
 	}
 
 	factoryFunc, ok := factoryFuncs[block.Type]
@@ -244,7 +233,7 @@ func resourceForBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.Hc
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("resourceForBlock called for unsupported block type %s", block.Type),
-			Subject:  &block.DefRange,
+			Subject:  hcl_helpers.BlockRangePointer(block),
 		},
 		}
 	}
@@ -303,9 +292,6 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 
 func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig.QueryProvider, *DecodeResult) {
 	res := newDecodeResult()
-
-	// TODO  [node_reuse] need raise errors for invalid properties https://github.com/turbot/steampipe/issues/2923
-
 	// get shell resource
 	resource, diags := resourceForBlock(block, parseCtx)
 	res.handleDecodeDiags(diags)
@@ -338,7 +324,7 @@ func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resour
 		panic(fmt.Sprintf("block type %s not convertible to a QueryProvider", block.Type))
 	}
 
-	if attr, exists := content.Attributes[schema.AttributeTypeArgs]; exists {
+	if attr, exists := content.Attributes[modconfig.AttributeArgs]; exists {
 		args, runtimeDependencies, diags := decodeArgs(attr.AsHCLAttribute(), parseCtx.EvalCtx, queryProvider)
 		if diags.HasErrors() {
 			// handle dependencies
@@ -353,7 +339,7 @@ func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resour
 	for _, b := range content.Blocks {
 		block = b.AsHCLBlock()
 		switch block.Type {
-		case schema.BlockTypeParam:
+		case modconfig.BlockTypeParam:
 			paramDef, runtimeDependencies, moreDiags := decodeParam(block, parseCtx)
 			if !moreDiags.HasErrors() {
 				params = append(params, paramDef)
@@ -372,8 +358,6 @@ func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resour
 
 func decodeNodeAndEdgeProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
 	res := newDecodeResult()
-
-	// TODO  [node_reuse] need raise errors for invalid properties https://github.com/turbot/steampipe/issues/2923
 
 	// get shell resource
 	resource, diags := resourceForBlock(block, parseCtx)
@@ -419,21 +403,20 @@ func decodeNodeAndEdgeProviderBlocks(content *hclsyntax.Body, nodeAndEdgeProvide
 	for _, b := range content.Blocks {
 		block := b.AsHCLBlock()
 		switch block.Type {
-		// TODO: commented out: dashboard
-		// case schema.BlockTypeCategory:
-		// 	// decode block
-		// 	category, blockRes := decodeBlock(block, parseCtx)
-		// 	res.Merge(blockRes)
-		// 	if !blockRes.Success() {
-		// 		continue
-		// 	}
+		case modconfig.BlockTypeCategory:
+			// decode block
+			category, blockRes := decodeBlock(block, parseCtx)
+			res.Merge(blockRes)
+			if !blockRes.Success() {
+				continue
+			}
 
-		// 	// add the category to the nodeAndEdgeProvider
-		// 	res.addDiags(nodeAndEdgeProvider.AddCategory(category.(*modconfig.DashboardCategory)))
+			// add the category to the nodeAndEdgeProvider
+			res.addDiags(nodeAndEdgeProvider.AddCategory(category.(*modconfig.DashboardCategory)))
 
-		// DO NOT add the category to the mod
+			// DO NOT add the category to the mod
 
-		case schema.BlockTypeNode, schema.BlockTypeEdge:
+		case modconfig.BlockTypeNode, modconfig.BlockTypeEdge:
 			child, childRes := decodeQueryProvider(block, parseCtx)
 
 			// TACTICAL if child has any runtime dependencies, claim them
@@ -450,14 +433,13 @@ func decodeNodeAndEdgeProviderBlocks(content *hclsyntax.Body, nodeAndEdgeProvide
 				moreDiags := nodeAndEdgeProvider.AddChild(child)
 				res.addDiags(moreDiags)
 			}
-			// TODO: commented out: dashboard
-			// case schema.BlockTypeWith:
-			// 	with, withRes := decodeBlock(block, parseCtx)
-			// 	res.Merge(withRes)
-			// 	if res.Success() {
-			// 		moreDiags := nodeAndEdgeProvider.AddWith(with.(*modconfig.DashboardWith))
-			// 		res.addDiags(moreDiags)
-			// 	}
+		case modconfig.BlockTypeWith:
+			with, withRes := decodeBlock(block, parseCtx)
+			res.Merge(withRes)
+			if res.Success() {
+				moreDiags := nodeAndEdgeProvider.AddWith(with.(*modconfig.DashboardWith))
+				res.addDiags(moreDiags)
+			}
 		}
 
 	}
@@ -465,137 +447,136 @@ func decodeNodeAndEdgeProviderBlocks(content *hclsyntax.Body, nodeAndEdgeProvide
 	return res
 }
 
-// TODO: commented out: dashboard
-// func decodeDashboard(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Dashboard, *DecodeResult) {
-// 	res := newDecodeResult()
-// 	dashboard := modconfig.NewDashboard(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.Dashboard)
+func decodeDashboard(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Dashboard, *DecodeResult) {
+	res := newDecodeResult()
+	dashboard := modconfig.NewDashboard(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.Dashboard)
 
-// 	// do a partial decode using an empty schema - use to pull out all body content in the remain block
-// 	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
-// 	body := r.(*hclsyntax.Body)
-// 	res.handleDecodeDiags(diags)
+	// do a partial decode using an empty schema - use to pull out all body content in the remain block
+	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
+	body := r.(*hclsyntax.Body)
+	res.handleDecodeDiags(diags)
 
-// 	// decode the body into 'dashboardContainer' to populate all properties that can be automatically decoded
-// 	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, dashboard)
-// 	// handle any resulting diags, which may specify dependencies
-// 	res.handleDecodeDiags(diags)
+	// decode the body into 'dashboardContainer' to populate all properties that can be automatically decoded
+	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, dashboard)
+	// handle any resulting diags, which may specify dependencies
+	res.handleDecodeDiags(diags)
 
-// 	if dashboard.Base != nil && len(dashboard.Base.ChildNames) > 0 {
-// 		supportedChildren := []string{schema.BlockTypeContainer, schema.BlockTypeChart, schema.BlockTypeControl, schema.BlockTypeCard, schema.BlockTypeFlow, schema.BlockTypeGraph, schema.BlockTypeHierarchy, schema.BlockTypeImage, schema.BlockTypeInput, schema.BlockTypeTable, schema.BlockTypeText}
-// 		// TACTICAL: we should be passing in the block for the Base resource - but this is only used for diags
-// 		// and we do not expect to get any (as this function has already succeeded when the base was originally parsed)
-// 		children, _ := resolveChildrenFromNames(dashboard.Base.ChildNames, block, supportedChildren, parseCtx)
-// 		dashboard.Base.SetChildren(children)
-// 	}
-// 	if !res.Success() {
-// 		return dashboard, res
-// 	}
+	if dashboard.Base != nil && len(dashboard.Base.ChildNames) > 0 {
+		supportedChildren := []string{modconfig.BlockTypeContainer, modconfig.BlockTypeChart, modconfig.BlockTypeControl, modconfig.BlockTypeCard, modconfig.BlockTypeFlow, modconfig.BlockTypeGraph, modconfig.BlockTypeHierarchy, modconfig.BlockTypeImage, modconfig.BlockTypeInput, modconfig.BlockTypeTable, modconfig.BlockTypeText}
+		// TACTICAL: we should be passing in the block for the Base resource - but this is only used for diags
+		// and we do not expect to get any (as this function has already succeeded when the base was originally parsed)
+		children, _ := resolveChildrenFromNames(dashboard.Base.ChildNames, block, supportedChildren, parseCtx)
+		dashboard.Base.SetChildren(children)
+	}
+	if !res.Success() {
+		return dashboard, res
+	}
 
-// 	// now decode child blocks
-// 	if len(body.Blocks) > 0 {
-// 		blocksRes := decodeDashboardBlocks(body, dashboard, parseCtx)
-// 		res.Merge(blocksRes)
-// 	}
+	// now decode child blocks
+	if len(body.Blocks) > 0 {
+		blocksRes := decodeDashboardBlocks(body, dashboard, parseCtx)
+		res.Merge(blocksRes)
+	}
 
-// 	return dashboard, res
-// }
+	return dashboard, res
+}
 
-// func decodeDashboardBlocks(content *hclsyntax.Body, dashboard *modconfig.Dashboard, parseCtx *ModParseContext) *DecodeResult {
-// 	var res = newDecodeResult()
-// 	// set dashboard as parent on the run context - this is used when generating names for anonymous blocks
-// 	parseCtx.PushParent(dashboard)
-// 	defer func() {
-// 		parseCtx.PopParent()
-// 	}()
+func decodeDashboardBlocks(content *hclsyntax.Body, dashboard *modconfig.Dashboard, parseCtx *ModParseContext) *DecodeResult {
+	var res = newDecodeResult()
+	// set dashboard as parent on the run context - this is used when generating names for anonymous blocks
+	parseCtx.PushParent(dashboard)
+	defer func() {
+		parseCtx.PopParent()
+	}()
 
-// 	for _, b := range content.Blocks {
-// 		block := b.AsHCLBlock()
+	for _, b := range content.Blocks {
+		block := b.AsHCLBlock()
 
-// 		// decode block
-// 		resource, blockRes := decodeBlock(block, parseCtx)
-// 		res.Merge(blockRes)
-// 		if !blockRes.Success() {
-// 			continue
-// 		}
+		// decode block
+		resource, blockRes := decodeBlock(block, parseCtx)
+		res.Merge(blockRes)
+		if !blockRes.Success() {
+			continue
+		}
 
-// 		// we expect either inputs or child report nodes
-// 		// add the resource to the mod
-// 		res.addDiags(addResourceToMod(resource, block, parseCtx))
-// 		// add to the dashboard children
-// 		// (we expect this cast to always succeed)
-// 		if child, ok := resource.(modconfig.ModTreeItem); ok {
-// 			dashboard.AddChild(child)
-// 		}
+		// we expect either inputs or child report nodes
+		// add the resource to the mod
+		res.addDiags(addResourceToMod(resource, block, parseCtx))
+		// add to the dashboard children
+		// (we expect this cast to always succeed)
+		if child, ok := resource.(modconfig.ModTreeItem); ok {
+			dashboard.AddChild(child)
+		}
 
-// 	}
+	}
 
-// 	moreDiags := dashboard.InitInputs()
-// 	res.addDiags(moreDiags)
+	moreDiags := dashboard.InitInputs()
+	res.addDiags(moreDiags)
 
-// 	return res
-// }
+	return res
+}
 
-// func decodeDashboardContainer(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.DashboardContainer, *DecodeResult) {
-// 	res := newDecodeResult()
-// 	container := modconfig.NewDashboardContainer(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.DashboardContainer)
+func decodeDashboardContainer(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.DashboardContainer, *DecodeResult) {
+	res := newDecodeResult()
+	container := modconfig.NewDashboardContainer(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.DashboardContainer)
 
-// 	// do a partial decode using an empty schema - use to pull out all body content in the remain block
-// 	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
-// 	body := r.(*hclsyntax.Body)
-// 	res.handleDecodeDiags(diags)
-// 	if !res.Success() {
-// 		return nil, res
-// 	}
+	// do a partial decode using an empty schema - use to pull out all body content in the remain block
+	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
+	body := r.(*hclsyntax.Body)
+	res.handleDecodeDiags(diags)
+	if !res.Success() {
+		return nil, res
+	}
 
-// 	// decode the body into 'dashboardContainer' to populate all properties that can be automatically decoded
-// 	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, container)
-// 	// handle any resulting diags, which may specify dependencies
-// 	res.handleDecodeDiags(diags)
+	// decode the body into 'dashboardContainer' to populate all properties that can be automatically decoded
+	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, container)
+	// handle any resulting diags, which may specify dependencies
+	res.handleDecodeDiags(diags)
 
-// 	// now decode child blocks
-// 	if len(body.Blocks) > 0 {
-// 		blocksRes := decodeDashboardContainerBlocks(body, container, parseCtx)
-// 		res.Merge(blocksRes)
-// 	}
+	// now decode child blocks
+	if len(body.Blocks) > 0 {
+		blocksRes := decodeDashboardContainerBlocks(body, container, parseCtx)
+		res.Merge(blocksRes)
+	}
 
-// 	return container, res
-// }
+	return container, res
+}
 
-// func decodeDashboardContainerBlocks(content *hclsyntax.Body, dashboardContainer *modconfig.DashboardContainer, parseCtx *ModParseContext) *DecodeResult {
-// 	var res = newDecodeResult()
+func decodeDashboardContainerBlocks(content *hclsyntax.Body, dashboardContainer *modconfig.DashboardContainer, parseCtx *ModParseContext) *DecodeResult {
+	var res = newDecodeResult()
 
-// 	// set container as parent on the run context - this is used when generating names for anonymous blocks
-// 	parseCtx.PushParent(dashboardContainer)
-// 	defer func() {
-// 		parseCtx.PopParent()
-// 	}()
+	// set container as parent on the run context - this is used when generating names for anonymous blocks
+	parseCtx.PushParent(dashboardContainer)
+	defer func() {
+		parseCtx.PopParent()
+	}()
 
-// 	for _, b := range content.Blocks {
-// 		block := b.AsHCLBlock()
-// 		resource, blockRes := decodeBlock(block, parseCtx)
-// 		res.Merge(blockRes)
-// 		if !blockRes.Success() {
-// 			continue
-// 		}
+	for _, b := range content.Blocks {
+		block := b.AsHCLBlock()
+		resource, blockRes := decodeBlock(block, parseCtx)
+		res.Merge(blockRes)
+		if !blockRes.Success() {
+			continue
+		}
 
-// 		// special handling for inputs
-// 		if b.Type == schema.BlockTypeInput {
-// 			input := resource.(*modconfig.DashboardInput)
-// 			dashboardContainer.Inputs = append(dashboardContainer.Inputs, input)
-// 			dashboardContainer.AddChild(input)
-// 			// the input will be added to the mod by the parent dashboard
+		// special handling for inputs
+		if b.Type == modconfig.BlockTypeInput {
+			input := resource.(*modconfig.DashboardInput)
+			dashboardContainer.Inputs = append(dashboardContainer.Inputs, input)
+			dashboardContainer.AddChild(input)
+			// the input will be added to the mod by the parent dashboard
 
-// 		} else {
-// 			// for all other children, add to mod and children
-// 			res.addDiags(addResourceToMod(resource, block, parseCtx))
-// 			if child, ok := resource.(modconfig.ModTreeItem); ok {
-// 				dashboardContainer.AddChild(child)
-// 			}
-// 		}
-// 	}
+		} else {
+			// for all other children, add to mod and children
+			res.addDiags(addResourceToMod(resource, block, parseCtx))
+			if child, ok := resource.(modconfig.ModTreeItem); ok {
+				dashboardContainer.AddChild(child)
+			}
+		}
+	}
 
-// 	return res
-// }
+	return res
+}
 
 func decodeBenchmark(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Benchmark, *DecodeResult) {
 	res := newDecodeResult()
@@ -626,7 +607,7 @@ func decodeBenchmark(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Be
 
 	// now add children
 	if res.Success() {
-		supportedChildren := []string{schema.BlockTypeBenchmark, schema.BlockTypeControl}
+		supportedChildren := []string{modconfig.BlockTypeBenchmark, modconfig.BlockTypeControl}
 		children, diags := resolveChildrenFromNames(benchmark.ChildNames.StringList(), block, supportedChildren, parseCtx)
 		res.handleDecodeDiags(diags)
 
@@ -638,7 +619,7 @@ func decodeBenchmark(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Be
 	diags = decodeProperty(content, "base", &benchmark.Base, parseCtx.EvalCtx)
 	res.handleDecodeDiags(diags)
 	if benchmark.Base != nil && len(benchmark.Base.ChildNames) > 0 {
-		supportedChildren := []string{schema.BlockTypeBenchmark, schema.BlockTypeControl}
+		supportedChildren := []string{modconfig.BlockTypeBenchmark, modconfig.BlockTypeControl}
 		// TACTICAL: we should be passing in the block for the Base resource - but this is only used for diags
 		// and we do not expect to get any (as this function has already succeeded when the base was originally parsed)
 		children, _ := resolveChildrenFromNames(benchmark.Base.ChildNameStrings, block, supportedChildren, parseCtx)
@@ -698,8 +679,7 @@ func handleModDecodeResult(resource modconfig.HclResource, res *DecodeResult, bl
 
 	// if resource supports metadata, save it
 	if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
-		body := block.Body.(*hclsyntax.Body)
-		moreDiags = addResourceMetadata(resourceWithMetadata, body.SrcRange, parseCtx)
+		moreDiags = addResourceMetadata(resourceWithMetadata, resource.GetHclResourceImpl().DeclRange, parseCtx)
 		res.addDiags(moreDiags)
 	}
 }
@@ -794,7 +774,7 @@ func validateHcl(blockType string, body *hclsyntax.Body, schema *hcl.BodySchema)
 func isDeprecated(attribute *hclsyntax.Attribute, blockType string) bool {
 	switch attribute.Name {
 	case "search_path", "search_path_prefix":
-		return blockType == schema.BlockTypeQuery || blockType == schema.BlockTypeControl
+		return blockType == modconfig.BlockTypeQuery || blockType == modconfig.BlockTypeControl
 	default:
 		return false
 	}

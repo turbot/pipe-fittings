@@ -2,12 +2,13 @@ package inputvars
 
 import (
 	"fmt"
-	"github.com/turbot/terraform-components/terraform"
-
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 )
+
+const ValueFromModFile terraform.ValueSourceType = 'M'
 
 func CollectVariableValuesFromModRequire(m *modconfig.Mod, lock *versionmap.WorkspaceLock) (terraform.InputValues, error) {
 	res := make(terraform.InputValues)
