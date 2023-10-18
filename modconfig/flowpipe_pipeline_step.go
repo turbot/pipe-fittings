@@ -302,6 +302,14 @@ func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
 	return true
 }
 
+type PipelineStepInputNotify struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Channel     *string      `json:"channel,omitempty" hcl:"channel"`
+	Integration *Integration `hcl:"integration"`
+}
+
 // A common base struct that all pipeline steps must embed
 type PipelineStepBase struct {
 	Title        *string                    `json:"title,omitempty"`
@@ -2210,6 +2218,23 @@ type PipelineStepInput struct {
 	PipelineStepBase
 
 	Prompt string `json:"prompt"`
+
+	// Temporary setup for Integrated 2023 - will need to move to Notify block
+
+	// email
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	SmtpServer string
+
+	// slack
+	Token   string `json:"token"`
+	Channel string `json:"channel"`
+
+	// type
+	Type string `json:"type"`
+
+	// end Integrated 2023 temporary setup
+	// Notify *PipelineStepInputNotify
 }
 
 func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
@@ -2226,8 +2251,16 @@ func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
 	return p.Name == iOther.GetName()
 }
 
-func (*PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	return nil, nil
+func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+
+	return map[string]interface{}{
+		"username":    p.Username,
+		"password":    p.Password,
+		"smtp_server": p.SmtpServer,
+		"token":       p.Token,
+		"channel":     p.Channel,
+		"type":        p.Type,
+	}, nil
 }
 
 func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -2239,9 +2272,65 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
+				continue
 			}
 			if val != cty.NilVal {
 				p.Prompt = val.AsString()
+			}
+		case "Username":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				p.Username = val.AsString()
+			}
+		case "Password":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				p.Password = val.AsString()
+			}
+		case "SmtpServer":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				p.SmtpServer = val.AsString()
+			}
+		case "Token":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				p.Token = val.AsString()
+			}
+		case "Channel":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				p.Channel = val.AsString()
+			}
+		case "Type":
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				p.Type = val.AsString()
 			}
 
 		default:
@@ -2259,6 +2348,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 }
 
 func (p *PipelineStepInput) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
 	return nil
 }
 

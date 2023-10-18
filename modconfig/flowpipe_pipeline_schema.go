@@ -670,5 +670,19 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeNotify,
+		},
+	},
+}
+
+var PipelineStepInputNotifyBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name: schema.AttributeTypeIntegration,
+		},
+		{
+			Name: schema.AttributeTypeChannel,
+		},
 	},
 }

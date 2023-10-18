@@ -44,6 +44,7 @@ const (
 	BlockTypeTrigger           = "trigger"
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
+	BlockTypeNotify            = "notify"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
@@ -110,6 +111,9 @@ const (
 	AttributeTypeToken         = "token"
 	AttributeTypeSigningSecret = "signing_secret"
 	AttributeTypeWebhookUrl    = "webhook_url"
+
+	AttributeTypeIntegration = "integration"
+	AttributeTypeChannel     = "channel"
 
 	// Used by sleep step
 	AttributeTypeDuration = "duration"
