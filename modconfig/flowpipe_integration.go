@@ -173,7 +173,7 @@ func NewIntegration(mod *Mod, block *hcl.Block) IIntegration {
 			HclResourceImpl: HclResourceImpl{
 				// The FullName is the full name of the resource, including the mod name
 				FullName:        integrationName,
-				UnqualifiedName: "trigger." + integrationName,
+				UnqualifiedName: "integration." + block.Labels[0] + "." + block.Labels[1],
 				DeclRange:       block.DefRange,
 				blockType:       block.Type,
 			},
@@ -185,7 +185,7 @@ func NewIntegration(mod *Mod, block *hcl.Block) IIntegration {
 			HclResourceImpl: HclResourceImpl{
 				// The FullName is the full name of the resource, including the mod name
 				FullName:        integrationName,
-				UnqualifiedName: "pipeline." + block.Labels[0],
+				UnqualifiedName: "integration." + block.Labels[0] + "." + block.Labels[1],
 				DeclRange:       block.DefRange,
 				blockType:       block.Type,
 			},

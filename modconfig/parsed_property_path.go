@@ -45,6 +45,14 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 	// <resource>.<name>.<property path...>
 	// so either the first or second slice must be a valid resource type
 
+	//
+	// unless they are some flowpipe resources:
+	//
+	// mod.trigger.trigger_type.trigger_name.<property_path>
+	// trigger.trigger_type.trigger_name.<property_path>
+	//
+	// We can have trigger and integration in this current format
+
 	parts := strings.Split(propertyPath, ".")
 	if len(parts) < 2 {
 		return nil, perr.BadRequestWithMessage("invalid property path: " + propertyPath)
@@ -73,10 +81,19 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		res.ItemType = parts[1]
 		res.Name = parts[2]
 	default:
-		res.Mod = parts[0]
-		res.ItemType = parts[1]
-		res.Name = parts[2]
-		res.PropertyPath = parts[3:]
+		if parts[1] == "integration" || parts[1] == "trigger" {
+			res.Mod = parts[0]
+			res.ItemType = parts[1]
+			res.Name = parts[2] + "." + parts[3]
+			if len(parts) > 4 {
+				res.PropertyPath = parts[3:]
+			}
+		} else {
+			res.Mod = parts[0]
+			res.ItemType = parts[1]
+			res.Name = parts[2]
+			res.PropertyPath = parts[3:]
+		}
 	}
 
 	if !schema.IsValidResourceItemType(res.ItemType) {

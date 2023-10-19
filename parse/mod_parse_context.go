@@ -775,19 +775,4 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 	return nil
 }
 
-func (m *ModParseContext) AddIntegration(integration modconfig.IIntegration) hcl.Diagnostics {
-
-	// Split and get the last part for pipeline name
-	parts := strings.Split(integration.Name(), ".")
-	integrationNameOnly := parts[len(parts)-1]
-
-	m.IntegrationHcls[integrationNameOnly] = integration
-
-	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, integration.Name())
-
-	m.buildEvalContext()
-	return nil
-}
-
 // TODO: transition period

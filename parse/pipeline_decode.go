@@ -327,6 +327,7 @@ func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseC
 
 	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, integration)
 	if len(diags) > 0 {
+		res.handleDecodeDiags(diags)
 		return integration, res
 	}
 
