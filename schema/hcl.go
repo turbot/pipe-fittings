@@ -155,8 +155,9 @@ const (
 	AttributeTypeFunction = "function"
 	AttributeTypeEvent    = "event"
 
-	AttributeTypeImage = "image"
-	AttributeTypeCmd   = "cmd"
+	AttributeTypeImage      = "image"
+	AttributeTypeCmd        = "cmd"
+	AttributeTypeEntryPoint = "entrypoint"
 
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"

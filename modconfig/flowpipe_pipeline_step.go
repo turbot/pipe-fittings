@@ -2861,9 +2861,10 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 type PipelineStepContainer struct {
 	PipelineStepBase
 
-	Image string            `json:"image"`
-	Cmd   []string          `json:"cmd"`
-	Env   map[string]string `json:"env"`
+	Image      string            `json:"image"`
+	Cmd        []string          `json:"cmd"`
+	Env        map[string]string `json:"env"`
+	EntryPoint []string          `json:"entrypoint"`
 }
 
 func (p *PipelineStepContainer) Equals(iOther IPipelineStep) bool {
@@ -2925,11 +2926,29 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
+	var entryPoint []string
+	if p.UnresolvedAttributes[schema.AttributeTypeEntryPoint] == nil {
+		entryPoint = p.EntryPoint
+	} else {
+		var args cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEntryPoint], evalContext, &args)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+
+		var err error
+		entryPoint, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
+		if err != nil {
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse entrypoint attribute to []string: " + err.Error())
+		}
+	}
+
 	return map[string]interface{}{
-		schema.LabelName:          p.Name,
-		schema.AttributeTypeImage: image,
-		schema.AttributeTypeCmd:   cmd,
-		schema.AttributeTypeEnv:   env,
+		schema.LabelName:               p.Name,
+		schema.AttributeTypeImage:      image,
+		schema.AttributeTypeCmd:        cmd,
+		schema.AttributeTypeEnv:        env,
+		schema.AttributeTypeEntryPoint: entryPoint,
 	}, nil
 }
 
@@ -2985,6 +3004,25 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 					continue
 				}
 				p.Env = env
+			}
+		case schema.AttributeTypeEntryPoint:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				ep, moreErr := hclhelpers.CtyToGoStringSlice(val, val.Type())
+				if moreErr != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse '" + schema.AttributeTypeEntryPoint + "' attribute to string slice",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Cmd = ep
 			}
 		default:
 			if !p.IsBaseAttribute(name) {
