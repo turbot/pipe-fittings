@@ -2258,6 +2258,7 @@ func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
 
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
+	// TODO: remove the inline settings post Integrated 2023
 	var to []string
 	if p.UnresolvedAttributes[schema.AttributeTypeTo] == nil {
 		to = p.To
@@ -2468,6 +2469,28 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	if responseUrl != nil {
 		results[schema.AttributeTypeResponseUrl] = *responseUrl
+	}
+
+	// The real settings for Notify is here
+	if p.Notify != nil {
+		integration := p.Notify.Integration
+		if integration == cty.NilVal {
+			return nil, perr.BadRequestWithMessage(p.Name + ": integration must be supplied")
+		}
+
+		valueMap := integration.AsValueMap()
+		for key, value := range valueMap {
+			// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
+			if value != cty.NilVal {
+				goVal, err := hclhelpers.CtyToGo(value)
+				if err != nil {
+					return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse integration attribute to Go values: " + err.Error())
+				}
+				if !helpers.IsNil(goVal) {
+					results[key] = goVal
+				}
+			}
+		}
 	}
 
 	return results, nil
