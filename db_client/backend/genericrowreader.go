@@ -6,7 +6,9 @@ import (
 
 func NewGenericSQLRowReader() *genericSQLRowReader {
 	return &genericSQLRowReader{
-		CellReader: pgxReadCell,
+		CellReader: func(columnValue any, col *queryresult.ColumnDef) (any, error) {
+			return columnValue, nil
+		},
 	}
 }
 

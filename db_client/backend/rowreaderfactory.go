@@ -14,9 +14,10 @@ func RowReaderFactory(backend DBClientBackendType) RowReader {
 	case PostgresDBClientBackend:
 		// we have special handing of a few types for postgres
 		reader = NewPgxRowReader()
+	case MySQLDBClientBackend:
+		reader = NewMySqlRowReader()
 	default:
 		reader = NewGenericSQLRowReader()
-
 	}
 	return reader
 }

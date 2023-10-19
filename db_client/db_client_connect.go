@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/db_client/backend"
 	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/utils"
 )
@@ -18,11 +19,11 @@ const (
 
 // getDriverNameFromConnectionString returns the driver name for the given connection string
 func getDriverNameFromConnectionString(connStr string) string {
-	if isPostgresConnectionString(connStr) {
+	if backend.IsPostgresConnectionString(connStr) {
 		return "pgx"
-	} else if isSqliteConnectionString(connStr) {
+	} else if backend.IsSqliteConnectionString(connStr) {
 		return "sqlite3"
-	} else if isMySqlConnectionString(connStr) {
+	} else if backend.IsMySqlConnectionString(connStr) {
 		return "mysql"
 	}
 	return "Unknown"
