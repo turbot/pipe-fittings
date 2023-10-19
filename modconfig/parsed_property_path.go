@@ -47,7 +47,7 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 
 	parts := strings.Split(propertyPath, ".")
 	if len(parts) < 2 {
-		return nil, perr.BadRequestWithMessage("invalid property path passed to ParseResourcePropertyPath: " + propertyPath)
+		return nil, perr.BadRequestWithMessage("invalid property path: " + propertyPath)
 	}
 
 	// special case handling for runtime dependencies which may have use the "self" qualifier
@@ -61,6 +61,11 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		// put empty mod as first part
 		parts = append([]string{""}, parts...)
 	}
+
+	if len(parts) < 3 {
+		return nil, perr.BadRequestWithMessage("invalid property path: " + propertyPath)
+	}
+
 	switch len(parts) {
 	case 3:
 		// no property path specified

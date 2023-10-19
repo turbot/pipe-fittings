@@ -44,17 +44,17 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	stepOptions, diags := block.Body.Content(pipelineStepBlockSchema)
 
 	if diags.HasErrors() {
-		return nil, diags
+		return step, diags
 	}
 
 	diags = step.SetAttributes(stepOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
-		return nil, diags
+		return step, diags
 	}
 
 	diags = step.SetBlockConfig(stepOptions.Blocks, parseCtx.EvalCtx)
 	if len(diags) > 0 {
-		return nil, diags
+		return step, diags
 	}
 
 	if errorBlocks := stepOptions.Blocks.ByType()[schema.BlockTypeError]; len(errorBlocks) > 0 {
@@ -69,7 +69,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 
 		attributes, diags := errorBlock.Body.JustAttributes()
 		if len(diags) > 0 {
-			return nil, diags
+			return step, diags
 		}
 
 		ignore := false
@@ -78,12 +78,12 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		if attr, exists := attributes[schema.AttributeTypeIgnore]; exists {
 			val, diags := attr.Expr.Value(nil)
 			if len(diags) > 0 {
-				return nil, diags
+				return step, diags
 			}
 
 			var target bool
 			if err := gocty.FromCtyValue(val, &target); err != nil {
-				return nil, hcl.Diagnostics{&hcl.Diagnostic{
+				return step, hcl.Diagnostics{&hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "Error decoding ignore attribute",
 					Detail:   err.Error(),
@@ -96,12 +96,12 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		if attr, exists := attributes[schema.AttributeTypeRetries]; exists {
 			val, diags := attr.Expr.Value(nil)
 			if len(diags) > 0 {
-				return nil, diags
+				return step, diags
 			}
 
 			var target int
 			if err := gocty.FromCtyValue(val, &target); err != nil {
-				return nil, hcl.Diagnostics{&hcl.Diagnostic{
+				return step, hcl.Diagnostics{&hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "Error decoding retries attribute",
 					Detail:   err.Error(),
@@ -132,7 +132,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	for _, outputBlock := range outputBlocks {
 		attributes, diags := outputBlock.Body.JustAttributes()
 		if len(diags) > 0 {
-			return nil, diags
+			return step, diags
 		}
 
 		if attr, exists := attributes[schema.AttributeTypeValue]; exists {

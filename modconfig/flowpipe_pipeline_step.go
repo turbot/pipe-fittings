@@ -2491,6 +2491,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 				}
 			}
 		}
+
 	}
 
 	return results, nil
