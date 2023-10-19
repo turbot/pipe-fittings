@@ -37,7 +37,7 @@ func NewLeafRun(resource modconfig.DashboardLeafNode, parent dashboardtypes.Dash
 		Resource: resource,
 	}
 	// get the connection string from the QueryProvider
-	if qp, ok := resource.(modconfig.QueryProvider); ok {
+	if qp, ok := resource.(modconfig.ConnectionStringItem); ok {
 		r.ConnectionString = executionTree.defaultConnectionString
 		if queryConnectionString := qp.GetConnectionString(); queryConnectionString != nil {
 			r.ConnectionString = *queryConnectionString

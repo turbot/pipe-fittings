@@ -36,7 +36,7 @@ func setupTestData() {
 
 func TestFindPluginFolderTest(t *testing.T) {
 
-	filepaths.SteampipeDir, _ = filehelpers.Tildefy("~/.steampipe")
+	filepaths.InstallDir, _ = filehelpers.Tildefy("~/.steampipe")
 	setupTestData()
 
 	directories := []string{

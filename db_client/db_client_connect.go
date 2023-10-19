@@ -18,7 +18,7 @@ const (
 
 func getDriverNameFromConnectionString(connStr string) string {
 	if isPostgresConnectionString(connStr) {
-		return "postgres"
+		return "pgx"
 	} else if isSqliteConnectionString(connStr) {
 		return "sqlite3"
 	}

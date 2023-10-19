@@ -38,6 +38,7 @@ type HclResource interface {
 type ModTreeItem interface {
 	HclResource
 	ModItem
+	ConnectionStringItem
 
 	AddParent(ModTreeItem) error
 	GetParents() []ModTreeItem
@@ -46,6 +47,10 @@ type ModTreeItem interface {
 	GetPaths() []NodePath
 	SetPaths()
 	GetModTreeItemImpl() *ModTreeItemImpl
+}
+
+type ConnectionStringItem interface {
+	GetConnectionString() *string
 }
 
 type ModItem interface {
@@ -72,7 +77,6 @@ type QueryProvider interface {
 	GetParams() []*ParamDef
 	GetSQL() *string
 	GetQuery() *Query
-	GetConnectionString() *string
 	SetArgs(*QueryArgs)
 	SetParams([]*ParamDef)
 	GetResolvedQuery(*QueryArgs) (*ResolvedQuery, error)

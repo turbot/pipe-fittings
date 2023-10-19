@@ -10,9 +10,12 @@ type ModTreeItemImpl struct {
 	// required to allow partial decoding
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
-	Mod   *Mod       `cty:"mod" json:"-"`
+	Mod              *Mod    `cty:"mod" json:"-"`
+	ConnectionString *string `cty:"connection_string" hcl:"connection_string" json:"-"`
+
 	Paths []NodePath `column:"path,jsonb" json:"-"`
 
+	// TODO KAI DO WE EVER HAVE MULTIPE PARENTS
 	parents  []ModTreeItem
 	children []ModTreeItem
 }
@@ -48,11 +51,24 @@ func (b *ModTreeItemImpl) SetPaths() {
 		}
 	}
 }
+
+// GetMod implements ModItem, ModTreeItem
 func (b *ModTreeItemImpl) GetMod() *Mod {
 	return b.Mod
 }
 
-// GetModTreeItemBase implements ModTreeItem
+// GetConnectionString implements ConnectionStringItem, ModTreeItem
+func (b *ModTreeItemImpl) GetConnectionString() *string {
+	if b.ConnectionString != nil {
+		return b.ConnectionString
+	}
+	if len(b.parents) > 0 {
+		return b.parents[0].GetConnectionString()
+	}
+	return nil
+}
+
+// GetModTreeItemImpl implements ModTreeItem
 func (b *ModTreeItemImpl) GetModTreeItemImpl() *ModTreeItemImpl {
 	return b
 }

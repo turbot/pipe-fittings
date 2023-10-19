@@ -136,7 +136,7 @@ func RunForService(ctx context.Context, serverListen ListenType, serverPort List
 		"dashboard",
 		fmt.Sprintf("--%s=%s", constants.ArgDashboardListen, string(serverListen)),
 		fmt.Sprintf("--%s=%d", constants.ArgDashboardPort, serverPort),
-		fmt.Sprintf("--%s=%s", constants.ArgInstallDir, filepaths.SteampipeDir),
+		fmt.Sprintf("--%s=%s", constants.ArgInstallDir, filepaths.InstallDir),
 		fmt.Sprintf("--%s=%s", constants.ArgModLocation, viper.GetString(constants.ArgModLocation)),
 		fmt.Sprintf("--%s=true", constants.ArgServiceMode),
 		fmt.Sprintf("--%s=false", constants.ArgInput),
