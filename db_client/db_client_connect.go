@@ -16,13 +16,16 @@ const (
 	MaxConnIdleTime = 1 * time.Minute
 )
 
+// getDriverNameFromConnectionString returns the driver name for the given connection string
 func getDriverNameFromConnectionString(connStr string) string {
 	if isPostgresConnectionString(connStr) {
 		return "pgx"
 	} else if isSqliteConnectionString(connStr) {
 		return "sqlite3"
+	} else if isMySqlConnectionString(connStr) {
+		return "mysql"
 	}
-	return "unknown"
+	return "Unknown"
 }
 
 type DbConnectionCallback func(context.Context, *sql.Conn) error
