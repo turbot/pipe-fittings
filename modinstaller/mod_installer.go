@@ -194,15 +194,16 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 	}()
 
-	if validationErrors := workspaceMod.ValidateRequirements(i.installedPlugins); len(validationErrors) > 0 {
-		if !i.force {
-			// if this is not a force install, return errors in validation
-			return error_helpers.CombineErrors(validationErrors...)
-		}
-		// ignore if this is a force install
-		// TODO: raise warnings for errors getting suppressed [https://github.com/turbot/steampipe/issues/3364]
-		log.Println("[TRACE] suppressing mod validation error", validationErrors)
-	}
+	// TODO PSKR re-enable validation
+	// if validationErrors := workspaceMod.ValidateRequirements(i.installedPlugins); len(validationErrors) > 0 {
+	// 	if !i.force {
+	// 		// if this is not a force install, return errors in validation
+	// 		return error_helpers.CombineErrors(validationErrors...)
+	// 	}
+	// 	// ignore if this is a force install
+	// 	// TODO: raise warnings for errors getting suppressed [https://github.com/turbot/steampipe/issues/3364]
+	// 	log.Println("[TRACE] suppressing mod validation error", validationErrors)
+	// }
 
 	// if mod args have been provided, add them to the workspace mod requires
 	// (this will replace any existing dependencies of same name)
@@ -373,8 +374,9 @@ func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, req
 			return err
 		}
 
-		validationErrors := dependencyMod.ValidateRequirements(i.installedPlugins)
-		errors = append(errors, validationErrors...)
+		// TODO PSKR re-add validation
+		// validationErrors := dependencyMod.ValidateRequirements(i.installedPlugins)
+		// errors = append(errors, validationErrors...)
 	} else {
 		// update the install data
 		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.Constraint, parent)
