@@ -149,7 +149,7 @@ func (m *ModParseContext) EnsureWorkspaceLock(mod *modconfig.Mod) error {
 	if mod.HasDependentMods() && (m.WorkspaceLock.Empty() || m.WorkspaceLock.Incomplete()) {
 		// logger := fplog.Logger(m.RunCtx)
 		// logger.Error("mod has dependencies but no workspace lock file found", "mod", mod.Name(), "m.HasDependentMods()", mod.HasDependentMods(), "m.WorkspaceLock.Empty()", m.WorkspaceLock.Empty(), "m.WorkspaceLock.Incomplete()", m.WorkspaceLock.Incomplete())
-		return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run 'steampipe mod install'")
+		return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run 'flowpipe mod install'")
 	}
 
 	return nil
