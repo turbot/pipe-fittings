@@ -132,7 +132,7 @@ func (e *DashboardExecutionTree) Execute(ctx context.Context) {
 	startTime := time.Now()
 
 	// TODO KAI WHAT DO WE DO HERE
-	searchPath := e.defaultClient().GetRequiredSessionSearchPath()
+	//searchPath := e.defaultClient().GetRequiredSessionSearchPath()
 
 	// store context
 	cancelCtx, cancel := context.WithCancel(ctx)
@@ -185,7 +185,8 @@ func (e *DashboardExecutionTree) Execute(ctx context.Context) {
 			Variables:   referencedVariables,
 			// search path elements are quoted (for consumption by postgres)
 			// unquote them
-			SearchPath: utils.UnquoteStringArray(searchPath),
+			// TOSO STEAMPIPE ONLY
+			SearchPath: nil, //utils.UnquoteStringArray(searchPath),
 			StartTime:  startTime,
 			EndTime:    time.Now(),
 		}

@@ -15,7 +15,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/statushooks"
-	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"golang.org/x/sync/semaphore"
@@ -44,13 +43,15 @@ func NewExecutionTree(ctx context.Context, workspace *workspace.Workspace, clien
 		return nil, sperr.New("need at least one argument to create a check execution tree")
 	}
 
-	searchPath := client.GetRequiredSessionSearchPath()
+	// TODO STEAMPIPE ONLY
+	//searchPath := client.GetRequiredSessionSearchPath()
 
 	// now populate the ExecutionTree
 	executionTree := &ExecutionTree{
-		Workspace:  workspace,
-		client:     client,
-		SearchPath: utils.UnquoteStringArray(searchPath),
+		Workspace: workspace,
+		client:    client,
+		// TODO STEAMPIPE
+		SearchPath: nil, //utils.UnquoteStringArray(searchPath),
 	}
 	// if a "--where" or "--tag" parameter was passed, build a map of control names used to filter the controls to run
 	// create a context with status hooks disabled
