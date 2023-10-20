@@ -11,7 +11,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlstatus"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
-	"github.com/turbot/pipe-fittings/db_common"
+	"github.com/turbot/pipe-fittings/db_client"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
@@ -180,7 +180,7 @@ func (r *ControlRun) skip(ctx context.Context) {
 	r.setRunStatus(ctx, dashboardtypes.RunComplete)
 }
 
-func (r *ControlRun) execute(ctx context.Context, client db_common.Client) {
+func (r *ControlRun) execute(ctx context.Context, client *db_client.DbClient) {
 	utils.LogTime("ControlRun.execute start")
 	defer utils.LogTime("ControlRun.execute end")
 
@@ -206,21 +206,22 @@ func (r *ControlRun) execute(ctx context.Context, client db_common.Client) {
 	}()
 
 	// get a db connection
-	sessionResult := r.acquireSession(ctx, client)
-	if sessionResult.Error != nil {
-		if !error_helpers.IsCancelledError(sessionResult.Error) {
-			log.Printf("[TRACE] controlRun %s execute failed to acquire session: %s", r.ControlId, sessionResult.Error)
-			sessionResult.Error = fmt.Errorf("error acquiring database connection, %s", sessionResult.Error.Error())
-			r.setError(ctx, sessionResult.Error)
-		}
-		return
-	}
-
-	dbSession := sessionResult.Session
-	defer func() {
-		// do this in a closure, otherwise the argument will not get evaluated during calltime
-		dbSession.Close(error_helpers.IsContextCanceled(ctx))
-	}()
+	// TODO KAI why do we need to manually acquire a session???
+	//sessionResult := r.acquireSession(ctx, client)
+	//if sessionResult.Error != nil {
+	//	if !error_helpers.IsCancelledError(sessionResult.Error) {
+	//		log.Printf("[TRACE] controlRun %s execute failed to acquire session: %s", r.ControlId, sessionResult.Error)
+	//		sessionResult.Error = fmt.Errorf("error acquiring database connection, %s", sessionResult.Error.Error())
+	//		r.setError(ctx, sessionResult.Error)
+	//	}
+	//	return
+	//}
+	//
+	//dbSession := sessionResult.Session
+	//defer func() {
+	//	// do this in a closure, otherwise the argument will not get evaluated during calltime
+	//	dbSession.Close(error_helpers.IsContextCanceled(ctx))
+	//}()
 
 	// set our status
 	r.RunStatus = dashboardtypes.RunRunning
@@ -248,7 +249,7 @@ func (r *ControlRun) execute(ctx context.Context, client db_common.Client) {
 	// execute the control query
 	// NOTE no need to pass an OnComplete callback - we are already closing our session after waiting for results
 	log.Printf("[TRACE] execute start for, %s\n", control.Name())
-	queryResult, err := client.ExecuteInSession(controlExecutionCtx, dbSession, nil, resolvedQuery.ExecuteSQL, resolvedQuery.Args...)
+	queryResult, err := client.Execute(controlExecutionCtx, resolvedQuery.ExecuteSQL, resolvedQuery.Args...)
 	log.Printf("[TRACE] execute finish for, %s\n", control.Name())
 
 	if err != nil {
@@ -277,20 +278,21 @@ func (r *ControlRun) execute(ctx context.Context, client db_common.Client) {
 	log.Printf("[TRACE] finish result for, %s\n", control.Name())
 }
 
-// try to acquire a database session - retry up to 4 times if there is an error
-func (r *ControlRun) acquireSession(ctx context.Context, client db_common.Client) *db_common.AcquireSessionResult {
-	var sessionResult *db_common.AcquireSessionResult
-	for attempt := 0; attempt < 4; attempt++ {
-		sessionResult = client.AcquireSession(ctx)
-		if sessionResult.Error == nil || error_helpers.IsCancelledError(sessionResult.Error) {
-			break
-		}
-
-		log.Printf("[TRACE] controlRun %s acquireSession failed with error: %s - retrying", r.ControlId, sessionResult.Error)
-	}
-
-	return sessionResult
-}
+// todo kai why do we need to manually acquire a session???
+//// try to acquire a database session - retry up to 4 times if there is an error
+//func (r *ControlRun) acquireSession(ctx context.Context, client *db_client.DbClient) *db_common.AcquireSessionResult {
+//	var sessionResult *db_common.AcquireSessionResult
+//	for attempt := 0; attempt < 4; attempt++ {
+//		sessionResult = client.AcquireSession(ctx)
+//		if sessionResult.Error == nil || error_helpers.IsCancelledError(sessionResult.Error) {
+//			break
+//		}
+//
+//		log.Printf("[TRACE] controlRun %s acquireSession failed with error: %s - retrying", r.ControlId, sessionResult.Error)
+//	}
+//
+//	return sessionResult
+//}
 
 // create a context with status updates disabled (we do not want to show 'loading' results)
 func (r *ControlRun) getControlQueryContext(ctx context.Context) context.Context {

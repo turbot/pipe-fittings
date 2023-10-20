@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/db_client"
 	"gopkg.in/olahol/melody.v1"
 	"log"
 	"os"
@@ -15,21 +16,20 @@ import (
 	typeHelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardexecute"
-	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/workspace"
 )
 
 type Server struct {
-	dbClient         db_common.Client
+	dbClient         *db_client.DbClient
 	mutex            *sync.Mutex
 	dashboardClients map[string]*DashboardClientInfo
 	webSocket        *melody.Melody
 	workspace        *workspace.Workspace
 }
 
-func NewServer(ctx context.Context, dbClient db_common.Client, w *workspace.Workspace, webSocket *melody.Melody) (*Server, error) {
+func NewServer(ctx context.Context, dbClient *db_client.DbClient, w *workspace.Workspace, webSocket *melody.Melody) (*Server, error) {
 	initLogSink()
 
 	OutputWait(ctx, "Starting Dashboard Server")
@@ -264,7 +264,7 @@ func (s *Server) HandleDashboardEvent(ctx context.Context, event dashboardevents
 			sessionMap := s.getDashboardClients()
 			for sessionId, dashboardClientInfo := range sessionMap {
 				if typeHelpers.SafeString(dashboardClientInfo.Dashboard) == changedDashboardName {
-					clientMap := map[string]db_common.Client{s.dbClient.GetConnectionString(): s.dbClient}
+					clientMap := map[string]*db_client.DbClient{s.dbClient.GetConnectionString(): s.dbClient}
 					_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, changedDashboardName, dashboardClientInfo.DashboardInputs, s.workspace, clientMap)
 				}
 			}
@@ -284,7 +284,7 @@ func (s *Server) HandleDashboardEvent(ctx context.Context, event dashboardevents
 		for _, newDashboardName := range newDashboardNames {
 			for sessionId, dashboardClientInfo := range sessionMap {
 				if typeHelpers.SafeString(dashboardClientInfo.Dashboard) == newDashboardName {
-					clientMap := map[string]db_common.Client{s.dbClient.GetConnectionString(): s.dbClient}
+					clientMap := map[string]*db_client.DbClient{s.dbClient.GetConnectionString(): s.dbClient}
 					_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, newDashboardName, dashboardClientInfo.DashboardInputs, s.workspace, clientMap)
 				}
 			}
@@ -358,7 +358,7 @@ func (s *Server) handleMessageFunc(ctx context.Context) func(session *melody.Ses
 			_ = session.Write(payload)
 		case "select_dashboard":
 			s.setDashboardForSession(sessionId, request.Payload.Dashboard.FullName, request.Payload.InputValues)
-			clientMap := map[string]db_common.Client{s.dbClient.GetConnectionString(): s.dbClient}
+			clientMap := map[string]*db_client.DbClient{s.dbClient.GetConnectionString(): s.dbClient}
 			_ = dashboardexecute.Executor.ExecuteDashboard(ctx, sessionId, request.Payload.Dashboard.FullName, request.Payload.InputValues, s.workspace, clientMap)
 
 		case "select_snapshot":

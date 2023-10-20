@@ -29,7 +29,7 @@ func getDriverNameFromConnectionString(connStr string) string {
 	return "Unknown"
 }
 
-type DbConnectionCallback func(context.Context, *sql.Conn) error
+//type DbConnectionCallback func(context.Context, *sql.Conn) error
 
 func (c *DbClient) establishConnectionPool(ctx context.Context, overrides clientConfig) error {
 	utils.LogTime("db_client.establishConnectionPool start")

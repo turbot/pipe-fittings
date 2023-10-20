@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/db_client"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardevents"
-	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -137,7 +137,7 @@ func LoadResourceNames(ctx context.Context, workspacePath string) (*modconfig.Wo
 	return workspace.loadWorkspaceResourceName(ctx)
 }
 
-func (w *Workspace) SetupWatcher(ctx context.Context, client db_common.Client, errorHandler func(context.Context, error)) error {
+func (w *Workspace) SetupWatcher(ctx context.Context, client *db_client.DbClient, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: []string{w.Path},
 		Include:     filehelpers.InclusionsFromExtensions(steampipeconfig.GetModFileExtensions()),
@@ -149,7 +149,7 @@ func (w *Workspace) SetupWatcher(ctx context.Context, client db_common.Client, e
 		// decide how to handle them
 		// OnError: errCallback,
 		OnChange: func(events []fsnotify.Event) {
-			w.handleFileWatcherEvent(ctx, client, events)
+			w.handleFileWatcherEvent(ctx)
 		},
 	}
 	watcher, err := filewatcher.NewWatcher(watcherOptions)

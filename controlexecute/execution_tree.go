@@ -11,7 +11,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlstatus"
-	"github.com/turbot/pipe-fittings/db_common"
+	"github.com/turbot/pipe-fittings/db_client"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/statushooks"
@@ -34,12 +34,12 @@ type ExecutionTree struct {
 	// the current session search path
 	SearchPath []string             `json:"-"`
 	Workspace  *workspace.Workspace `json:"-"`
-	client     db_common.Client
+	client     *db_client.DbClient
 	// an optional map of control names used to filter the controls which are run
 	controlNameFilterMap map[string]bool
 }
 
-func NewExecutionTree(ctx context.Context, workspace *workspace.Workspace, client db_common.Client, controlFilterWhereClause string, args ...string) (*ExecutionTree, error) {
+func NewExecutionTree(ctx context.Context, workspace *workspace.Workspace, client *db_client.DbClient, controlFilterWhereClause string, args ...string) (*ExecutionTree, error) {
 	if len(args) < 1 {
 		return nil, sperr.New("need at least one argument to create a check execution tree")
 	}

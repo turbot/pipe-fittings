@@ -2,7 +2,6 @@ package initialisation
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/spf13/viper"
@@ -23,7 +22,7 @@ import (
 
 type InitData struct {
 	Workspace *workspace.Workspace
-	Client    db_common.Client
+	Client    *db_client.DbClient
 	Result    *db_common.InitResult
 
 	ShutdownTelemetry func()
@@ -135,13 +134,15 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	//	}
 	//}
 
-	// get a client
-	// add a message rendering function to the context - this is used for the fdw update message and
-	// allows us to render it as a standard initialisation message
-	getClientCtx := statushooks.AddMessageRendererToContext(ctx, func(format string, a ...any) {
-		i.Result.AddMessage(fmt.Sprintf(format, a...))
-	})
+	// TODO STEAMPIPE ONLY
+	//// get a client
+	//// add a message rendering function to the context - this is used for the fdw update message and
+	//// allows us to render it as a standard initialisation message
+	//getClientCtx := statushooks.AddMessageRendererToContext(ctx, func(format string, a ...any) {
+	//	i.Result.AddMessage(fmt.Sprintf(format, a...))
+	//})
 
+	// TODO KAI WHY ARE WE USING CONNECTION STRING?????????
 	statushooks.SetStatus(ctx, "Connecting to steampipe database")
 	log.Printf("[INFO] Connecting to steampipe database")
 	connectionString := viper.GetString(constants.ArgConnectionString)
@@ -150,21 +151,20 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 		return
 	}
 
-	client, errorsAndWarnings := GetDbClient(getClientCtx, invoker, connectionString, nil, opts...)
-	if errorsAndWarnings.Error != nil {
-		i.Result.Error = errorsAndWarnings.Error
+	client, err := db_client.NewDbClient(ctx, connectionString, opts...)
+	if err != nil {
+		i.Result.Error = err
 		return
 	}
 
-	i.Result.AddWarnings(errorsAndWarnings.Warnings...)
-
+	// TODO KAI STEAMPIPE ONLY
 	log.Printf("[INFO] ValidateClientCacheSettings")
-	if errorsAndWarnings := db_common.ValidateClientCacheSettings(client); errorsAndWarnings != nil {
-		if errorsAndWarnings.GetError() != nil {
-			i.Result.Error = errorsAndWarnings.GetError()
-		}
-		i.Result.AddWarnings(errorsAndWarnings.Warnings...)
-	}
+	//if errorsAndWarnings := db_common.ValidateClientCacheSettings(client); errorsAndWarnings != nil {
+	//	if errorsAndWarnings.GetError() != nil {
+	//		i.Result.Error = errorsAndWarnings.GetError()
+	//	}
+	//	i.Result.AddWarnings(errorsAndWarnings.Warnings...)
+	//}
 
 	i.Client = client
 }
@@ -192,14 +192,6 @@ func validateModRequirementsRecursively(mod *modconfig.Mod, pluginVersionMap map
 	}
 
 	return validationErrors
-}
-
-// GetDbClient either creates a DB client using the configured connection string (if present) or creates a LocalDbClient
-func GetDbClient(ctx context.Context, invoker constants.Invoker, connectionString string, onConnectionCallback db_client.DbConnectionCallback, opts ...db_client.ClientOption) (db_common.Client, *error_helpers.ErrorAndWarnings) {
-	statushooks.SetStatus(ctx, "Connecting to remote Steampipe database")
-	client, err := db_client.NewDbClient(ctx, connectionString, opts...)
-	return client, error_helpers.NewErrorsAndWarning(err)
-
 }
 
 func (i *InitData) Cleanup(ctx context.Context) {

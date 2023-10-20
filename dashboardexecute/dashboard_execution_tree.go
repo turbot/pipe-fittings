@@ -3,6 +3,7 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/db_client"
 	"log"
 	"sync"
 	"time"
@@ -11,8 +12,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
-	"github.com/turbot/pipe-fittings/db_common"
-	"github.com/turbot/pipe-fittings/initialisation"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
@@ -27,7 +26,7 @@ type DashboardExecutionTree struct {
 	dashboardName string
 	sessionId     string
 	// map of clients, keyed by connection string
-	clients                 map[string]db_common.Client
+	clients                 map[string]*db_client.DbClient
 	clientsMut              sync.RWMutex
 	defaultConnectionString string
 	// map of executing runs, keyed by full name
@@ -42,11 +41,11 @@ type DashboardExecutionTree struct {
 	id          string
 }
 
-func NewDashboardExecutionTree(rootName string, sessionId string, clients map[string]db_common.Client, workspace *workspace.Workspace) (*DashboardExecutionTree, error) {
+func NewDashboardExecutionTree(rootName string, sessionId string, clients map[string]*db_client.DbClient, workspace *workspace.Workspace) (*DashboardExecutionTree, error) {
 	// now populate the DashboardExecutionTree
 	executionTree := &DashboardExecutionTree{
-		dashboardName:           rootName,
-		sessionId:               sessionId,
+		dashboardName: rootName,
+		sessionId:     sessionId,
 		// TODO KAI pass in default connection string?
 		defaultConnectionString: viper.GetString(constants.ArgWorkspaceDatabase),
 		clients:                 clients,
@@ -356,11 +355,11 @@ func (*DashboardExecutionTree) GetResource() modconfig.DashboardLeafNode {
 	panic("should never call for DashboardExecutionTree")
 }
 
-func (e *DashboardExecutionTree) defaultClient() db_common.Client {
+func (e *DashboardExecutionTree) defaultClient() *db_client.DbClient {
 	return e.clients[e.defaultConnectionString]
 }
 
-func (e *DashboardExecutionTree) getClient(ctx context.Context, connectionString string) (db_common.Client, error) {
+func (e *DashboardExecutionTree) getClient(ctx context.Context, connectionString string) (*db_client.DbClient, error) {
 	e.clientsMut.RLock()
 	client := e.clients[connectionString]
 	e.clientsMut.RUnlock()
@@ -371,9 +370,9 @@ func (e *DashboardExecutionTree) getClient(ctx context.Context, connectionString
 	e.clientsMut.Lock()
 	defer e.clientsMut.Unlock()
 
-	client, errorsAndWarnings := initialisation.GetDbClient(ctx, constants.InvokerDashboard, connectionString, nil)
-	if errorsAndWarnings.Error != nil {
-		return nil, errorsAndWarnings.Error
+	client, err := db_client.NewDbClient(ctx, connectionString)
+	if err != nil {
+		return nil, err
 	}
 	return client, nil
 }

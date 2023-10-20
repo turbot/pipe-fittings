@@ -1,14 +1,13 @@
-package db_common
+package db_client
 
 import (
 	"context"
-
 	"github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
 // ExecuteQuery executes a single query. If shutdownAfterCompletion is true, shutdown the client after completion
-func ExecuteQuery(ctx context.Context, client Client, queryString string, args ...any) (*queryresult.ResultStreamer, error) {
+func ExecuteQuery(ctx context.Context, client *DbClient, queryString string, args ...any) (*queryresult.ResultStreamer, error) {
 	utils.LogTime("db.ExecuteQuery start")
 	defer utils.LogTime("db.ExecuteQuery end")
 

@@ -4,10 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
-
-	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/db_common"
 )
 
@@ -36,6 +32,7 @@ func (c *DbClient) AcquireSession(ctx context.Context) (sessionResult *db_common
 		return sessionResult
 	}
 
+	// TODO POSTGRES/STEAMPIPE ONLY
 	// backendPid := databaseConnection.Conn().PgConn().PID()
 	// c.sessionsMutex.Lock()
 	// session, found := c.sessions[backendPid]
@@ -58,32 +55,32 @@ func (c *DbClient) AcquireSession(ctx context.Context) (sessionResult *db_common
 		}
 	}()
 
+	// TODO STEAMPIPE ONLY
 	// if this is connected to a local service (localhost) and if the server cache
 	// is disabled, override the client setting to always disable
 	//
 	// this is a temporary workaround to make sure
 	// that we turn off caching for plugins compiled with SDK pre-V5
-	if c.isLocalService && !viper.GetBool(constants.ArgServiceCacheEnabled) {
-		if err := db_common.SetCacheEnabled(ctx, false, databaseConnection); err != nil {
-			sessionResult.Error = err
-			return sessionResult
-		}
-	} else {
-		if viper.IsSet(constants.ArgClientCacheEnabled) {
-			if err := db_common.SetCacheEnabled(ctx, viper.GetBool(constants.ArgClientCacheEnabled), databaseConnection); err != nil {
-				sessionResult.Error = err
-				return sessionResult
-			}
-		}
-	}
-
-	if viper.IsSet(constants.ArgCacheTtl) {
-		ttl := time.Duration(viper.GetInt(constants.ArgCacheTtl)) * time.Second
-		if err := db_common.SetCacheTtl(ctx, ttl, databaseConnection); err != nil {
-			sessionResult.Error = err
-			return sessionResult
-		}
-	}
+	//if c.isLocalService && !viper.GetBool(constants.ArgServiceCacheEnabled) {
+	//	if err := db_common.SetCacheEnabled(ctx, false, databaseConnection); err != nil {
+	//		sessionResult.Error = err
+	//		return sessionResult
+	//	}
+	//} else {
+	//	if viper.IsSet(constants.ArgClientCacheEnabled) {
+	//		if err := db_common.SetCacheEnabled(ctx, viper.GetBool(constants.ArgClientCacheEnabled), databaseConnection); err != nil {
+	//			sessionResult.Error = err
+	//			return sessionResult
+	//		}
+	//	}
+	//}
+	//if viper.IsSet(constants.ArgCacheTtl) {
+	//	ttl := time.Duration(viper.GetInt(constants.ArgCacheTtl)) * time.Second
+	//	if err := db_common.SetCacheTtl(ctx, ttl, databaseConnection); err != nil {
+	//		sessionResult.Error = err
+	//		return sessionResult
+	//	}
+	//}
 
 	// update required session search path if needed
 	err = c.ensureSessionSearchPath(ctx, session)

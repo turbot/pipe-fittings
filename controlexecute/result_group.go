@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/db_client"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlstatus"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
-	"github.com/turbot/pipe-fittings/db_common"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"golang.org/x/sync/semaphore"
@@ -296,7 +296,7 @@ func (r *ResultGroup) updateSeverityCounts(severity string, summary *controlstat
 	}
 }
 
-func (r *ResultGroup) execute(ctx context.Context, client db_common.Client, parallelismLock *semaphore.Weighted) {
+func (r *ResultGroup) execute(ctx context.Context, client *db_client.DbClient, parallelismLock *semaphore.Weighted) {
 	log.Printf("[TRACE] begin ResultGroup.Execute: %s\n", r.GroupId)
 	defer log.Printf("[TRACE] end ResultGroup.Execute: %s\n", r.GroupId)
 
@@ -326,7 +326,7 @@ func (r *ResultGroup) execute(ctx context.Context, client db_common.Client, para
 	}
 }
 
-func executeRun(ctx context.Context, run *ControlRun, parallelismLock *semaphore.Weighted, client db_common.Client) {
+func executeRun(ctx context.Context, run *ControlRun, parallelismLock *semaphore.Weighted, client *db_client.DbClient) {
 	defer func() {
 		if r := recover(); r != nil {
 			// if the Execute panic'ed, set it as an error
