@@ -1,3 +1,4 @@
+//nolint:forbidigo // Test case: it's OK to use fmt.Println()
 package flowpipe_invalid_tests
 
 import (
