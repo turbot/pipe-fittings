@@ -1,11 +1,59 @@
 package modconfig
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 )
+
+func PropertyPathFromExpression(expr hcl.Expression) (bool, *ParsedPropertyPath, error) {
+	var propertyPathStr string
+	var isArray bool
+
+dep_loop:
+	for {
+		switch e := expr.(type) {
+		case *hclsyntax.ScopeTraversalExpr:
+			propertyPathStr = hclhelpers.TraversalAsString(e.Traversal)
+			break dep_loop
+		case *hclsyntax.SplatExpr:
+			root := hclhelpers.TraversalAsString(e.Source.(*hclsyntax.ScopeTraversalExpr).Traversal)
+			var suffix string
+			// if there is a property path, add it
+			if each, ok := e.Each.(*hclsyntax.RelativeTraversalExpr); ok {
+				suffix = fmt.Sprintf(".%s", hclhelpers.TraversalAsString(each.Traversal))
+			}
+			propertyPathStr = fmt.Sprintf("%s.*%s", root, suffix)
+			break dep_loop
+		case *hclsyntax.TupleConsExpr:
+			// TACTICAL
+			// handle the case where an arg value is given as a runtime dependency inside an array, for example
+			// arns = [input.arn]
+			// this is a common pattern where a runtime depdency gives a scalar value, but an array is needed for the arg
+			// NOTE: this code only supports a SINGLE item in the array
+			if len(e.Exprs) != 1 {
+				return false, nil, fmt.Errorf("unsupported runtime dependency expression - only a single runtime depdency item may be wrapped in an array")
+			}
+			isArray = true
+			expr = e.Exprs[0]
+			// fall through to rerun loop with updated expr
+		default:
+			// unhandled expression type
+			return false, nil, fmt.Errorf("unexpected runtime dependency expression type")
+		}
+	}
+
+	propertyPath, err := ParseResourcePropertyPath(propertyPathStr)
+	if err != nil {
+		return false, nil, err
+	}
+	return isArray, propertyPath, nil
+}
 
 type ParsedPropertyPath struct {
 	Mod          string

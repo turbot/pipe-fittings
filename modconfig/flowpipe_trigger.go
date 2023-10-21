@@ -184,7 +184,22 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(nil)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			if val.Type() != cty.String {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The given schedule is not a string",
+					Detail:   "The given schedule is not a string",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
 			t.Schedule = val.AsString()
 
 			// validate cron format
@@ -225,7 +240,21 @@ func (t *TriggerInterval) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(evalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			if val.Type() != cty.String {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The given interval is not a string",
+					Detail:   "The given interval is not a string",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
 			t.Schedule = val.AsString()
 
 			if !helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {

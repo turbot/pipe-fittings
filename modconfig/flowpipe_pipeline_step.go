@@ -2789,24 +2789,23 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 	for _, e := range diags {
 		if e.Severity == hcl.DiagError {
 			if e.Detail == `There is no variable named "step".` {
-				// traversals := expr.Variables()
-				// dependsOnAdded := false
-				// for _, traversal := range traversals {
-				// 	parts := hclhelpers.TraversalAsStringSlice(traversal)
-				// 	if len(parts) > 0 {
-				// 		// When the expression/traversal is referencing an index, the index is also included in the parts
-				// 		// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
-				// 		if parts[0] == schema.BlockTypePipelineStep {
-				// 			dependsOn := parts[1] + "." + parts[2]
-				// 			p.AppendDependsOn(dependsOn)
-				// 			dependsOnAdded = true
-				// 		}
-				// 	}
-				// }
-				// if dependsOnAdded {
-				// 	resolvedDiags++
-				// }
-				resolvedDiags++
+				traversals := e.Expression.Variables()
+				dependsOnAdded := false
+				for _, traversal := range traversals {
+					parts := hclhelpers.TraversalAsStringSlice(traversal)
+					if len(parts) > 0 {
+						// When the expression/traversal is referencing an index, the index is also included in the parts
+						// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
+						if parts[0] == schema.BlockTypePipelineStep {
+							dependsOn := parts[1] + "." + parts[2]
+							p.AppendDependsOn(dependsOn)
+							dependsOnAdded = true
+						}
+					}
+				}
+				if dependsOnAdded {
+					resolvedDiags++
+				}
 			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" {
 				// hcl.decodeBody returns 2 error messages:
 				// 1. There's no variable named "param", AND
@@ -2822,10 +2821,11 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 	if resolvedDiags == len(diags) {
 
 		// * Don't forget to add this, if you change the logic ensure that the code flow still
-		// * calls AddUnresolvedAttribute
+		// * calls AddUnresolvedBody
 		p.AddUnresolvedBody(attributeName, body)
 		return hcl.Diagnostics{}
 	}
+
 	// There's an error here
 	return diags
 
