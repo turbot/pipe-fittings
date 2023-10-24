@@ -287,8 +287,9 @@ func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
 }
 
 type PipelineStepInputNotify struct {
-	Channel     *string   `json:"channel,omitempty" hcl:"channel,optional" cty:"channel"`
-	Integration cty.Value `json:"-" hcl:"integration,optional" cty:"integration"`
+	Channel     *string   `json:"channel,omitempty" hcl:"channel,optional"`
+	To          *string   `json:"to,omitempty" hcl:"to,optional"`
+	Integration cty.Value `json:"-" hcl:"integration,optional"`
 }
 
 // A common base struct that all pipeline steps must embed
@@ -2187,6 +2188,15 @@ func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalC
 	}
 
 	return diags
+}
+
+type PipelineStepInput2 struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type     string                    `json:"type" cty:"type" hcl:"type,label"`
+	Notify   *PipelineStepInputNotify  `json:"notify" hcl:"notify,block"`
+	Notifies []PipelineStepInputNotify `json:"notifies" hcl:"notifies,optional" cty:"tuple"`
 }
 
 type PipelineStepInput struct {

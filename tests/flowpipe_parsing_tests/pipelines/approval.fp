@@ -22,7 +22,7 @@ integration "email" "email_integration" {
 
 pipeline "approval" {
   step "input" "input" {
-    token = "remove this after integrated"
+    
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"
@@ -30,13 +30,15 @@ pipeline "approval" {
   }
 }
 
+
+// TODO: this doesn't work yet
 pipeline "approval_dynamic_integration" {
 
   param "integration_param" {
   }
 
   step "input" "input" {
-    token = "remove this after integrated"
+    
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"

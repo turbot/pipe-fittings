@@ -63,8 +63,6 @@ func TestApproval(t *testing.T) {
 	assert.NotNil(integrationMap)
 	assert.Equal("xoxp-111111", integrationMap["token"].AsString())
 
-	assert.Equal("remove this after integrated", *inputStep.Token)
-
 	inputsAfterEval, err := inputStep.GetInputs(&hcl.EvalContext{})
 	// the notify should override the inline definition (the inline definition should not be there after integrated 2023)
 	assert.Nil(err)

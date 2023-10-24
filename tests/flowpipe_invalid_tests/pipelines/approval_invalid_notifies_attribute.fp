@@ -2,9 +2,11 @@
 
 integration "slack" "my_slack_app" {
   token           = "xoxp-111111"
+
   # optional - if you want to verify the source
   signing_secret  = "Q#$$#@#$$#W"
 }
+
 
 integration "email" "email_integration" {
   smtp_host = "foo bar baz"
@@ -28,6 +30,7 @@ pipeline "approval_with_notifies" {
       {
         integration = integration.slack.my_slack_app
         channel = "foo"
+        bad_attribute = "bar"
         # channel = param.slack_channel
         # if      = param.slack_integration == null ? false : true
       },
@@ -59,6 +62,7 @@ pipeline "approval_with_notifies_depend_another_step" {
         integration = integration.slack.my_slack_app
         channel = step.echo.echo.text
         # channel = param.slack_channel
+
         # if      = param.slack_integration == null ? false : true
       },
       {

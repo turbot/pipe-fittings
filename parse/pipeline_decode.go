@@ -17,8 +17,26 @@ import (
 )
 
 func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *modconfig.Pipeline) (modconfig.IPipelineStep, hcl.Diagnostics) {
+
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
+
+	// if stepType == schema.BlockTypePipelineStepInput {
+
+	// 	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
+	// 	if len(diags) > 0 {
+	// 		return nil, diags
+	// 	}
+	// 	body := r.(*hclsyntax.Body)
+	// 	// res.handleDecodeDiags(diags)
+	// 	step := modconfig.PipelineStepInput2{}
+
+	// 	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, &step)
+	// 	if len(diags) > 0 {
+	// 		return nil, diags
+	// 	}
+
+	// }
 
 	step := modconfig.NewPipelineStep(stepType, stepName)
 	if step == nil {
