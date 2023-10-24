@@ -116,11 +116,11 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 		for _, stepErr := range o.Errors {
 			ctyMap := map[string]cty.Value{}
 			var err error
-			ctyMap["message"], err = gocty.ToCtyValue(stepErr.Message, cty.String)
+			ctyMap["message"], err = gocty.ToCtyValue(stepErr.Error.Detail, cty.String)
 			if err != nil {
 				return nil, err
 			}
-			ctyMap["error_code"], err = gocty.ToCtyValue(stepErr.ErrorCode, cty.Number)
+			ctyMap["error_code"], err = gocty.ToCtyValue(stepErr.Error.Status, cty.Number)
 			if err != nil {
 				return nil, err
 			}
@@ -148,12 +148,11 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 }
 
 type StepError struct {
-	PipelineExecutionID string `json:"pipeline_execution_id"`
-	StepExecutionID     string `json:"step_execution_id"`
-	Pipeline            string `json:"pipeline"`
-	Step                string `json:"step"`
-	Message             string `json:"message"`
-	ErrorCode           int    `json:"error_code"`
+	PipelineExecutionID string          `json:"pipeline_execution_id"`
+	StepExecutionID     string          `json:"step_execution_id"`
+	Pipeline            string          `json:"pipeline"`
+	Step                string          `json:"step"`
+	Error               perr.ErrorModel `json:"error"`
 }
 
 type NextStepAction string
