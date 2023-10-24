@@ -111,6 +111,7 @@ const (
 	AttributeTypeToken         = "token"
 	AttributeTypeSigningSecret = "signing_secret"
 	AttributeTypeWebhookUrl    = "webhook_url"
+	AttributeTypeNotifies      = "notifies"
 
 	AttributeTypeIntegration = "integration"
 	AttributeTypeChannel     = "channel"

@@ -72,6 +72,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_trigger.fp",
 		containsError: "Failed to decode mod:\nMissing required argument: The argument \"pipeline\" is required, but no definition was found.",
 	},
+	{
+		title:         "invalid approval - notify and notifies specified",
+		file:          "./pipelines/approval_notify_and_notifies.fp",
+		containsError: "Notify and Notifies attributes are mutualy exclusive: input.input",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unaable to test

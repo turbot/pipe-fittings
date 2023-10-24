@@ -20,8 +20,6 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
 
-	// TODO: collect all diags?
-
 	step := modconfig.NewPipelineStep(stepType, stepName)
 	if step == nil {
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
@@ -47,77 +45,78 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		return step, diags
 	}
 
-	diags = step.SetAttributes(stepOptions.Attributes, parseCtx.EvalCtx)
-	if len(diags) > 0 {
-		return step, diags
+	moreDiags := step.SetAttributes(stepOptions.Attributes, parseCtx.EvalCtx)
+	if len(moreDiags) > 0 {
+		diags = append(diags, moreDiags...)
 	}
 
-	diags = step.SetBlockConfig(stepOptions.Blocks, parseCtx.EvalCtx)
-	if len(diags) > 0 {
-		return step, diags
+	moreDiags = step.SetBlockConfig(stepOptions.Blocks, parseCtx.EvalCtx)
+	if len(moreDiags) > 0 {
+		diags = append(diags, moreDiags...)
 	}
 
 	if errorBlocks := stepOptions.Blocks.ByType()[schema.BlockTypeError]; len(errorBlocks) > 0 {
 		if len(errorBlocks) > 1 {
-			return nil, hcl.Diagnostics{&hcl.Diagnostic{
+			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Multiple error blocks found for step " + stepName,
 				Subject:  &block.DefRange,
-			}}
-		}
-		errorBlock := errorBlocks[0]
+			})
+		} else {
 
-		attributes, diags := errorBlock.Body.JustAttributes()
-		if len(diags) > 0 {
-			return step, diags
-		}
+			errorBlock := errorBlocks[0]
 
-		ignore := false
-		retries := 0
-
-		if attr, exists := attributes[schema.AttributeTypeIgnore]; exists {
-			val, diags := attr.Expr.Value(nil)
-			if len(diags) > 0 {
-				return step, diags
+			attributes, moreDiags := errorBlock.Body.JustAttributes()
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
 			}
 
-			var target bool
-			if err := gocty.FromCtyValue(val, &target); err != nil {
-				return step, hcl.Diagnostics{&hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Error decoding ignore attribute",
-					Detail:   err.Error(),
-					Subject:  &block.DefRange,
-				}}
+			ignore := false
+			retries := 0
+
+			if attr, exists := attributes[schema.AttributeTypeIgnore]; exists {
+				val, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
+				if len(moreDiags) > 0 {
+					diags = append(diags, moreDiags...)
+				} else {
+					var target bool
+					if err := gocty.FromCtyValue(val, &target); err != nil {
+						diags = append(diags, &hcl.Diagnostic{
+							Severity: hcl.DiagError,
+							Summary:  "Error decoding ignore attribute",
+							Detail:   err.Error(),
+							Subject:  &block.DefRange,
+						})
+					}
+					ignore = target
+				}
 			}
-			ignore = target
-		}
 
-		if attr, exists := attributes[schema.AttributeTypeRetries]; exists {
-			val, diags := attr.Expr.Value(nil)
-			if len(diags) > 0 {
-				return step, diags
+			if attr, exists := attributes[schema.AttributeTypeRetries]; exists {
+				val, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
+				if len(moreDiags) > 0 {
+					diags = append(diags, moreDiags...)
+				} else {
+					var target int
+					if err := gocty.FromCtyValue(val, &target); err != nil {
+						diags = append(diags, &hcl.Diagnostic{
+							Severity: hcl.DiagError,
+							Summary:  "Error decoding retries attribute",
+							Detail:   err.Error(),
+							Subject:  &block.DefRange,
+						})
+					}
+					retries = target
+				}
 			}
 
-			var target int
-			if err := gocty.FromCtyValue(val, &target); err != nil {
-				return step, hcl.Diagnostics{&hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Error decoding retries attribute",
-					Detail:   err.Error(),
-					Subject:  &block.DefRange,
-				}}
+			errorConfig := &modconfig.ErrorConfig{
+				Ignore:  ignore,
+				Retries: retries,
 			}
-			retries = target
 
+			step.SetErrorConfig(errorConfig)
 		}
-
-		errorConfig := &modconfig.ErrorConfig{
-			Ignore:  ignore,
-			Retries: retries,
-		}
-
-		step.SetErrorConfig(errorConfig)
 	} else {
 		errorConfig := &modconfig.ErrorConfig{
 			Ignore:  false,
@@ -130,9 +129,10 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 
 	outputBlocks := stepOptions.Blocks.ByType()[schema.BlockTypePipelineOutput]
 	for _, outputBlock := range outputBlocks {
-		attributes, diags := outputBlock.Body.JustAttributes()
-		if len(diags) > 0 {
-			return step, diags
+		attributes, moreDiags := outputBlock.Body.JustAttributes()
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
+			continue
 		}
 
 		if attr, exists := attributes[schema.AttributeTypeValue]; exists {
@@ -162,17 +162,24 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 
 			stepOutput[o.Name] = o
 		} else {
-			return nil, hcl.Diagnostics{&hcl.Diagnostic{
+			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Missing value attribute",
 				Subject:  &block.DefRange,
-			}}
+			})
 		}
 
 	}
 	step.SetOutputConfig(stepOutput)
 
-	return step, hcl.Diagnostics{}
+	if len(diags) == 0 {
+		moreDiags := step.Validate()
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
+		}
+	}
+
+	return step, diags
 }
 
 func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {

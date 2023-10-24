@@ -234,6 +234,7 @@ type IPipelineStep interface {
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
 	Equals(other IPipelineStep) bool
+	Validate() hcl.Diagnostics
 }
 
 type ErrorConfig struct {
@@ -313,12 +314,20 @@ func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedBodies = make(map[string]hcl.Body)
 }
 
+func (*PipelineStepBase) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	return nil
+}
+
 func (p *PipelineStepBase) AddUnresolvedBody(name string, body hcl.Body) {
 	p.UnresolvedBodies[name] = body
 }
 
 func (p *PipelineStepBase) GetUnresolvedBodies() map[string]hcl.Body {
 	return p.UnresolvedBodies
+}
+
+func (*PipelineStepBase) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
 }
 
 func (p *PipelineStepBase) Equals(otherBase *PipelineStepBase) bool {
@@ -1043,34 +1052,6 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	}
 
 	return diags
-}
-
-func (p *PipelineStepSleep) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
-func (p *PipelineStepEmail) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
-func (p *PipelineStepEcho) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
-func (p *PipelineStepQuery) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
-func (p *PipelineStepPipeline) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
-func (p *PipelineStepFunction) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
-}
-
-func (p *PipelineStepContainer) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
 }
 
 type PipelineStepEmail struct {
@@ -2234,9 +2215,10 @@ type PipelineStepInput struct {
 
 	// type
 	Type *string `json:"type" cty:"type"`
-
 	// end Integrated 2023 temporary setup
-	Notify *PipelineStepInputNotify
+
+	Notify   *PipelineStepInputNotify
+	Notifies cty.Value // TODO: this is odd, we should just have cty.Value for notify as well I think?
 }
 
 func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
@@ -2497,6 +2479,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes)
 
+	// TODO: Integrated 2023 hack - remove non appropriate attribute and add them to notify, notifies, option, options
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypePrompt:
@@ -2769,6 +2752,26 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				p.SlackType = &slackType
 			}
 
+		case schema.AttributeTypeNotifies:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				if !val.Type().IsTupleType() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Attribute " + schema.AttributeTypeNotifies + " is not a tuple",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Notifies = val
+			}
+
+			// TODO: add back this check after tidy up
 			// default:
 			// 	if !p.IsBaseAttribute(name) {
 			// 		diags = append(diags, &hcl.Diagnostic{
@@ -2830,6 +2833,30 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 	return diags
 
 }
+
+func (p *PipelineStepInput) Validate() hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+	if p.Notify != nil && p.Notifies != cty.NilVal {
+		if !p.Notifies.Type().IsTupleType() {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute notifies is not a tuple for " + p.GetFullyQualifiedName(),
+			})
+		} else {
+			listVal := p.Notifies.AsValueSlice()
+			if len(listVal) > 0 {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Notify and Notifies attributes are mutualy exclusive: " + p.GetFullyQualifiedName(),
+				})
+			}
+		}
+	}
+
+	return diags
+}
+
 func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 

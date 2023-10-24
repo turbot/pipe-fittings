@@ -709,6 +709,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeToken,
 		},
+		{
+			Name: schema.AttributeTypeNotifies,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{

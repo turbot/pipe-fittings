@@ -20,28 +20,35 @@ integration "email" "email_integration" {
   smtp_username = "baz bar foo"
 }
 
-pipeline "approval" {
+pipeline "approval_with_notifies_and_notify" {
+
+  param "slack_integration" {
+    default = true
+  }
+
+  param "slack_channel" {
+    default = "foo"
+  }
+
   step "input" "input" {
-    token = "remove this after integrated"
+
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"
     }
+    
+    notifies = [
+      {
+        integration = integration.slack.my_slack_app
+        channel = "foo"
+        # channel = param.slack_channel
+
+        # if      = param.slack_integration == null ? false : true
+      },
+      {
+        integration = integration.email.email_integration
+        to = "bob.loblaw@bobloblawlaw.com"
+      }
+    ]
   }
 }
-
-pipeline "approval_dynamic_integration" {
-
-  param "integration_param" {
-  }
-
-  step "input" "input" {
-    token = "remove this after integrated"
-    notify {
-      integration = integration.slack.my_slack_app
-      channel = "foo"
-    }
-  }
-}
-
-
