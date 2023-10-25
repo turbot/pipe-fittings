@@ -461,6 +461,6 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
-func TestFpTestSuite(t *testing.T) {
+func TestFlowpipeModTestSuite(t *testing.T) {
 	suite.Run(t, new(FlowpipeModTestSuite))
 }
