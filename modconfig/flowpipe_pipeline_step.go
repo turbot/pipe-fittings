@@ -299,7 +299,6 @@ func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Either channel or to  must be specified",
-			Detail:   "Either channel or to  must be specified",
 		})
 	}
 
@@ -307,7 +306,6 @@ func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "integration must be specified",
-			Detail:   "integration must be specified",
 		})
 	}
 
@@ -315,7 +313,6 @@ func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "integration must be a map",
-			Detail:   "integration must be a map",
 		})
 	} else {
 		integrationMap := p.Integration.AsValueMap()
