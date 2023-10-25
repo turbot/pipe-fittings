@@ -116,11 +116,22 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 		for _, stepErr := range o.Errors {
 			ctyMap := map[string]cty.Value{}
 			var err error
-			ctyMap["message"], err = gocty.ToCtyValue(stepErr.Error.Detail, cty.String)
-			if err != nil {
-				return nil, err
+			errorAttributes := map[string]cty.Type{
+				"instance": cty.String,
+				"detail": cty.String,
+				"type": cty.String,
+				"title": cty.String,
+				"status": cty.Number,
 			}
-			ctyMap["error_code"], err = gocty.ToCtyValue(stepErr.Error.Status, cty.Number)
+
+			errorObject := map[string]interface{}{
+				"instance": stepErr.Error.Instance,
+				"detail": stepErr.Error.Detail,
+				"type": stepErr.Error.Type,
+				"title": stepErr.Error.Title,
+				"status": stepErr.Error.Status,
+			}
+			ctyMap["error"], err = gocty.ToCtyValue(errorObject, cty.Object(errorAttributes))
 			if err != nil {
 				return nil, err
 			}
