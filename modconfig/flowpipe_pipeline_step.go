@@ -2907,7 +2907,9 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 		}
 	}
 
-	if p.Notify != nil {
+	// Only validate the notify block if there are no unresolved bodies
+	// TODO: this is not correct fix this
+	if p.Notify != nil && p.UnresolvedBodies[schema.BlockTypeNotify] == nil {
 		moreDiags := p.Notify.Validate()
 		if len(moreDiags) > 0 {
 			diags = append(diags, moreDiags...)
