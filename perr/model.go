@@ -24,9 +24,6 @@ type ErrorModel struct {
 	Detail string `json:"detail" binding:"required"`
 
 	ValidationErrors []*ErrorDetailModel `json:"validation_errors,omitempty"`
-
-	// All errors are fatal unless specified
-	Retryable bool `json:"retryable,omitempty"`
 }
 
 func FromHttpError(err error, statusCode int) ErrorModel {

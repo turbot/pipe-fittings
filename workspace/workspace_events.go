@@ -80,6 +80,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context, ev []fsnotify.Ev
 		// TODO: dashboard
 		// w.PublishDashboardEvent(ctx, &dashboardevents.WorkspaceError{Error: errAndWarnings.GetError()})
 		log.Printf("[TRACE] back from PublishDashboardEvent")
+		// Flag on workspace?
 		return
 	}
 	// if resources have changed, update introspection tables
