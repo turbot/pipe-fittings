@@ -191,7 +191,7 @@ func ParseMod(fileData map[string][]byte, pseudoResources []modconfig.MappableRe
 	for attempts := 0; ; attempts++ {
 		diags = decode(parseCtx)
 		if diags.HasErrors() {
-			return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to decode all mod hcl files", diags))
+			return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to decode mod", diags))
 		}
 		// now retrieve the warning strings
 		res.AddWarning(plugin.DiagsToWarnings(diags)...)

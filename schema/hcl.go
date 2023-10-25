@@ -111,6 +111,7 @@ const (
 	AttributeTypeToken         = "token"
 	AttributeTypeSigningSecret = "signing_secret"
 	AttributeTypeWebhookUrl    = "webhook_url"
+	AttributeTypeNotifies      = "notifies"
 
 	AttributeTypeIntegration = "integration"
 	AttributeTypeChannel     = "channel"
@@ -155,8 +156,9 @@ const (
 	AttributeTypeFunction = "function"
 	AttributeTypeEvent    = "event"
 
-	AttributeTypeImage = "image"
-	AttributeTypeCmd   = "cmd"
+	AttributeTypeImage      = "image"
+	AttributeTypeCmd        = "cmd"
+	AttributeTypeEntryPoint = "entrypoint"
 
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"

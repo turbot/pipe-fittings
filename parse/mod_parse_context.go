@@ -149,7 +149,7 @@ func (m *ModParseContext) EnsureWorkspaceLock(mod *modconfig.Mod) error {
 	if mod.HasDependentMods() && (m.WorkspaceLock.Empty() || m.WorkspaceLock.Incomplete()) {
 		// logger := fplog.Logger(m.RunCtx)
 		// logger.Error("mod has dependencies but no workspace lock file found", "mod", mod.Name(), "m.HasDependentMods()", mod.HasDependentMods(), "m.WorkspaceLock.Empty()", m.WorkspaceLock.Empty(), "m.WorkspaceLock.Incomplete()", m.WorkspaceLock.Incomplete())
-		return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run 'steampipe mod install'")
+		return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run 'flowpipe mod install'")
 	}
 
 	return nil
@@ -770,21 +770,6 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, trigger.Name())
-
-	m.buildEvalContext()
-	return nil
-}
-
-func (m *ModParseContext) AddIntegration(integration modconfig.IIntegration) hcl.Diagnostics {
-
-	// Split and get the last part for pipeline name
-	parts := strings.Split(integration.Name(), ".")
-	integrationNameOnly := parts[len(parts)-1]
-
-	m.IntegrationHcls[integrationNameOnly] = integration
-
-	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, integration.Name())
 
 	m.buildEvalContext()
 	return nil

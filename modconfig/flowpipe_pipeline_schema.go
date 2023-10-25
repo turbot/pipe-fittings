@@ -632,6 +632,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeEnv,
 		},
+		{
+			Name: schema.AttributeTypeEntryPoint,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -705,6 +708,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeToken,
+		},
+		{
+			Name: schema.AttributeTypeNotifies,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
