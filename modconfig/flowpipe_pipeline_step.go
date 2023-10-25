@@ -287,8 +287,56 @@ func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
 }
 
 type PipelineStepInputNotify struct {
-	Channel     *string   `json:"channel,omitempty" hcl:"channel,optional" cty:"channel"`
-	Integration cty.Value `json:"-" hcl:"integration,optional" cty:"integration"`
+	Channel     *string   `json:"channel,omitempty" hcl:"channel,optional"`
+	To          *string   `json:"to,omitempty" hcl:"to,optional"`
+	Integration cty.Value `json:"-" hcl:"integration"`
+}
+
+func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
+	var diags hcl.Diagnostics
+
+	if p.Channel == nil && p.To == nil {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Either channel or to  must be specified",
+		})
+	}
+
+	if p.Integration == cty.NilVal {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "integration must be specified",
+		})
+	}
+
+	if !p.Integration.Type().IsObjectType() {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "integration must be a map",
+		})
+	} else {
+		integrationMap := p.Integration.AsValueMap()
+		integrationType := integrationMap["type"].AsString()
+		if integrationType == "slack" && p.Channel == nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "channel must be specified for slack integration",
+			})
+
+		} else if integrationType == "email" && p.To == nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "to must be specified for email integration",
+			})
+		} else if integrationType != "slack" && integrationType != "email" {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("unsupported integration type %s", integrationType),
+			})
+		}
+	}
+
+	return diags
 }
 
 // A common base struct that all pipeline steps must embed
@@ -2217,8 +2265,13 @@ type PipelineStepInput struct {
 	Type *string `json:"type" cty:"type"`
 	// end Integrated 2023 temporary setup
 
-	Notify   *PipelineStepInputNotify
-	Notifies cty.Value // TODO: this is odd, we should just have cty.Value for notify as well I think?
+	Notify *PipelineStepInputNotify
+
+	// This is odd but notifies is an attribute that can be set dynamically, i.e. input from another step. It's also a list of complex
+	// object, so we've decided for now it's the quickest way to implement it.
+	//
+	// We are unable to parse the Notifies for invalid
+	Notifies cty.Value
 }
 
 func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
@@ -2851,6 +2904,13 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 					Summary:  "Notify and Notifies attributes are mutualy exclusive: " + p.GetFullyQualifiedName(),
 				})
 			}
+		}
+	}
+
+	if p.Notify != nil {
+		moreDiags := p.Notify.Validate()
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
 		}
 	}
 

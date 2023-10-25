@@ -20,7 +20,7 @@ func TestApprovalNotifies(t *testing.T) {
 		return
 	}
 
-	assert.Equal(3, len(mod.ResourceMaps.Integrations))
+	assert.Equal(2, len(mod.ResourceMaps.Integrations))
 
 	integration := mod.ResourceMaps.Integrations["local.integration.slack.my_slack_app"]
 	if integration == nil {

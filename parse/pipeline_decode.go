@@ -17,6 +17,7 @@ import (
 )
 
 func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *modconfig.Pipeline) (modconfig.IPipelineStep, hcl.Diagnostics) {
+
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
 

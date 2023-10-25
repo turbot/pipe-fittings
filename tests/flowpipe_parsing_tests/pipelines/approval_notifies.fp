@@ -2,14 +2,6 @@
 
 integration "slack" "my_slack_app" {
   token           = "xoxp-111111"
-
-  # optional - if you want to verify the source
-  signing_secret  = "Q#$$#@#$$#W"
-}
-
-integration "slack" "my_slack_app_two" {
-  token           = "xoxp-111111"
-
   # optional - if you want to verify the source
   signing_secret  = "Q#$$#@#$$#W"
 }
@@ -36,13 +28,14 @@ pipeline "approval_with_notifies" {
       {
         integration = integration.slack.my_slack_app
         channel = "foo"
+        to = "bob.loblaw@bobloblawlaw.com"
         # channel = param.slack_channel
-
         # if      = param.slack_integration == null ? false : true
       },
       {
         integration = integration.email.email_integration
         to = "bob.loblaw@bobloblawlaw.com"
+        channel = "bar"
       }
     ]
   }
@@ -68,7 +61,6 @@ pipeline "approval_with_notifies_depend_another_step" {
         integration = integration.slack.my_slack_app
         channel = step.echo.echo.text
         # channel = param.slack_channel
-
         # if      = param.slack_integration == null ? false : true
       },
       {

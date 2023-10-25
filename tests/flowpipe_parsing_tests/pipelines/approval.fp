@@ -22,7 +22,7 @@ integration "email" "email_integration" {
 
 pipeline "approval" {
   step "input" "input" {
-    token = "remove this after integrated"
+    
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"
@@ -30,13 +30,24 @@ pipeline "approval" {
   }
 }
 
+pipeline "approval_email" {
+  step "input" "input_email" {
+    
+    notify {
+      integration = integration.email.email_integration
+      to = "victor@turbot.com"
+    }
+  }
+}
+
+// TODO: param doesn't work yet
 pipeline "approval_dynamic_integration" {
 
   param "integration_param" {
   }
 
   step "input" "input" {
-    token = "remove this after integrated"
+    
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"

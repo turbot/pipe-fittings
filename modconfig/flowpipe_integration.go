@@ -90,6 +90,10 @@ func (i *EmailIntegration) GetType() string {
 	return i.Type
 }
 
+func (i *EmailIntegration) CtyValue() (cty.Value, error) {
+	return GetCtyValue(i)
+}
+
 func (i *EmailIntegration) Equals(other *EmailIntegration) bool {
 	if i == nil && other == nil {
 		return true
