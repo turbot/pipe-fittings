@@ -28,12 +28,14 @@ pipeline "approval_with_notifies" {
       {
         integration = integration.slack.my_slack_app
         channel = "foo"
+        to = "bob.loblaw@bobloblawlaw.com"
         # channel = param.slack_channel
         # if      = param.slack_integration == null ? false : true
       },
       {
         integration = integration.email.email_integration
         to = "bob.loblaw@bobloblawlaw.com"
+        channel = "bar"
       }
     ]
   }

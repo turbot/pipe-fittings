@@ -68,4 +68,21 @@ func TestApproval(t *testing.T) {
 	assert.Nil(err)
 
 	assert.Equal("xoxp-111111", inputsAfterEval["token"].(string))
+
+	pipeline = mod.ResourceMaps.Pipelines["local.pipeline.approval_email"]
+	if pipeline == nil {
+		assert.Fail("Pipeline not found")
+		return
+	}
+
+	inputStep, ok = pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Pipeline step not found")
+		return
+	}
+
+	assert.Equal("input_email", inputStep.Name)
+	assert.NotNil(inputStep.Notify)
+	assert.Equal("victor@turbot.com", *inputStep.Notify.To)
+
 }

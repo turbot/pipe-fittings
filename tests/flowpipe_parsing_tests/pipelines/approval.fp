@@ -30,8 +30,17 @@ pipeline "approval" {
   }
 }
 
+pipeline "approval_email" {
+  step "input" "input_email" {
+    
+    notify {
+      integration = integration.email.email_integration
+      to = "victor@turbot.com"
+    }
+  }
+}
 
-// TODO: this doesn't work yet
+// TODO: param doesn't work yet
 pipeline "approval_dynamic_integration" {
 
   param "integration_param" {

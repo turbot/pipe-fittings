@@ -77,6 +77,16 @@ var tests = []testSetup{
 		file:          "./pipelines/approval_notify_and_notifies.fp",
 		containsError: "Notify and Notifies attributes are mutualy exclusive: input.input",
 	},
+	{
+		title:         "invalid approval - slack notify missing channel",
+		file:          "./pipelines/approval_invalid_notify_slack.fp",
+		containsError: "channel must be specified for slack integration",
+	},
+	{
+		title:         "invalid approval - email notify missing to",
+		file:          "./pipelines/approval_invalid_notify_email.fp",
+		containsError: "to must be specified for email integration",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unaable to test
