@@ -1,7 +1,6 @@
 package funcs
 
 import (
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function"
 )
@@ -45,6 +44,12 @@ var ErrorMessageFunc = function.New(&function.Spec{
 		firstError := errors[0]
 		firstErrorMap := firstError.AsValueMap()
 
-		return firstErrorMap[schema.AttributeTypeMessage], nil
+		perr := firstErrorMap["error"]
+		if perr.IsNull() {
+			return cty.StringVal(""), nil
+		}
+
+		perrMap := perr.AsValueMap()
+		return perrMap["detail"], nil
 	},
 })
