@@ -707,9 +707,6 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeSlackType,
 		},
 		{
-			Name: schema.AttributeTypeToken,
-		},
-		{
 			Name: schema.AttributeTypeNotifies,
 		},
 	},

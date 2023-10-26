@@ -25,4 +25,11 @@ func TestInputStep(t *testing.T) {
 	assert.Equal("local.pipeline.pipeline_with_input", pipelineDefn.Name(), "wrong pipeline name")
 	assert.Equal(1, len(pipelineDefn.Steps), "wrong number of steps")
 	assert.Equal("input", pipelineDefn.Steps[0].GetName())
+
+	steps := pipelineDefn.Steps
+	assert.GreaterOrEqual(len(steps), 1, "wrong number of steps")
+
+	inputs, err := steps[0].GetInputs(nil)
+	assert.Nil(err)
+	assert.Nil(inputs)
 }
