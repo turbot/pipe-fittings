@@ -689,9 +689,6 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeIf,
 		},
 		{
-			Name: schema.AttributeTypeType,
-		},
-		{
 			Name: schema.AttributeTypeUsername,
 		},
 		{
@@ -723,9 +720,6 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypePrompt,
-		},
-		{
-			Name: schema.AttributeTypeChannel,
 		},
 		{
 			Name: schema.AttributeTypeSlackType,
