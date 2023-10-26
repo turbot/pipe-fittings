@@ -116,11 +116,22 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 		for _, stepErr := range o.Errors {
 			ctyMap := map[string]cty.Value{}
 			var err error
-			ctyMap["message"], err = gocty.ToCtyValue(stepErr.Message, cty.String)
-			if err != nil {
-				return nil, err
+			errorAttributes := map[string]cty.Type{
+				"instance": cty.String,
+				"detail":   cty.String,
+				"type":     cty.String,
+				"title":    cty.String,
+				"status":   cty.Number,
 			}
-			ctyMap["error_code"], err = gocty.ToCtyValue(stepErr.ErrorCode, cty.Number)
+
+			errorObject := map[string]interface{}{
+				"instance": stepErr.Error.Instance,
+				"detail":   stepErr.Error.Detail,
+				"type":     stepErr.Error.Type,
+				"title":    stepErr.Error.Title,
+				"status":   stepErr.Error.Status,
+			}
+			ctyMap["error"], err = gocty.ToCtyValue(errorObject, cty.Object(errorAttributes))
 			if err != nil {
 				return nil, err
 			}
@@ -148,12 +159,11 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 }
 
 type StepError struct {
-	PipelineExecutionID string `json:"pipeline_execution_id"`
-	StepExecutionID     string `json:"step_execution_id"`
-	Pipeline            string `json:"pipeline"`
-	Step                string `json:"step"`
-	Message             string `json:"message"`
-	ErrorCode           int    `json:"error_code"`
+	PipelineExecutionID string          `json:"pipeline_execution_id"`
+	StepExecutionID     string          `json:"step_execution_id"`
+	Pipeline            string          `json:"pipeline"`
+	Step                string          `json:"step"`
+	Error               perr.ErrorModel `json:"error"`
 }
 
 type NextStepAction string
@@ -362,8 +372,50 @@ func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedBodies = make(map[string]hcl.Body)
 }
 
-func (*PipelineStepBase) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	return nil
+func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	loopBlocks := blocks.ByType()[schema.BlockTypeLoop]
+	if len(loopBlocks) > 1 {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Only one loop block is allowed per step",
+			Subject:  &blocks.ByType()[schema.BlockTypeLoop][0].DefRange,
+		})
+	}
+
+	if len(loopBlocks) == 1 {
+		loopBlock := loopBlocks[0]
+
+		stepType := p.GetType()
+
+		loopDefn := GetLoopDefn(stepType)
+		if loopDefn == nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("Loop block is not supported for step type %s", stepType),
+				Subject:  &loopBlock.DefRange,
+			})
+		} else {
+			// Decode the loop block
+			moreDiags := gohcl.DecodeBody(loopBlock.Body, evalContext, loopDefn)
+
+			// TODO: Loop should always be unresolved I believe? Will it end in an infinite loop if loop block is resolved?
+			if len(moreDiags) > 0 {
+				moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeLoop, loopBlock.Body)
+				if len(moreDiags) > 0 {
+					diags = append(diags, moreDiags...)
+				}
+			} else {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("Loop block is fully resolved. A fully resolved loop block may lead to an infinite loop. Step type %s", stepType),
+					Subject:  &loopBlock.DefRange,
+				})
+			}
+		}
+	}
+	return diags
 }
 
 func (p *PipelineStepBase) AddUnresolvedBody(name string, body hcl.Body) {
@@ -956,11 +1008,13 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 	return diags
 }
 
-func (p *PipelineStepHttp) SetBlockConfig(block hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := p.PipelineStepBase.SetBlockConfig(blocks, evalContext)
 
 	basicAuthConfig := &BasicAuthConfig{}
 
-	if basicAuthBlocks := block.ByType()[schema.BlockTypePipelineBasicAuth]; len(basicAuthBlocks) > 0 {
+	if basicAuthBlocks := blocks.ByType()[schema.BlockTypePipelineBasicAuth]; len(basicAuthBlocks) > 0 {
 		if len(basicAuthBlocks) > 1 {
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -969,7 +1023,9 @@ func (p *PipelineStepHttp) SetBlockConfig(block hcl.Blocks, evalContext *hcl.Eva
 		}
 		basicAuthBlock := basicAuthBlocks[0]
 
-		attributes, diags := basicAuthBlock.Body.JustAttributes()
+		var attributes hcl.Attributes
+
+		attributes, diags = basicAuthBlock.Body.JustAttributes()
 		if len(diags) > 0 {
 			return diags
 		}
@@ -1020,7 +1076,7 @@ func (p *PipelineStepHttp) SetBlockConfig(block hcl.Blocks, evalContext *hcl.Eva
 		p.BasicAuthConfig = basicAuthConfig
 	}
 
-	return nil
+	return diags
 }
 
 type PipelineStepSleep struct {
@@ -2842,6 +2898,8 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attributeName string, body hcl.Body) hcl.Diagnostics {
 	resolvedDiags := 0
 
+	unresolvedDiags := hcl.Diagnostics{}
+
 	for _, e := range diags {
 		if e.Severity == hcl.DiagError {
 			if e.Detail == `There is no variable named "step".` {
@@ -2862,13 +2920,16 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 				if dependsOnAdded {
 					resolvedDiags++
 				}
+			} else if e.Detail == `There is no variable named "result".` && attributeName == schema.BlockTypeLoop {
+				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block
+				resolvedDiags++
 			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" {
 				// hcl.decodeBody returns 2 error messages:
 				// 1. There's no variable named "param", AND
 				// 2. Unsuitable value: value must be known
 				resolvedDiags++
 			} else {
-				return diags
+				unresolvedDiags = append(unresolvedDiags, e)
 			}
 		}
 	}
@@ -2883,7 +2944,7 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 	}
 
 	// There's an error here
-	return diags
+	return unresolvedDiags
 
 }
 
