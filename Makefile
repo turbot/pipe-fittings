@@ -1,4 +1,3 @@
 test:
 	go clean -testcache
-	RUN_MODE=TEST_ES go test  $$(go list ./...) -timeout 120s
-
+	RUN_MODE=TEST_ES go test ./... -timeout 120s | grep -v "no test files"

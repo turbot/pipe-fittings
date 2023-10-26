@@ -87,6 +87,16 @@ var tests = []testSetup{
 		file:          "./pipelines/approval_invalid_notify_email.fp",
 		containsError: "to must be specified for email integration",
 	},
+	{
+		title:         "invalid loop - bad definition for echo step loop",
+		file:          "./pipelines/loop_invalid_echo.fp",
+		containsError: "An argument named \"baz\" is not expected here",
+	},
+	{
+		title:         "invalid loop - no if",
+		file:          "./pipelines/loop_no_if.fp",
+		containsError: "The argument \"if\" is required, but no definition was found",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unaable to test

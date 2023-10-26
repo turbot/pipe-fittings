@@ -333,6 +333,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypePipelineBasicAuth,
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -378,6 +381,9 @@ var PipelineStepSleepBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -446,6 +452,9 @@ var PipelineStepEmailBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -483,6 +492,9 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -522,6 +534,9 @@ var PipelineStepEchoBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -556,6 +571,9 @@ var PipelineStepPipelineBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -602,6 +620,9 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -643,6 +664,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -720,6 +744,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeNotify,
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
