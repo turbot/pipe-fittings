@@ -34,6 +34,8 @@ func FromHttpError(err error, statusCode int) ErrorModel {
 	}
 
 	switch statusCode {
+	case http.StatusUnauthorized:
+		return UnauthorizedWithMessage(errorMsg)
 	case http.StatusNotFound:
 		return NotFoundWithMessage(errorMsg)
 	case http.StatusForbidden:
@@ -50,6 +52,10 @@ func FromHttpError(err error, statusCode int) ErrorModel {
 		return UnsupportedPlanValueWithMessage(errorMsg)
 	case http.StatusInternalServerError:
 		return InternalWithMessage(errorMsg)
+	case http.StatusServiceUnavailable:
+		return ServiceUnavailableWithMessage(errorMsg)
+	case http.StatusTooManyRequests:
+		return TooManyRequestsWithMessage(errorMsg)
 	default:
 		return InternalWithMessage(errorMsg)
 	}
