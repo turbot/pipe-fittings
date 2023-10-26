@@ -104,7 +104,10 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 					Subject:  &block.DefRange,
 				})
 				continue
+			}
 
+			if parsedPropertyPath == nil {
+				continue
 			}
 
 			// 'd' may be a property path - when storing dependencies we only care about the resource names

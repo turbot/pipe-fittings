@@ -45,6 +45,7 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeNotify            = "notify"
+	BlockTypeLoop              = "loop"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
