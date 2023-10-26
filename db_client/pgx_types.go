@@ -1,5 +1,7 @@
 package db_client
 
+// TODO KAI does not seem to be used
+
 // // ColumnTypeDatabaseTypeName returns the database system type name. If the name is unknown the OID is returned.
 // func columnTypeDatabaseTypeName(field pgconn.FieldDescription, connection *pgx.Conn) (typeName string) {
 // 	if dt, ok := connection.TypeMap().TypeForOID(field.DataTypeOID); ok {

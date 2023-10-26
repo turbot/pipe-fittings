@@ -12,7 +12,7 @@ type ColumnTag struct {
 	ColumnType string
 }
 
-func newColumnTag(field reflect.StructField) (*ColumnTag, bool) {
+func NewColumnTag(field reflect.StructField) (*ColumnTag, bool) {
 	columnTag, ok := field.Tag.Lookup(TagColumn)
 	if !ok {
 		return nil, false

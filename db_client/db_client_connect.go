@@ -56,7 +56,7 @@ func (c *DbClient) establishConnectionPool(ctx context.Context, overrides client
 	if err != nil {
 		return err
 	}
-	c.userPool = pool
+	c.UserPool = pool
 
 	return c.establishManagementConnectionPool(ctx, overrides)
 }
@@ -87,7 +87,7 @@ func (c *DbClient) establishManagementConnectionPool(ctx context.Context, overri
 	if err != nil {
 		return err
 	}
-	c.managementPool = pool
+	c.ManagementPool = pool
 
 	return nil
 }

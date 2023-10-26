@@ -68,3 +68,7 @@ func (r *ErrorAndWarnings) Merge(other *ErrorAndWarnings) *ErrorAndWarnings {
 	}
 	return r
 }
+
+func (r *ErrorAndWarnings) Empty() bool {
+	return r.Error == nil && len(r.Warnings) == 0
+}

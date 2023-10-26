@@ -10,8 +10,7 @@ import (
 )
 
 type InitResult struct {
-	Error    error
-	Warnings []string
+	error_helpers.ErrorAndWarnings
 	Messages []string
 
 	// allow overriding of the display functions

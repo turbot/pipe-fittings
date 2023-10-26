@@ -31,7 +31,9 @@ type InitData struct {
 
 func NewErrorInitData(err error) *InitData {
 	return &InitData{
-		Result: &db_common.InitResult{Error: err},
+		Result: &db_common.InitResult{
+			ErrorAndWarnings: *error_helpers.NewErrorsAndWarning(err),
+		},
 	}
 }
 

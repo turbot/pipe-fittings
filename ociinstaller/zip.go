@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func ungzip(sourceFile string, destDir string) (string, error) {
+func Ungzip(sourceFile string, destDir string) (string, error) {
 	r, err := os.Open(sourceFile)
 	if err != nil {
 		return "", err
@@ -37,16 +37,9 @@ func ungzip(sourceFile string, destDir string) (string, error) {
 	return destFile, nil
 }
 
-func fileExists(filePath string) bool {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
-
 // moves a file within an fs partition. panics if movement is attempted between partitions
 // this is done separately to achieve performance benefits of os.Rename over reading and writing content
-func moveFileWithinPartition(sourcePath, destPath string) error {
+func MoveFileWithinPartition(sourcePath, destPath string) error {
 	if err := os.Rename(sourcePath, destPath); err != nil {
 		return fmt.Errorf("error moving file: %s", err)
 	}
@@ -81,6 +74,6 @@ func MoveFolderWithinPartition(sourcePath, destPath string) error {
 		if info.IsDir() {
 			return os.MkdirAll(filepath.Join(destPath, relPath), info.Mode())
 		}
-		return moveFileWithinPartition(filepath.Join(sourcePath, relPath), filepath.Join(destPath, relPath))
+		return MoveFileWithinPartition(filepath.Join(sourcePath, relPath), filepath.Join(destPath, relPath))
 	})
 }

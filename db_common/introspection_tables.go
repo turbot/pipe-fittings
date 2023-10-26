@@ -231,7 +231,7 @@ func getColumnDefinitions(item interface{}) []string {
 	for i := 0; i < val.NumField(); i++ {
 		fieldName := val.Type().Field(i).Name
 		field, _ := t.FieldByName(fieldName)
-		columnTag, ok := newColumnTag(field)
+		columnTag, ok := NewColumnTag(field)
 		if !ok {
 			continue
 		}
@@ -292,7 +292,7 @@ func getColumnValues(item interface{}) ([]string, []string) {
 		fieldName := val.Type().Field(i).Name
 		field, _ := t.FieldByName(fieldName)
 
-		columnTag, ok := newColumnTag(field)
+		columnTag, ok := NewColumnTag(field)
 		if !ok {
 			continue
 		}

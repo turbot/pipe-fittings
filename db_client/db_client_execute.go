@@ -20,7 +20,7 @@ import (
 // NOTE: The returned Result MUST be fully read - otherwise the connection will block and will prevent further communication
 func (c *DbClient) Execute(ctx context.Context, query string, args ...any) (*queryresult.Result, error) {
 	// acquire a connection
-	databaseConnection, err := c.userPool.Conn(ctx)
+	databaseConnection, err := c.UserPool.Conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (c *DbClient) Execute(ctx context.Context, query string, args ...any) (*que
 // execute a query against this client and wait for the result
 func (c *DbClient) ExecuteSync(ctx context.Context, query string, args ...any) (*queryresult.SyncQueryResult, error) {
 	// acquire a connection
-	dbConn, err := c.userPool.Conn(ctx)
+	dbConn, err := c.UserPool.Conn(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (c *DbClient) getExecuteContext(ctx context.Context) context.Context {
 
 // run query in a goroutine, so we can check for cancellation
 // in case the client becomes unresponsive and does not respect context cancellation
-func (c *DbClient) startQuery(ctx context.Context, dbConn *sql.Conn, query string, args ...any) (rows *sql.Rows, err error) {
+func (c *DbClient) StartQuery(ctx context.Context, dbConn *sql.Conn, query string, args ...any) (rows *sql.Rows, err error) {
 	doneChan := make(chan bool)
 	go func() {
 		// start asynchronous query

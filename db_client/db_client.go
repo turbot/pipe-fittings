@@ -15,25 +15,22 @@ import (
 	"strings"
 )
 
-// define func type for startQuery
+// define func type for StartQuery
 type startQueryFunc func(ctx context.Context, dbConn *sql.Conn, query string, args ...any) (*sql.Rows, error)
 
 // DbClient wraps over `sql.DB` and gives an interface to the database
 type DbClient struct {
 	connectionString string
 
-	// connection userPool for user initiated queries
-	userPool *sql.DB
+	// connection UserPool for user initiated queries
+	UserPool *sql.DB
 
 	// connection used to run system/plumbing queries (connection state, server settings)
-	managementPool *sql.DB
+	ManagementPool *sql.DB
 
 	// function to start the query - defaults to startquery
 	// steampipe overrides this with startQueryWithRetries
 	startQueryFunc startQueryFunc
-	// this flag is set if the service that this client
-	// is connected to is running in the same physical system
-	isLocalService bool
 
 	// concurrency management for db session access
 	parallelSessionInitLock *semaphore.Weighted
@@ -46,6 +43,16 @@ type DbClient struct {
 
 	// TODO KAI new hook
 	BeforeExecuteHook func(context.Context, *sql.Conn) error
+
+	// if a custom search path or a prefix is used, store it here
+	CustomSearchPath []string
+	SearchPathPrefix []string
+	// the default user search path
+	UserSearchPath []string
+
+	// TODO KAI NEEDED?
+	//onConnectionCallback DbConnectionCallback
+
 }
 
 func NewDbClient(ctx context.Context, connectionString string, opts ...ClientOption) (_ *DbClient, err error) {
@@ -67,7 +74,7 @@ func NewDbClient(ctx context.Context, connectionString string, opts ...ClientOpt
 	}
 
 	// set the start query func
-	client.startQueryFunc = client.startQuery
+	client.startQueryFunc = client.StartQuery
 
 	defer func() {
 		if err != nil {
@@ -85,51 +92,18 @@ func NewDbClient(ctx context.Context, connectionString string, opts ...ClientOpt
 		return nil, err
 	}
 
-	// load up the server settings
-	// if err := client.loadServerSettings(ctx); err != nil {
-	// 	return nil, err
-	// }
-
-	// // set user search path
-	// if err := client.LoadUserSearchPath(ctx); err != nil {
-	// 	return nil, err
-	// }
-
-	// // populate customSearchPath
-	// if err := client.SetRequiredSessionSearchPath(ctx); err != nil {
-	// 	return nil, err
-	// }
-
 	return client, nil
 }
 
 func (c *DbClient) closePools() {
-	if c.userPool != nil {
-		c.userPool.Close()
+	if c.UserPool != nil {
+		c.UserPool.Close()
 	}
-	if c.managementPool != nil {
-		c.managementPool.Close()
+	if c.ManagementPool != nil {
+		c.ManagementPool.Close()
 	}
 }
 
-// TODO KAI this should only be in SteampipeDbClient
-//
-//	func (c *DbClient) loadServerSettings(ctx context.Context) error {
-//		serverSettings, err := serversettings.Load(ctx, c.managementPool)
-//		if err != nil {
-//			if notFound := db_common.IsRelationNotFoundError(err); notFound {
-//				// when connecting to pre-0.21.0 services, the steampipe_server_settings table will not be available.
-//				// this is expected and not an error
-//				// code which uses steampipe_server_settings should handle this
-//				log.Printf("[TRACE] could not find %s.%s table. skipping\n", constants.InternalSchema, constants.ServerSettingsTable)
-//				return nil
-//			}
-//			return err
-//		}
-//		c.serverSettings = serverSettings
-//		log.Println("[TRACE] loaded server settings:", serverSettings)
-//		return nil
-//	}
 func (c *DbClient) GetConnectionString() string {
 	return c.connectionString
 }
@@ -140,7 +114,7 @@ func (c *DbClient) RegisterNotificationListener(func(notification *pgconn.Notifi
 
 // closes the connection to the database and shuts down the backend
 func (c *DbClient) Close(context.Context) error {
-	log.Printf("[TRACE] DbClient.Close %v", c.userPool)
+	log.Printf("[TRACE] DbClient.Close %v", c.UserPool)
 	c.closePools()
 
 	return nil
@@ -152,7 +126,7 @@ func (c *DbClient) Close(context.Context) error {
 // connections backed by distinct plugins and then fanning back out.
 func (c *DbClient) GetSchemaFromDB(ctx context.Context) (*db_common.SchemaMetadata, error) {
 	log.Printf("[INFO] DbClient GetSchemaFromDB")
-	// mgmtConn, err := c.managementPool.Acquire(ctx)
+	// mgmtConn, err := c.ManagementPool.Acquire(ctx)
 	// if err != nil {
 	// 	return nil, err
 	// }
@@ -220,8 +194,8 @@ func (c *DbClient) ResetPools(ctx context.Context) {
 	log.Println("[TRACE] db_client.ResetPools start")
 	defer log.Println("[TRACE] db_client.ResetPools end")
 
-	// c.userPool.Reset()
-	// c.managementPool.Reset()
+	// c.UserPool.Reset()
+	// c.ManagementPool.Reset()
 }
 
 func (c *DbClient) buildSchemasQuery(schemas ...string) string {

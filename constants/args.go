@@ -75,7 +75,7 @@ const (
 )
 
 // metaquery mode arguments
-
+// TODO KAI maybe decouple from metacommand so we can move metacommands back to steampipe
 var ArgOutput = ArgFromMetaquery(CmdOutput)
 var ArgSeparator = ArgFromMetaquery(CmdSeparator)
 var ArgHeader = ArgFromMetaquery(CmdHeaders)

@@ -17,21 +17,21 @@ const (
 
 // SteampipeImageRef a struct encapsulating a ref to an OCI image
 type SteampipeImageRef struct {
-	requestedRef string
+	RequestedRef string
 }
 
 // NewSteampipeImageRef creates and returns a New SteampipeImageRef
 func NewSteampipeImageRef(ref string) *SteampipeImageRef {
 	ref = sanitizeRefStream(ref)
 	return &SteampipeImageRef{
-		requestedRef: ref,
+		RequestedRef: ref,
 	}
 }
 
 // ActualImageRef returns the actual, physical full image ref
 // (us-docker.pkg.dev/steampipe/plugins/turbot/aws:1.0.0)
 func (r *SteampipeImageRef) ActualImageRef() string {
-	ref := r.requestedRef
+	ref := r.RequestedRef
 
 	if !isDigestRef(ref) {
 		ref = strings.ReplaceAll(ref, "@", ":")

@@ -194,7 +194,7 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 	}()
 
-	// TODO PSKR re-enable validation
+	// TODO KAI re-enable validation
 	// if validationErrors := workspaceMod.ValidateRequirements(i.installedPlugins); len(validationErrors) > 0 {
 	// 	if !i.force {
 	// 		// if this is not a force install, return errors in validation
@@ -260,6 +260,7 @@ func (i *ModInstaller) commitShadow(ctx context.Context) error {
 	}
 	entries, err := os.ReadDir(i.shadowDirPath)
 	if err != nil {
+		// TODO KAI readd sperr
 		// return sperr.WrapWithRootMessage(err, "could not read shadow directory")
 		return fmt.Errorf("could not read shadow directory: %w", err)
 	}
@@ -374,7 +375,7 @@ func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, req
 			return err
 		}
 
-		// TODO PSKR re-add validation
+		// TODO KAI re-add validation
 		// validationErrors := dependencyMod.ValidateRequirements(i.installedPlugins)
 		// errors = append(errors, validationErrors...)
 	} else {

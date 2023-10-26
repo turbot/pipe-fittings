@@ -5,6 +5,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+// TODO KAI REMOVE AND USE GO KIT
+
 func AttributeToString(attr *hcl.Attribute, evalContext *hcl.EvalContext, allowExpression bool) (*string, hcl.Diagnostics) {
 	if attr.Expr == nil {
 		return nil, nil

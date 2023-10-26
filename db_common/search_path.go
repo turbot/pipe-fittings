@@ -48,7 +48,7 @@ func BuildSearchPathResult(searchPathString string) ([]string, error) {
 	return searchPath, nil
 }
 
-// TODO:: BINAEK :: we need to fix this
+// TODO:: KAI :: we need to fix this
 // this is going to be referred to from steampipe code in the future
 // and
 func GetUserSearchPath(ctx context.Context, conn *sql.Conn) ([]string, error) {
