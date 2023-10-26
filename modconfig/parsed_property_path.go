@@ -113,6 +113,12 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		parts = parts[1:]
 	}
 
+	// special case if the first part is "each" or "result", both are Flowpipe magic keywords that mean self reference,
+	// they are not dependency to other resources
+	if parts[0] == "each" || parts[0] == "result" {
+		return nil, nil
+	}
+
 	if schema.IsValidResourceItemType(parts[0]) {
 		// put empty mod as first part
 		parts = append([]string{""}, parts...)
