@@ -2427,26 +2427,6 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
-	var token *string
-	if p.UnresolvedAttributes[schema.AttributeTypeToken] == nil {
-		token = p.Token
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeToken], evalContext, &token)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	// var channel *string
-	// if p.UnresolvedAttributes[schema.AttributeTypeChannel] == nil {
-	// 	channel = p.Channel
-	// } else {
-	// 	diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeChannel], evalContext, &channel)
-	// 	if diags.HasErrors() {
-	// 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
-	// 	}
-	// }
-
 	var slackType *string
 	if p.UnresolvedAttributes[schema.AttributeTypeSlackType] == nil {
 		slackType = p.SlackType
@@ -2534,14 +2514,6 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	if stepInputType != nil {
 		results[schema.AttributeTypeType] = *stepInputType
 	}
-
-	if token != nil {
-		results[schema.AttributeTypeToken] = *token
-	}
-
-	// if channel != nil {
-	// 	results[schema.AttributeTypeChannel] = *channel
-	// }
 
 	if slackType != nil {
 		results[schema.AttributeTypeSlackType] = *slackType
@@ -2818,44 +2790,6 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 					})
 				}
 				p.Type = &intType
-			}
-
-		// TODO: Remove after hooking the integration block with input step
-
-		// case schema.AttributeTypeToken:
-		// 	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-		// 	if stepDiags.HasErrors() {
-		// 		diags = append(diags, stepDiags...)
-		// 		continue
-		// 	}
-		// 	if val != cty.NilVal {
-		// 		token, err := hclhelpers.CtyToString(val)
-		// 		if err != nil {
-		// 			diags = append(diags, &hcl.Diagnostic{
-		// 				Severity: hcl.DiagError,
-		// 				Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
-		// 				Subject:  &attr.Range,
-		// 			})
-		// 		}
-		// 		p.Token = &token
-		// 	}
-
-		case schema.AttributeTypeChannel:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-			if val != cty.NilVal {
-				channel, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Channel = &channel
 			}
 
 		case schema.AttributeTypeSlackType:
