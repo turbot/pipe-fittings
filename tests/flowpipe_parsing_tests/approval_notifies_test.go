@@ -34,6 +34,9 @@ func TestApprovalNotifies(t *testing.T) {
 		return
 	}
 
+	inputs, _ := pipeline.Steps[0].GetInputs(nil)
+	assert.Nil(inputs)
+
 	inputStep, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
 	if !ok {
 		assert.Fail("Pipeline step not found")

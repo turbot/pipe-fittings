@@ -302,6 +302,58 @@ type PipelineStepInputNotify struct {
 	Integration cty.Value `json:"-" hcl:"integration"`
 }
 
+func (*PipelineStepInputNotify) AsValueMap() (map[string]interface{}, error) {
+	// create this structure maybe?
+	/*
+		{
+			"channel": "foo",
+			"to": "bar",
+			"integration": {
+				"type": "slack",
+				"token": "foo",
+				"signing_secret": "bar"
+			}
+		}
+		**/
+	return nil, nil
+}
+
+func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) map[string]interface{} {
+	notify := map[string]interface{}{}
+
+	valuemap := value.AsValueMap()
+	if !valuemap[schema.AttributeTypeChannel].IsNull() {
+		notify[schema.AttributeTypeChannel] = valuemap[schema.AttributeTypeChannel].AsString()
+	}
+
+	integrationMap := map[string]interface{}{}
+	if !valuemap[schema.AttributeTypeIntegration].IsNull() {
+		integrationValueMap := valuemap[schema.AttributeTypeIntegration].AsValueMap()
+
+		for key, value := range integrationValueMap {
+			// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
+			if !value.IsNull() {
+				goVal, err := hclhelpers.CtyToGo(value)
+				if err != nil {
+					return nil
+				}
+				if !helpers.IsNil(goVal) {
+					integrationMap[key] = goVal
+				}
+			}
+		}
+		notify[schema.AttributeTypeIntegration] = integrationMap
+
+		channel := valuemap[schema.AttributeTypeChannel]
+		if helpers.IsNil(channel) {
+			return nil
+		}
+		notify[schema.AttributeTypeChannel] = channel.AsString()
+	}
+
+	return notify
+}
+
 func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
@@ -1637,6 +1689,18 @@ func (p *PipelineStepEcho) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
+
+		p.Text = textInput
+
+		/*
+			first run
+			p.Text = nil
+			you resolve to "foo"
+			if you set p.Text
+
+			2nd run
+			p.Text = "foo"
+		*/
 	}
 
 	var numericInput float64
@@ -2531,14 +2595,75 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeResponseUrl] = *responseUrl
 	}
 
+	/**
+	if there is p.Notify then the Step Input will be like this
+
+	{
+		"notifies": [
+			{
+				"integration": {
+					"type": "slack",
+					"token": "xvcxfvdsfadf"
+				},
+				"channel": "foo"
+
+			}
+		]
+	}
+
+	if there is p.Notifies, the result will be like this:
+	{
+		"notifies": [
+			{
+				"integration": {
+					"type": "slack",
+					"token": "xvcxfvdsfadf"
+				},
+				"channel": "foo"
+
+			},
+			{
+				"integration": {
+					"type": "slack",
+					"token": "xvcxfvdsfadf"
+				},
+				"channel": "foo"
+
+			},
+			{
+				"integration": {
+					"type": "slack",
+					"token": "xvcxfvdsfadf"
+				},
+				"channel": "foo"
+
+			}
+
+		]
+	}
+
+
+	*/
+
+	notifiesResult := []map[string]interface{}{}
+
+	// TODO: Resolved the notify
+	if p.UnresolvedBodies["notify"] != nil {
+
+		// resolve the body
+	}
 	// The real settings for Notify is here
 	if p.Notify != nil {
+
+		notify := map[string]interface{}{}
+
 		integration := p.Notify.Integration
-		if integration == cty.NilVal {
+		if integration.IsNull() {
 			return nil, perr.BadRequestWithMessage(p.Name + ": integration must be supplied")
 		}
 
 		valueMap := integration.AsValueMap()
+		integrationMap := map[string]interface{}{}
 		for key, value := range valueMap {
 			// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
 			if value != cty.NilVal {
@@ -2547,16 +2672,37 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 					return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse integration attribute to Go values: " + err.Error())
 				}
 				if !helpers.IsNil(goVal) {
-					results[key] = goVal
+					integrationMap[key] = goVal
 				}
 			}
 		}
+		notify[schema.AttributeTypeIntegration] = integrationMap
 
 		channel := p.Notify.Channel
 		if helpers.IsNil(channel) {
 			return nil, perr.BadRequestWithMessage(p.Name + ": channel must be supplied")
 		}
-		results[schema.AttributeTypeChannel] = *channel
+		notify[schema.AttributeTypeChannel] = *channel
+
+		if notify != nil {
+			notifiesResult = append(notifiesResult, notify)
+		}
+
+		results[schema.AttributeTypeNotifies] = notifiesResult
+	}
+
+	// TODO: Resolved the notifies
+	if p.UnresolvedAttributes["notifies"] != nil {
+		// resolve notifies
+	}
+
+	if !p.Notifies.IsNull() {
+		notifiesValueSlice := p.Notifies.AsValueSlice()
+
+		for _, v := range notifiesValueSlice {
+			notifiesResult = append(notifiesResult, CtyValueToPipelineStepInputNotifyValueMap(v))
+		}
+		results[schema.AttributeTypeNotifies] = notifiesResult
 	}
 
 	return results, nil
