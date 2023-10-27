@@ -2628,9 +2628,8 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 	*/
 
-	var resolvedNotify *PipelineStepInputNotify
-
 	// Resolve notify
+	var resolvedNotify *PipelineStepInputNotify
 	if p.UnresolvedBodies["notify"] != nil {
 		notify := PipelineStepInputNotify{}
 		diags := gohcl.DecodeBody(p.UnresolvedBodies["notify"], evalContext, &notify)

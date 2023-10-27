@@ -3,6 +3,22 @@ integration "slack" "integrated_app" {
 }
 
 pipeline "pipeline_with_input" {
+  step "input" "input" {
+    prompt = "Choose an option:"
+
+    notify {
+      integration = integration.slack.integrated_app
+      channel     = "#general"
+    }
+  }
+}
+
+pipeline "pipeline_with_unresolved_notify" {
+
+  param "channel" {
+    type    = string
+    default = "#general"
+  }
 
   step "input" "input" {
 
@@ -10,7 +26,7 @@ pipeline "pipeline_with_input" {
 
     notify {
       integration = integration.slack.integrated_app
-      channel     = "#infosec"
+      channel     = param.channel
     }
 
   }
