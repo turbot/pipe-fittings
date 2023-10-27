@@ -318,40 +318,49 @@ func (*PipelineStepInputNotify) AsValueMap() (map[string]interface{}, error) {
 	return nil, nil
 }
 
-func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) map[string]interface{} {
+func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) (map[string]interface{}, error) {
 	notify := map[string]interface{}{}
 
-	valuemap := value.AsValueMap()
-	if !valuemap[schema.AttributeTypeChannel].IsNull() {
-		notify[schema.AttributeTypeChannel] = valuemap[schema.AttributeTypeChannel].AsString()
-	}
+	valueMap := value.AsValueMap()
 
-	integrationMap := map[string]interface{}{}
-	if !valuemap[schema.AttributeTypeIntegration].IsNull() {
-		integrationValueMap := valuemap[schema.AttributeTypeIntegration].AsValueMap()
-
-		for key, value := range integrationValueMap {
-			// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
-			if !value.IsNull() {
-				goVal, err := hclhelpers.CtyToGo(value)
-				if err != nil {
-					return nil
-				}
-				if !helpers.IsNil(goVal) {
-					integrationMap[key] = goVal
-				}
+	for k, v := range valueMap {
+		switch k {
+		case schema.AttributeTypeChannel:
+		case schema.AttributeTypeTo:
+			if !v.IsNull() {
+				notify[k] = v.AsString()
 			}
-		}
-		notify[schema.AttributeTypeIntegration] = integrationMap
+		case schema.AttributeTypeIntegration:
+			integrationMap := map[string]interface{}{}
+			if !v.IsNull() {
+				integrationValueMap := v.AsValueMap()
 
-		channel := valuemap[schema.AttributeTypeChannel]
-		if helpers.IsNil(channel) {
-			return nil
+				for key, value := range integrationValueMap {
+					switch key {
+					case schema.AttributeTypeToken:
+					case schema.AttributeTypeSigningSecret:
+					case schema.AttributeTypeWebhookUrl:
+						if !value.IsNull() {
+							goVal, err := hclhelpers.CtyToGo(value)
+							if err != nil {
+								return nil, perr.InternalWithMessage("Unable to convert " + key + " to goVal")
+							}
+							if !helpers.IsNil(goVal) {
+								integrationMap[key] = goVal
+							}
+						}
+					default:
+						return nil, perr.BadRequestWithMessage(key + " is not a valid attribute in integration")
+					}
+				}
+				notify[k] = integrationMap
+			}
+		default:
+			return nil, perr.BadRequestWithMessage(k + " is not a valid attribute in notify/notifies")
 		}
-		notify[schema.AttributeTypeChannel] = channel.AsString()
 	}
 
-	return notify
+	return notify, nil
 }
 
 func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
@@ -2684,10 +2693,15 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 		notify[schema.AttributeTypeChannel] = *channel
 
+		to := p.Notify.To
+		if helpers.IsNil(to) {
+			return nil, perr.BadRequestWithMessage(p.Name + ": to must be supplied")
+		}
+		notify[schema.AttributeTypeTo] = *to
+
 		if notify != nil {
 			notifiesResult = append(notifiesResult, notify)
 		}
-
 		results[schema.AttributeTypeNotifies] = notifiesResult
 	}
 
@@ -2700,7 +2714,11 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		notifiesValueSlice := p.Notifies.AsValueSlice()
 
 		for _, v := range notifiesValueSlice {
-			notifiesResult = append(notifiesResult, CtyValueToPipelineStepInputNotifyValueMap(v))
+			notifyValueMap, err := CtyValueToPipelineStepInputNotifyValueMap(v)
+			if err != nil {
+				return nil, err
+			}
+			notifiesResult = append(notifiesResult, notifyValueMap)
 		}
 		results[schema.AttributeTypeNotifies] = notifiesResult
 	}
