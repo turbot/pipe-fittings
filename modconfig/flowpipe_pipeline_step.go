@@ -306,22 +306,6 @@ type PipelineStepInputNotify struct {
 	Integration cty.Value `json:"-" hcl:"integration"`
 }
 
-func (*PipelineStepInputNotify) AsValueMap() (map[string]interface{}, error) {
-	// create this structure maybe?
-	/*
-		{
-			"channel": "foo",
-			"to": "bar",
-			"integration": {
-				"type": "slack",
-				"token": "foo",
-				"signing_secret": "bar"
-			}
-		}
-		**/
-	return nil, nil
-}
-
 func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) (map[string]interface{}, error) {
 	notify := map[string]interface{}{}
 
@@ -2644,8 +2628,9 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 	*/
 
-	// Resolve notify
 	var resolvedNotify *PipelineStepInputNotify
+
+	// Resolve notify
 	if p.UnresolvedBodies["notify"] != nil {
 		notify := PipelineStepInputNotify{}
 		diags := gohcl.DecodeBody(p.UnresolvedBodies["notify"], evalContext, &notify)
@@ -2697,15 +2682,23 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeNotifies] = notifiesResult
 	}
 
-	// TODO: Resolved the notifies
+	// Resolve notifies
+	var resolvedNotifies cty.Value
 	if p.UnresolvedAttributes["notifies"] != nil {
-		// resolve notifies
+		var data cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes["notifies"], evalContext, &data)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+		resolvedNotifies = data
+	} else {
+		resolvedNotifies = p.Notifies
 	}
 
-	if !p.Notifies.IsNull() {
-		notifiesResult := []map[string]interface{}{}
-		notifiesValueSlice := p.Notifies.AsValueSlice()
+	if !resolvedNotifies.IsNull() {
+		notifiesValueSlice := resolvedNotifies.AsValueSlice()
 
+		notifiesResult := []map[string]interface{}{}
 		for _, v := range notifiesValueSlice {
 			notifyValueMap, err := CtyValueToPipelineStepInputNotifyValueMap(v)
 			if err != nil {
