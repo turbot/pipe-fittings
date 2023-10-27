@@ -31,9 +31,6 @@ type ModInstaller struct {
 	// to be able to calculate changes
 	oldRequire *modconfig.Require
 
-	// installed plugins
-	installedPlugins map[string]*modconfig.PluginVersionString
-
 	mods versionmap.VersionConstraintMap
 
 	// the final resting place of all dependency mods
@@ -73,13 +70,6 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 	if err := i.setModsPath(); err != nil {
 		return nil, err
 	}
-
-	// TODO KAI hack to make pp mod install work for now
-	// installedPlugins, err := plugin.GetInstalledPlugins()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// i.installedPlugins = installedPlugins
 
 	// load lock file
 	workspaceLock, err := versionmap.LoadWorkspaceLock(i.workspacePath)
@@ -194,16 +184,15 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 	}()
 
-	// TODO KAI re-enable validation
-	// if validationErrors := workspaceMod.ValidateRequirements(i.installedPlugins); len(validationErrors) > 0 {
-	// 	if !i.force {
-	// 		// if this is not a force install, return errors in validation
-	// 		return error_helpers.CombineErrors(validationErrors...)
-	// 	}
-	// 	// ignore if this is a force install
-	// 	// TODO: raise warnings for errors getting suppressed [https://github.com/turbot/steampipe/issues/3364]
-	// 	log.Println("[TRACE] suppressing mod validation error", validationErrors)
-	// }
+	if validationErrors := workspaceMod.ValidateRequirements(); len(validationErrors) > 0 {
+		if !i.force {
+			// if this is not a force install, return errors in validation
+			return error_helpers.CombineErrors(validationErrors...)
+		}
+		// ignore if this is a force install
+		// TODO: raise warnings for errors getting suppressed [https://github.com/turbot/steampipe/issues/3364]
+		log.Println("[TRACE] suppressing mod validation error", validationErrors)
+	}
 
 	// if mod args have been provided, add them to the workspace mod requires
 	// (this will replace any existing dependencies of same name)
@@ -451,7 +440,7 @@ func (i *ModInstaller) loadDependencyMod(ctx context.Context, modVersion *versio
 		return nil, fmt.Errorf("could not find dependency mod '%s'", dependencyPath)
 	}
 
-	// set the DependencyName, DependencyPath and Version properties on the mod
+	// set the DependencyName, DependencyPath and AppVersion properties on the mod
 	if err := i.setModDependencyConfig(modDefinition, dependencyPath); err != nil {
 		return nil, err
 	}

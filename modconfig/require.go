@@ -2,14 +2,15 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/ociinstaller"
-	"github.com/turbot/pipe-fittings/version"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
@@ -63,10 +64,10 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 	diags = append(diags, moreDiags...)
 
 	// find the require block
-	requireBlock := hcl_helpers.FindFirstChildBlock(modBlock, BlockTypeRequire)
+	requireBlock := hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeRequire)
 	if requireBlock == nil {
 		// was this the legacy 'requires' block?
-		requireBlock = hcl_helpers.FindFirstChildBlock(modBlock, BlockTypeLegacyRequires)
+		requireBlock = hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeLegacyRequires)
 	}
 	if requireBlock == nil {
 		// nothing else to populate
@@ -74,12 +75,12 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 	}
 
 	// set our Ranges
-	r.DeclRange = hcl_helpers.BlockRange(requireBlock)
+	r.DeclRange = hclhelpers.BlockRange(requireBlock)
 	r.BodyRange = requireBlock.Body.(*hclsyntax.Body).SrcRange
 
 	// build maps of plugin and mod blocks
-	pluginBlockMap := hcl_helpers.BlocksToMap(hcl_helpers.FindChildBlocks(requireBlock, BlockTypePlugin))
-	modBlockMap := hcl_helpers.BlocksToMap(hcl_helpers.FindChildBlocks(requireBlock, BlockTypeMod))
+	pluginBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypePlugin))
+	modBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypeMod))
 
 	if r.Steampipe != nil {
 		moreDiags := r.Steampipe.initialise(requireBlock)
@@ -126,10 +127,10 @@ func (r *Require) handleDeprecations() hcl.Diagnostics {
 	return diags
 }
 
-func (r *Require) validateSteampipeVersion(modName string) error {
+func (r *Require) validateAppVersion(modName string) error {
 	if steampipeVersionConstraint := r.SteampipeVersionConstraint(); steampipeVersionConstraint != nil {
-		if !steampipeVersionConstraint.Check(version.SteampipeVersion) {
-			return fmt.Errorf("steampipe version %s does not satisfy %s which requires version %s", version.SteampipeVersion.String(), modName, r.Steampipe.MinVersionString)
+		if !steampipeVersionConstraint.Check(constants.AppVersion) {
+			return fmt.Errorf("App version %s does not satisfy %s which requires version %s", constants.AppVersion.String(), modName, r.Steampipe.MinVersionString)
 		}
 	}
 	return nil
@@ -137,6 +138,7 @@ func (r *Require) validateSteampipeVersion(modName string) error {
 
 // validatePluginVersions validates that for every plugin requirement there's at least one plugin installed
 func (r *Require) validatePluginVersions(modName string, plugins map[string]*PluginVersionString) []error {
+	// TODO KAI NO LONGER REQUIRED?
 	if len(r.Plugins) == 0 {
 		return nil
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"log"
 	"strconv"
@@ -59,7 +60,7 @@ func (p *runtimeDependencyPublisherImpl) GetName() string {
 func (p *runtimeDependencyPublisherImpl) ProvidesRuntimeDependency(dependency *modconfig.RuntimeDependency) bool {
 	resourceName := dependency.SourceResourceName()
 	switch dependency.PropertyPath.ItemType {
-	case modconfig.BlockTypeWith:
+	case schema.BlockTypeWith:
 		// we cannot use withRuns here as if withs have dependencies on each other,
 		// this function may be called before all runs have been added
 		// instead, look directly at the underlying resource withs
@@ -71,9 +72,9 @@ func (p *runtimeDependencyPublisherImpl) ProvidesRuntimeDependency(dependency *m
 			}
 		}
 		return false
-	case modconfig.BlockTypeInput:
+	case schema.BlockTypeInput:
 		return p.inputs[resourceName] != nil
-	case modconfig.BlockTypeParam:
+	case schema.BlockTypeParam:
 		for _, p := range p.Params {
 			// check short name not resource name (which is unqualified name)
 			if p.ShortName == dependency.PropertyPath.Name {

@@ -5,10 +5,10 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/go-kit/hcl_helpers"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/go-kit/type_conversion"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 )
@@ -75,7 +75,7 @@ func ctyTupleToArgArray(attr *hcl.Attribute, val cty.Value) ([]any, []*modconfig
 	for idx, v := range values {
 		// if the value is unknown, this is a runtime dependency
 		if !v.IsKnown() {
-			runtimeDependency, err := identifyRuntimeDependenciesFromArray(attr, idx, modconfig.AttributeArgs)
+			runtimeDependency, err := identifyRuntimeDependenciesFromArray(attr, idx, schema.AttributeArgs)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -83,7 +83,7 @@ func ctyTupleToArgArray(attr *hcl.Attribute, val cty.Value) ([]any, []*modconfig
 			runtimeDependencies = append(runtimeDependencies, runtimeDependency)
 		} else {
 			// decode the value into a go type
-			val, err := type_conversion.CtyToGo(v)
+			val, err := hclhelpers.CtyToGo(v)
 			if err != nil {
 				err := fmt.Errorf("invalid value provided for arg #%d: %v", idx, err)
 				return nil, nil, err
@@ -110,20 +110,20 @@ func ctyObjectToArgMap(attr *hcl.Attribute, val cty.Value, evalCtx *hcl.EvalCont
 
 		// if the value is unknown, this is a runtime dependency
 		if !v.IsKnown() {
-			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, modconfig.AttributeArgs, evalCtx)
+			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, schema.AttributeArgs, evalCtx)
 			if err != nil {
 				return nil, nil, err
 			}
 			runtimeDependencies = append(runtimeDependencies, runtimeDependency)
 		} else if getWrappedUnknownVal(v) {
-			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, modconfig.AttributeArgs, evalCtx)
+			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, schema.AttributeArgs, evalCtx)
 			if err != nil {
 				return nil, nil, err
 			}
 			runtimeDependencies = append(runtimeDependencies, runtimeDependency)
 		} else {
 			// decode the value into a go type
-			val, err := type_conversion.CtyToGo(v)
+			val, err := hclhelpers.CtyToGo(v)
 			if err != nil {
 				err := fmt.Errorf("invalid value provided for param '%s': %v", key, err)
 				return nil, nil, err
@@ -183,7 +183,7 @@ func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProp
 		return nil, err
 	}
 
-	if propertyPath.ItemType == modconfig.BlockTypeInput {
+	if propertyPath.ItemType == schema.BlockTypeInput {
 		// tactical: validate input dependency
 		if err := validateInputRuntimeDependency(propertyPath); err != nil {
 			return nil, err
@@ -206,14 +206,14 @@ dep_loop:
 	for {
 		switch e := expr.(type) {
 		case *hclsyntax.ScopeTraversalExpr:
-			propertyPathStr = hcl_helpers.TraversalAsString(e.Traversal)
+			propertyPathStr = hclhelpers.TraversalAsString(e.Traversal)
 			break dep_loop
 		case *hclsyntax.SplatExpr:
-			root := hcl_helpers.TraversalAsString(e.Source.(*hclsyntax.ScopeTraversalExpr).Traversal)
+			root := hclhelpers.TraversalAsString(e.Source.(*hclsyntax.ScopeTraversalExpr).Traversal)
 			var suffix string
 			// if there is a property path, add it
 			if each, ok := e.Each.(*hclsyntax.RelativeTraversalExpr); ok {
-				suffix = fmt.Sprintf(".%s", hcl_helpers.TraversalAsString(each.Traversal))
+				suffix = fmt.Sprintf(".%s", hclhelpers.TraversalAsString(each.Traversal))
 			}
 			propertyPathStr = fmt.Sprintf("%s.*%s", root, suffix)
 			break dep_loop
@@ -255,7 +255,7 @@ func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentPr
 				return nil, err
 			}
 			// tactical: validate input dependency
-			if propertyPath.ItemType == modconfig.BlockTypeInput {
+			if propertyPath.ItemType == schema.BlockTypeInput {
 				if err := validateInputRuntimeDependency(propertyPath); err != nil {
 					return nil, err
 				}
@@ -308,7 +308,7 @@ func decodeParamDefault(attr *hcl.Attribute, parseCtx *ModParseContext, paramNam
 
 	if v.IsKnown() {
 		// convert the raw default into a string representation
-		val, err := type_conversion.CtyToGo(v)
+		val, err := hclhelpers.CtyToGo(v)
 		if err != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,

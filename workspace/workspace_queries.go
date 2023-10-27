@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"os"
 	"path/filepath"
@@ -224,7 +225,7 @@ func queryLooksLikeExecutableResource(input string) (string, bool) {
 		input = input[:openBracketIdx]
 	}
 	parsedName, err := modconfig.ParseResourceName(input)
-	if err == nil && helpers.StringSliceContains(modconfig.QueryProviderBlocks, parsedName.ItemType) {
+	if err == nil && helpers.StringSliceContains(schema.QueryProviderBlocks, parsedName.ItemType) {
 		return parsedName.ToResourceName(), true
 	}
 	// do not bubble error up, just return false

@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"reflect"
 	"strings"
 
@@ -72,7 +72,7 @@ func (p *WorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hc
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("invalid nested option type %s - only 'connection' options blocks are supported for Connections", reflect.TypeOf(o).Name()),
-			Subject:  hcl_helpers.BlockRangePointer(block),
+			Subject:  hclhelpers.BlockRangePointer(block),
 		})
 	}
 	return diags
@@ -82,7 +82,7 @@ func duplicateOptionsBlockDiag(block *hcl.Block) *hcl.Diagnostic {
 	return &hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  fmt.Sprintf("duplicate %s options block", block.Type),
-		Subject:  hcl_helpers.BlockRangePointer(block),
+		Subject:  hclhelpers.BlockRangePointer(block),
 	}
 }
 

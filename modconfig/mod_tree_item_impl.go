@@ -15,7 +15,7 @@ type ModTreeItemImpl struct {
 
 	Paths []NodePath `column:"path,jsonb" json:"-"`
 
-	// TODO KAI DO WE EVER HAVE MULTIPE PARENTS
+	// TODO DO WE EVER HAVE MULTIPLE PARENTS
 	parents  []ModTreeItem
 	children []ModTreeItem
 }

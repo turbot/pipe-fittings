@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"strings"
 
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
@@ -36,7 +37,7 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 	default:
 		err = sperr.New("invalid name '%s' passed to ParseResourceName", fullName)
 	}
-	if !IsValidResourceItemType(res.ItemType) {
+	if !schema.IsValidResourceItemType(res.ItemType) {
 		err = sperr.New("invalid name '%s' passed to ParseResourceName", fullName)
 	}
 	return

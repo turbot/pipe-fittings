@@ -6,6 +6,7 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/statushooks"
 	"golang.org/x/exp/maps"
 	"log"
@@ -219,7 +220,7 @@ func (r *LeafRun) combineChildData() {
 		childLeafRun := c.(*LeafRun)
 		data := childLeafRun.Data
 		// if there is no data or this is a 'with', skip
-		if data == nil || childLeafRun.resource.BlockType() == modconfig.BlockTypeWith {
+		if data == nil || childLeafRun.resource.BlockType() == schema.BlockTypeWith {
 			continue
 		}
 		for _, s := range data.Columns {

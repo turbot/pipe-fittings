@@ -39,12 +39,12 @@ func (d *RuntimeDependency) ValidateSource(dashboard *Dashboard, workspace Resou
 	////var sourceResource HclResource
 	//switch d.PropertyPath.ItemType {
 	//// if this is a 'with' resolve from the parent resource
-	//case BlockTypeParam:
+	//case schema.BlockTypeParam:
 	//	_, found = d.ParentResource.ResolveWithFromTree(resourceName)
-	//case BlockTypeWith:
+	//case schema.BlockTypeWith:
 	//	_, found = d.ParentResource.ResolveWithFromTree(resourceName)
 	//// if this dependency has a 'self' prefix, resolve from the current dashboard container
-	//case BlockTypeInput:
+	//case schema.BlockTypeInput:
 	//	_, found = dashboard.GetInput(resourceName)
 	//
 	//	//default:

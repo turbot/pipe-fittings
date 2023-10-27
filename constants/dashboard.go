@@ -2,8 +2,6 @@ package constants
 
 import (
 	"fmt"
-
-	"github.com/turbot/pipe-fittings/version"
 )
 
 // DashboardListenAddresses is an arrays is listen addresses which Steampipe accepts
@@ -14,7 +12,6 @@ const (
 	DashboardAssetsImageRefFormat = "us-docker.pkg.dev/steampipe/steampipe/assets:%s"
 )
 
-// TODO KAI MOVE TO POWERPIPE - remove version from pipe-fittings
 var (
-	DashboardAssetsImageRef = fmt.Sprintf(DashboardAssetsImageRefFormat, version.VersionString)
+	DashboardAssetsImageRef = fmt.Sprintf(DashboardAssetsImageRefFormat, AppVersion.String())
 )

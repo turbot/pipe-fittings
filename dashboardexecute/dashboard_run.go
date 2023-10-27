@@ -3,6 +3,7 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 
 	"github.com/turbot/pipe-fittings/dashboardtypes"
@@ -26,7 +27,7 @@ func (r *DashboardRun) AsTreeNode() *dashboardtypes.SnapshotTreeNode {
 
 	for _, c := range r.children {
 		// NOTE: exclude with runs
-		if c.GetNodeType() != modconfig.BlockTypeWith {
+		if c.GetNodeType() != schema.BlockTypeWith {
 			res.Children = append(res.Children, c.AsTreeNode())
 		}
 	}

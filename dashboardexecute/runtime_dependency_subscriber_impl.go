@@ -3,6 +3,7 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"sync"
 
@@ -109,7 +110,7 @@ func (s *RuntimeDependencySubscriberImpl) resolveRuntimeDependencies() error {
 		var opts []RuntimeDependencyPublishOption
 
 		switch dep.PropertyPath.ItemType {
-		case modconfig.BlockTypeWith:
+		case schema.BlockTypeWith:
 			// set a transform function to extract the requested with data
 			opts = append(opts, WithTransform(func(resolvedVal *dashboardtypes.ResolvedRuntimeDependencyValue) *dashboardtypes.ResolvedRuntimeDependencyValue {
 				transformedResolvedVal := &dashboardtypes.ResolvedRuntimeDependencyValue{Error: resolvedVal.Error}
@@ -140,7 +141,7 @@ func (s *RuntimeDependencySubscriberImpl) findRuntimeDependencyPublisher(runtime
 	// or if this resource (or in case of a node/edge, the resource parent) has a base,
 	// the baseDependencySubscriber for that base
 	var subscriber RuntimeDependencySubscriber = s
-	if s.NodeType == modconfig.BlockTypeNode || s.NodeType == modconfig.BlockTypeEdge {
+	if s.NodeType == schema.BlockTypeNode || s.NodeType == schema.BlockTypeEdge {
 		subscriber = s.parent.(RuntimeDependencySubscriber)
 	}
 	baseSubscriber := subscriber.GetBaseDependencySubscriber()
@@ -376,7 +377,7 @@ func (s *RuntimeDependencySubscriberImpl) buildRuntimeDependencyArgs() (*modconf
 	// if the runtime dependencies use position args, get the max index and ensure the args array is large enough
 	maxArgIndex := -1
 	// build list of all args runtime dependencies
-	argRuntimeDependencies := s.findRuntimeDependenciesForParentProperty(modconfig.AttributeArgs)
+	argRuntimeDependencies := s.findRuntimeDependenciesForParentProperty(schema.AttributeArgs)
 
 	for _, dep := range argRuntimeDependencies {
 		if dep.Dependency.TargetPropertyIndex != nil && *dep.Dependency.TargetPropertyIndex > maxArgIndex {

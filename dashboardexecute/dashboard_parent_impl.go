@@ -5,6 +5,7 @@ import (
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"sync"
 )
@@ -76,7 +77,7 @@ func (r *DashboardParentImpl) executeChildrenAsync(ctx context.Context) {
 // if this leaf run has with runs execute them asynchronously
 func (r *DashboardParentImpl) executeWithsAsync(ctx context.Context) {
 	for _, c := range r.children {
-		if c.GetNodeType() == modconfig.BlockTypeWith {
+		if c.GetNodeType() == schema.BlockTypeWith {
 			go c.Execute(ctx)
 		}
 	}

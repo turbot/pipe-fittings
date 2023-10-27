@@ -1,6 +1,8 @@
 module github.com/turbot/pipe-fittings
 
 go 1.21.0
+replace github.com/turbot/go-kit => /Users/kai/Dev/github/turbot/go-kit
+
 
 require (
 	github.com/Machiel/slugify v1.0.1

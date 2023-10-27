@@ -2,6 +2,7 @@ package load_mod
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/terraform-components/terraform"
 	"sort"
 
@@ -20,7 +21,7 @@ import (
 
 func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error) {
 	// only load mod and variables blocks
-	parseCtx.BlockTypes = []string{modconfig.BlockTypeVariable}
+	parseCtx.BlockTypes = []string{schema.BlockTypeVariable}
 	mod, errAndWarnings := LoadMod(ctx, variablePath, parseCtx)
 	if errAndWarnings.GetError() != nil {
 		return nil, errAndWarnings.GetError()

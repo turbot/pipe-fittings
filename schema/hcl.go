@@ -35,6 +35,7 @@ const (
 	BlockTypeError          = "error"
 
 	// config blocks
+	BlockTypeRateLimiter       = "limiter"
 	BlockTypeConnection        = "connection"
 	BlockTypeOptions           = "options"
 	BlockTypeWorkspaceProfile  = "workspace"

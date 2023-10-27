@@ -3,6 +3,7 @@ package dashboardassets
 import (
 	"context"
 	"encoding/json"
+	"github.com/turbot/pipe-fittings/constants"
 	"log"
 	"os"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/statushooks"
-	"github.com/turbot/pipe-fittings/version"
 	"github.com/turbot/steampipe-plugin-sdk/v5/logging"
 )
 
@@ -24,7 +24,7 @@ func Ensure(ctx context.Context) error {
 		return err
 	}
 
-	if versionFile.Version == version.VersionString {
+	if versionFile.Version == constants.AppVersion.String() {
 		return nil
 	}
 

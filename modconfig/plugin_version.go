@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -42,7 +42,7 @@ func (p *PluginVersion) String() string {
 // Initialise parses the version and name properties
 func (p *PluginVersion) Initialise(block *hcl.Block) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-	p.DeclRange = hcl_helpers.BlockRange(block)
+	p.DeclRange = hclhelpers.BlockRange(block)
 	// handle deprecation warnings/errors
 	if p.VersionString != "" {
 		if p.MinVersionString != "" {

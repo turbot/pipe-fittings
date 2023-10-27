@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"reflect"
 	"strings"
 
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/go-kit/type_conversion"
 	typeHelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -323,7 +323,7 @@ func formatIntrospectionTableValue(item interface{}, columnTag *ColumnTag) (stri
 		if columnTag.ColumnType != "jsonb" {
 			return "nil", fmt.Errorf("data for column %s is of type cty.Value so column type should be 'jsonb' but is actually %s", columnTag.Column, columnTag.ColumnType)
 		}
-		str, err := type_conversion.CtyToJSON(t)
+		str, err := hclhelpers.CtyToJSON(t)
 		if err != nil {
 			return "", err
 		}

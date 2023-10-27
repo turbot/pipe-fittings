@@ -2,7 +2,8 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 
 	"github.com/hashicorp/hcl/v2"
@@ -111,7 +112,7 @@ func decodeWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string
 	parseCtx.ClearDependencies()
 
 	for _, block := range blocksToDecode {
-		if block.Type == modconfig.BlockTypeWorkspaceProfile {
+		if block.Type == schema.BlockTypeWorkspaceProfile {
 			workspaceProfile, res := decodeWorkspaceProfile(block, parseCtx)
 
 			if res.Success() {
@@ -159,7 +160,7 @@ func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseCon
 				// fail
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Subject:  hcl_helpers.BlockRangePointer(block),
+					Subject:  hclhelpers.BlockRangePointer(block),
 					Summary:  fmt.Sprintf("Duplicate options type '%s'", optionsBlockType),
 				})
 			}
@@ -178,7 +179,7 @@ func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseCon
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  fmt.Sprintf("invalid block type '%s' - only 'options' blocks are supported for workspace profiles", block.Type),
-				Subject:  hcl_helpers.BlockRangePointer(block),
+				Subject:  hclhelpers.BlockRangePointer(block),
 			})
 		}
 	}

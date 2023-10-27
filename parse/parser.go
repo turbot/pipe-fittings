@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"io"
 	"log"
 	"os"
@@ -153,7 +154,7 @@ func loadMappableResourceNames(content *hcl.BodyContent) (map[string]bool, error
 	for _, block := range content.Blocks {
 		// if this is a mod, build a shell mod struct (with just the name populated)
 		switch block.Type {
-		case modconfig.BlockTypeQuery:
+		case schema.BlockTypeQuery:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			hclResources[name] = true
@@ -181,15 +182,15 @@ func ParseModResourceNames(fileData map[string][]byte) (*modconfig.WorkspaceReso
 		// if this is a mod, build a shell mod struct (with just the name populated)
 		switch block.Type {
 
-		case modconfig.BlockTypeQuery:
+		case schema.BlockTypeQuery:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			resources.Query[name] = true
-		case modconfig.BlockTypeControl:
+		case schema.BlockTypeControl:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			resources.Control[name] = true
-		case modconfig.BlockTypeBenchmark:
+		case schema.BlockTypeBenchmark:
 			// for any mappable resource, store the resource name
 			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
 			resources.Benchmark[name] = true

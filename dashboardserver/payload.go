@@ -11,7 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardexecute"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/version"
 )
 
 func buildDashboardMetadataPayload(workspaceResources *modconfig.ResourceMaps, cloudMetadata *steampipeconfig.CloudMetadata) ([]byte, error) {
@@ -32,7 +31,7 @@ func buildDashboardMetadataPayload(workspaceResources *modconfig.ResourceMaps, c
 		Action: "dashboard_metadata",
 		Metadata: DashboardMetadata{
 			CLI: DashboardCLIMetadata{
-				Version: version.VersionString,
+				Version: constants.AppVersion.String(),
 			},
 			InstalledMods: installedMods,
 			Telemetry:     viper.GetString(constants.ArgTelemetry),

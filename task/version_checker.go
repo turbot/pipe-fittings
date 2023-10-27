@@ -10,11 +10,7 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/pipe-fittings/version"
 )
-
-// the current version of the Steampipe CLI application
-var currentVersion = version.SteampipeVersion.String()
 
 type CLIVersionCheckResponse struct {
 	NewVersion   string    `json:"latest_version,omitempty"` // `json:"current_version"`

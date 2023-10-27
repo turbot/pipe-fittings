@@ -10,12 +10,12 @@ type connectionEquality struct {
 
 var conn1 *Connection = &Connection{
 	Name:   "connection",
-	Config: "hcl_helpers",
+	Config: "hclhelpers",
 }
 
 var conn1_duplicate *Connection = &Connection{
 	Name:   "connection",
-	Config: "hcl_helpers",
+	Config: "hclhelpers",
 }
 
 var other_conn *Connection = &Connection{

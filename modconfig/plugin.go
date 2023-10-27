@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"golang.org/x/exp/maps"
 	"strings"
@@ -33,7 +33,7 @@ func NewImplicitPlugin(connection *Connection, imageRef string) *Plugin {
 }
 
 func (l *Plugin) OnDecoded(block *hcl.Block) {
-	pluginRange := hcl_helpers.BlockRange(block)
+	pluginRange := hclhelpers.BlockRange(block)
 	l.FileName = &pluginRange.Filename
 	l.StartLineNumber = &pluginRange.Start.Line
 	l.EndLineNumber = &pluginRange.End.Line

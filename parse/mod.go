@@ -3,7 +3,8 @@ package parse
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"os"
 	"path"
@@ -69,7 +70,7 @@ func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mo
 		return nil, res
 	}
 
-	block := hcl_helpers.GetFirstBlockOfType(workspaceContent.Blocks, modconfig.BlockTypeMod)
+	block := hclhelpers.GetFirstBlockOfType(workspaceContent.Blocks, schema.BlockTypeMod)
 	if block == nil {
 		res.Diags = append(res.Diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -77,7 +78,7 @@ func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mo
 		})
 		return nil, res
 	}
-	var defRange = hcl_helpers.BlockRange(block)
+	var defRange = hclhelpers.BlockRange(block)
 	mod := modconfig.NewMod(block.Labels[0], path.Dir(modFilePath), defRange)
 	// set modFilePath
 	mod.SetFilePath(modFilePath)

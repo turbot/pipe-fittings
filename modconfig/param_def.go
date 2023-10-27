@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/hcl_helpers"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 )
 
 type ParamDef struct {
@@ -25,7 +25,7 @@ func NewParamDef(block *hcl.Block) *ParamDef {
 	return &ParamDef{
 		ShortName:       block.Labels[0],
 		UnqualifiedName: fmt.Sprintf("param.%s", block.Labels[0]),
-		DeclRange:       hcl_helpers.BlockRange(block),
+		DeclRange:       hclhelpers.BlockRange(block),
 	}
 }
 

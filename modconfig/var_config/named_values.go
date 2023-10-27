@@ -3,7 +3,7 @@ package var_config
 // github.com/turbot/terraform-components/configs/parser_config.go
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"unicode"
 
 	"github.com/hashicorp/hcl/v2"
@@ -36,7 +36,7 @@ type Variable struct {
 func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bool) (*Variable, hcl.Diagnostics) {
 	v := &Variable{
 		Name:      block.Labels[0],
-		DeclRange: hcl_helpers.BlockRange(block),
+		DeclRange: hclhelpers.BlockRange(block),
 	}
 	var diags hcl.Diagnostics
 

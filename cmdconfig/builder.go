@@ -3,13 +3,19 @@ package cmdconfig
 import (
 	"fmt"
 
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-// TODO KAI unify this with steampipe (currently missing hooks etc)
+var CustomPreRunHook func(cmd *cobra.Command, args []string)
+var CustomPostRunHook func(cmd *cobra.Command, args []string)
+
 type CmdBuilder struct {
 	cmd      *cobra.Command
 	bindings map[string]*pflag.Flag
@@ -20,6 +26,32 @@ func OnCmd(cmd *cobra.Command) *CmdBuilder {
 	cfg := new(CmdBuilder)
 	cfg.cmd = cmd
 	cfg.bindings = map[string]*pflag.Flag{}
+
+	setPreRunHook(cfg)
+
+	setPostRunHook(cfg)
+
+	// wrap over the original Run function
+	originalRun := cfg.cmd.Run
+	cfg.cmd.Run = func(cmd *cobra.Command, args []string) {
+		utils.LogTime(fmt.Sprintf("cmd.%s.Run start", cmd.CommandPath()))
+		defer utils.LogTime(fmt.Sprintf("cmd.%s.Run end", cmd.CommandPath()))
+
+		// run the original Run
+		if originalRun != nil {
+			originalRun(cmd, args)
+		}
+	}
+
+	return cfg
+}
+
+func setPreRunHook(cfg *CmdBuilder) {
+	/* update the command pre run hook to:
+	 	- bind command flags
+		- run any custom pre run hook
+		- run the existing pre run hook
+	*/
 
 	// we will wrap over these two function - need references to call them
 	originalPreRun := cfg.cmd.PreRun
@@ -35,25 +67,34 @@ func OnCmd(cmd *cobra.Command) *CmdBuilder {
 			//nolint:golint,errcheck // nil check above
 			viper.GetViper().BindPFlag(flagName, flag)
 		}
+
+		// now that we have done all the flag bindings, run the custom pre run hook (if set)
+		if CustomPreRunHook != nil {
+			CustomPreRunHook(cmd, args)
+		}
+
 		// run the original PreRun
 		if originalPreRun != nil {
 			originalPreRun(cmd, args)
 		}
 	}
+}
 
-	// wrap over the original Run function
-	originalRun := cfg.cmd.Run
-	cfg.cmd.Run = func(cmd *cobra.Command, args []string) {
-		utils.LogTime(fmt.Sprintf("cmd.%s.Run start", cmd.CommandPath()))
-		defer utils.LogTime(fmt.Sprintf("cmd.%s.Run end", cmd.CommandPath()))
+func setPostRunHook(cfg *CmdBuilder) {
+	originalPostRun := cfg.cmd.PostRun
+	cfg.cmd.PostRun = func(cmd *cobra.Command, args []string) {
+		utils.LogTime(fmt.Sprintf("cmd.%s.PostRun start", cmd.CommandPath()))
+		defer utils.LogTime(fmt.Sprintf("cmd.%s.PostRun end", cmd.CommandPath()))
+		// run the original PostRun
+		if originalPostRun != nil {
+			originalPostRun(cmd, args)
+		}
 
-		// run the original Run
-		if originalRun != nil {
-			originalRun(cmd, args)
+		// run the custom post run hook (if there is one)
+		if CustomPostRunHook != nil {
+			CustomPostRunHook(cmd, args)
 		}
 	}
-
-	return cfg
 }
 
 // AddStringFlag is a helper function to add a string flag to a command
@@ -85,6 +126,27 @@ func (c *CmdBuilder) AddBoolFlag(name string, defaultValue bool, desc string, op
 		o(c.cmd, name, name)
 	}
 	return c
+}
+
+// AddCloudFlags is helper function to add the cloud flags to a command
+func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
+	return c.
+		AddStringFlag(constants.ArgCloudHost, constants.DefaultCloudHost, "Turbot Pipes host").
+		AddStringFlag(constants.ArgCloudToken, "", "Turbot Pipes authentication token")
+}
+
+// AddWorkspaceDatabaseFlag is helper function to add the workspace-databse flag to a command
+func (c *CmdBuilder) AddWorkspaceDatabaseFlag() *CmdBuilder {
+	return c.
+		AddStringFlag(constants.ArgWorkspaceDatabase, constants.DefaultWorkspaceDatabase, "Turbot Pipes workspace database")
+}
+
+// AddModLocationFlag is helper function to add the mod-location flag to a command
+func (c *CmdBuilder) AddModLocationFlag() *CmdBuilder {
+	cwd, err := os.Getwd()
+	error_helpers.FailOnError(err)
+	return c.
+		AddStringFlag(constants.ArgModLocation, cwd, "Path to the workspace working directory")
 }
 
 // AddStringSliceFlag is a helper function to add a flag that accepts an array of strings

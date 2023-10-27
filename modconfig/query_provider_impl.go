@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
@@ -66,7 +67,7 @@ func (q *QueryProviderImpl) ValidateQuery() hcl.Diagnostics {
 	// only used as base for a nested resource.
 	// Therefore only nested resources, controls and queries MUST have sql or a query defined
 	queryRequired := !q.IsTopLevel() ||
-		helpers.StringSliceContains([]string{BlockTypeQuery, BlockTypeControl}, q.BlockType())
+		helpers.StringSliceContains([]string{schema.BlockTypeQuery, schema.BlockTypeControl}, q.BlockType())
 
 	if !queryRequired {
 		return nil

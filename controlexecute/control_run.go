@@ -3,6 +3,7 @@ package controlexecute
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"sync"
 	"time"
@@ -95,7 +96,7 @@ func NewControlRun(control *modconfig.Control, group *ResultGroup, executionTree
 		RunStatus: dashboardtypes.RunInitialized,
 
 		Group:    group,
-		NodeType: modconfig.BlockTypeControl,
+		NodeType: schema.BlockTypeControl,
 		doneChan: make(chan bool, 1),
 	}
 	return res

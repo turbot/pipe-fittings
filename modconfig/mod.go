@@ -2,7 +2,8 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,7 +72,7 @@ func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 				FullName:        name,
 				UnqualifiedName: name,
 				DeclRange:       defRange,
-				blockType:       BlockTypeMod,
+				blockType:       schema.BlockTypeMod,
 			},
 		},
 		ModPath: modPath,
@@ -155,11 +156,11 @@ func (m *Mod) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostic
 	if m.LegacyRequire != nil && !m.LegacyRequire.Empty() {
 		// ensure that both 'require' and 'requires' were not set
 		for _, b := range block.Body.(*hclsyntax.Body).Blocks {
-			if b.Type == BlockTypeRequire {
+			if b.Type == schema.BlockTypeRequire {
 				return hcl.Diagnostics{&hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "Both 'require' and legacy 'requires' blocks are defined",
-					Subject:  hcl_helpers.BlockRangePointer(block),
+					Subject:  hclhelpers.BlockRangePointer(block),
 				}}
 			}
 		}
@@ -341,13 +342,11 @@ func (m *Mod) SetFilePath(modFilePath string) {
 }
 
 // ValidateRequirements validates that the current steampipe CLI and the installed plugins is compatible with the mod
-func (m *Mod) ValidateRequirements(pluginVersionMap map[string]*PluginVersionString) []error {
-	validationErrors := []error{}
+func (m *Mod) ValidateRequirements() []error {
+	var validationErrors []error
 	if err := m.validateSteampipeVersion(); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
-	pluginErr := m.validatePluginVersions(pluginVersionMap)
-	validationErrors = append(validationErrors, pluginErr...)
 	return validationErrors
 }
 
@@ -355,10 +354,11 @@ func (m *Mod) validateSteampipeVersion() error {
 	if m.Require == nil {
 		return nil
 	}
-	return m.Require.validateSteampipeVersion(m.Name())
+	return m.Require.validateAppVersion(m.Name())
 }
 
 func (m *Mod) validatePluginVersions(availablePlugins map[string]*PluginVersionString) []error {
+	// TODO KAI NO LONGER REQUIRED?
 	if m.Require == nil {
 		return nil
 	}

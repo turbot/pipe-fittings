@@ -1,7 +1,7 @@
 package modconfig
 
 import (
-	"github.com/turbot/go-kit/type_conversion"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/utils"
@@ -98,7 +98,7 @@ func (m *ModVariableMap) GetPublicVariableValues() (map[string]string, error) {
 	res := make(map[string]string, len(m.PublicVariables))
 	for k, v := range m.PublicVariables {
 		// TODO investigate workspace usage of value string and determine whether we can simply format ValueGo
-		valueString, err := type_conversion.CtyToString(v.Value)
+		valueString, err := hclhelpers.CtyToString(v.Value)
 		if err != nil {
 			return nil, err
 		}

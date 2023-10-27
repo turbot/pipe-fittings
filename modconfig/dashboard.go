@@ -2,7 +2,8 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -47,7 +48,7 @@ func NewDashboard(block *hcl.Block, mod *Mod, shortName string) HclResource {
 				ShortName:       shortName,
 				FullName:        fullName,
 				UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-				DeclRange:       hcl_helpers.BlockRange(block),
+				DeclRange:       hclhelpers.BlockRange(block),
 				blockType:       block.Type,
 			},
 			Mod: mod,
@@ -72,7 +73,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	}
 
 	// for query dashboard use generated title, for control use original title
-	if qp.BlockType() != BlockTypeQuery {
+	if qp.BlockType() != schema.BlockTypeQuery {
 		title = qp.GetTitle()
 	}
 
@@ -89,7 +90,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 				Description:     utils.ToStringPointer(qp.GetDescription()),
 				Documentation:   utils.ToStringPointer(qp.GetDocumentation()),
 				Tags:            qp.GetTags(),
-				blockType:       BlockTypeDashboard,
+				blockType:       schema.BlockTypeDashboard,
 			},
 			Mod: qp.GetMod(),
 		},

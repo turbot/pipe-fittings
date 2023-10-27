@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/turbot/pipe-fittings/db_client"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"os"
 	"path/filepath"
@@ -293,7 +294,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 	// add evaluated variables to the context
 	parseCtx.AddInputVariableValues(inputVariables)
 	// do not reload variables as we already have them
-	parseCtx.BlockTypeExclusions = []string{modconfig.BlockTypeVariable}
+	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
 
 	// load the workspace mod
 	m, otherErrorAndWarning := steampipeconfig.LoadMod(ctx, w.Path, parseCtx)

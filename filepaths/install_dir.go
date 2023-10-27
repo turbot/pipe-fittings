@@ -14,10 +14,7 @@ import (
 
 var InstallDir string
 
-// NOTE: must be set by application repo
-var DefaultInstallDir string
-
-var PipesComponentDefaultInstallDir = DefaultInstallDir
+var PipesComponentDefaultInstallDir = constants.DefaultInstallDir
 
 const (
 	connectionsStateFileName     = "connection.json"

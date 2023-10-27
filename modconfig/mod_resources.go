@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
@@ -396,43 +397,43 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 	// NOTE: we could use WalkResources, but this is quicker
 
 	switch parsedName.ItemType {
-	case BlockTypeBenchmark:
+	case schema.BlockTypeBenchmark:
 		resource, found = m.Benchmarks[longName]
-	case BlockTypeControl:
+	case schema.BlockTypeControl:
 		resource, found = m.Controls[longName]
-	case BlockTypeDashboard:
+	case schema.BlockTypeDashboard:
 		resource, found = m.Dashboards[longName]
-	case BlockTypeCard:
+	case schema.BlockTypeCard:
 		resource, found = m.DashboardCards[longName]
-	case BlockTypeCategory:
+	case schema.BlockTypeCategory:
 		resource, found = m.DashboardCategories[longName]
-	case BlockTypeChart:
+	case schema.BlockTypeChart:
 		resource, found = m.DashboardCharts[longName]
-	case BlockTypeContainer:
+	case schema.BlockTypeContainer:
 		resource, found = m.DashboardContainers[longName]
-	case BlockTypeEdge:
+	case schema.BlockTypeEdge:
 		resource, found = m.DashboardEdges[longName]
-	case BlockTypeFlow:
+	case schema.BlockTypeFlow:
 		resource, found = m.DashboardFlows[longName]
-	case BlockTypeGraph:
+	case schema.BlockTypeGraph:
 		resource, found = m.DashboardGraphs[longName]
-	case BlockTypeHierarchy:
+	case schema.BlockTypeHierarchy:
 		resource, found = m.DashboardHierarchies[longName]
-	case BlockTypeImage:
+	case schema.BlockTypeImage:
 		resource, found = m.DashboardImages[longName]
-	case BlockTypeNode:
+	case schema.BlockTypeNode:
 		resource, found = m.DashboardNodes[longName]
-	case BlockTypeTable:
+	case schema.BlockTypeTable:
 		resource, found = m.DashboardTables[longName]
-	case BlockTypeText:
+	case schema.BlockTypeText:
 		resource, found = m.DashboardTexts[longName]
-	case BlockTypeInput:
+	case schema.BlockTypeInput:
 		// this function only supports global inputs
 		// if the input has a parent dashboard, you must use GetDashboardInput
 		resource, found = m.GlobalDashboardInputs[longName]
-	case BlockTypeQuery:
+	case schema.BlockTypeQuery:
 		resource, found = m.Queries[longName]
-	case BlockTypeVariable:
+	case schema.BlockTypeVariable:
 		resource, found = m.Variables[longName]
 	}
 	return resource, found
@@ -496,7 +497,7 @@ func (m *ResourceMaps) populateWithRefs(name string, rdp RuntimeDependencyProvid
 		return
 	}
 	for _, r := range rdp.GetRuntimeDependencies() {
-		if r.PropertyPath.ItemType == BlockTypeWith {
+		if r.PropertyPath.ItemType == schema.BlockTypeWith {
 			// find the with
 			w, ok := withRoot.GetWith(r.PropertyPath.ToResourceName())
 			if ok {
@@ -518,7 +519,7 @@ func getWithRoot(rdp RuntimeDependencyProvider) WithProvider {
 	// (if our parent is the Mod, we are the root resource, otherwise traverse up until we find the mod
 	parent := rdp.GetParents()[0]
 
-	for parent.BlockType() != BlockTypeMod {
+	for parent.BlockType() != schema.BlockTypeMod {
 		if wp, ok := parent.(WithProvider); ok {
 			withRoot = wp
 		}

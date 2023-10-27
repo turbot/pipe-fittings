@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/schema"
 	"strings"
 )
 
@@ -54,7 +55,7 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		parts = parts[1:]
 	}
 
-	if IsValidResourceItemType(parts[0]) {
+	if schema.IsValidResourceItemType(parts[0]) {
 		// put empty mod as first part - so we can assume always that the first part is mod
 		parts = append([]string{""}, parts...)
 	}
@@ -75,7 +76,7 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		res.PropertyPath = parts[3:]
 	}
 
-	if !IsValidResourceItemType(res.ItemType) {
+	if !schema.IsValidResourceItemType(res.ItemType) {
 		return nil, fmt.Errorf("invalid property path '%s' passed to ParseResourcePropertyPath", propertyPath)
 	}
 

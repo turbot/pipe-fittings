@@ -3,7 +3,6 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/db_client"
 	"log"
 	"sync"
 	"time"
@@ -12,7 +11,9 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
+	"github.com/turbot/pipe-fittings/db_client"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
 
@@ -85,19 +86,19 @@ func (e *DashboardExecutionTree) createRootItem(rootName string) (dashboardtypes
 		rootName = fullName
 	}
 	switch parsedName.ItemType {
-	case modconfig.BlockTypeDashboard:
+	case schema.BlockTypeDashboard:
 		dashboard, ok := e.workspace.GetResourceMaps().Dashboards[rootName]
 		if !ok {
 			return nil, fmt.Errorf("dashboard '%s' does not exist in workspace", rootName)
 		}
 		return NewDashboardRun(dashboard, e, e)
-	case modconfig.BlockTypeBenchmark:
+	case schema.BlockTypeBenchmark:
 		benchmark, ok := e.workspace.GetResourceMaps().Benchmarks[rootName]
 		if !ok {
 			return nil, fmt.Errorf("benchmark '%s' does not exist in workspace", rootName)
 		}
 		return NewCheckRun(benchmark, e, e)
-	case modconfig.BlockTypeQuery:
+	case schema.BlockTypeQuery:
 		// wrap in a table
 		query, ok := e.workspace.GetResourceMaps().Queries[rootName]
 		if !ok {
@@ -111,7 +112,7 @@ func (e *DashboardExecutionTree) createRootItem(rootName string) (dashboardtypes
 			return nil, err
 		}
 		return NewDashboardRun(dashboard, e, e)
-	case modconfig.BlockTypeControl:
+	case schema.BlockTypeControl:
 		// wrap in a table
 		control, ok := e.workspace.GetResourceMaps().Controls[rootName]
 		if !ok {
@@ -302,7 +303,7 @@ func (e *DashboardExecutionTree) InputRuntimeDependencies() []string {
 	for _, r := range e.runs {
 		if leafRun, ok := r.(*LeafRun); ok {
 			for _, r := range leafRun.runtimeDependencies {
-				if r.Dependency.PropertyPath.ItemType == modconfig.BlockTypeInput {
+				if r.Dependency.PropertyPath.ItemType == schema.BlockTypeInput {
 					deps[r.Dependency.SourceResourceName()] = struct{}{}
 				}
 			}

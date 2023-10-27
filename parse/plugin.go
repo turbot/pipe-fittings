@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/turbot/pipe-fittings/modconfig"
 )
@@ -32,7 +33,7 @@ func DecodePlugin(block *hcl.Block) (*modconfig.Plugin, hcl.Diagnostics) {
 	for _, block := range content.Blocks {
 		switch block.Type {
 		// only block defined in schema
-		case modconfig.BlockTypeRateLimiter:
+		case schema.BlockTypeRateLimiter:
 			limiter, moreDiags := DecodeLimiter(block)
 			diags = append(diags, moreDiags...)
 			if moreDiags.HasErrors() {

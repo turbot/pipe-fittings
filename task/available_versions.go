@@ -70,17 +70,11 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 		return nil, err
 	}
 
-	currentVersion, err := semver.NewVersion(currentVersion)
-	if err != nil {
-		fmt.Println(fmt.Errorf("there's something wrong with the Current Version"))
-		fmt.Println(err)
-	}
-
-	if newVersion.GreaterThan(currentVersion) {
+	if newVersion.GreaterThan(constants.AppVersion) {
 		var downloadURLColor = color.New(color.FgYellow)
 		var notificationLines = []string{
 			"",
-			fmt.Sprintf("A new version of Steampipe is available! %s → %s", constants.Bold(currentVersion), constants.Bold(newVersion)),
+			fmt.Sprintf("A new version of Steampipe is available! %s → %s", constants.Bold(constants.AppVersion.String()), constants.Bold(newVersion)),
 			fmt.Sprintf("You can update by downloading from %s", downloadURLColor.Sprint("https://steampipe.io/downloads")),
 			"",
 		}
@@ -135,26 +129,26 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 //	for _, report := range reports {
 //		thisName := report.ShortName()
 //		line := ""
-//		if len(report.Plugin.Version) == 0 {
+//		if len(report.Plugin.AppVersion) == 0 {
 //			format := fmt.Sprintf("  %%-%ds @ %%-10s  →  %%10s", longestNameLength)
 //			line = fmt.Sprintf(
 //				format,
 //				thisName,
 //				report.CheckResponse.Stream,
-//				constants.Bold(report.CheckResponse.Version),
+//				constants.Bold(report.CheckResponse.AppVersion),
 //			)
 //		} else {
-//			version := report.CheckResponse.Version
+//			version := report.CheckResponse.AppVersion
 //			format := fmt.Sprintf("  %%-%ds @ %%-10s       %%10s → %%-10s", longestNameLength)
 //			// an arm64 binary of the plugin might exist for the same version
-//			if report.Plugin.Version == report.CheckResponse.Version {
+//			if report.Plugin.AppVersion == report.CheckResponse.AppVersion {
 //				version = fmt.Sprintf("%s (arm64)", version)
 //			}
 //			line = fmt.Sprintf(
 //				format,
 //				thisName,
 //				report.CheckResponse.Stream,
-//				constants.Bold(report.Plugin.Version),
+//				constants.Bold(report.Plugin.AppVersion),
 //				constants.Bold(version),
 //			)
 //		}

@@ -1,15 +1,12 @@
 package constants
 
-// TODO KAI this does not really below here - think about app specific stuff
-// Application constants
+import "github.com/Masterminds/semver/v3"
 
-const (
-	AppName = "steampipe"
-	FdwName = "steampipe-postgres-fdw"
-)
+// Application constants which MUST be set by the application
 
-const (
-	ClientConnectionAppNamePrefix       = "steampipe_client"
-	ServiceConnectionAppNamePrefix      = "steampipe_service"
-	ClientSystemConnectionAppNamePrefix = "steampipe_client_system"
-)
+var AppName string
+var ClientConnectionAppNamePrefix string
+var ServiceConnectionAppNamePrefix string
+var ClientSystemConnectionAppNamePrefix string
+var DefaultInstallDir string
+var AppVersion *semver.Version

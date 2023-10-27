@@ -109,21 +109,11 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	// set cloud metadata (may be nil)
 	i.Workspace.CloudMetadata = cloudMetadata
 
-	// TODO KAI REMOVE
-	//statushooks.SetStatus(ctx, "Checking for required plugins")
-	//log.Printf("[INFO] Checking for required plugins")
-	//pluginsInstalled, err := plugin.GetInstalledPlugins()
-	//if err != nil {
-	//	i.Result.Error = err
-	//	return
-	//}
-
 	// no need to validate local steampipe and plugin versions for when connecting to remote steampipe database
 	// ArgConnectionString is empty when connecting to local database
 	if connectionString := viper.GetString(constants.ArgConnectionString); connectionString == "" {
-		// validate steampipe version and required plugin version
-		// TODO KAI REMOVE PLUGINS
-		validationWarnings := validateModRequirementsRecursively(i.Workspace.Mod, nil)
+		// validate steampipe version
+		validationWarnings := validateModRequirementsRecursively(i.Workspace.Mod)
 		i.Result.AddWarnings(validationWarnings...)
 	}
 
@@ -171,12 +161,11 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	i.Client = client
 }
 
-// TODO KAI REMOVE PLUGINS
-func validateModRequirementsRecursively(mod *modconfig.Mod, pluginVersionMap map[string]*modconfig.PluginVersionString) []string {
+func validateModRequirementsRecursively(mod *modconfig.Mod) []string {
 	var validationErrors []string
 
 	// validate this mod
-	for _, err := range mod.ValidateRequirements(pluginVersionMap) {
+	for _, err := range mod.ValidateRequirements() {
 		validationErrors = append(validationErrors, err.Error())
 	}
 
@@ -189,7 +178,7 @@ func validateModRequirementsRecursively(mod *modconfig.Mod, pluginVersionMap map
 			// this is a reference to self - skip (otherwise we will end up with a recursion loop)
 			continue
 		}
-		childValidationErrors := validateModRequirementsRecursively(childMod, pluginVersionMap)
+		childValidationErrors := validateModRequirementsRecursively(childMod)
 		validationErrors = append(validationErrors, childValidationErrors...)
 	}
 

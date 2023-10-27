@@ -1,7 +1,7 @@
 package modconfig
 
 import (
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"sort"
 	"strings"
 
@@ -81,7 +81,7 @@ func (l *RateLimiter) AsProto() *proto.RateLimiterDefinition {
 }
 
 func (l *RateLimiter) OnDecoded(block *hcl.Block) {
-	limiterRange := hcl_helpers.BlockRange(block)
+	limiterRange := hclhelpers.BlockRange(block)
 	l.FileName = &limiterRange.Filename
 	l.StartLineNumber = &limiterRange.Start.Line
 	l.EndLineNumber = &limiterRange.End.Line

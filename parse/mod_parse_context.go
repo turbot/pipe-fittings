@@ -2,7 +2,8 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/terraform-components/terraform"
 	"strings"
 
@@ -219,8 +220,8 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	// do not add variables (as they have already been added)
 	// if the resource is for a dependency mod, do not add locals
 	shouldAdd := func(item modconfig.HclResource) bool {
-		if item.BlockType() == modconfig.BlockTypeVariable ||
-			item.BlockType() == modconfig.BlockTypeLocals && item.(modconfig.ModTreeItem).GetMod().ShortName != m.CurrentMod.ShortName {
+		if item.BlockType() == schema.BlockTypeVariable ||
+			item.BlockType() == schema.BlockTypeLocals && item.(modconfig.ModTreeItem).GetMod().ShortName != m.CurrentMod.ShortName {
 			return false
 		}
 		return true
@@ -646,7 +647,7 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 				return "", fmt.Errorf("failed to get args details for %s", parsedVarName.ToResourceName())
 			}
 			// ok we have the expression - build the error string
-			exprString := hcl_helpers.TraversalAsString(expr.Traversal)
+			exprString := hclhelpers.TraversalAsString(expr.Traversal)
 			r := expr.Range()
 			sourceRange := fmt.Sprintf("%s:%d", r.Filename, r.Start.Line)
 			res := fmt.Sprintf("\"%s = %s\" (%s %s)",
@@ -663,7 +664,7 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 
 func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
 	for _, b := range m.CurrentMod.ResourceWithMetadataBaseRemain.(*hclsyntax.Body).Blocks {
-		if b.Type == modconfig.BlockTypeRequire {
+		if b.Type == schema.BlockTypeRequire {
 			return b
 		}
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlexecute"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/pipe-fittings/version"
 )
 
 // TemplateFormatter implements the 'Formatter' interface and exposes a generic template based output mechanism
@@ -51,7 +50,7 @@ func (tf TemplateFormatter) Format(ctx context.Context, tree *controlexecute.Exe
 		}
 		renderContext := TemplateRenderContext{
 			Constants: TemplateRenderConstants{
-				SteampipeVersion: version.SteampipeVersion.String(),
+				SteampipeVersion: constants.AppVersion.String(),
 				WorkingDir:       workingDirectory,
 			},
 			Config: TemplateRenderConfig{

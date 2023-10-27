@@ -2,7 +2,7 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -21,7 +21,7 @@ func newUnresolvedBlock(block *hcl.Block, name string, dependencies map[string]*
 		Name:         name,
 		Block:        block,
 		Dependencies: dependencies,
-		DeclRange:    hcl_helpers.BlockRange(block),
+		DeclRange:    hclhelpers.BlockRange(block),
 	}
 }
 

@@ -2,6 +2,7 @@ package controlexecute
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"sort"
 	"sync"
@@ -75,7 +76,7 @@ func NewRootResultGroup(ctx context.Context, executionTree *ExecutionTree, rootI
 		Summary:    NewGroupSummary(),
 		Severity:   make(map[string]controlstatus.StatusSummary),
 		updateLock: new(sync.Mutex),
-		NodeType:   modconfig.BlockTypeBenchmark,
+		NodeType:   schema.BlockTypeBenchmark,
 		Title:      rootItem.GetTitle(),
 	}
 
@@ -105,7 +106,7 @@ func NewResultGroup(ctx context.Context, executionTree *ExecutionTree, treeItem 
 		Summary:     NewGroupSummary(),
 		Severity:    make(map[string]controlstatus.StatusSummary),
 		updateLock:  new(sync.Mutex),
-		NodeType:    modconfig.BlockTypeBenchmark,
+		NodeType:    schema.BlockTypeBenchmark,
 	}
 
 	// populate additional properties (this avoids adding GetDocumentation, GetDisplay and GetType to all ModTreeItems)

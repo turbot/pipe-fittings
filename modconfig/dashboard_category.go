@@ -3,7 +3,7 @@ package modconfig
 import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -39,7 +39,7 @@ func NewDashboardCategory(block *hcl.Block, mod *Mod, shortName string) HclResou
 				ShortName:       shortName,
 				FullName:        fullName,
 				UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-				DeclRange:       hcl_helpers.BlockRange(block),
+				DeclRange:       hclhelpers.BlockRange(block),
 				blockType:       block.Type,
 			},
 			Mod: mod,

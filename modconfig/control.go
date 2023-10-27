@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -42,7 +42,7 @@ func NewControl(block *hcl.Block, mod *Mod, shortName string) HclResource {
 						FullName:        fullName,
 						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
 						ShortName:       shortName,
-						DeclRange:       hcl_helpers.BlockRange(block),
+						DeclRange:       hclhelpers.BlockRange(block),
 						blockType:       block.Type,
 					},
 					Mod: mod,

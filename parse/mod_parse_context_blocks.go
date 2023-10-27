@@ -2,7 +2,7 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/hcl_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -68,7 +68,7 @@ func (m *ModParseContext) cacheBlockName(block *hcl.Block, shortName string) {
 }
 
 func (m *ModParseContext) blockHash(block *hcl.Block) string {
-	return helpers.GetMD5Hash(hcl_helpers.BlockRange(block).String())
+	return helpers.GetMD5Hash(hclhelpers.BlockRange(block).String())
 }
 
 // getUniqueName returns a name unique within the scope of this execution tree

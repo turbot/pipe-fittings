@@ -2,7 +2,7 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/go-kit/type_conversion"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -147,7 +147,7 @@ func parseArg(v string) (any, error) {
 	if diags.HasErrors() {
 		return "", plugin.DiagsToError("bad arg syntax", diags)
 	}
-	return type_conversion.CtyToGo(val)
+	return hclhelpers.CtyToGo(val)
 }
 
 func parseNamedArgs(argsList []string) (map[string]any, error) {

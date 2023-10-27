@@ -3,8 +3,9 @@ package modconfig
 import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/type_conversion"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/tfdiags"
 	"github.com/zclconf/go-cty/cty"
@@ -43,7 +44,7 @@ type Variable struct {
 func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 	var defaultGo interface{} = nil
 	if !v.Default.IsNull() {
-		defaultGo, _ = type_conversion.CtyToGo(v.Default)
+		defaultGo, _ = hclhelpers.CtyToGo(v.Default)
 	}
 	fullName := fmt.Sprintf("%s.var.%s", mod.ShortName, v.Name)
 	res := &Variable{
@@ -54,7 +55,7 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 				FullName:        fullName,
 				DeclRange:       v.DeclRange,
 				UnqualifiedName: fmt.Sprintf("var.%s", v.Name),
-				blockType:       BlockTypeVariable,
+				blockType:       schema.BlockTypeVariable,
 			},
 			Mod: mod,
 		},
@@ -67,7 +68,7 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 		Type:        v.Type,
 		ParsingMode: v.ParsingMode,
 		ModName:     mod.ShortName,
-		TypeString:  type_conversion.CtyTypeToHclType(v.Type, v.Default.Type()),
+		TypeString:  hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()),
 	}
 	// if no type is set and a default _is_ set, use default to set the type
 	if res.Type.Equals(cty.DynamicPseudoType) && !res.Default.IsNull() {
@@ -110,10 +111,10 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	v.ValueSourceFileName = sourceRange.Filename
 	v.ValueSourceStartLineNumber = sourceRange.Start.Line
 	v.ValueSourceEndLineNumber = sourceRange.End.Line
-	v.ValueGo, _ = type_conversion.CtyToGo(value)
+	v.ValueGo, _ = hclhelpers.CtyToGo(value)
 	// if type string is not set, derive from the type of value
 	if v.TypeString == "" {
-		v.TypeString = type_conversion.CtyTypeToHclType(value.Type())
+		v.TypeString = hclhelpers.CtyTypeToHclType(value.Type())
 	}
 
 	return nil
