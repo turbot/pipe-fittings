@@ -43,6 +43,10 @@ type StepForEach struct {
 	Each       json.SimpleJSONValue `json:"each"`
 }
 
+type StepLoop struct {
+	Key string
+}
+
 // Input to the step or pipeline execution
 type Input map[string]interface{}
 
