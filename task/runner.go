@@ -92,7 +92,7 @@ func (r *Runner) run(ctx context.Context) {
 
 	var availableCliVersion *CLIVersionCheckResponse
 
-	// TODO KAI REMOVE PLUGIN
+	// TODO KAI REMOVE PLUGIN <TASKS>
 	//var availablePluginVersions map[string]plugin.VersionCheckReport
 
 	waitGroup := sync.WaitGroup{}
@@ -103,7 +103,7 @@ func (r *Runner) run(ctx context.Context) {
 			availableCliVersion, _ = fetchAvailableCLIVerion(ctx, r.currentState.InstallationID)
 		}, &waitGroup)
 
-		// TODO KAI REMOVE PLUGIN
+		// TODO KAI REMOVE PLUGIN <TASKS>
 
 		// check whether an updated version is available
 		//r.runJobAsync(ctx, func(c context.Context) {
@@ -111,7 +111,7 @@ func (r *Runner) run(ctx context.Context) {
 		//}, &waitGroup)
 	}
 
-	// TODO KAI find a home for TrimLogs
+	// TODO KAI find a home for TrimLogs <TASKS>
 	// remove log files older than 7 days
 	r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)
 

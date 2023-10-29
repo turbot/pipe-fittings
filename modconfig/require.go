@@ -138,7 +138,7 @@ func (r *Require) validateAppVersion(modName string) error {
 
 // validatePluginVersions validates that for every plugin requirement there's at least one plugin installed
 func (r *Require) validatePluginVersions(modName string, plugins map[string]*PluginVersionString) []error {
-	// TODO KAI NO LONGER REQUIRED?
+	// TODO KAI NO LONGER REQUIRED? <MOD PLUGINS>
 	if len(r.Plugins) == 0 {
 		return nil
 	}

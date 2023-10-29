@@ -14,7 +14,7 @@ func ToError(val interface{}) error {
 	}
 }
 
-// TODO KAI unify with Victors mod loading
+// TODO KAI unify with Victors mod loading <FLOWPIPE>
 //
 //// Convenient function to support testing
 ////

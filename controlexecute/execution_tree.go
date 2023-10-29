@@ -124,7 +124,6 @@ func (e *ExecutionTree) Execute(ctx context.Context) error {
 		e.Progress.Finish(ctx)
 	}()
 
-	//TODO KAI what about search paths
 	//// TODO should we always wait even with non custom search path?
 	//// if there is a custom search path, wait until the first connection of each plugin has loaded
 	//if customSearchPath := e.client.GetCustomSearchPath(); customSearchPath != nil {

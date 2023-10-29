@@ -207,7 +207,7 @@ func (r *ControlRun) execute(ctx context.Context, client *db_client.DbClient) {
 	}()
 
 	// get a db connection
-	// TODO KAI why do we need to manually acquire a session???
+	// TODO KAI why do we need to manually acquire a session??? <SESSION>
 	//sessionResult := r.acquireSession(ctx, client)
 	//if sessionResult.Error != nil {
 	//	if !error_helpers.IsCancelledError(sessionResult.Error) {
@@ -279,7 +279,7 @@ func (r *ControlRun) execute(ctx context.Context, client *db_client.DbClient) {
 	log.Printf("[TRACE] finish result for, %s\n", control.Name())
 }
 
-// todo kai why do we need to manually acquire a session???
+// todo kai why do we need to manually acquire a session??? <SESSION>
 //// try to acquire a database session - retry up to 4 times if there is an error
 //func (r *ControlRun) acquireSession(ctx context.Context, client *db_client.DbClient) *db_common.AcquireSessionResult {
 //	var sessionResult *db_common.AcquireSessionResult

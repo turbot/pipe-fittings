@@ -49,7 +49,7 @@ func (r *CheckRun) Initialise(ctx context.Context) {
 	// build control execution tree during init, rather than in Execute, so that it is populated when the ExecutionStarted event is sent
 	controlFilterWhereClause := ""
 
-	// TODO KAI HACK - just pass top level client
+	// TODO KAI HACK - just pass top level client <MISC>
 	client := r.executionTree.clients[viper.GetString(constants.ArgWorkspaceDatabase)]
 	executionTree, err := controlexecute.NewExecutionTree(ctx, r.executionTree.workspace, client, controlFilterWhereClause, r.resource.Name())
 	if err != nil {

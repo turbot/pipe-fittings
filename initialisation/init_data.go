@@ -117,7 +117,7 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 		i.Result.AddWarnings(validationWarnings...)
 	}
 
-	// TODO KAI FIX ME
+	// TODO KAI FIX ME <INTROSPECTION>
 	// if introspection tables are enabled, setup the session data callback
 	//var ensureSessionData db_client.DbConnectionCallback
 	//if viper.GetString(constants.ArgIntrospection) != constants.IntrospectionNone {
@@ -126,7 +126,7 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	//	}
 	//}
 
-	// TODO STEAMPIPE ONLY
+	// TODO STEAMPIPE ONLY <MISC>
 	//// get a client
 	//// add a message rendering function to the context - this is used for the fdw update message and
 	//// allows us to render it as a standard initialisation message
@@ -134,7 +134,7 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	//	i.Result.AddMessage(fmt.Sprintf(format, a...))
 	//})
 
-	// TODO KAI WHY ARE WE USING CONNECTION STRING?????????
+	// TODO KAI WHY ARE WE USING CONNECTION STRING????????? <MISC>
 	statushooks.SetStatus(ctx, "Connecting to steampipe database")
 	log.Printf("[INFO] Connecting to steampipe database")
 	connectionString := viper.GetString(constants.ArgConnectionString)
@@ -149,7 +149,7 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 		return
 	}
 
-	// TODO KAI STEAMPIPE ONLY
+	// TODO KAI STEAMPIPE ONLY <CACHE>
 	log.Printf("[INFO] ValidateClientCacheSettings")
 	//if errorsAndWarnings := db_common.ValidateClientCacheSettings(client); errorsAndWarnings != nil {
 	//	if errorsAndWarnings.GetError() != nil {

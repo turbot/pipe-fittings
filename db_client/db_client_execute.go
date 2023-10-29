@@ -25,13 +25,13 @@ func (c *DbClient) Execute(ctx context.Context, query string, args ...any) (*que
 		return nil, err
 	}
 
-	// TODO KAI REMOVED
+	// TODO KAI REMOVED <SESSION>
 	//sessionResult := c.AcquireSession(ctx)
 	//if sessionResult.Error != nil {
 	//	return nil, sessionResult.Error
 	//}
 
-	// TODO steampipe only
+	// TODO KAI steampipe only <TIMING>
 	//// disable statushooks when timing is enabled, because setShouldShowTiming internally calls the readRows funcs which
 	//// calls the statushooks.Done, which hides the `Executing query…` spinner, when timing is enabled.
 	//timingCtx := statushooks.DisableStatusHooks(ctx)
@@ -40,7 +40,7 @@ func (c *DbClient) Execute(ctx context.Context, query string, args ...any) (*que
 	//c.setShouldShowTiming(timingCtx, sessionResult.Session)
 
 	// define callback to close session when the async execution is complete
-	// TODO KAI session close  waited for pg shutdown
+	// TODO KAI session close  waited for pg shutdown <SESSION>
 
 	closeSessionCallback := func() { databaseConnection.Close() }
 	return c.executeOnConnection(ctx, databaseConnection, closeSessionCallback, query, args...)
@@ -54,13 +54,13 @@ func (c *DbClient) ExecuteSync(ctx context.Context, query string, args ...any) (
 		return nil, err
 	}
 
-	// TODO KAI REMOVED
+	// TODO KAI REMOVED <SESSION>
 	//sessionResult := c.AcquireSession(ctx)
 	//if sessionResult.Error != nil {
 	//	return nil, sessionResult.Error
 	//}
 
-	// TODO KAI STEAMPIPE ONLY
+	// TODO KAI STEAMPIPE ONLY <TIMING>
 	// set setShouldShowTiming flag
 	// (this will refetch ScanMetadataMaxId if timing has just been enabled)
 	//c.setShouldShowTiming(ctx, sessionResult.Session)
@@ -72,7 +72,7 @@ func (c *DbClient) ExecuteSync(ctx context.Context, query string, args ...any) (
 	}
 	defer func() {
 
-		// TODO KAI we do this in session close - move to steampipe from Session.Close
+		// TODO KAI we do this in session close - move to steampipe from Session.Close <SESSION>
 		//if error_helpers.IsContextCanceled(ctx) {
 		//	log.Printf("[TRACE] DatabaseSession.Close wait for connection cleanup")
 		//	select {
@@ -111,7 +111,7 @@ func (c *DbClient) executeSyncOnConnection(ctx context.Context, dbConn *sql.Conn
 			syncResult.Rows = append(syncResult.Rows, row)
 		}
 	}
-	// TODO KAI STEAMPIPE ONLY
+	// TODO KAI STEAMPIPE ONLY <TIMING>
 	//if c.shouldShowTiming() {
 	//	syncResult.TimingResult = <-result.TimingResult
 	//}
@@ -127,13 +127,13 @@ func (c *DbClient) executeOnConnection(ctx context.Context, dbConn *sql.Conn, on
 		return queryresult.NewResult(nil), nil
 	}
 
-	// TODO KAI be clear about which execute calls we need to call the hook for - simplify?
+	// TODO KAI be clear about which execute calls we need to call the hook for - simplify? <TIMING>
 	if c.BeforeExecuteHook != nil {
 		if err := c.BeforeExecuteHook(ctx, dbConn); err != nil {
 			return nil, err
 		}
 	}
-	// TODO KAI steampipe only
+	// TODO KAI steampipe only <TIMING>
 	//startTime := time.Now()
 
 	// get a context with a timeout for the query to execute within
@@ -177,7 +177,7 @@ func (c *DbClient) executeOnConnection(ctx context.Context, dbConn *sql.Conn, on
 
 	// read the rows in a go routine
 	go func() {
-		// TODO KAI do in steampipe
+		// TODO KAI do in steampipe <TIMING>
 		//// define a callback which fetches the timing information
 		//// this will be invoked after reading rows is complete but BEFORE closing the rows object (which closes the connection)
 		//timingCallback := func() {
@@ -185,7 +185,7 @@ func (c *DbClient) executeOnConnection(ctx context.Context, dbConn *sql.Conn, on
 		//}
 
 		// read in the rows and stream to the query result object
-		// TODO kai make callbacks options
+		// TODO kai make callbacks options <TIMING>
 		c.readRows(ctxExecute, rows, result, nil, nil)
 
 		// call the completion callback - if one was provided
@@ -234,7 +234,7 @@ func (c *DbClient) readRows(ctx context.Context, rows *sql.Rows, result *queryre
 	defer func() {
 		// we are done fetching results. time for display. clear the status indication
 		statushooks.Done(ctx)
-		// TODO KAI STEAMPIPE should pass timingCallback as onComplete
+		// TODO KAI STEAMPIPE should pass timingCallback as onComplete <TIMING>
 		// call the timing callback BEFORE closing the rows
 		if onComplete != nil {
 			onComplete()
@@ -263,7 +263,7 @@ Loop:
 				break Loop
 			}
 
-			// TODO KAI STEAMPIPE should pass this as onRow
+			// TODO KAI STEAMPIPE should pass this as onRow <MISC>
 			/*
 				// TACTICAL
 					// determine whether to stop the spinner as soon as we stream a row or to wait for completion

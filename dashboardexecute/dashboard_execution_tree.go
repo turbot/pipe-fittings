@@ -47,7 +47,7 @@ func NewDashboardExecutionTree(rootName string, sessionId string, clients map[st
 	executionTree := &DashboardExecutionTree{
 		dashboardName: rootName,
 		sessionId:     sessionId,
-		// TODO KAI pass in default connection string?
+		// TODO KAI pass in default connection string? <MISC>
 		defaultConnectionString: viper.GetString(constants.ArgWorkspaceDatabase),
 		clients:                 clients,
 		runs:                    make(map[string]dashboardtypes.DashboardTreeRun),
@@ -132,7 +132,7 @@ func (e *DashboardExecutionTree) createRootItem(rootName string) (dashboardtypes
 func (e *DashboardExecutionTree) Execute(ctx context.Context) {
 	startTime := time.Now()
 
-	// TODO KAI WHAT DO WE DO HERE
+	// TODO KAI WHAT DO WE DO HERE <SEARCH PATH>
 	//searchPath := e.defaultClient().GetRequiredSessionSearchPath()
 
 	// store context

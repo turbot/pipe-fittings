@@ -10,3 +10,4 @@ var ServiceConnectionAppNamePrefix string
 var ClientSystemConnectionAppNamePrefix string
 var DefaultInstallDir string
 var AppVersion *semver.Version
+var DefaultWorkspaceDatabase string

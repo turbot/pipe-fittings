@@ -11,7 +11,7 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-// TODO KAI REMOVE PLUGIN
+// TODO KAI REMOVE PLUGIN <TASKS>
 type AvailableVersionCache struct {
 	StructVersion uint32                   `json:"struct_version"`
 	CliCache      *CLIVersionCheckResponse `json:"cli_version"`
@@ -47,7 +47,7 @@ func (av *AvailableVersionCache) buildNotification() ([]string, error) {
 		return nil, err
 	}
 	return cliLines, nil
-	// TODO KAI REMOVE PLUGIN
+	// TODO KAI REMOVE PLUGIN <TASKS>
 
 	//pluginLines := av.pluginNotificationMessage()
 	//// convert notificationLines into an array of arrays
@@ -83,7 +83,7 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 	return nil, nil
 }
 
-// TODO KAI REMOVE PLUGIN
+// TODO KAI REMOVE PLUGIN <TASKS>
 
 //
 //func (av *AvailableVersionCache) pluginNotificationMessage() []string {

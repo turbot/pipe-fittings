@@ -17,7 +17,7 @@ const (
 	AvailableVersionsCacheStructVersion = 20230117
 )
 
-// TODO KAI REMOVED PLUGIN
+// TODO KAI REMOVED PLUGIN <TASKS>
 func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin map[string]plugin.VersionCheckReport*/) error {
 	utils.LogTime("Runner.saveAvailableVersions start")
 	defer utils.LogTime("Runner.saveAvailableVersions end")

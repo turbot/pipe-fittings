@@ -358,7 +358,7 @@ func (m *Mod) validateSteampipeVersion() error {
 }
 
 func (m *Mod) validatePluginVersions(availablePlugins map[string]*PluginVersionString) []error {
-	// TODO KAI NO LONGER REQUIRED?
+	// TODO KAI NO LONGER REQUIRED? <MOD PLUGINS>
 	if m.Require == nil {
 		return nil
 	}

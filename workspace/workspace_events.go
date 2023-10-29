@@ -82,7 +82,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	}
 	// if resources have changed, update introspection tables
 	if !prevResourceMaps.Equals(resourceMaps) {
-		// TODO KAI STEAMPIPE workspacres should not know about introspection data - STEAMPIPE will need a hook here
+		// TODO KAI STEAMPIPE workspacres should not know about introspection data - STEAMPIPE will need a hook here <INTROSPECTION>
 		// maybe workspace could provide a file changed hook which Steampipe uses
 
 		//// update the client with the new introspection data
@@ -95,7 +95,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	w.raiseDashboardChangedEvents(ctx, resourceMaps, prevResourceMaps)
 }
 
-// TODO KAI STEAMPIPE workspaces should not know about introspection data - STEAMPIPE will need a hook here
+// TODO KAI STEAMPIPE workspaces should not know about introspection data - STEAMPIPE will need a hook here <INTROSPECTION>
 // maybe workspace could provide a file changed hook which Steampipe uses
 //func (w *Workspace) onNewIntrospectionData(ctx context.Context, client *db_client.DbClient) {
 //	if viper.GetString(constants.ArgIntrospection) == constants.IntrospectionNone {
