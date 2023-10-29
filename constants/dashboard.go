@@ -12,6 +12,6 @@ const (
 	DashboardAssetsImageRefFormat = "us-docker.pkg.dev/steampipe/steampipe/assets:%s"
 )
 
-var (
-	DashboardAssetsImageRef = fmt.Sprintf(DashboardAssetsImageRefFormat, AppVersion.String())
-)
+func DashboardAssetsImageRef() string {
+	return fmt.Sprintf(DashboardAssetsImageRefFormat, AppVersion.String())
+}

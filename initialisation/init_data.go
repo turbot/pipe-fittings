@@ -109,6 +109,8 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	// set cloud metadata (may be nil)
 	i.Workspace.CloudMetadata = cloudMetadata
 
+	// TODO KAI WHY ARE WE USING CONNECTION STRING????????? <MISC>
+
 	// no need to validate local steampipe and plugin versions for when connecting to remote steampipe database
 	// ArgConnectionString is empty when connecting to local database
 	if connectionString := viper.GetString(constants.ArgConnectionString); connectionString == "" {
