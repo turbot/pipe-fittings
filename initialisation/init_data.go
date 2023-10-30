@@ -54,7 +54,7 @@ func (i *InitData) RegisterExporters(exporters ...export.Exporter) *InitData {
 	return i
 }
 
-func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...db_client.ClientOption) {
+func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	defer func() {
 		if r := recover(); r != nil {
 			i.Result.Error = helpers.ToError(r)
@@ -109,15 +109,15 @@ func (i *InitData) Init(ctx context.Context, invoker constants.Invoker, opts ...
 	// set cloud metadata (may be nil)
 	i.Workspace.CloudMetadata = cloudMetadata
 
-	// TODO KAI WHY ARE WE USING CONNECTION STRING????????? <MISC>
-
+	// TODO KAI RETHINK THIS
+	// we are only validating the CLI version now - ok to do remotely?
 	// no need to validate local steampipe and plugin versions for when connecting to remote steampipe database
 	// ArgConnectionString is empty when connecting to local database
-	if connectionString := viper.GetString(constants.ArgConnectionString); connectionString == "" {
-		// validate steampipe version
-		validationWarnings := validateModRequirementsRecursively(i.Workspace.Mod)
-		i.Result.AddWarnings(validationWarnings...)
-	}
+	//if connectionString := viper.GetString(constants.ArgConnectionString); connectionString == "" {
+	// validate steampipe version
+	validationWarnings := validateModRequirementsRecursively(i.Workspace.Mod)
+	i.Result.AddWarnings(validationWarnings...)
+	//}
 
 	// TODO KAI FIX ME <INTROSPECTION>
 	// if introspection tables are enabled, setup the session data callback
