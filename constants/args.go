@@ -69,6 +69,9 @@ const (
 	ArgLogDir      = "log-dir"
 	ArgFunctions   = "functions"
 	ArgNoScheduler = "no-scheduler"
+
+	// Experimental
+	ArgRetainArtifacts = "retain-artifacts"
 )
 
 // metaquery mode arguments
