@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -199,4 +200,15 @@ func NewIntegration(mod *Mod, block *hcl.Block) IIntegration {
 	}
 
 	return nil
+}
+
+var ValidBaseIntegrationAttributes = []string{
+	schema.AttributeTypeDocumentation,
+	schema.AttributeTypeUnqualifiedName,
+	schema.AttributeTypeDescription,
+	schema.AttributeTypeName,
+	schema.AttributeTypeShortName,
+	schema.AttributeTypeTags,
+	schema.AttributeTypeTitle,
+	schema.AttributeTypeType,
 }
