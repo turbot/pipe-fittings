@@ -1698,18 +1698,6 @@ func (p *PipelineStepEcho) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
-
-		p.Text = textInput
-
-		/*
-			first run
-			p.Text = nil
-			you resolve to "foo"
-			if you set p.Text
-
-			2nd run
-			p.Text = "foo"
-		*/
 	}
 
 	var numericInput float64
