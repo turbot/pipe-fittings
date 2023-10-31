@@ -2633,9 +2633,9 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	// Resolve notify
 	var resolvedNotify *PipelineStepInputNotify
-	if p.UnresolvedBodies["notify"] != nil {
+	if p.UnresolvedBodies[schema.BlockTypeNotify] != nil {
 		notify := PipelineStepInputNotify{}
-		diags := gohcl.DecodeBody(p.UnresolvedBodies["notify"], evalContext, &notify)
+		diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeNotify], evalContext, &notify)
 		if len(diags) > 0 {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
@@ -2678,7 +2678,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			notify[schema.AttributeTypeTo] = *resolvedNotify.To
 		}
 
-		if notify != nil {
+		if len(notify) > 0 {
 			notifiesResult = append(notifiesResult, notify)
 		}
 		results[schema.AttributeTypeNotifies] = notifiesResult
@@ -2686,9 +2686,9 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	// Resolve notifies
 	var resolvedNotifies cty.Value
-	if p.UnresolvedAttributes["notifies"] != nil {
+	if p.UnresolvedAttributes[schema.AttributeTypeNotifies] != nil {
 		var data cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes["notifies"], evalContext, &data)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNotifies], evalContext, &data)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
