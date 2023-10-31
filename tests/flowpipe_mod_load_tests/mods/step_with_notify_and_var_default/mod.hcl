@@ -3,23 +3,23 @@ mod "local" {
 }
 
 integration "slack" "my_slack_app" {
-  token           = var.slack_token
+  token = var.slack_token
 
   # optional - if you want to verify the source
-  signing_secret  = "Q#$$#@#$$#W"
+  signing_secret = "Q#$$#@#$$#W"
 }
 
 integration "slack" "my_slack_app_two" {
-  token           = "xoxp-111111"
+  token = "xoxp-111111"
 
   # optional - if you want to verify the source
-  signing_secret  = "Q#$$#@#$$#W"
+  signing_secret = "Q#$$#@#$$#W"
 }
 
 integration "email" "email_integration" {
-  smtp_host = "foo bar baz"
+  smtp_host       = "foo bar baz"
   default_subject = "bar foo baz"
-  smtp_username = "baz bar foo"
+  smtp_username   = "baz bar foo"
 }
 
 // pipeline "approval_with_runtime_param" {
@@ -40,16 +40,15 @@ integration "email" "email_integration" {
 pipeline "approval_with_variables" {
 
   step "input" "input" {
-    token = "remove this after integrated"
     notify {
       integration = integration.slack.my_slack_app
-      channel = var.channel_name
+      channel     = var.channel_name
     }
   }
 }
 
 variable "channel_name" {
-  type = string
+  type    = string
   default = "bar"
 }
 

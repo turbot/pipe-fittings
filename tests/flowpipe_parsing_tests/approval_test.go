@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/misc"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 func TestApproval(t *testing.T) {
@@ -67,7 +68,14 @@ func TestApproval(t *testing.T) {
 	// the notify should override the inline definition (the inline definition should not be there after integrated 2023)
 	assert.Nil(err)
 
-	assert.Equal("xoxp-111111", inputsAfterEval["token"].(string))
+	if _, ok := inputsAfterEval[schema.AttributeTypeNotifies].([]map[string]interface{}); !ok {
+		assert.Fail("Failed to convert notifies into []map[string]interface{}")
+	}
+	notifiesMap := inputsAfterEval[schema.AttributeTypeNotifies].([]map[string]interface{})
+	assert.Equal(1, len(notifiesMap))
+
+	integrationValueMap := notifiesMap[0][schema.AttributeTypeIntegration].(map[string]interface{})
+	assert.Equal("xoxp-111111", integrationValueMap["token"].(string))
 
 	pipeline = mod.ResourceMaps.Pipelines["local.pipeline.approval_email"]
 	if pipeline == nil {

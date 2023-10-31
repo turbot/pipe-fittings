@@ -104,5 +104,5 @@ func TestApprovalNotifiesInvalid(t *testing.T) {
 	_, err = pipeline.Steps[0].GetInputs(nil)
 	assert.NotNil(err)
 
-	assert.Equal("Bad Request: Unsupported attribute to provided for Slack type notification", err.Error())
+	assert.Equal("Bad Request: Unsupported attribute to provided for slack type notification", err.Error())
 }

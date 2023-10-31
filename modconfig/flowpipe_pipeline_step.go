@@ -308,99 +308,56 @@ type PipelineStepInputNotify struct {
 
 func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) (map[string]interface{}, error) {
 	notify := map[string]interface{}{}
+	integrationMap := map[string]interface{}{}
 
+	var integrationType string
+
+	// Get the integration
 	valueMap := value.AsValueMap()
+	if !valueMap[schema.AttributeTypeIntegration].IsNull() {
+		integrationValueMap := valueMap[schema.AttributeTypeIntegration].AsValueMap()
 
+		for key, value := range integrationValueMap {
+			if !value.IsNull() {
+				goVal, err := hclhelpers.CtyToGo(value)
+				if err != nil {
+					return nil, perr.InternalWithMessage("Unable to convert " + key + " to goVal")
+				}
+				if !helpers.IsNil(goVal) {
+					integrationMap[key] = goVal
+				}
+
+				if key == schema.AttributeTypeType {
+					integrationType = goVal.(string)
+				}
+			}
+		}
+		notify[schema.AttributeTypeIntegration] = integrationMap
+	}
+
+	// Get the other notifies attributes
+	// Also validates for the unsupported attributes for a specific notification type
 	for k, v := range valueMap {
 		switch k {
-		case schema.AttributeTypeChannel, schema.AttributeTypeTo:
+		case schema.AttributeTypeChannel:
+			if integrationType != schema.IntegrationTypeSlack {
+				return nil, perr.BadRequestWithMessage("Unsupported attribute channel provided for " + integrationType + " type notification")
+			}
+			if !v.IsNull() {
+				notify[k] = v.AsString()
+			}
+		case schema.AttributeTypeTo:
+			if integrationType != schema.IntegrationTypeEmail {
+				return nil, perr.BadRequestWithMessage("Unsupported attribute to provided for " + integrationType + " type notification")
+			}
 			if !v.IsNull() {
 				notify[k] = v.AsString()
 			}
 		case schema.AttributeTypeIntegration:
-			integrationMap := map[string]interface{}{}
-			if !v.IsNull() {
-				integrationValueMap := v.AsValueMap()
-
-				// Get the type of the integration
-				if !integrationValueMap[schema.AttributeTypeType].IsNull() {
-					goVal, err := hclhelpers.CtyToGo(integrationValueMap[schema.AttributeTypeType])
-					if err != nil {
-						return nil, perr.InternalWithMessage("Unable to convert type to goVal")
-					}
-					if !helpers.IsNil(goVal) {
-						integrationMap[schema.AttributeTypeType] = goVal
-					}
-				}
-
-				for key, value := range integrationValueMap {
-					switch key {
-					// Slack attributes
-					case
-						schema.AttributeTypeToken,
-						schema.AttributeTypeSigningSecret,
-						schema.AttributeTypeWebhookUrl:
-						if !value.IsNull() {
-							goVal, err := hclhelpers.CtyToGo(value)
-							if err != nil {
-								return nil, perr.InternalWithMessage("Unable to convert " + key + " to goVal")
-							}
-							if !helpers.IsNil(goVal) {
-								integrationMap[key] = goVal
-							}
-						}
-					// Email attributes
-					case
-						schema.AttributeTypeSmtpHost,
-						schema.AttributeTypeSmtpTls,
-						schema.AttributeTypeDefaultRecipient,
-						schema.AttributeTypeSmtpPort,
-						schema.AttributeTypeDefaultSubject,
-						schema.AttributeTypeSmtpUsername,
-						schema.AttributeTypeSmtpPassword,
-						schema.AttributeTypeSmtpsPort,
-						schema.AttributeTypeFrom:
-						if !value.IsNull() {
-							goVal, err := hclhelpers.CtyToGo(value)
-							if err != nil {
-								return nil, perr.InternalWithMessage("Unable to convert " + key + " to goVal")
-							}
-							if !helpers.IsNil(goVal) {
-								integrationMap[key] = goVal
-							}
-						}
-					default:
-						if !slices.Contains[[]string, string](ValidBaseIntegrationAttributes, key) {
-							return nil, perr.BadRequestWithMessage("Unsupported attribute for input step: " + key)
-						}
-					}
-				}
-				notify[schema.AttributeTypeIntegration] = integrationMap
-			}
+			// Do nothing. Already handled above
 		default:
 			return nil, perr.BadRequestWithMessage(k + " is not a valid attribute in notify/notifies")
 		}
-	}
-
-	// TODO: Refactor the validation logic
-	// Check for unsupported attributes
-	integration := notify[schema.AttributeTypeIntegration]
-	if _, ok := integration.(map[string]interface{}); !ok {
-		return nil, perr.InternalWithMessage("Unable to validate the integration")
-	}
-	integrationMap := integration.(map[string]interface{})
-
-	if _, ok := integrationMap[schema.AttributeTypeType].(string); !ok {
-		return nil, perr.InternalWithMessage("Unable to validate the integration type")
-	}
-	integrationType := integration.(map[string]interface{})[schema.AttributeTypeType].(string)
-
-	if integrationType == schema.IntegrationTypeSlack && notify[schema.AttributeTypeTo] != nil {
-		return nil, perr.BadRequestWithMessage("Unsupported attribute to provided for Slack type notification")
-	}
-
-	if integrationType == schema.IntegrationTypeEmail && notify[schema.AttributeTypeChannel] != nil {
-		return nil, perr.BadRequestWithMessage("Unsupported attribute to provided for Email type notification")
 	}
 
 	return notify, nil
