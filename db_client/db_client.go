@@ -108,7 +108,7 @@ func (c *DbClient) GetConnectionString() string {
 // NOTE: we do not (currently) support notifications from remote connections
 func (c *DbClient) RegisterNotificationListener(func(notification *pgconn.Notification)) {}
 
-// closes the connection to the database and shuts down the backend
+// Close closes the connection to the database and shuts down the backend
 func (c *DbClient) Close(context.Context) error {
 	log.Printf("[TRACE] DbClient.Close %v", c.UserPool)
 	c.closePools()

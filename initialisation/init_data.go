@@ -128,15 +128,6 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	//	}
 	//}
 
-	// TODO STEAMPIPE ONLY <MISC>
-	//// get a client
-	//// add a message rendering function to the context - this is used for the fdw update message and
-	//// allows us to render it as a standard initialisation message
-	//getClientCtx := statushooks.AddMessageRendererToContext(ctx, func(format string, a ...any) {
-	//	i.Result.AddMessage(fmt.Sprintf(format, a...))
-	//})
-
-	// TODO KAI WHY ARE WE USING CONNECTION STRING????????? <MISC>
 	statushooks.SetStatus(ctx, "Connecting to steampipe database")
 	log.Printf("[INFO] Connecting to steampipe database")
 	connectionString := viper.GetString(constants.ArgConnectionString)

@@ -18,8 +18,8 @@ type InitResult struct {
 	DisplayWarning func(ctx context.Context, w string)
 }
 
-func (r *InitResult) AddMessage(message string) {
-	r.Messages = append(r.Messages, message)
+func (r *InitResult) AddMessage(messages ...string) {
+	r.Messages = append(r.Messages, messages...)
 }
 
 func (r *InitResult) AddWarnings(warnings ...string) {
@@ -52,4 +52,10 @@ func (r *InitResult) DisplayMessages() {
 	for _, m := range r.Messages {
 		r.DisplayMessage(context.Background(), m)
 	}
+}
+
+func (r *InitResult) Merge(other InitResult) {
+	r.ErrorAndWarnings.Merge(&other.ErrorAndWarnings)
+
+	r.AddMessage(other.Messages...)
 }
