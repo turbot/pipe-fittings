@@ -109,7 +109,7 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	// set cloud metadata (may be nil)
 	i.Workspace.CloudMetadata = cloudMetadata
 
-	// TODO KAI RETHINK THIS
+	// TODO KAI RETHINK THIS <MOD VALIDATION>
 	// we are only validating the CLI version now - ok to do remotely?
 	// no need to validate local steampipe and plugin versions for when connecting to remote steampipe database
 	// ArgConnectionString is empty when connecting to local database
@@ -117,15 +117,6 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	// validate steampipe version
 	validationWarnings := validateModRequirementsRecursively(i.Workspace.Mod)
 	i.Result.AddWarnings(validationWarnings...)
-	//}
-
-	// TODO KAI FIX ME <INTROSPECTION>
-	// if introspection tables are enabled, setup the session data callback
-	//var ensureSessionData db_client.DbConnectionCallback
-	//if viper.GetString(constants.ArgIntrospection) != constants.IntrospectionNone {
-	//	ensureSessionData = func(ctx context.Context, conn *pgx.Conn) error {
-	//		return workspace.EnsureSessionData(ctx, i.Workspace.GetResourceMaps(), conn)
-	//	}
 	//}
 
 	statushooks.SetStatus(ctx, "Connecting to steampipe database")

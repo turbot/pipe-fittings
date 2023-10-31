@@ -66,21 +66,17 @@ const (
 	ArgDatabaseStartTimeout    = "database-start-timeout"
 	ArgMemoryMaxMb             = "memory-max-mb"
 	ArgMemoryMaxMbPlugin       = "memory-max-mb-plugin"
-
-	ArgGitUrlMode  = "git-url-mode"
-	ArgOutputDir   = "output-dir"
-	ArgLogDir      = "log-dir"
-	ArgFunctions   = "functions"
-	ArgNoScheduler = "no-scheduler"
+	ArgGitUrlMode              = "git-url-mode"
+	ArgOutputDir               = "output-dir"
+	ArgLogDir                  = "log-dir"
+	ArgFunctions               = "functions"
+	ArgNoScheduler             = "no-scheduler"
+	ArgOutput                  = "output"
+	ArgSeparator               = "separator"
+	ArgHeader                  = "header"
+	ArgMultiLine               = "multi-line"
+	ArgAutoComplete            = "auto-complete"
 )
-
-// metaquery mode arguments
-// TODO KAI maybe decouple from metacommand so we can move metacommands back to steampipe <MISC>
-var ArgOutput = ArgFromMetaquery(CmdOutput)
-var ArgSeparator = ArgFromMetaquery(CmdSeparator)
-var ArgHeader = ArgFromMetaquery(CmdHeaders)
-var ArgMultiLine = ArgFromMetaquery(CmdMulti)
-var ArgAutoComplete = ArgFromMetaquery(CmdAutoComplete)
 
 // BoolToOnOff converts a boolean value onto the string "on" or "off"
 func BoolToOnOff(val bool) string {

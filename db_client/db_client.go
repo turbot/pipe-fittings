@@ -37,7 +37,7 @@ type DbClient struct {
 	// a reader which can be used to read rows from a pgx.Rows object
 	rowReader backend.RowReader
 
-	// TODO KAI new hook
+	// TODO KAI new hook <TIMING>
 	BeforeExecuteHook func(context.Context, *sql.Conn) error
 
 	// if a custom search path or a prefix is used, store it here
@@ -45,10 +45,6 @@ type DbClient struct {
 	SearchPathPrefix []string
 	// the default user search path
 	UserSearchPath []string
-
-	// TODO KAI NEEDED?
-	//onConnectionCallback DbConnectionCallback
-
 }
 
 func NewDbClient(ctx context.Context, connectionString string, opts ...ClientOption) (_ *DbClient, err error) {
