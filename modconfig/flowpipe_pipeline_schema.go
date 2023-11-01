@@ -58,6 +58,37 @@ var IntegrationEmailBlockSchema = &hcl.BodySchema{
 			Name:     schema.AttributeTypeTitle,
 			Required: false,
 		},
+		{
+			Name:     schema.AttributeTypeSmtpTls,
+			Required: false,
+		},
+		{
+			Name: schema.AttributeTypeSmtpHost,
+		},
+		{
+			Name: schema.AttributeTypeSmtpPort,
+		},
+		{
+			Name:     schema.AttributeTypeSmtpsPort,
+			Required: false,
+		},
+		{
+			Name: schema.AttributeTypeSmtpUsername,
+		},
+		{
+			Name: schema.AttributeTypeSmtpPassword,
+		},
+		{
+			Name: schema.AttributeTypeFrom,
+		},
+		{
+			Name:     schema.AttributeTypeDefaultRecipient,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeDefaultSubject,
+			Required: false,
+		},
 	},
 }
 
@@ -689,40 +720,10 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeIf,
 		},
 		{
-			Name: schema.AttributeTypeUsername,
-		},
-		{
-			Name: schema.AttributeTypePassword,
-		},
-		{
-			Name: schema.AttributeTypeSmtpServer,
-		},
-		{
-			Name: schema.AttributeTypeResponseUrl,
-		},
-		{
-			Name: schema.AttributeTypeTo,
-		},
-		{
-			Name: schema.AttributeTypeSmtpPort,
-		},
-		{
-			Name: schema.AttributeTypeSubject,
-		},
-		{
-			Name: schema.AttributeTypeBody,
-		},
-		{
-			Name: schema.AttributeTypeSenderName,
-		},
-		{
 			Name: schema.AttributeTypeOptions,
 		},
 		{
 			Name: schema.AttributeTypePrompt,
-		},
-		{
-			Name: schema.AttributeTypeSlackType,
 		},
 		{
 			Name: schema.AttributeTypeNotifies,

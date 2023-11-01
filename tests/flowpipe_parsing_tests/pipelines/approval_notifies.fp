@@ -84,3 +84,43 @@ pipeline "approval_with_invalid_notifies" {
     ]
   }
 }
+
+pipeline "approval_with_invalid_email_notifies" {
+  step "input" "input" {
+
+    notifies = [
+      {
+        integration = integration.slack.my_slack_app
+        channel     = "#general"
+      },
+      {
+        integration = integration.email.email_integration
+        channel     = "#general"
+      }
+    ]
+  }
+}
+
+pipeline "approval_with_invalid_email" {
+  step "input" "input" {
+
+    notifies = [
+      {
+        integration = integration.email.email_integration
+        channel     = "#general"
+      }
+    ]
+  }
+}
+
+pipeline "approval_with_invalid_slack" {
+  step "input" "input" {
+
+    notifies = [
+      {
+        integration = integration.slack.my_slack_app
+        to          = "testabc@example.com"
+      }
+    ]
+  }
+}
