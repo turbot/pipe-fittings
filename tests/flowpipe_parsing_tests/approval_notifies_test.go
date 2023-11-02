@@ -34,6 +34,9 @@ func TestApprovalNotifies(t *testing.T) {
 		return
 	}
 
+	_, err = pipeline.Steps[0].GetInputs(nil)
+	assert.Nil(err)
+
 	inputStep, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
 	if !ok {
 		assert.Fail("Pipeline step not found")
@@ -72,4 +75,117 @@ func TestApprovalNotifies(t *testing.T) {
 	unresolvedAttribute := pipeline.Steps[1].GetUnresolvedAttributes()["notifies"]
 	assert.NotNil(unresolvedAttribute)
 	assert.True(len(unresolvedAttribute.Variables()) > 0)
+}
+
+func TestApprovalNotifiesInvalidSlackAttribute(t *testing.T) {
+	assert := assert.New(t)
+
+	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	assert.Nil(err)
+	assert.NotNil(mod)
+	if mod == nil {
+		return
+	}
+
+	assert.Equal(2, len(mod.ResourceMaps.Integrations))
+
+	integration := mod.ResourceMaps.Integrations["local.integration.slack.my_slack_app"]
+	if integration == nil {
+		assert.Fail("Integration not found")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.approval_with_invalid_notifies"]
+	if pipeline == nil {
+		assert.Fail("Pipeline not found")
+		return
+	}
+
+	_, err = pipeline.Steps[0].GetInputs(nil)
+	assert.NotNil(err)
+
+	assert.Equal("Bad Request: Unsupported attribute to provided for slack type notification", err.Error())
+}
+
+func TestApprovalNotifiesInvalidEmailAttribute(t *testing.T) {
+	assert := assert.New(t)
+
+	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	assert.Nil(err)
+	assert.NotNil(mod)
+	if mod == nil {
+		return
+	}
+	assert.Equal(2, len(mod.ResourceMaps.Integrations))
+
+	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.approval_with_invalid_email_notifies"]
+	if pipeline == nil {
+		assert.Fail("Pipeline not found")
+		return
+	}
+
+	_, err = pipeline.Steps[0].GetInputs(nil)
+	assert.NotNil(err)
+
+	assert.Equal("Bad Request: Unsupported attribute channel provided for email type notification", err.Error())
+}
+
+func TestApprovalNotifiesInvalidEmail(t *testing.T) {
+	assert := assert.New(t)
+
+	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	assert.Nil(err)
+	assert.NotNil(mod)
+	if mod == nil {
+		return
+	}
+
+	assert.Equal(2, len(mod.ResourceMaps.Integrations))
+
+	integration := mod.ResourceMaps.Integrations["local.integration.email.email_integration"]
+	if integration == nil {
+		assert.Fail("Integration not found")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.approval_with_invalid_email"]
+	if pipeline == nil {
+		assert.Fail("Pipeline not found")
+		return
+	}
+
+	_, err = pipeline.Steps[0].GetInputs(nil)
+	assert.NotNil(err)
+
+	assert.Equal("Bad Request: Unsupported attribute channel provided for email type notification", err.Error())
+}
+
+func TestApprovalNotifiesInvalidSlack(t *testing.T) {
+	assert := assert.New(t)
+
+	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	assert.Nil(err)
+	assert.NotNil(mod)
+	if mod == nil {
+		return
+	}
+
+	assert.Equal(2, len(mod.ResourceMaps.Integrations))
+
+	integration := mod.ResourceMaps.Integrations["local.integration.slack.my_slack_app"]
+	if integration == nil {
+		assert.Fail("Integration not found")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.approval_with_invalid_slack"]
+	if pipeline == nil {
+		assert.Fail("Pipeline not found")
+		return
+	}
+
+	_, err = pipeline.Steps[0].GetInputs(nil)
+	assert.NotNil(err)
+
+	assert.Equal("Bad Request: Unsupported attribute to provided for slack type notification", err.Error())
 }
