@@ -44,7 +44,7 @@ func TestApprovalNotifies(t *testing.T) {
 	}
 
 	assert.Equal("input", inputStep.Name)
-	assert.Nil(inputStep.Notify)
+	assert.Nil(inputStep.NotifyList)
 
 	notifies := inputStep.Notifies
 

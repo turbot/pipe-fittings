@@ -2365,7 +2365,23 @@ type PipelineStepInput struct {
 
 	Options []string `json:"options" cty:"options"`
 
-	Notify *PipelineStepInputNotify
+	// We can have more than one notify block
+	/*
+			step "input" "input" {
+		    prompt = "Choose an option:"
+
+		    notify {
+		      integration = integration.slack.integrated_app
+		      channel     = "#general"
+		    }
+
+		    notify {
+		      integration = integration.email.email_integration
+		      to          = "awesomebob@blahblah.com"
+		    }
+		  }
+	*/
+	NotifyList []PipelineStepInputNotify
 
 	// This is odd but notifies is an attribute that can be set dynamically, i.e. input from another step. It's also a list of complex
 	// object, so we've decided for now it's the quickest way to implement it.
@@ -2459,24 +2475,23 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	*/
 
 	// Resolve notify
-	var resolvedNotify *PipelineStepInputNotify
+	var resolvedNotify []PipelineStepInputNotify
 	if p.UnresolvedBodies[schema.BlockTypeNotify] != nil {
 		notify := PipelineStepInputNotify{}
 		diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeNotify], evalContext, &notify)
 		if len(diags) > 0 {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
-		resolvedNotify = &notify
+		resolvedNotify = append(resolvedNotify, notify)
 	} else {
-		resolvedNotify = p.Notify
+		resolvedNotify = p.NotifyList
 	}
 
-	// The real settings for Notify is here
-	if resolvedNotify != nil {
-		notifiesResult := []map[string]interface{}{}
+	notifiesResult := []map[string]interface{}{}
+	for _, n := range resolvedNotify {
 		notify := map[string]interface{}{}
 
-		integration := resolvedNotify.Integration
+		integration := n.Integration
 		if integration.IsNull() {
 			return nil, perr.BadRequestWithMessage(p.Name + ": integration must be supplied")
 		}
@@ -2497,19 +2512,19 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 		notify[schema.AttributeTypeIntegration] = integrationMap
 
-		if !helpers.IsNil(resolvedNotify.Channel) {
-			notify[schema.AttributeTypeChannel] = *resolvedNotify.Channel
+		if !helpers.IsNil(n.Channel) {
+			notify[schema.AttributeTypeChannel] = *n.Channel
 		}
 
-		if !helpers.IsNil(resolvedNotify.To) {
-			notify[schema.AttributeTypeTo] = *resolvedNotify.To
+		if !helpers.IsNil(n.To) {
+			notify[schema.AttributeTypeTo] = *n.To
 		}
 
 		if len(notify) > 0 {
 			notifiesResult = append(notifiesResult, notify)
 		}
-		results[schema.AttributeTypeNotifies] = notifiesResult
 	}
+	results[schema.AttributeTypeNotifies] = notifiesResult
 
 	// Resolve notifies
 	var resolvedNotifies cty.Value
@@ -2648,7 +2663,7 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 			} else if e.Detail == `There is no variable named "result".` && attributeName == schema.BlockTypeLoop {
 				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block
 				resolvedDiags++
-			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" || e.Detail == `There is no variable named "loop".` {
+			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" {
 				// hcl.decodeBody returns 2 error messages:
 				// 1. There's no variable named "param", AND
 				// 2. Unsuitable value: value must be known
@@ -2676,7 +2691,7 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 
 	diags := hcl.Diagnostics{}
-	if p.Notify != nil && p.Notifies != cty.NilVal {
+	if len(p.NotifyList) > 0 && p.Notifies != cty.NilVal {
 		if !p.Notifies.Type().IsTupleType() {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -2687,7 +2702,7 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 			if len(listVal) > 0 {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Notify and Notifies attributes are mutualy exclusive: " + p.GetFullyQualifiedName(),
+					Summary:  "Notify and Notifies attributes are mutually exclusive: " + p.GetFullyQualifiedName(),
 				})
 			}
 		}
@@ -2695,10 +2710,12 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 
 	// Only validate the notify block if there are no unresolved bodies
 	// TODO: this is not correct fix this
-	if p.Notify != nil && p.UnresolvedBodies[schema.BlockTypeNotify] == nil {
-		moreDiags := p.Notify.Validate()
-		if len(moreDiags) > 0 {
-			diags = append(diags, moreDiags...)
+	if len(p.NotifyList) > 0 && p.UnresolvedBodies[schema.BlockTypeNotify] == nil {
+		for _, n := range p.NotifyList {
+			moreDiags := n.Validate()
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+			}
 		}
 	}
 
@@ -2720,7 +2737,7 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 					continue
 				}
 			}
-			p.Notify = &notify
+			p.NotifyList = append(p.NotifyList, notify)
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,

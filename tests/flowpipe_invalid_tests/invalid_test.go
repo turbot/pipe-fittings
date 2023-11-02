@@ -75,7 +75,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid approval - notify and notifies specified",
 		file:          "./pipelines/approval_notify_and_notifies.fp",
-		containsError: "Notify and Notifies attributes are mutualy exclusive: input.input",
+		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
 	},
 	{
 		title:         "invalid approval - slack notify missing channel",
@@ -86,6 +86,26 @@ var tests = []testSetup{
 		title:         "invalid approval - email notify missing to",
 		file:          "./pipelines/approval_invalid_notify_email.fp",
 		containsError: "to must be specified for email integration",
+	},
+	{
+		title:         "invalid approval - slack integration invalid attribute",
+		file:          "./pipelines/approval_invalid_integration_slack_attribute.fp",
+		containsError: "Unsupported attribute: 'from' not expected here.",
+	},
+	{
+		title:         "invalid approval - email integration invalid attribute",
+		file:          "./pipelines/approval_invalid_integration_email_attribute.fp",
+		containsError: "Unsupported attribute: 'token' not expected here.",
+	},
+	{
+		title:         "invalid approval - notify with missing integration attribute",
+		file:          "./pipelines/approval_invalid_notify_missing_integration.fp",
+		containsError: "Missing required argument: The argument \"integration\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid approval - notify with invalid integration that does not exist",
+		file:          "./pipelines/approval_invalid_notify_invalid_integration.fp",
+		containsError: "MISSING: integration.slack.missing_slack_integration",
 	},
 	{
 		title:         "invalid loop - bad definition for echo step loop",
@@ -99,7 +119,7 @@ var tests = []testSetup{
 	},
 }
 
-// Simple invalid test. Only single file resources can be evaluated here. This test is unaable to test
+// Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
 // more complex error message expectations or complex structure such as mod & var
 func TestSimpleInvalidResources(t *testing.T) {
 	assert := assert.New(t)

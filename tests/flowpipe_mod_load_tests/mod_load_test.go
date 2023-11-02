@@ -101,13 +101,14 @@ func (suite *FlowpipeModLoadTestSuite) TestInputStepContainsNotifyBlockThatHasVa
 	}
 	assert.Equal("input", step.Name)
 
-	if step.Notify == nil {
+	if step.NotifyList == nil {
 		assert.Fail("notify block is nil")
 		return
 	}
+	assert.Equal(1, len(step.NotifyList))
 
-	assert.Equal("bar", *step.Notify.Channel, "this value - bar - is set from the default of the variable")
-	assert.Equal("this value is from pvar file", step.Notify.Integration.AsValueMap()["token"].AsString())
+	assert.Equal("bar", *step.NotifyList[0].Channel, "this value - bar - is set from the default of the variable")
+	assert.Equal("this value is from pvar file", step.NotifyList[0].Integration.AsValueMap()["token"].AsString())
 }
 
 func (suite *FlowpipeModLoadTestSuite) TestNotifyDependsAnotherStep() {

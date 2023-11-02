@@ -55,10 +55,11 @@ func TestApproval(t *testing.T) {
 	}
 
 	assert.Equal("input", inputStep.Name)
-	assert.NotNil(inputStep.Notify)
-	assert.Equal("foo", *inputStep.Notify.Channel)
+	assert.NotNil(inputStep.NotifyList)
+	assert.Equal(1, len(inputStep.NotifyList))
+	assert.Equal("foo", *inputStep.NotifyList[0].Channel)
 
-	integrationLink := inputStep.Notify.Integration
+	integrationLink := inputStep.NotifyList[0].Integration
 	assert.NotNil(integrationLink)
 	integrationMap := integrationLink.AsValueMap()
 	assert.NotNil(integrationMap)
@@ -90,7 +91,8 @@ func TestApproval(t *testing.T) {
 	}
 
 	assert.Equal("input_email", inputStep.Name)
-	assert.NotNil(inputStep.Notify)
-	assert.Equal("victor@turbot.com", *inputStep.Notify.To)
+	assert.NotNil(inputStep.NotifyList)
+	assert.Equal(1, len(inputStep.NotifyList))
+	assert.Equal("victor@turbot.com", *inputStep.NotifyList[0].To)
 
 }
