@@ -118,6 +118,11 @@ var tests = []testSetup{
 		containsError: "to must be specified for email integration",
 	},
 	{
+		title:         "invalid approval - multiple notify and notifies specified",
+		file:          "./pipelines/approval_multiple_notify_and_notifies.fp",
+		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
+	},
+	{
 		title:         "invalid loop - bad definition for echo step loop",
 		file:          "./pipelines/loop_invalid_echo.fp",
 		containsError: "An argument named \"baz\" is not expected here",
