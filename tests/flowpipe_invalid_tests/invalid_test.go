@@ -108,6 +108,16 @@ var tests = []testSetup{
 		containsError: "MISSING: integration.slack.missing_slack_integration",
 	},
 	{
+		title:         "invalid approval - step with multiple notify block with invalid slack attribute",
+		file:          "./pipelines/approval_invalid_multiple_notify_slack.fp",
+		containsError: "channel must be specified for slack integration",
+	},
+	{
+		title:         "invalid approval - step with multiple notify block with invalid email attribute",
+		file:          "./pipelines/approval_invalid_multiple_notify_email.fp",
+		containsError: "to must be specified for email integration",
+	},
+	{
 		title:         "invalid loop - bad definition for echo step loop",
 		file:          "./pipelines/loop_invalid_echo.fp",
 		containsError: "An argument named \"baz\" is not expected here",
