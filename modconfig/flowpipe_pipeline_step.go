@@ -44,7 +44,9 @@ type StepForEach struct {
 }
 
 type StepLoop struct {
-	Key string
+	Index         int    `json:"index" binding:"required"`
+	Input         *Input `json:"input,omitempty"`
+	LoopCompleted bool   `json:"loop_completed"`
 }
 
 // Input to the step or pipeline execution
@@ -185,9 +187,11 @@ const (
 )
 
 type NextStep struct {
-	StepName string         `json:"step_name"`
-	DelayMs  int            `json:"delay_ms,omitempty"`
-	Action   NextStepAction `json:"action"`
+	StepName    string         `json:"step_name"`
+	DelayMs     int            `json:"delay_ms,omitempty"`
+	Action      NextStepAction `json:"action"`
+	StepForEach *StepForEach   `json:"step_for_each,omitempty"`
+	StepLoop    *StepLoop      `json:"step_loop,omitempty"`
 }
 
 func NewPipelineStep(stepType, stepName string) IPipelineStep {
@@ -1766,7 +1770,7 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 					if dependsOnAdded {
 						resolvedDiags++
 					}
-				} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` {
+				} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == `There is no variable named "loop".` {
 					resolvedDiags++
 				} else {
 					return cty.NilVal, stepDiags
@@ -2644,7 +2648,7 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 			} else if e.Detail == `There is no variable named "result".` && attributeName == schema.BlockTypeLoop {
 				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block
 				resolvedDiags++
-			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" {
+			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" || e.Detail == `There is no variable named "loop".` {
 				// hcl.decodeBody returns 2 error messages:
 				// 1. There's no variable named "param", AND
 				// 2. Unsuitable value: value must be known

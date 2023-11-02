@@ -2,13 +2,13 @@ package modconfig
 
 import "github.com/turbot/pipe-fittings/schema"
 
-type ILoop interface {
+type LoopDefn interface {
 	ShouldRun() bool
 	GetType() string
 	UpdateInput(input Input) (Input, error)
 }
 
-func GetLoopDefn(stepType string) ILoop {
+func GetLoopDefn(stepType string) LoopDefn {
 	switch stepType {
 	case schema.BlockTypePipelineStepEcho:
 		return &LoopEchoStep{}
@@ -18,17 +18,10 @@ func GetLoopDefn(stepType string) ILoop {
 	return nil
 }
 
-type LoopBase struct {
-}
-
 type LoopEchoStep struct {
 	If      bool    `json:"if" hcl:"if" cty:"if"`
 	Numeric *int    `json:"numeric,omitempty" hcl:"numeric,optional" cty:"numeric"`
 	Text    *string `json:"text,omitempty" hcl:"text,optional" cty:"text"`
-}
-
-func (l *LoopEchoStep) ShouldRun() bool {
-	return l.If
 }
 
 func (l *LoopEchoStep) UpdateInput(input Input) (Input, error) {
@@ -39,6 +32,10 @@ func (l *LoopEchoStep) UpdateInput(input Input) (Input, error) {
 		input["text"] = *l.Text
 	}
 	return input, nil
+}
+
+func (l *LoopEchoStep) ShouldRun() bool {
+	return l.If
 }
 
 func (*LoopEchoStep) GetType() string {
