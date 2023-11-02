@@ -2,11 +2,11 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
@@ -86,7 +86,7 @@ func (m *ModParseContext) getUniqueName(blockType string, parent string) string 
 			childCount++
 		}
 	}
-	sanitisedParentName := strings.Replace(parent, ".", "_", -1)
+	sanitisedParentName := strings.ReplaceAll(parent, ".", "_")
 	return fmt.Sprintf("%s_anonymous_%s_%d", sanitisedParentName, blockType, childCount)
 }
 

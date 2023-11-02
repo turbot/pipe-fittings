@@ -2,8 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/zclconf/go-cty/cty"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,7 +11,9 @@ import (
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // Query is a struct representing the Query resource

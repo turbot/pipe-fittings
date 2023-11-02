@@ -3,6 +3,7 @@ package versionmap
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/constants"
 	"log"
 	"os"
 	"path"
@@ -76,11 +77,18 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 
 // getInstalledMods returns a map installed mods, and the versions installed for each
 func (l *WorkspaceLock) getInstalledMods() error {
+
+	var includes []string
+	for _, file := range filepaths.PipesComponentValidModFiles {
+		includes = append(includes, fmt.Sprintf("**/%s", file))
+	}
+
 	// recursively search for all the mod.sp files under the .steampipe/mods folder, then build the mod name from the file path
 	modFiles, err := filehelpers.ListFiles(l.ModInstallationPath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesRecursive,
-		Include: []string{"**/mod.sp"},
+		Include: includes,
 	})
+
 	if err != nil {
 		return err
 	}
@@ -91,7 +99,7 @@ func (l *WorkspaceLock) getInstalledMods() error {
 	var errors []error
 
 	for _, modfilePath := range modFiles {
-		// try to parse the mon name and version form the parent folder of the modfile
+		// try to parse the mod name and version form the parent folder of the modfile
 		modDependencyName, version, err := l.parseModPath(modfilePath)
 		if err != nil {
 			// if we fail to parse, just ignore this modfile
@@ -178,15 +186,14 @@ func (l *WorkspaceLock) parseModPath(modfilePath string) (modDependencyName stri
 
 func (l *WorkspaceLock) Save() error {
 	if len(l.InstallCache) == 0 {
-		// ignore error
-		l.Delete()
+		l.Delete() //nolint:errcheck // ignore error
 		return nil
 	}
 	content, err := json.MarshalIndent(l.InstallCache, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepaths.WorkspaceLockPath(l.WorkspacePath), content, 0644)
+	return os.WriteFile(filepaths.WorkspaceLockPath(l.WorkspacePath), content, 0644) //nolint:gosec // TODO: check file permission
 }
 
 // Delete deletes the lock file
@@ -336,5 +343,6 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 		return dependencyFilepath, nil
 	}
 
-	return "", fmt.Errorf("dependency mod '%s' is not installed - run 'steampipe mod install'", modDependency.DependencyPath())
+	// TODO KAI look at PipesComponentAppName
+	return "", fmt.Errorf("dependency mod '%s' is not installed - run '"+constants.PipesComponentAppName+" mod install'", modDependency.DependencyPath())
 }

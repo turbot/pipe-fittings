@@ -78,6 +78,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 		// publish error event
 		w.PublishDashboardEvent(ctx, &dashboardevents.WorkspaceError{Error: errAndWarnings.GetError()})
 		log.Printf("[TRACE] back from PublishDashboardEvent")
+		// Flag on workspace?
 		return
 	}
 	// if resources have changed, update introspection tables

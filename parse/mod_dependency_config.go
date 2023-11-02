@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/versionmap"
 )

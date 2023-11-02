@@ -2,11 +2,12 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/error_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -41,6 +42,11 @@ type ResourceMaps struct {
 	// map of snapshot paths, keyed by snapshot name
 	Snapshots map[string]string
 	Variables map[string]*Variable
+
+	// flowpipe
+	Pipelines    map[string]*Pipeline
+	Triggers     map[string]*Trigger
+	Integrations map[string]IIntegration
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -81,6 +87,11 @@ func emptyModResources() *ResourceMaps {
 		References:            make(map[string]*ResourceReference),
 		Snapshots:             make(map[string]string),
 		Variables:             make(map[string]*Variable),
+
+		// Flowpipe
+		Pipelines:    make(map[string]*Pipeline),
+		Triggers:     make(map[string]*Trigger),
+		Integrations: make(map[string]IIntegration),
 	}
 }
 
@@ -96,7 +107,7 @@ func (m *ResourceMaps) QueryProviders() []QueryProvider {
 		return true, nil
 	}
 
-	m.WalkResources(f)
+	m.WalkResources(f) //nolint:errcheck // TODO: fix this error check
 
 	return res
 }
@@ -106,13 +117,16 @@ func (m *ResourceMaps) TopLevelResources() *ResourceMaps {
 	res := NewModResources(m.Mod)
 
 	f := func(item HclResource) (bool, error) {
-		if modTreeItem, ok := item.(ModTreeItem); ok && modTreeItem.GetMod().FullName == m.Mod.FullName {
-			res.AddResource(item)
+		if modItem, ok := item.(ModItem); ok && modItem.GetMod().FullName == m.Mod.FullName {
+			diags := res.AddResource(item)
+			if diags.HasErrors() {
+				return false, error_helpers.HclDiagsToError("TopLevelResources", diags)
+			}
 		}
 		return true, nil
 	}
 
-	m.WalkResources(f)
+	m.WalkResources(f) //nolint:errcheck // TODO: fix this error check
 
 	return res
 }
@@ -171,6 +185,32 @@ func (m *ResourceMaps) Equals(other *ResourceMaps) bool {
 	}
 	for name := range other.Variables {
 		if _, ok := m.Variables[name]; !ok {
+			return false
+		}
+	}
+
+	for name, pipeline := range m.Pipelines {
+		if otherPipeline, ok := other.Pipelines[name]; !ok {
+			return false
+		} else if !pipeline.Equals(otherPipeline) {
+			return false
+		}
+	}
+	for name := range other.Pipelines {
+		if _, ok := m.Pipelines[name]; !ok {
+			return false
+		}
+	}
+
+	for name, trigger := range m.Triggers {
+		if otherTrigger, ok := other.Triggers[name]; !ok {
+			return false
+		} else if !trigger.Equals(otherTrigger) {
+			return false
+		}
+	}
+	for name := range other.Triggers {
+		if _, ok := m.Triggers[name]; !ok {
 			return false
 		}
 	}
@@ -435,6 +475,12 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Queries[longName]
 	case schema.BlockTypeVariable:
 		resource, found = m.Variables[longName]
+	case schema.BlockTypePipeline:
+		resource, found = m.Pipelines[longName]
+	case schema.BlockTypeTrigger:
+		resource, found = m.Triggers[longName]
+	case schema.BlockTypeIntegration:
+		resource, found = m.Integrations[longName]
 	}
 	return resource, found
 }
@@ -454,15 +500,17 @@ func (m *ResourceMaps) PopulateReferences() {
 				// if this resource is a RuntimeDependencyProvider, add references from any 'withs'
 				if nep, ok := resource.(NodeAndEdgeProvider); ok {
 					m.populateNodeEdgeProviderRefs(nep)
-				} else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
-					m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
 				}
+				// TODO: KAI commented out line here <FLOWPIPE>
+				// } else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
+				// 	m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
+				// }
 			}
 
 			// continue walking
 			return true, nil
 		}
-		m.WalkResources(resourceFunc)
+		m.WalkResources(resourceFunc) //nolint:errcheck // TODO: fix this error check
 	}
 }
 
@@ -552,6 +600,8 @@ func (m *ResourceMaps) Empty() bool {
 }
 
 // this is used to create an optimized ResourceMaps containing only the queries which will be run
+//
+//nolint:unused // TODO: check this unused property
 func (m *ResourceMaps) addControlOrQuery(provider QueryProvider) {
 	switch p := provider.(type) {
 	case *Query:
@@ -667,6 +717,18 @@ func (m *ResourceMaps) WalkResources(resourceFunc func(item HclResource) (bool, 
 	}
 	// we cannot walk source snapshots as they are not a HclResource
 	for _, r := range m.Variables {
+		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
+			return err
+		}
+	}
+
+	for _, r := range m.Pipelines {
+		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
+			return err
+		}
+	}
+
+	for _, r := range m.Triggers {
 		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
 			return err
 		}
@@ -845,7 +907,31 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 		}
 		m.Locals[name] = r
 
+	case *Pipeline:
+		name := r.Name()
+		if existing, ok := m.Pipelines[name]; ok {
+			diags = append(diags, checkForDuplicate(existing, item)...)
+			break
+		}
+		m.Pipelines[name] = r
+
+	case *Trigger:
+		name := r.Name()
+		if existing, ok := m.Triggers[name]; ok {
+			diags = append(diags, checkForDuplicate(existing, item)...)
+			break
+		}
+		m.Triggers[name] = r
+
+	case IIntegration:
+		name := r.Name()
+		if existing, ok := m.Integrations[name]; ok {
+			diags = append(diags, checkForDuplicate(existing, item)...)
+			break
+		}
+		m.Integrations[name] = r
 	}
+
 	return diags
 }
 
@@ -923,6 +1009,12 @@ func (m *ResourceMaps) Merge(others []*ResourceMaps) *ResourceMaps {
 		}
 		for k, v := range source.Snapshots {
 			res.Snapshots[k] = v
+		}
+		for k, v := range source.Pipelines {
+			res.Pipelines[k] = v
+		}
+		for k, v := range source.Triggers {
+			res.Triggers[k] = v
 		}
 		for k, v := range source.Variables {
 			// NOTE: only include variables from root mod  - we add in the others separately

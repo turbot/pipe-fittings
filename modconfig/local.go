@@ -2,9 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -17,7 +17,7 @@ type Local struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	Value    cty.Value
-	metadata *ResourceMetadata
+	metadata *ResourceMetadata //nolint:unused // TODO check this unused variable
 }
 
 func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local {

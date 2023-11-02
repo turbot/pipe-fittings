@@ -13,7 +13,7 @@ import (
 type PluginVersion struct {
 	// the plugin name, as specified in the mod requires block. , e.g. turbot/mod1, aws
 	RawName string `cty:"name" hcl:"name,label"`
-	// deprecated: use MinVersionString
+	// Deprecated: use MinVersionString
 	VersionString string `cty:"version" hcl:"version,optional"`
 	// the minumum version which satisfies the requirement
 	MinVersionString string `cty:"min_version" hcl:"min_version,optional"`

@@ -16,6 +16,61 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeTrigger,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeIntegration,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+	},
+}
+
+var IntegrationSlackBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeToken,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeSigningSecret,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeWebhookUrl,
+			Required: false,
+		},
+	},
+}
+
+var IntegrationEmailBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+	},
+}
+
+var IntegrationTeamsBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
 	},
 }
 
@@ -278,6 +333,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypePipelineBasicAuth,
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -323,6 +381,9 @@ var PipelineStepSleepBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -391,6 +452,9 @@ var PipelineStepEmailBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -428,6 +492,9 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -467,6 +534,9 @@ var PipelineStepEchoBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -501,6 +571,9 @@ var PipelineStepPipelineBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -547,6 +620,9 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -577,6 +653,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeEnv,
 		},
+		{
+			Name: schema.AttributeTypeEntryPoint,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -585,6 +664,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }
@@ -606,6 +688,54 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeIf,
 		},
+		{
+			Name: schema.AttributeTypeType,
+		},
+		{
+			Name: schema.AttributeTypeUsername,
+		},
+		{
+			Name: schema.AttributeTypePassword,
+		},
+		{
+			Name: schema.AttributeTypeSmtpServer,
+		},
+		{
+			Name: schema.AttributeTypeResponseUrl,
+		},
+		{
+			Name: schema.AttributeTypeTo,
+		},
+		{
+			Name: schema.AttributeTypeSmtpPort,
+		},
+		{
+			Name: schema.AttributeTypeSubject,
+		},
+		{
+			Name: schema.AttributeTypeBody,
+		},
+		{
+			Name: schema.AttributeTypeSenderName,
+		},
+		{
+			Name: schema.AttributeTypeOptions,
+		},
+		{
+			Name: schema.AttributeTypePrompt,
+		},
+		{
+			Name: schema.AttributeTypeChannel,
+		},
+		{
+			Name: schema.AttributeTypeSlackType,
+		},
+		{
+			Name: schema.AttributeTypeToken,
+		},
+		{
+			Name: schema.AttributeTypeNotifies,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -614,6 +744,23 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePipelineOutput,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeNotify,
+		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
+	},
+}
+
+var PipelineStepInputNotifyBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name: schema.AttributeTypeIntegration,
+		},
+		{
+			Name: schema.AttributeTypeChannel,
 		},
 	},
 }

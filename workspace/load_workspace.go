@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -26,7 +27,8 @@ func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error
 	if errAndWarnings.GetError() == nil {
 		return w, errAndWarnings
 	}
-	missingVariablesError, ok := errAndWarnings.GetError().(*steampipeconfig.MissingVariableError)
+	var missingVariablesError *steampipeconfig.MissingVariableError
+	ok := errors.As(errAndWarnings.GetError(), &missingVariablesError)
 	// if there was an error which is NOT a MissingVariableError, return it
 	if !ok {
 		return nil, errAndWarnings
@@ -51,8 +53,8 @@ func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error
 }
 
 func promptForMissingVariables(ctx context.Context, missingVariables []*modconfig.Variable, workspacePath string) error {
-	fmt.Println()
-	fmt.Println("Variables defined with no value set.")
+	fmt.Println()                                       //nolint:forbidigo // TODO: check this lint issue
+	fmt.Println("Variables defined with no value set.") //nolint:forbidigo // TODO: check this lint issue
 	for _, v := range missingVariables {
 		variableName := v.ShortName
 		variableDisplayName := fmt.Sprintf("var.%s", v.ShortName)

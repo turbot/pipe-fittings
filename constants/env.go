@@ -1,6 +1,6 @@
 package constants
 
-// TODO remove - these are all steampipe specific
+// TODO KAI remove - these are all steampipe specific <MISC>
 // Environment Variables
 const (
 	EnvUpdateCheck     = "STEAMPIPE_UPDATE_CHECK"

@@ -2,8 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/schema"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +13,8 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -293,7 +293,7 @@ func (m *Mod) Save() error {
 		return err
 	}
 	modData := append(f.Bytes(), nonModData...)
-	return os.WriteFile(filepaths.ModFilePath(m.ModPath), modData, 0644)
+	return os.WriteFile(filepaths.ModFilePath(m.ModPath), modData, 0644) //nolint:gosec // TODO: check this gosec lint issue
 }
 
 func (m *Mod) HasDependentMods() bool {

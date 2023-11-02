@@ -3,16 +3,19 @@ package parse
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/perr"
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -24,7 +27,7 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 
 	// build an eval context just containing functions
 	evalCtx := &hcl.EvalContext{
-		Functions: ContextFunctions(modPath),
+		Functions: funcs.ContextFunctions(modPath),
 		Variables: make(map[string]cty.Value),
 	}
 
@@ -36,15 +39,28 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 	return mod, nil
 }
 
-// ParseModDefinition parses the modfile only
-// it is expected the calling code will have verified the existence of the modfile by calling ModfileExists
-// this is called before parsing the workspace to, for example, identify dependency mods
-func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
+func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
 	res := newDecodeResult()
 
 	// if there is no mod at this location, return error
-	modFilePath := filepaths.ModFilePath(modPath)
+	modFilePath := filepath.Join(modPath, modFileName)
+
+	modFileFound := true
 	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
+		modFileFound = false
+		for _, file := range filepaths.PipesComponentValidModFiles {
+			modFilePath = filepath.Join(modPath, file)
+			if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
+
+				continue
+			} else {
+				modFileFound = true
+				break
+			}
+		}
+	}
+
+	if !modFileFound {
 		res.Diags = append(res.Diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("no mod file found in %s", modPath),
@@ -74,7 +90,7 @@ func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mo
 	if block == nil {
 		res.Diags = append(res.Diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("failed to parse mod definition file: no mod definition found in %s", fmt.Sprintf("%s/mod.sp", modPath)),
+			Summary:  fmt.Sprintf("no mod definition found in %s", modPath),
 		})
 		return nil, res
 	}
@@ -95,6 +111,15 @@ func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mo
 	res.addDiags(diags)
 
 	return mod, res
+}
+
+// ParseModDefinition parses the modfile only
+// it is expected the calling code will have verified the existence of the modfile by calling ModfileExists
+// this is called before parsing the workspace to, for example, identify dependency mods
+//
+// This function only parse the "mod" block, and does not parse any resources in the mod file
+func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
+	return ParseModDefinitionWithFileName(modPath, filepaths.PipesComponentModsFileName, evalCtx)
 }
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
@@ -144,7 +169,18 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 
 	// add the mod to the run context
 	// - this it to ensure all pseudo resources get added and build the eval context with the variables we just added
-	// - it also adds the top level resources of the any dependency mods
+
+	// ! This is the place where the child mods (dependent mods) resources are "pulled up" into this current evaluation
+	// ! context.
+	// !
+	// ! Step through the code to find the place where the child mod resources are added to the "referencesValue"
+	// !
+	// ! Note that this resource MUST implement ModItem interface, otherwise it will look "flat", i.e. it will be added
+	// ! to the current mod
+	// !
+	// ! There's also a bug where we test for ModTreeItem, we added a new interface ModItem for resources that are mod
+	// ! resources but not necessarily need to be in the mod tree
+	// !
 	if diags = parseCtx.AddModResources(mod); diags.HasErrors() {
 		return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to add mod to run context", diags))
 	}
@@ -155,7 +191,7 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 	for attempts := 0; ; attempts++ {
 		diags = decode(parseCtx)
 		if diags.HasErrors() {
-			return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to decode all mod hcl files", diags))
+			return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to decode mod", diags))
 		}
 		// now retrieve the warning strings
 		res.AddWarning(plugin.DiagsToWarnings(diags)...)
@@ -169,7 +205,8 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 		// if the number of unresolved blocks has NOT reduced, fail
 		if prevUnresolvedBlocks != 0 && unresolvedBlocks >= prevUnresolvedBlocks {
 			str := parseCtx.FormatDependencies()
-			return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("failed to resolve dependencies for mod '%s' after %d attempts\nDependencies:\n%s", mod.FullName, attempts+1, str))
+			msg := fmt.Sprintf("Failed to resolve dependencies after %d passes. Unresolved blocks:\n%s", attempts+1, str)
+			return nil, error_helpers.NewErrorsAndWarning(perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, msg))
 		}
 		// update prevUnresolvedBlocks
 		prevUnresolvedBlocks = unresolvedBlocks

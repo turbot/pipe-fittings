@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -75,7 +76,7 @@ func ctyTupleToArgArray(attr *hcl.Attribute, val cty.Value) ([]any, []*modconfig
 	for idx, v := range values {
 		// if the value is unknown, this is a runtime dependency
 		if !v.IsKnown() {
-			runtimeDependency, err := identifyRuntimeDependenciesFromArray(attr, idx, schema.AttributeArgs)
+			runtimeDependency, err := identifyRuntimeDependenciesFromArray(attr, idx, schema.AttributeTypeArgs)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -110,13 +111,13 @@ func ctyObjectToArgMap(attr *hcl.Attribute, val cty.Value, evalCtx *hcl.EvalCont
 
 		// if the value is unknown, this is a runtime dependency
 		if !v.IsKnown() {
-			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, schema.AttributeArgs, evalCtx)
+			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, schema.AttributeTypeArgs, evalCtx)
 			if err != nil {
 				return nil, nil, err
 			}
 			runtimeDependencies = append(runtimeDependencies, runtimeDependency)
 		} else if getWrappedUnknownVal(v) {
-			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, schema.AttributeArgs, evalCtx)
+			runtimeDependency, err := identifyRuntimeDependenciesFromObject(attr, key, schema.AttributeTypeArgs, evalCtx)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -178,7 +179,7 @@ func identifyRuntimeDependenciesFromObject(attr *hcl.Attribute, targetProperty, 
 }
 
 func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProperty string) (*modconfig.RuntimeDependency, error) {
-	isArray, propertyPath, err := propertyPathFromExpression(expr)
+	isArray, propertyPath, err := modconfig.PropertyPathFromExpression(expr)
 	if err != nil {
 		return nil, err
 	}
@@ -198,50 +199,6 @@ func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProp
 	return ret, nil
 }
 
-func propertyPathFromExpression(expr hcl.Expression) (bool, *modconfig.ParsedPropertyPath, error) {
-	var propertyPathStr string
-	var isArray bool
-
-dep_loop:
-	for {
-		switch e := expr.(type) {
-		case *hclsyntax.ScopeTraversalExpr:
-			propertyPathStr = hclhelpers.TraversalAsString(e.Traversal)
-			break dep_loop
-		case *hclsyntax.SplatExpr:
-			root := hclhelpers.TraversalAsString(e.Source.(*hclsyntax.ScopeTraversalExpr).Traversal)
-			var suffix string
-			// if there is a property path, add it
-			if each, ok := e.Each.(*hclsyntax.RelativeTraversalExpr); ok {
-				suffix = fmt.Sprintf(".%s", hclhelpers.TraversalAsString(each.Traversal))
-			}
-			propertyPathStr = fmt.Sprintf("%s.*%s", root, suffix)
-			break dep_loop
-		case *hclsyntax.TupleConsExpr:
-			// TACTICAL
-			// handle the case where an arg value is given as a runtime dependency inside an array, for example
-			// arns = [input.arn]
-			// this is a common pattern where a runtime depdency gives a scalar value, but an array is needed for the arg
-			// NOTE: this code only supports a SINGLE item in the array
-			if len(e.Exprs) != 1 {
-				return false, nil, fmt.Errorf("unsupported runtime dependency expression - only a single runtime depdency item may be wrapped in an array")
-			}
-			isArray = true
-			expr = e.Exprs[0]
-			// fall through to rerun loop with updated expr
-		default:
-			// unhandled expression type
-			return false, nil, fmt.Errorf("unexpected runtime dependency expression type")
-		}
-	}
-
-	propertyPath, err := modconfig.ParseResourcePropertyPath(propertyPathStr)
-	if err != nil {
-		return false, nil, err
-	}
-	return isArray, propertyPath, nil
-}
-
 func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentProperty string) (*modconfig.RuntimeDependency, error) {
 	// find the expression for this key
 	argsExpr, ok := attr.Expr.(*hclsyntax.TupleConsExpr)
@@ -250,7 +207,7 @@ func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentPr
 	}
 	for i, item := range argsExpr.Exprs {
 		if i == idx {
-			isArray, propertyPath, err := propertyPathFromExpression(item)
+			isArray, propertyPath, err := modconfig.PropertyPathFromExpression(item)
 			if err != nil {
 				return nil, err
 			}
@@ -296,7 +253,16 @@ func decodeParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.ParamD
 		defaultValue, deps, moreDiags := decodeParamDefault(attr, parseCtx, def.UnqualifiedName)
 		diags = append(diags, moreDiags...)
 		if !helpers.IsNil(defaultValue) {
-			def.SetDefault(defaultValue)
+			err := def.SetDefault(defaultValue)
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "invalid default config for " + def.UnqualifiedName,
+					Detail:   err.Error(),
+					Subject:  &attr.Range,
+				})
+				return nil, nil, diags
+			}
 		}
 		runtimeDependencies = deps
 	}

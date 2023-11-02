@@ -24,9 +24,6 @@ type ErrorModel struct {
 	Detail string `json:"detail" binding:"required"`
 
 	ValidationErrors []*ErrorDetailModel `json:"validation_errors,omitempty"`
-
-	// All errors are fatal unless specified
-	Retryable bool `json:"retryable,omitempty"`
 }
 
 func FromHttpError(err error, statusCode int) ErrorModel {
@@ -37,6 +34,8 @@ func FromHttpError(err error, statusCode int) ErrorModel {
 	}
 
 	switch statusCode {
+	case http.StatusUnauthorized:
+		return UnauthorizedWithMessage(errorMsg)
 	case http.StatusNotFound:
 		return NotFoundWithMessage(errorMsg)
 	case http.StatusForbidden:
@@ -53,6 +52,10 @@ func FromHttpError(err error, statusCode int) ErrorModel {
 		return UnsupportedPlanValueWithMessage(errorMsg)
 	case http.StatusInternalServerError:
 		return InternalWithMessage(errorMsg)
+	case http.StatusServiceUnavailable:
+		return ServiceUnavailableWithMessage(errorMsg)
+	case http.StatusTooManyRequests:
+		return TooManyRequestsWithMessage(errorMsg)
 	default:
 		return InternalWithMessage(errorMsg)
 	}

@@ -1,0 +1,53 @@
+package pipeline_test
+
+import (
+	"context"
+	"github.com/turbot/pipe-fittings/load_mod"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestStepErrorConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/error.fp")
+	assert.Nil(err, "error found")
+
+	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
+
+	if pipelines["local.pipeline.bad_http"] == nil {
+		assert.Fail("bad_http pipeline not found")
+		return
+	}
+
+}
+
+func TestStepErrorConfigRetries(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/error.fp")
+	assert.Nil(err, "error found")
+
+	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
+
+	if pipelines["local.pipeline.bad_http_retries"] == nil {
+		assert.Fail("bad_http_retries pipeline not found")
+		return
+	}
+
+	step := pipelines["local.pipeline.bad_http_retries"].GetStep("http.my_step_1")
+
+	if step == nil {
+		assert.Fail("step not found")
+		return
+	}
+
+	errorConfig := step.GetErrorConfig()
+	if step == nil {
+		assert.Fail("error config not found")
+		return
+	}
+
+	assert.Equal(2, errorConfig.Retries)
+}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+//TODO KAI ARE THESE ALL NEEDED <MISC>
+
 // Client constants
 const (
 	// MaxParallelClientInits is the number of clients to initialize in parallel

@@ -152,6 +152,20 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeCategory,
 			LabelNames: []string{"name"},
 		},
+
+		// Flowpipe
+		{
+			Type:       schema.BlockTypePipeline,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeTrigger,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeIntegration,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
 	},
 }
 

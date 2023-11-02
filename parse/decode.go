@@ -161,15 +161,24 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 			resource, res = decodeVariable(block, parseCtx)
 		case schema.BlockTypeBenchmark:
 			resource, res = decodeBenchmark(block, parseCtx)
+		case schema.BlockTypePipeline:
+			resource, res = decodePipeline(parseCtx.CurrentMod, block, parseCtx)
+		case schema.BlockTypeTrigger:
+			resource, res = decodeTrigger(parseCtx.CurrentMod, block, parseCtx)
+		case schema.BlockTypeIntegration:
+			resource, res = decodeIntegration(parseCtx.CurrentMod, block, parseCtx)
 		default:
 			// all other blocks are treated the same:
 			resource, res = decodeResource(block, parseCtx)
 		}
 	}
 
-	// handle the result
-	// - if there are dependencies, add to run context
-	handleModDecodeResult(resource, res, block, parseCtx)
+	// Note that an interface value that holds a nil concrete value is itself non-nil.
+	if !helpers.IsNil(resource) {
+		// handle the result
+		// - if there are dependencies, add to run context
+		handleModDecodeResult(resource, res, block, parseCtx)
+	}
 
 	return resource, res
 }
@@ -325,7 +334,7 @@ func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resour
 		panic(fmt.Sprintf("block type %s not convertible to a QueryProvider", block.Type))
 	}
 
-	if attr, exists := content.Attributes[schema.AttributeArgs]; exists {
+	if attr, exists := content.Attributes[schema.AttributeTypeArgs]; exists {
 		args, runtimeDependencies, diags := decodeArgs(attr.AsHCLAttribute(), parseCtx.EvalCtx, queryProvider)
 		if diags.HasErrors() {
 			// handle dependencies

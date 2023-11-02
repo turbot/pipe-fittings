@@ -76,6 +76,8 @@ const (
 	ArgHeader                  = "header"
 	ArgMultiLine               = "multi-line"
 	ArgAutoComplete            = "auto-complete"
+	// Experimental
+	ArgRetainArtifacts = "retain-artifacts"
 )
 
 // BoolToOnOff converts a boolean value onto the string "on" or "off"

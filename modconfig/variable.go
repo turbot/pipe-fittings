@@ -2,6 +2,8 @@ package modconfig
 
 import (
 	"fmt"
+	typehelpers "github.com/turbot/go-kit/types"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
@@ -38,7 +40,7 @@ type Variable struct {
 	ValueSourceEndLineNumber   int                            `column:"value_source_end_line_number,integer" json:"-"`
 	ParsingMode                var_config.VariableParsingMode `json:"-"`
 
-	metadata *ResourceMetadata
+	metadata *ResourceMetadata //nolint:unused // TODO: check this is not used
 }
 
 func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
@@ -80,7 +82,7 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 func (v *Variable) Equals(other *Variable) bool {
 	return v.ShortName == other.ShortName &&
 		v.FullName == other.FullName &&
-		v.Description == other.Description &&
+		typehelpers.SafeString(v.Description) == typehelpers.SafeString(other.Description) &&
 		v.Default.RawEquals(other.Default) &&
 		v.Value.RawEquals(other.Value)
 }

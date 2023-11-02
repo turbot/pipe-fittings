@@ -3,6 +3,7 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"

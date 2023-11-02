@@ -1,9 +1,8 @@
 package parse
 
 import (
+	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/schema"
 	"log"
 
 	"github.com/hashicorp/hcl/v2"
@@ -11,12 +10,14 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/options"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
-func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
+func LoadWorkspaceProfiles(ctx context.Context, workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -58,7 +59,7 @@ func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*
 		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
 	}
 
-	parseCtx := NewWorkspaceProfileParseContext(workspaceProfilePath)
+	parseCtx := NewWorkspaceProfileParseContext(ctx, workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)
 
 	// build parse context

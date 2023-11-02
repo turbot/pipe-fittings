@@ -1,13 +1,13 @@
 package modconfig
 
 import (
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-// ModVariableMap is a struct containins maps of variable definitions
+// ModVariableMap is a struct containing maps of variable definitions
 type ModVariableMap struct {
 	// which mod have these variables been loaded for?
 	Mod *Mod

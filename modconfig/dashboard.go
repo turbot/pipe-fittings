@@ -67,10 +67,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	if err != nil {
 		return nil, err
 	}
-	fullName, err := parsedName.ToFullName()
-	if err != nil {
-		return nil, err
-	}
+	fullName := parsedName.ToFullName()
 
 	// for query dashboard use generated title, for control use original title
 	if qp.BlockType() != schema.BlockTypeQuery {

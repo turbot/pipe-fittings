@@ -121,7 +121,7 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 		// remove `Query` from attributes
 		var querySchema = &hcl.BodySchema{}
 		for _, a := range res.Attributes {
-			if a.Name != schema.AttributeQuery {
+			if a.Name != schema.AttributeTypeQuery {
 				querySchema.Attributes = append(querySchema.Attributes, a)
 			}
 		}
@@ -132,7 +132,7 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeParam})
 		// if this is NOT query, add args
 		if resource.BlockType() != schema.BlockTypeQuery {
-			res.Attributes = append(res.Attributes, hcl.AttributeSchema{Name: schema.AttributeArgs})
+			res.Attributes = append(res.Attributes, hcl.AttributeSchema{Name: schema.AttributeTypeArgs})
 		}
 	}
 	if _, ok := resource.(modconfig.NodeAndEdgeProvider); ok {

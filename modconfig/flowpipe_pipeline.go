@@ -173,15 +173,21 @@ func (p *Pipeline) GetStep(stepFullyQualifiedName string) IPipelineStep {
 	return nil
 }
 
-func (p *Pipeline) AsCtyValue() cty.Value {
-	pipelineVars := map[string]cty.Value{}
+func (p *Pipeline) CtyValue() (cty.Value, error) {
+	baseCtyValue, err := p.HclResourceImpl.CtyValue()
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	pipelineVars := baseCtyValue.AsValueMap()
 	pipelineVars[schema.LabelName] = cty.StringVal(p.Name())
 
 	if p.Description != nil {
 		pipelineVars[schema.AttributeTypeDescription] = cty.StringVal(*p.Description)
 	}
 
-	return cty.ObjectVal(pipelineVars)
+	return cty.ObjectVal(pipelineVars), nil
+
 }
 
 // SetOptions sets the options on the connection

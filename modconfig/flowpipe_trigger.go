@@ -19,6 +19,7 @@ type Trigger struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
+	// TODO KAI why does trigger store a context?
 	ctx context.Context
 
 	// 27/09/23 - Args is introduces combination of both parse time and runtime arguments. "var" should be resolved
@@ -184,7 +185,22 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(nil)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			if val.Type() != cty.String {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The given schedule is not a string",
+					Detail:   "The given schedule is not a string",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
 			t.Schedule = val.AsString()
 
 			// validate cron format
@@ -225,7 +241,21 @@ func (t *TriggerInterval) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(nil)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			if val.Type() != cty.String {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The given interval is not a string",
+					Detail:   "The given interval is not a string",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
 			t.Schedule = val.AsString()
 
 			if !helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
@@ -267,7 +297,7 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.Schedule = val.AsString()
 
 			// validate cron format
@@ -281,16 +311,16 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 				})
 			}
 		case schema.AttributeTypeSql:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.Sql = val.AsString()
 		case schema.AttributeTypeConnectionString:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.ConnectionString = val.AsString()
 		case schema.AttributeTypePrimaryKey:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			t.PrimaryKey = val.AsString()
 		case schema.AttributeTypeEvents:
-			val, _ := attr.Expr.Value(nil)
+			val, _ := attr.Expr.Value(evalContext)
 			var err error
 			t.Events, err = hclhelpers.CtyTupleToArrayOfStrings(val)
 			if err != nil {

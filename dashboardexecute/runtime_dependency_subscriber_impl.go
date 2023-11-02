@@ -377,7 +377,7 @@ func (s *RuntimeDependencySubscriberImpl) buildRuntimeDependencyArgs() (*modconf
 	// if the runtime dependencies use position args, get the max index and ensure the args array is large enough
 	maxArgIndex := -1
 	// build list of all args runtime dependencies
-	argRuntimeDependencies := s.findRuntimeDependenciesForParentProperty(schema.AttributeArgs)
+	argRuntimeDependencies := s.findRuntimeDependenciesForParentProperty(schema.AttributeTypeArgs)
 
 	for _, dep := range argRuntimeDependencies {
 		if dep.Dependency.TargetPropertyIndex != nil && *dep.Dependency.TargetPropertyIndex > maxArgIndex {

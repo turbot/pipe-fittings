@@ -1,4 +1,4 @@
-name: Go Lint
+name: Go Lint and Test
 on:
   push:
     tags:
@@ -7,11 +7,16 @@ on:
       - main
       - "v*"
       - pp
+      - pp-rebuilt
   workflow_dispatch:
+  pull_request:
+
+env:
+  GOPRIVATE: github.com/turbot/*
 
 jobs:
   golangci:
-    name: Lint
+    name: Lint and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout pipe-fittings repository
@@ -43,3 +48,6 @@ jobs:
         with:
           version: v1.54.1
           args: --timeout=15m
+
+      - name: Run tests
+        run: make test

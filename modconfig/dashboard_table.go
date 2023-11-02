@@ -59,10 +59,7 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 	if err != nil {
 		return nil, err
 	}
-	fullName, err := parsedName.ToFullName()
-	if err != nil {
-		return nil, err
-	}
+	fullName := parsedName.ToFullName()
 
 	c := &DashboardTable{
 		ResourceWithMetadataImpl: ResourceWithMetadataImpl{

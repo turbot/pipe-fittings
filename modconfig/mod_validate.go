@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 

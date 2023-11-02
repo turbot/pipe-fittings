@@ -2,10 +2,10 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/schema"
 	"strings"
 
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 type ParsedResourceName struct {
@@ -24,7 +24,7 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 
 	switch len(parts) {
 	case 0:
-		err = sperr.New("empty name passed to ParseResourceName")
+		err = perr.BadRequestWithMessage("empty name passed to ParseResourceName")
 	case 1:
 		res.Name = parts[0]
 	case 2:
@@ -34,11 +34,21 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 		res.Mod = parts[0]
 		res.ItemType = parts[1]
 		res.Name = parts[2]
+	case 4:
+		// this only applies for Triggers and Integration (as of 2023/09/13)
+		// mod_name.trigger.schedule.trigger__name
+		// mod_name.integration.slack.integration__name
+		if parts[1] != "trigger" && parts[1] != "integration" {
+			err = perr.BadRequestWithMessage(fmt.Sprintf("invalid name passed to ParseResourceName '%s' ", fullName))
+		}
+		res.Mod = parts[0]
+		res.ItemType = parts[1]
+		res.Name = parts[2] + "." + parts[3]
 	default:
-		err = sperr.New("invalid name '%s' passed to ParseResourceName", fullName)
+		err = perr.BadRequestWithMessage(fmt.Sprintf("invalid name passed to ParseResourceName '%s'", fullName))
 	}
 	if !schema.IsValidResourceItemType(res.ItemType) {
-		err = sperr.New("invalid name '%s' passed to ParseResourceName", fullName)
+		err = perr.BadRequestWithMessage("not a valid resource type passed to ParseResourceName '" + fullName + "' (" + res.ItemType + ")")
 	}
 	return
 }
@@ -47,30 +57,18 @@ func (p *ParsedResourceName) ToResourceName() string {
 	return BuildModResourceName(p.ItemType, p.Name)
 }
 
-func (p *ParsedResourceName) ToFullName() (string, error) {
+func (p *ParsedResourceName) ToFullName() string {
 	return BuildFullResourceName(p.Mod, p.ItemType, p.Name)
 }
-
-func (p *ParsedResourceName) ToFullNameWithMod(mod string) (string, error) {
+func (p *ParsedResourceName) ToFullNameWithMod(mod string) string {
 	if p.Mod != "" {
 		return p.ToFullName()
 	}
 	return BuildFullResourceName(mod, p.ItemType, p.Name)
 }
 
-// BuildFullResourceName generates a fully qualified name from the given components
-// e.g: aws_compliance.benchmark.cis_v150_1
-func BuildFullResourceName(mod, blockType, name string) (string, error) {
-	if mod == "" {
-		return "", sperr.New("mod name not provided")
-	}
-	if blockType == "" {
-		return "", sperr.New("block type not provided")
-	}
-	if name == "" {
-		return "", sperr.New("resource name not provided")
-	}
-	return fmt.Sprintf("%s.%s.%s", mod, blockType, name), nil
+func BuildFullResourceName(mod, blockType, name string) string {
+	return fmt.Sprintf("%s.%s.%s", mod, blockType, name)
 }
 
 // UnqualifiedResourceName removes the mod prefix from the given name

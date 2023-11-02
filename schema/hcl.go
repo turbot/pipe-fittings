@@ -44,6 +44,9 @@ const (
 	BlockTypePipelineOutput    = "output"
 	BlockTypeTrigger           = "trigger"
 	BlockTypePipelineBasicAuth = "basic_auth"
+	BlockTypeIntegration       = "integration"
+	BlockTypeNotify            = "notify"
+	BlockTypeLoop              = "loop"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
@@ -107,6 +110,14 @@ const (
 	AttributeTypeSubject          = "subject"
 	AttributeTypeTo               = "to"
 
+	AttributeTypeToken         = "token"
+	AttributeTypeSigningSecret = "signing_secret"
+	AttributeTypeWebhookUrl    = "webhook_url"
+	AttributeTypeNotifies      = "notifies"
+
+	AttributeTypeIntegration = "integration"
+	AttributeTypeChannel     = "channel"
+
 	// Used by sleep step
 	AttributeTypeDuration = "duration"
 
@@ -131,6 +142,12 @@ const (
 	// Used byy Pipeline step
 	AttributeTypePipeline = "pipeline"
 
+	// Used by input step
+	AttributeTypeResponseUrl = "response_url"
+	AttributeTypeSmtpServer  = "smtp_server"
+	AttributeTypeSmtpPort    = "smtp_port"
+	AttributeTypeOptions     = "options"
+
 	AttributeTypeMessage = "message"
 
 	// Functions attributes
@@ -141,13 +158,18 @@ const (
 	AttributeTypeFunction = "function"
 	AttributeTypeEvent    = "event"
 
-	AttributeTypeImage = "image"
-	AttributeTypeCmd   = "cmd"
+	AttributeTypeImage      = "image"
+	AttributeTypeCmd        = "cmd"
+	AttributeTypeEntryPoint = "entrypoint"
 
-	// All possible trigger attributes
+	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
 	AttributeTypePrimaryKey = "primary_key"
 	AttributeTypeEvents     = "events"
+
+	// Input step attributes
+	AttributeTypePrompt    = "prompt"
+	AttributeTypeSlackType = "slack_type"
 
 	// All Possible Trigger Types
 	TriggerTypeSchedule = "schedule"
@@ -155,13 +177,17 @@ const (
 	TriggerTypeQuery    = "query"
 	TriggerTypeHttp     = "http"
 
+	// Integration Types
+	IntegrationTypeSlack = "slack"
+	IntegrationTypeEmail = "email"
+	IntegrationTypeTeams = "teams"
+
 	LabelName = "name"
 	LabelType = "type"
 
 	ResourceTypeSnapshot = "snapshot"
-	AttributeArgs        = "args"
-	AttributeQuery       = "query"
 
+	// TODO KAI should these be AttributeType <MISC>
 	AttributeVar   = "var"
 	AttributeLocal = "local"
 
@@ -245,6 +271,7 @@ var ValidResourceItemTypes = []string{
 	BlockTypePipeline,
 	BlockTypeTrigger,
 	BlockTypeWith,
+	BlockTypeIntegration,
 	// local is not an actual block name but is a resource type
 	"local",
 	// references

@@ -1,7 +1,9 @@
 package parse
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
@@ -13,8 +15,8 @@ type WorkspaceProfileParseContext struct {
 	valueMap          map[string]cty.Value
 }
 
-func NewWorkspaceProfileParseContext(rootEvalPath string) *WorkspaceProfileParseContext {
-	parseContext := NewParseContext(rootEvalPath)
+func NewWorkspaceProfileParseContext(ctx context.Context, rootEvalPath string) *WorkspaceProfileParseContext {
+	parseContext := NewParseContext(ctx, rootEvalPath)
 	// TODO uncomment once https://github.com/turbot/steampipe/issues/2640 is done
 	//parseContext.BlockTypes = []string{schema.BlockTypeWorkspaceProfile}
 	c := &WorkspaceProfileParseContext{
@@ -57,6 +59,6 @@ func (c *WorkspaceProfileParseContext) buildEvalContext() {
 	vars := map[string]cty.Value{
 		"workspace": cty.ObjectVal(c.valueMap),
 	}
-	c.ParseContext.buildEvalContext(vars)
+	c.ParseContext.BuildEvalContext(vars)
 
 }

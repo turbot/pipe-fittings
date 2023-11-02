@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/db_client"
-	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"os"
 	"path/filepath"
@@ -20,9 +18,11 @@ import (
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modinstaller"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
@@ -48,7 +48,9 @@ type Workspace struct {
 	exclusions  []string
 	modFilePath string
 	// should we load/watch files recursively
-	listFlag                filehelpers.ListFlag
+	ListFlag       filehelpers.ListFlag
+	FileInclusions []string
+
 	fileWatcherErrorHandler func(context.Context, error)
 	watcherError            error
 	// event handlers
@@ -61,11 +63,12 @@ type Workspace struct {
 }
 
 // Load creates a Workspace and loads the workspace mod
-func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+
+func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.Load start")
 	defer utils.LogTime("workspace.Load end")
 
-	workspace, err := createShellWorkspace(workspacePath)
+	workspace, err := createShellWorkspace(workspacePath, fileInclusions)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -75,14 +78,19 @@ func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers
 	return workspace, errAndWarnings
 }
 
+// Load creates a Workspace and loads the workspace mod
+func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+	return LoadWithParams(ctx, workspacePath, []string{constants.ModDataExtension})
+}
+
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
 // this is use for the variable list command
-func LoadVariables(ctx context.Context, workspacePath string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
+func LoadVariables(ctx context.Context, workspacePath string, fileInclusions []string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.LoadVariables start")
 	defer utils.LogTime("workspace.LoadVariables end")
 
 	// create shell workspace
-	workspace, err := createShellWorkspace(workspacePath)
+	workspace, err := createShellWorkspace(workspacePath, fileInclusions)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -98,11 +106,12 @@ func LoadVariables(ctx context.Context, workspacePath string) ([]*modconfig.Vari
 	return variableMap.ToArray(), errorAndWarnings
 }
 
-func createShellWorkspace(workspacePath string) (*Workspace, error) {
+func createShellWorkspace(workspacePath string, fileInclusions []string) (*Workspace, error) {
 	// create shell workspace
 	workspace := &Workspace{
 		Path:           workspacePath,
 		VariableValues: make(map[string]string),
+		FileInclusions: fileInclusions,
 	}
 
 	// check whether the workspace contains a modfile
@@ -138,12 +147,12 @@ func LoadResourceNames(ctx context.Context, workspacePath string) (*modconfig.Wo
 	return workspace.loadWorkspaceResourceName(ctx)
 }
 
-func (w *Workspace) SetupWatcher(ctx context.Context, client *db_client.DbClient, errorHandler func(context.Context, error)) error {
+func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: []string{w.Path},
-		Include:     filehelpers.InclusionsFromExtensions(steampipeconfig.GetModFileExtensions()),
+		Include:     filehelpers.InclusionsFromExtensions(load_mod.GetModFileExtensions()),
 		Exclude:     w.exclusions,
-		ListFlag:    w.listFlag,
+		ListFlag:    w.ListFlag,
 		EventMask:   fsnotify.Create | fsnotify.Remove | fsnotify.Rename | fsnotify.Write,
 		// we should look into passing the callback function into the underlying watcher
 		// we need to analyze the kind of errors that come out from the watcher and
@@ -166,7 +175,7 @@ func (w *Workspace) SetupWatcher(ctx context.Context, client *db_client.DbClient
 	w.fileWatcherErrorHandler = errorHandler
 	if w.fileWatcherErrorHandler == nil {
 		w.fileWatcherErrorHandler = func(ctx context.Context, err error) {
-			fmt.Println()
+			// TODO KAI remove display code?
 			error_helpers.ShowErrorWithMessage(ctx, err, "failed to reload mod from file watcher")
 		}
 	}
@@ -206,7 +215,7 @@ func (w *Workspace) setModfileExists() {
 	if modFileExists {
 		log.Printf("[TRACE] modfile exists in workspace folder - creating pseudo-resources and loading files recursively ")
 		// only load/watch recursively if a mod sp file exists in the workspace folder
-		w.listFlag = filehelpers.FilesRecursive
+		w.ListFlag = filehelpers.FilesRecursive
 		w.loadPseudoResources = true
 		w.modFilePath = modFile
 
@@ -215,7 +224,7 @@ func (w *Workspace) setModfileExists() {
 		w.Path = filepath.Dir(modFile)
 	} else {
 		log.Printf("[TRACE] no modfile exists in workspace folder - NOT creating pseudoresources and only loading resource files from top level folder")
-		w.listFlag = filehelpers.Files
+		w.ListFlag = filehelpers.Files
 		w.loadPseudoResources = false
 	}
 }
@@ -297,7 +306,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
 
 	// load the workspace mod
-	m, otherErrorAndWarning := steampipeconfig.LoadMod(ctx, w.Path, parseCtx)
+	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
 	errorsAndWarnings.Merge(otherErrorAndWarning)
 	if errorsAndWarnings.Error != nil {
 		return errorsAndWarnings
@@ -331,12 +340,12 @@ func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool)
 
 func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, *error_helpers.ErrorAndWarnings) {
 	// load variable definitions
-	variableMap, err := steampipeconfig.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
+	variableMap, err := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// get the values
-	return steampipeconfig.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
+	return load_mod.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
 }
 
 // build options used to load workspace
@@ -350,13 +359,16 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO KAI why is there a context in ModParseContext?	<FLOWPIPE>
 	parseCtx := parse.NewModParseContext(
+		ctx,
 		workspaceLock,
 		w.Path,
 		parseFlag,
 		&filehelpers.ListOptions{
 			// listFlag specifies whether to load files recursively
-			Flags:   w.listFlag,
+			Flags:   w.ListFlag,
 			Exclude: w.exclusions,
 			// only load .sp files
 			Include: filehelpers.InclusionsFromExtensions([]string{constants.ModDataExtension}),
@@ -393,7 +405,10 @@ func (w *Workspace) loadExclusions() error {
 		fmt.Sprintf("%s/.*/**", w.Path),
 	}
 
-	ignorePath := filepath.Join(w.Path, filepaths.WorkspaceIgnoreFile)
+	// TODO KAI <FLOWPIPE>
+
+	ignorePath := filepath.Join(w.Path, filepaths.PipesComponentWorkspaceIgnoreFiles)
+	//ignorePath := filepath.Join(w.Path, filepaths.WorkspaceIgnoreFile)
 	file, err := os.Open(ignorePath)
 	if err != nil {
 		// if file does not exist, just return
@@ -428,7 +443,7 @@ func (w *Workspace) loadWorkspaceResourceName(ctx context.Context) (*modconfig.W
 		return nil, err
 	}
 
-	workspaceResourceNames, err := steampipeconfig.LoadModResourceNames(ctx, w.Mod, parseCtx)
+	workspaceResourceNames, err := load_mod.LoadModResourceNames(ctx, w.Mod, parseCtx)
 	if err != nil {
 		return nil, err
 	}
