@@ -84,8 +84,11 @@ const (
 	AttributeTypeStepName    = "step_name"
 
 	// pipeline attributes
-	AttributeTypeTags          = "tags"
-	AttributeTypeDocumentation = "documentation"
+	AttributeTypeTags            = "tags"
+	AttributeTypeDocumentation   = "documentation"
+	AttributeTypeUnqualifiedName = "unqualified_name"
+	AttributeTypeName            = "name"
+	AttributeTypeShortName       = "short_name"
 
 	AttributeTypeStartedAt  = "started_at"
 	AttributeTypeFinishedAt = "finished_at"
@@ -143,10 +146,17 @@ const (
 	AttributeTypePipeline = "pipeline"
 
 	// Used by input step
-	AttributeTypeResponseUrl = "response_url"
-	AttributeTypeSmtpServer  = "smtp_server"
-	AttributeTypeSmtpPort    = "smtp_port"
-	AttributeTypeOptions     = "options"
+	AttributeTypeDefaultRecipient = "default_recipient"
+	AttributeTypeDefaultSubject   = "default_subject"
+	AttributeTypeOptions          = "options"
+	AttributeTypeResponseUrl      = "response_url"
+	AttributeTypeSmtpHost         = "smtp_host"
+	AttributeTypeSmtpPassword     = "smtp_password"
+	AttributeTypeSmtpPort         = "smtp_port"
+	AttributeTypeSmtpServer       = "smtp_server"
+	AttributeTypeSmtpTls          = "smtp_tls"
+	AttributeTypeSmtpUsername     = "smtp_username"
+	AttributeTypeSmtpsPort        = "smtps_port"
 
 	AttributeTypeMessage = "message"
 
@@ -186,6 +196,8 @@ const (
 	LabelType = "type"
 
 	ResourceTypeSnapshot = "snapshot"
+	AttributeArgs        = "args"
+	AttributeQuery       = "query"
 
 	// TODO KAI should these be AttributeType <MISC>
 	AttributeVar   = "var"

@@ -16,7 +16,7 @@ import (
 	"github.com/zclconf/go-cty/cty/gocty"
 )
 
-func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *modconfig.Pipeline) (modconfig.IPipelineStep, hcl.Diagnostics) {
+func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *modconfig.Pipeline) (modconfig.PipelineStep, hcl.Diagnostics) {
 
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
@@ -298,7 +298,7 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 	return o, diags
 }
 
-func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.IIntegration, *DecodeResult) {
+func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.Integration, *DecodeResult) {
 
 	res := newDecodeResult()
 
