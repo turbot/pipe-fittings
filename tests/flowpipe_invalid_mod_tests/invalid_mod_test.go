@@ -129,7 +129,7 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 
 		fmt.Println("Running test " + test.title)
 
-		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, []string{".hcl", ".sp"})
+		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, ".hcl", ".sp")
 		assert.NotNil(errorAndWarning.Error)
 		assert.Contains(errorAndWarning.Error.Error(), test.containsError)
 
