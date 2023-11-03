@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 func TestChildPipeline(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/child_pipeline.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/child_pipeline.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
@@ -38,7 +38,7 @@ func TestChildPipeline(t *testing.T) {
 func TestChildPipelineWithArgs(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/child_pipeline.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/child_pipeline.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")

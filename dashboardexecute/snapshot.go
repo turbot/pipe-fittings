@@ -40,10 +40,8 @@ func GenerateSnapshot(ctx context.Context, target string, initData *initialisati
 		return nil, err
 	case snapshot = <-resultChannel:
 		// set the filename root of the snapshot
-		fileRootName, err := parsedName.ToFullNameWithMod(w.Mod.ShortName)
-		if err != nil {
-			return nil, err
-		}
+		fileRootName := parsedName.ToFullNameWithMod(w.Mod.ShortName)
+
 		snapshot.FileNameRoot = fileRootName
 		//  return the context error (if any) to ensure we respect cancellation
 		return snapshot, ctx.Err()

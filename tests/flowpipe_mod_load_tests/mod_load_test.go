@@ -2,7 +2,7 @@ package flowpipe_mod_load_tests
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 	"os"
 	"path"
 	"testing"
@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/workspace"
 )
@@ -59,16 +60,8 @@ func (suite *FlowpipeModLoadTestSuite) SetupSuite() {
 
 	suite.ctx = ctx
 
-	app_specific.WorkspaceDataDir = ".flowpipe"
-	app_specific.ModFileName = "mod.hcl"
-	app_specific.DefaultVarsFileName = "flowpipe.pvars"
-	app_specific.DefaultInstallDir = "~/.flowpipe"
-
-	app_specific.ModDataExtension = ".hcl"
-	app_specific.VariablesExtension = ".pvars"
-	app_specific.AutoVariablesExtension = ".auto.pvars"
-	app_specific.EnvInputVarPrefix = "P_VAR_"
-	app_specific.AppName = "flowpipe"
+	// set app specific constants
+	test_init.SetAppSpecificConstants()
 
 	suite.SetupSuiteRunCount++
 }

@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 func TestNestedThreeLevelJsonencode(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/nested_three_levels_jsonencode.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/nested_three_levels_jsonencode.fp")
 	assert.Nil(err)
 	assert.NotNil(pipelines)
 

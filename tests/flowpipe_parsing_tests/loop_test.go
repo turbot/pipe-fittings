@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 func TestLoop(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/loop.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/loop.fp")
 	assert.Nil(err, "error found")
 
 	if pipelines["local.pipeline.simple_loop"] == nil {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 type testSetup struct {
@@ -153,7 +153,7 @@ func TestSimpleInvalidResources(t *testing.T) {
 
 		fmt.Println("Running test: " + test.title)
 
-		_, _, err := misc.LoadPipelines(ctx, test.file)
+		_, _, err := load_mod.LoadPipelines(ctx, test.file)
 		assert.NotNil(err)
 		assert.Contains(err.Error(), test.containsError)
 	}

@@ -4,6 +4,7 @@ package invalid_mod_tests
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 	"os"
 	"path"
 	"testing"
@@ -60,16 +61,8 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) SetupSuite() {
 
 	suite.ctx = ctx
 
-	app_specific.WorkspaceDataDir = ".flowpipe"
-	app_specific.ModFileName = "mod.hcl"
-	app_specific.DefaultVarsFileName = "flowpipe.pvars"
-	app_specific.DefaultInstallDir = "~/.flowpipe"
-
-	app_specific.ModDataExtension = ".hcl"
-	app_specific.VariablesExtension = ".pvars"
-	app_specific.AutoVariablesExtension = ".auto.pvars"
-	app_specific.EnvInputVarPrefix = "P_VAR_"
-	app_specific.AppName = "flowpipe"
+	// set app specific constants
+	test_init.SetAppSpecificConstants()
 
 	suite.SetupSuiteRunCount++
 }

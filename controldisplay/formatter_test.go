@@ -2,13 +2,13 @@ package controldisplay
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/controlexecute"
-	"github.com/turbot/pipe-fittings/filepaths"
 )
 
 // testFormatter is an implementation of the Formatter interface
@@ -84,7 +84,7 @@ func TestFormatResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	filepaths.SteampipeDir = tmpDir
+	app_specific.InstallDir = tmpDir
 	if err := EnsureTemplates(); err != nil {
 		t.Fatal(err)
 	}

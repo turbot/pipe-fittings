@@ -50,7 +50,8 @@ func NewServer(ctx context.Context, dbClient *db_client.DbClient, w *workspace.W
 	}
 
 	w.RegisterDashboardEventHandler(ctx, server.HandleDashboardEvent)
-	err := w.SetupWatcher(ctx, dbClient, func(c context.Context, e error) {})
+	// TODO KAI client <MISC>
+	err := w.SetupWatcher(ctx /*,dbClient*/, func(c context.Context, e error) {})
 	OutputMessage(ctx, "Workspace loaded")
 
 	return server, err

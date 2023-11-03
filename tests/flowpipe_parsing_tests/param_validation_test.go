@@ -7,13 +7,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 func TestParamValidation(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/param_validation.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/param_validation.fp")
 	assert.Nil(err, "error found")
 
 	validateMyParam := pipelines["local.pipeline.validate_my_param"]
@@ -291,7 +291,7 @@ func TestParamValidation(t *testing.T) {
 func TestParamCoerce(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/param_validation.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/param_validation.fp")
 	assert.Nil(err, "error found")
 
 	validateMyParam := pipelines["local.pipeline.validate_my_param"]

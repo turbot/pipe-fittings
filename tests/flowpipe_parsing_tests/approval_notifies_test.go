@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -13,7 +13,7 @@ import (
 func TestApprovalNotifies(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 	if mod == nil {
@@ -80,7 +80,7 @@ func TestApprovalNotifies(t *testing.T) {
 func TestApprovalNotifiesInvalidSlackAttribute(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 	if mod == nil {
@@ -110,7 +110,7 @@ func TestApprovalNotifiesInvalidSlackAttribute(t *testing.T) {
 func TestApprovalNotifiesInvalidEmailAttribute(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 	if mod == nil {
@@ -133,7 +133,7 @@ func TestApprovalNotifiesInvalidEmailAttribute(t *testing.T) {
 func TestApprovalNotifiesInvalidEmail(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 	if mod == nil {
@@ -163,7 +163,7 @@ func TestApprovalNotifiesInvalidEmail(t *testing.T) {
 func TestApprovalNotifiesInvalidSlack(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_notifies.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 	if mod == nil {

@@ -93,6 +93,8 @@ func TestParsePropertyPath(t *testing.T) {
 				// test passed and error message matched
 				continue
 			}
+		} else if test.expected == "ERROR" {
+			t.Errorf("Test: '%s'' FAILED : \nexpected error: %s", name, test.errorMessage)
 		}
 		if !propertyPathsEqual(res, test.expected.(*ParsedPropertyPath)) {
 			t.Errorf("Test: '%s'' FAILED : \nexpected:\n %v, \ngot:\n %v\n", name, test.expected, res)

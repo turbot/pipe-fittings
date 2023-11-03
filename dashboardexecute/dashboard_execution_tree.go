@@ -72,10 +72,7 @@ func (e *DashboardExecutionTree) createRootItem(rootName string) (dashboardtypes
 	if err != nil {
 		return nil, err
 	}
-	fullName, err := parsedName.ToFullName()
-	if err != nil {
-		return nil, err
-	}
+	fullName := parsedName.ToFullName()
 
 	if parsedName.ItemType == "" {
 		return nil, fmt.Errorf("root item is not valid named resource")

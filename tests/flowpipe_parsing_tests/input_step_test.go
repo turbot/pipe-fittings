@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -14,7 +14,7 @@ import (
 func TestInputStep(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
 	assert.Nil(err, "error found")
 	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
 
@@ -51,7 +51,7 @@ func TestInputStep(t *testing.T) {
 func TestInputStepUnresolvedNotify(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
 	assert.Nil(err, "error found")
 	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
 
@@ -106,7 +106,7 @@ func TestInputStepUnresolvedNotify(t *testing.T) {
 func TestEmailInputStep(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
 	assert.Nil(err, "error found")
 	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
 

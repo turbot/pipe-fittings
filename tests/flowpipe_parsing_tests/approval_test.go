@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 )
@@ -14,7 +14,7 @@ import (
 func TestApproval(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 

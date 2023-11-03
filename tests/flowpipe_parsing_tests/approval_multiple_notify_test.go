@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty/gocty"
@@ -14,7 +14,7 @@ import (
 func TestApprovalMultipleNotify(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_multiple_notify.fp")
+	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval_multiple_notify.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 	assert.Equal(2, len(mod.ResourceMaps.Integrations))
