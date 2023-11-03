@@ -194,8 +194,8 @@ type NextStep struct {
 	StepLoop    *StepLoop      `json:"step_loop,omitempty"`
 }
 
-func NewPipelineStep(stepType, stepName string) IPipelineStep {
-	var step IPipelineStep
+func NewPipelineStep(stepType, stepName string) PipelineStep {
+	var step PipelineStep
 	switch stepType {
 	case schema.BlockTypePipelineStepHttp:
 		step = &PipelineStepHttp{}
@@ -227,7 +227,7 @@ func NewPipelineStep(stepType, stepName string) IPipelineStep {
 }
 
 // A common interface that all pipeline steps must implement
-type IPipelineStep interface {
+type PipelineStep interface {
 	Initialize()
 	GetFullyQualifiedName() string
 	GetName() string
@@ -251,7 +251,7 @@ type IPipelineStep interface {
 	GetErrorConfig() *ErrorConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
-	Equals(other IPipelineStep) bool
+	Equals(other PipelineStep) bool
 	Validate() hcl.Diagnostics
 }
 
@@ -784,7 +784,7 @@ type PipelineStepHttp struct {
 	BasicAuthConfig  *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
 }
 
-func (p *PipelineStepHttp) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -1149,7 +1149,7 @@ type PipelineStepSleep struct {
 	Duration string `json:"duration"`
 }
 
-func (p *PipelineStepSleep) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -1238,7 +1238,7 @@ type PipelineStepEmail struct {
 	Subject          *string  `json:"subject"`
 }
 
-func (p *PipelineStepEmail) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepEmail) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -1669,7 +1669,7 @@ type PipelineStepEcho struct {
 	Json    json.SimpleJSONValue `json:"json"`
 }
 
-func (p *PipelineStepEcho) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepEcho) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -1733,7 +1733,7 @@ func (p *PipelineStepEcho) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	}, nil
 }
 
-func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p IPipelineStep) (cty.Value, hcl.Diagnostics) {
+func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStep) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
 	// If there is a param in the expression, then we must assume that we can't resolve it at this stage.
@@ -1859,7 +1859,7 @@ type PipelineStepQuery struct {
 	Args              []interface{} `json:"args"`
 }
 
-func (p *PipelineStepQuery) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -2020,7 +2020,7 @@ type PipelineStepPipeline struct {
 	Args     Input     `json:"args"`
 }
 
-func (p *PipelineStepPipeline) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -2177,7 +2177,7 @@ type PipelineStepFunction struct {
 	Env   map[string]string      `json:"env"`
 }
 
-func (p *PipelineStepFunction) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepFunction) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -2374,7 +2374,7 @@ type PipelineStepInput struct {
 	Notifies cty.Value
 }
 
-func (p *PipelineStepInput) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true
@@ -2742,7 +2742,7 @@ type PipelineStepContainer struct {
 	EntryPoint []string          `json:"entrypoint"`
 }
 
-func (p *PipelineStepContainer) Equals(iOther IPipelineStep) bool {
+func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && iOther == nil {
 		return true

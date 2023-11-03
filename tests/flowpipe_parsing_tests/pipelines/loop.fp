@@ -5,7 +5,7 @@ pipeline "simple_loop" {
         numeric = 1
 
         loop {
-            if = result.numeric > 5
+            until = result.numeric > 5
             numeric = result.numeric + 1
         }
     }
@@ -23,7 +23,7 @@ pipeline "simple_http_loop" {
     }
 
     loop {
-      if  = result.response_body.next_token != null
+      until  = result.response_body.next_token != null
       url = "https://latestpipe.turbot.io/api/v1/org/latesttank/workspace/?limit=3&next_token=${result.response_body.next_token}"
     }
   }
@@ -41,7 +41,7 @@ pipeline "loop_depeneds_on_another_step" {
         numeric = 1
 
         loop {
-            if = result.numeric > 5
+            until = result.numeric > 5
             numeric = result.numeric + step.echo.base.numeric + 1
         }
     }
