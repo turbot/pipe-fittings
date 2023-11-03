@@ -66,6 +66,7 @@ func LoadWorkspaceProfiles(ctx context.Context, workspaceProfilePath string) (pr
 	return parseWorkspaceProfiles(parseCtx)
 
 }
+
 func parseWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string]*modconfig.WorkspaceProfile, error) {
 	// we may need to decode more than once as we gather dependencies as we go
 	// continue decoding as long as the number of unresolved blocks decreases
