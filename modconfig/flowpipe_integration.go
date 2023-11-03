@@ -7,7 +7,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type IIntegration interface {
+type Integration interface {
 	HclResource
 	ResourceWithMetadata
 	GetType() string
@@ -152,7 +152,7 @@ func (i *EmailIntegration) Equals(other *EmailIntegration) bool {
 	return true
 }
 
-func NewIntegration(mod *Mod, block *hcl.Block) IIntegration {
+func NewIntegration(mod *Mod, block *hcl.Block) Integration {
 
 	integrationType := block.Labels[0]
 	integrationName := block.Labels[1]

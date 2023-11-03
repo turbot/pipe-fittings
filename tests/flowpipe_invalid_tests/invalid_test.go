@@ -130,7 +130,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid loop - no if",
 		file:          "./pipelines/loop_no_if.fp",
-		containsError: "The argument \"if\" is required, but no definition was found",
+		containsError: "The argument \"until\" is required, but no definition was found",
 	},
 }
 

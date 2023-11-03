@@ -5,7 +5,7 @@ pipeline "simple_loop" {
         numeric = 1
 
         loop {
-            if = result.numeric > 5
+            until = result.numeric > 5
             baz = result.numeric + 1
         }
     }

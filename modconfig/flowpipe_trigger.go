@@ -30,7 +30,7 @@ type Trigger struct {
 	Pipeline cty.Value `json:"-"`
 	RawBody  hcl.Body  `json:"-" hcl:",remain"`
 
-	Config ITriggerConfig `json:"-"`
+	Config TriggerConfig `json:"-"`
 }
 
 func (p *Trigger) Equals(other *Trigger) bool {
@@ -167,7 +167,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	return diags
 }
 
-type ITriggerConfig interface {
+type TriggerConfig interface {
 	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 }
 
@@ -410,7 +410,7 @@ func NewTrigger(ctx context.Context, block *hcl.Block, mod *Mod, triggerType, tr
 }
 
 // GetTriggerTypeFromTriggerConfig returns the type of the trigger from the trigger config
-func GetTriggerTypeFromTriggerConfig(config ITriggerConfig) string {
+func GetTriggerTypeFromTriggerConfig(config TriggerConfig) string {
 	switch config.(type) {
 	case *TriggerSchedule:
 		return schema.TriggerTypeSchedule

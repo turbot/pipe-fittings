@@ -68,7 +68,7 @@ type Pipeline struct {
 	// Unparsed JSON raw message, needed so we can unmarshall the step JSON into the correct struct
 	StepsRawJson json.RawMessage `json:"-"`
 
-	Steps []IPipelineStep `json:"steps,omitempty"`
+	Steps []PipelineStep `json:"steps,omitempty"`
 
 	OutputConfig []PipelineOutput `json:"outputs,omitempty"`
 
@@ -164,7 +164,7 @@ func (p *Pipeline) GetMod() *Mod {
 }
 
 // Pipeline functions
-func (p *Pipeline) GetStep(stepFullyQualifiedName string) IPipelineStep {
+func (p *Pipeline) GetStep(stepFullyQualifiedName string) PipelineStep {
 	for i := 0; i < len(p.Steps); i++ {
 		if p.Steps[i].GetFullyQualifiedName() == stepFullyQualifiedName {
 			return p.Steps[i]
