@@ -2,12 +2,12 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/schema"
@@ -129,9 +129,9 @@ func (r *Require) handleDeprecations() hcl.Diagnostics {
 
 func (r *Require) validateAppVersion(modName string) error {
 	if steampipeVersionConstraint := r.SteampipeVersionConstraint(); steampipeVersionConstraint != nil {
-		if !steampipeVersionConstraint.Check(constants.AppVersion) {
+		if !steampipeVersionConstraint.Check(app_specific.AppVersion) {
 			// TODO KAI app specific constants <MISC>
-			return fmt.Errorf("App version %s does not satisfy %s which requires version %s", constants.AppVersion.String(), modName, r.Steampipe.MinVersionString)
+			return fmt.Errorf("App version %s does not satisfy %s which requires version %s", app_specific.AppVersion.String(), modName, r.Steampipe.MinVersionString)
 		}
 	}
 	return nil

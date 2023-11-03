@@ -3,6 +3,7 @@ package modinstaller
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 
 	"github.com/fatih/color"
@@ -22,7 +23,7 @@ func ValidateModLocation(ctx context.Context, workspacePath string) bool {
 
 	// check if running in home directory
 	if workspacePath == home {
-		return utils.UserConfirmation(fmt.Sprintf("%s: Creating a mod file in the home directory is not recommended.\nBest practice is to create a new directory and run %s from there.\nDo you want to continue? (y/n)", color.YellowString("Warning"), constants.Bold(fmt.Sprintf("%s mod %s", constants.PipesComponentAppName, cmd.Name()))))
+		return utils.UserConfirmation(fmt.Sprintf("%s: Creating a mod file in the home directory is not recommended.\nBest practice is to create a new directory and run %s from there.\nDo you want to continue? (y/n)", color.YellowString("Warning"), constants.Bold(fmt.Sprintf("%s mod %s", app_specific.AppName, cmd.Name()))))
 	}
 	// else check if running in a directory containing lot of sql and sp files
 	fileList, _ := filehelpers.ListFiles(workspacePath, &filehelpers.ListOptions{
@@ -31,7 +32,7 @@ func ValidateModLocation(ctx context.Context, workspacePath string) bool {
 		MaxResults: MaxResults,
 	})
 	if len(fileList) == MaxResults {
-		return utils.UserConfirmation(fmt.Sprintf("%s: Creating a mod file in a directory with a lot of files or subdirectories is not recommended.\nBest practice is to create a new directory and run %s from there.\nDo you want to continue? (y/n)", color.YellowString("Warning"), constants.Bold(fmt.Sprintf("%s mod %s", constants.PipesComponentAppName, cmd.Name()))))
+		return utils.UserConfirmation(fmt.Sprintf("%s: Creating a mod file in a directory with a lot of files or subdirectories is not recommended.\nBest practice is to create a new directory and run %s from there.\nDo you want to continue? (y/n)", color.YellowString("Warning"), constants.Bold(fmt.Sprintf("%s mod %s", app_specific.AppName, cmd.Name()))))
 	}
 
 	return true

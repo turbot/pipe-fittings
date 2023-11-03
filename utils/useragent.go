@@ -5,23 +5,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"net/http"
 	"net/url"
 	"runtime"
 
 	"github.com/hashicorp/go-cleanhttp"
-	"github.com/turbot/pipe-fittings/constants"
 )
 
 func getUserAgent() string {
-	return fmt.Sprintf("Turbot Steampipe/%s (+https://steampipe.io)", constants.AppVersion.String())
+	return fmt.Sprintf("Turbot Steampipe/%s (+https://steampipe.io)", app_specific.AppVersion.String())
 }
 
 // BuildRequestPayload merges the provided payload with the standard payload that needs to be sent
 func BuildRequestPayload(signature string, payload map[string]interface{}) *bytes.Buffer {
 	requestPayload := map[string]interface{}{
-		"version":     constants.AppVersion.String(),
+		"version":     app_specific.AppVersion.String(),
 		"os_platform": runtime.GOOS,
 		"arch":        runtime.GOARCH,
 		"signature":   signature,

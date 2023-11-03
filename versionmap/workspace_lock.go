@@ -3,7 +3,7 @@ package versionmap
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"log"
 	"os"
 	"path"
@@ -79,7 +79,7 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 func (l *WorkspaceLock) getInstalledMods() error {
 
 	var includes []string
-	for _, file := range filepaths.PipesComponentValidModFiles {
+	for _, file := range filepaths.ValidModFiles {
 		includes = append(includes, fmt.Sprintf("**/%s", file))
 	}
 
@@ -344,5 +344,5 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 	}
 
 	// TODO KAI look at PipesComponentAppName
-	return "", fmt.Errorf("dependency mod '%s' is not installed - run '"+constants.PipesComponentAppName+" mod install'", modDependency.DependencyPath())
+	return "", fmt.Errorf("dependency mod '%s' is not installed - run '"+app_specific.AppName+" mod install'", modDependency.DependencyPath())
 }

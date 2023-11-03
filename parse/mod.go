@@ -3,6 +3,7 @@ package parse
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/perr"
 	"log"
@@ -48,7 +49,7 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 	modFileFound := true
 	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
 		modFileFound = false
-		for _, file := range filepaths.PipesComponentValidModFiles {
+		for _, file := range filepaths.ValidModFiles {
 			modFilePath = filepath.Join(modPath, file)
 			if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
 
@@ -119,7 +120,7 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 //
 // This function only parse the "mod" block, and does not parse any resources in the mod file
 func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
-	return ParseModDefinitionWithFileName(modPath, filepaths.PipesComponentModsFileName, evalCtx)
+	return ParseModDefinitionWithFileName(modPath, app_specific.ModFileName, evalCtx)
 }
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object

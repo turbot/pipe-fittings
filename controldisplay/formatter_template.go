@@ -3,6 +3,7 @@ package controldisplay
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"os"
 	"text/template"
@@ -50,7 +51,7 @@ func (tf TemplateFormatter) Format(ctx context.Context, tree *controlexecute.Exe
 		}
 		renderContext := TemplateRenderContext{
 			Constants: TemplateRenderConstants{
-				SteampipeVersion: constants.AppVersion.String(),
+				SteampipeVersion: app_specific.AppVersion.String(),
 				WorkingDir:       workingDirectory,
 			},
 			Config: TemplateRenderConfig{

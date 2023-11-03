@@ -2,6 +2,7 @@ package filepaths
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"path"
 	"path/filepath"
 	"strings"
@@ -11,29 +12,21 @@ import (
 
 // mod related constants
 const (
-	WorkspaceDataDir            = ".steampipe"
 	WorkspaceModDir             = "mods"
 	WorkspaceModShadowDirPrefix = ".mods."
 	WorkspaceConfigFileName     = "workspace.spc"
-	WorkspaceIgnoreFile         = ".steampipeignore"
-	ModFileName                 = "mod.sp"
-	DefaultVarsFileName         = "steampipe.spvars"
 	WorkspaceLockFileName       = ".mod.cache.json"
 )
 
-var PipesComponentWorkspaceDataDir = WorkspaceDataDir
-var PipesComponentModsFileName = ModFileName
-var PipesComponentWorkspaceIgnoreFiles = WorkspaceIgnoreFile
-var PipesComponentDefaultVarsFileName = DefaultVarsFileName
-
-var PipesComponentValidModFiles = []string{"mod.sp", "mod.hcl"}
+// TODO is this app specific?
+var ValidModFiles = []string{"mod.sp", "mod.hcl"}
 
 func WorkspaceModPath(workspacePath string) string {
-	return path.Join(workspacePath, PipesComponentWorkspaceDataDir, WorkspaceModDir)
+	return path.Join(workspacePath, app_specific.WorkspaceDataDir, WorkspaceModDir)
 }
 
 func WorkspaceModShadowPath(workspacePath string) string {
-	return path.Join(workspacePath, PipesComponentWorkspaceDataDir, fmt.Sprintf("%s%s", WorkspaceModShadowDirPrefix, runtime.ExecutionID))
+	return path.Join(workspacePath, app_specific.WorkspaceDataDir, fmt.Sprintf("%s%s", WorkspaceModShadowDirPrefix, runtime.ExecutionID))
 }
 
 func IsModInstallShadowPath(dirName string) bool {
@@ -45,10 +38,10 @@ func WorkspaceLockPath(workspacePath string) string {
 }
 
 func DefaultVarsFilePath(workspacePath string) string {
-	return path.Join(workspacePath, PipesComponentDefaultVarsFileName)
+	return path.Join(workspacePath, app_specific.DefaultVarsFileName)
 }
 
 func ModFilePath(modFolder string) string {
-	modFilePath := filepath.Join(modFolder, PipesComponentModsFileName)
+	modFilePath := filepath.Join(modFolder, app_specific.ModFileName)
 	return modFilePath
 }

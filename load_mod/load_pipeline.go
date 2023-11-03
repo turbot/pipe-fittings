@@ -3,11 +3,11 @@ package load_mod
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"path/filepath"
 
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
@@ -73,12 +73,12 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 		}
 	} else if info.IsDir() { // Check if it's a directory
 
-		defaultModSp := filepath.Join(configPath, filepaths.PipesComponentModsFileName)
+		defaultModSp := filepath.Join(configPath, app_specific.ModFileName)
 
 		_, err := os.Stat(defaultModSp)
 		if err == nil {
 			// default mod.hcl exist
-			fileName = filepaths.PipesComponentModsFileName
+			fileName = app_specific.ModFileName
 			modDir = configPath
 		} else {
 			fileName = "*.fp"

@@ -2,6 +2,7 @@ package inputvars
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"regexp"
 	"strings"
@@ -33,10 +34,10 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 	{
 		env := os.Environ()
 		for _, raw := range env {
-			if !strings.HasPrefix(raw, constants.EnvInputVarPrefix) {
+			if !strings.HasPrefix(raw, app_specific.EnvInputVarPrefix) {
 				continue
 			}
-			raw = raw[len(constants.EnvInputVarPrefix):] // trim the prefix
+			raw = raw[len(app_specific.EnvInputVarPrefix):] // trim the prefix
 
 			eq := strings.Index(raw, "=")
 			if eq == -1 {
@@ -312,5 +313,5 @@ func (v unparsedVariableValueString) ParseVariableValue(mode var_config.Variable
 
 // isAutoVarFile determines if the file ends with .auto.spvars or .auto.spvars.json
 func isAutoVarFile(path string) bool {
-	return strings.HasSuffix(path, constants.AutoVariablesExtension)
+	return strings.HasSuffix(path, app_specific.AutoVariablesExtension)
 }

@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"log"
 	"os"
@@ -13,7 +14,6 @@ import (
 	"github.com/hashicorp/hcl/v2/json"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
@@ -86,7 +86,7 @@ func buildOrderedFileNameList(fileData map[string][]byte) []string {
 // ModfileExists returns whether a mod file exists at the specified path
 func ModfileExists(modPath string) bool {
 	// TODO KAI Ccheck const <FLOWPIPE>
-	modFilePath := filepath.Join(modPath, filepaths.PipesComponentModsFileName)
+	modFilePath := filepath.Join(modPath, app_specific.ModFileName)
 	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
 		return false
 	}

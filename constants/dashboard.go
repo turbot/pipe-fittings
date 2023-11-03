@@ -2,6 +2,7 @@ package constants
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 )
 
 // DashboardListenAddresses is an arrays is listen addresses which Steampipe accepts
@@ -13,5 +14,5 @@ const (
 )
 
 func DashboardAssetsImageRef() string {
-	return fmt.Sprintf(DashboardAssetsImageRefFormat, AppVersion.String())
+	return fmt.Sprintf(DashboardAssetsImageRefFormat, app_specific.AppVersion.String())
 }

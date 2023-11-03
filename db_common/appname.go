@@ -1,20 +1,19 @@
 package db_common
 
 import (
+	"github.com/turbot/pipe-fittings/app_specific"
 	"strings"
-
-	"github.com/turbot/pipe-fittings/constants"
 )
 
 // TODO think about app specific stuff here
 func IsClientAppName(appName string) bool {
-	return strings.HasPrefix(appName, constants.ClientConnectionAppNamePrefix) && !strings.HasPrefix(appName, constants.ClientSystemConnectionAppNamePrefix)
+	return strings.HasPrefix(appName, app_specific.ClientConnectionAppNamePrefix) && !strings.HasPrefix(appName, app_specific.ClientSystemConnectionAppNamePrefix)
 }
 
 func IsClientSystemAppName(appName string) bool {
-	return strings.HasPrefix(appName, constants.ClientSystemConnectionAppNamePrefix)
+	return strings.HasPrefix(appName, app_specific.ClientSystemConnectionAppNamePrefix)
 }
 
 func IsServiceAppName(appName string) bool {
-	return strings.HasPrefix(appName, constants.ServiceConnectionAppNamePrefix)
+	return strings.HasPrefix(appName, app_specific.ServiceConnectionAppNamePrefix)
 }

@@ -3,7 +3,7 @@ package dashboardassets
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"log"
 	"os"
 
@@ -24,7 +24,7 @@ func Ensure(ctx context.Context) error {
 		return err
 	}
 
-	if versionFile.Version == constants.AppVersion.String() {
+	if versionFile.Version == app_specific.AppVersion.String() {
 		return nil
 	}
 

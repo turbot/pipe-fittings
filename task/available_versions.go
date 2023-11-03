@@ -5,6 +5,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"os"
 	//"github.com/turbot/pipe-fittings/plugin"
@@ -70,11 +71,11 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 		return nil, err
 	}
 
-	if newVersion.GreaterThan(constants.AppVersion) {
+	if newVersion.GreaterThan(app_specific.AppVersion) {
 		var downloadURLColor = color.New(color.FgYellow)
 		var notificationLines = []string{
 			"",
-			fmt.Sprintf("A new version of Steampipe is available! %s → %s", constants.Bold(constants.AppVersion.String()), constants.Bold(newVersion)),
+			fmt.Sprintf("A new version of Steampipe is available! %s → %s", constants.Bold(app_specific.AppVersion.String()), constants.Bold(newVersion)),
 			fmt.Sprintf("You can update by downloading from %s", downloadURLColor.Sprint("https://steampipe.io/downloads")),
 			"",
 		}

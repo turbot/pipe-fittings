@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"log"
 	"os"
 	"path/filepath"
@@ -80,7 +81,7 @@ func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []
 
 // Load creates a Workspace and loads the workspace mod
 func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	return LoadWithParams(ctx, workspacePath, []string{constants.ModDataExtension})
+	return LoadWithParams(ctx, workspacePath, []string{app_specific.ModDataExtension})
 }
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
@@ -371,7 +372,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 			Flags:   w.ListFlag,
 			Exclude: w.exclusions,
 			// only load .sp files
-			Include: filehelpers.InclusionsFromExtensions([]string{constants.ModDataExtension}),
+			Include: filehelpers.InclusionsFromExtensions([]string{app_specific.ModDataExtension}),
 		})
 
 	return parseCtx, nil
@@ -405,10 +406,7 @@ func (w *Workspace) loadExclusions() error {
 		fmt.Sprintf("%s/.*/**", w.Path),
 	}
 
-	// TODO KAI <FLOWPIPE>
-
-	ignorePath := filepath.Join(w.Path, filepaths.PipesComponentWorkspaceIgnoreFiles)
-	//ignorePath := filepath.Join(w.Path, filepaths.WorkspaceIgnoreFile)
+	ignorePath := filepath.Join(w.Path, app_specific.WorkspaceIgnoreFile)
 	file, err := os.Open(ignorePath)
 	if err != nil {
 		// if file does not exist, just return

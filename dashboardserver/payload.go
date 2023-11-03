@@ -3,6 +3,7 @@ package dashboardserver
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 
 	"github.com/spf13/viper"
@@ -31,7 +32,7 @@ func buildDashboardMetadataPayload(workspaceResources *modconfig.ResourceMaps, c
 		Action: "dashboard_metadata",
 		Metadata: DashboardMetadata{
 			CLI: DashboardCLIMetadata{
-				Version: constants.AppVersion.String(),
+				Version: app_specific.AppVersion.String(),
 			},
 			InstalledMods: installedMods,
 			Telemetry:     viper.GetString(constants.ArgTelemetry),

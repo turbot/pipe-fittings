@@ -2,6 +2,7 @@ package filepaths
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"path/filepath"
 
@@ -14,7 +15,7 @@ import (
 
 var InstallDir string
 
-var PipesComponentDefaultInstallDir = constants.DefaultInstallDir
+var PipesComponentDefaultInstallDir = app_specific.DefaultInstallDir
 
 const (
 	connectionsStateFileName     = "connection.json"

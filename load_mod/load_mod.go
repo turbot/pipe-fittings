@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/perr"
 	"log"
@@ -13,7 +14,6 @@ import (
 
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
@@ -69,7 +69,7 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 		}
 	}()
 
-	return LoadModWithFileName(ctx, modPath, filepaths.PipesComponentModsFileName, parseCtx)
+	return LoadModWithFileName(ctx, modPath, app_specific.ModFileName, parseCtx)
 }
 
 func ModFileExists(modPath, modFile string) bool {
@@ -81,7 +81,7 @@ func ModFileExists(modPath, modFile string) bool {
 		return true
 	}
 
-	for _, file := range filepaths.PipesComponentValidModFiles {
+	for _, file := range filepaths.ValidModFiles {
 		filePath := filepath.Join(modPath, file)
 		_, err := os.Stat(filePath)
 		if err == nil {
@@ -142,7 +142,7 @@ func loadModDependencies(ctx context.Context, parent *modconfig.Mod, parseCtx *p
 				return err
 			}
 			if lockedVersion == nil {
-				return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run '"+constants.PipesComponentAppName+" mod install'")
+				return perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, "not all dependencies are installed - run '"+app_specific.AppName+" mod install'")
 			}
 			if err := loadModDependency(ctx, lockedVersion, parseCtx); err != nil {
 				errors = append(errors, err)
@@ -276,7 +276,7 @@ func LoadModResourceNames(ctx context.Context, mod *modconfig.Mod, parseCtx *par
 // GetModFileExtensions returns list of all file extensions we care about
 // this will be the mod data extension, plus any registered extensions registered in fileToResourceMap
 func GetModFileExtensions() []string {
-	return append(modconfig.RegisteredFileExtensions(), constants.PipesComponentModDataExtension, constants.PipesComponentVariablesExtension)
+	return append(modconfig.RegisteredFileExtensions(), app_specific.ModDataExtension, app_specific.VariablesExtension)
 }
 
 // build list of all filepaths we need to parse/load the mod
