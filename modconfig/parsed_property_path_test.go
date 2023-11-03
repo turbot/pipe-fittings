@@ -23,7 +23,7 @@ var parsePropertyPathTestCases = map[string]parsePropertyPathTest{
 	"invalid resource name": {
 		input:        "m1.q1",
 		expected:     "ERROR",
-		errorMessage: "invalid property path 'm1.q1' passed to ParseResourcePropertyPath",
+		errorMessage: "Bad Request: invalid property path: m1.q1",
 	},
 	"qualified resource name": {
 		input: "m1.query.q1",
@@ -89,13 +89,17 @@ func TestParsePropertyPath(t *testing.T) {
 				t.Errorf("Test: '%s'' FAILED : \nunexpected error %v", name, err)
 				continue
 			}
-			if test.expected == "ERROR" && test.errorMessage == err.Error() {
+			if test.expected == "ERROR" {
+				if test.errorMessage != err.Error() {
+					t.Errorf("Test: '%s'' FAILED : \nexpected error:\n %s, \ngot:\n %s\n", name, test.errorMessage, err.Error())
+				}
 				// test passed and error message matched
 				continue
 			}
 		} else if test.expected == "ERROR" {
 			t.Errorf("Test: '%s'' FAILED : \nexpected error: %s", name, test.errorMessage)
 		}
+
 		if !propertyPathsEqual(res, test.expected.(*ParsedPropertyPath)) {
 			t.Errorf("Test: '%s'' FAILED : \nexpected:\n %v, \ngot:\n %v\n", name, test.expected, res)
 		}
