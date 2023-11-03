@@ -65,7 +65,7 @@ type Workspace struct {
 
 // Load creates a Workspace and loads the workspace mod
 
-func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.Load start")
 	defer utils.LogTime("workspace.Load end")
 
@@ -81,12 +81,16 @@ func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions []
 
 // Load creates a Workspace and loads the workspace mod
 func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	return LoadWithParams(ctx, workspacePath, []string{app_specific.ModDataExtension})
+	return LoadWithParams(ctx, workspacePath, app_specific.ModDataExtension)
 }
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
 // this is use for the variable list command
-func LoadVariables(ctx context.Context, workspacePath string, fileInclusions []string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
+func LoadVariables(ctx context.Context, workspacePath string, fileInclusions ...string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
+	if len(fileInclusions) == 0 {
+		// default to the mod data extension (
+		fileInclusions = []string{app_specific.ModDataExtension}
+	}
 	utils.LogTime("workspace.LoadVariables start")
 	defer utils.LogTime("workspace.LoadVariables end")
 

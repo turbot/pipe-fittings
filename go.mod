@@ -36,7 +36,7 @@ require (
 	github.com/turbot/go-kit v0.9.0-rc.2
 	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.6.2
-	// pp
+	// pp branch
 	github.com/turbot/terraform-components v0.0.0-20231017100940-c8df9a3a9aab
 	github.com/xlab/treeprint v1.2.0
 	github.com/zclconf/go-cty v1.14.1
