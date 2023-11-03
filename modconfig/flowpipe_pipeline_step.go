@@ -205,6 +205,8 @@ func NewPipelineStep(stepType, stepName string) PipelineStep {
 		step = &PipelineStepEmail{}
 	case schema.BlockTypePipelineStepEcho:
 		step = &PipelineStepEcho{}
+	case schema.BlockTypePipelineStepTransform:
+		step = &PipelineStepTransform{}
 	case schema.BlockTypePipelineStepQuery:
 		step = &PipelineStepQuery{}
 	case schema.BlockTypePipelineStepPipeline:
@@ -1843,6 +1845,89 @@ func (p *PipelineStepEcho) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "Unsupported attribute for Echo Step: " + attr.Name,
+					Subject:  &attr.Range,
+				})
+			}
+		}
+	}
+
+	return diags
+}
+
+type PipelineStepTransform struct {
+	PipelineStepBase
+	Value any `json:"value"`
+}
+
+func (p *PipelineStepTransform) Equals(iOther PipelineStep) bool {
+	// If both pointers are nil, they are considered equal
+	if p == nil && iOther == nil {
+		return true
+	}
+
+	other, ok := iOther.(*PipelineStepTransform)
+	if !ok {
+		return false
+	}
+
+	if !p.PipelineStepBase.Equals(&other.PipelineStepBase) {
+		return false
+	}
+
+	if p.Value != other.Value {
+		return false
+	}
+
+	return true
+}
+
+func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	var value any
+
+	if p.UnresolvedAttributes[schema.AttributeTypeValue] == nil {
+		value = p.Value
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &value)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	return map[string]interface{}{
+		schema.AttributeTypeValue: value,
+	}, nil
+}
+
+func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := p.SetBaseAttributes(hclAttributes)
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeValue:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				value, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeValue + " attribute to interface",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Value = value
+			}
+
+		default:
+			if !p.IsBaseAttribute(name) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unsupported attribute for Transform Step: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}
