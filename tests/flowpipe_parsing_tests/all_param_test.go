@@ -2,16 +2,16 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/misc"
 )
 
 func TestAllParam(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/all_param.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/all_param.fp")
 	assert.Nil(err, "error found")
 
 	pipeline := pipelines["local.pipeline.all_param"]

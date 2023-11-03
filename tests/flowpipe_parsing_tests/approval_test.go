@@ -2,18 +2,19 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/misc"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 func TestApproval(t *testing.T) {
 	assert := assert.New(t)
 
-	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval.fp")
+	mod, err := misc.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/approval.fp")
 	assert.Nil(err)
 	assert.NotNil(mod)
 
@@ -54,10 +55,11 @@ func TestApproval(t *testing.T) {
 	}
 
 	assert.Equal("input", inputStep.Name)
-	assert.NotNil(inputStep.Notify)
-	assert.Equal("foo", *inputStep.Notify.Channel)
+	assert.NotNil(inputStep.NotifyList)
+	assert.Equal(1, len(inputStep.NotifyList))
+	assert.Equal("foo", *inputStep.NotifyList[0].Channel)
 
-	integrationLink := inputStep.Notify.Integration
+	integrationLink := inputStep.NotifyList[0].Integration
 	assert.NotNil(integrationLink)
 	integrationMap := integrationLink.AsValueMap()
 	assert.NotNil(integrationMap)
@@ -67,7 +69,14 @@ func TestApproval(t *testing.T) {
 	// the notify should override the inline definition (the inline definition should not be there after integrated 2023)
 	assert.Nil(err)
 
-	assert.Equal("xoxp-111111", inputsAfterEval["token"].(string))
+	if _, ok := inputsAfterEval[schema.AttributeTypeNotifies].([]map[string]interface{}); !ok {
+		assert.Fail("Failed to convert notifies into []map[string]interface{}")
+	}
+	notifiesMap := inputsAfterEval[schema.AttributeTypeNotifies].([]map[string]interface{})
+	assert.Equal(1, len(notifiesMap))
+
+	integrationValueMap := notifiesMap[0][schema.AttributeTypeIntegration].(map[string]interface{})
+	assert.Equal("xoxp-111111", integrationValueMap["token"].(string))
 
 	pipeline = mod.ResourceMaps.Pipelines["local.pipeline.approval_email"]
 	if pipeline == nil {
@@ -82,7 +91,8 @@ func TestApproval(t *testing.T) {
 	}
 
 	assert.Equal("input_email", inputStep.Name)
-	assert.NotNil(inputStep.Notify)
-	assert.Equal("victor@turbot.com", *inputStep.Notify.To)
+	assert.NotNil(inputStep.NotifyList)
+	assert.Equal(1, len(inputStep.NotifyList))
+	assert.Equal("victor@turbot.com", *inputStep.NotifyList[0].To)
 
 }

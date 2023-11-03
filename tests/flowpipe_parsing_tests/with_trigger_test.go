@@ -2,10 +2,10 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/misc"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
@@ -13,7 +13,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := context.Background()
-	pipelines, triggers, err := load_mod.LoadPipelines(ctx, "./pipelines/with_trigger.fp")
+	pipelines, triggers, err := misc.LoadPipelines(ctx, "./pipelines/with_trigger.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
@@ -101,6 +101,6 @@ func TestPipelineWithTriggerSelf(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, _, err := load_mod.LoadPipelines(ctx, "./pipelines/with_trigger_self.fp")
+	_, _, err := misc.LoadPipelines(ctx, "./pipelines/with_trigger_self.fp")
 	assert.Nil(err, "error found")
 }

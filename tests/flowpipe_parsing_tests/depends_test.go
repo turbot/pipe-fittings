@@ -2,16 +2,16 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/misc"
 )
 
 func TestImplicitDependsIndex(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
@@ -34,7 +34,7 @@ func TestImplicitDependsIndex(t *testing.T) {
 func TestImplicitDepends(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
@@ -57,7 +57,7 @@ func TestImplicitDepends(t *testing.T) {
 func TestExplicitDependsOnIndex(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
@@ -80,7 +80,7 @@ func TestExplicitDependsOnIndex(t *testing.T) {
 func TestImplicitQueryDepends(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/depends.fp")
 	assert.Nil(err, "error found")
 
 	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")

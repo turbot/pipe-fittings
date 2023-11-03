@@ -19,14 +19,43 @@ func Viper() *viper.Viper {
 	return viper.GetViper()
 }
 
+type bootstrapConfig struct {
+	configDefaults       map[string]any
+	directoryEnvMappings map[string]EnvMapping
+}
+
+func newBootstrapConfig() *bootstrapConfig {
+	return &bootstrapConfig{
+		configDefaults:       make(map[string]any),
+		directoryEnvMappings: make(map[string]EnvMapping),
+	}
+}
+
+type bootstrapOption func(*bootstrapConfig)
+
+func WithConfigDefaults(configDefaults map[string]any) bootstrapOption {
+	return func(c *bootstrapConfig) {
+		c.configDefaults = configDefaults
+	}
+}
+func WithDirectoryEnvMappings(directoryEnvMappings map[string]EnvMapping) bootstrapOption {
+	return func(c *bootstrapConfig) {
+		c.directoryEnvMappings = directoryEnvMappings
+	}
+}
+
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
-func BootstrapViper(loader *steampipeconfig.WorkspaceProfileLoader, cmd *cobra.Command, configDefaults map[string]any, directoryEnvMappings map[string]EnvMapping) error {
+func BootstrapViper(loader *steampipeconfig.WorkspaceProfileLoader, cmd *cobra.Command, opts ...bootstrapOption) error {
 	if loader == nil {
 		return perr.BadRequestWithMessage("workspace profile loader cannot be nil")
 	}
 
+	config := newBootstrapConfig()
+	for _, opt := range opts {
+		opt(config)
+	}
 	// set defaults  for keys which do not have a corresponding command flag
-	setBaseDefaults(configDefaults)
+	setBaseDefaults(config.configDefaults)
 
 	// set defaults from defaultWorkspaceProfile
 	SetDefaultsFromConfig(loader.DefaultProfile.ConfigMap(cmd))
@@ -34,7 +63,7 @@ func BootstrapViper(loader *steampipeconfig.WorkspaceProfileLoader, cmd *cobra.C
 	// set defaults for install dir and mod location from env vars
 	// this needs to be done since the workspace profile definitions exist in the
 	// default install dir
-	SetDefaultsFromEnv(directoryEnvMappings)
+	SetDefaultsFromEnv(config.directoryEnvMappings)
 
 	// NOTE: if an explicit workspace profile was set, default the mod location and install dir _now_
 	// All other workspace profile values are defaults _after defaulting to the connection config options

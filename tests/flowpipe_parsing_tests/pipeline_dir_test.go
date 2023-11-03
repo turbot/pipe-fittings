@@ -3,10 +3,10 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/misc"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 )
@@ -14,7 +14,7 @@ import (
 func TestLoadPipelineDir(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple")
 	assert.Nil(err, "error found")
 
 	// Check the number of pipelines loaded
@@ -43,7 +43,7 @@ func TestLoadPipelineDir(t *testing.T) {
 func SkipTestLoadPipelineDirRecursive(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/**/*.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/**/*.fp")
 	assert.Nil(err, "error found")
 
 	// Check the number of pipelines loaded
@@ -72,7 +72,7 @@ func SkipTestLoadPipelineDirRecursive(t *testing.T) {
 func SkipTestLoadPipelineFromFileMatchesGlob(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple/simple*.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple/simple*.fp")
 	assert.Nil(err, "error found")
 
 	// Check the number of pipelines loaded
@@ -137,7 +137,7 @@ func SkipTestLoadPipelineFromFileMatchesGlob(t *testing.T) {
 func TestLoadPipelineSpecificFile(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple/simple.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple/simple.fp")
 	assert.Nil(err, "error found")
 
 	// Check the number of pipelines loaded
@@ -191,7 +191,7 @@ func TestLoadPipelineSpecificFile(t *testing.T) {
 func TestSleepWithOutput(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/sleep_with_output/sleep_with_output.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/sleep_with_output/sleep_with_output.fp")
 	assert.Nil(err, "error found")
 
 	assert.Equal(1, len(pipelines), "wrong number of pipelines")
@@ -211,7 +211,7 @@ func TestSleepWithOutput(t *testing.T) {
 func TestLoadPipelineDepends(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/depends/depends.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/depends/depends.fp")
 	assert.Nil(err, "error found")
 
 	// Check the number of pipelines loaded
@@ -235,7 +235,7 @@ func TestLoadPipelineDepends(t *testing.T) {
 
 func TestMarshallUnmarshal(t *testing.T) {
 	assert := assert.New(t)
-	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple/simple.fp")
+	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/pipeline_dir/simple/simple.fp")
 	assert.Nil(err, "error found")
 
 	// Check the number of pipelines loaded

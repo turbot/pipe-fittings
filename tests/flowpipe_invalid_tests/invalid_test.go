@@ -4,10 +4,10 @@ package flowpipe_invalid_tests
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/misc"
 )
 
 type testSetup struct {
@@ -75,7 +75,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid approval - notify and notifies specified",
 		file:          "./pipelines/approval_notify_and_notifies.fp",
-		containsError: "Notify and Notifies attributes are mutualy exclusive: input.input",
+		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
 	},
 	{
 		title:         "invalid approval - slack notify missing channel",
@@ -88,6 +88,41 @@ var tests = []testSetup{
 		containsError: "to must be specified for email integration",
 	},
 	{
+		title:         "invalid approval - slack integration invalid attribute",
+		file:          "./pipelines/approval_invalid_integration_slack_attribute.fp",
+		containsError: "Unsupported attribute: 'from' not expected here.",
+	},
+	{
+		title:         "invalid approval - email integration invalid attribute",
+		file:          "./pipelines/approval_invalid_integration_email_attribute.fp",
+		containsError: "Unsupported attribute: 'token' not expected here.",
+	},
+	{
+		title:         "invalid approval - notify with missing integration attribute",
+		file:          "./pipelines/approval_invalid_notify_missing_integration.fp",
+		containsError: "Missing required argument: The argument \"integration\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid approval - notify with invalid integration that does not exist",
+		file:          "./pipelines/approval_invalid_notify_invalid_integration.fp",
+		containsError: "MISSING: integration.slack.missing_slack_integration",
+	},
+	{
+		title:         "invalid approval - step with multiple notify block with invalid slack attribute",
+		file:          "./pipelines/approval_invalid_multiple_notify_slack.fp",
+		containsError: "channel must be specified for slack integration",
+	},
+	{
+		title:         "invalid approval - step with multiple notify block with invalid email attribute",
+		file:          "./pipelines/approval_invalid_multiple_notify_email.fp",
+		containsError: "to must be specified for email integration",
+	},
+	{
+		title:         "invalid approval - multiple notify and notifies specified",
+		file:          "./pipelines/approval_multiple_notify_and_notifies.fp",
+		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
+	},
+	{
 		title:         "invalid loop - bad definition for echo step loop",
 		file:          "./pipelines/loop_invalid_echo.fp",
 		containsError: "An argument named \"baz\" is not expected here",
@@ -95,11 +130,11 @@ var tests = []testSetup{
 	{
 		title:         "invalid loop - no if",
 		file:          "./pipelines/loop_no_if.fp",
-		containsError: "The argument \"if\" is required, but no definition was found",
+		containsError: "The argument \"until\" is required, but no definition was found",
 	},
 }
 
-// Simple invalid test. Only single file resources can be evaluated here. This test is unaable to test
+// Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
 // more complex error message expectations or complex structure such as mod & var
 func TestSimpleInvalidResources(t *testing.T) {
 	assert := assert.New(t)
@@ -118,7 +153,7 @@ func TestSimpleInvalidResources(t *testing.T) {
 
 		fmt.Println("Running test: " + test.title)
 
-		_, _, err := load_mod.LoadPipelines(ctx, test.file)
+		_, _, err := misc.LoadPipelines(ctx, test.file)
 		assert.NotNil(err)
 		assert.Contains(err.Error(), test.containsError)
 	}

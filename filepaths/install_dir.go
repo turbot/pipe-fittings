@@ -13,10 +13,6 @@ import (
 
 // Constants for Config
 
-var InstallDir string
-
-var PipesComponentDefaultInstallDir = app_specific.DefaultInstallDir
-
 const (
 	connectionsStateFileName     = "connection.json"
 	versionFileName              = "versions.json"
@@ -43,10 +39,10 @@ func ensureInstallSubDir(dirName string) string {
 }
 
 func installSubDir(dirName string) string {
-	if InstallDir == "" {
-		panic(fmt.Errorf("cannot call any Steampipe directory functions before InstallDir is set"))
+	if app_specific.InstallDir == "" {
+		panic(fmt.Errorf("cannot call any %s directory functions before InstallDir is set", app_specific.AppName))
 	}
-	return filepath.Join(InstallDir, dirName)
+	return filepath.Join(app_specific.InstallDir, dirName)
 }
 
 // EnsureTemplateDir returns the path to the templates directory (creates if missing)

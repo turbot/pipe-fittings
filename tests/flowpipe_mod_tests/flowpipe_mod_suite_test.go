@@ -2,7 +2,6 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"path"
 	"testing"

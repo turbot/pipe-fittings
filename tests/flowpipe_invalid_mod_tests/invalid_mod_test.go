@@ -4,7 +4,6 @@ package invalid_mod_tests
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"path"
 	"testing"
