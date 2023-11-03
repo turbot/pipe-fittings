@@ -4,26 +4,19 @@ import "github.com/turbot/go-kit/helpers"
 
 // Original Steampipe values
 const (
-	PluginExtension        = ".plugin"
-	ConfigExtension        = ".spc"
-	SqlExtension           = ".sql"
-	MarkdownExtension      = ".md"
-	ModDataExtension       = ".sp"
-	VariablesExtension     = ".spvars"
-	AutoVariablesExtension = ".auto.spvars"
-	JsonExtension          = ".json"
-	CsvExtension           = ".csv"
-	TextExtension          = ".txt"
-	SnapshotExtension      = ".sps"
-	TokenExtension         = ".tptt"
-	LegacyTokenExtension   = ".sptt"
-	PipelineExtension      = ".fp"
-)
+	PluginExtension   = ".plugin"
+	ConfigExtension   = ".spc"
+	SqlExtension      = ".sql"
+	MarkdownExtension = ".md"
 
-// Pipes Components overrides
-var PipesComponentModDataExtension = ModDataExtension
-var PipesComponentAutoVariablesExtension = AutoVariablesExtension
-var PipesComponentVariablesExtension = VariablesExtension
+	JsonExtension        = ".json"
+	CsvExtension         = ".csv"
+	TextExtension        = ".txt"
+	SnapshotExtension    = ".sps"
+	TokenExtension       = ".tptt"
+	LegacyTokenExtension = ".sptt"
+	PipelineExtension    = ".fp"
+)
 
 var YamlExtensions = []string{".yml", ".yaml"}
 

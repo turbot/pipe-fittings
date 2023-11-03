@@ -46,4 +46,3 @@ const (
 )
 
 var PipesComponentEnvInputVarPrefix = EnvInputVarPrefix
-var PipesComponentAppName = AppName
