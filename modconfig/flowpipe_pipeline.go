@@ -247,42 +247,56 @@ func (ph *Pipeline) UnmarshalJSON(data []byte) error {
 			}
 
 			switch stepType.StepType {
+
 			case schema.BlockTypePipelineStepHttp:
 				var step PipelineStepHttp
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
 				ph.Steps = append(ph.Steps, &step)
+
 			case schema.BlockTypePipelineStepSleep:
 				var step PipelineStepSleep
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
 				ph.Steps = append(ph.Steps, &step)
+
 			case schema.BlockTypePipelineStepEmail:
 				var step PipelineStepEmail
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
 				ph.Steps = append(ph.Steps, &step)
+
 			case schema.BlockTypePipelineStepEcho:
 				var step PipelineStepEcho
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
 				ph.Steps = append(ph.Steps, &step)
+
+			case schema.BlockTypePipelineStepTransform:
+				var step PipelineStepTransform
+				if err := json.Unmarshal(stepData, &step); err != nil {
+					return err
+				}
+				ph.Steps = append(ph.Steps, &step)
+
 			case schema.BlockTypePipelineStepQuery:
 				var step PipelineStepQuery
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
 				ph.Steps = append(ph.Steps, &step)
+
 			case schema.BlockTypePipelineStepPipeline:
 				var step PipelineStepPipeline
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
 				ph.Steps = append(ph.Steps, &step)
+
 			case schema.BlockTypePipelineStepFunction:
 				var step PipelineStepFunction
 				if err := json.Unmarshal(stepData, &step); err != nil {
