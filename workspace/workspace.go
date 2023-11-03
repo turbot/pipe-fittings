@@ -371,8 +371,8 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 			// listFlag specifies whether to load files recursively
 			Flags:   w.ListFlag,
 			Exclude: w.exclusions,
-			// only load .sp files
-			Include: filehelpers.InclusionsFromExtensions([]string{app_specific.ModDataExtension}),
+			// load files specified by inclusions
+			Include: filehelpers.InclusionsFromExtensions(w.FileInclusions),
 		})
 
 	return parseCtx, nil

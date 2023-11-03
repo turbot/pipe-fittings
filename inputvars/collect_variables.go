@@ -2,14 +2,15 @@ package inputvars
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
@@ -69,14 +70,15 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 
 	}
 
-	if infos, err := os.ReadDir("."); err == nil {
+	if infos, err := os.ReadDir(workspacePath); err == nil {
 		// "infos" is already sorted by name, so we just need to filter it here.
 		for _, info := range infos {
 			name := info.Name()
 			if !isAutoVarFile(name) {
 				continue
 			}
-			diags := addVarsFromFile(name, terraform.ValueFromAutoFile, ret)
+
+			diags := addVarsFromFile(filepath.Join(workspacePath, name), terraform.ValueFromAutoFile, ret)
 			if diags.HasErrors() {
 				return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", name), diags)
 			}
