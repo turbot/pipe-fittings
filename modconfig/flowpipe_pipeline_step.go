@@ -1916,7 +1916,7 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 			value = goSlice
 		// TODO: Add cases for other types you expect to handle...
 		default:
-			fmt.Println("Type not handled")
+			return nil, fmt.Errorf("Type not handled")
 		}
 
 		// diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &value)
