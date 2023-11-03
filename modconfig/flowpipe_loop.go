@@ -14,7 +14,10 @@ func GetLoopDefn(stepType string) LoopDefn {
 		return &LoopEchoStep{}
 	case schema.BlockTypePipelineStepHttp:
 		return &LoopHttpStep{}
+	case schema.BlockTypePipelineStepSleep:
+		return &LoopSleepStep{}
 	}
+
 	return nil
 }
 
@@ -60,4 +63,24 @@ func (l *LoopHttpStep) UpdateInput(input Input) (Input, error) {
 
 func (*LoopHttpStep) GetType() string {
 	return schema.BlockTypePipelineStepHttp
+}
+
+type LoopSleepStep struct {
+	If       bool    `json:"if" hcl:"if" cty:"if"`
+	Duration *string `json:"duration,omitempty" hcl:"duration,optional" cty:"duration"`
+}
+
+func (l *LoopSleepStep) ShouldRun() bool {
+	return l.If
+}
+
+func (l *LoopSleepStep) UpdateInput(input Input) (Input, error) {
+	if l.Duration != nil {
+		input["duration"] = *l.Duration
+	}
+	return input, nil
+}
+
+func (*LoopSleepStep) GetType() string {
+	return schema.BlockTypePipelineStepSleep
 }
