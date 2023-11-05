@@ -10,7 +10,6 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 )
 
@@ -18,20 +17,6 @@ import (
 func Viper() *viper.Viper {
 	return viper.GetViper()
 }
-
-type bootstrapConfig struct {
-	configDefaults       map[string]any
-	directoryEnvMappings map[string]EnvMapping
-}
-
-func newBootstrapConfig() *bootstrapConfig {
-	return &bootstrapConfig{
-		configDefaults:       make(map[string]any),
-		directoryEnvMappings: make(map[string]EnvMapping),
-	}
-}
-
-type bootstrapOption func(*bootstrapConfig)
 
 func WithConfigDefaults(configDefaults map[string]any) bootstrapOption {
 	return func(c *bootstrapConfig) {
@@ -43,17 +28,22 @@ func WithDirectoryEnvMappings(directoryEnvMappings map[string]EnvMapping) bootst
 		c.directoryEnvMappings = directoryEnvMappings
 	}
 }
+func WithWorkspaceProfileLoader(loader *steampipeconfig.WorkspaceProfileLoader) bootstrapOption {
+	return func(c *bootstrapConfig) {
+		c.workspaceProfileLoader = loader
+	}
+}
 
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
-func BootstrapViper(loader *steampipeconfig.WorkspaceProfileLoader, cmd *cobra.Command, opts ...bootstrapOption) error {
-	if loader == nil {
-		return perr.BadRequestWithMessage("workspace profile loader cannot be nil")
-	}
+func BootstrapViper(cmd *cobra.Command, opts ...bootstrapOption) error {
 
 	config := newBootstrapConfig()
 	for _, opt := range opts {
 		opt(config)
 	}
+	// retrieve workspace profile loader from config (this may be empty - but not nil)
+	loader := config.workspaceProfileLoader
+
 	// set defaults  for keys which do not have a corresponding command flag
 	setBaseDefaults(config.configDefaults)
 
