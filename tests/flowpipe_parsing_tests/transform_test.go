@@ -15,7 +15,7 @@ func TestTransformStep(t *testing.T) {
 
 	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/transform.fp")
 	assert.Nil(err, "error found")
-	assert.Equal(6, len(pipelines), "wrong number of pipelines")
+	assert.Equal(7, len(pipelines), "wrong number of pipelines")
 
 	if pipelines["local.pipeline.pipeline_with_transform_step"] == nil {
 		assert.Fail("pipeline_with_transform_step pipeline not found")
@@ -183,4 +183,53 @@ func TestTransformStep(t *testing.T) {
 		return
 	}
 	assert.Equal("counter set to 3", inputs["value"])
+
+	// Pipeline 7
+
+	if pipelines["local.pipeline.transform_step_for_map"] == nil {
+		assert.Fail("transform_step_for_map pipeline not found")
+		return
+	}
+
+	step = pipelines["local.pipeline.transform_step_for_map"].GetStep("transform.text_1")
+	if step == nil {
+		assert.Fail("transform step not found")
+		return
+	}
+
+	paramVal = cty.ObjectVal(map[string]cty.Value{
+		"legends": cty.ObjectVal(map[string]cty.Value{
+			"janis": cty.ObjectVal(map[string]cty.Value{
+				"age":       cty.NumberFloatVal(27),
+				"last_name": cty.StringVal("joplin"),
+			}),
+			"jimi": cty.ObjectVal(map[string]cty.Value{
+				"age":       cty.NumberFloatVal(27),
+				"last_name": cty.StringVal("hendrix"),
+			}),
+			"jerry": cty.ObjectVal(map[string]cty.Value{
+				"age":       cty.NumberFloatVal(53),
+				"last_name": cty.StringVal("garcia"),
+			}),
+		}),
+	})
+	eachVal = cty.ObjectVal(map[string]cty.Value{
+		"key": cty.StringVal("jimi"),
+		"value": cty.ObjectVal(map[string]cty.Value{
+			"age":       cty.NumberFloatVal(27),
+			"last_name": cty.StringVal("hendrix"),
+		}),
+	})
+
+	evalContext = &hcl.EvalContext{}
+	evalContext.Variables = map[string]cty.Value{}
+	evalContext.Variables["param"] = paramVal
+	evalContext.Variables["each"] = eachVal
+
+	inputs, err = step.GetInputs(evalContext)
+	if err != nil {
+		assert.Fail("error getting inputs")
+		return
+	}
+	assert.Equal("jimi hendrix was 27", inputs["value"])
 }
