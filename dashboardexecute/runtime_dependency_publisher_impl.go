@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"strconv"
+	"sync"
+
 	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
-	"log"
-	"strconv"
-	"sync"
 )
 
 type runtimeDependencyPublisherImpl struct {
@@ -235,7 +236,6 @@ func (p *runtimeDependencyPublisherImpl) setWithValue(w *LeafRun) {
 		populateData(w.Data, result)
 	}
 	p.PublishRuntimeDependencyValue(name, result)
-	return
 }
 
 func populateData(withData *dashboardtypes.LeafData, result *dashboardtypes.ResolvedRuntimeDependencyValue) {
