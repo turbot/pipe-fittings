@@ -31,5 +31,5 @@ func TestTransformStep(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("select * from foo", inputs["sql"])
+	assert.Equal("hello world", inputs["value"])
 }
