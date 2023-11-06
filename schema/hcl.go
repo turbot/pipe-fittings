@@ -62,6 +62,7 @@ const (
 	BlockTypePipelineStepSleep     = "sleep"
 	BlockTypePipelineStepEmail     = "email"
 	BlockTypePipelineStepEcho      = "echo"
+	BlockTypePipelineStepTransform = "transform"
 	BlockTypePipelineStepQuery     = "query"
 	BlockTypePipelineStepExec      = "exec"
 	BlockTypePipelineStepPipeline  = "pipeline"
