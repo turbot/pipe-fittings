@@ -100,9 +100,9 @@ func (r *Runner) displayNotifications(cmd *cobra.Command, cmdArgs []string) erro
 		return nil
 	}
 
-	fmt.Println()
+	fmt.Println() //nolint:forbidigo // acceptable
 	table.Render()
-	fmt.Println()
+	fmt.Println() //nolint:forbidigo // acceptable
 
 	return nil
 }

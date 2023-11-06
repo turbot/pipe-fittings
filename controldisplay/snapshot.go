@@ -69,7 +69,7 @@ func PublishSnapshot(ctx context.Context, e *controlexecute.ExecutionTree, shoul
 	}
 	if viper.GetBool(constants.ArgProgress) {
 		statushooks.Done(ctx)
-		fmt.Println(message)
+		fmt.Println(message) //nolint:forbidigo // acceptable
 	}
 	return nil
 

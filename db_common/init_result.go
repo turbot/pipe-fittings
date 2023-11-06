@@ -33,7 +33,7 @@ func (r *InitResult) HasMessages() bool {
 func (r *InitResult) DisplayMessages() {
 	if r.DisplayMessage == nil {
 		r.DisplayMessage = func(ctx context.Context, m string) {
-			fmt.Println(m)
+			fmt.Println(m) //nolint:forbidigo // TODO
 		}
 	}
 	if r.DisplayWarning == nil {

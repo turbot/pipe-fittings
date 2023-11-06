@@ -23,10 +23,10 @@ func (r PluginRemoveReports) Print() {
 	length := len(r)
 	var staleConnections []*modconfig.Connection
 	if length > 0 {
-		fmt.Printf("\nUninstalled %s:\n", utils.Pluralize("plugin", length))
+		fmt.Printf("\nUninstalled %s:\n", utils.Pluralize("plugin", length)) //nolint:forbidigo // acceptable
 		for _, report := range r {
 			org, name, _ := report.Image.GetOrgNameAndStream()
-			fmt.Printf("* %s/%s\n", org, name)
+			fmt.Printf("* %s/%s\n", org, name) //nolint:forbidigo // acceptable
 			staleConnections = append(staleConnections, report.Connections...)
 
 			// sort the connections by line number while we are at it!
@@ -36,7 +36,7 @@ func (r PluginRemoveReports) Print() {
 				return left.DeclRange.Start.Line < right.DeclRange.Start.Line
 			})
 		}
-		fmt.Println()
+		fmt.Println() //nolint:forbidigo // acceptable
 		staleLength := len(staleConnections)
 		uniqueFiles := map[string]bool{}
 		// get the unique files
@@ -67,7 +67,7 @@ func (r PluginRemoveReports) Print() {
 				str = append(str, "")
 			}
 
-			fmt.Println(strings.Join(str, "\n"))
+			fmt.Println(strings.Join(str, "\n")) //nolint:forbidigo // acceptable
 		}
 	}
 }

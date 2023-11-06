@@ -30,7 +30,7 @@ func initLogSink() {
 		logPath := filepath.Join(filepaths.EnsureLogDir(), logName)
 		f, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			fmt.Printf("failed to open dashboard manager log file: %s\n", err.Error())
+			fmt.Printf("failed to open dashboard manager log file: %s\n", err.Error()) //nolint:forbidigo // TODO: better way to log error?
 			os.Exit(3)
 		}
 		logSink = f
@@ -43,7 +43,7 @@ func output(_ context.Context, prefix string, msg interface{}) {
 	if logSink == nil {
 		logSink = os.Stdout
 	}
-	fmt.Fprintf(logSink, "%s %v\n", prefix, msg)
+	fmt.Fprintf(logSink, "%s %v\n", prefix, msg) //nolint:forbidigo // acceptable
 }
 
 func OutputMessage(ctx context.Context, msg string) {

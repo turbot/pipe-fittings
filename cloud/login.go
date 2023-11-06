@@ -32,8 +32,8 @@ func WebLogin(ctx context.Context) (string, error) {
 	// add in id query string
 	browserUrl := fmt.Sprintf("%s?r=%s", getLoginTokenConfirmUIUrl(), id)
 
-	fmt.Println()
-	fmt.Printf("Verify login at %s\n", browserUrl)
+	fmt.Println()                                  //nolint:forbidigo // acceptable
+	fmt.Printf("Verify login at %s\n", browserUrl) //nolint:forbidigo // acceptable
 
 	if err = utils.OpenBrowser(browserUrl); err != nil {
 		log.Println("[INFO] failed to open login web page")
