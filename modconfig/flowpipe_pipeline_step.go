@@ -1888,41 +1888,17 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 		value = p.Value
 	} else {
 
-		// TODO : Recheck the below logic
-		// gohcl.DecodeExpression doesn't support interface type directly and returns an error
-		// unsuitable DecodeExpression target: no cty.Type for interface {}
-		// hence, converting the unresolvedAttribute to the cty.Value and then cast it based on the type
-		anyToCtyValue, err := p.UnresolvedAttributes[schema.AttributeTypeValue].Value(evalContext)
+		var transformValueCtyValue cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &transformValueCtyValue)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+
+		goVal, err := hclhelpers.CtyToGo(transformValueCtyValue)
 		if err != nil {
 			return nil, err
 		}
-
-		switch anyToCtyValue.Type() {
-		case cty.String:
-			value = anyToCtyValue.AsString()
-		case cty.Number:
-			// cty.Number is represented as a big.Float in Go.
-			bigFloat := anyToCtyValue.AsBigFloat()
-			value, _ = bigFloat.Float64()
-		case cty.Bool:
-			value = anyToCtyValue.True()
-		case cty.List(cty.String): // Example for a list of strings
-			iter := anyToCtyValue.ElementIterator()
-			var goSlice []string
-			for iter.Next() {
-				_, val := iter.Element()
-				goSlice = append(goSlice, val.AsString())
-			}
-			value = goSlice
-		// TODO: Add cases for other types you expect to handle...
-		default:
-			return nil, fmt.Errorf("Type not handled")
-		}
-
-		// diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &value)
-		// if diags.HasErrors() {
-		// 	return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		// }
+		value = goVal
 	}
 
 	return map[string]interface{}{
@@ -1944,7 +1920,7 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 			}
 
 			if val != cty.NilVal {
-				value, err := hclhelpers.CtyToString(val)
+				goVal, err := hclhelpers.CtyToGo(val)
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
@@ -1952,7 +1928,8 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 						Subject:  &attr.Range,
 					})
 				}
-				p.Value = value
+
+				p.Value = goVal
 			}
 
 		default:
