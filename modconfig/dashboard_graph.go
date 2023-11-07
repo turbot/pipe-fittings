@@ -176,20 +176,30 @@ func (g *DashboardGraph) AddCategory(category *DashboardCategory) hcl.Diagnostic
 
 // AddChild implements NodeAndEdgeProvider
 func (g *DashboardGraph) AddChild(child HclResource) hcl.Diagnostics {
+	var diags hcl.Diagnostics
 	switch c := child.(type) {
 	case *DashboardNode:
 		g.Nodes = append(g.Nodes, c)
 	case *DashboardEdge:
 		g.Edges = append(g.Edges, c)
 	default:
-		return hcl.Diagnostics{&hcl.Diagnostic{
+		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("DashboardGraph does not support children of type %s", child.BlockType()),
 			Subject:  g.GetDeclRange(),
-		}}
+		})
+		return diags
 	}
 	// set ourselves as parent
-	child.(ModTreeItem).AddParent(g)
+	err := child.(ModTreeItem).AddParent(g)
+	if err != nil {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "failed to add parent to ModTreeItem",
+			Detail:   err.Error(),
+			Subject:  child.GetDeclRange(),
+		})
+	}
 	return nil
 }
 

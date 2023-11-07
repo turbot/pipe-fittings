@@ -9,5 +9,5 @@ const (
 	ConfigKeyIsTerminalTTY               = "is_terminal"
 	ConfigKeyServerSearchPath            = "server-search-path"
 	ConfigKeyServerSearchPathPrefix      = "server-search-path-prefix"
-	ConfigKeyBypassHomeDirModfileWarning = "bypass-home-dir-modfile-warning"
+	ConfigKeyBypassHomeDirModfileWarning = "bypass-home-dir-modfile-warning" //nolint: gosec // not credentials
 )

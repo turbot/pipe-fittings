@@ -143,7 +143,10 @@ func (d *Dashboard) Equals(other *Dashboard) bool {
 
 // OnDecoded implements HclResource
 func (d *Dashboard) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
-	d.setBaseProperties()
+	diags := d.setBaseProperties()
+	if diags.HasErrors() {
+		return diags
+	}
 
 	d.ChildNames = make([]string, len(d.children))
 	for i, child := range d.children {
@@ -215,15 +218,26 @@ func (d *Dashboard) SetChildren(children []ModTreeItem) {
 	d.children = children
 }
 
-func (d *Dashboard) AddChild(child ModTreeItem) {
+func (d *Dashboard) AddChild(child ModTreeItem) hcl.Diagnostics {
+	var diags hcl.Diagnostics
 	d.children = append(d.children, child)
 
 	switch c := child.(type) {
 	case *DashboardInput:
 		d.Inputs = append(d.Inputs, c)
 	case *DashboardWith:
-		d.AddWith(c)
+		err := d.AddWith(c)
+		if err != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "failed to add 'with' block  to dashboard",
+				Detail:   err.Error(),
+				Subject:  &c.DeclRange,
+			},
+			)
+		}
 	}
+	return diags
 }
 
 func (d *Dashboard) WalkResources(resourceFunc func(resource HclResource) (bool, error)) error {
@@ -402,9 +416,10 @@ func (d *Dashboard) CtyValue() (cty.Value, error) {
 	return GetCtyValue(d)
 }
 
-func (d *Dashboard) setBaseProperties() {
+func (d *Dashboard) setBaseProperties() hcl.Diagnostics {
+	var diags hcl.Diagnostics
 	if d.Base == nil {
-		return
+		return diags
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
 	d.base = d.Base
@@ -420,32 +435,38 @@ func (d *Dashboard) setBaseProperties() {
 		d.ChildNames = d.Base.ChildNames
 	}
 
-	d.addBaseInputs(d.Base.Inputs)
+	return d.addBaseInputs(d.Base.Inputs)
 }
 
-func (d *Dashboard) addBaseInputs(baseInputs []*DashboardInput) {
+func (d *Dashboard) addBaseInputs(baseInputs []*DashboardInput) hcl.Diagnostics {
+	var diags hcl.Diagnostics
 	if len(baseInputs) == 0 {
-		return
+		return diags
 	}
 	// rebuild Inputs and children
-	inheritedInputs := make([]*DashboardInput, len(baseInputs))
-	inheritedChildren := make([]ModTreeItem, len(baseInputs))
+	inheritedInputs := make([]*DashboardInput, 0, len(baseInputs))
+	inheritedChildren := make([]ModTreeItem, 0, len(baseInputs))
 
 	for i, baseInput := range baseInputs {
 		input := baseInput.Clone()
 		input.SetDashboard(d)
 		// add to mod
-		d.Mod.AddResource(input)
+		moreDiags := d.Mod.AddResource(input)
+		diags = append(diags, moreDiags...)
 		// add to our inputs
 		inheritedInputs[i] = input
 		inheritedChildren[i] = input
-
 	}
-	// add inputs to beginning of our existing inputs (if any)
-	d.Inputs = append(inheritedInputs, d.Inputs...)
-	// add inputs to beginning of our children
-	d.children = append(inheritedChildren, d.children...)
-	d.setInputMap()
+
+	if !diags.HasErrors() {
+		// add inputs to beginning of our existing inputs (if any)
+		d.Inputs = append(inheritedInputs, d.Inputs...)
+		// add inputs to beginning of our children
+		d.children = append(inheritedChildren, d.children...)
+		d.setInputMap()
+	}
+
+	return diags
 }
 
 // ensure that dependencies between inputs are resolveable

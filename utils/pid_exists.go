@@ -39,7 +39,7 @@ func FindProcess(targetPid int) (*psutils.Process, error) {
 		if targetPid == int(pid) {
 			process, err := psutils.NewProcess(int32(targetPid))
 			if err != nil {
-				// if we fail to create a process for the pid, just treat it as if we can't find the process
+				//nolint: nilerr // if we fail to create a process for the pid, treat it as if we can't find the process
 				return nil, nil
 			}
 

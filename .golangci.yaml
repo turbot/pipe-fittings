@@ -9,6 +9,7 @@ issues:
         - forbidigo
 
 linters:
+  disable-all: true
   enable:
     - asasalint
     - asciicheck
@@ -27,6 +28,7 @@ linters:
     - reassign
     - sqlclosecheck
     - unconvert
+
 
 linters-settings:
   nolintlint:

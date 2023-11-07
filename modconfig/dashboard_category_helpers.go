@@ -12,7 +12,7 @@ func enrichCategory(shellCategory *DashboardCategory, parent HclResource, resour
 	resourceMaps := resourceMapProvider.GetResourceMaps()
 	fullCategory, ok := resourceMaps.DashboardCategories[shellCategory.Name()]
 	if !ok {
-		diags.Append(&hcl.Diagnostic{
+		diags = diags.Append(&hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("%s contains edge %s but this has not been loaded", parent.Name(), shellCategory.Name()),
 			Subject:  parent.GetDeclRange(),

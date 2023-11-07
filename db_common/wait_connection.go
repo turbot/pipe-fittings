@@ -3,11 +3,11 @@ package db_common
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sethvargo/go-retry"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"

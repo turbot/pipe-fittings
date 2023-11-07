@@ -116,6 +116,7 @@ func TestParseQueryInvocation(t *testing.T) {
 		queryName, args, _ := ParseQueryInvocation(test.input)
 
 		if queryName != test.expected.queryName || !test.expected.args.Equals(args) {
+			//nolint:forbidigo // acceptable
 			fmt.Printf("")
 			t.Errorf("Test: '%s'' FAILED : expected:\nquery: %s params: %s\n\ngot:\nquery: %s params: %s",
 				name,

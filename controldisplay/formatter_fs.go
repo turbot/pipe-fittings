@@ -104,6 +104,7 @@ func writeTemplate(path string, target string) error {
 			return err
 		}
 
+		//nolint: gosec // this file is safe to be read by all users
 		err = os.WriteFile(filepath.Join(target, entry.Name()), bytes, 0744)
 		if err != nil {
 			return err

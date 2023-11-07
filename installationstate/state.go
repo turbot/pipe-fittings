@@ -62,6 +62,7 @@ func (s *InstallationState) Save() error {
 	_ = os.Remove(stateFilePath)
 	// save state file
 	file, _ := json.MarshalIndent(s, "", " ")
+	//nolint: gosec // this file is safe to be read by all users
 	return os.WriteFile(stateFilePath, file, 0644)
 }
 

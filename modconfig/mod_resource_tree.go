@@ -75,7 +75,11 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod) error {
 }
 
 func (m *Mod) addItemIntoResourceTree(item ModTreeItem) error {
-	for _, p := range m.getParents(item) {
+	parents, err := m.getParents(item)
+	if err != nil {
+		return err
+	}
+	for _, p := range parents {
 		// if we are the parent, add as a child
 		if err := item.AddParent(p); err != nil {
 			return err

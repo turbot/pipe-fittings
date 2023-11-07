@@ -32,6 +32,7 @@ func ensureDefaultWorkspaceFile(configFolder string) error {
 		return err
 	}
 	defaultWorkspaceSampleFile := filepath.Join(configFolder, defaultWorkspaceSampleFileName)
+	//nolint: gosec // this file is safe to be read by all users
 	err = os.WriteFile(defaultWorkspaceSampleFile, []byte(constants.DefaultWorkspaceContent), 0755)
 	if err != nil {
 		return err

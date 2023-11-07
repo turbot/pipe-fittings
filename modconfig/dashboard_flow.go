@@ -175,21 +175,32 @@ func (f *DashboardFlow) AddCategory(category *DashboardCategory) hcl.Diagnostics
 
 // AddChild implements NodeAndEdgeProvider
 func (f *DashboardFlow) AddChild(child HclResource) hcl.Diagnostics {
+	var diags hcl.Diagnostics
 	switch c := child.(type) {
 	case *DashboardNode:
 		f.Nodes = append(f.Nodes, c)
 	case *DashboardEdge:
 		f.Edges = append(f.Edges, c)
 	default:
-		return hcl.Diagnostics{&hcl.Diagnostic{
+		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("DashboardFlow does not support children of type %s", child.BlockType()),
 			Subject:  f.GetDeclRange(),
-		}}
+		})
+		return diags
 	}
 	// set ourselves as parent
-	child.(ModTreeItem).AddParent(f)
-	return nil
+	err := child.(ModTreeItem).AddParent(f)
+	if err != nil {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "failed to add parent to ModTreeItem",
+			Detail:   err.Error(),
+			Subject:  child.GetDeclRange(),
+		})
+	}
+
+	return diags
 }
 
 // CtyValue implements CtyValueProvider

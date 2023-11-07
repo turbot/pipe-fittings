@@ -205,18 +205,19 @@ func (c *DbClient) getExecuteContext(ctx context.Context) context.Context {
 	}
 	// create a context with a deadline
 	shouldBeDoneBy := time.Now().Add(queryTimeout)
-	//nolint:golint,lostcancel //we don't use this cancel fn because, pgx prematurely cancels the PG connection when this cancel gets called in 'defer'
+	//nolint:golint //we don't use this cancel fn because, pgx prematurely cancels the PG connection when this cancel gets called in 'defer'
 	newCtx, _ := context.WithDeadline(ctx, shouldBeDoneBy)
 
 	return newCtx
 }
 
-// run query in a goroutine, so we can check for cancellation
+// StartQuery runs query in a goroutine, so we can check for cancellation
 // in case the client becomes unresponsive and does not respect context cancellation
 func (c *DbClient) StartQuery(ctx context.Context, dbConn *sql.Conn, query string, args ...any) (rows *sql.Rows, err error) {
 	doneChan := make(chan bool)
 	go func() {
 		// start asynchronous query
+		//nolint: sqlclosecheck // rows is closed in readRows
 		rows, err = dbConn.QueryContext(ctx, query, args...)
 		close(doneChan)
 	}()

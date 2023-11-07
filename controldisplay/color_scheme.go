@@ -103,7 +103,7 @@ func NewControlColorScheme(def *ControlColorSchemaDefinition) (*ControlColorSche
 func (c *ControlColorScheme) Initialise(def *ControlColorSchemaDefinition) error {
 	destV := reflect.ValueOf(c).Elem()
 
-	nullColorFunc := func(val interface{}) aurora.Value { return aurora.Reset(val) }
+	nullColorFunc := aurora.Reset
 	var validationErrors []string
 
 	v := reflect.ValueOf(def).Elem()

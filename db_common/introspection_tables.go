@@ -165,6 +165,7 @@ func getTableInsertSql(workspaceResources *modconfig.ResourceMaps) string {
 // to build the introspection table creation sql
 // NOTE: ensure the object passed to this is a pointer, as otherwise the interface type casts will return false
 func getTableCreateSqlForResource(s interface{}, tableName string, commonColumnSql []string) string {
+	//nolint: gocritic // intended assignment
 	columnDefinitions := append(commonColumnSql, getColumnDefinitions(s)...)
 	if qp, ok := s.(modconfig.QueryProvider); ok {
 		columnDefinitions = append(columnDefinitions, getColumnDefinitions(qp.GetQueryProviderImpl())...)
@@ -244,15 +245,15 @@ func getTableInsertSqlForResource(item any, tableName string) string {
 	// for each item there is core reflection data (i.e. reflection resource all items have)
 	// and item specific reflection data
 	// get the core reflection data values
-	var valuesCore, columnsCore []string
+	var values, columns []string
 	if rwm, ok := item.(modconfig.ResourceWithMetadata); ok {
-		valuesCore, columnsCore = getColumnValues(rwm.GetMetadata())
+		values, columns = getColumnValues(rwm.GetMetadata())
 	}
 
 	// get item specific reflection data values from the item
 	valuesItem, columnsItem := getColumnValues(item)
-	columns := append(columnsCore, columnsItem...)
-	values := append(valuesCore, valuesItem...)
+	columns = append(columns, columnsItem...)
+	values = append(values, valuesItem...)
 
 	// get properties from embedded structs
 	if qp, ok := item.(modconfig.QueryProvider); ok {

@@ -515,7 +515,7 @@ func decodeDashboardBlocks(content *hclsyntax.Body, dashboard *modconfig.Dashboa
 		// add to the dashboard children
 		// (we expect this cast to always succeed)
 		if child, ok := resource.(modconfig.ModTreeItem); ok {
-			dashboard.AddChild(child)
+			res.addDiags(dashboard.AddChild(child))
 		}
 
 	}

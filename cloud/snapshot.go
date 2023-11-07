@@ -92,7 +92,10 @@ func uploadSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnaps
 	}
 
 	// strip verbose/sensitive fields
-	dashboardtypes.StripSnapshot(cloudSnapshot)
+	err = dashboardtypes.StripSnapshot(cloudSnapshot)
+	if err != nil {
+		return "", sperr.Wrap(err)
+	}
 
 	req := steampipecloud.CreateWorkspaceSnapshotRequest{Data: *cloudSnapshot, Tags: tags, Visibility: &visibility}
 	req.SetTitle(title)

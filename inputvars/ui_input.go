@@ -140,7 +140,7 @@ func (i *UIInput) Input(ctx context.Context, opts *terraform.InputOpts) (string,
 			line, err = buf.ReadString('\n')
 		}
 		if err != nil {
-			i.err <- string(err.Error())
+			i.err <- err.Error()
 		} else {
 			i.result <- strings.TrimRightFunc(line, unicode.IsSpace)
 		}

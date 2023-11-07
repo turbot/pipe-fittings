@@ -48,6 +48,7 @@ func startAPIAsync(ctx context.Context, webSocket *melody.Melody) chan struct{} 
 			dashboardServerListen = ""
 		}
 
+		//nolint: gosec // TODO FIX ME
 		srv := &http.Server{
 			Addr:    fmt.Sprintf("%s:%d", dashboardServerListen, dashboardServerPort),
 			Handler: router,

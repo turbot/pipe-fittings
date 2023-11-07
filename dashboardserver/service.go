@@ -66,6 +66,7 @@ func (s *DashboardServiceState) write(path string) error {
 		log.Println("Error while writing version file", err)
 		return err
 	}
+	//nolint: gosec // this file is safe to be read by all users
 	return os.WriteFile(path, versionFileJSON, 0644)
 }
 
@@ -225,5 +226,6 @@ func WriteServiceStateFile(state *DashboardServiceState) error {
 	if err != nil {
 		return err
 	}
+	//nolint: gosec // this file is safe to be read by all users
 	return os.WriteFile(filepaths.DashboardServiceStateFilePath(), stateBytes, 0666)
 }

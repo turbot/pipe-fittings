@@ -1,7 +1,7 @@
 package modconfig
 
 // get the parent item for this ModTreeItem
-func (m *Mod) getParents(item ModTreeItem) []ModTreeItem {
+func (m *Mod) getParents(item ModTreeItem) ([]ModTreeItem, error) {
 	var parents []ModTreeItem
 
 	resourceFunc := func(parent HclResource) (bool, error) {
@@ -15,14 +15,17 @@ func (m *Mod) getParents(item ModTreeItem) []ModTreeItem {
 		// continue walking
 		return true, nil
 	}
-	m.ResourceMaps.WalkResources(resourceFunc)
+	err := m.ResourceMaps.WalkResources(resourceFunc)
+	if err != nil {
+		return nil, err
+	}
 
 	// if this item has no parents and is a child of the mod, set the mod as parent
 	if len(parents) == 0 && m.containsResource(item.Name()) {
 		parents = []ModTreeItem{m}
 
 	}
-	return parents
+	return parents, nil
 }
 
 // does the mod contain a resource with this name?

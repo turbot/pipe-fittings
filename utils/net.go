@@ -83,7 +83,7 @@ func IsPortBindable(host string, port int) error {
 	timeout := 5 * time.Millisecond
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, fmt.Sprintf("%d", port)), timeout)
 	if err != nil {
-		return nil
+		return err
 	}
 	if conn != nil {
 		defer conn.Close()
