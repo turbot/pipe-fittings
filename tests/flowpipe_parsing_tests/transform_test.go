@@ -6,14 +6,14 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/misc"
+	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/zclconf/go-cty/cty"
 )
 
 func TestTransformStep(t *testing.T) {
 	assert := assert.New(t)
 
-	pipelines, _, err := misc.LoadPipelines(context.TODO(), "./pipelines/transform.fp")
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/transform.fp")
 	assert.Nil(err, "error found")
 	assert.Equal(7, len(pipelines), "wrong number of pipelines")
 
