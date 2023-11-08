@@ -54,7 +54,7 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/sethvargo/go-retry v0.2.4
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/turbot/terraform-components v0.0.0-20231108014223-83bd6c20c5af
+	github.com/turbot/terraform-components v0.0.0-20231108031935-358f803c1a8b
 	golang.org/x/sync v0.4.0
 	golang.org/x/text v0.13.0
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
@@ -207,7 +207,7 @@ require (
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.16.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
