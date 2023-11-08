@@ -354,6 +354,7 @@ func (*DashboardExecutionTree) GetResource() modconfig.DashboardLeafNode {
 	panic("should never call for DashboardExecutionTree")
 }
 
+//nolint:unused // TODO: unused function
 func (e *DashboardExecutionTree) defaultClient() *db_client.DbClient {
 	return e.clients[e.defaultConnectionString]
 }

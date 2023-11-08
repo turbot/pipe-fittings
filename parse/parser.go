@@ -2,12 +2,13 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+
+	"github.com/turbot/pipe-fittings/app_specific"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -141,6 +142,7 @@ func addPseudoResourcesToMod(pseudoResources []modconfig.MappableResource, hclRe
 			continue
 		}
 		// add pseudo resource to mod
+		//nolint:errcheck // TODO: fix this
 		mod.AddResource(r.(modconfig.HclResource))
 		// add to map of existing resources
 		hclResources[name] = true

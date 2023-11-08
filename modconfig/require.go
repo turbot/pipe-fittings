@@ -2,8 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"sort"
+
+	"github.com/turbot/pipe-fittings/app_specific"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
@@ -138,6 +139,8 @@ func (r *Require) validateAppVersion(modName string) error {
 }
 
 // validatePluginVersions validates that for every plugin requirement there's at least one plugin installed
+//
+//nolint:unused // TODO: unused function
 func (r *Require) validatePluginVersions(modName string, plugins map[string]*PluginVersionString) []error {
 	// TODO KAI NO LONGER REQUIRED? <MOD VALIDATION>
 	if len(r.Plugins) == 0 {
@@ -154,6 +157,8 @@ func (r *Require) validatePluginVersions(modName string, plugins map[string]*Plu
 
 // searchInstalledPluginForRequirement returns plugin validation errors if no plugin is found which satisfies
 // the mod requirement. If plugin is found nil error is returned.
+//
+//nolint:unused // TODO: unused function
 func (r *Require) searchInstalledPluginForRequirement(modName string, requirement *PluginVersion, plugins map[string]*PluginVersionString) error {
 	for installedName, installed := range plugins {
 		org, name, _ := ociinstaller.NewSteampipeImageRef(installedName).GetOrgNameAndStream()

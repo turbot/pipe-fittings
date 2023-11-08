@@ -121,7 +121,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 	}
 
 	if diags.HasErrors() {
-		return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to evaluate var args:"), diags)
+		return nil, error_helpers.DiagsToError("failed to evaluate var args:", diags)
 	}
 
 	// check viper for any interactively added variables
@@ -252,7 +252,7 @@ func sanitiseVariableNames(src []byte) ([]byte, map[string]string) {
 
 		r := regexp.MustCompile(`^ ?(([a-z0-9\-_]+)\.([a-z0-9\-_]+)) ?=`)
 		captureGroups := r.FindStringSubmatch(line)
-		if captureGroups != nil && len(captureGroups) == 4 {
+		if len(captureGroups) == 4 {
 			fullVarName := captureGroups[1]
 			mod := captureGroups[2]
 			varName := captureGroups[3]

@@ -3,8 +3,9 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/db_client"
 	"log"
+
+	"github.com/turbot/pipe-fittings/db_client"
 
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
@@ -33,7 +34,7 @@ func GenerateSnapshot(ctx context.Context, target string, initData *initialisati
 	// all runtime dependencies must be resolved before execution (i.e. inputs must be passed in)
 	Executor.interactive = false
 	clientMap := map[string]*db_client.DbClient{initData.Client.GetConnectionString(): initData.Client}
-	Executor.ExecuteDashboard(ctx, sessionId, target, inputs, w, clientMap)
+	Executor.ExecuteDashboard(ctx, sessionId, target, inputs, w, clientMap) //nolint:errcheck // TODO: fix this
 
 	select {
 	case err = <-errorChannel:

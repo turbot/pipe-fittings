@@ -2,8 +2,9 @@ package initialisation
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"log"
+
+	"github.com/turbot/pipe-fittings/app_specific"
 
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/helpers"
@@ -49,7 +50,7 @@ func NewInitData() *InitData {
 
 func (i *InitData) RegisterExporters(exporters ...export.Exporter) *InitData {
 	for _, e := range exporters {
-		i.ExportManager.Register(e)
+		i.ExportManager.Register(e) //nolint:errcheck // TODO: fix this
 	}
 
 	return i

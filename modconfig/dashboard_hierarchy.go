@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -30,6 +31,7 @@ type DashboardHierarchy struct {
 
 	Base *DashboardHierarchy `hcl:"base" json:"-"`
 
+	//nolint:unused // TODO: unused attribute
 	parents []ModTreeItem
 }
 

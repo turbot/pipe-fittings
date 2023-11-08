@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stevenle/topsort"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -26,6 +27,7 @@ type DashboardContainer struct {
 	// store children in a way which can be serialised via cty
 	ChildNames []string `cty:"children" column:"children,jsonb"`
 
+	//nolint:unused // TODO: unused attribute
 	runtimeDependencyGraph *topsort.Graph
 }
 

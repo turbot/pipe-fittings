@@ -2,6 +2,7 @@ package inputvars
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
@@ -19,6 +20,7 @@ func SetVariableValues(vv terraform.InputValues, m *modconfig.ModVariableMap) {
 			// we should have already caught this
 			continue
 		}
+		//nolint:errcheck // TODO: fix this
 		variable.SetInputValue(
 			inputValue.Value,
 			SourceTypeString(inputValue),

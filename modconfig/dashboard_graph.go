@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -200,7 +201,7 @@ func (g *DashboardGraph) AddChild(child HclResource) hcl.Diagnostics {
 			Subject:  child.GetDeclRange(),
 		})
 	}
-	return nil
+	return diags
 }
 
 // CtyValue implements CtyValueProvider

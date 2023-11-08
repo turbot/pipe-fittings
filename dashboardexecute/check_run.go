@@ -71,7 +71,7 @@ func (r *CheckRun) Execute(ctx context.Context) {
 
 	// create a context with a DashboardEventControlHooks to report control execution progress
 	ctx = controlstatus.AddControlHooksToContext(ctx, NewDashboardEventControlHooks(r))
-	r.controlExecutionTree.Execute(ctx)
+	r.controlExecutionTree.Execute(ctx) //nolint:errcheck // TODO: fix this
 
 	// set the summary on the CheckRun
 	r.Summary = r.controlExecutionTree.Root.Summary

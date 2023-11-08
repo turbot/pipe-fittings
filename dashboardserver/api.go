@@ -31,7 +31,7 @@ func startAPIAsync(ctx context.Context, webSocket *melody.Melody) chan struct{} 
 		router.Use(static.Serve("/", static.LocalFile(assetsDirectory, true)))
 
 		router.GET("/ws", func(c *gin.Context) {
-			webSocket.HandleRequest(c.Writer, c.Request)
+			webSocket.HandleRequest(c.Writer, c.Request) //nolint:errcheck // TODO: fix this
 		})
 
 		router.NoRoute(func(c *gin.Context) {

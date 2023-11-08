@@ -3,9 +3,10 @@ package dashboardexecute
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/schema"
 	"log"
 	"sync"
+
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -362,7 +363,7 @@ func (s *RuntimeDependencySubscriberImpl) populateParamDefaults(provider modconf
 		if dep := s.findRuntimeDependencyForParentProperty(paramDef.UnqualifiedName); dep != nil {
 			// assuming the default property is the target, set the default
 			if typehelpers.SafeString(dep.Dependency.TargetPropertyName) == "default" {
-				paramDef.SetDefault(dep.Value)
+				paramDef.SetDefault(dep.Value) //nolint:errcheck // TODO: fix this
 			}
 		}
 	}

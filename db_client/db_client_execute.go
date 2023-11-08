@@ -205,7 +205,7 @@ func (c *DbClient) getExecuteContext(ctx context.Context) context.Context {
 	}
 	// create a context with a deadline
 	shouldBeDoneBy := time.Now().Add(queryTimeout)
-	//nolint:golint //we don't use this cancel fn because, pgx prematurely cancels the PG connection when this cancel gets called in 'defer'
+	//nolint:govet //we don't use this cancel fn because, pgx prematurely cancels the PG connection when this cancel gets called in 'defer'
 	newCtx, _ := context.WithDeadline(ctx, shouldBeDoneBy)
 
 	return newCtx

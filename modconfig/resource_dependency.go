@@ -51,6 +51,8 @@ func isRunTimeDependencyProperty(propertyPath *ParsedPropertyPath) bool {
 }
 
 // getPropertiesFromContent finds any attributes in the given content which depend on this dependency
+//
+//nolint:unused // TODO: unused function
 func (d *ResourceDependency) getPropertiesFromContent(content *hcl.BodyContent) []string {
 	var res []string
 	for _, a := range content.Attributes {

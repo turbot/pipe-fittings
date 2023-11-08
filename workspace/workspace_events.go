@@ -437,7 +437,7 @@ func (w *Workspace) raiseDashboardChangedEvents(ctx context.Context, resourceMap
 			event.SetParentsChanged(item, prevResourceMaps)
 			return true, nil
 		}
-		event.WalkChangedResources(f)
+		event.WalkChangedResources(f) //nolint:errcheck // TODO: fix this
 		w.PublishDashboardEvent(ctx, event)
 	}
 }

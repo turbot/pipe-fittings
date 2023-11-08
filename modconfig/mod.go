@@ -357,6 +357,7 @@ func (m *Mod) validateSteampipeVersion() error {
 	return m.Require.validateAppVersion(m.Name())
 }
 
+//nolint:unused // TODO: unused function
 func (m *Mod) validatePluginVersions(availablePlugins map[string]*PluginVersionString) []error {
 	// TODO KAI NO LONGER REQUIRED? <MOD VALIDATION>
 	if m.Require == nil {

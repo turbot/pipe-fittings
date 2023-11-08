@@ -20,6 +20,7 @@ type QueryProviderImpl struct {
 	Params    []*ParamDef `cty:"params" column:"params,jsonb" json:"-"`
 	QueryName *string     `column:"query,text" json:"-"`
 
+	//nolint:unused // TODO: unused function
 	withs               []*DashboardWith
 	disableCtySerialise bool
 	// flags to indicate if params and args were inherited from base resource

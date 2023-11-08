@@ -104,6 +104,7 @@ type VariableValidationFailedError struct {
 	diags tfdiags.Diagnostics
 }
 
+//nolint:unused // TODO: unused function
 func newVariableValidationFailedError(diags tfdiags.Diagnostics) VariableValidationFailedError {
 	return VariableValidationFailedError{diags: diags}
 }

@@ -36,6 +36,7 @@ func GetReferencedVariables(root dashboardtypes.DashboardTreeRun, w *workspace.W
 
 	switch r := root.(type) {
 	case *DashboardRun:
+		//nolint:errcheck // TODO: fix this
 		r.dashboard.WalkResources(
 			func(resource modconfig.HclResource) (bool, error) {
 				if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
@@ -47,6 +48,7 @@ func GetReferencedVariables(root dashboardtypes.DashboardTreeRun, w *workspace.W
 	case *CheckRun:
 		switch n := r.resource.(type) {
 		case *modconfig.Benchmark:
+			//nolint:errcheck // TODO: fix this
 			n.WalkResources(
 				func(resource modconfig.ModTreeItem) (bool, error) {
 					if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {

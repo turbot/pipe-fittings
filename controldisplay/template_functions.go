@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
-	"github.com/Masterminds/sprig/v3"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/Masterminds/sprig/v3"
 )
 
 // templateFuncs merges desired functions from sprig with custom functions that we
@@ -58,7 +59,7 @@ func toCSVCellFnFactory(comma string) func(interface{}) string {
 		defer csvBufferLock.Unlock()
 
 		csvWriterBuffer.Reset()
-		csvWriter.Write([]string{fmt.Sprintf("%v", v)})
+		csvWriter.Write([]string{fmt.Sprintf("%v", v)}) //nolint:errcheck // TODO: fix this
 		csvWriter.Flush()
 		return strings.TrimSpace(csvWriterBuffer.String())
 	}
