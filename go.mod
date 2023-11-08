@@ -2,6 +2,9 @@ module github.com/turbot/pipe-fittings
 
 go 1.21.0
 
+//
+replace github.com/turbot/terraform-components => ../terraform-components/
+
 require (
 	github.com/Machiel/slugify v1.0.1
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -37,7 +40,6 @@ require (
 	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.6.2
 	// pp branch
-	github.com/turbot/terraform-components v0.0.0-20231017100940-c8df9a3a9aab
 	github.com/xlab/treeprint v1.2.0
 	github.com/zclconf/go-cty v1.14.1
 	github.com/zclconf/go-cty-yaml v1.0.3
@@ -55,6 +57,7 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/sethvargo/go-retry v0.2.4
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/turbot/terraform-components v0.0.0-00010101000000-000000000000
 	golang.org/x/sync v0.4.0
 	golang.org/x/text v0.13.0
 	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
