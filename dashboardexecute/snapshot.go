@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/turbot/pipe-fittings/db_client"
-
 	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/dashboardtypes"
+	"github.com/turbot/pipe-fittings/db_client"
 	"github.com/turbot/pipe-fittings/initialisation"
 	"github.com/turbot/pipe-fittings/modconfig"
 )

@@ -79,13 +79,13 @@ func (b *ByteSequence) ApplyChanges(changeSet ChangeSet) {
 }
 
 // Apply applies the given function on the byte sequence
-func (bseq *ByteSequence) Apply(apply func([]byte) []byte) {
-	bseq._underlying = apply(bseq._underlying)
+func (b *ByteSequence) Apply(apply func([]byte) []byte) {
+	b._underlying = apply(b._underlying)
 }
 
 // Bytes returns the current underlying byte sequence
-func (bseq *ByteSequence) Bytes() []byte {
-	return bseq._underlying
+func (b *ByteSequence) Bytes() []byte {
+	return b._underlying
 }
 
 func clear(change *Change, source []byte) []byte {
