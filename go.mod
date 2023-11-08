@@ -9,7 +9,7 @@ require (
 	github.com/briandowns/spinner v1.23.0
 	github.com/containerd/containerd v1.7.7
 	github.com/fatih/color v1.15.0
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gertd/go-pluralize v0.2.1
 	github.com/go-git/go-git/v5 v5.9.0
 	github.com/go-playground/validator/v10 v10.15.5
@@ -33,10 +33,9 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.4
-	github.com/turbot/go-kit v0.9.0-rc.2
+	github.com/turbot/go-kit v0.9.0-rc.3
 	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.6.2
-	// pp branch
 	github.com/xlab/treeprint v1.2.0
 	github.com/zclconf/go-cty v1.14.1
 	github.com/zclconf/go-cty-yaml v1.0.3
