@@ -3,12 +3,12 @@ package modinstaller
 import (
 	"bytes"
 	"fmt"
-	"os"
-
 	"github.com/hashicorp/hcl/v2/hclwrite"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
+	"os"
 )
 
 // updates the 'require' block in 'mod.sp'
@@ -51,8 +51,10 @@ func (i *ModInstaller) updateModFile() error {
 
 	contents.ApplyChanges(changes)
 	contents.Apply(hclwrite.Format)
+	// strip blank lines
+	modData := []byte(helpers.TrimBlankLines(string(contents.Bytes())))
 
-	return os.WriteFile(filepaths.ModFilePath(i.workspaceMod.ModPath), contents.Bytes(), 0644) //nolint:gosec // TODO - review file permissions
+	return os.WriteFile(filepaths.ModFilePath(i.workspaceMod.ModPath), modData, 0644) //nolint:gosec // TODO - review file permissions
 }
 
 // loads the contents of the mod.sp file and wraps it with a thin wrapper
@@ -76,8 +78,8 @@ func (i *ModInstaller) shouldCreateRequireBlock(oldRequire *modconfig.Require, n
 func (i *ModInstaller) buildChangeSetForRequireDelete(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	return NewChangeSet(&Change{
 		Operation:   Delete,
-		OffsetStart: oldRequire.DeclRange.Start.Byte,
-		OffsetEnd:   oldRequire.BodyRange.End.Byte,
+		OffsetStart: oldRequire.TypeRange.Start.Byte,
+		OffsetEnd:   oldRequire.DeclRange.End.Byte,
 	})
 }
 
@@ -90,11 +92,11 @@ func (i *ModInstaller) buildChangeSetForRequireCreate(oldRequire *modconfig.Requ
 	var body *hclwrite.Body
 	var insertOffset int
 
-	if oldRequire.BodyRange.Start.Byte != 0 {
+	if oldRequire.TypeRange.Start.Byte != 0 {
 		// this means that there is a require block
 		// but is probably empty
 		body = f.Body()
-		insertOffset = oldRequire.BodyRange.End.Byte - 1
+		insertOffset = oldRequire.TypeRange.End.Byte - 1
 	} else {
 		// we don't have a require block at all
 		// let's create one to append to
@@ -187,7 +189,7 @@ func (i *ModInstaller) calcChangesForInstall(oldRequire *modconfig.Require, newR
 	return ChangeSet{
 		&Change{
 			Operation:   Insert,
-			OffsetStart: oldRequire.BodyRange.End.Byte - 1,
+			OffsetStart: oldRequire.DeclRange.End.Byte - 1,
 			Content:     f.Bytes(),
 		},
 	}

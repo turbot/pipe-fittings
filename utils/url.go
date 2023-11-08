@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// Modifies(trims) the URL if contains http ot https in arguments
+// TrimGitUrls Modifies(trims) the URL if contains http ot https in arguments
 func TrimGitUrls(urls []string) []string {
 	res := make([]string, len(urls))
 	for i, url := range urls {

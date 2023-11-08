@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -13,7 +12,7 @@ func InstallWorkspaceDependencies(ctx context.Context, opts *InstallOpts) (_ *In
 	defer func() {
 		utils.LogTime("cmd.InstallWorkspaceDependencies end")
 		if r := recover(); r != nil {
-			error_helpers.ShowError(ctx, helpers.ToError(r))
+			err = helpers.ToError(r)
 		}
 	}()
 
