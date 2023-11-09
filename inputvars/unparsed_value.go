@@ -2,14 +2,15 @@ package inputvars
 
 import (
 	"fmt"
-	"github.com/turbot/terraform-components/terraform"
-	"github.com/zclconf/go-cty/cty"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
+	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
+	"github.com/zclconf/go-cty/cty"
+	"golang.org/x/exp/maps"
 )
 
 // UnparsedVariableValue represents a variable value provided by the caller
@@ -43,9 +44,8 @@ func ParseVariableValues(inputValueUnparsed map[string]UnparsedVariableValue, re
 	ret := make(terraform.InputValues, len(inputValueUnparsed)*len(requireArgs))
 
 	// initialise ret to contain any values that were set in the mod Require block using Args property
-	for k, v := range requireArgs {
-		ret[k] = v
-	}
+	maps.Copy(ret, requireArgs)
+
 	publicVariables := variablesMap.PublicVariables
 
 	// Currently we're generating only warnings for undeclared variables
