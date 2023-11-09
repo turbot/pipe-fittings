@@ -1,7 +1,6 @@
 package modconfig
 
 import (
-	"context"
 	"slices"
 	"strings"
 
@@ -18,8 +17,6 @@ import (
 type Trigger struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
-
-	ctx context.Context
 
 	// 27/09/23 - Args is introduces combination of both parse time and runtime arguments. "var" should be resolved
 	// at parse time, the vars all should be supplied when we start the system. However, args can also contain
@@ -369,7 +366,7 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 	return diags
 }
 
-func NewTrigger(ctx context.Context, block *hcl.Block, mod *Mod, triggerType, triggerName string) *Trigger {
+func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Trigger {
 
 	triggerFullName := triggerType + "." + triggerName
 
@@ -390,7 +387,6 @@ func NewTrigger(ctx context.Context, block *hcl.Block, mod *Mod, triggerType, tr
 			DeclRange:       block.DefRange,
 			blockType:       block.Type,
 		},
-		ctx: ctx,
 	}
 
 	switch triggerType {

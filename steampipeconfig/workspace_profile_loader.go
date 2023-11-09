@@ -1,7 +1,6 @@
 package steampipeconfig
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -50,6 +49,8 @@ func NewWorkspaceProfileLoader(workspaceProfilePath string) (*WorkspaceProfileLo
 			)
 	}
 	loader := &WorkspaceProfileLoader{workspaceProfilePath: workspaceProfilePath}
+
+	// do the load
 	workspaceProfiles, err := loader.load()
 	if err != nil {
 		return nil, err
@@ -96,8 +97,7 @@ func (l *WorkspaceProfileLoader) get(name string) (*modconfig.WorkspaceProfile, 
 
 func (l *WorkspaceProfileLoader) load() (map[string]*modconfig.WorkspaceProfile, error) {
 	// get all the config files in the directory
-	// TODO KAI remove ctx
-	return parse.LoadWorkspaceProfiles(context.Background(), l.workspaceProfilePath)
+	return parse.LoadWorkspaceProfiles(l.workspaceProfilePath)
 }
 
 /*

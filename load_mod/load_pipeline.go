@@ -90,7 +90,6 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 	}
 
 	parseCtx := parse.NewModParseContext(
-		ctx,
 		nil,
 		modDir,
 		parse.CreateTransientLocalMod,

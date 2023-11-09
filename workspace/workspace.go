@@ -365,19 +365,13 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 		return nil, err
 	}
 
-	// TODO KAI why is there a context in ModParseContext?	<FLOWPIPE>
-	parseCtx := parse.NewModParseContext(
-		ctx,
-		workspaceLock,
-		w.Path,
-		parseFlag,
-		&filehelpers.ListOptions{
-			// listFlag specifies whether to load files recursively
-			Flags:   w.ListFlag,
-			Exclude: w.exclusions,
-			// load files specified by inclusions
-			Include: filehelpers.InclusionsFromExtensions(w.FileInclusions),
-		})
+	parseCtx := parse.NewModParseContext(workspaceLock, w.Path, parseFlag, &filehelpers.ListOptions{
+		// listFlag specifies whether to load files recursively
+		Flags:   w.ListFlag,
+		Exclude: w.exclusions,
+		// load files specified by inclusions
+		Include: filehelpers.InclusionsFromExtensions(w.FileInclusions),
+	})
 
 	return parseCtx, nil
 }

@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -15,9 +14,6 @@ import (
 )
 
 type ParseContext struct {
-	// TODO KAI why ctx <FLOWPIPE>
-	// This is the running application context
-	RunCtx           context.Context
 	UnresolvedBlocks map[string]*unresolvedBlock
 	FileData         map[string][]byte
 
@@ -37,11 +33,10 @@ type ParseContext struct {
 	blocks          hcl.Blocks
 }
 
-func NewParseContext(runContext context.Context, rootEvalPath string) ParseContext {
+func NewParseContext(rootEvalPath string) ParseContext {
 	c := ParseContext{
 		UnresolvedBlocks: make(map[string]*unresolvedBlock),
 		RootEvalPath:     rootEvalPath,
-		RunCtx:           runContext,
 	}
 	// add root node - this will depend on all other nodes
 	c.dependencyGraph = c.newDependencyGraph()

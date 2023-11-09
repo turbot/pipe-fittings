@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -86,10 +85,9 @@ type ModParseContext struct {
 	DependencyConfig *ModDependencyConfig
 }
 
-// TODO KAI WHY store ctx <FLOWPIPE>
-func NewModParseContext(runContext context.Context, workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, flags ParseModFlag, listOptions *filehelpers.ListOptions) *ModParseContext {
+func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, flags ParseModFlag, listOptions *filehelpers.ListOptions) *ModParseContext {
 
-	parseContext := NewParseContext(runContext, rootEvalPath)
+	parseContext := NewParseContext(rootEvalPath)
 	c := &ModParseContext{
 		ParseContext: parseContext,
 
@@ -120,12 +118,7 @@ func NewModParseContext(runContext context.Context, workspaceLock *versionmap.Wo
 
 func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.ResolvedVersionConstraint, rootEvalPath string) *ModParseContext {
 	// create a child run context
-	child := NewModParseContext(
-		parent.RunCtx,
-		parent.WorkspaceLock,
-		rootEvalPath,
-		parent.Flags,
-		parent.ListOptions)
+	child := NewModParseContext(parent.WorkspaceLock, rootEvalPath, parent.Flags, parent.ListOptions)
 	// copy our block tpyes
 	child.BlockTypes = parent.BlockTypes
 	// set the child's parent

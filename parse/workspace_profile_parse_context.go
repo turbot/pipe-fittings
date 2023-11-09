@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
@@ -15,8 +14,8 @@ type WorkspaceProfileParseContext struct {
 	valueMap          map[string]cty.Value
 }
 
-func NewWorkspaceProfileParseContext(ctx context.Context, rootEvalPath string) *WorkspaceProfileParseContext {
-	parseContext := NewParseContext(ctx, rootEvalPath)
+func NewWorkspaceProfileParseContext(rootEvalPath string) *WorkspaceProfileParseContext {
+	parseContext := NewParseContext(rootEvalPath)
 	// TODO uncomment once https://github.com/turbot/steampipe/issues/2640 is done
 	//parseContext.BlockTypes = []string{schema.BlockTypeWorkspaceProfile}
 	c := &WorkspaceProfileParseContext{

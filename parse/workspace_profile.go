@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"context"
 	"fmt"
 	"log"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
-func LoadWorkspaceProfiles(ctx context.Context, workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
+func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -59,7 +58,7 @@ func LoadWorkspaceProfiles(ctx context.Context, workspaceProfilePath string) (pr
 		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
 	}
 
-	parseCtx := NewWorkspaceProfileParseContext(ctx, workspaceProfilePath)
+	parseCtx := NewWorkspaceProfileParseContext(workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)
 
 	// build parse context
