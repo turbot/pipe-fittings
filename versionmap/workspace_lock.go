@@ -343,6 +343,5 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 		return dependencyFilepath, nil
 	}
 
-	// TODO KAI look at PipesComponentAppName
 	return "", fmt.Errorf("dependency mod '%s' is not installed - run '"+app_specific.AppName+" mod install'", modDependency.DependencyPath())
 }

@@ -2,21 +2,20 @@ package load_mod
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/terraform-components/terraform"
-	"sort"
-
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"golang.org/x/exp/maps"
+	"sort"
 )
 
 func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error) {
@@ -61,8 +60,16 @@ func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, var
 			return nil, error_helpers.NewErrorsAndWarning(err)
 		}
 	}
-	// only parse values for public variables
-	parsedValues, diags := inputvars.ParseVariableValues(inputValuesUnparsed, variableMap, validate)
+
+	// read any args set in the mod require block
+	depModArgs, err := inputvars.CollectVariableValuesFromModRequire(variableMap.Mod, parseCtx.WorkspaceLock)
+	if err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+
+	// parse the input values (only parse values for public variables)
+	// NOTE: pass in variable values set in mod require block to ensure validation passes
+	parsedValues, diags := inputvars.ParseVariableValues(inputValuesUnparsed, depModArgs, variableMap, validate)
 
 	if validate {
 		moreDiags := inputvars.CheckInputVariables(variableMap.PublicVariables, parsedValues)
@@ -84,7 +91,7 @@ func newVariableValidationResult(diags tfdiags.Diagnostics) *error_helpers.Error
 func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, variableValues map[string]inputvars.UnparsedVariableValue) error {
 	// convert variableValues into a lookup
 	var variableValueLookup = utils.SliceToLookup(maps.Keys(variableValues))
-	missingVarsMap, err := identifyMissingVariablesForDependencies(parseCtx.WorkspaceLock, variableMap, variableValueLookup, nil)
+	missingVarsMap, err := identifyMissingVariablesForDependencyTree(parseCtx.WorkspaceLock, variableMap, variableValueLookup, nil)
 
 	if err != nil {
 		return err
@@ -115,16 +122,29 @@ func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *m
 	return missingVarErr
 }
 
-func identifyMissingVariablesForDependencies(workspaceLock *versionmap.WorkspaceLock, variableMap *modconfig.ModVariableMap, parentVariableValuesLookup map[string]struct{}, dependencyPath []string) (map[DependencyPathKey][]*modconfig.Variable, error) {
+func identifyMissingVariablesForDependencyTree(workspaceLock *versionmap.WorkspaceLock, variableMap *modconfig.ModVariableMap, parentVariableValuesLookup map[string]struct{}, dependencyPath []string) (map[DependencyPathKey][]*modconfig.Variable, error) {
 	// return a map of missing variables, keyed by dependency path
 	res := make(map[DependencyPathKey][]*modconfig.Variable)
 
 	// update the path to this dependency
 	dependencyPath = append(dependencyPath, variableMap.Mod.GetInstallCacheKey())
 
-	// clone variableValuesLookup so we can mutate it with depdency specific args overrides
+	// clone parentVariableValuesLookup so we can mutate it with dependency specific args overrides
 	var variableValueLookup = make(map[string]struct{}, len(parentVariableValuesLookup))
 	for k := range parentVariableValuesLookup {
+		// attempt to parse the variable name.
+		// Note: if the variable is not fully qualified (e.g. "var_name"),  ParseResourceName will return an error
+		// in which case we add it to our map unchanged
+		parsedName, err := modconfig.ParseResourceName(k)
+		// if this IS a dependency variable, the parse will success
+		// if the mod name is the same as the current mod (variableMap.Mod)
+		// then add a map entry with the variable short name
+		// this will allow us to match the variable value to a variable defined in this mod
+		if err == nil && parsedName.Mod == variableMap.Mod.ShortName {
+			k = parsedName.Name
+		}
+
+		// add into lookup
 		variableValueLookup[k] = struct{}{}
 	}
 
@@ -146,7 +166,7 @@ func identifyMissingVariablesForDependencies(workspaceLock *versionmap.Workspace
 
 	// now iterate through all the dependency variable maps
 	for _, dependencyVariableMap := range variableMap.DependencyVariables {
-		childMissingMap, err := identifyMissingVariablesForDependencies(workspaceLock, dependencyVariableMap, variableValueLookup, dependencyPath)
+		childMissingMap, err := identifyMissingVariablesForDependencyTree(workspaceLock, dependencyVariableMap, variableValueLookup, dependencyPath)
 		if err != nil {
 			return nil, err
 		}
