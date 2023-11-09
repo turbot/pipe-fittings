@@ -4,11 +4,10 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"github.com/zclconf/go-cty/cty/convert"
-
-	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 // SetVariableValues determines whether the given variable is a public variable and if so sets its value

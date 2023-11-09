@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 type InstallOpts struct {
@@ -22,7 +23,7 @@ func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *Insta
 		WorkspaceMod: workspaceMod,
 		DryRun:       viper.GetBool(constants.ArgDryRun),
 		Force:        viper.GetBool(constants.ArgForce),
-		ModArgs:      modsToInstall,
+		ModArgs:      utils.TrimGitUrls(modsToInstall),
 		Command:      cmdName,
 	}
 	return opts
