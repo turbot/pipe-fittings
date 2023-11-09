@@ -37,10 +37,11 @@ var ValidHttpMethods = []string{
 }
 
 type StepForEach struct {
-	Key        string               `json:"key"  binding:"required"`
-	Output     *Output              `json:"output,omitempty"`
-	TotalCount int                  `json:"total_count" binding:"required"`
-	Each       json.SimpleJSONValue `json:"each" swaggertype:"string"`
+	ForEachStep bool                 `json:"for_each_step"`
+	Key         string               `json:"key"  binding:"required"`
+	Output      *Output              `json:"output,omitempty"`
+	TotalCount  int                  `json:"total_count" binding:"required"`
+	Each        json.SimpleJSONValue `json:"each" swaggertype:"string"`
 }
 
 type StepLoop struct {
@@ -181,6 +182,12 @@ const (
 	NextStepActionStart NextStepAction = "start"
 
 	// This happens if the step can't be started because one of it's dependency as failed
+	//
+	// Q: So why would step failure does not mean pipeline fail straight away?
+	// A: We can't raise the pipeline fail command if there's "ignore error" directive on the step.
+	//    If there are steps that depend on the failed step, these steps becomes "inaccessible", they can't start
+	//    because the dependend step has failed.
+	//
 	NextStepActionInaccessible NextStepAction = "inaccessible"
 
 	NextStepActionSkip NextStepAction = "skip"
@@ -192,6 +199,7 @@ type NextStep struct {
 	Action      NextStepAction `json:"action"`
 	StepForEach *StepForEach   `json:"step_for_each,omitempty"`
 	StepLoop    *StepLoop      `json:"step_loop,omitempty"`
+	Input       Input          `json:"input"`
 }
 
 func NewPipelineStep(stepType, stepName string) PipelineStep {
