@@ -34,11 +34,11 @@ func SetVariableValues(vv terraform.InputValues, m *modconfig.ModVariableMap) {
 // The set of values is considered valid only if the returned diagnostics
 // does not contain errors. A valid set of values may still produce warnings,
 // which should be returned to the user.
-func CheckInputVariables(vcs map[string]*modconfig.Variable, vs terraform.InputValues) tfdiags.Diagnostics {
+func CheckInputVariables(defs map[string]*modconfig.Variable, values terraform.InputValues) tfdiags.Diagnostics {
 	var diags tfdiags.Diagnostics
 
-	for name, vc := range vcs {
-		val, isSet := vs[name]
+	for name, def := range defs {
+		val, isSet := values[name]
 		if !isSet {
 			// Always an error, since the caller should already have included
 			// default values from the configuration in the values map.
@@ -50,7 +50,7 @@ func CheckInputVariables(vcs map[string]*modconfig.Variable, vs terraform.InputV
 			continue
 		}
 
-		wantType := vc.Type
+		wantType := def.Type
 
 		// A given value is valid if it can convert to the desired type.
 		_, err := convert.Convert(val.Value, wantType)
@@ -100,8 +100,8 @@ func CheckInputVariables(vcs map[string]*modconfig.Variable, vs terraform.InputV
 	// This is always an implementation error in the caller, because we
 	// expect undefined variables to be caught during context construction
 	// where there is better context to report it well.
-	for name := range vs {
-		if _, defined := vcs[name]; !defined {
+	for name := range values {
+		if _, defined := defs[name]; !defined {
 			diags = diags.Append(tfdiags.Sourceless(
 				tfdiags.Error,
 				"Value assigned to undeclared variable",
