@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"strings"
 
@@ -40,24 +39,13 @@ type Dashboard struct {
 }
 
 func NewDashboard(block *hcl.Block, mod *Mod, shortName string) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
-
-	c := &Dashboard{
-		ModTreeItemImpl: ModTreeItemImpl{
-			HclResourceImpl: HclResourceImpl{
-				ShortName:       shortName,
-				FullName:        fullName,
-				UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-				DeclRange:       hclhelpers.BlockRange(block),
-				blockType:       block.Type,
-			},
-			Mod: mod,
-		},
+	d := &Dashboard{
+		ModTreeItemImpl: NewModTreeItemImpl(block, mod, shortName),
 	}
-	c.SetAnonymous(block)
-	c.setUrlPath()
+	d.SetAnonymous(block)
+	d.setUrlPath()
 
-	return c
+	return d
 }
 
 // NewQueryDashboard creates a dashboard to wrap a query/control
@@ -88,6 +76,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 				Documentation:   utils.ToStringPointer(qp.GetDocumentation()),
 				Tags:            qp.GetTags(),
 				blockType:       schema.BlockTypeDashboard,
+				DeclRange:       *qp.GetDeclRange(),
 			},
 			Mod: qp.GetMod(),
 		},

@@ -1,9 +1,7 @@
 package modconfig
 
 import (
-	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -20,26 +18,12 @@ type DashboardNode struct {
 }
 
 func NewDashboardNode(block *hcl.Block, mod *Mod, shortName string) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
-	c := &DashboardNode{
-		QueryProviderImpl: QueryProviderImpl{
-			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
-				ModTreeItemImpl: ModTreeItemImpl{
-					HclResourceImpl: HclResourceImpl{
-						ShortName:       shortName,
-						FullName:        fullName,
-						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-						DeclRange:       hclhelpers.BlockRange(block),
-						blockType:       block.Type,
-					},
-					Mod: mod,
-				},
-			},
-		},
+	n := &DashboardNode{
+		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
 
-	c.SetAnonymous(block)
-	return c
+	n.SetAnonymous(block)
+	return n
 }
 
 func (n *DashboardNode) Equals(other *DashboardNode) bool {

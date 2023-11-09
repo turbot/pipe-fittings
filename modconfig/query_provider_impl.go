@@ -28,6 +28,14 @@ type QueryProviderImpl struct {
 	paramsInheritedFromBase bool
 }
 
+func NewQueryProviderImpl(block *hcl.Block, mod *Mod, shortName string) QueryProviderImpl {
+	return QueryProviderImpl{
+		RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
+			ModTreeItemImpl: NewModTreeItemImpl(block, mod, shortName),
+		},
+	}
+}
+
 // GetParams implements QueryProvider
 func (q *QueryProviderImpl) GetParams() []*ParamDef {
 	return q.Params

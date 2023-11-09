@@ -5,7 +5,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -36,27 +35,12 @@ type DashboardGraph struct {
 }
 
 func NewDashboardGraph(block *hcl.Block, mod *Mod, shortName string) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
-
-	h := &DashboardGraph{
-		Categories: make(map[string]*DashboardCategory),
-		QueryProviderImpl: QueryProviderImpl{
-			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
-				ModTreeItemImpl: ModTreeItemImpl{
-					HclResourceImpl: HclResourceImpl{
-						ShortName:       shortName,
-						FullName:        fullName,
-						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-						DeclRange:       hclhelpers.BlockRange(block),
-						blockType:       block.Type,
-					},
-					Mod: mod,
-				},
-			},
-		},
+	g := &DashboardGraph{
+		Categories:        make(map[string]*DashboardCategory),
+		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
-	h.SetAnonymous(block)
-	return h
+	g.SetAnonymous(block)
+	return g
 }
 
 func (g *DashboardGraph) Equals(other *DashboardGraph) bool {

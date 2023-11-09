@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -32,26 +31,10 @@ type Control struct {
 }
 
 func NewControl(block *hcl.Block, mod *Mod, shortName string) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
-
 	control := &Control{
-		QueryProviderImpl: QueryProviderImpl{
-			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
-				ModTreeItemImpl: ModTreeItemImpl{
-					HclResourceImpl: HclResourceImpl{
-						FullName:        fullName,
-						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-						ShortName:       shortName,
-						DeclRange:       hclhelpers.BlockRange(block),
-						blockType:       block.Type,
-					},
-					Mod: mod,
-				},
-			},
-			Args: NewQueryArgs(),
-		},
+		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
-
+	control.Args = NewQueryArgs()
 	control.SetAnonymous(block)
 	return control
 }
