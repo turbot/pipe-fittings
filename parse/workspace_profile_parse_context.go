@@ -8,19 +8,19 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type WorkspaceProfileParseContext struct {
+type WorkspaceProfileParseContext[T modconfig.WorkspaceProfile] struct {
 	ParseContext
-	workspaceProfiles map[string]*modconfig.WorkspaceProfile
+	workspaceProfiles map[string]T
 	valueMap          map[string]cty.Value
 }
 
-func NewWorkspaceProfileParseContext(rootEvalPath string) *WorkspaceProfileParseContext {
+func NewWorkspaceProfileParseContext[T modconfig.WorkspaceProfile](rootEvalPath string) *WorkspaceProfileParseContext[T] {
 	parseContext := NewParseContext(rootEvalPath)
 	// TODO uncomment once https://github.com/turbot/steampipe/issues/2640 is done
 	//parseContext.BlockTypes = []string{schema.BlockTypeWorkspaceProfile}
-	c := &WorkspaceProfileParseContext{
+	c := &WorkspaceProfileParseContext[T]{
 		ParseContext:      parseContext,
-		workspaceProfiles: make(map[string]*modconfig.WorkspaceProfile),
+		workspaceProfiles: make(map[string]T),
 		valueMap:          make(map[string]cty.Value),
 	}
 
@@ -30,29 +30,30 @@ func NewWorkspaceProfileParseContext(rootEvalPath string) *WorkspaceProfileParse
 }
 
 // AddResource stores this resource as a variable to be added to the eval context. It alse
-func (c *WorkspaceProfileParseContext) AddResource(workspaceProfile *modconfig.WorkspaceProfile) hcl.Diagnostics {
+func (c *WorkspaceProfileParseContext[T]) AddResource(workspaceProfile T) hcl.Diagnostics {
+	profileName := workspaceProfile.ShortName()
 	ctyVal, err := workspaceProfile.CtyValue()
 	if err != nil {
 		return hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("failed to convert workspaceProfile '%s' to its cty value", workspaceProfile.ProfileName),
+			Summary:  fmt.Sprintf("failed to convert workspaceProfile '%s' to its cty value", profileName),
 			Detail:   err.Error(),
-			Subject:  &workspaceProfile.DeclRange,
+			Subject:  workspaceProfile.GetDeclRange(),
 		}}
 	}
 
-	c.workspaceProfiles[workspaceProfile.ProfileName] = workspaceProfile
-	c.valueMap[workspaceProfile.ProfileName] = ctyVal
+	c.workspaceProfiles[profileName] = workspaceProfile
+	c.valueMap[workspaceProfile.ShortName()] = ctyVal
 
 	// remove this resource from unparsed blocks
-	delete(c.UnresolvedBlocks, workspaceProfile.ProfileName)
+	delete(c.UnresolvedBlocks, profileName)
 
 	c.buildEvalContext()
 
 	return nil
 }
 
-func (c *WorkspaceProfileParseContext) buildEvalContext() {
+func (c *WorkspaceProfileParseContext[T]) buildEvalContext() {
 	// rebuild the eval context
 	// build a map with a single key - workspace
 	vars := map[string]cty.Value{

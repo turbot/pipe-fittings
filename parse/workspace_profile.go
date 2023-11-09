@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"log"
+	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -16,20 +17,39 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
-func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*modconfig.WorkspaceProfile, err error) {
+func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
+	//var res T
+	//switch  any(res).(type) {
+	//case *modconfig.SteampipeWorkspaceProfile:
+	//	// do something specific for SteampipeWorkspaceProfile
+	//	return LoadSteampipeWorkspaceProfiles(workspaceProfilePath)
+	//default:
+	//	// handle other types of T
+	//
+	//}
 
 	defer func() {
 		if r := recover(); r != nil {
 			err = helpers.ToError(r)
 		}
-		// be sure to return the default
-		if profileMap != nil && profileMap["default"] == nil {
-			profileMap["default"] = &modconfig.WorkspaceProfile{ProfileName: "default"}
-		}
+
 	}()
 
 	// create profile map to populate
-	profileMap = map[string]*modconfig.WorkspaceProfile{}
+	profileMap = make(map[string]T)
+
+	defer func() {
+		if err == nil {
+			// be sure to return the default
+			if _, haveDefault := profileMap["default"]; !haveDefault {
+				d, diags := modconfig.NewDefaultWorkspaceProfile[T]()
+				if diags.HasErrors() {
+					err = plugin.DiagsToError("failed to create default workspace", diags)
+				}
+				profileMap["default"] = d
+			}
+		}
+	}()
 
 	configPaths, err := filehelpers.ListFiles(workspaceProfilePath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
@@ -58,7 +78,7 @@ func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*
 		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
 	}
 
-	parseCtx := NewWorkspaceProfileParseContext(workspaceProfilePath)
+	parseCtx := NewWorkspaceProfileParseContext[T](workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)
 
 	// build parse context
@@ -66,7 +86,7 @@ func LoadWorkspaceProfiles(workspaceProfilePath string) (profileMap map[string]*
 
 }
 
-func parseWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string]*modconfig.WorkspaceProfile, error) {
+func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, error) {
 	// we may need to decode more than once as we gather dependencies as we go
 	// continue decoding as long as the number of unresolved blocks decreases
 	prevUnresolvedBlocks := 0
@@ -95,8 +115,8 @@ func parseWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string]
 
 }
 
-func decodeWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string]*modconfig.WorkspaceProfile, hcl.Diagnostics) {
-	profileMap := map[string]*modconfig.WorkspaceProfile{}
+func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, hcl.Diagnostics) {
+	profileMap := make(map[string]T)
 
 	var diags hcl.Diagnostics
 	blocksToDecode, err := parseCtx.BlocksToDecode()
@@ -114,11 +134,11 @@ func decodeWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string
 
 	for _, block := range blocksToDecode {
 		if block.Type == schema.BlockTypeWorkspaceProfile {
-			workspaceProfile, res := decodeWorkspaceProfile(block, parseCtx)
+			workspaceProfile, res := decodeWorkspaceProfile[T](block, parseCtx)
 
 			if res.Success() {
 				// success - add to map
-				profileMap[workspaceProfile.ProfileName] = workspaceProfile
+				profileMap[workspaceProfile.ShortName()] = workspaceProfile
 			}
 			diags = append(diags, res.Diags...)
 		}
@@ -129,29 +149,43 @@ func decodeWorkspaceProfiles(parseCtx *WorkspaceProfileParseContext) (map[string
 // decodeWorkspaceProfileOption decodes an options block as a workspace profile property
 // setting the necessary overrides for special handling of the "dashboard" option which is different
 // from the global "dashboard" option
-func decodeWorkspaceProfileOption(block *hcl.Block) (options.Options, hcl.Diagnostics) {
-	return DecodeOptions(block, WithOverride(constants.CmdNameDashboard, &options.WorkspaceProfileDashboard{}))
+func decodeWorkspaceProfileOption[T modconfig.WorkspaceProfile](block *hcl.Block) (options.Options, hcl.Diagnostics) {
+	var w T
+	switch any(w).(type) {
+	case *modconfig.SteampipeWorkspaceProfile:
+		return DecodeOptions(block, SteampipeWorkspaceOptionsBlockMapping)
+	default:
+		return nil, hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("unexpected workspace profile type %s", reflect.TypeOf(w).Name()),
+				Subject:  hclhelpers.BlockRangePointer(block),
+			}}
+	}
 }
 
-func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseContext) (*modconfig.WorkspaceProfile, *DecodeResult) {
+func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
+	var emptyProfile T
 	res := newDecodeResult()
 	// get shell resource
-	resource := modconfig.NewWorkspaceProfile(block)
+	resource, diags := modconfig.NewWorkspaceProfile[T](block)
+	if diags.HasErrors() {
+		res.handleDecodeDiags(diags)
+		return emptyProfile, res
+	}
 
 	// do a partial decode to get options blocks into workspaceProfileOptions, with all other attributes in rest
 	workspaceProfileOptions, rest, diags := block.Body.PartialContent(WorkspaceProfileBlockSchema)
 	if diags.HasErrors() {
 		res.handleDecodeDiags(diags)
-		return nil, res
+		return emptyProfile, res
 	}
 
 	diags = gohcl.DecodeBody(rest, parseCtx.EvalCtx, resource)
 	if len(diags) > 0 {
 		res.handleDecodeDiags(diags)
 	}
-	// use a map keyed by a string for fast lookup
-	// we use an empty struct as the value type, so that
-	// we don't use up unnecessary memory
+	// lookup of options blocks
 	foundOptions := map[string]struct{}{}
 	for _, block := range workspaceProfileOptions.Blocks {
 		switch block.Type {
@@ -165,7 +199,7 @@ func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseCon
 					Summary:  fmt.Sprintf("Duplicate options type '%s'", optionsBlockType),
 				})
 			}
-			opts, moreDiags := decodeWorkspaceProfileOption(block)
+			opts, moreDiags := decodeWorkspaceProfileOption[T](block)
 			if moreDiags.HasErrors() {
 				diags = append(diags, moreDiags...)
 				break
@@ -189,7 +223,7 @@ func decodeWorkspaceProfile(block *hcl.Block, parseCtx *WorkspaceProfileParseCon
 	return resource, res
 }
 
-func handleWorkspaceProfileDecodeResult(resource *modconfig.WorkspaceProfile, res *DecodeResult, block *hcl.Block, parseCtx *WorkspaceProfileParseContext) {
+func handleWorkspaceProfileDecodeResult[T modconfig.WorkspaceProfile](resource T, res *DecodeResult, block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) {
 	if res.Success() {
 		// call post decode hook
 		// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property

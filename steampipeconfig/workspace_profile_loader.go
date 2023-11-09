@@ -2,26 +2,22 @@ package steampipeconfig
 
 import (
 	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"os"
+	"path/filepath"
 )
 
-var GlobalWorkspaceProfile *modconfig.WorkspaceProfile
 var defaultWorkspaceSampleFileName = "workspaces.spc.sample"
 
-type WorkspaceProfileLoader struct {
-	workspaceProfiles    map[string]*modconfig.WorkspaceProfile
+type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
+	workspaceProfiles    map[string]T
 	workspaceProfilePath string
-	DefaultProfile       *modconfig.WorkspaceProfile
-	ConfiguredProfile    *modconfig.WorkspaceProfile
+	DefaultProfile       T
+	ConfiguredProfile    T
 }
 
 func ensureDefaultWorkspaceFile(configFolder string) error {
@@ -39,7 +35,7 @@ func ensureDefaultWorkspaceFile(configFolder string) error {
 	return nil
 }
 
-func NewWorkspaceProfileLoader(workspaceProfilePath string) (*WorkspaceProfileLoader, error) {
+func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePath string) (*WorkspaceProfileLoader[T], error) {
 	// write the workspaces.spc.sample file
 	if err := ensureDefaultWorkspaceFile(workspaceProfilePath); err != nil {
 		return nil,
@@ -48,7 +44,7 @@ func NewWorkspaceProfileLoader(workspaceProfilePath string) (*WorkspaceProfileLo
 				"could not create sample workspace",
 			)
 	}
-	loader := &WorkspaceProfileLoader{workspaceProfilePath: workspaceProfilePath}
+	loader := &WorkspaceProfileLoader[T]{workspaceProfilePath: workspaceProfilePath}
 
 	// do the load
 	workspaceProfiles, err := loader.load()
@@ -76,28 +72,30 @@ func NewWorkspaceProfileLoader(workspaceProfilePath string) (*WorkspaceProfileLo
 	return loader, nil
 }
 
-func (l *WorkspaceProfileLoader) GetActiveWorkspaceProfile() *modconfig.WorkspaceProfile {
-	if l.ConfiguredProfile != nil {
+func (l *WorkspaceProfileLoader[T]) GetActiveWorkspaceProfile() T {
+	// TODO KAI nicer way to nil check
+	if !l.ConfiguredProfile.IsNil() {
 		return l.ConfiguredProfile
 	}
 	return l.DefaultProfile
 }
 
-func (l *WorkspaceProfileLoader) get(name string) (*modconfig.WorkspaceProfile, error) {
+func (l *WorkspaceProfileLoader[T]) get(name string) (T, error) {
+	var emptyProfile T
 	if workspaceProfile, ok := l.workspaceProfiles[name]; ok {
 		return workspaceProfile, nil
 	}
 
-	if implicitWorkspace := l.getImplicitWorkspace(name); implicitWorkspace != nil {
+	if implicitWorkspace := l.getImplicitWorkspace(name); !implicitWorkspace.IsNil() {
 		return implicitWorkspace, nil
 	}
 
-	return nil, fmt.Errorf("workspace profile %s does not exist", name)
+	return emptyProfile, fmt.Errorf("workspace profile %s does not exist", name)
 }
 
-func (l *WorkspaceProfileLoader) load() (map[string]*modconfig.WorkspaceProfile, error) {
+func (l *WorkspaceProfileLoader[T]) load() (map[string]T, error) {
 	// get all the config files in the directory
-	return parse.LoadWorkspaceProfiles(l.workspaceProfilePath)
+	return parse.LoadWorkspaceProfiles[T](l.workspaceProfilePath)
 }
 
 /*
@@ -118,13 +116,15 @@ Essentially, --workspace acme/dev is equivalent to:
 	  snapshot_location  = "acme/dev"
 	}
 */
-func (l *WorkspaceProfileLoader) getImplicitWorkspace(name string) *modconfig.WorkspaceProfile {
-	if IsCloudWorkspaceIdentifier(name) {
-		log.Printf("[TRACE] getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
-		return &modconfig.WorkspaceProfile{
-			SnapshotLocation:  utils.ToStringPointer(name),
-			WorkspaceDatabase: utils.ToStringPointer(name),
-		}
-	}
-	return nil
+func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
+	// TODO KAI FIX ME <WORKSPACE>
+	//if IsCloudWorkspaceIdentifier(name) {
+	//	log.Printf("[TRACE] getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
+	//	return &modconfig.SteampipeWorkspaceProfile{
+	//		SnapshotLocation:  utils.ToStringPointer(name),
+	//		WorkspaceDatabase: utils.ToStringPointer(name),
+	//	}
+	//}
+	var w T
+	return w
 }
