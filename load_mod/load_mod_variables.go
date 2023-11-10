@@ -9,6 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
@@ -83,7 +84,7 @@ func newVariableValidationResult(diags tfdiags.Diagnostics) *error_helpers.Error
 	warnings := plugin.DiagsToWarnings(diags.ToHCL())
 	var err error
 	if diags.HasErrors() {
-		err = newVariableValidationFailedError(diags)
+		err = steampipeconfig.NewVariableValidationFailedError(diags)
 	}
 	return error_helpers.NewErrorsAndWarning(err, warnings...)
 }
@@ -102,13 +103,13 @@ func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *m
 	}
 
 	// build a MissingVariableError
-	missingVarErr := NewMissingVarsError(parseCtx.CurrentMod)
+	missingVarErr := steampipeconfig.NewMissingVarsError(parseCtx.CurrentMod)
 
 	// build a lookup with the dependency path of the root mod and all top level dependencies
 	rootName := variableMap.Mod.ShortName
-	topLevelModLookup := map[DependencyPathKey]struct{}{DependencyPathKey(rootName): {}}
+	topLevelModLookup := map[steampipeconfig.DependencyPathKey]struct{}{steampipeconfig.DependencyPathKey(rootName): {}}
 	for dep := range parseCtx.WorkspaceLock.InstallCache {
-		depPathKey := NewDependencyPathKey(rootName, dep)
+		depPathKey := steampipeconfig.NewDependencyPathKey(rootName, dep)
 		topLevelModLookup[depPathKey] = struct{}{}
 	}
 	for depPath, missingVars := range missingVarsMap {
@@ -122,9 +123,9 @@ func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *m
 	return missingVarErr
 }
 
-func identifyMissingVariablesForDependencyTree(workspaceLock *versionmap.WorkspaceLock, variableMap *modconfig.ModVariableMap, parentVariableValuesLookup map[string]struct{}, dependencyPath []string) (map[DependencyPathKey][]*modconfig.Variable, error) {
+func identifyMissingVariablesForDependencyTree(workspaceLock *versionmap.WorkspaceLock, variableMap *modconfig.ModVariableMap, parentVariableValuesLookup map[string]struct{}, dependencyPath []string) (map[steampipeconfig.DependencyPathKey][]*modconfig.Variable, error) {
 	// return a map of missing variables, keyed by dependency path
-	res := make(map[DependencyPathKey][]*modconfig.Variable)
+	res := make(map[steampipeconfig.DependencyPathKey][]*modconfig.Variable)
 
 	// update the path to this dependency
 	dependencyPath = append(dependencyPath, variableMap.Mod.GetInstallCacheKey())
@@ -161,7 +162,7 @@ func identifyMissingVariablesForDependencyTree(workspaceLock *versionmap.Workspa
 	//  handle root variables
 	missingVariables := identifyMissingVariables(variableMap.RootVariables, variableValueLookup)
 	if len(missingVariables) > 0 {
-		res[NewDependencyPathKey(dependencyPath...)] = missingVariables
+		res[steampipeconfig.NewDependencyPathKey(dependencyPath...)] = missingVariables
 	}
 
 	// now iterate through all the dependency variable maps

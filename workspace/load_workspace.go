@@ -17,17 +17,16 @@ import (
 	"github.com/turbot/terraform-components/terraform"
 )
 
-func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	workspacePath := viper.GetString(constants.ArgModLocation)
+func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	t := time.Now()
 	defer func() {
 		log.Printf("[TRACE] Workspace load took %dms\n", time.Since(t).Milliseconds())
 	}()
-	w, errAndWarnings := Load(ctx, workspacePath)
+	w, errAndWarnings := LoadWithParams(ctx, workspacePath, fileInclusions...)
 	if errAndWarnings.GetError() == nil {
 		return w, errAndWarnings
 	}
-	var missingVariablesError *steampipeconfig.MissingVariableError
+	var missingVariablesError steampipeconfig.MissingVariableError
 	ok := errors.As(errAndWarnings.GetError(), &missingVariablesError)
 	// if there was an error which is NOT a MissingVariableError, return it
 	if !ok {
@@ -49,7 +48,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context) (*Workspace, *error
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// ok we should have all variables now - reload workspace
-	return Load(ctx, workspacePath)
+	return LoadWithParams(ctx, workspacePath, fileInclusions...)
 }
 
 func promptForMissingVariables(ctx context.Context, missingVariables []*modconfig.Variable, workspacePath string) error {
