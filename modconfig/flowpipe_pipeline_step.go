@@ -259,6 +259,7 @@ type PipelineStep interface {
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	SetErrorConfig(*ErrorConfig)
 	GetErrorConfig() *ErrorConfig
+	GetRetryConfig() *RetryConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
 	Equals(other PipelineStep) bool
@@ -434,6 +435,7 @@ type PipelineStepBase struct {
 	DependsOn    []string                   `json:"depends_on,omitempty"`
 	Resolved     bool                       `json:"resolved,omitempty"`
 	ErrorConfig  *ErrorConfig               `json:"-"`
+	RetryConfig  *RetryConfig               `json:"retry,omitempty"`
 	OutputConfig map[string]*PipelineOutput `json:"-"`
 
 	// This cant' be serialised
@@ -447,8 +449,14 @@ func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedBodies = make(map[string]hcl.Body)
 }
 
+func (p *PipelineStepBase) GetRetryConfig() *RetryConfig {
+	return p.RetryConfig
+}
+
 func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
+
+	stepType := p.GetType()
 
 	loopBlocks := blocks.ByType()[schema.BlockTypeLoop]
 	if len(loopBlocks) > 1 {
@@ -461,8 +469,6 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 	if len(loopBlocks) == 1 {
 		loopBlock := loopBlocks[0]
-
-		stepType := p.GetType()
 
 		loopDefn := GetLoopDefn(stepType)
 		if loopDefn == nil {
@@ -490,6 +496,33 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 			}
 		}
 	}
+
+	retryBlocks := blocks.ByType()[schema.BlockTypeRetry]
+	if len(retryBlocks) > 1 {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Only one retry block is allowed per step",
+			Subject:  &blocks.ByType()[schema.BlockTypeRetry][0].DefRange,
+		})
+	}
+
+	if len(retryBlocks) == 1 {
+		retryBlock := retryBlocks[0]
+		retryConfig := RetryConfig{}
+		// Decode the loop block
+		moreDiags := gohcl.DecodeBody(retryBlock.Body, evalContext, &retryConfig)
+
+		if len(moreDiags) > 0 {
+			moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeRetry, retryBlock.Body)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+			}
+		} else {
+			// fully resolved retry block
+			p.RetryConfig = &retryConfig
+		}
+	}
+
 	return diags
 }
 
@@ -2762,8 +2795,8 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 				if dependsOnAdded {
 					resolvedDiags++
 				}
-			} else if e.Detail == `There is no variable named "result".` && attributeName == schema.BlockTypeLoop {
-				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block
+			} else if e.Detail == `There is no variable named "result".` && (attributeName == schema.BlockTypeLoop || attributeName == schema.BlockTypeRetry) {
+				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
 				resolvedDiags++
 			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" || e.Detail == `There is no variable named "loop".` {
 				// hcl.decodeBody returns 2 error messages:

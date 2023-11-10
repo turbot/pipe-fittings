@@ -367,6 +367,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypeLoop,
 		},
+		{
+			Type: schema.BlockTypeRetry,
+		},
 	},
 }
 
@@ -415,6 +418,9 @@ var PipelineStepSleepBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeLoop,
+		},
+		{
+			Type: schema.BlockTypeRetry,
 		},
 	},
 }
@@ -486,6 +492,9 @@ var PipelineStepEmailBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypeLoop,
 		},
+		{
+			Type: schema.BlockTypeRetry,
+		},
 	},
 }
 
@@ -526,6 +535,9 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeLoop,
+		},
+		{
+			Type: schema.BlockTypeRetry,
 		},
 	},
 }
@@ -568,6 +580,9 @@ var PipelineStepEchoBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypeLoop,
 		},
+		{
+			Type: schema.BlockTypeRetry,
+		},
 	},
 }
 
@@ -602,6 +617,9 @@ var PipelineStepTransformBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeLoop,
+		},
+		{
+			Type: schema.BlockTypeRetry,
 		},
 	},
 }
@@ -640,6 +658,9 @@ var PipelineStepPipelineBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeLoop,
+		},
+		{
+			Type: schema.BlockTypeRetry,
 		},
 	},
 }
@@ -689,6 +710,9 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypeLoop,
 		},
+		{
+			Type: schema.BlockTypeRetry,
+		},
 	},
 }
 
@@ -734,6 +758,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypeLoop,
 		},
+		{
+			Type: schema.BlockTypeRetry,
+		},
 	},
 }
 
@@ -777,6 +804,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeLoop,
+		},
+		{
+			Type: schema.BlockTypeRetry,
 		},
 	},
 }

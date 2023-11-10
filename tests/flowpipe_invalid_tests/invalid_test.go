@@ -132,6 +132,21 @@ var tests = []testSetup{
 		file:          "./pipelines/loop_no_if.fp",
 		containsError: "The argument \"until\" is required, but no definition was found",
 	},
+	{
+		title:         "retry - multiple retry blocks",
+		file:          "./pipelines/retry_multiple_retry_blocks.fp",
+		containsError: "Only one retry block is allowed per step",
+	},
+	{
+		title:         "retry - invalid attribute",
+		file:          "./pipelines/retry_invalid_attribute.fp",
+		containsError: "An argument named \"except\" is not expected here",
+	},
+	{
+		title:         "retry - missing retries",
+		file:          "./pipelines/retry_missing_retries.fp",
+		containsError: "The argument \"retries\" is required, but no definition was found",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

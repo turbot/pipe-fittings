@@ -47,6 +47,7 @@ const (
 	BlockTypeIntegration       = "integration"
 	BlockTypeNotify            = "notify"
 	BlockTypeLoop              = "loop"
+	BlockTypeRetry             = "retry"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
