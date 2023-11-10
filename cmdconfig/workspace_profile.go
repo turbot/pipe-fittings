@@ -25,13 +25,24 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 		return nil, err
 	}
 
-	workspaceProfileDir, err := filepaths.WorkspaceProfileDir(installDir)
+	// TODO KAI what if the mod locaiton is specified in workdpace profile???
+	modDir, err := filehelpers.Tildefy(viper.GetString(constants.ArgModLocation))
+	if err != nil {
+		return nil, err
+	}
+
+	globalWorkspaceProfileDir, err := filepaths.GlobalWorkspaceProfileDir(installDir)
+	if err != nil {
+		return nil, err
+	}
+
+	localWorkspaceProfileDir, err := filepaths.LocalWorkspaceProfileDir(modDir)
 	if err != nil {
 		return nil, err
 	}
 
 	// create loader and load ther workspace
-	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](workspaceProfileDir)
+	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](globalWorkspaceProfileDir, localWorkspaceProfileDir)
 	if err != nil {
 		return nil, err
 	}

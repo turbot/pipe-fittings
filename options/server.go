@@ -10,8 +10,8 @@ import (
 
 // TODO KAI this is Flowpipe specific - should it be named as such
 type Server struct {
-	Port   *int    `hcl:"port"`
-	Listen *string `hcl:"listen"`
+	Port   *int    `hcl:"port" cty:"port"`
+	Listen *string `hcl:"listen" cty:"port"`
 }
 
 // TODO KAI what is the difference between merge and SetBaseProperties

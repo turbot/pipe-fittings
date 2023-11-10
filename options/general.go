@@ -9,11 +9,11 @@ import (
 )
 
 type General struct {
-	UpdateCheck *string `hcl:"update_check"`
-	MaxParallel *int    `hcl:"max_parallel"`
-	Telemetry   *string `hcl:"telemetry"`
-	LogLevel    *string `hcl:"log_level"`
-	MemoryMaxMb *int    `hcl:"memory_max_mb"`
+	UpdateCheck *string `hcl:"update_check" cty:"update_check"`
+	MaxParallel *int    `hcl:"max_parallel" cty:"max_parallel"`
+	Telemetry   *string `hcl:"telemetry" cty:"telemetry"`
+	LogLevel    *string `hcl:"log_level" cty:"log_level"`
+	MemoryMaxMb *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
 }
 
 // TODO KAI what is the difference between merge and SetBaseProperties

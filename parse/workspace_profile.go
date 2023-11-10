@@ -25,19 +25,6 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 	// create profile map to populate
 	profileMap = make(map[string]T)
 
-	defer func() {
-		if err == nil {
-			// be sure to return the default
-			if _, haveDefault := profileMap["default"]; !haveDefault {
-				d, diags := modconfig.NewDefaultWorkspaceProfile[T]()
-				if diags.HasErrors() {
-					err = plugin.DiagsToError("failed to create default workspace", diags)
-				}
-				profileMap["default"] = d
-			}
-		}
-	}()
-
 	configPaths, err := filehelpers.ListFiles(workspaceProfilePath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
 		Include: filehelpers.InclusionsFromExtensions([]string{constants.ConfigExtension}),
