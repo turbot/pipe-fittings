@@ -2,6 +2,7 @@ package options
 
 import (
 	"fmt"
+	"github.com/turbot/go-kit/helpers"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/constants"
@@ -13,6 +14,31 @@ type General struct {
 	Telemetry   *string `hcl:"telemetry"`
 	LogLevel    *string `hcl:"log_level"`
 	MemoryMaxMb *int    `hcl:"memory_max_mb"`
+}
+
+// TODO KAI what is the difference between merge and SetBaseProperties
+func (s *General) SetBaseProperties(otherOptions Options) {
+	if helpers.IsNil(otherOptions) {
+		return
+	}
+	if o, ok := otherOptions.(*General); ok {
+		if s.UpdateCheck == nil && o.UpdateCheck != nil {
+			s.UpdateCheck = o.UpdateCheck
+		}
+		if s.MaxParallel == nil && o.MaxParallel != nil {
+			s.MaxParallel = o.MaxParallel
+		}
+		if s.Telemetry == nil && o.Telemetry != nil {
+			s.Telemetry = o.Telemetry
+		}
+		if s.LogLevel == nil && o.LogLevel != nil {
+			s.LogLevel = o.LogLevel
+		}
+		if s.MemoryMaxMb == nil && o.MemoryMaxMb != nil {
+			s.MemoryMaxMb = o.MemoryMaxMb
+		}
+
+	}
 }
 
 // ConfigMap creates a config map that can be merged with viper
@@ -41,6 +67,8 @@ func (g *General) ConfigMap() map[string]interface{} {
 // Merge merges other options over the top of this options object
 // i.e. if a property is set in otherOptions, it takes precedence
 func (g *General) Merge(otherOptions Options) {
+	// TODO KAI this seems incomplete - check all merge
+	// also who uses this???
 	switch o := otherOptions.(type) {
 	case *General:
 		if o.UpdateCheck != nil {

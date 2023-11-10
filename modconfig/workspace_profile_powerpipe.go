@@ -2,18 +2,16 @@ package modconfig
 
 import (
 	"fmt"
-	"reflect"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
+	"reflect"
 )
 
-type SteampipeWorkspaceProfile struct {
+type PowerpipeWorkspaceProfile struct {
 	ProfileName       string                     `hcl:"name,label" cty:"name"`
 	CloudHost         *string                    `hcl:"cloud_host,optional" cty:"cloud_host"`
 	CloudToken        *string                    `hcl:"cloud_token,optional" cty:"cloud_token"`
@@ -32,7 +30,7 @@ type SteampipeWorkspaceProfile struct {
 	Theme             *string                    `hcl:"theme" cty:"theme"`
 	Cache             *bool                      `hcl:"cache" cty:"cache"`
 	CacheTTL          *int                       `hcl:"cache_ttl" cty:"cache_ttl"`
-	Base              *SteampipeWorkspaceProfile `hcl:"base"`
+	Base              *PowerpipeWorkspaceProfile `hcl:"base"`
 
 	// options
 	QueryOptions     *options.Query                     `cty:"query-options"`
@@ -43,7 +41,7 @@ type SteampipeWorkspaceProfile struct {
 
 // SetOptions sets the options on the connection
 // verify the options object is a valid options type (only options.Connection currently supported)
-func (p *SteampipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
+func (p *PowerpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	switch o := opts.(type) {
 	case *options.Query:
@@ -71,31 +69,23 @@ func (p *SteampipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.
 	return diags
 }
 
-func duplicateOptionsBlockDiag(block *hcl.Block) *hcl.Diagnostic {
-	return &hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  fmt.Sprintf("duplicate %s options block", block.Type),
-		Subject:  hclhelpers.BlockRangePointer(block),
-	}
-}
-
-func (p *SteampipeWorkspaceProfile) Name() string {
+func (p *PowerpipeWorkspaceProfile) Name() string {
 	return fmt.Sprintf("workspace.%s", p.ProfileName)
 }
-func (p *SteampipeWorkspaceProfile) ShortName() string {
+func (p *PowerpipeWorkspaceProfile) ShortName() string {
 	return p.ProfileName
 }
 
-func (p *SteampipeWorkspaceProfile) CtyValue() (cty.Value, error) {
+func (p *PowerpipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 	return GetCtyValue(p)
 }
 
-func (p *SteampipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
+func (p *PowerpipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
 	return nil
 }
 
-func (p *SteampipeWorkspaceProfile) setBaseProperties() {
+func (p *PowerpipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
 	}
@@ -178,7 +168,7 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
-func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
+func (p *PowerpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
 	res := ConfigMap{}
 	// add non-empty properties to config map
 
@@ -213,64 +203,18 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	return res
 }
 
-func (p *SteampipeWorkspaceProfile) GetDeclRange() *hcl.Range {
+func (p *PowerpipeWorkspaceProfile) GetDeclRange() *hcl.Range {
 	return &p.DeclRange
 }
 
-func (p *SteampipeWorkspaceProfile) GetModLocation() *string {
+func (p *PowerpipeWorkspaceProfile) GetModLocation() *string {
 	return p.ModLocation
 }
 
-func (p *SteampipeWorkspaceProfile) GetInstallDir() *string {
+func (p *PowerpipeWorkspaceProfile) GetInstallDir() *string {
 	return p.InstallDir
 }
 
-func (p *SteampipeWorkspaceProfile) IsNil() bool {
+func (p *PowerpipeWorkspaceProfile) IsNil() bool {
 	return p == nil
-}
-
-func (p *SteampipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {
-	var diags hcl.Diagnostics
-
-	switch block.Labels[0] {
-	case options.ConnectionBlock:
-		return new(options.Connection), nil
-	case options.DatabaseBlock:
-		return new(options.Database), nil
-	case options.TerminalBlock:
-		return new(options.Terminal), nil
-	case options.GeneralBlock:
-		return new(options.General), nil
-	case options.QueryBlock:
-		return new(options.Query), nil
-	case options.CheckBlock:
-		return new(options.Check), nil
-	case options.DashboardBlock:
-		return new(options.WorkspaceProfileDashboard), nil
-	case options.PluginBlock:
-		return new(options.Plugin), nil
-	default:
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("Unexpected options type '%s'", block.Type),
-			Subject:  hclhelpers.BlockRangePointer(block),
-		})
-		return nil, diags
-	}
-}
-
-// searchPathFromString checks that `str` is `nil` and returns a string slice with `str`
-// separated with `separator`
-// If `str` is `nil`, this returns a `nil`
-func searchPathFromString(str *string, separator string) []string {
-	if str == nil {
-		return nil
-	}
-	// convert comma separated list to array
-	searchPath := strings.Split(*str, separator)
-	// strip whitespace
-	for i, s := range searchPath {
-		searchPath[i] = strings.TrimSpace(s)
-	}
-	return searchPath
 }

@@ -19,6 +19,8 @@ type WorkspaceProfile interface {
 	ConfigMap(cmd *cobra.Command) map[string]interface{}
 	GetDeclRange() *hcl.Range
 
+	GetOptionsForBlock(*hcl.Block) (options.Options, hcl.Diagnostics)
+
 	// TODO do we actually need this in the interface or is it steampipe specific
 	GetModLocation() *string
 	GetInstallDir() *string
@@ -29,13 +31,17 @@ type WorkspaceProfile interface {
 func NewWorkspaceProfile[T WorkspaceProfile](block *hcl.Block) (T, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	var empty T
-	switch t := any(empty).(type) {
+	var res any
+
+	profileName := block.Labels[0]
+	declRange := hclhelpers.BlockRange(block)
+	switch any(empty).(type) {
+	case *FlowpipeWorkspaceProfile:
+		res = &FlowpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	case *SteampipeWorkspaceProfile:
-		t = &SteampipeWorkspaceProfile{
-			ProfileName: block.Labels[0],
-			DeclRange:   hclhelpers.BlockRange(block),
-		}
-		return any(t).(T), nil
+		res = &SteampipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
+	case *PowerpipeWorkspaceProfile:
+		res = &PowerpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -44,6 +50,8 @@ func NewWorkspaceProfile[T WorkspaceProfile](block *hcl.Block) (T, hcl.Diagnosti
 		})
 		return empty, diags
 	}
+
+	return res.(T), nil
 }
 
 func NewDefaultWorkspaceProfile[T WorkspaceProfile]() (T, hcl.Diagnostics) {

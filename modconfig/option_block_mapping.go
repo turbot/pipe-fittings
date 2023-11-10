@@ -1,4 +1,4 @@
-package parse
+package modconfig
 
 import (
 	"fmt"
@@ -9,6 +9,8 @@ import (
 
 type OptionsBlockFactory = func(*hcl.Block) (options.Options, hcl.Diagnostics)
 
+// SteampipeOptionsBlockMapping is an OptionsBlockFactory used to map global steampipe options
+// TODO look at deprecations
 func SteampipeOptionsBlockMapping(block *hcl.Block) (options.Options, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 
@@ -38,12 +40,4 @@ func SteampipeOptionsBlockMapping(block *hcl.Block) (options.Options, hcl.Diagno
 		})
 		return nil, diags
 	}
-}
-func SteampipeWorkspaceOptionsBlockMapping(block *hcl.Block) (options.Options, hcl.Diagnostics) {
-	/// override the block for dashboard
-	if block.Type == options.DashboardBlock {
-		return new(options.WorkspaceProfileDashboard), nil
-	}
-	return SteampipeOptionsBlockMapping(block)
-
 }

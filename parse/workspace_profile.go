@@ -2,9 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"log"
-	"reflect"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
@@ -12,22 +9,12 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"log"
 )
 
 func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
-	//var res T
-	//switch  any(res).(type) {
-	//case *modconfig.SteampipeWorkspaceProfile:
-	//	// do something specific for SteampipeWorkspaceProfile
-	//	return LoadSteampipeWorkspaceProfiles(workspaceProfilePath)
-	//default:
-	//	// handle other types of T
-	//
-	//}
-
 	defer func() {
 		if r := recover(); r != nil {
 			err = helpers.ToError(r)
@@ -146,24 +133,6 @@ func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePr
 	return profileMap, diags
 }
 
-// decodeWorkspaceProfileOption decodes an options block as a workspace profile property
-// setting the necessary overrides for special handling of the "dashboard" option which is different
-// from the global "dashboard" option
-func decodeWorkspaceProfileOption[T modconfig.WorkspaceProfile](block *hcl.Block) (options.Options, hcl.Diagnostics) {
-	var w T
-	switch any(w).(type) {
-	case *modconfig.SteampipeWorkspaceProfile:
-		return DecodeOptions(block, SteampipeWorkspaceOptionsBlockMapping)
-	default:
-		return nil, hcl.Diagnostics{
-			&hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("unexpected workspace profile type %s", reflect.TypeOf(w).Name()),
-				Subject:  hclhelpers.BlockRangePointer(block),
-			}}
-	}
-}
-
 func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
 	var emptyProfile T
 	res := newDecodeResult()
@@ -199,7 +168,7 @@ func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, pars
 					Summary:  fmt.Sprintf("Duplicate options type '%s'", optionsBlockType),
 				})
 			}
-			opts, moreDiags := decodeWorkspaceProfileOption[T](block)
+			opts, moreDiags := DecodeOptions(block, resource.GetOptionsForBlock)
 			if moreDiags.HasErrors() {
 				diags = append(diags, moreDiags...)
 				break
@@ -218,6 +187,8 @@ func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, pars
 			})
 		}
 	}
+
+	res.addDiags(diags)
 
 	handleWorkspaceProfileDecodeResult(resource, res, block, parseCtx)
 	return resource, res

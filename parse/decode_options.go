@@ -3,11 +3,12 @@ package parse
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/options"
 )
 
 // DecodeOptions decodes an options block
-func DecodeOptions(block *hcl.Block, blockFactory OptionsBlockFactory) (options.Options, hcl.Diagnostics) {
+func DecodeOptions(block *hcl.Block, blockFactory modconfig.OptionsBlockFactory) (options.Options, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 
 	destination, diags := blockFactory(block)

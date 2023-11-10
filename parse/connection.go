@@ -60,7 +60,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.Connection, hcl.Diagnostics)
 		switch connectionBlock.Type {
 		case "options":
 			// if we already found settings, fail
-			opts, moreDiags := DecodeOptions(connectionBlock, SteampipeOptionsBlockMapping)
+			opts, moreDiags := DecodeOptions(connectionBlock, modconfig.SteampipeOptionsBlockMapping)
 			if moreDiags.HasErrors() {
 				diags = append(diags, moreDiags...)
 				break
