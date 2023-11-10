@@ -95,7 +95,9 @@ func (l *WorkspaceProfileLoader[T]) load() error {
 	}
 
 	// determine the default workspace
-	l.setDefault(localWorkspaces, globalWorkspaces)
+	if err := l.setDefault(localWorkspaces, globalWorkspaces); err != nil {
+		return err
+	}
 
 	l.setWorkspaces(localWorkspaces, globalWorkspaces)
 
