@@ -20,6 +20,13 @@ type ModTreeItemImpl struct {
 	children []ModTreeItem
 }
 
+func NewModTreeItemImpl(block *hcl.Block, mod *Mod, shortName string) ModTreeItemImpl {
+	return ModTreeItemImpl{
+		HclResourceImpl: NewHclResourceImpl(block, mod, shortName),
+		Mod:             mod,
+	}
+}
+
 // AddParent implements ModTreeItem
 func (b *ModTreeItemImpl) AddParent(parent ModTreeItem) error {
 	b.parents = append(b.parents, parent)

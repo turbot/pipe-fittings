@@ -11,7 +11,6 @@ import (
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -29,25 +28,10 @@ type Query struct {
 }
 
 func NewQuery(block *hcl.Block, mod *Mod, shortName string) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
 	// queries cannot be anonymous
-	q := &Query{
-		QueryProviderImpl: QueryProviderImpl{
-			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
-				ModTreeItemImpl: ModTreeItemImpl{
-					HclResourceImpl: HclResourceImpl{
-						ShortName:       shortName,
-						FullName:        fullName,
-						UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
-						DeclRange:       hclhelpers.BlockRange(block),
-						blockType:       block.Type,
-					},
-					Mod: mod,
-				},
-			},
-		},
+	return &Query{
+		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
-	return q
 }
 
 func QueryFromFile(modPath, filePath string, mod *Mod) (MappableResource, []byte, error) {
