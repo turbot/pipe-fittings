@@ -45,6 +45,7 @@ func getGlobalWorkspaceDir() (string, error) {
 	}
 	return filepaths.GlobalWorkspaceProfileDir(installDir)
 }
+
 func getLocalWorkspaceDir() (string, error) {
 	modDir, err := filehelpers.Tildefy(viper.GetString(constants.ArgModLocation))
 	if err != nil {
