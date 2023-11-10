@@ -14,9 +14,9 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	// NOTE: we need to setup some viper defaults to enable workspace profile loading
 	// the rest are set up in BootstrapViper
 
-	// set viper default for workspace profile, using STEAMPIPE_WORKSPACE env var
+	// set viper default for workspace profile, using ArgWorkspaceProfile env var
 	SetDefaultFromEnv(constants.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
-	// set viper default for install dir, using STEAMPIPE_INSTALL_DIR env var
+	// set viper default for install dir, using ArgInstallDir env var
 	SetDefaultFromEnv(constants.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	// resolve the workspace profile dir
