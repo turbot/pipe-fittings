@@ -16,7 +16,6 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/dashboardevents"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/load_mod"
@@ -54,13 +53,13 @@ type Workspace struct {
 
 	fileWatcherErrorHandler func(context.Context, error)
 	watcherError            error
-	// event handlers
-	dashboardEventHandlers []dashboardevents.DashboardEventHandler
 	// callback function called when there is a file watcher event
 	onFileWatcherEventMessages func()
 	loadPseudoResources        bool
-	// channel used to send dashboard events to the handleDashboardEvent goroutine
-	dashboardEventChan chan dashboardevents.DashboardEvent
+
+	// hooks
+	OnFileWatcherError func(context.Context, error)
+	OnFileWatcherEvent func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
 }
 
 // Load creates a Workspace and loads the workspace mod
@@ -198,12 +197,6 @@ func (w *Workspace) SetOnFileWatcherEventMessages(f func()) {
 func (w *Workspace) Close() {
 	if w.watcher != nil {
 		w.watcher.Close()
-	}
-	if ch := w.dashboardEventChan; ch != nil {
-		// NOTE: set nil first
-		w.dashboardEventChan = nil
-		log.Printf("[TRACE] closing dashboardEventChan")
-		close(ch)
 	}
 }
 
