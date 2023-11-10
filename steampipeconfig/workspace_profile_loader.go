@@ -22,33 +22,20 @@ type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
 	ConfiguredProfile          T
 }
 
-func ensureDefaultWorkspaceFile(configFolder string) error {
-	// always write the workspaces.spc.sample file
-	err := os.MkdirAll(configFolder, 0755)
-	if err != nil {
-		return err
-	}
-	defaultWorkspaceSampleFile := filepath.Join(configFolder, defaultWorkspaceSampleFileName)
-	//nolint: gosec // this file is safe to be read by all users
-	err = os.WriteFile(defaultWorkspaceSampleFile, []byte(constants.DefaultWorkspaceContent), 0755)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](globalWorkspaceProfilePath, localWorkspaceProfilePath string) (*WorkspaceProfileLoader[T], error) {
+
+	loader := &WorkspaceProfileLoader[T]{
+		globalWorkspaceProfilePath: globalWorkspaceProfilePath,
+		localWorkspaceProfilePath:  localWorkspaceProfilePath,
+	}
+
 	// write the workspaces.spc.sample file
-	if err := ensureDefaultWorkspaceFile(globalWorkspaceProfilePath); err != nil {
+	if err := loader.ensureDefaultWorkspaceFile(globalWorkspaceProfilePath); err != nil {
 		return nil,
 			sperr.WrapWithMessage(
 				err,
 				"could not create sample workspace",
 			)
-	}
-	loader := &WorkspaceProfileLoader[T]{
-		globalWorkspaceProfilePath: globalWorkspaceProfilePath,
-		localWorkspaceProfilePath:  localWorkspaceProfilePath,
 	}
 
 	// do the load
@@ -58,6 +45,32 @@ func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](globalWorkspaceProf
 	}
 
 	return loader, nil
+}
+
+func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(configFolder string) error {
+	var empty T
+
+	var sampleContent string
+	switch any(empty).(type) {
+	case *modconfig.FlowpipeWorkspaceProfile:
+		sampleContent = constants.DefaultFlowpipeWorkspaceContent
+	case *modconfig.SteampipeWorkspaceProfile:
+		sampleContent = constants.DefaultSteampipeWorkspaceContent
+	case *modconfig.PowerpipeWorkspaceProfile:
+		sampleContent = constants.DefaultPowerpipeWorkspaceContent
+	}
+	// always write the workspaces.spc.sample file
+	err := os.MkdirAll(configFolder, 0755)
+	if err != nil {
+		return err
+	}
+	defaultWorkspaceSampleFile := filepath.Join(configFolder, defaultWorkspaceSampleFileName)
+	//nolint: gosec // this file is safe to be read by all users
+	err = os.WriteFile(defaultWorkspaceSampleFile, []byte(sampleContent), 0755)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (l *WorkspaceProfileLoader[T]) GetActiveWorkspaceProfile() T {
