@@ -21,8 +21,6 @@ type WorkspaceProfile interface {
 
 	GetOptionsForBlock(*hcl.Block) (options.Options, hcl.Diagnostics)
 
-	// TODO do we actually need this in the interface or is it steampipe specific
-	GetModLocation() *string
 	GetInstallDir() *string
 	// TODO slightly hacky way of doing nil checks with generic types
 	IsNil() bool

@@ -14,7 +14,6 @@ import (
 type FlowpipeWorkspaceProfile struct {
 	ProfileName string  `hcl:"name,label" cty:"name"`
 	Output      *string `hcl:"output" cty:"max-output"`
-	ModLocation *string `hcl:"mod_location,optional" cty:"mod_location"`
 
 	// TODO this is in general options
 	MaxParallel *int `hcl:"max_parallel" cty:"max-parallel"`
@@ -85,9 +84,6 @@ func (p *FlowpipeWorkspaceProfile) setBaseProperties() {
 		p.Output = p.Base.Output
 	}
 
-	if p.ModLocation == nil {
-		p.ModLocation = p.Base.ModLocation
-	}
 	if p.Watch == nil {
 		p.Watch = p.Base.Watch
 	}
@@ -107,6 +103,7 @@ func (p *FlowpipeWorkspaceProfile) setBaseProperties() {
 	if p.Host == nil {
 		p.Host = p.Base.Host
 	}
+
 	if p.Insecure == nil {
 		p.Insecure = p.Base.Insecure
 	}
@@ -136,10 +133,8 @@ func (p *FlowpipeWorkspaceProfile) setBaseProperties() {
 func (p *FlowpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
 	res := ConfigMap{}
 	// add non-empty properties to config map
-
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
 	res.SetStringItem(p.Output, constants.ArgOutput)
-	res.SetStringItem(p.ModLocation, constants.ArgModLocation)
 	res.SetBoolItem(p.Watch, constants.ArgWatch)
 	res.SetBoolItem(p.Input, constants.ArgInput)
 	res.SetBoolItem(p.Progress, constants.ArgProgress)
@@ -155,10 +150,6 @@ func (p *FlowpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]inte
 
 func (p *FlowpipeWorkspaceProfile) GetDeclRange() *hcl.Range {
 	return &p.DeclRange
-}
-
-func (p *FlowpipeWorkspaceProfile) GetModLocation() *string {
-	return p.ModLocation
 }
 
 // TODO this is (currently) required by interface

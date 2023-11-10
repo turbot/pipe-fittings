@@ -16,7 +16,6 @@ type PowerpipeWorkspaceProfile struct {
 	CloudHost         *string                    `hcl:"cloud_host,optional" cty:"cloud_host"`
 	CloudToken        *string                    `hcl:"cloud_token,optional" cty:"cloud_token"`
 	InstallDir        *string                    `hcl:"install_dir,optional" cty:"install_dir"`
-	ModLocation       *string                    `hcl:"mod_location,optional" cty:"mod_location"`
 	QueryTimeout      *int                       `hcl:"query_timeout,optional" cty:"query_timeout"`
 	SnapshotLocation  *string                    `hcl:"snapshot_location,optional" cty:"snapshot_location"`
 	WorkspaceDatabase *string                    `hcl:"workspace_database,optional" cty:"workspace_database"`
@@ -99,9 +98,6 @@ func (p *PowerpipeWorkspaceProfile) setBaseProperties() {
 	if p.InstallDir == nil {
 		p.InstallDir = p.Base.InstallDir
 	}
-	if p.ModLocation == nil {
-		p.ModLocation = p.Base.ModLocation
-	}
 	if p.SnapshotLocation == nil {
 		p.SnapshotLocation = p.Base.SnapshotLocation
 	}
@@ -175,7 +171,6 @@ func (p *PowerpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetStringItem(p.CloudHost, constants.ArgCloudHost)
 	res.SetStringItem(p.CloudToken, constants.ArgCloudToken)
 	res.SetStringItem(p.InstallDir, constants.ArgInstallDir)
-	res.SetStringItem(p.ModLocation, constants.ArgModLocation)
 	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)
 	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
 	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
@@ -205,10 +200,6 @@ func (p *PowerpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 
 func (p *PowerpipeWorkspaceProfile) GetDeclRange() *hcl.Range {
 	return &p.DeclRange
-}
-
-func (p *PowerpipeWorkspaceProfile) GetModLocation() *string {
-	return p.ModLocation
 }
 
 func (p *PowerpipeWorkspaceProfile) GetInstallDir() *string {

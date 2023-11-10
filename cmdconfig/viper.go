@@ -42,16 +42,10 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 	// to give them higher precedence, but these must be done now as subsequent operations depend on them
 	// (and they cannot be set from hcl options)
 	if !loader.ConfiguredProfile.IsNil() {
-		// TODO do we catuall need this here or is it steampipe specific??
-		if modLocation := loader.ConfiguredProfile.GetModLocation(); modLocation != nil {
-			log.Printf("[TRACE] setting mod location from configured profile '%s' to '%s'", loader.ConfiguredProfile.Name(), *modLocation)
-			viper.SetDefault(constants.ArgModLocation, *modLocation)
-		}
 		if installDir := loader.ConfiguredProfile.GetInstallDir(); installDir != nil {
 			log.Printf("[TRACE] setting install from configured profile '%s' to '%s'", loader.ConfiguredProfile.Name(), *installDir)
 			viper.SetDefault(constants.ArgInstallDir, *installDir)
 		}
-
 	}
 
 	// tildefy all paths in viper
