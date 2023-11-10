@@ -147,6 +147,16 @@ var tests = []testSetup{
 		file:          "./pipelines/retry_missing_retries.fp",
 		containsError: "The argument \"retries\" is required, but no definition was found",
 	},
+	{
+		title:         "throw - invalid attribute",
+		file:          "./pipelines/throw_invalid_attribute.fp",
+		containsError: "An argument named \"foo\" is not expected here",
+	},
+	{
+		title:         "throw - missing if",
+		file:          "./pipelines/throw_missing_if.fp",
+		containsError: "The argument \"if\" is required, but no definition was found",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

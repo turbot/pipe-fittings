@@ -48,6 +48,7 @@ const (
 	BlockTypeNotify            = "notify"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
+	BlockTypeThrow             = "throw"
 
 	AttributeTypeValue     = "value"
 	AttributeTypeSensitive = "sensitive"
