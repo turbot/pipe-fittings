@@ -76,11 +76,10 @@ const (
 	ArgHeader                  = "header"
 	ArgMultiLine               = "multi-line"
 	ArgAutoComplete            = "auto-complete"
-	// TODO KAI these are used by ServerOptions which are Flowpipe specific
-	// should these be flowpipe specific
-	ArgPort   = "port"
-	ArgListen = "listen"
-	// Flowpipe
+
+	// flowpipe
+	ArgPort     = "port"
+	ArgListen   = "listen"
 	ArgHost     = "host"
 	ArgInsecure = "insecure"
 
