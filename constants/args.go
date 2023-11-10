@@ -76,6 +76,13 @@ const (
 	ArgHeader                  = "header"
 	ArgMultiLine               = "multi-line"
 	ArgAutoComplete            = "auto-complete"
+
+	// flowpipe
+	ArgPort     = "port"
+	ArgListen   = "listen"
+	ArgHost     = "host"
+	ArgInsecure = "insecure"
+
 	// Experimental
 	ArgRetainArtifacts = "retain-artifacts"
 )

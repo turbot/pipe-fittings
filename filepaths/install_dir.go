@@ -75,18 +75,24 @@ func BackupsDir() string {
 	return installSubDir("backups")
 }
 
-// WorkspaceProfileDir returns the path to the workspace profiles directory
+// GlobalWorkspaceProfileDir returns the path to the workspace profiles directory
 // if  STEAMPIPE_WORKSPACE_PROFILES_LOCATION is set use that
 // otherwise look in the config folder
 // NOTE: unlike other path functions this accepts the install-dir as arg
 // this is because of the slightly complex bootstrapping process required because the
 // install-dir may be set in the workspace profile
-func WorkspaceProfileDir(installDir string) (string, error) {
+func GlobalWorkspaceProfileDir(installDir string) (string, error) {
 	if workspaceProfileLocation, ok := os.LookupEnv(constants.EnvWorkspaceProfileLocation); ok {
 		return filehelpers.Tildefy(workspaceProfileLocation)
 	}
 	return filepath.Join(installDir, "config"), nil
 
+}
+
+// LocalWorkspaceProfileDir returns the path to the local workspace profiles directory.
+// i.e. the workspace profiles which may be specified in the mod-location
+func LocalWorkspaceProfileDir(modLocation string) (string, error) {
+	return filepath.Join(modLocation, app_specific.WorkspaceDataDir, "config"), nil
 }
 
 // EnsureDatabaseDir returns the path to the db directory (creates if missing)

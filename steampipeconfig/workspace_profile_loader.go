@@ -1,28 +1,25 @@
 package steampipeconfig
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"os"
-	"path/filepath"
-
+	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"os"
+	"path/filepath"
 )
 
-var GlobalWorkspaceProfile *modconfig.WorkspaceProfile
 var defaultWorkspaceSampleFileName = "workspaces.spc.sample"
 
-type WorkspaceProfileLoader struct {
-	workspaceProfiles    map[string]*modconfig.WorkspaceProfile
-	workspaceProfilePath string
-	DefaultProfile       *modconfig.WorkspaceProfile
-	ConfiguredProfile    *modconfig.WorkspaceProfile
+type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
+	workspaceProfiles          map[string]T
+	globalWorkspaceProfilePath string
+	localWorkspaceProfilePath  string
+	DefaultProfile             T
+	ConfiguredProfile          T
 }
 
 func ensureDefaultWorkspaceFile(configFolder string) error {
@@ -40,64 +37,99 @@ func ensureDefaultWorkspaceFile(configFolder string) error {
 	return nil
 }
 
-func NewWorkspaceProfileLoader(workspaceProfilePath string) (*WorkspaceProfileLoader, error) {
+func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](globalWorkspaceProfilePath, localWorkspaceProfilePath string) (*WorkspaceProfileLoader[T], error) {
 	// write the workspaces.spc.sample file
-	if err := ensureDefaultWorkspaceFile(workspaceProfilePath); err != nil {
+	if err := ensureDefaultWorkspaceFile(globalWorkspaceProfilePath); err != nil {
 		return nil,
 			sperr.WrapWithMessage(
 				err,
 				"could not create sample workspace",
 			)
 	}
-	loader := &WorkspaceProfileLoader{workspaceProfilePath: workspaceProfilePath}
-	workspaceProfiles, err := loader.load()
+	loader := &WorkspaceProfileLoader[T]{
+		globalWorkspaceProfilePath: globalWorkspaceProfilePath,
+		localWorkspaceProfilePath:  localWorkspaceProfilePath,
+	}
+
+	// do the load
+	err := loader.load()
 	if err != nil {
 		return nil, err
-	}
-	loader.workspaceProfiles = workspaceProfiles
-
-	defaultProfile, err := loader.get("default")
-	if err != nil {
-		// there must always be a default - this should have been added by parse.LoadWorkspaceProfiles
-		return nil, err
-	}
-	loader.DefaultProfile = defaultProfile
-
-	if viper.IsSet(constants.ArgWorkspaceProfile) {
-		configuredProfile, err := loader.get(viper.GetString(constants.ArgWorkspaceProfile))
-		if err != nil {
-			// could not find configured profile
-			return nil, err
-		}
-		loader.ConfiguredProfile = configuredProfile
 	}
 
 	return loader, nil
 }
 
-func (l *WorkspaceProfileLoader) GetActiveWorkspaceProfile() *modconfig.WorkspaceProfile {
-	if l.ConfiguredProfile != nil {
+func (l *WorkspaceProfileLoader[T]) GetActiveWorkspaceProfile() T {
+	// TODO KAI nicer way to nil check
+	if !l.ConfiguredProfile.IsNil() {
 		return l.ConfiguredProfile
 	}
 	return l.DefaultProfile
 }
 
-func (l *WorkspaceProfileLoader) get(name string) (*modconfig.WorkspaceProfile, error) {
+func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
+	var emptyProfile T
+
 	if workspaceProfile, ok := l.workspaceProfiles[name]; ok {
-		return workspaceProfile, nil
+		return workspaceProfile, true
 	}
 
-	if implicitWorkspace := l.getImplicitWorkspace(name); implicitWorkspace != nil {
-		return implicitWorkspace, nil
+	if implicitWorkspace := l.getImplicitWorkspace(name); !implicitWorkspace.IsNil() {
+		return implicitWorkspace, true
 	}
 
-	return nil, fmt.Errorf("workspace profile %s does not exist", name)
+	return emptyProfile, false // fmt.Errorf("workspace profile %s does not exist", name)
 }
 
-func (l *WorkspaceProfileLoader) load() (map[string]*modconfig.WorkspaceProfile, error) {
-	// get all the config files in the directory
-	// TODO KAI remove ctx
-	return parse.LoadWorkspaceProfiles(context.Background(), l.workspaceProfilePath)
+func (l *WorkspaceProfileLoader[T]) load() error {
+	// load all workspaces in the global config location
+	globalWorkspaces, err := parse.LoadWorkspaceProfiles[T](l.globalWorkspaceProfilePath)
+	if err != nil {
+		return err
+	}
+	// load all workspaces in the mod location
+	localWorkspaces, err := parse.LoadWorkspaceProfiles[T](l.localWorkspaceProfilePath)
+	if err != nil {
+		return err
+	}
+
+	// determine the default workspace
+	if err := l.setDefault(localWorkspaces, globalWorkspaces); err != nil {
+		return err
+	}
+
+	l.setWorkspaces(localWorkspaces, globalWorkspaces)
+
+	// try to set the configured workspace
+	if viper.IsSet(constants.ArgWorkspaceProfile) {
+		configuredProfile, ok := l.get(viper.GetString(constants.ArgWorkspaceProfile))
+		if !ok {
+			// could not find configured profile
+			return err
+		}
+		l.ConfiguredProfile = configuredProfile
+	}
+
+	return nil
+}
+
+func (l *WorkspaceProfileLoader[T]) setDefault(localWorkspaces map[string]T, globalWorkspaces map[string]T) error {
+	// if there is a 'local' workspace defined in localWorkspaces, use it as the default
+	defaultProfile, ok := localWorkspaces["local"]
+	if !ok {
+		// no local profile - look for a global default
+		defaultProfile, ok = globalWorkspaces["default"]
+		if !ok {
+			var diags hcl.Diagnostics
+			defaultProfile, diags = modconfig.NewDefaultWorkspaceProfile[T]()
+			if diags.HasErrors() {
+				return plugin.DiagsToError("failed to create default workspace", diags)
+			}
+		}
+	}
+	l.DefaultProfile = defaultProfile
+	return nil
 }
 
 /*
@@ -118,13 +150,27 @@ Essentially, --workspace acme/dev is equivalent to:
 	  snapshot_location  = "acme/dev"
 	}
 */
-func (l *WorkspaceProfileLoader) getImplicitWorkspace(name string) *modconfig.WorkspaceProfile {
-	if IsCloudWorkspaceIdentifier(name) {
-		log.Printf("[TRACE] getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
-		return &modconfig.WorkspaceProfile{
-			SnapshotLocation:  utils.ToStringPointer(name),
-			WorkspaceDatabase: utils.ToStringPointer(name),
-		}
+func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
+	// TODO KAI FIX ME <WORKSPACE>
+	//if IsCloudWorkspaceIdentifier(name) {
+	//	log.Printf("[TRACE] getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
+	//	return &modconfig.SteampipeWorkspaceProfile{
+	//		SnapshotLocation:  utils.ToStringPointer(name),
+	//		WorkspaceDatabase: utils.ToStringPointer(name),
+	//	}
+	//}
+	var w T
+	return w
+}
+
+func (l *WorkspaceProfileLoader[T]) setWorkspaces(globalWorkspaces, localWorkspaces map[string]T) {
+	l.workspaceProfiles = make(map[string]T)
+	// assign global workspaces
+	for k, v := range globalWorkspaces {
+		l.workspaceProfiles[k] = v
 	}
-	return nil
+	// assign local workspaces with higher precedence (i.e. these overwrite global workspaces with same name)
+	for k, v := range localWorkspaces {
+		l.workspaceProfiles[k] = v
+	}
 }

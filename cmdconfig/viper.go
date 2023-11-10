@@ -2,6 +2,7 @@ package cmdconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"log"
 	"os"
 
@@ -18,31 +19,12 @@ func Viper() *viper.Viper {
 	return viper.GetViper()
 }
 
-func WithConfigDefaults(configDefaults map[string]any) bootstrapOption {
-	return func(c *bootstrapConfig) {
-		c.configDefaults = configDefaults
-	}
-}
-func WithDirectoryEnvMappings(directoryEnvMappings map[string]EnvMapping) bootstrapOption {
-	return func(c *bootstrapConfig) {
-		c.directoryEnvMappings = directoryEnvMappings
-	}
-}
-func WithWorkspaceProfileLoader(loader *steampipeconfig.WorkspaceProfileLoader) bootstrapOption {
-	return func(c *bootstrapConfig) {
-		c.workspaceProfileLoader = loader
-	}
-}
-
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
-func BootstrapViper(cmd *cobra.Command, opts ...bootstrapOption) error {
-
+func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.WorkspaceProfileLoader[T], cmd *cobra.Command, opts ...bootstrapOption) error {
 	config := newBootstrapConfig()
 	for _, opt := range opts {
 		opt(config)
 	}
-	// retrieve workspace profile loader from config (this may be empty - but not nil)
-	loader := config.workspaceProfileLoader
 
 	// set defaults  for keys which do not have a corresponding command flag
 	setBaseDefaults(config.configDefaults)
@@ -59,14 +41,10 @@ func BootstrapViper(cmd *cobra.Command, opts ...bootstrapOption) error {
 	// All other workspace profile values are defaults _after defaulting to the connection config options
 	// to give them higher precedence, but these must be done now as subsequent operations depend on them
 	// (and they cannot be set from hcl options)
-	if loader.ConfiguredProfile != nil {
-		if loader.ConfiguredProfile.ModLocation != nil {
-			log.Printf("[TRACE] setting mod location from configured profile '%s' to '%s'", loader.ConfiguredProfile.Name(), *loader.ConfiguredProfile.ModLocation)
-			viper.SetDefault(constants.ArgModLocation, *loader.ConfiguredProfile.ModLocation)
-		}
-		if loader.ConfiguredProfile.InstallDir != nil {
-			log.Printf("[TRACE] setting install dir from configured profile '%s' to '%s'", loader.ConfiguredProfile.Name(), *loader.ConfiguredProfile.InstallDir)
-			viper.SetDefault(constants.ArgInstallDir, *loader.ConfiguredProfile.InstallDir)
+	if !loader.ConfiguredProfile.IsNil() {
+		if installDir := loader.ConfiguredProfile.GetInstallDir(); installDir != nil {
+			log.Printf("[TRACE] setting install from configured profile '%s' to '%s'", loader.ConfiguredProfile.Name(), *installDir)
+			viper.SetDefault(constants.ArgInstallDir, *installDir)
 		}
 	}
 

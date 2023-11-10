@@ -2,6 +2,7 @@ package options
 
 // hcl options block types
 const (
+	ServerBlock     = "server"
 	ConnectionBlock = "connection"
 	QueryBlock      = "query"
 	CheckBlock      = "check"
