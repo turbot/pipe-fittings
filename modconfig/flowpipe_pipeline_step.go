@@ -50,6 +50,12 @@ type StepLoop struct {
 	LoopCompleted bool   `json:"loop_completed"`
 }
 
+type StepRetry struct {
+	Index          int    `json:"index" binding:"required"`
+	Input          *Input `json:"input,omitempty"`
+	RetryCompleted bool   `json:"retry_completed"`
+}
+
 // Input to the step or pipeline execution
 type Input map[string]interface{}
 
