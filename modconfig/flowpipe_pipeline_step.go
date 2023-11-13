@@ -201,7 +201,6 @@ const (
 
 type NextStep struct {
 	StepName    string         `json:"step_name"`
-	DelayMs     int            `json:"delay_ms,omitempty"`
 	Action      NextStepAction `json:"action"`
 	StepForEach *StepForEach   `json:"step_for_each,omitempty"`
 	StepLoop    *StepLoop      `json:"step_loop,omitempty"`
