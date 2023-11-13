@@ -20,8 +20,7 @@ func (c *CmdBuilder) AddPersistentStringFlag(name string, defaultValue string, d
 func (c *CmdBuilder) AddPersistentFilepathFlag(name string, defaultValue string, desc string) *CmdBuilder {
 	c.cmd.PersistentFlags().String(name, defaultValue, desc)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
-	return c
-
+	// add the key to the list of keys to tildefy
 	filePathViperKeys = append(filePathViperKeys, name)
 
 	return c
@@ -40,8 +39,6 @@ func (c *CmdBuilder) AddPersistentBoolFlag(name string, defaultValue bool, desc 
 	c.cmd.PersistentFlags().Bool(name, defaultValue, desc)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
 	return c
-
-	return c
 }
 
 // AddPersistentStringSliceFlag is a helper function to add a flag that accepts an array of strings
@@ -49,15 +46,11 @@ func (c *CmdBuilder) AddPersistentStringSliceFlag(name string, defaultValue []st
 	c.cmd.PersistentFlags().StringSlice(name, defaultValue, desc)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
 	return c
-
-	return c
 }
 
 // AddPersistentStringArrayFlag is a helper function to add a flag that accepts an array of strings
 func (c *CmdBuilder) AddPersistentStringArrayFlag(name string, defaultValue []string, desc string) *CmdBuilder {
 	c.cmd.PersistentFlags().StringArray(name, defaultValue, desc)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
-	return c
-
 	return c
 }
