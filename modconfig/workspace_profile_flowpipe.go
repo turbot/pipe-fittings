@@ -144,6 +144,9 @@ func (p *FlowpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]inte
 	if p.ServerOptions != nil {
 		res.PopulateConfigMapForOptions(p.ServerOptions)
 	}
+	if p.GeneralOptions != nil {
+		res.PopulateConfigMapForOptions(p.GeneralOptions)
+	}
 
 	return res
 }
