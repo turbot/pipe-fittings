@@ -1,6 +1,7 @@
 package cmdconfig
 
 import (
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
@@ -51,6 +52,12 @@ func (c *CmdBuilder) AddPersistentStringSliceFlag(name string, defaultValue []st
 // AddPersistentStringArrayFlag is a helper function to add a flag that accepts an array of strings
 func (c *CmdBuilder) AddPersistentStringArrayFlag(name string, defaultValue []string, desc string) *CmdBuilder {
 	c.cmd.PersistentFlags().StringArray(name, defaultValue, desc)
+	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
+	return c
+}
+
+func (c *CmdBuilder) AddPersistentVarFlag(value pflag.Value, name string, usage string) *CmdBuilder {
+	c.cmd.PersistentFlags().Var(value, name, usage)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
 	return c
 }
