@@ -3,6 +3,7 @@ package constants
 // Argument name constants
 const (
 	ArgAll                     = "all"
+	ArgArg                     = "arg"
 	ArgAutoComplete            = "auto-complete"
 	ArgBrowser                 = "browser"
 	ArgCacheMaxTtl             = "cache-max-ttl"
@@ -53,6 +54,7 @@ const (
 	ArgOutputDir               = "output-dir"
 	ArgOutputOnly              = "output-only"
 	ArgPort                    = "port"
+	ArgPortHttps               = "port-https"
 	ArgProgress                = "progress"
 	ArgPrune                   = "prune"
 	ArgRetainArtifacts         = "retain-artifacts"
