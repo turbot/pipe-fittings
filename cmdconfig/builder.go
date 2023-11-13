@@ -2,20 +2,19 @@ package cmdconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
-
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/error_helpers"
+	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
 var CustomPreRunHook func(cmd *cobra.Command, args []string)
 var CustomPostRunHook func(cmd *cobra.Command, args []string)
+
+// global array of config keys which contain filepaths
+// this is populated by AddFilepathFlag and AddPersistentFilepathFlag
+var filePathViperKeys []string
 
 type CmdBuilder struct {
 	cmd      *cobra.Command
@@ -61,12 +60,17 @@ func setPreRunHook(cfg *CmdBuilder) {
 		defer utils.LogTime(fmt.Sprintf("cmd.%s.PreRun end", cmd.CommandPath()))
 		// bind flags
 		for flagName, flag := range cfg.bindings {
-			if flag == nil {
+			if err := viper.GetViper().BindPFlag(flagName, flag); err != nil {
 				// we can panic here since this is bootstrap code and not execution path specific
 				panic(fmt.Sprintf("flag for %s cannot be nil", flagName))
 			}
-			//nolint:golint,errcheck // nil check above
-			viper.GetViper().BindPFlag(flagName, flag)
+		}
+
+		// tildefy all paths in viper
+		// NOTE: this will tildefy any config key which has been added using cmdbuilder.AddFilepathArg
+		if err := tildefyPaths(); err != nil {
+			// we can panic here since this is bootstrap code and not execution path specific
+			panic(fmt.Sprintf("failed to resolve the hgome director for all config values: %s", err.Error()))
 		}
 
 		// now that we have done all the flag bindings, run the custom pre run hook (if set)
@@ -98,84 +102,22 @@ func setPostRunHook(cfg *CmdBuilder) {
 	}
 }
 
-// AddStringFlag is a helper function to add a string flag to a command
-func (c *CmdBuilder) AddStringFlag(name string, defaultValue string, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().String(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
+// tildefyPaths cleans all path config values and replaces '~' with the home directory
+func tildefyPaths() error {
+	var err error
+	for _, argName := range filePathViperKeys {
+		if argVal := viper.GetString(argName); argVal != "" {
+			if argVal, err = filehelpers.Tildefy(argVal); err != nil {
+				return err
+			}
+			if viper.IsSet(argName) {
+				// if the value was already set re-set
+				viper.Set(argName, argVal)
+			} else {
+				// otherwise just update the default
+				viper.SetDefault(argName, argVal)
+			}
+		}
 	}
-
-	return c
-}
-
-// AddIntFlag is a helper function to add an integer flag to a command
-func (c *CmdBuilder) AddIntFlag(name string, defaultValue int, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().Int(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
-	}
-	return c
-}
-
-// AddBoolFlag ia s helper function to add a boolean flag to a command
-func (c *CmdBuilder) AddBoolFlag(name string, defaultValue bool, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().Bool(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
-	}
-	return c
-}
-
-// AddCloudFlags is helper function to add the cloud flags to a command
-func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
-	return c.
-		AddStringFlag(constants.ArgCloudHost, constants.DefaultCloudHost, "Turbot Pipes host").
-		AddStringFlag(constants.ArgCloudToken, "", "Turbot Pipes authentication token")
-}
-
-// AddWorkspaceDatabaseFlag is helper function to add the workspace-databse flag to a command
-func (c *CmdBuilder) AddWorkspaceDatabaseFlag() *CmdBuilder {
-	return c.
-		AddStringFlag(constants.ArgWorkspaceDatabase, app_specific.DefaultWorkspaceDatabase, "Turbot Pipes workspace database")
-}
-
-// AddModLocationFlag is helper function to add the mod-location flag to a command
-func (c *CmdBuilder) AddModLocationFlag() *CmdBuilder {
-	cwd, err := os.Getwd()
-	error_helpers.FailOnError(err)
-	return c.
-		AddStringFlag(constants.ArgModLocation, cwd, "Path to the workspace working directory")
-}
-
-// AddStringSliceFlag is a helper function to add a flag that accepts an array of strings
-func (c *CmdBuilder) AddStringSliceFlag(name string, defaultValue []string, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().StringSlice(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
-	}
-	return c
-}
-
-// AddStringArrayFlag is a helper function to add a flag that accepts an array of strings
-func (c *CmdBuilder) AddStringArrayFlag(name string, defaultValue []string, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().StringArray(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
-	}
-	return c
-}
-
-// AddStringMapStringFlag is a helper function to add a flag that accepts a map of strings
-func (c *CmdBuilder) AddStringMapStringFlag(name string, defaultValue map[string]string, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().StringToString(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
-	}
-	return c
+	return nil
 }

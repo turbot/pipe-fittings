@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
@@ -20,7 +19,7 @@ func Viper() *viper.Viper {
 }
 
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
-func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.WorkspaceProfileLoader[T], cmd *cobra.Command, opts ...bootstrapOption) error {
+func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.WorkspaceProfileLoader[T], cmd *cobra.Command, opts ...bootstrapOption) {
 	config := newBootstrapConfig()
 	for _, opt := range opts {
 		opt(config)
@@ -37,7 +36,7 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 	// default install dir
 	SetDefaultsFromEnv(config.directoryEnvMappings)
 
-	// NOTE: if an explicit workspace profile was set, default the mod location and install dir _now_
+	// NOTE: if an explicit workspace profile was set, default the install dir _now_
 	// All other workspace profile values are defaults _after defaulting to the connection config options
 	// to give them higher precedence, but these must be done now as subsequent operations depend on them
 	// (and they cannot be set from hcl options)
@@ -48,35 +47,6 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 		}
 	}
 
-	// tildefy all paths in viper
-	return TildefyPaths()
-}
-
-// TildefyPaths cleans all path config values and replaces '~' with the home directory
-func TildefyPaths() error {
-	pathArgs := []string{
-		constants.ArgSnapshotLocation,
-		constants.ArgModLocation,
-		constants.ArgInstallDir,
-		constants.ArgOutputDir,
-		constants.ArgLogDir,
-	}
-	var err error
-	for _, argName := range pathArgs {
-		if argVal := viper.GetString(argName); argVal != "" {
-			if argVal, err = filehelpers.Tildefy(argVal); err != nil {
-				return err
-			}
-			if viper.IsSet(argName) {
-				// if the value was already set re-set
-				viper.Set(argName, argVal)
-			} else {
-				// otherwise just update the default
-				viper.SetDefault(argName, argVal)
-			}
-		}
-	}
-	return nil
 }
 
 // for keys which do not have a corresponding command flag, we need a separate defaulting mechanism

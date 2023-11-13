@@ -39,6 +39,7 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 }
 
 func getGlobalWorkspaceDir() (string, error) {
+	// TODO kai shouldn't need as everything in viper is tildefied
 	installDir, err := filehelpers.Tildefy(viper.GetString(constants.ArgInstallDir))
 	if err != nil {
 		return "", err
