@@ -18,6 +18,8 @@ func GetLoopDefn(stepType string) LoopDefn {
 		return &LoopSleepStep{}
 	case schema.BlockTypePipelineStepQuery:
 		return &LoopQueryStep{}
+	case schema.BlockTypePipelineStepPipeline:
+		return &LoopPipelineStep{}
 	}
 
 	return nil
@@ -198,4 +200,20 @@ func (l *LoopSleepStep) UpdateInput(input Input) (Input, error) {
 
 func (*LoopSleepStep) GetType() string {
 	return schema.BlockTypePipelineStepSleep
+}
+
+type LoopPipelineStep struct {
+	Until bool `json:"until" hcl:"until" cty:"until"`
+}
+
+func (l *LoopPipelineStep) ShouldRun() bool {
+	return l.Until
+}
+
+func (l *LoopPipelineStep) UpdateInput(input Input) (Input, error) {
+	return input, nil
+}
+
+func (*LoopPipelineStep) GetType() string {
+	return schema.BlockTypePipelineStepPipeline
 }
