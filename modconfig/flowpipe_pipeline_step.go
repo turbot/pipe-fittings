@@ -41,7 +41,7 @@ type StepForEach struct {
 	Key         string               `json:"key"  binding:"required"`
 	Output      *Output              `json:"output,omitempty"`
 	TotalCount  int                  `json:"total_count" binding:"required"`
-	Each        json.SimpleJSONValue `json:"each" swaggertype:"string"`
+	Each        json.SimpleJSONValue `json:"each" swaggerignore:"true"`
 }
 
 type StepLoop struct {
