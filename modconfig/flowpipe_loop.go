@@ -1,11 +1,19 @@
 package modconfig
 
-import "github.com/turbot/pipe-fittings/schema"
+import (
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
+	"github.com/zclconf/go-cty/cty"
+)
 
 type LoopDefn interface {
 	ShouldRun() bool
 	GetType() string
-	UpdateInput(input Input) (Input, error)
+	UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error)
 }
 
 func GetLoopDefn(stepType string) LoopDefn {
@@ -20,6 +28,8 @@ func GetLoopDefn(stepType string) LoopDefn {
 		return &LoopQueryStep{}
 	case schema.BlockTypePipelineStepPipeline:
 		return &LoopPipelineStep{}
+	case schema.BlockTypePipelineStepTransform:
+		return &LoopTransformStep{}
 	}
 
 	return nil
@@ -44,7 +54,7 @@ func (l *LoopEmailStep) ShouldRun() bool {
 	return l.Until
 }
 
-func (l *LoopEmailStep) UpdateInput(input Input) (Input, error) {
+func (l *LoopEmailStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.To != nil {
 		input["to"] = *l.To
 	}
@@ -96,7 +106,7 @@ func (l *LoopQueryStep) ShouldRun() bool {
 	return l.Until
 }
 
-func (l *LoopQueryStep) UpdateInput(input Input) (Input, error) {
+func (l *LoopQueryStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.ConnnectionString != nil {
 		input["connection_string"] = *l.ConnnectionString
 	}
@@ -119,7 +129,7 @@ type LoopEchoStep struct {
 	Text    *string `json:"text,omitempty" hcl:"text,optional" cty:"text"`
 }
 
-func (l *LoopEchoStep) UpdateInput(input Input) (Input, error) {
+func (l *LoopEchoStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.Numeric != nil {
 		input["numeric"] = *l.Numeric
 	}
@@ -152,7 +162,7 @@ func (l *LoopHttpStep) ShouldRun() bool {
 	return l.Until
 }
 
-func (l *LoopHttpStep) UpdateInput(input Input) (Input, error) {
+func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.URL != nil {
 		input["url"] = *l.URL
 	}
@@ -191,7 +201,7 @@ func (l *LoopSleepStep) ShouldRun() bool {
 	return l.Until
 }
 
-func (l *LoopSleepStep) UpdateInput(input Input) (Input, error) {
+func (l *LoopSleepStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.Duration != nil {
 		input["duration"] = *l.Duration
 	}
@@ -210,10 +220,44 @@ func (l *LoopPipelineStep) ShouldRun() bool {
 	return l.Until
 }
 
-func (l *LoopPipelineStep) UpdateInput(input Input) (Input, error) {
+func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	return input, nil
 }
 
 func (*LoopPipelineStep) GetType() string {
 	return schema.BlockTypePipelineStepPipeline
+}
+
+type LoopTransformStep struct {
+	Until bool        `json:"until" hcl:"until" cty:"until"`
+	Value interface{} `json:"value,omitempty" hcl:"value,optional" cty:"value"`
+}
+
+func (l *LoopTransformStep) ShouldRun() bool {
+	return l.Until
+}
+
+func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+	if !helpers.IsNil(l.Value) {
+		hclAttrib, ok := l.Value.(*hcl.Attribute)
+		if !ok {
+			input["value"] = l.Value
+		} else {
+			var ctyValue cty.Value
+			diags := gohcl.DecodeExpression(hclAttrib.Expr, evalContext, &ctyValue)
+			if len(diags) > 0 {
+				return nil, error_helpers.HclDiagsToError("transform loop", diags)
+			}
+			goVal, err := hclhelpers.CtyToGo(ctyValue)
+			if err != nil {
+				return nil, err
+			}
+			input["value"] = goVal
+		}
+	}
+	return input, nil
+}
+
+func (*LoopTransformStep) GetType() string {
+	return schema.BlockTypePipelineStepTransform
 }
