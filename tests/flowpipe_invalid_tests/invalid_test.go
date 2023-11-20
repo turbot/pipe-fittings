@@ -148,6 +148,11 @@ var tests = []testSetup{
 		containsError: "Unsuitable value: a number is required",
 	},
 	{
+		title:         "retry - invalid attribute value for strategy",
+		file:          "./pipelines/retry_invalid_value_for_strategy.fp",
+		containsError: "Invalid retry strategy: Valid values are constant, exponential or linear",
+	},
+	{
 		title:         "throw - invalid attribute",
 		file:          "./pipelines/throw_invalid_attribute.fp",
 		containsError: "An argument named \"foo\" is not expected here",

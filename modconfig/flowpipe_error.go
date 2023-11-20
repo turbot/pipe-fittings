@@ -17,7 +17,7 @@ func NewRetryConfig() *RetryConfig {
 		MaxAttempts: 3, // TODO: should we have max attempts?
 		Strategy:    "constant",
 		MinInterval: 1000,
-		MaxInterval: 1000,
+		MaxInterval: 10000,
 	}
 }
 

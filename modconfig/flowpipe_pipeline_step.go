@@ -264,7 +264,7 @@ type PipelineStep interface {
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	SetErrorConfig(*ErrorConfig)
 	GetErrorConfig() *ErrorConfig
-	GetRetryConfig() *RetryConfig
+	GetRetryConfig(*hcl.EvalContext) (*RetryConfig, hcl.Diagnostics)
 	GetThrowConfig() []ThrowConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
