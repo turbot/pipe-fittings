@@ -2926,9 +2926,12 @@ type PipelineStepContainer struct {
 	PipelineStepBase
 
 	Image      string            `json:"image"`
+	Source     string            `json:"source"`
 	Cmd        []string          `json:"cmd"`
 	Env        map[string]string `json:"env"`
 	EntryPoint []string          `json:"entrypoint"`
+	Timeout    int64             `json:"timeout"`
+	Memory     int64             `json:"memory"`
 }
 
 func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
@@ -2951,6 +2954,16 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		image = p.Image
 	} else {
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeImage], evalContext, &image)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var source string
+	if p.UnresolvedAttributes[schema.AttributeTypeSource] == nil {
+		source = p.Source
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSource], evalContext, &source)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
@@ -3007,12 +3020,35 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
+	var timeout int64
+	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil {
+		timeout = p.Timeout
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &timeout)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var memory int64
+	if p.UnresolvedAttributes[schema.AttributeTypeMemory] == nil {
+		memory = p.Memory
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemory], evalContext, &memory)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
 	return map[string]interface{}{
 		schema.LabelName:               p.Name,
 		schema.AttributeTypeImage:      image,
+		schema.AttributeTypeSource:     source,
 		schema.AttributeTypeCmd:        cmd,
 		schema.AttributeTypeEnv:        env,
 		schema.AttributeTypeEntryPoint: entryPoint,
+		schema.AttributeTypeTimeout:    timeout,
+		schema.AttributeTypeMemory:     memory,
 	}, nil
 }
 
@@ -3030,6 +3066,16 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 
 			if val != cty.NilVal {
 				p.Image = val.AsString()
+			}
+		case schema.AttributeTypeSource:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				p.Source = val.AsString()
 			}
 		case schema.AttributeTypeCmd:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3088,6 +3134,44 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				}
 				p.Cmd = ep
 			}
+		case schema.AttributeTypeTimeout:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				timeout, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to convert timeout into integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Timeout = *timeout
+			}
+		case schema.AttributeTypeMemory:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				memory, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to convert memory into integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Memory = *memory
+			}
 		default:
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
@@ -3097,6 +3181,32 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				})
 			}
 		}
+	}
+
+	return diags
+}
+
+func (p *PipelineStepContainer) Validate() hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	// The source indicates the path to a folder that contains the dockerfile or containerfile to build the container
+	// Currently the step does not support the source attribute.
+	// So, if passed in the step, return an error
+	// TODO: Remove once it is supported
+	if p.Source != "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Source is not yet implemented: " + p.GetFullyQualifiedName(),
+		})
+	}
+
+	// Either source or image must be specified, but not both
+	if p.Image != "" && p.Source != "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Image and Source attributes are mutually exclusive: " + p.GetFullyQualifiedName(),
+		})
 	}
 
 	return diags

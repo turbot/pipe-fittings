@@ -758,8 +758,12 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeIf,
 		},
 		{
-			Name:     schema.AttributeTypeImage,
-			Required: true,
+			Name: schema.AttributeTypeImage,
+			// Required: true,
+		},
+		{
+			Name: schema.AttributeTypeSource,
+			// Required: true,
 		},
 		{
 			Name: schema.AttributeTypeCmd,
@@ -769,6 +773,12 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeEntryPoint,
+		},
+		{
+			Name: schema.AttributeTypeTimeout,
+		},
+		{
+			Name: schema.AttributeTypeMemory,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{

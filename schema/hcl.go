@@ -172,8 +172,11 @@ const (
 	AttributeTypeEvent    = "event"
 
 	AttributeTypeImage      = "image"
+	AttributeTypeSource     = "source"
 	AttributeTypeCmd        = "cmd"
 	AttributeTypeEntryPoint = "entrypoint"
+	AttributeTypeTimeout    = "timeout"
+	AttributeTypeMemory     = "memory"
 
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
