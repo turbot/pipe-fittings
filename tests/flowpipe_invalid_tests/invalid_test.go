@@ -143,9 +143,9 @@ var tests = []testSetup{
 		containsError: "An argument named \"except\" is not expected here",
 	},
 	{
-		title:         "retry - missing retries",
-		file:          "./pipelines/retry_missing_retries.fp",
-		containsError: "The argument \"retries\" is required, but no definition was found",
+		title:         "retry - invalid attribute value",
+		file:          "./pipelines/retry_invalid_attribute_value.fp",
+		containsError: "Unsuitable value: a number is required",
 	},
 	{
 		title:         "throw - invalid attribute",

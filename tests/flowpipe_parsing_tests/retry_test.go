@@ -14,8 +14,6 @@ func TestRetry(t *testing.T) {
 	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/retry.fp")
 	assert.Nil(err, "error found")
 
-	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
-
 	pipeline := pipelines["local.pipeline.retry_simple"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
@@ -24,7 +22,8 @@ func TestRetry(t *testing.T) {
 
 	assert.NotNil(pipeline.Steps, "steps not found")
 	assert.NotNil(pipeline.Steps[0].GetRetryConfig())
-	assert.Equal(3, pipeline.Steps[0].GetRetryConfig().Retries)
+	assert.Equal(2, pipeline.Steps[0].GetRetryConfig().MaxAttempts)
+	assert.Equal("exponential", pipeline.Steps[0].GetRetryConfig().Strategy)
 
 	pipeline = pipelines["local.pipeline.retry_with_if"]
 	if pipeline == nil {
@@ -35,4 +34,18 @@ func TestRetry(t *testing.T) {
 	assert.NotNil(pipeline.Steps, "steps not found")
 	assert.Nil(pipeline.Steps[0].GetRetryConfig())
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["retry"])
+
+	pipeline = pipelines["local.pipeline.retry_default"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	assert.NotNil(pipeline.Steps, "steps not found")
+	assert.NotNil(pipeline.Steps[0].GetRetryConfig())
+	assert.Equal(3, pipeline.Steps[0].GetRetryConfig().MaxAttempts)
+	assert.Equal(1000, pipeline.Steps[0].GetRetryConfig().MinInterval)
+	assert.Equal(1000, pipeline.Steps[0].GetRetryConfig().MaxInterval)
+	assert.Equal("constant", pipeline.Steps[0].GetRetryConfig().Strategy)
+
 }

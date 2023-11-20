@@ -1,10 +1,22 @@
+pipeline "retry_default" {
+
+    step "transform" "one" {
+        value = "foo"
+
+        retry { 
+
+        }
+    }
+}
+
 pipeline "retry_simple" {
 
     step "transform" "one" {
         value = "foo"
 
         retry {
-            retries = 3
+            max_attempts = 2
+            strategy = "exponential"
         }
     }
 }
@@ -16,7 +28,7 @@ pipeline "retry_with_if" {
 
         retry {
             if = result.value == "foo"
-            retries = 5
+            max_attempts = 5
         }
     }
 }

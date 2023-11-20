@@ -22,7 +22,7 @@ pipeline "bad_http_retries" {
 
         error {
           ignore = true
-          retries = 2
+          max_attempts = 2
         }
     }
 
