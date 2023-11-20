@@ -41,6 +41,7 @@ func (m *Mod) containsResource(childName string) bool {
 		// continue walking
 		return true, nil
 	}
-	m.ResourceMaps.WalkResources(resourceFunc) //nolint:errcheck // TODO: fix this error check
+	// resource func will not return an error
+	_ = m.ResourceMaps.WalkResources(resourceFunc)
 	return res
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-var CustomPreRunHook func(cmd *cobra.Command, args []string)
-var CustomPostRunHook func(cmd *cobra.Command, args []string)
+var CustomPreRunHook func(cmd *cobra.Command, args []string) error
+var CustomPostRunHook func(cmd *cobra.Command, args []string) error
 
 // global array of config keys which contain filepaths
 // this is populated by AddFilepathFlag and AddPersistentFilepathFlag
@@ -54,8 +54,16 @@ func setPreRunHook(cfg *CmdBuilder) {
 	*/
 
 	// we will wrap over these two function - need references to call them
-	originalPreRun := cfg.cmd.PreRun
-	cfg.cmd.PreRun = func(cmd *cobra.Command, args []string) {
+
+	// override PreRunE no PreRun as this has precedence
+	originalPreRun := cfg.cmd.PreRunE
+	if originalPreRun == nil && cfg.cmd.PreRun != nil {
+		originalPreRun = func(cmd *cobra.Command, args []string) error {
+			cfg.cmd.PreRun(cmd, args)
+			return nil
+		}
+	}
+	cfg.cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		utils.LogTime(fmt.Sprintf("cmd.%s.PreRun start", cmd.CommandPath()))
 		defer utils.LogTime(fmt.Sprintf("cmd.%s.PreRun end", cmd.CommandPath()))
 		// bind flags
@@ -75,30 +83,46 @@ func setPreRunHook(cfg *CmdBuilder) {
 
 		// now that we have done all the flag bindings, run the custom pre run hook (if set)
 		if CustomPreRunHook != nil {
-			CustomPreRunHook(cmd, args)
+			if err := CustomPreRunHook(cmd, args); err != nil {
+				return err
+			}
 		}
 
 		// run the original PreRun
 		if originalPreRun != nil {
-			originalPreRun(cmd, args)
+			return originalPreRun(cmd, args)
 		}
+
+		return nil
 	}
 }
 
 func setPostRunHook(cfg *CmdBuilder) {
-	originalPostRun := cfg.cmd.PostRun
-	cfg.cmd.PostRun = func(cmd *cobra.Command, args []string) {
+	// override PostRunE not PostRun as this has precedence
+	originalPostRun := cfg.cmd.PostRunE
+
+	if originalPostRun == nil && cfg.cmd.PostRun != nil {
+		originalPostRun = func(cmd *cobra.Command, args []string) error {
+			cfg.cmd.PostRun(cmd, args)
+			return nil
+		}
+	}
+
+	cfg.cmd.PostRunE = func(cmd *cobra.Command, args []string) error {
 		utils.LogTime(fmt.Sprintf("cmd.%s.PostRun start", cmd.CommandPath()))
 		defer utils.LogTime(fmt.Sprintf("cmd.%s.PostRun end", cmd.CommandPath()))
 		// run the original PostRun
 		if originalPostRun != nil {
-			originalPostRun(cmd, args)
+			if err := originalPostRun(cmd, args); err != nil {
+				return err
+			}
 		}
 
 		// run the custom post run hook (if there is one)
 		if CustomPostRunHook != nil {
-			CustomPostRunHook(cmd, args)
+			return CustomPostRunHook(cmd, args)
 		}
+		return nil
 	}
 }
 
