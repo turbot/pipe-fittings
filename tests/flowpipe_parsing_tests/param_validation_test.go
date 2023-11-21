@@ -532,3 +532,88 @@ func TestParamCoerce(t *testing.T) {
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: expected number type, but got string", errs[0].Error())
 }
+
+func TestParamCoerceWithAnyType(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/param_validation.fp")
+	assert.Nil(err, "error found")
+
+	validateMyParam := pipelines["local.pipeline.validate_my_param"]
+	if validateMyParam == nil {
+		assert.Fail("validate_my_param pipeline not found")
+		return
+	}
+
+	stringParam := map[string]string{
+		"param_any": "abc",
+	}
+	res, errs := validateMyParam.CoercePipelineParams(stringParam)
+	if len(errs) > 0 {
+		assert.Fail("error found")
+		return
+	}
+
+	assert.NotNil(res)
+	assert.Equal("abc", res["param_any"])
+
+	intParam := map[string]string{
+		"param_any": "23",
+	}
+
+	res, errs = validateMyParam.CoercePipelineParams(intParam)
+	if len(errs) > 0 {
+		assert.Fail("error found")
+		return
+	}
+
+	assert.NotNil(res)
+	assert.Equal(23, res["param_any"])
+
+	complexParam := map[string]string{
+		"param_any": `["foo", "bar", "baz"]`,
+	}
+
+	res, errs = validateMyParam.CoercePipelineParams(complexParam)
+	if len(errs) > 0 {
+		assert.Fail("error found")
+		return
+	}
+
+	assert.NotNil(res)
+	assert.Equal(3, len(res["param_any"].([]interface{})))
+	assert.Equal("foo", res["param_any"].([]interface{})[0])
+	assert.Equal("bar", res["param_any"].([]interface{})[1])
+	assert.Equal("baz", res["param_any"].([]interface{})[2])
+
+	complexParam = map[string]string{
+		"param_any": `["foo", 42, "baz"]`,
+	}
+
+	res, errs = validateMyParam.CoercePipelineParams(complexParam)
+	if len(errs) > 0 {
+		assert.Fail("error found")
+		return
+	}
+
+	assert.NotNil(res)
+	assert.Equal(3, len(res["param_any"].([]interface{})))
+	assert.Equal("foo", res["param_any"].([]interface{})[0])
+	assert.Equal(42, res["param_any"].([]interface{})[1])
+	assert.Equal("baz", res["param_any"].([]interface{})[2])
+
+	complexParam = map[string]string{
+		"param_any": `[{"foo": "bar"}, {"baz": "qux"}]`,
+	}
+
+	res, errs = validateMyParam.CoercePipelineParams(complexParam)
+	if len(errs) > 0 {
+		assert.Fail("error found")
+		return
+	}
+
+	assert.NotNil(res)
+	assert.Equal(2, len(res["param_any"].([]interface{})))
+	assert.Equal("bar", res["param_any"].([]interface{})[0].(map[string]interface{})["foo"])
+	assert.Equal("qux", res["param_any"].([]interface{})[1].(map[string]interface{})["baz"])
+}

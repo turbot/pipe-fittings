@@ -228,78 +228,104 @@ func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, er
 		return boolValue, nil
 	}
 
-	fakeFilename := fmt.Sprintf("<value for var.%s>", input)
-	expr, diags := hclsyntax.ParseExpression([]byte(input), fakeFilename, hcl.Pos{Line: 1, Column: 1})
-	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("flowpipe", diags)
-	}
+	if typ.HasDynamicTypes() {
+		fakeFilename := fmt.Sprintf("<value for var.%s>", input)
+		expr, diags := hclsyntax.ParseExpression([]byte(input), fakeFilename, hcl.Pos{Line: 1, Column: 1})
+		if diags.HasErrors() {
+			// not an hcl expression, it's a dynamic type .. return as is
+			return input, nil
+		} else {
 
-	val, valDiags := expr.Value(nil)
-	diags = append(diags, valDiags...)
+			val, valDiags := expr.Value(nil)
+			if len(valDiags) > 0 {
+				// not an hcl expression, it's a dynamic type .. return as is
+				return input, nil
+			}
 
-	if typ.IsListType() || typ.IsTupleType() || typ.IsSetType() {
+			res, err := CtyToGo(val)
+			if err != nil {
+				return nil, err
+			}
+			return res, nil
+		}
+	} else {
 
-		if typ == cty.List(cty.String) || typ == cty.Set(cty.String) {
-			res, err := CtyToGoStringSlice(val, typ)
+		fakeFilename := fmt.Sprintf("<value for var.%s>", input)
+		expr, diags := hclsyntax.ParseExpression([]byte(input), fakeFilename, hcl.Pos{Line: 1, Column: 1})
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError("flowpipe", diags)
+		}
+
+		val, valDiags := expr.Value(nil)
+		diags = append(diags, valDiags...)
+		if len(valDiags) > 0 {
+			return nil, perr.BadRequestWithMessage("unable to parse value has HCL expression: " + input)
+		}
+
+		if typ.IsListType() || typ.IsTupleType() || typ.IsSetType() {
+
+			if typ == cty.List(cty.String) || typ == cty.Set(cty.String) {
+				res, err := CtyToGoStringSlice(val, typ)
+				if err != nil {
+					return nil, err
+				}
+				return res, error_helpers.HclDiagsToError("flowpipe", diags)
+			}
+
+			if typ == cty.List(cty.Number) || typ == cty.Set(cty.Number) {
+				res, err := CtyToGoNumericSlice(val, typ)
+				if err != nil {
+					return nil, err
+				}
+				return res, error_helpers.HclDiagsToError("flowpipe", diags)
+			}
+
+			if typ == cty.List(cty.Bool) || typ == cty.Set(cty.Bool) {
+				res, err := CtyToGoBoolSlice(val, typ)
+				if err != nil {
+					return nil, err
+				}
+				return res, error_helpers.HclDiagsToError("flowpipe", diags)
+			}
+
+			res, err := CtyToGoInterfaceSlice(val)
 			if err != nil {
 				return nil, err
 			}
 			return res, error_helpers.HclDiagsToError("flowpipe", diags)
 		}
 
-		if typ == cty.List(cty.Number) || typ == cty.Set(cty.Number) {
-			res, err := CtyToGoNumericSlice(val, typ)
+		if typ.IsMapType() || typ.IsObjectType() {
+			if typ == cty.Map(cty.String) {
+				res, err := CtyToGoMapString(val)
+				if err != nil {
+					return nil, err
+				}
+				return res, error_helpers.HclDiagsToError("flowpipe", diags)
+			}
+
+			if typ == cty.Map(cty.Number) {
+				res, err := CtyToGoMapNumeric(val)
+				if err != nil {
+					return nil, err
+				}
+				return res, error_helpers.HclDiagsToError("flowpipe", diags)
+			}
+
+			if typ == cty.Map(cty.Bool) {
+				res, err := CtyToGoMapBool(val)
+				if err != nil {
+					return nil, err
+				}
+				return res, error_helpers.HclDiagsToError("flowpipe", diags)
+			}
+
+			res, err := CtyToGoMapInterface(val)
 			if err != nil {
 				return nil, err
 			}
 			return res, error_helpers.HclDiagsToError("flowpipe", diags)
 		}
-
-		if typ == cty.List(cty.Bool) || typ == cty.Set(cty.Bool) {
-			res, err := CtyToGoBoolSlice(val, typ)
-			if err != nil {
-				return nil, err
-			}
-			return res, error_helpers.HclDiagsToError("flowpipe", diags)
-		}
-
-		res, err := CtyToGoInterfaceSlice(val)
-		if err != nil {
-			return nil, err
-		}
-		return res, error_helpers.HclDiagsToError("flowpipe", diags)
-	}
-
-	if typ.IsMapType() || typ.IsObjectType() {
-		if typ == cty.Map(cty.String) {
-			res, err := CtyToGoMapString(val)
-			if err != nil {
-				return nil, err
-			}
-			return res, error_helpers.HclDiagsToError("flowpipe", diags)
-		}
-
-		if typ == cty.Map(cty.Number) {
-			res, err := CtyToGoMapNumeric(val)
-			if err != nil {
-				return nil, err
-			}
-			return res, error_helpers.HclDiagsToError("flowpipe", diags)
-		}
-
-		if typ == cty.Map(cty.Bool) {
-			res, err := CtyToGoMapBool(val)
-			if err != nil {
-				return nil, err
-			}
-			return res, error_helpers.HclDiagsToError("flowpipe", diags)
-		}
-
-		res, err := CtyToGoMapInterface(val)
-		if err != nil {
-			return nil, err
-		}
-		return res, error_helpers.HclDiagsToError("flowpipe", diags)
 	}
 
 	return nil, perr.BadRequestWithMessage(fmt.Sprintf("unsupported type %s", typ.FriendlyName()))

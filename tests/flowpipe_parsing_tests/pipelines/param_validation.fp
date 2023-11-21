@@ -136,6 +136,11 @@ pipeline "validate_my_param" {
         }
     }
 
+    param "param_any" {
+        type = any
+        default = "anything goes"
+    }
+
     step "echo" "echo" {
         text = param.my_token
     }
