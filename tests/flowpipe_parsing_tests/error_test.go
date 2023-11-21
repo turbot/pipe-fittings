@@ -44,10 +44,8 @@ func TestStepErrorConfigRetries(t *testing.T) {
 	}
 
 	errorConfig := step.GetErrorConfig()
-	if step == nil {
+	if errorConfig == nil {
 		assert.Fail("error config not found")
 		return
 	}
-
-	assert.Equal(2, errorConfig.Retries)
 }

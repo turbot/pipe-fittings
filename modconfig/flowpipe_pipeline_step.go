@@ -264,7 +264,7 @@ type PipelineStep interface {
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	SetErrorConfig(*ErrorConfig)
 	GetErrorConfig() *ErrorConfig
-	GetRetryConfig() *RetryConfig
+	GetRetryConfig(*hcl.EvalContext) (*RetryConfig, hcl.Diagnostics)
 	GetThrowConfig() []ThrowConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
@@ -456,8 +456,24 @@ func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedBodies = make(map[string]hcl.Body)
 }
 
-func (p *PipelineStepBase) GetRetryConfig() *RetryConfig {
-	return p.RetryConfig
+func (p *PipelineStepBase) GetRetryConfig(*hcl.EvalContext) (*RetryConfig, hcl.Diagnostics) {
+
+	if p.UnresolvedBodies[schema.BlockTypeRetry] != nil {
+		retryConfig := NewRetryConfig()
+		diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeRetry], nil, retryConfig)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		diags = append(diags, retryConfig.Validate()...)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		return retryConfig, hcl.Diagnostics{}
+	}
+
+	return p.RetryConfig, hcl.Diagnostics{}
 }
 
 func (p *PipelineStepBase) GetThrowConfig() []ThrowConfig {
@@ -519,9 +535,10 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 	if len(retryBlocks) == 1 {
 		retryBlock := retryBlocks[0]
-		retryConfig := RetryConfig{}
+		retryConfig := NewRetryConfig()
+
 		// Decode the loop block
-		moreDiags := gohcl.DecodeBody(retryBlock.Body, evalContext, &retryConfig)
+		moreDiags := gohcl.DecodeBody(retryBlock.Body, evalContext, retryConfig)
 
 		if len(moreDiags) > 0 {
 			moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeRetry, retryBlock.Body)
@@ -530,7 +547,12 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 			}
 		} else {
 			// fully resolved retry block
-			p.RetryConfig = &retryConfig
+			p.RetryConfig = retryConfig
+
+			moreDiags := p.RetryConfig.Validate()
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+			}
 		}
 	}
 

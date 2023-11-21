@@ -4,11 +4,7 @@ pipeline "retry_multiple_retry_blocks" {
         value = "foo"
 
         retry {
-            max_attempts = 3
+            max_attempts = "foo"
         }
-
-        retry {
-            max_attempts = 4
-        }        
     }
 }

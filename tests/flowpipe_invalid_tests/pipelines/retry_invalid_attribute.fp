@@ -4,7 +4,7 @@ pipeline "retry_invalid_attribute" {
         value = "foo"
 
         retry {
-            retries = 3
+            max_attempts = 3
             except = "foo"
         }
     }
