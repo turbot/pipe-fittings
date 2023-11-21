@@ -162,6 +162,11 @@ var tests = []testSetup{
 		file:          "./pipelines/throw_missing_if.fp",
 		containsError: "The argument \"if\" is required, but no definition was found",
 	},
+	{
+		title:         "invalid container step attribute - source",
+		file:          "./pipelines/container_step_invalid_attribute.fp",
+		containsError: "Source is not yet implemented",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

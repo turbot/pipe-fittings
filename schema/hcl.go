@@ -171,9 +171,18 @@ const (
 	AttributeTypeFunction = "function"
 	AttributeTypeEvent    = "event"
 
-	AttributeTypeImage      = "image"
-	AttributeTypeCmd        = "cmd"
-	AttributeTypeEntryPoint = "entrypoint"
+	AttributeTypeImage             = "image"
+	AttributeTypeSource            = "source"
+	AttributeTypeUser              = "user"
+	AttributeTypeWorkdir           = "workdir"
+	AttributeTypeCmd               = "cmd"
+	AttributeTypeEntryPoint        = "entrypoint"
+	AttributeTypeTimeout           = "timeout"
+	AttributeTypeMemory            = "memory"
+	AttributeTypeMemoryReservation = "memory_reservation"
+	AttributeTypeMemorySwap        = "memory_swap"
+	AttributeTypeMemorySwappiness  = "memory_swappiness"
+	AttributeTypeReadOnly          = "read_only"
 
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
