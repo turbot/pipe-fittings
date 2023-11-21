@@ -46,7 +46,6 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 			viper.SetDefault(constants.ArgInstallDir, *installDir)
 		}
 	}
-
 }
 
 // for keys which do not have a corresponding command flag, we need a separate defaulting mechanism

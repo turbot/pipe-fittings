@@ -26,6 +26,7 @@ var ClientSystemConnectionAppNamePrefix string
 
 // extensions
 
+var ConfigExtension string
 var ModDataExtension string
 var VariablesExtension string
 var AutoVariablesExtension string

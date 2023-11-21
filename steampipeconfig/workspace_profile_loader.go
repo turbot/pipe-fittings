@@ -1,8 +1,10 @@
 package steampipeconfig
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
@@ -12,7 +14,9 @@ import (
 	"path/filepath"
 )
 
-var defaultWorkspaceSampleFileName = "workspaces.spc.sample"
+func defaultWorkspaceSampleFileName() string {
+	return fmt.Sprintf("workspaces%s.sample", app_specific.ConfigExtension)
+}
 
 type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
 	workspaceProfiles          map[string]T
@@ -23,7 +27,6 @@ type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
 }
 
 func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](globalWorkspaceProfilePath, localWorkspaceProfilePath string) (*WorkspaceProfileLoader[T], error) {
-
 	loader := &WorkspaceProfileLoader[T]{
 		globalWorkspaceProfilePath: globalWorkspaceProfilePath,
 		localWorkspaceProfilePath:  localWorkspaceProfilePath,
@@ -64,7 +67,8 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(configFolder stri
 	if err != nil {
 		return err
 	}
-	defaultWorkspaceSampleFile := filepath.Join(configFolder, defaultWorkspaceSampleFileName)
+
+	defaultWorkspaceSampleFile := filepath.Join(configFolder, defaultWorkspaceSampleFileName())
 	//nolint: gosec // this file is safe to be read by all users
 	err = os.WriteFile(defaultWorkspaceSampleFile, []byte(sampleContent), 0755)
 	if err != nil {
