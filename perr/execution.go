@@ -30,7 +30,7 @@ func ExecutionErrorWithTypeAndMessage(errorType string, msg string) ErrorModel {
 	e := ErrorModel{
 		Instance: reference(),
 		Type:     errorType,
-		Title:    "Bad Request",
+		Title:    "Execution Error",
 		Status:   StatusExecutionError,
 		Detail:   msg,
 	}
