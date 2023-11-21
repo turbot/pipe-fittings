@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
@@ -27,7 +27,7 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 
 	configPaths, err := filehelpers.ListFiles(workspaceProfilePath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
-		Include: filehelpers.InclusionsFromExtensions([]string{constants.ConfigExtension}),
+		Include: filehelpers.InclusionsFromExtensions([]string{app_specific.ConfigExtension}),
 	})
 	if err != nil {
 		return nil, err

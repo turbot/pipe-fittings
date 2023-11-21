@@ -1,11 +1,13 @@
 package constants
 
-import "github.com/turbot/go-kit/helpers"
+import (
+	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific"
+)
 
 // Original Steampipe values
 const (
 	PluginExtension   = ".plugin"
-	ConfigExtension   = ".spc"
 	SqlExtension      = ".sql"
 	MarkdownExtension = ".md"
 
@@ -20,7 +22,7 @@ const (
 
 var YamlExtensions = []string{".yml", ".yaml"}
 
-var ConnectionConfigExtensions = append(YamlExtensions, ConfigExtension, JsonExtension)
+var ConnectionConfigExtensions = append(YamlExtensions, app_specific.ConfigExtension, JsonExtension)
 
 func IsYamlExtension(ext string) bool {
 	return helpers.StringSliceContains(YamlExtensions, ext)
