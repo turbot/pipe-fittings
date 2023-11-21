@@ -819,9 +819,9 @@ func ConvertMapOrSliceToCtyValue(data interface{}) (cty.Value, error) {
 	// Convert the input data to cty.Value based on its type
 	switch reflect.TypeOf(data).Kind() {
 	case reflect.Slice:
-		return convertSliceToCtyValue(data)
+		return ConvertSliceToCtyValue(data)
 	case reflect.Map:
-		return ConvertMapToCtyValue(data)
+		return ConvertMapInterfaceToCtyValue(data)
 	default:
 		// For other types, convert it as a single value using convertInterfaceToCtyValue
 		return ConvertInterfaceToCtyValue(data)
@@ -850,9 +850,9 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 		}
 		return val, nil
 	case reflect.Slice:
-		return convertSliceToCtyValue(v)
+		return ConvertSliceToCtyValue(v)
 	case reflect.Map:
-		return ConvertMapToCtyValue(v)
+		return ConvertMapInterfaceToCtyValue(v)
 
 	// Add more cases here for other types as needed.
 	default:
@@ -861,13 +861,28 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 	}
 }
 
-func convertSliceToCtyValue(v interface{}) (cty.Value, error) {
-	// Convert the slice to a []interface{} and recursively convert it to cty values
-	slice := v.([]interface{})
-	ctyValues := make([]cty.Value, len(slice))
-	for i, item := range slice {
+type SliceTypeConstraint interface {
+	[]bool |
+		[]string |
+		[]int | []int8 | []int16 | []int32 | []int64 |
+		[]uint | []uint8 | []uint16 | []uint32 | []uint64 | []uintptr |
+		[]float32 | []float64 |
+		[]complex64 | []complex128 |
+		[]interface{} | interface{}
+}
+
+// ConvertSliceToCtyValue converts a slice of various types to cty.Value
+func ConvertSliceToCtyValue[T SliceTypeConstraint](v T) (cty.Value, error) {
+	// Reflect on the slice to handle different types
+	rv := reflect.ValueOf(v)
+	ctyValues := make([]cty.Value, rv.Len())
+
+	for i := 0; i < rv.Len(); i++ {
+		// Extract the element and convert it to interface{}
+		elem := rv.Index(i).Interface()
+
 		var err error
-		ctyValues[i], err = ConvertInterfaceToCtyValue(item)
+		ctyValues[i], err = ConvertInterfaceToCtyValue(elem)
 		if err != nil {
 			return cty.NilVal, err
 		}
@@ -880,36 +895,49 @@ func convertSliceToCtyValue(v interface{}) (cty.Value, error) {
 	return tupleVal, nil
 }
 
-func ConvertMapToCtyValue(v interface{}) (cty.Value, error) {
-	// Convert the map to a map[string]interface{} and recursively convert it to cty values
-	mapData, ok := v.(map[string]interface{})
-	if !ok {
-		// try to convert to map[string]string
-		mapData, ok := v.(map[string]string)
-		if !ok {
-			return cty.NilVal, perr.BadRequestWithMessage("unable to convert map to cty value")
-		}
-
-		ctyValues := make(map[string]cty.Value, len(mapData))
-		for key, value := range mapData {
-			var err error
-			ctyValues[key], err = ConvertInterfaceToCtyValue(value)
-			if err != nil {
-				return cty.NilVal, err
-			}
-		}
-		// Create a cty.ObjectVal from the cty values
-		objectVal := cty.ObjectVal(ctyValues)
-
-		// Return the cty.ObjectVal as a cty.Value
-		return objectVal, nil
-
+func ConvertMapInterfaceToCtyValue(v interface{}) (cty.Value, error) {
+	switch t := v.(type) {
+	case map[string]interface{}:
+		return ConvertMapToCtyValue(t)
+	case map[string]string:
+		return ConvertMapToCtyValue(t)
+	case map[string]int:
+		return ConvertMapToCtyValue(t)
+	case map[string]int8:
+		return ConvertMapToCtyValue(t)
+	case map[string]int16:
+		return ConvertMapToCtyValue(t)
+	case map[string]int32:
+		return ConvertMapToCtyValue(t)
+	case map[string]int64:
+		return ConvertMapToCtyValue(t)
+	case map[string]uint:
+		return ConvertMapToCtyValue(t)
+	case map[string]uint8:
+		return ConvertMapToCtyValue(t)
+	case map[string]uint16:
+		return ConvertMapToCtyValue(t)
+	case map[string]uint32:
+		return ConvertMapToCtyValue(t)
+	case map[string]uint64:
+		return ConvertMapToCtyValue(t)
+	case map[string]float32:
+		return ConvertMapToCtyValue(t)
+	case map[string]float64:
+		return ConvertMapToCtyValue(t)
+	case map[string]bool:
+		return ConvertMapToCtyValue(t)
+	// Add other simple types here as needed
+	default:
+		return cty.NilVal, perr.BadRequestWithMessage("unsupported map type")
 	}
+}
 
-	ctyValues := make(map[string]cty.Value, len(mapData))
-	for key, value := range mapData {
+func ConvertMapToCtyValue[K comparable, V any](v map[K]V) (cty.Value, error) {
+	ctyValues := make(map[string]cty.Value, len(v))
+	for key, value := range v {
 		var err error
-		ctyValues[key], err = ConvertInterfaceToCtyValue(value)
+		ctyValues[fmt.Sprint(key)], err = ConvertInterfaceToCtyValue(value)
 		if err != nil {
 			return cty.NilVal, err
 		}
@@ -921,3 +949,45 @@ func ConvertMapToCtyValue(v interface{}) (cty.Value, error) {
 	// Return the cty.ObjectVal as a cty.Value
 	return objectVal, nil
 }
+
+// func ConvertMapToCtyValue(v interface{}) (cty.Value, error) {
+// 	// Convert the map to a map[string]interface{} and recursively convert it to cty values
+// 	mapData, ok := v.(map[string]interface{})
+// 	if !ok {
+// 		// try to convert to map[string]string
+// 		mapData, ok := v.(map[string]string)
+// 		if !ok {
+// 			return cty.NilVal, perr.BadRequestWithMessage("unable to convert map to cty value")
+// 		}
+
+// 		ctyValues := make(map[string]cty.Value, len(mapData))
+// 		for key, value := range mapData {
+// 			var err error
+// 			ctyValues[key], err = ConvertInterfaceToCtyValue(value)
+// 			if err != nil {
+// 				return cty.NilVal, err
+// 			}
+// 		}
+// 		// Create a cty.ObjectVal from the cty values
+// 		objectVal := cty.ObjectVal(ctyValues)
+
+// 		// Return the cty.ObjectVal as a cty.Value
+// 		return objectVal, nil
+
+// 	}
+
+// 	ctyValues := make(map[string]cty.Value, len(mapData))
+// 	for key, value := range mapData {
+// 		var err error
+// 		ctyValues[key], err = ConvertInterfaceToCtyValue(value)
+// 		if err != nil {
+// 			return cty.NilVal, err
+// 		}
+// 	}
+
+// 	// Create a cty.ObjectVal from the cty values
+// 	objectVal := cty.ObjectVal(ctyValues)
+
+// 	// Return the cty.ObjectVal as a cty.Value
+// 	return objectVal, nil
+// }
