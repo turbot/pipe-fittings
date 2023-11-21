@@ -38,10 +38,25 @@ func TestContainerStep(t *testing.T) {
 	assert.Equal("test/image", inputs[schema.AttributeTypeImage])
 	assert.Equal(int64(60), inputs[schema.AttributeTypeTimeout])
 
+	assert.Equal(int64(60), inputs[schema.AttributeTypeTimeout])
+	assert.Equal(int64(128), inputs[schema.AttributeTypeMemory])
+	assert.Equal(int64(64), inputs[schema.AttributeTypeMemoryReservation])
+	assert.Equal(int64(-1), inputs[schema.AttributeTypeMemorySwap])
+	assert.Equal(int64(60), inputs[schema.AttributeTypeMemorySwappiness])
+
+	assert.Equal(false, inputs[schema.AttributeTypeReadOnly])
+	assert.Equal("flowpipe", inputs[schema.AttributeTypeUser])
+	assert.Equal(".", inputs[schema.AttributeTypeWorkdir])
+
 	if _, ok := inputs[schema.AttributeTypeCmd].([]string); !ok {
 		assert.Fail("attribute cmd should be a list of strings")
 	}
 	assert.Equal(2, len(inputs[schema.AttributeTypeCmd].([]string)))
+
+	if _, ok := inputs[schema.AttributeTypeEntryPoint].([]string); !ok {
+		assert.Fail("attribute entry_point should be a list of strings")
+	}
+	assert.Equal(2, len(inputs[schema.AttributeTypeEntryPoint].([]string)))
 
 	if _, ok := inputs[schema.AttributeTypeEnv].(map[string]string); !ok {
 		assert.Fail("env block is not defined correctly")
@@ -70,6 +85,18 @@ func TestContainerStep(t *testing.T) {
 			cty.StringVal("foo"),
 			cty.StringVal("bar"),
 		}),
+		"entry_point": cty.ListVal([]cty.Value{
+			cty.StringVal("foo"),
+			cty.StringVal("bar"),
+			cty.StringVal("baz"),
+		}),
+		"memory":             cty.NumberIntVal(128),
+		"memory_reservation": cty.NumberIntVal(64),
+		"memory_swap":        cty.NumberIntVal(-1),
+		"memory_swappiness":  cty.NumberIntVal(60),
+		"read_only":          cty.BoolVal(true),
+		"container_user":     cty.StringVal("flowpipe"),
+		"work_dir":           cty.StringVal("."),
 	})
 
 	evalContext := &hcl.EvalContext{}
@@ -85,10 +112,24 @@ func TestContainerStep(t *testing.T) {
 	assert.Equal("test/image", inputs[schema.AttributeTypeImage])
 	assert.Equal(int64(120), inputs[schema.AttributeTypeTimeout])
 
+	assert.Equal(int64(128), inputs[schema.AttributeTypeMemory])
+	assert.Equal(int64(64), inputs[schema.AttributeTypeMemoryReservation])
+	assert.Equal(int64(-1), inputs[schema.AttributeTypeMemorySwap])
+	assert.Equal(int64(60), inputs[schema.AttributeTypeMemorySwappiness])
+
+	assert.Equal(true, inputs[schema.AttributeTypeReadOnly])
+	assert.Equal("flowpipe", inputs[schema.AttributeTypeUser])
+	assert.Equal(".", inputs[schema.AttributeTypeWorkdir])
+
 	if _, ok := inputs[schema.AttributeTypeCmd].([]string); !ok {
 		assert.Fail("attribute cmd should be a list of strings")
 	}
 	assert.Equal(2, len(inputs[schema.AttributeTypeCmd].([]string)))
+
+	if _, ok := inputs[schema.AttributeTypeEntryPoint].([]string); !ok {
+		assert.Fail("attribute entrypoint should be a list of strings")
+	}
+	assert.Equal(3, len(inputs[schema.AttributeTypeEntryPoint].([]string)))
 
 	if _, ok := inputs[schema.AttributeTypeEnv].(map[string]string); !ok {
 		assert.Fail("env block is not defined correctly")

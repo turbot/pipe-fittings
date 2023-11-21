@@ -3274,7 +3274,7 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 					})
 					continue
 				}
-				p.Cmd = ep
+				p.EntryPoint = ep
 			}
 		case schema.AttributeTypeTimeout:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3425,8 +3425,8 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 					continue
 				}
 
-				if boolVal, ok := readOnly.(*bool); ok {
-					p.ReadOnly = boolVal
+				if boolVal, ok := readOnly.(bool); ok {
+					p.ReadOnly = &boolVal
 				}
 			}
 		default:

@@ -780,6 +780,24 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeMemory,
 		},
+		{
+			Name: schema.AttributeTypeMemoryReservation,
+		},
+		{
+			Name: schema.AttributeTypeMemorySwap,
+		},
+		{
+			Name: schema.AttributeTypeMemorySwappiness,
+		},
+		{
+			Name: schema.AttributeTypeReadOnly,
+		},
+		{
+			Name: schema.AttributeTypeUser,
+		},
+		{
+			Name: schema.AttributeTypeWorkdir,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
