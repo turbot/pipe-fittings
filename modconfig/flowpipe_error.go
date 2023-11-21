@@ -39,12 +39,16 @@ func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
 	}
 
 	if r.Strategy == "exponential" {
+		if attempt == 2 {
+			return time.Duration(r.MinInterval) * time.Millisecond
+		}
+
 		// The multiplier factor, usually 2 for exponential growth.
 		factor := 2
 
 		// Calculate the delay as baseInterval * 2^(attempt-1).
 		// We subtract 1 from attempt to make the first attempt have no delay if desired.
-		delay := float64(r.MinInterval) * math.Pow(float64(factor), float64(attempt-1))
+		delay := float64(r.MinInterval) * math.Pow(float64(factor), float64(attempt-2))
 
 		duration := time.Duration(delay) * time.Millisecond
 		if duration < 0 {
