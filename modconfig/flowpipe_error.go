@@ -1,6 +1,8 @@
 package modconfig
 
 import (
+	"time"
+
 	"github.com/hashicorp/hcl/v2"
 )
 
@@ -21,6 +23,23 @@ func NewRetryConfig() *RetryConfig {
 	}
 }
 
+func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
+
+	maxDuration := time.Duration(r.MaxInterval) * time.Millisecond
+
+	if r.Strategy == "linear" {
+		duration := time.Duration(r.MinInterval*attempt) * time.Millisecond
+		return min(duration, maxDuration)
+	}
+
+	if r.Strategy == "exponential" {
+		duration := time.Duration(r.MinInterval*attempt*attempt) * time.Millisecond
+		return min(duration, maxDuration)
+	}
+
+	return time.Duration(r.MinInterval) * time.Millisecond
+}
+
 func (r *RetryConfig) Validate() hcl.Diagnostics {
 
 	diags := hcl.Diagnostics{}
@@ -32,19 +51,19 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MaxAttempts > 1000 {
+	if r.MaxAttempts > 3*100 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_attempts",
-			Detail:   "max_attempts must be less than 10000",
+			Detail:   "max_attempts must be less than 300",
 		})
 	}
 
-	if r.MinInterval > 1000000 {
+	if r.MinInterval > 1000*100 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
-			Detail:   "min_interval must be less than 1000000",
+			Detail:   "min_interval must be less than 100000",
 		})
 	}
 
@@ -56,7 +75,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MaxInterval > 1000000 {
+	if r.MaxInterval > 10000*100 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_interval",
@@ -69,6 +88,14 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_interval",
 			Detail:   "max_interval must be greater than 0",
+		})
+	}
+
+	if r.MinInterval >= r.MaxInterval {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Invalid min_interval",
+			Detail:   "min_interval must be less than max_interval",
 		})
 	}
 

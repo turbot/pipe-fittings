@@ -49,7 +49,7 @@ func TestRetry(t *testing.T) {
 	assert.NotNil(retryConfig)
 	assert.Equal(3, retryConfig.MaxAttempts)
 	assert.Equal(1000, retryConfig.MinInterval)
-	assert.Equal(1000, retryConfig.MaxInterval)
+	assert.Equal(10000, retryConfig.MaxInterval)
 	assert.Equal("constant", retryConfig.Strategy)
 
 }
