@@ -21,8 +21,7 @@ pipeline "bad_http_retries" {
         url = "http://api.open-notify.org/astros.jsons"
 
         error {
-          ignore = true
-          retries = 2
+          ignore = true          
         }
     }
 
