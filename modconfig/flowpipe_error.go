@@ -1,6 +1,7 @@
 package modconfig
 
 import (
+	"math"
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
@@ -25,15 +26,31 @@ func NewRetryConfig() *RetryConfig {
 
 func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
 
+	// TODO: check this
+	if attempt <= 1 {
+		return time.Duration(0)
+	}
+
 	maxDuration := time.Duration(r.MaxInterval) * time.Millisecond
 
 	if r.Strategy == "linear" {
-		duration := time.Duration(r.MinInterval*attempt) * time.Millisecond
+		duration := time.Duration(r.MinInterval*(attempt-1)) * time.Millisecond
 		return min(duration, maxDuration)
 	}
 
 	if r.Strategy == "exponential" {
-		duration := time.Duration(r.MinInterval*attempt*attempt) * time.Millisecond
+		// The multiplier factor, usually 2 for exponential growth.
+		factor := 2
+
+		// Calculate the delay as baseInterval * 2^(attempt-1).
+		// We subtract 1 from attempt to make the first attempt have no delay if desired.
+		delay := float64(r.MinInterval) * math.Pow(float64(factor), float64(attempt-1))
+
+		duration := time.Duration(delay) * time.Millisecond
+		if duration < 0 {
+			return maxDuration
+		}
+
 		return min(duration, maxDuration)
 	}
 
