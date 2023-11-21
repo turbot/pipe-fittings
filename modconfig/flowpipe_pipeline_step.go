@@ -2925,13 +2925,19 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 type PipelineStepContainer struct {
 	PipelineStepBase
 
-	Image      string            `json:"image"`
-	Source     string            `json:"source"`
-	Cmd        []string          `json:"cmd"`
-	Env        map[string]string `json:"env"`
-	EntryPoint []string          `json:"entrypoint"`
-	Timeout    int64             `json:"timeout"`
-	Memory     int64             `json:"memory"`
+	Image             *string           `json:"image"`
+	Source            *string           `json:"source"`
+	Cmd               []string          `json:"cmd"`
+	Env               map[string]string `json:"env"`
+	EntryPoint        []string          `json:"entrypoint"`
+	Timeout           *int64            `json:"timeout"`
+	Memory            *int64            `json:"memory"`
+	MemoryReservation *int64            `json:"memory_reservation"`
+	MemorySwap        *int64            `json:"memory_swap"`
+	MemorySwappiness  *int64            `json:"memory_swappiness"`
+	ReadOnly          *bool             `json:"read_only"`
+	User              *string           `json:"user"`
+	Workdir           *string           `json:"workdir"`
 }
 
 func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
@@ -2949,7 +2955,7 @@ func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var image string
+	var image *string
 	if p.UnresolvedAttributes[schema.AttributeTypeImage] == nil {
 		image = p.Image
 	} else {
@@ -2959,7 +2965,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	var source string
+	var source *string
 	if p.UnresolvedAttributes[schema.AttributeTypeSource] == nil {
 		source = p.Source
 	} else {
@@ -3020,7 +3026,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	var timeout int64
+	var timeout *int64
 	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil {
 		timeout = p.Timeout
 	} else {
@@ -3030,7 +3036,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	var memory int64
+	var memory *int64
 	if p.UnresolvedAttributes[schema.AttributeTypeMemory] == nil {
 		memory = p.Memory
 	} else {
@@ -3040,16 +3046,114 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	return map[string]interface{}{
+	var memoryReservation *int64
+	if p.UnresolvedAttributes[schema.AttributeTypeMemoryReservation] == nil {
+		memoryReservation = p.MemoryReservation
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemoryReservation], evalContext, &memoryReservation)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var memorySwap *int64
+	if p.UnresolvedAttributes[schema.AttributeTypeMemorySwap] == nil {
+		memorySwap = p.MemorySwap
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemorySwap], evalContext, &memorySwap)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var memorySwappiness *int64
+	if p.UnresolvedAttributes[schema.AttributeTypeMemorySwappiness] == nil {
+		memorySwappiness = p.MemorySwappiness
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemorySwappiness], evalContext, &memorySwappiness)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var containerUser *string
+	if p.UnresolvedAttributes[schema.AttributeTypeUser] == nil {
+		containerUser = p.User
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeUser], evalContext, &containerUser)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var workDir *string
+	if p.UnresolvedAttributes[schema.AttributeTypeWorkdir] == nil {
+		workDir = p.Workdir
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeWorkdir], evalContext, &workDir)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var readOnly *bool
+	if p.UnresolvedAttributes[schema.AttributeTypeReadOnly] == nil {
+		readOnly = p.ReadOnly
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeReadOnly], evalContext, &readOnly)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	results := map[string]interface{}{
 		schema.LabelName:               p.Name,
-		schema.AttributeTypeImage:      image,
-		schema.AttributeTypeSource:     source,
 		schema.AttributeTypeCmd:        cmd,
 		schema.AttributeTypeEnv:        env,
 		schema.AttributeTypeEntryPoint: entryPoint,
-		schema.AttributeTypeTimeout:    timeout,
-		schema.AttributeTypeMemory:     memory,
-	}, nil
+	}
+
+	if image != nil {
+		results[schema.AttributeTypeImage] = *image
+	}
+
+	if source != nil {
+		results[schema.AttributeTypeSource] = *source
+	}
+
+	if timeout != nil {
+		results[schema.AttributeTypeTimeout] = *timeout
+	}
+
+	if memory != nil {
+		results[schema.AttributeTypeMemory] = *memory
+	}
+
+	if memoryReservation != nil {
+		results[schema.AttributeTypeMemoryReservation] = *memoryReservation
+	}
+
+	if memorySwap != nil {
+		results[schema.AttributeTypeMemorySwap] = *memorySwap
+	}
+
+	if memorySwappiness != nil {
+		results[schema.AttributeTypeMemorySwappiness] = *memorySwappiness
+	}
+
+	if containerUser != nil {
+		results[schema.AttributeTypeUser] = *containerUser
+	}
+
+	if workDir != nil {
+		results[schema.AttributeTypeWorkdir] = *workDir
+	}
+
+	if readOnly != nil {
+		results[schema.AttributeTypeReadOnly] = *readOnly
+	}
+
+	return results, nil
 }
 
 func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -3065,7 +3169,15 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 			}
 
 			if val != cty.NilVal {
-				p.Image = val.AsString()
+				image, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeImage + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Image = &image
 			}
 		case schema.AttributeTypeSource:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3075,7 +3187,15 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 			}
 
 			if val != cty.NilVal {
-				p.Source = val.AsString()
+				source, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeSource + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Source = &source
 			}
 		case schema.AttributeTypeCmd:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3146,12 +3266,12 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				if ctyDiags.HasErrors() {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to convert timeout into integer",
+						Summary:  "Unable to parse " + schema.AttributeTypeTimeout + " attribute to integer",
 						Subject:  &attr.Range,
 					})
 					continue
 				}
-				p.Timeout = *timeout
+				p.Timeout = timeout
 			}
 		case schema.AttributeTypeMemory:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3165,12 +3285,127 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				if ctyDiags.HasErrors() {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to convert memory into integer",
+						Summary:  "Unable to parse " + schema.AttributeTypeMemory + " attribute to integer",
 						Subject:  &attr.Range,
 					})
 					continue
 				}
-				p.Memory = *memory
+				p.Memory = memory
+			}
+		case schema.AttributeTypeMemoryReservation:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				memoryReservation, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeMemoryReservation + " attribute to integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.MemoryReservation = memoryReservation
+			}
+		case schema.AttributeTypeMemorySwap:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				memorySwap, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeMemorySwap + " attribute to integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.MemorySwap = memorySwap
+			}
+		case schema.AttributeTypeMemorySwappiness:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				memorySwappiness, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeMemorySwappiness + " attribute to integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.MemorySwappiness = memorySwappiness
+			}
+		case schema.AttributeTypeUser:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				containerUser, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeUser + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.User = &containerUser
+			}
+		case schema.AttributeTypeWorkdir:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				workDir, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeWorkdir + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Workdir = &workDir
+			}
+		case schema.AttributeTypeReadOnly:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				readOnly, err := hclhelpers.CtyToGo(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeReadOnly + " attribute to integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+
+				if boolVal, ok := readOnly.(*bool); ok {
+					p.ReadOnly = boolVal
+				}
 			}
 		default:
 			if !p.IsBaseAttribute(name) {
@@ -3194,7 +3429,7 @@ func (p *PipelineStepContainer) Validate() hcl.Diagnostics {
 	// Currently the step does not support the source attribute.
 	// So, if passed in the step, return an error
 	// TODO: Remove once it is supported
-	if p.Source != "" {
+	if p.Source != nil {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Source is not yet implemented: " + p.GetFullyQualifiedName(),
@@ -3202,7 +3437,7 @@ func (p *PipelineStepContainer) Validate() hcl.Diagnostics {
 	}
 
 	// Either source or image must be specified, but not both
-	if p.Image != "" && p.Source != "" {
+	if p.Image != nil && p.Source != nil {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Image and Source attributes are mutually exclusive: " + p.GetFullyQualifiedName(),
