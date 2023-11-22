@@ -67,7 +67,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 
 		// TODO: this is a hack (ish) to let the existing automated test to pass
 		if filepath.Ext(fileName) == ".fp" {
-			modFileNameToLoad = "ignore.sp"
+			modFileNameToLoad = "ignore.fp"
 		} else {
 			modFileNameToLoad = fileName
 		}
