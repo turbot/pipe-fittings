@@ -51,7 +51,7 @@ type StepLoop struct {
 }
 
 type StepRetry struct {
-	Index          int    `json:"index" binding:"required"`
+	Count          int    `json:"count" binding:"required"`
 	Input          *Input `json:"input,omitempty"`
 	RetryCompleted bool   `json:"retry_completed"`
 }

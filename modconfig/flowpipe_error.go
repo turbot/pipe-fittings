@@ -24,9 +24,12 @@ func NewRetryConfig() *RetryConfig {
 	}
 }
 
+// The first attempt is the first time the operation is tried, NOT the first
+// retry.
+//
+// The first retry is the 2nd attempt
 func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
 
-	// TODO: check this
 	if attempt <= 1 {
 		return time.Duration(0)
 	}
