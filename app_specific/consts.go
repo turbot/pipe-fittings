@@ -12,7 +12,10 @@ var AppVersion *semver.Version
 // filepaths
 
 var DefaultVarsFileName string
-var ModFileName string = "mod.sp"
+
+// TODO why the default
+var ModFileName string // = "mod.sp"
+
 var WorkspaceIgnoreFile string
 var WorkspaceDataDir string
 var InstallDir string

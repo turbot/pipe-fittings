@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/perr"
 	"log"
 	"os"
@@ -81,12 +80,9 @@ func ModFileExists(modPath, modFile string) bool {
 		return true
 	}
 
-	for _, file := range filepaths.ValidModFiles {
-		filePath := filepath.Join(modPath, file)
-		_, err := os.Stat(filePath)
-		if err == nil {
-			return true
-		}
+	filePath := filepath.Join(modPath, app_specific.ModFileName)
+	if _, err = os.Stat(filePath); err == nil {
+		return true
 	}
 
 	return false

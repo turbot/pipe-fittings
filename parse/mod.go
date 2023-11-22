@@ -13,7 +13,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
@@ -49,15 +48,9 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 	modFileFound := true
 	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
 		modFileFound = false
-		for _, file := range filepaths.ValidModFiles {
-			modFilePath = filepath.Join(modPath, file)
-			if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
-
-				continue
-			} else {
-				modFileFound = true
-				break
-			}
+		modFilePath = filepath.Join(modPath, app_specific.ModFileName)
+		if _, err := os.Stat(modFilePath); err == nil {
+			modFileFound = true
 		}
 	}
 
