@@ -18,9 +18,6 @@ const (
 	WorkspaceLockFileName       = ".mod.cache.json"
 )
 
-// TODO is this app specific?
-var ValidModFiles = []string{"mod.sp", "mod.hcl"}
-
 func WorkspaceModPath(workspacePath string) string {
 	return path.Join(workspacePath, app_specific.WorkspaceDataDir, WorkspaceModDir)
 }
