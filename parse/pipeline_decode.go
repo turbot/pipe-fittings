@@ -342,6 +342,50 @@ func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseC
 	return integration, res
 }
 
+func decodeCredential(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.Credential, *DecodeResult) {
+
+	res := newDecodeResult()
+
+	if len(block.Labels) != 2 {
+		res.handleDecodeDiags(hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid credential block - expected 2 labels, found %d", len(block.Labels)),
+				Subject:  &block.DefRange,
+			},
+		})
+		return nil, res
+	}
+
+	credentialType := block.Labels[0]
+
+	credential := modconfig.NewCredential(mod, block)
+	if credential == nil {
+		res.handleDecodeDiags(hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid credential type '%s'", credentialType),
+				Subject:  &block.DefRange,
+			},
+		})
+		return nil, res
+	}
+	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
+	if len(diags) > 0 {
+		return nil, res
+	}
+	body := r.(*hclsyntax.Body)
+	res.handleDecodeDiags(diags)
+
+	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, credential)
+	if len(diags) > 0 {
+		res.handleDecodeDiags(diags)
+		return credential, res
+	}
+
+	return credential, res
+}
+
 func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Trigger, *DecodeResult) {
 
 	res := newDecodeResult()

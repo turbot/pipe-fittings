@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/turbot/pipe-fittings/error_helpers"
 
 	"github.com/hashicorp/hcl/v2"
@@ -47,6 +48,7 @@ type ResourceMaps struct {
 	Pipelines    map[string]*Pipeline
 	Triggers     map[string]*Trigger
 	Integrations map[string]Integration
+	Credentials  map[string]Credential
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -92,6 +94,7 @@ func emptyModResources() *ResourceMaps {
 		Pipelines:    make(map[string]*Pipeline),
 		Triggers:     make(map[string]*Trigger),
 		Integrations: make(map[string]Integration),
+		Credentials:  make(map[string]Credential),
 	}
 }
 
@@ -481,6 +484,8 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Triggers[longName]
 	case schema.BlockTypeIntegration:
 		resource, found = m.Integrations[longName]
+	case schema.BlockTypeCredential:
+		resource, found = m.Credentials[longName]
 	}
 	return resource, found
 }
@@ -923,6 +928,14 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 		}
 		m.Triggers[name] = r
 
+	case Credential:
+		name := r.Name()
+		if existing, ok := m.Credentials[name]; ok {
+			diags = append(diags, checkForDuplicate(existing, item)...)
+			break
+		}
+		m.Credentials[name] = r
+
 	case Integration:
 		name := r.Name()
 		if existing, ok := m.Integrations[name]; ok {
@@ -930,6 +943,7 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 			break
 		}
 		m.Integrations[name] = r
+
 	}
 
 	return diags

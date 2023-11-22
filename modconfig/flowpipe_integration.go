@@ -10,7 +10,7 @@ import (
 type Integration interface {
 	HclResource
 	ResourceWithMetadata
-	GetType() string
+	GetIntegrationType() string
 }
 
 type SlackIntegration struct {
@@ -29,7 +29,7 @@ func (i *SlackIntegration) CtyValue() (cty.Value, error) {
 	return GetCtyValue(i)
 }
 
-func (i *SlackIntegration) GetType() string {
+func (i *SlackIntegration) GetIntegrationType() string {
 	return i.Type
 }
 
@@ -86,7 +86,7 @@ type EmailIntegration struct {
 	DefaultSubject   *string `json:"default_subject,omitempty" cty:"default_subject" hcl:"default_subject,optional"`
 }
 
-func (i *EmailIntegration) GetType() string {
+func (i *EmailIntegration) GetIntegrationType() string {
 	return i.Type
 }
 

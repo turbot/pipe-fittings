@@ -45,6 +45,7 @@ const (
 	BlockTypeTrigger           = "trigger"
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
+	BlockTypeCredential        = "credential"
 	BlockTypeNotify            = "notify"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
@@ -122,7 +123,9 @@ const (
 	AttributeTypeNotifies      = "notifies"
 
 	AttributeTypeIntegration = "integration"
-	AttributeTypeChannel     = "channel"
+	AttributeTypeCredential  = "credential"
+
+	AttributeTypeChannel = "channel"
 
 	// Used by sleep step
 	AttributeTypeDuration = "duration"
@@ -296,6 +299,7 @@ var ValidResourceItemTypes = []string{
 	BlockTypeTrigger,
 	BlockTypeWith,
 	BlockTypeIntegration,
+	BlockTypeCredential,
 	// local is not an actual block name but is a resource type
 	"local",
 	// references

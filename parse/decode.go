@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -167,6 +168,8 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 			resource, res = decodeTrigger(parseCtx.CurrentMod, block, parseCtx)
 		case schema.BlockTypeIntegration:
 			resource, res = decodeIntegration(parseCtx.CurrentMod, block, parseCtx)
+		case schema.BlockTypeCredential:
+			resource, res = decodeCredential(parseCtx.CurrentMod, block, parseCtx)
 		default:
 			// all other blocks are treated the same:
 			resource, res = decodeResource(block, parseCtx)

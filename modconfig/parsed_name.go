@@ -38,7 +38,7 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 		// this only applies for Triggers and Integration (as of 2023/09/13)
 		// mod_name.trigger.schedule.trigger__name
 		// mod_name.integration.slack.integration__name
-		if parts[1] != "trigger" && parts[1] != "integration" {
+		if parts[1] != schema.BlockTypeTrigger && parts[1] != schema.BlockTypeIntegration && parts[1] != schema.BlockTypeCredential {
 			err = perr.BadRequestWithMessage(fmt.Sprintf("invalid name passed to ParseResourceName '%s' ", fullName))
 		}
 		res.Mod = parts[0]

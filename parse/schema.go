@@ -166,6 +166,10 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeIntegration,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeCredential,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
 	},
 }
 
