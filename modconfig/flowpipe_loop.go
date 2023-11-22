@@ -3,7 +3,6 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
@@ -11,7 +10,7 @@ import (
 )
 
 type LoopDefn interface {
-	ShouldRun() bool
+	UntilReached() bool
 	GetType() string
 	UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error)
 }
@@ -102,7 +101,7 @@ type LoopQueryStep struct {
 	Args              *[]interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
 }
 
-func (l *LoopQueryStep) ShouldRun() bool {
+func (l *LoopQueryStep) UntilReached() bool {
 	return l.Until
 }
 
@@ -139,7 +138,7 @@ func (l *LoopEchoStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (I
 	return input, nil
 }
 
-func (l *LoopEchoStep) ShouldRun() bool {
+func (l *LoopEchoStep) UntilReached() bool {
 	return l.Until
 }
 
@@ -158,7 +157,7 @@ type LoopHttpStep struct {
 	Insecure         *bool                   `json:"insecure,omitempty" hcl:"insecure,optional" cty:"insecure"`
 }
 
-func (l *LoopHttpStep) ShouldRun() bool {
+func (l *LoopHttpStep) UntilReached() bool {
 	return l.Until
 }
 
@@ -197,7 +196,7 @@ type LoopSleepStep struct {
 	Duration *string `json:"duration,omitempty" hcl:"duration,optional" cty:"duration"`
 }
 
-func (l *LoopSleepStep) ShouldRun() bool {
+func (l *LoopSleepStep) UntilReached() bool {
 	return l.Until
 }
 
@@ -216,7 +215,7 @@ type LoopPipelineStep struct {
 	Until bool `json:"until" hcl:"until" cty:"until"`
 }
 
-func (l *LoopPipelineStep) ShouldRun() bool {
+func (l *LoopPipelineStep) UntilReached() bool {
 	return l.Until
 }
 
@@ -233,12 +232,27 @@ type LoopTransformStep struct {
 	Value interface{} `json:"value,omitempty" hcl:"value,optional" cty:"value"`
 }
 
-func (l *LoopTransformStep) ShouldRun() bool {
+func (l *LoopTransformStep) UntilReached() bool {
 	return l.Until
 }
 
 func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
-	if !helpers.IsNil(l.Value) {
+
+	expr, ok := l.Value.(hcl.Expression)
+	if ok {
+		val, err := expr.Value(nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if !val.IsNull() {
+			goVal, err := hclhelpers.CtyToGo(val)
+			if err != nil {
+				return nil, err
+			}
+			input["value"] = goVal
+		}
+	} else {
 		hclAttrib, ok := l.Value.(*hcl.Attribute)
 		if !ok {
 			input["value"] = l.Value
@@ -254,7 +268,9 @@ func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContex
 			}
 			input["value"] = goVal
 		}
+
 	}
+
 	return input, nil
 }
 
