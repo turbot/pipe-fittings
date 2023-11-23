@@ -2,10 +2,11 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/tests/test_init"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/turbot/pipe-fittings/tests/test_init"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,7 @@ func (suite *FlowpipeModTestSuite) TearDownSuite() {
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./good_mod", ".hcl")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./good_mod", ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -111,7 +112,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_references", ".hcl")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_references", ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -133,7 +134,7 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_step_output", ".hcl")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_step_output", ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -158,7 +159,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_one", ".hcl")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_one", ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -221,7 +222,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_simple", ".hcl")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_simple", ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -278,7 +279,8 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert.Equal("foo: var_two from parent .pvars file", childPipelineWithVarPassedFromParent.Steps[0].(*modconfig.PipelineStepEcho).Text)
 }
 
-func (suite *FlowpipeModTestSuite) TestModDependenciesBackwardCompatible() {
+// VH: design change, no more backward compatible mod
+func (suite *FlowpipeModTestSuite) XTestModDependenciesBackwardCompatible() {
 	assert := assert.New(suite.T())
 
 	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./backward_compatible_mod", ".hcl", ".sp")
@@ -354,7 +356,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	os.Setenv("P_VAR_var_six", "set from env var")
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", ".hcl", ".sp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
