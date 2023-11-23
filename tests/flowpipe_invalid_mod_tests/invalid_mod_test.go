@@ -4,10 +4,11 @@ package invalid_mod_tests
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/tests/test_init"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/turbot/pipe-fittings/tests/test_init"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -129,7 +130,7 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 
 		fmt.Println("Running test " + test.title)
 
-		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, ".hcl", ".sp")
+		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, ".fp")
 		assert.NotNil(errorAndWarning.Error)
 		assert.Contains(errorAndWarning.Error.Error(), test.containsError)
 
