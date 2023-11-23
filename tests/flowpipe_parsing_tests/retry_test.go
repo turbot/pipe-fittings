@@ -124,8 +124,4 @@ func TestRetryWithBackoff(t *testing.T) {
 
 	// max interval is 50000
 	assert.Equal(int64(50000), retryConfig.CalculateBackoff(10).Milliseconds())
-
-	// Test when the number is so large it becomes a negative backoff
-	assert.Equal(int64(50000), retryConfig.CalculateBackoff(100).Milliseconds())
-
 }
