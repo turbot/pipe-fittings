@@ -187,7 +187,6 @@ func (p *Pipeline) CtyValue() (cty.Value, error) {
 	}
 
 	return cty.ObjectVal(pipelineVars), nil
-
 }
 
 // SetOptions sets the options on the connection

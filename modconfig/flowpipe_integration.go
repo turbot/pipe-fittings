@@ -11,6 +11,7 @@ type Integration interface {
 	HclResource
 	ResourceWithMetadata
 	GetIntegrationType() string
+	CtyValue() (cty.Value, error)
 }
 
 type SlackIntegration struct {

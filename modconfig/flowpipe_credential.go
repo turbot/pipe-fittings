@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type Credential interface {
@@ -11,6 +12,8 @@ type Credential interface {
 	ResourceWithMetadata
 
 	GetCredentialType() string
+	GetEnv() map[string]cty.Value
+	CtyValue() (cty.Value, error)
 }
 
 type AwsCredential struct {
@@ -29,6 +32,32 @@ func (*AwsCredential) GetCredentialType() string {
 	return "aws"
 }
 
+func (c *AwsCredential) GetEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.AccessKey != nil {
+		env["AWS_ACCESS_KEY_ID"] = cty.StringVal(*c.AccessKey)
+	}
+	if c.SecretKey != nil {
+		env["AWS_SECRET_ACCESS_KEY"] = cty.StringVal(*c.SecretKey)
+	}
+	if c.SessionToken != nil {
+		env["AWS_SESSION_TOKEN"] = cty.StringVal(*c.SessionToken)
+	}
+	return env
+}
+
+func (c *AwsCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
 type SlackCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -40,6 +69,26 @@ type SlackCredential struct {
 
 func (*SlackCredential) GetCredentialType() string {
 	return "slack"
+}
+
+func (c *SlackCredential) GetEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["SLACK_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	return env
+}
+
+func (c *SlackCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 type GcpCredential struct {
@@ -56,6 +105,23 @@ func (*GcpCredential) GetCredentialType() string {
 	return "gcp"
 }
 
+func (c *GcpCredential) GetEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	return env
+}
+
+func (c *GcpCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -66,8 +132,25 @@ type BasicCredential struct {
 	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
+func (c *BasicCredential) GetEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	return env
+}
+
 func (*BasicCredential) GetCredentialType() string {
 	return "basic"
+}
+
+func (c *BasicCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func NewCredential(mod *Mod, block *hcl.Block) Credential {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 func TestCredentials(t *testing.T) {
@@ -23,4 +24,10 @@ func TestCredentials(t *testing.T) {
 		assert.Fail("Credential not found")
 		return
 	}
+
+	assert.Equal("credential.aws.aws_static", credential.GetUnqualifiedName())
+	assert.Equal("aws", credential.GetCredentialType())
+
+	awsCred := credential.(*modconfig.AwsCredential)
+	assert.Equal("ASIAQGDFAKEKGUI5MCEU", *awsCred.AccessKey)
 }

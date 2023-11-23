@@ -2,10 +2,11 @@ package flowpipe_mod_load_tests
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/tests/test_init"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/turbot/pipe-fittings/tests/test_init"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
