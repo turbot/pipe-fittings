@@ -43,6 +43,7 @@ func TestContainerStep(t *testing.T) {
 	assert.Equal(int64(64), inputs[schema.AttributeTypeMemoryReservation])
 	assert.Equal(int64(-1), inputs[schema.AttributeTypeMemorySwap])
 	assert.Equal(int64(60), inputs[schema.AttributeTypeMemorySwappiness])
+	assert.Equal(int64(512), inputs[schema.AttributeTypeCpuShares])
 
 	assert.Equal(false, inputs[schema.AttributeTypeReadOnly])
 	assert.Equal("flowpipe", inputs[schema.AttributeTypeUser])
@@ -78,9 +79,10 @@ func TestContainerStep(t *testing.T) {
 	}
 
 	paramVal := cty.ObjectVal(map[string]cty.Value{
-		"region":  cty.StringVal("ap-south-1"),
-		"image":   cty.StringVal("test/image"),
-		"timeout": cty.NumberIntVal(120),
+		"region":     cty.StringVal("ap-south-1"),
+		"image":      cty.StringVal("test/image"),
+		"timeout":    cty.NumberIntVal(120),
+		"cpu_shares": cty.NumberIntVal(512),
 		"cmd": cty.ListVal([]cty.Value{
 			cty.StringVal("foo"),
 			cty.StringVal("bar"),
@@ -111,6 +113,7 @@ func TestContainerStep(t *testing.T) {
 	assert.Equal("container_test1", inputs[schema.AttributeTypeName])
 	assert.Equal("test/image", inputs[schema.AttributeTypeImage])
 	assert.Equal(int64(120), inputs[schema.AttributeTypeTimeout])
+	assert.Equal(int64(512), inputs[schema.AttributeTypeCpuShares])
 
 	assert.Equal(int64(128), inputs[schema.AttributeTypeMemory])
 	assert.Equal(int64(64), inputs[schema.AttributeTypeMemoryReservation])
