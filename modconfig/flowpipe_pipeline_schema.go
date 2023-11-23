@@ -782,6 +782,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeTimeout,
 		},
 		{
+			Name: schema.AttributeTypeCpuShares,
+		},
+		{
 			Name: schema.AttributeTypeMemory,
 		},
 		{

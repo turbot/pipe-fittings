@@ -2953,6 +2953,7 @@ type PipelineStepContainer struct {
 	Env               map[string]string `json:"env"`
 	EntryPoint        []string          `json:"entrypoint"`
 	Timeout           *int64            `json:"timeout"`
+	CpuShares         *int64            `json:"cpu_shares"`
 	Memory            *int64            `json:"memory"`
 	MemoryReservation *int64            `json:"memory_reservation"`
 	MemorySwap        *int64            `json:"memory_swap"`
@@ -3058,6 +3059,16 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
+	var cpuShares *int64
+	if p.UnresolvedAttributes[schema.AttributeTypeCpuShares] == nil {
+		cpuShares = p.CpuShares
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCpuShares], evalContext, &cpuShares)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
 	var memory *int64
 	if p.UnresolvedAttributes[schema.AttributeTypeMemory] == nil {
 		memory = p.Memory
@@ -3145,6 +3156,10 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 
 	if timeout != nil {
 		results[schema.AttributeTypeTimeout] = *timeout
+	}
+
+	if cpuShares != nil {
+		results[schema.AttributeTypeCpuShares] = *cpuShares
 	}
 
 	if memory != nil {
@@ -3294,6 +3309,25 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 					continue
 				}
 				p.Timeout = timeout
+			}
+		case schema.AttributeTypeCpuShares:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				cpuShares, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeCpuShares + " attribute to integer",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.CpuShares = cpuShares
 			}
 		case schema.AttributeTypeMemory:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)

@@ -11,6 +11,7 @@ pipeline "pipeline_step_container" {
     memory_reservation = 64
     memory_swap        = -1
     memory_swappiness  = 60
+    cpu_shares         = 512
     read_only          = false
     user               = "flowpipe"
     workdir            = "."
@@ -52,6 +53,12 @@ pipeline "pipeline_step_with_param" {
     description = "The timeout of the container run."
     type        = number
     default     = 120
+  }
+
+  param "cpu_shares" {
+    description = "CPU shares (relative weight) for the container."
+    type        = number
+    default     = 512
   }
 
   param "memory" {
@@ -101,6 +108,7 @@ pipeline "pipeline_step_with_param" {
     cmd                = param.cmd
     entrypoint         = param.entry_point
     timeout            = param.timeout
+    cpu_shares         = param.cpu_shares
     memory             = param.memory
     memory_reservation = param.memory_reservation
     memory_swap        = param.memory_swap

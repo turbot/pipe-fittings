@@ -181,6 +181,7 @@ const (
 	AttributeTypeCmd               = "cmd"
 	AttributeTypeEntryPoint        = "entrypoint"
 	AttributeTypeTimeout           = "timeout"
+	AttributeTypeCpuShares         = "cpu_shares"
 	AttributeTypeMemory            = "memory"
 	AttributeTypeMemoryReservation = "memory_reservation"
 	AttributeTypeMemorySwap        = "memory_swap"
