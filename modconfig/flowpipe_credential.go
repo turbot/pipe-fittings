@@ -1,8 +1,6 @@
 package modconfig
 
 import (
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -153,22 +151,12 @@ func (c *BasicCredential) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func NewCredential(mod *Mod, block *hcl.Block) Credential {
+func NewCredential(block *hcl.Block) Credential {
 
 	credentialType := block.Labels[0]
 	credentialName := block.Labels[1]
 
 	credentialName = credentialType + "." + credentialName
-
-	if mod != nil {
-		modName := mod.Name()
-		if strings.HasPrefix(modName, "mod") {
-			modName = strings.TrimPrefix(modName, "mod.")
-		}
-		credentialName = modName + ".credential." + credentialName
-	} else {
-		credentialName = "local.credential." + credentialName
-	}
 
 	if credentialType == "aws" {
 		credential := &AwsCredential{

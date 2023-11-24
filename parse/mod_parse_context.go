@@ -63,6 +63,10 @@ type ModParseContext struct {
 	// Variables is a tree of maps of the variables in the current mod and child dependency mods
 	Variables *modconfig.ModVariableMap
 
+	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
+	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
+	Credentials map[string]modconfig.Credential
+
 	ParentParseCtx *ModParseContext
 
 	// stack of parent resources for the currently parsed block
@@ -386,8 +390,57 @@ func (m *ModParseContext) buildEvalContext() {
 		referenceValues[mod] = cty.ObjectVal(refTypeMap)
 	}
 
+	credentialMap, err := BuildCredentialMapForEvalContext(m.Credentials)
+	if err != nil {
+		// TODO: need to be able to return error here!
+		panic(err)
+	}
+
+	referenceValues["credential"] = cty.ObjectVal(credentialMap)
+
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(referenceValues)
+}
+
+func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Credential) (map[string]cty.Value, error) {
+	credentialMap := map[string]cty.Value{}
+	awsCredentialMap := map[string]cty.Value{}
+	basicCredentialMap := map[string]cty.Value{}
+
+	for _, c := range allCredentials {
+		parts := strings.Split(c.Name(), ".")
+		if len(parts) != 2 {
+			return nil, perr.BadRequestWithMessage("invalid credential name: " + c.Name())
+		}
+
+		pCty, err := c.CtyValue()
+		if err != nil {
+			return nil, err
+		}
+
+		credentialType := parts[0]
+
+		switch credentialType {
+		case "aws":
+			awsCredentialMap[parts[1]] = pCty
+
+		case "basic":
+			basicCredentialMap[parts[1]] = pCty
+
+		default:
+			return nil, perr.BadRequestWithMessage("invalid credential type: " + credentialType)
+		}
+	}
+
+	if len(awsCredentialMap) > 0 {
+		credentialMap["aws"] = cty.ObjectVal(awsCredentialMap)
+	}
+
+	if len(basicCredentialMap) > 0 {
+		credentialMap["basic"] = cty.ObjectVal(basicCredentialMap)
+	}
+
+	return credentialMap, nil
 }
 
 // store the resource as a cty value in the reference valuemap

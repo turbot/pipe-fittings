@@ -27,8 +27,13 @@ var ConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeWorkspaceProfile,
 			LabelNames: []string{"name"},
 		},
+		{
+			Type:       schema.BlockTypeCredential,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
 	},
 }
+
 var PluginBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -164,10 +169,6 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type:       schema.BlockTypeIntegration,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeCredential,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
 	},

@@ -1,33 +1,24 @@
 package pipeline_test
 
-import (
-	"context"
-	"testing"
+// func TestCredentials(t *testing.T) {
+// 	assert := assert.New(t)
 
-	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/load_mod"
-	"github.com/turbot/pipe-fittings/modconfig"
-)
+// 	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/credentials.fp")
+// 	assert.Nil(err)
+// 	assert.NotNil(mod)
+// 	if mod == nil {
+// 		return
+// 	}
 
-func TestCredentials(t *testing.T) {
-	assert := assert.New(t)
+// 	credential := mod.ResourceMaps.Credentials["local.credential.aws.aws_static"]
+// 	if credential == nil {
+// 		assert.Fail("Credential not found")
+// 		return
+// 	}
 
-	mod, err := load_mod.LoadPipelinesReturningItsMod(context.TODO(), "./pipelines/credentials.fp")
-	assert.Nil(err)
-	assert.NotNil(mod)
-	if mod == nil {
-		return
-	}
+// 	assert.Equal("credential.aws.aws_static", credential.GetUnqualifiedName())
+// 	assert.Equal("aws", credential.GetCredentialType())
 
-	credential := mod.ResourceMaps.Credentials["local.credential.aws.aws_static"]
-	if credential == nil {
-		assert.Fail("Credential not found")
-		return
-	}
-
-	assert.Equal("credential.aws.aws_static", credential.GetUnqualifiedName())
-	assert.Equal("aws", credential.GetCredentialType())
-
-	awsCred := credential.(*modconfig.AwsCredential)
-	assert.Equal("ASIAQGDFAKEKGUI5MCEU", *awsCred.AccessKey)
-}
+// 	awsCred := credential.(*modconfig.AwsCredential)
+// 	assert.Equal("ASIAQGDFAKEKGUI5MCEU", *awsCred.AccessKey)
+// }

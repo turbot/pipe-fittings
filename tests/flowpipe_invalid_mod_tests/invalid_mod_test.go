@@ -8,6 +8,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 
 	"github.com/spf13/viper"
@@ -130,7 +131,7 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 
 		fmt.Println("Running test " + test.title)
 
-		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, ".fp")
+		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, map[string]modconfig.Credential{}, ".fp")
 		assert.NotNil(errorAndWarning.Error)
 		assert.Contains(errorAndWarning.Error.Error(), test.containsError)
 

@@ -2,6 +2,9 @@ package steampipeconfig
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/app_specific"
@@ -10,8 +13,6 @@ import (
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
-	"os"
-	"path/filepath"
 )
 
 func defaultWorkspaceSampleFileName() string {

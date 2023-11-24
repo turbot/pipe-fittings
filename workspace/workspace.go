@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/turbot/pipe-fittings/app_specific"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -35,7 +36,12 @@ type Workspace struct {
 	Mods map[string]*modconfig.Mod
 	// the input variables used in the parse
 	VariableValues map[string]string
-	CloudMetadata  *steampipeconfig.CloudMetadata
+
+	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
+	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
+	Credentials map[string]modconfig.Credential
+
+	CloudMetadata *steampipeconfig.CloudMetadata
 
 	// source snapshot paths
 	// if this is set, no other mod resources are loaded and
@@ -63,7 +69,7 @@ type Workspace struct {
 
 // Load creates a Workspace and loads the workspace mod
 
-func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+func LoadWithParams(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.Load start")
 	defer utils.LogTime("workspace.Load end")
 
@@ -72,6 +78,8 @@ func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions ..
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
+	workspace.Credentials = credentials
+
 	// load the workspace mod
 	errAndWarnings := workspace.loadWorkspaceMod(ctx)
 	return workspace, errAndWarnings
@@ -79,7 +87,7 @@ func LoadWithParams(ctx context.Context, workspacePath string, fileInclusions ..
 
 // Load creates a Workspace and loads the workspace mod
 func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	return LoadWithParams(ctx, workspacePath, app_specific.ModDataExtension)
+	return LoadWithParams(ctx, workspacePath, map[string]modconfig.Credential{}, app_specific.ModDataExtension)
 }
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
@@ -248,6 +256,8 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 		errorsAndWarnings.Error = err
 		return errorsAndWarnings
 	}
+
+	parseCtx.Credentials = w.Credentials
 
 	// add evaluated variables to the context
 	parseCtx.AddInputVariableValues(inputVariables)

@@ -75,7 +75,7 @@ func (suite *FlowpipeModTestSuite) TearDownSuite() {
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./good_mod", ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./good_mod", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -112,7 +112,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_references", ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_references", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -134,7 +134,7 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_step_output", ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_step_output", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -159,7 +159,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_one", ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_one", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -222,7 +222,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_simple", ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_simple", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -283,7 +283,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 func (suite *FlowpipeModTestSuite) XTestModDependenciesBackwardCompatible() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./backward_compatible_mod", ".hcl", ".sp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./backward_compatible_mod", map[string]modconfig.Credential{}, ".hcl", ".sp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -356,7 +356,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	os.Setenv("P_VAR_var_six", "set from env var")
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
