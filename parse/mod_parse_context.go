@@ -390,13 +390,14 @@ func (m *ModParseContext) buildEvalContext() {
 		referenceValues[mod] = cty.ObjectVal(refTypeMap)
 	}
 
-	credentialMap, err := BuildCredentialMapForEvalContext(m.Credentials)
-	if err != nil {
-		// TODO: need to be able to return error here!
-		panic(err)
-	}
+	// Do not refererence credential here, we don't want to "resolve" credential at parse time.
+	// credentialMap, err := BuildCredentialMapForEvalContext(m.Credentials)
+	// if err != nil {
+	// 	// TODO: need to be able to return error here!
+	// 	panic(err)
+	// }
 
-	referenceValues["credential"] = cty.ObjectVal(credentialMap)
+	// referenceValues["credential"] = cty.ObjectVal(credentialMap)
 
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(referenceValues)
@@ -406,6 +407,7 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 	credentialMap := map[string]cty.Value{}
 	awsCredentialMap := map[string]cty.Value{}
 	basicCredentialMap := map[string]cty.Value{}
+	slackCedentialMap := map[string]cty.Value{}
 
 	for _, c := range allCredentials {
 		parts := strings.Split(c.Name(), ".")
@@ -427,6 +429,9 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 		case "basic":
 			basicCredentialMap[parts[1]] = pCty
 
+		case "slack":
+			slackCedentialMap[parts[1]] = pCty
+
 		default:
 			return nil, perr.BadRequestWithMessage("invalid credential type: " + credentialType)
 		}
@@ -438,6 +443,10 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 
 	if len(basicCredentialMap) > 0 {
 		credentialMap["basic"] = cty.ObjectVal(basicCredentialMap)
+	}
+
+	if len(slackCedentialMap) > 0 {
+		credentialMap["slack"] = cty.ObjectVal(slackCedentialMap)
 	}
 
 	return credentialMap, nil

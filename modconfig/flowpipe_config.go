@@ -10,8 +10,10 @@ type FlowpipeConfig struct {
 }
 
 func NewFlowpipeConfig() *FlowpipeConfig {
-	return &FlowpipeConfig{
-		Credentials:    make(map[string]Credential),
+	fpConfig := FlowpipeConfig{
+		Credentials:    DefaultCredentials(),
 		GeneralOptions: &options.General{},
 	}
+
+	return &fpConfig
 }

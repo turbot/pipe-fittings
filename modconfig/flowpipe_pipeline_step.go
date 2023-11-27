@@ -258,7 +258,9 @@ type PipelineStep interface {
 	GetUnresolvedBodies() map[string]hcl.Body
 	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
 	GetDependsOn() []string
+	GetCredentialDependsOn() []string
 	AppendDependsOn(...string)
+	AppendCredentialDependsOn(...string)
 	GetForEach() hcl.Expression
 	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
@@ -433,17 +435,18 @@ func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
 
 // A common base struct that all pipeline steps must embed
 type PipelineStepBase struct {
-	Title        *string                    `json:"title,omitempty"`
-	Description  *string                    `json:"description,omitempty"`
-	Name         string                     `json:"name"`
-	Type         string                     `json:"step_type"`
-	PipelineName string                     `json:"pipeline_name,omitempty"`
-	DependsOn    []string                   `json:"depends_on,omitempty"`
-	Resolved     bool                       `json:"resolved,omitempty"`
-	ErrorConfig  *ErrorConfig               `json:"-"`
-	RetryConfig  *RetryConfig               `json:"retry,omitempty"`
-	ThrowConfig  []ThrowConfig              `json:"throw,omitempty"`
-	OutputConfig map[string]*PipelineOutput `json:"-"`
+	Title               *string                    `json:"title,omitempty"`
+	Description         *string                    `json:"description,omitempty"`
+	Name                string                     `json:"name"`
+	Type                string                     `json:"step_type"`
+	PipelineName        string                     `json:"pipeline_name,omitempty"`
+	DependsOn           []string                   `json:"depends_on,omitempty"`
+	CredentialDependsOn []string                   `json:"credential_depends_on,omitempty"`
+	Resolved            bool                       `json:"resolved,omitempty"`
+	ErrorConfig         *ErrorConfig               `json:"-"`
+	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
+	ThrowConfig         []ThrowConfig              `json:"throw,omitempty"`
+	OutputConfig        map[string]*PipelineOutput `json:"-"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -722,6 +725,10 @@ func (p *PipelineStepBase) GetDependsOn() []string {
 	return p.DependsOn
 }
 
+func (p *PipelineStepBase) GetCredentialDependsOn() []string {
+	return p.CredentialDependsOn
+}
+
 func (p *PipelineStepBase) IsResolved() bool {
 	return len(p.UnresolvedAttributes) == 0
 }
@@ -745,6 +752,20 @@ func (p *PipelineStepBase) AppendDependsOn(dependsOn ...string) {
 	for _, dep := range dependsOn {
 		if !existingDeps[dep] {
 			p.DependsOn = append(p.DependsOn, dep)
+			existingDeps[dep] = true
+		}
+	}
+}
+
+func (p *PipelineStepBase) AppendCredentialDependsOn(credentialDependsOn ...string) {
+	existingDeps := make(map[string]bool)
+	for _, dep := range p.CredentialDependsOn {
+		existingDeps[dep] = true
+	}
+
+	for _, dep := range credentialDependsOn {
+		if !existingDeps[dep] {
+			p.CredentialDependsOn = append(p.CredentialDependsOn, dep)
 			existingDeps[dep] = true
 		}
 	}
@@ -1851,7 +1872,7 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 		resolvedDiags := 0
 		for _, e := range stepDiags {
 			if e.Severity == hcl.DiagError {
-				if e.Detail == `There is no variable named "step".` {
+				if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
 					traversals := expr.Variables()
 					dependsOnAdded := false
 					for _, traversal := range traversals {
@@ -1860,9 +1881,30 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 							// When the expression/traversal is referencing an index, the index is also included in the parts
 							// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
 							if parts[0] == schema.BlockTypePipelineStep {
+								if len(parts) < 3 {
+									return cty.NilVal, stepDiags
+								}
 								dependsOn := parts[1] + "." + parts[2]
 								p.AppendDependsOn(dependsOn)
 								dependsOnAdded = true
+							} else if parts[0] == schema.BlockTypeCredential {
+								if len(parts) < 2 {
+									return cty.NilVal, stepDiags
+								}
+
+								if len(parts) == 2 {
+									// dynamic references:
+									// step "transform" "aws" {
+									// 	value   = credential.aws[param.cred].env
+									// }
+									dependsOn := parts[1] + ".<dynamic>"
+									p.AppendCredentialDependsOn(dependsOn)
+									dependsOnAdded = true
+								} else {
+									dependsOn := parts[1] + "." + parts[2]
+									p.AppendCredentialDependsOn(dependsOn)
+									dependsOnAdded = true
+								}
 							}
 						}
 					}
@@ -2833,7 +2875,7 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 
 	for _, e := range diags {
 		if e.Severity == hcl.DiagError {
-			if e.Detail == `There is no variable named "step".` {
+			if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
 				traversals := e.Expression.Variables()
 				dependsOnAdded := false
 				for _, traversal := range traversals {
@@ -2842,9 +2884,30 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 						// When the expression/traversal is referencing an index, the index is also included in the parts
 						// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
 						if parts[0] == schema.BlockTypePipelineStep {
+							if len(parts) < 3 {
+								return diags
+							}
 							dependsOn := parts[1] + "." + parts[2]
 							p.AppendDependsOn(dependsOn)
 							dependsOnAdded = true
+						} else if parts[0] == schema.BlockTypeCredential {
+							if len(parts) < 2 {
+								return diags
+							}
+
+							if len(parts) == 2 {
+								// dynamic references:
+								// step "transform" "aws" {
+								// 	value   = credential.aws[param.cred].env
+								// }
+								dependsOn := parts[1] + ".<dynamic>"
+								p.AppendCredentialDependsOn(dependsOn)
+								dependsOnAdded = true
+							} else {
+								dependsOn := parts[1] + "." + parts[2]
+								p.AppendCredentialDependsOn(dependsOn)
+								dependsOnAdded = true
+							}
 						}
 					}
 				}

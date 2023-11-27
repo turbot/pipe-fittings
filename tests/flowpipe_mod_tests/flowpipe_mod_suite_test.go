@@ -131,6 +131,29 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert.NotNil(pipelines["pipeline_with_references.pipeline.foo_two"])
 }
 
+func (suite *FlowpipeModTestSuite) TestModWithCreds() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", map[string]modconfig.Credential{}, ".fp")
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
+
+	assert.Equal("aws.default", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+}
+
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 

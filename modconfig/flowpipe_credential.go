@@ -24,6 +24,11 @@ type AwsCredential struct {
 	SecretKey    *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 	SessionToken *string `json:"session_token,omitempty" cty:"session_token" hcl:"session_token,optional"`
 	Ttl          *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
+	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
+}
+
+func DefaultCredentialNames() []string {
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -151,6 +156,33 @@ func (c *BasicCredential) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
+func DefaultCredentials() map[string]Credential {
+	credentials := make(map[string]Credential)
+	// credentials["aws.default"] = &AwsCredential{
+	// 	HclResourceImpl: HclResourceImpl{
+	// 		FullName:        "aws.default",
+	// 		UnqualifiedName: "credential.aws.default",
+	// 	},
+	// 	Type: "aws",
+	// }
+	// credentials["slack.default"] = &SlackCredential{
+	// 	HclResourceImpl: HclResourceImpl{
+	// 		FullName:        "slack.default",
+	// 		UnqualifiedName: "credential.slack.default",
+	// 	},
+	// 	Type: "slack",
+	// }
+	// credentials["gcp.default"] = &GcpCredential{
+	// 	HclResourceImpl: HclResourceImpl{
+	// 		FullName:        "gcp.default",
+	// 		UnqualifiedName: "credential.gcp.default",
+	// 	},
+	// 	Type: "gcp",
+	// }
+
+	return credentials
+}
+
 func NewCredential(block *hcl.Block) Credential {
 
 	credentialType := block.Labels[0]
@@ -161,7 +193,6 @@ func NewCredential(block *hcl.Block) Credential {
 	if credentialType == "aws" {
 		credential := &AwsCredential{
 			HclResourceImpl: HclResourceImpl{
-				// The FullName is the full name of the resource, including the mod name
 				FullName:        credentialName,
 				UnqualifiedName: "credential." + block.Labels[0] + "." + block.Labels[1],
 				DeclRange:       block.DefRange,
@@ -173,13 +204,23 @@ func NewCredential(block *hcl.Block) Credential {
 	} else if credentialType == "basic" {
 		credential := &BasicCredential{
 			HclResourceImpl: HclResourceImpl{
-				// The FullName is the full name of the resource, including the mod name
 				FullName:        credentialName,
 				UnqualifiedName: "credential." + block.Labels[0] + "." + block.Labels[1],
 				DeclRange:       block.DefRange,
 				blockType:       block.Type,
 			},
-			Type: "email",
+			Type: "basic",
+		}
+		return credential
+	} else if credentialType == "slack" {
+		credential := &SlackCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialName,
+				UnqualifiedName: "credential." + block.Labels[0] + "." + block.Labels[1],
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "slack",
 		}
 		return credential
 	}

@@ -477,7 +477,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	}
 
 	handlePipelineDecodeResult(pipelineHcl, res, block, parseCtx)
-	diags = validatePipelineDependencies(pipelineHcl)
+	diags = validatePipelineDependencies(pipelineHcl, parseCtx.Credentials)
 	if len(diags) > 0 {
 		res.handleDecodeDiags(diags)
 
@@ -489,13 +489,26 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	return pipelineHcl, res
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]modconfig.Credential) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string
 	for _, step := range pipelineHcl.Steps {
 		stepRegisters = append(stepRegisters, step.GetFullyQualifiedName())
 	}
+
+	var credentialRegisters []string
+	for k := range credentials {
+		parts := strings.Split(k, ".")
+		if len(parts) != 3 {
+			continue
+		}
+
+		cred := parts[1] + "." + parts[2]
+		credentialRegisters = append(credentialRegisters, cred)
+	}
+
+	credentialRegisters = append(credentialRegisters, modconfig.DefaultCredentialNames()...)
 
 	for _, step := range pipelineHcl.Steps {
 		dependsOn := step.GetDependsOn()
@@ -509,6 +522,17 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline) hcl.Diagnosti
 				})
 			}
 		}
+
+		credentialDependsOn := step.GetCredentialDependsOn()
+		for _, dep := range credentialDependsOn {
+			if !helpers.StringSliceContains(credentialRegisters, dep) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("invalid depends_on '%s' - credential does not exist for pipeline %s", dep, pipelineHcl.Name()),
+					Detail:   fmt.Sprintf("valid credentials are: %s", strings.Join(credentialRegisters, ", ")),
+				})
+			}
+		}
 	}
 
 	for _, outputConfig := range pipelineHcl.OutputConfig {
@@ -519,7 +543,6 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline) hcl.Diagnosti
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  fmt.Sprintf("invalid depends_on '%s' - does not exist for pipeline %s", dep, pipelineHcl.Name()),
-					Detail:   fmt.Sprintf("valid steps are: %s", strings.Join(stepRegisters, ", ")),
 				})
 			}
 		}

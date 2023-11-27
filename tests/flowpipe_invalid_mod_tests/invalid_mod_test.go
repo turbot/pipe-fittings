@@ -114,6 +114,11 @@ var tests = []testSetup{
 		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> pipeline.simple_with_trigger\n     MISSING: pipeline.simple_with_trigger",
 		errorType:     perr.ErrorCodeDependencyFailure,
 	},
+	{
+		title:         "Invalid credential reference",
+		modDir:        "./mods/invalid_creds_reference",
+		containsError: "invalid depends_on 'aws.abc' - credential does not exist for pipeline mod_with_creds.pipeline.with_creds",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
