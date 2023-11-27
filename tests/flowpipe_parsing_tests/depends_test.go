@@ -21,9 +21,9 @@ func TestImplicitDependsIndex(t *testing.T) {
 		return
 	}
 
-	step := pipelines["local.pipeline.depends_index"].GetStep("echo.echo_1")
+	step := pipelines["local.pipeline.depends_index"].GetStep("transform.echo_1")
 	if step == nil {
-		assert.Fail("echo.echo_1 step not found")
+		assert.Fail("transform.echo_1 step not found")
 		return
 	}
 
@@ -67,9 +67,9 @@ func TestExplicitDependsOnIndex(t *testing.T) {
 		return
 	}
 
-	step := pipelines["local.pipeline.explicit_depends_index"].GetStep("echo.echo_1")
+	step := pipelines["local.pipeline.explicit_depends_index"].GetStep("transform.echo_1")
 	if step == nil {
-		assert.Fail("echo.echo_1 step not found")
+		assert.Fail("transform.echo_1 step not found")
 		return
 	}
 
@@ -90,9 +90,9 @@ func TestImplicitQueryDepends(t *testing.T) {
 		return
 	}
 
-	step := pipelines["local.pipeline.query"].GetStep("echo.result")
+	step := pipelines["local.pipeline.query"].GetStep("transform.result")
 	if step == nil {
-		assert.Fail("echo.result step not found")
+		assert.Fail("transform.result step not found")
 		return
 	}
 

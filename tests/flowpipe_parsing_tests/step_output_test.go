@@ -23,7 +23,7 @@ func TestStepOutput(t *testing.T) {
 
 	assert.Equal(2, len(pipelines["local.pipeline.step_output"].Steps), "wrong number of steps")
 
-	startStep := pipelines["local.pipeline.step_output"].GetStep("echo.start_step")
+	startStep := pipelines["local.pipeline.step_output"].GetStep("transform.start_step")
 
 	startStepOutputConfig := startStep.GetOutputConfig()
 	if startStepOutputConfig == nil {
@@ -38,12 +38,12 @@ func TestStepOutput(t *testing.T) {
 
 	assert.Equal("bar", startOutput.Value)
 
-	endStep := pipelines["local.pipeline.step_output"].GetStep("echo.end_step")
+	endStep := pipelines["local.pipeline.step_output"].GetStep("transform.end_step")
 	if endStep == nil {
 		assert.Fail("end_step not found")
 		return
 	}
 
 	assert.Equal(1, len(endStep.GetDependsOn()))
-	assert.Equal("echo.start_step", endStep.GetDependsOn()[0])
+	assert.Equal("transform.start_step", endStep.GetDependsOn()[0])
 }

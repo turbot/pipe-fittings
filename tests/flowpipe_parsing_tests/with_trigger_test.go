@@ -23,9 +23,9 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
-	echoStep := pipelines["local.pipeline.simple_with_trigger"].GetStep("echo.simple_echo")
+	echoStep := pipelines["local.pipeline.simple_with_trigger"].GetStep("transform.simple_echo")
 	if echoStep == nil {
-		assert.Fail("echo.simple_echo step not found")
+		assert.Fail("transform.simple_echo step not found")
 		return
 	}
 

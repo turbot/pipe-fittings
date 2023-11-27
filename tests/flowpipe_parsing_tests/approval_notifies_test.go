@@ -71,7 +71,7 @@ func TestApprovalNotifies(t *testing.T) {
 	assert.Equal("echo", pipeline.Steps[0].GetName())
 	assert.Equal("input", pipeline.Steps[1].GetName())
 
-	assert.Equal("echo.echo", pipeline.Steps[1].GetDependsOn()[0])
+	assert.Equal("transform.echo", pipeline.Steps[1].GetDependsOn()[0])
 	unresolvedAttribute := pipeline.Steps[1].GetUnresolvedAttributes()["notifies"]
 	assert.NotNil(unresolvedAttribute)
 	assert.True(len(unresolvedAttribute.Variables()) > 0)

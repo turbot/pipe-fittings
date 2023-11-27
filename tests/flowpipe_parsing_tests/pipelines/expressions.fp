@@ -1,45 +1,45 @@
 pipeline "text_expr" {
-    step "echo" "text_1" {
-        text = "foo"
-    }
+  step "transform" "text_1" {
+    value = "foo"
+  }
 
-    step "echo" "text_2" {
-        text = "bar ${step.echo.text_1.text} baz"
-    }
+  step "transform" "text_2" {
+    value = "bar ${step.transform.text_1.value} baz"
+  }
 
-    step "echo" "text_3" {
-        text = "bar ${step.echo.text_2.text} baz ${step.echo.text_1.text}"
-    }
+  step "transform" "text_3" {
+    value = "bar ${step.transform.text_2.value} baz ${step.transform.text_1.value}"
+  }
 }
 
 pipeline "expr_func" {
-    step "echo" "text_title" {
-        text = title("Hello World")
-    }
+  step "transform" "text_title" {
+    value = title("Hello World")
+  }
 }
 
 pipeline "expr_within_text" {
-    step "echo" "text_title" {
-        text = "Hello ${title("world")}"
-    }
+  step "transform" "text_title" {
+    value = "Hello ${title("world")}"
+  }
 }
 
 
 pipeline "expr_depend_and_function" {
-    step "echo" "text_1" {
-        text = "foo"
-    }
+  step "transform" "text_1" {
+    value = "foo"
+  }
 
-    step "echo" "text_1_a" {
-        text = title("foo")
-    }
+  step "transform" "text_1_a" {
+    value = title("foo")
+  }
 
 
-    step "echo" "text_2" {
-        text = title("bar ${step.echo.text_1.text} baz")
-    }
+  step "transform" "text_2" {
+    value = title("bar ${step.transform.text_1.value} baz")
+  }
 
-    step "echo" "text_3" {
-        text = "output2 ${title(step.echo.text_2.text)} func(output1) ${title(step.echo.text_1.text)}"
-    }
+  step "transform" "text_3" {
+    value = "output2 ${title(step.transform.text_2.value)} func(output1) ${title(step.transform.text_1.value)}"
+  }
 }

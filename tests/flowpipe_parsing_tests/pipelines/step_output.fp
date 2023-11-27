@@ -1,14 +1,14 @@
 pipeline "step_output" {
 
-  step "echo" "start_step" {
-      text = "foo"
+  step "transform" "start_step" {
+    value = "foo"
 
-      output "start_output" {
-         value = "bar"
-      }
+    output "start_output" {
+      value = "bar"
+    }
   }
 
-  step "echo" "end_step" {
-     text = step.echo.start_step.output.start_output
+  step "transform" "end_step" {
+    value = step.transform.start_step.output.start_output
   }
 }
