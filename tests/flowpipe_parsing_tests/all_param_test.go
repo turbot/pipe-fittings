@@ -2,8 +2,9 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/load_mod"
 	"testing"
+
+	"github.com/turbot/pipe-fittings/load_mod"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -24,9 +25,9 @@ func TestAllParam(t *testing.T) {
 	for _, step := range pipeline.Steps {
 		// except echo bazz
 		if step.GetName() == "echo_baz" {
-			assert.Nil(step.GetUnresolvedAttributes()["text"])
+			assert.Nil(step.GetUnresolvedAttributes()["value"])
 		} else {
-			assert.NotNil(step.GetUnresolvedAttributes()["text"])
+			assert.NotNil(step.GetUnresolvedAttributes()["value"])
 		}
 	}
 }

@@ -21,9 +21,9 @@ func TestJsonSimple(t *testing.T) {
 		return
 	}
 
-	step := pipelines["local.pipeline.json"].GetStep("echo.json")
+	step := pipelines["local.pipeline.json"].GetStep("transform.json")
 	if step == nil {
-		assert.Fail("echo.json step not found")
+		assert.Fail("transform.json step not found")
 		return
 	}
 }
@@ -41,9 +41,9 @@ func TestJsonFor(t *testing.T) {
 		return
 	}
 
-	step := pipelines["local.pipeline.json_for"].GetStep("echo.json")
+	step := pipelines["local.pipeline.json_for"].GetStep("transform.json")
 	if step == nil {
-		assert.Fail("echo.json step not found")
+		assert.Fail("transform.json step not found")
 		return
 	}
 }

@@ -1,84 +1,84 @@
 pipeline "for_loop" {
 
-    param "users" {
-        type = list(string)
-        default = ["jerry", "Janis", "Jimi"]
-    }
+  param "users" {
+    type    = list(string)
+    default = ["jerry", "Janis", "Jimi"]
+  }
 
-    step "echo" "text_1" {
-        for_each = param.users
-        text = "user if ${each.value}"
-    }
+  step "transform" "text_1" {
+    for_each = param.users
+    value    = "user if ${each.value}"
+  }
 
-    step "echo" "no_for_each" {
-        text = "baz"
-    }
+  step "transform" "no_for_each" {
+    value = "baz"
+  }
 }
 
 pipeline "for_depend_object" {
 
-    param "users" {
-        type = list(string)
-        default = ["brian", "freddie", "john", "roger"]
-    }
+  param "users" {
+    type    = list(string)
+    default = ["brian", "freddie", "john", "roger"]
+  }
 
-    step "echo" "text_1" {
-        for_each = param.users
-        text = "user if ${each.value}"
-    }
+  step "transform" "text_1" {
+    for_each = param.users
+    value    = "user if ${each.value}"
+  }
 
-    step "echo" "text_3" {
-        for_each = step.echo.text_1
-        text = "output one value is ${each.value.text}"
-    }
+  step "transform" "text_3" {
+    for_each = step.transform.text_1
+    value    = "output one value is ${each.value.value}"
+  }
 }
 
 
 pipeline "for_loop_depend" {
 
-    param "users" {
-        type = list(string)
-        default = ["jerry", "Janis", "Jimi"]
-    }
+  param "users" {
+    type    = list(string)
+    default = ["jerry", "Janis", "Jimi"]
+  }
 
-    step "echo" "text_1" {
-        for_each = param.users
-        text = "user is ${each.value}"
-    }
+  step "transform" "text_1" {
+    for_each = param.users
+    value    = "user is ${each.value}"
+  }
 
-    step "echo" "text_2" {
-        text = "output is ${step.echo.text_1[0].text}"
-    }
+  step "transform" "text_2" {
+    value = "output is ${step.transform.text_1[0].value}"
+  }
 
-    step "echo" "text_3" {
-        for_each = step.echo.text_1
-        text = "output one value is ${each.value.text}"
-    }
+  step "transform" "text_3" {
+    for_each = step.transform.text_1
+    value    = "output one value is ${each.value.value}"
+  }
 }
 
 
 pipeline "for_map" {
-    param "legends" {
-        type = map
+  param "legends" {
+    type = map
 
-        default = {
-            "janis" = {
-                last_name= "joplin"
-                age = 27
-            }
-            "jimi" = {
-                last_name= "hendrix"
-                age = 27
-            }
-            "jerry" = {
-                last_name= "garcia"
-                age = 53
-            }
-        }
+    default = {
+      "janis" = {
+        last_name = "joplin"
+        age       = 27
+      }
+      "jimi" = {
+        last_name = "hendrix"
+        age       = 27
+      }
+      "jerry" = {
+        last_name = "garcia"
+        age       = 53
+      }
     }
+  }
 
-    step "echo" "text_1" {
-        for_each = param.legends
-        text = "${each.value.key} ${each.value.last_name} was ${each.value.age}"
-    }
+  step "transform" "text_1" {
+    for_each = param.legends
+    value    = "${each.value.key} ${each.value.last_name} was ${each.value.age}"
+  }
 }

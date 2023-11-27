@@ -25,12 +25,12 @@ func TestExpression(t *testing.T) {
 	}
 
 	var output string
-	expr := pipelines["local.pipeline.text_expr"].Steps[1].GetUnresolvedAttributes()["text"]
+	expr := pipelines["local.pipeline.text_expr"].Steps[1].GetUnresolvedAttributes()["value"]
 
 	objectVal := cty.ObjectVal(map[string]cty.Value{
-		"echo": cty.ObjectVal(map[string]cty.Value{
+		"transform": cty.ObjectVal(map[string]cty.Value{
 			"text_1": cty.ObjectVal(map[string]cty.Value{
-				"text": cty.StringVal("hello"),
+				"value": cty.StringVal("hello"),
 			}),
 		}),
 	})
@@ -60,9 +60,9 @@ func TestExprFunc(t *testing.T) {
 	}
 
 	pipelineHcl := pipelines["local.pipeline.expr_func"]
-	step := pipelineHcl.GetStep("echo.text_title")
+	step := pipelineHcl.GetStep("transform.text_title")
 	if step == nil {
-		assert.Fail("echo.text_title step not found")
+		assert.Fail("transform.text_title step not found")
 		return
 	}
 
@@ -70,7 +70,7 @@ func TestExprFunc(t *testing.T) {
 	assert.Nil(err, "error found")
 	assert.GreaterOrEqual(len(stepInputs), 1, "wrong number of inputs")
 
-	textInput := stepInputs["text"]
+	textInput := stepInputs["value"]
 	assert.NotNil(textInput, "text input not found")
 
 	// test the title function is working as expected
@@ -91,9 +91,9 @@ func TestExprWithinVariable(t *testing.T) {
 	}
 
 	pipelineHcl := pipelines["local.pipeline.expr_within_text"]
-	step := pipelineHcl.GetStep("echo.text_title")
+	step := pipelineHcl.GetStep("transform.text_title")
 	if step == nil {
-		assert.Fail("echo.text_title step not found")
+		assert.Fail("transform.text_title step not found")
 	}
 
 	// There's no unresolved variable, the function is just ${title("world")}
@@ -103,7 +103,7 @@ func TestExprWithinVariable(t *testing.T) {
 	assert.Nil(err, "error found")
 	assert.GreaterOrEqual(len(stepInputs), 1, "wrong number of inputs")
 
-	textInput := stepInputs["text"]
+	textInput := stepInputs["value"]
 	assert.NotNil(textInput, "text input not found")
 
 	// test the title function is working as expected
@@ -124,9 +124,9 @@ func TestExprDependAndFunction(t *testing.T) {
 	}
 
 	pipelineHcl := pipelines["local.pipeline.expr_depend_and_function"]
-	stepOne := pipelineHcl.GetStep("echo.text_1")
+	stepOne := pipelineHcl.GetStep("transform.text_1")
 	if stepOne == nil {
-		assert.Fail("echo.text_1 step not found")
+		assert.Fail("transform.text_1 step not found")
 		return
 	}
 
@@ -134,11 +134,11 @@ func TestExprDependAndFunction(t *testing.T) {
 
 	stepOneInput, err := stepOne.GetInputs(nil)
 	assert.Nil(err)
-	assert.Equal("foo", stepOneInput["text"])
+	assert.Equal("foo", stepOneInput["value"])
 
-	stepOneA := pipelineHcl.GetStep("echo.text_1_a")
+	stepOneA := pipelineHcl.GetStep("transform.text_1_a")
 	if stepOneA == nil {
-		assert.Fail("echo.text_1_a step not found")
+		assert.Fail("transform.text_1_a step not found")
 		return
 	}
 
@@ -148,19 +148,19 @@ func TestExprDependAndFunction(t *testing.T) {
 	assert.Nil(err)
 
 	// step_1_a has a title function on its text
-	assert.Equal("Foo", stepOneAInput["text"])
+	assert.Equal("Foo", stepOneAInput["value"])
 
-	stepTwo := pipelineHcl.GetStep("echo.text_2")
+	stepTwo := pipelineHcl.GetStep("transform.text_2")
 	if stepTwo == nil {
-		assert.Fail("echo.text_1 step not found")
+		assert.Fail("transform.text_1 step not found")
 		return
 	}
 
 	assert.False(stepTwo.IsResolved(), "step 2 should NOT be resolved")
 
-	stepThree := pipelineHcl.GetStep("echo.text_3")
+	stepThree := pipelineHcl.GetStep("transform.text_3")
 	if stepThree == nil {
-		assert.Fail("text.text_3 step not found")
+		assert.Fail("transform.text_3 step not found")
 		return
 	}
 

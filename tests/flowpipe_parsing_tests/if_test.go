@@ -21,10 +21,10 @@ func TestIf(t *testing.T) {
 		return
 	}
 
-	step := pipelines["local.pipeline.if"].GetStep("echo.text_1")
+	step := pipelines["local.pipeline.if"].GetStep("transform.text_1")
 
 	if step == nil {
-		assert.Fail("echo.text_1 step not found")
+		assert.Fail("transform.text_1 step not found")
 		return
 	}
 

@@ -1,19 +1,19 @@
 pipeline "param_on_echo" {
-    param "test_optional" {
-        type = string
-        # optional = true
-        # default = null
-    }
+  param "test_optional" {
+    type = string
+    # optional = true
+    # default = null
+  }
 
-    step "echo" "echo_one" {
-        text = "Hello World"
-    }
+  step "transform" "echo_one" {
+    value = "Hello World"
+  }
 
-    step "echo" "test" {
-        text = param.test_optional != null ? "${param.test_optional}" : "default"
-    }
+  step "transform" "test" {
+    value = param.test_optional != null ? "${param.test_optional}" : "default"
+  }
 
-    output "echo_one_output" {
-        value = step.echo.test.text
-    }
+  output "echo_one_output" {
+    value = step.transform.test.value
+  }
 }

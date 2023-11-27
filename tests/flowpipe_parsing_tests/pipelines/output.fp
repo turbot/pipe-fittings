@@ -1,13 +1,13 @@
 pipeline "with_output" {
-    step "echo" "echo_1" {
-        text = "foo bar"
-    }
+  step "transform" "echo_1" {
+    value = "foo bar"
+  }
 
-    output "one" {
-        value = step.echo.echo_1.text
-    }
+  output "one" {
+    value = step.transform.echo_1.value
+  }
 
-    output "two" {
-        value = title(step.echo.echo_1.text)
-    }
+  output "two" {
+    value = title(step.transform.echo_1.value)
+  }
 }

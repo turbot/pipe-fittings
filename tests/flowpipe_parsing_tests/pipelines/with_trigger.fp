@@ -1,42 +1,42 @@
 pipeline "simple_with_trigger" {
-    description = "simple pipeline that will be referred to by a trigger"
+  description = "simple pipeline that will be referred to by a trigger"
 
-    step "echo" "simple_echo" {
-        text = "foo bar"
-    }
+  step "transform" "simple_echo" {
+    value = "foo bar"
+  }
 }
 
 trigger "schedule" "my_hourly_trigger" {
-    schedule = "5 * * * *"
-    pipeline = pipeline.simple_with_trigger
+  schedule = "5 * * * *"
+  pipeline = pipeline.simple_with_trigger
 }
 
 
 trigger "schedule" "trigger_with_args" {
-    schedule = "5 * * * *"
-    pipeline = pipeline.simple_with_trigger
+  schedule = "5 * * * *"
+  pipeline = pipeline.simple_with_trigger
 
-    args = {
-        param_one     = "one"
-        param_two_int = 2
-    }
+  args = {
+    param_one     = "one"
+    param_two_int = 2
+  }
 }
 
 trigger "http" "trigger_with_args" {
-    pipeline = pipeline.simple_with_trigger
+  pipeline = pipeline.simple_with_trigger
 
-    args = {
-        param_one     = "one"
-        param_two_int = 2
-    }
+  args = {
+    param_one     = "one"
+    param_two_int = 2
+  }
 }
 
 
 trigger "query" "query_trigger" {
-    schedule = "5 * * * *"
-    pipeline = pipeline.simple_with_trigger
+  schedule = "5 * * * *"
+  pipeline = pipeline.simple_with_trigger
 
-    sql = <<EOQ
+  sql = <<EOQ
         select
             access_key_id,
             user_name,
@@ -46,12 +46,12 @@ trigger "query" "query_trigger" {
         where create_date < now() - interval '90 days'
     EOQ
 
-    # Only run the pipeline when keys are newly discovered to have expired
-    events = [ "insert" ]
-    primary_key = "access_key_id"
+  # Only run the pipeline when keys are newly discovered to have expired
+  events      = ["insert"]
+  primary_key = "access_key_id"
 
-    args = {
-        param_one     = "one"
-        param_two_int = 2
-    }
+  args = {
+    param_one     = "one"
+    param_two_int = 2
+  }
 }

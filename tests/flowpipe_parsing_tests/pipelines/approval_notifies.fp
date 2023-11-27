@@ -48,15 +48,15 @@ pipeline "approval_with_notifies_depend_another_step" {
     default = "foo"
   }
 
-  step "echo" "echo" {
-    text = "some val"
+  step "transform" "echo" {
+    value = "some val"
   }
   step "input" "input" {
 
     notifies = [
       {
         integration = integration.slack.my_slack_app
-        channel     = step.echo.echo.text
+        channel     = step.transform.echo.value
         # channel = param.slack_channel
         # if      = param.slack_integration == null ? false : true
       },

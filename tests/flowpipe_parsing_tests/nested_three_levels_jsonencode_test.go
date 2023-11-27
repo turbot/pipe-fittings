@@ -18,7 +18,7 @@ func TestNestedThreeLevelJsonencode(t *testing.T) {
 	assert.Equal(3, len(pipelines))
 	found := false
 	for _, s := range pipelines["local.pipeline.middle"].Steps {
-		if s.GetName() == "echo_two" && s.GetType() == "echo" {
+		if s.GetName() == "echo_two" && s.GetType() == "transform" {
 			dependsOn := s.GetDependsOn()
 			assert.Equal(1, len(dependsOn))
 			assert.Equal("pipeline.call_bottom", dependsOn[0])

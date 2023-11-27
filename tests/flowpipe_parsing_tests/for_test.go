@@ -38,21 +38,21 @@ func TestSimpleForAndParam(t *testing.T) {
 
 	pipeline := pipelines["local.pipeline.for_loop"]
 
-	step := pipeline.GetStep("echo.no_for_each")
+	step := pipeline.GetStep("transform.no_for_each")
 	if step == nil {
-		assert.Fail("echo.no_for_each step not found")
+		assert.Fail("transform.no_for_each step not found")
 		return
 	}
 
 	if step.GetForEach() != nil {
-		assert.Fail("echo.no_for_each should not have a for_each")
+		assert.Fail("transform.no_for_each should not have a for_each")
 		return
 	}
 
-	step = pipeline.GetStep("echo.text_1")
+	step = pipeline.GetStep("transform.text_1")
 
 	if step == nil {
-		assert.Fail("echo.text_1 step not found")
+		assert.Fail("transform.text_1 step not found")
 		return
 	}
 
@@ -69,7 +69,7 @@ func TestSimpleForAndParam(t *testing.T) {
 	var output []string
 
 	if step.GetForEach() == nil {
-		assert.Fail("echo.text_1 should have a for_each")
+		assert.Fail("transform.text_1 should have a for_each")
 		return
 	}
 
@@ -81,9 +81,9 @@ func TestSimpleForAndParam(t *testing.T) {
 
 	assert.Equal("foo bar", strings.Join(output, " "), "wrong output")
 
-	textAttribute := step.GetUnresolvedAttributes()["text"]
+	textAttribute := step.GetUnresolvedAttributes()["value"]
 	if textAttribute == nil {
-		assert.Fail("text attribute not found")
+		assert.Fail("value attribute not found")
 	}
 
 	eachVal := cty.ObjectVal(map[string]cty.Value{
@@ -119,14 +119,14 @@ func TestParamsProcessing(t *testing.T) {
 
 	pipeline := pipelines["local.pipeline.for_loop"]
 
-	step := pipeline.GetStep("echo.text_1")
+	step := pipeline.GetStep("transform.text_1")
 	if step == nil {
-		assert.Fail("echo.text_1 step not found")
+		assert.Fail("transform.text_1 step not found")
 		return
 	}
 
 	if step.GetForEach() == nil {
-		assert.Fail("echo.text_1 should have a for_each")
+		assert.Fail("transform.text_1 should have a for_each")
 		return
 	}
 
@@ -190,6 +190,6 @@ func TestParamsProcessing(t *testing.T) {
 		evalContext.Variables["each"] = cty.ObjectVal(v)
 		stepInput, err := step.GetInputs(evalContext)
 		assert.Nil(err, "error getting step inputs")
-		assert.Equal(stepInput["text"], "user if "+expected[i], "wrong input")
+		assert.Equal(stepInput["value"], "user if "+expected[i], "wrong input")
 	}
 }
