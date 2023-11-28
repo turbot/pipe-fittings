@@ -508,10 +508,9 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 				Subject:  &loopBlock.DefRange,
 			})
 		} else {
-			// Decode the loop block
 			moreDiags := gohcl.DecodeBody(loopBlock.Body, evalContext, loopDefn)
 
-			// TODO: Loop should always be unresolved I believe? Will it end in an infinite loop if loop block is resolved?
+			// Loop should always be unresolved
 			if len(moreDiags) > 0 {
 				moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeLoop, loopBlock.Body)
 				if len(moreDiags) > 0 {

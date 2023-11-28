@@ -28,19 +28,18 @@ pipeline "simple_http_loop" {
   }
 }
 
+pipeline "loop_depends_on_another_step" {
 
-pipeline "loop_depeneds_on_another_step" {
-
-  step "transform" "base" {
-    value = 5
+  step "sleep" "base" {
+    duration = "5s"
   }
 
-  step "transform" "repeat" {
-    value = "iteration"
+  step "sleep" "repeat" {
+    duration = "iteration"
 
     loop {
       until = loop.index > 5
-      value = step.transform.base.value + 1 + loop.index
+      duration = step.sleep.base.duration + 1 + loop.index
     }
   }
 }
