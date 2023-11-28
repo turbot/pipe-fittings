@@ -134,6 +134,7 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert := assert.New(suite.T())
 
+	os.Setenv("TOKEN", "foobarbaz")
 	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", map[string]modconfig.Credential{}, ".fp")
 
 	assert.NotNil(w)
@@ -150,8 +151,40 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
-
 	assert.Equal("aws.default", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+
+	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
+	assert.Nil(err)
+
+	assert.Equal("foobarbaz", stepInputs["value"], "token should be set to foobarbaz")
+	os.Unsetenv("TOKEN")
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
+	assert := assert.New(suite.T())
+
+	// This is the same test with TestModWithCreds but with no TOKEN env var set, the value for the second step should be nil
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", map[string]modconfig.Credential{}, ".fp")
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
+	assert.Equal("aws.default", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+
+	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
+	assert.Nil(err)
+	assert.Equal("", stepInputs["value"])
 }
 
 func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {

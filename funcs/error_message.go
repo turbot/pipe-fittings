@@ -20,7 +20,6 @@ var ErrorMessageFunc = function.New(&function.Spec{
 	},
 	Type: function.StaticReturnType(cty.String),
 	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
-
 		if len(args) == 0 {
 			return cty.StringVal(""), nil
 		}
