@@ -1,20 +1,20 @@
 pipeline "parent_pipeline_hcl" {
-    step "echo" "foo" {
-        text = "foo"
+    step "transform" "foo" {
+        value = "foo"
     }
 
     output "foo_b" {
-        value = step.echo.foo.text
+        value = step.transform.foo.value
     }
 }
 
 
 pipeline "parent_pipeline_hcl_b" {
-    step "echo" "foo" {
-        text = "foo"
+    step "transform" "foo" {
+        value = "foo"
     }
 
     output "foo_b" {
-        value = step.echo.foo.text
+        value = step.transform.foo.value
     }
 }

@@ -15,23 +15,23 @@ variable "var_two" {
 }
 
 pipeline "this_pipeline_is_in_the_child" {
-    step "echo" "foo" {
-        text = "foo"
+    step "transform" "foo" {
+        value = "foo"
     }
 
     output "foo_a" {
-        value = step.echo.foo.text
+        value = step.transform.foo.value
     }
 }
 
 pipeline "this_pipeline_is_in_the_child_using_variable" {
-    step "echo" "foo" {
-        text = "foo: ${var.var_one}"
+    step "transform" "foo" {
+        value = "foo: ${var.var_one}"
     }
 }
 
 pipeline "this_pipeline_is_in_the_child_using_variable_passed_from_parent" {
-    step "echo" "foo" {
-        text = "foo: ${var.var_two}"
+    step "transform" "foo" {
+        value = "foo: ${var.var_two}"
     }
 }

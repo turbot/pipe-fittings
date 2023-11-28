@@ -3,16 +3,16 @@ mod "mod_child_b" {
 }
 
 pipeline "this_pipeline_is_in_the_child_b" {
-    step "echo" "foo" {
-        text = "foo"
+    step "transform" "foo" {
+        value = "foo"
     }
 
-    step "echo" "baz" {
-        text = "baz"
+    step "transform" "baz" {
+        value = "baz"
     }
 
     output "foo_a" {
-        value = step.echo.foo.text
+        value = step.transform.foo.value
     }
 
     # this will test resolving a step in a child pipeline
@@ -25,11 +25,11 @@ pipeline "this_pipeline_is_in_the_child_b" {
 
 
 pipeline "foo_two" {
-    step "echo" "baz" {
-        text = "foo"
+    step "transform" "baz" {
+        value = "foo"
     }
 
     output "foo" {
-        value = echo.baz.text
+        value = transform.baz.value
     }
 }

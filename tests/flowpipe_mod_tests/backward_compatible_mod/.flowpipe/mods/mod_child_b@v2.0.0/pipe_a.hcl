@@ -1,9 +1,9 @@
 pipeline "another_child_pipeline" {
-    step "echo" "foo" {
-        text = "foo"
+    step "transform" "foo" {
+        value = "foo"
     }
 
     output "foo_b" {
-        value = step.echo.foo.text
+        value = step.transform.foo.value
     }
 }

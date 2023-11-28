@@ -99,9 +99,9 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	// check if all steps are there
 	assert.Equal(2, len(jsonForPipeline.Steps), "wrong number of steps")
 	assert.Equal(jsonForPipeline.Steps[0].GetName(), "json", "wrong step name")
-	assert.Equal(jsonForPipeline.Steps[0].GetType(), "echo", "wrong step type")
+	assert.Equal(jsonForPipeline.Steps[0].GetType(), "transform", "wrong step type")
 	assert.Equal(jsonForPipeline.Steps[1].GetName(), "json_for", "wrong step name")
-	assert.Equal(jsonForPipeline.Steps[1].GetType(), "echo", "wrong step type")
+	assert.Equal(jsonForPipeline.Steps[1].GetType(), "transform", "wrong step type")
 
 	// check if all triggers are there
 	triggers := mod.ResourceMaps.Triggers
@@ -314,7 +314,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 		return
 	}
 
-	assert.Equal("foo: this is the value of var_one", childPipelineWithVar.Steps[0].(*modconfig.PipelineStepEcho).Text)
+	assert.Equal("foo: this is the value of var_one", childPipelineWithVar.Steps[0].(*modconfig.PipelineStepTransform).Value)
 
 	childPipelineWithVarPassedFromParent := pipelines["mod_child_a.pipeline.this_pipeline_is_in_the_child_using_variable_passed_from_parent"]
 	if childPipelineWithVarPassedFromParent == nil {
@@ -322,7 +322,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 		return
 	}
 
-	assert.Equal("foo: var_two from parent .pvars file", childPipelineWithVarPassedFromParent.Steps[0].(*modconfig.PipelineStepEcho).Text)
+	assert.Equal("foo: var_two from parent .pvars file", childPipelineWithVarPassedFromParent.Steps[0].(*modconfig.PipelineStepTransform).Value)
 }
 
 // VH: design change, no more backward compatible mod
@@ -420,25 +420,25 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 		return
 	}
 
-	assert.Equal("prefix text here and this is the value of var_one and suffix", pipelineOne.Steps[0].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("prefix text here and value from var file and suffix", pipelineOne.Steps[1].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("prefix text here and var_three from var file and suffix", pipelineOne.Steps[2].(*modconfig.PipelineStepEcho).Text)
+	assert.Equal("prefix text here and this is the value of var_one and suffix", pipelineOne.Steps[0].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("prefix text here and value from var file and suffix", pipelineOne.Steps[1].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("prefix text here and var_three from var file and suffix", pipelineOne.Steps[2].(*modconfig.PipelineStepTransform).Value)
 
 	assert.True(pipelineOne.Steps[0].IsResolved())
 	assert.True(pipelineOne.Steps[1].IsResolved())
 	assert.True(pipelineOne.Steps[2].IsResolved())
 
-	// step echo.one_echo should not be resolved, it has reference to echo.one step
+	// step transform.one_echo should not be resolved, it has reference to transform.one step
 	assert.False(pipelineOne.Steps[3].IsResolved())
 
-	assert.Equal("using value from locals: value of locals_one", pipelineOne.Steps[4].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("using value from locals: 10", pipelineOne.Steps[5].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("using value from locals: value of key_two", pipelineOne.Steps[6].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("using value from locals: value of key_two", pipelineOne.Steps[7].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("using value from locals: 33", pipelineOne.Steps[8].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("var_four value is: value from auto.vars file", pipelineOne.Steps[9].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("var_five value is: value from two.auto.vars file", pipelineOne.Steps[10].(*modconfig.PipelineStepEcho).Text)
-	assert.Equal("var_six value is: set from env var", pipelineOne.Steps[11].(*modconfig.PipelineStepEcho).Text)
+	assert.Equal("using value from locals: value of locals_one", pipelineOne.Steps[4].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("using value from locals: 10", pipelineOne.Steps[5].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("using value from locals: value of key_two", pipelineOne.Steps[6].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("using value from locals: value of key_two", pipelineOne.Steps[7].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("using value from locals: 33", pipelineOne.Steps[8].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("var_four value is: value from auto.vars file", pipelineOne.Steps[9].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("var_five value is: value from two.auto.vars file", pipelineOne.Steps[10].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("var_six value is: set from env var", pipelineOne.Steps[11].(*modconfig.PipelineStepTransform).Value)
 
 	githubIssuePipeline := pipelines["test_mod.pipeline.github_issue"]
 	if githubIssuePipeline == nil {

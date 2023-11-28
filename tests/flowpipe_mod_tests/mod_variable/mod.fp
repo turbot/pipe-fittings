@@ -3,15 +3,15 @@ mod "test_mod" {
 }
 
 variable "schedule_default" {
-  type = string
+  type        = string
   description = "schedule with default value"
-  default =  "5 * * * *"
+  default     = "5 * * * *"
 }
 
 variable "interval_default" {
-  type = string
+  type        = string
   description = "interval with default value"
-  default = "weekly"
+  default     = "weekly"
 }
 
 variable "var_one" {
@@ -24,7 +24,7 @@ variable "var_one" {
 variable "var_two" {
   type        = string
   description = "test variable"
-  default = "default of var_two"
+  default     = "default of var_two"
 }
 
 
@@ -53,71 +53,71 @@ variable "var_six" {
 }
 
 pipeline "one" {
-    step "echo" "one" {
-        text = "prefix text here and ${var.var_one} and suffix"
-    }
+  step "transform" "one" {
+    value = "prefix text here and ${var.var_one} and suffix"
+  }
 
-    step "echo" "two" {
-        text = "prefix text here and ${var.var_two} and suffix"
-    }
+  step "transform" "two" {
+    value = "prefix text here and ${var.var_two} and suffix"
+  }
 
-    step "echo" "three" {
-        text = "prefix text here and ${var.var_three} and suffix"
-    }
+  step "transform" "three" {
+    value = "prefix text here and ${var.var_three} and suffix"
+  }
 
-    step "echo" "one_echo" {
-        text =  "got prefix? ${step.echo.one.text} and again ${step.echo.one.text} and var ${var.var_one}"
-    }
+  step "transform" "one_echo" {
+    value = "got prefix? ${step.transform.one.value} and again ${step.transform.one.value} and var ${var.var_one}"
+  }
 
 
-    step "echo" "four" {
-      text = "using value from locals: ${local.locals_one}"
-    }
+  step "transform" "four" {
+    value = "using value from locals: ${local.locals_one}"
+  }
 
-    step "echo" "five" {
-      text = "using value from locals: ${local.locals_two}"
-    }
+  step "transform" "five" {
+    value = "using value from locals: ${local.locals_two}"
+  }
 
-    step "echo" "six" {
-      text = "using value from locals: ${local.locals_three.key_two}"
-    }
+  step "transform" "six" {
+    value = "using value from locals: ${local.locals_three.key_two}"
+  }
 
-    step "echo" "seven" {
-      text = "using value from locals: ${local.locals_three_merge.key_two}"
-    }
+  step "transform" "seven" {
+    value = "using value from locals: ${local.locals_three_merge.key_two}"
+  }
 
-    step "echo" "eight" {
-      text = "using value from locals: ${local.locals_three_merge.key_three}"
-    }
+  step "transform" "eight" {
+    value = "using value from locals: ${local.locals_three_merge.key_three}"
+  }
 
-    step "echo" "eight" {
-      text = "var_four value is: ${var.var_four}"
-    }
+  step "transform" "eight" {
+    value = "var_four value is: ${var.var_four}"
+  }
 
-    step "echo" "nine" {
-      text = "var_five value is: ${var.var_five}"
-    }
+  step "transform" "nine" {
+    value = "var_five value is: ${var.var_five}"
+  }
 
-    step "echo" "ten" {
-      text = "var_six value is: ${var.var_six}"
-    }
+  step "transform" "ten" {
+    value = "var_six value is: ${var.var_six}"
+  }
 }
 
 
 variable "default_gh_repo" {
-  type        = string
-  default     = "hello-world"
+  type    = string
+  default = "hello-world"
 }
 
 pipeline "github_issue" {
-    param "gh_repo" {
-        type    = string
-        default = var.default_gh_repo
-    }
+  param "gh_repo" {
+    type    = string
+    default = var.default_gh_repo
+  }
 
-    step "http" "get_issue" {
-        url = "https://api.github.com/repos/octocat/${param.gh_repo}/issues/2743"
-    }
+  step "http" "get_issue" {
+    url = "https://api.github.com/repos/octocat/${param.gh_repo}/issues/2743"
+  }
 }
 
 

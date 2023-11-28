@@ -11,8 +11,8 @@ mod "mod_parent" {
 }
 
 pipeline "json" {
-    step "echo" "json" {
-        json = jsonencode({
+    step "transform" "json" {
+        value = jsonencode({
             Version = "2012-10-17"
             Statement = [
             {
@@ -27,6 +27,6 @@ pipeline "json" {
     }
 
     output "foo" {
-        value = step.echo.json.json
+        value = step.transform.json.value
     }
 }

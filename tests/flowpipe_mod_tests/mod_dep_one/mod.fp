@@ -17,8 +17,8 @@ trigger "schedule" "my_hourly_trigger" {
 }
 
 pipeline "json" {
-    step "echo" "json" {
-        json = jsonencode({
+    step "transform" "json" {
+        value = jsonencode({
             Version = "2012-10-17"
             Statement = [
             {
@@ -33,7 +33,7 @@ pipeline "json" {
     }
 
     output "foo" {
-        value = step.echo.json.json
+        value = step.transform.json.value
     }
 }
 
@@ -56,30 +56,30 @@ pipeline "foo" {
     #
     # we parse the HCL files from top to bottom, so putting this step `baz` after `bar` is the easier path
     # reversing is the a harder parse
-    step "echo" "baz" {
-        text = step.echo.bar
+    step "transform" "baz" {
+        value = step.transform.bar
     }
 
-    step "echo" "bar" {
-        text = "test"
+    step "transform" "bar" {
+        value = "test"
     }
 
     step "pipeline" "child_pipeline" {
         pipeline = pipeline.foo_two
     }
 
-    step "echo" "child_pipeline" {
-        text = step.pipeline.child_pipeline.foo
+    step "transform" "child_pipeline" {
+        value = step.pipeline.child_pipeline.foo
     }
 }
 
 
 pipeline "foo_two" {
-    step "echo" "baz" {
-        text = "foo"
+    step "transform" "baz" {
+        value = "foo"
     }
 
     output "foo" {
-        value = echo.baz.text
+        value = transform.baz.value
     }
 }
