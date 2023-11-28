@@ -37,7 +37,7 @@ dep_loop:
 			// this is a common pattern where a runtime depdency gives a scalar value, but an array is needed for the arg
 			// NOTE: this code only supports a SINGLE item in the array
 			if len(e.Exprs) != 1 {
-				return false, nil, fmt.Errorf("unsupported runtime dependency expression - only a single runtime depdency item may be wrapped in an array")
+				return false, nil, fmt.Errorf("unsupported runtime dependency expression - only a single runtime dependency item may be wrapped in an array")
 			}
 			isArray = true
 			expr = e.Exprs[0]
@@ -53,6 +53,15 @@ dep_loop:
 		return false, nil, err
 	}
 	return isArray, propertyPath, nil
+}
+
+func AllDependentsFromExpression(expr hcl.Expression) {
+	traversals := expr.Variables()
+
+	for _, t := range traversals {
+		propertyPathStr := hclhelpers.TraversalAsString(t)
+		fmt.Println(propertyPathStr)
+	}
 }
 
 type ParsedPropertyPath struct {

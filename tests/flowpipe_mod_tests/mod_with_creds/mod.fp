@@ -9,5 +9,3 @@ pipeline "with_creds" {
         value = credential.aws.default.access_key
     }
 }
-
-

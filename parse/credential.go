@@ -46,5 +46,10 @@ func DecodeCredential(block *hcl.Block) (modconfig.Credential, hcl.Diagnostics) 
 		return nil, diags
 	}
 
-	return credential, hcl.Diagnostics{}
+	moreDiags := credential.Validate()
+	if len(moreDiags) > 0 {
+		diags = append(diags, moreDiags...)
+	}
+
+	return credential, diags
 }

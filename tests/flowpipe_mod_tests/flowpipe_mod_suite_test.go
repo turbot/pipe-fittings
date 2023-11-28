@@ -172,7 +172,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	pipelines := mod.ResourceMaps.Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
-	pipeline := pipelines["mod_with_creds.pipeline.cred_aws"]
+	pipeline := pipelines["mod_with_dynamic_creds.pipeline.cred_aws"]
 
 	assert.Equal("aws.<dynamic>", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
 }

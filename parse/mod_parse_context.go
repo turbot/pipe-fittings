@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -408,6 +409,7 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 	awsCredentialMap := map[string]cty.Value{}
 	basicCredentialMap := map[string]cty.Value{}
 	slackCedentialMap := map[string]cty.Value{}
+	gcpCredentialMap := map[string]cty.Value{}
 
 	for _, c := range allCredentials {
 		parts := strings.Split(c.Name(), ".")
@@ -415,7 +417,12 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 			return nil, perr.BadRequestWithMessage("invalid credential name: " + c.Name())
 		}
 
-		pCty, err := c.CtyValue()
+		newC, err := c.Resolve(context.TODO())
+		if err != nil {
+			return nil, err
+		}
+
+		pCty, err := newC.CtyValue()
 		if err != nil {
 			return nil, err
 		}
@@ -432,6 +439,9 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 		case "slack":
 			slackCedentialMap[parts[1]] = pCty
 
+		case "gcp":
+			gcpCredentialMap[parts[1]] = pCty
+
 		default:
 			return nil, perr.BadRequestWithMessage("invalid credential type: " + credentialType)
 		}
@@ -447,6 +457,10 @@ func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Creden
 
 	if len(slackCedentialMap) > 0 {
 		credentialMap["slack"] = cty.ObjectVal(slackCedentialMap)
+	}
+
+	if len(gcpCredentialMap) > 0 {
+		credentialMap["gcp"] = cty.ObjectVal(gcpCredentialMap)
 	}
 
 	return credentialMap, nil
