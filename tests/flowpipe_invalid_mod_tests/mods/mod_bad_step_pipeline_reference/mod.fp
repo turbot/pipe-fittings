@@ -1,37 +1,37 @@
 
 
 mod "pipeline_with_references" {
-    title = "Test mod"
-    description = "Use this mod for testing references within pipeline and from one pipeline to another"
+  title       = "Test mod"
+  description = "Use this mod for testing references within pipeline and from one pipeline to another"
 }
 
 
 pipeline "foo" {
 
-    step "echo" "baz" {
-        text = step.echo.bar
-    }
+  step "transform" "baz" {
+    value = step.transform.bar
+  }
 
-    step "echo" "bar" {
-        text = "test"
-    }
+  step "transform" "bar" {
+    value = "test"
+  }
 
-    step "pipeline" "child_pipeline" {
-        pipeline = pipeline.foo_two_invalid
-    }
+  step "pipeline" "child_pipeline" {
+    pipeline = pipeline.foo_two_invalid
+  }
 
-    step "echo" "child_pipeline" {
-        text = step.pipeline.child_pipeline.foo
-    }
+  step "transform" "child_pipeline" {
+    value = step.pipeline.child_pipeline.foo
+  }
 }
 
 
 pipeline "foo_two" {
-    step "echo" "baz" {
-        text = "foo"
-    }
+  step "transform" "baz" {
+    value = "foo"
+  }
 
-    output "foo" {
-        value = echo.baz.text
-    }
+  output "foo" {
+    value = transform.baz.value
+  }
 }

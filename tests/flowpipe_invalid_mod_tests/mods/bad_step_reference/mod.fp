@@ -8,12 +8,12 @@ mod "pipeline_with_references" {
 
 pipeline "foo" {
 
-    step "echo" "bar" {
-        text = "test"
+    step "transform" "bar" {
+        value = "test"
     }
 
 
-    step "echo" "baz" {
-        text = step.echozzzz.bar
+    step "transform" "baz" {
+        value = step.echozzzz.bar
     }
 }

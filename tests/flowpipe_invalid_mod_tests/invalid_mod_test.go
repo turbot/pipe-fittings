@@ -101,12 +101,12 @@ var tests = []testSetup{
 	{
 		title:         "Bad step reference",
 		modDir:        "./mods/bad_step_reference",
-		containsError: "invalid depends_on 'echozzzz.bar' - step 'echo.baz' does not exist for pipeline pipeline_with_references.pipeline.foo",
+		containsError: "invalid depends_on 'echozzzz.bar' - step 'transform.baz' does not exist for pipeline pipeline_with_references.pipeline.foo",
 	},
 	{
 		title:         "Bad step reference 2",
 		modDir:        "./mods/bad_step_reference_two",
-		containsError: "invalid depends_on 'echo.barrs' - step 'echo.baz' does not exist for pipeline pipeline_with_references.pipeline.foo",
+		containsError: "invalid depends_on 'transform.barrs' - step 'transform.baz' does not exist for pipeline pipeline_with_references.pipeline.foo",
 	},
 	{
 		title:         "Bad trigger reference to pipeline",
