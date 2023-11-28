@@ -17,6 +17,7 @@ type Credential interface {
 	GetCredentialType() string
 	CtyValue() (cty.Value, error)
 	Resolve(ctx context.Context) (Credential, error)
+	GetTtl() int // in seconds
 
 	Validate() hcl.Diagnostics
 	getEnv() map[string]cty.Value
@@ -119,6 +120,14 @@ func (c *AwsCredential) Resolve(ctx context.Context) (Credential, error) {
 	return newCreds, nil
 }
 
+// in seconds
+func (c *AwsCredential) GetTtl() int {
+	if c.Ttl == nil {
+		return 5 * 60
+	}
+	return *c.Ttl
+}
+
 func (c *AwsCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
 	if c.AccessKey != nil {
@@ -202,6 +211,10 @@ func (c *SlackCredential) Resolve(ctx context.Context) (Credential, error) {
 	return c, nil
 }
 
+func (c *SlackCredential) GetTtl() int {
+	return -1
+}
+
 func (c *SlackCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
@@ -245,6 +258,13 @@ func (c *GcpCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+func (c *GcpCredential) GetTtl() int {
+	if c.Ttl == nil {
+		return 5 * 60 // in seconds
+	}
+	return *c.Ttl
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -282,6 +302,10 @@ func (c *BasicCredential) Resolve(ctx context.Context) (Credential, error) {
 
 func (c *BasicCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
+}
+
+func (c *BasicCredential) GetTtl() int {
+	return -1
 }
 
 func DefaultCredentials() map[string]Credential {

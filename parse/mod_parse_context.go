@@ -1,7 +1,6 @@
 package parse
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -391,79 +390,8 @@ func (m *ModParseContext) buildEvalContext() {
 		referenceValues[mod] = cty.ObjectVal(refTypeMap)
 	}
 
-	// Do not refererence credential here, we don't want to "resolve" credential at parse time.
-	// credentialMap, err := BuildCredentialMapForEvalContext(m.Credentials)
-	// if err != nil {
-	// 	// TODO: need to be able to return error here!
-	// 	panic(err)
-	// }
-
-	// referenceValues["credential"] = cty.ObjectVal(credentialMap)
-
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(referenceValues)
-}
-
-func BuildCredentialMapForEvalContext(allCredentials map[string]modconfig.Credential) (map[string]cty.Value, error) {
-	credentialMap := map[string]cty.Value{}
-	awsCredentialMap := map[string]cty.Value{}
-	basicCredentialMap := map[string]cty.Value{}
-	slackCedentialMap := map[string]cty.Value{}
-	gcpCredentialMap := map[string]cty.Value{}
-
-	for _, c := range allCredentials {
-		parts := strings.Split(c.Name(), ".")
-		if len(parts) != 2 {
-			return nil, perr.BadRequestWithMessage("invalid credential name: " + c.Name())
-		}
-
-		newC, err := c.Resolve(context.TODO())
-		if err != nil {
-			return nil, err
-		}
-
-		pCty, err := newC.CtyValue()
-		if err != nil {
-			return nil, err
-		}
-
-		credentialType := parts[0]
-
-		switch credentialType {
-		case "aws":
-			awsCredentialMap[parts[1]] = pCty
-
-		case "basic":
-			basicCredentialMap[parts[1]] = pCty
-
-		case "slack":
-			slackCedentialMap[parts[1]] = pCty
-
-		case "gcp":
-			gcpCredentialMap[parts[1]] = pCty
-
-		default:
-			return nil, perr.BadRequestWithMessage("invalid credential type: " + credentialType)
-		}
-	}
-
-	if len(awsCredentialMap) > 0 {
-		credentialMap["aws"] = cty.ObjectVal(awsCredentialMap)
-	}
-
-	if len(basicCredentialMap) > 0 {
-		credentialMap["basic"] = cty.ObjectVal(basicCredentialMap)
-	}
-
-	if len(slackCedentialMap) > 0 {
-		credentialMap["slack"] = cty.ObjectVal(slackCedentialMap)
-	}
-
-	if len(gcpCredentialMap) > 0 {
-		credentialMap["gcp"] = cty.ObjectVal(gcpCredentialMap)
-	}
-
-	return credentialMap, nil
 }
 
 // store the resource as a cty value in the reference valuemap
