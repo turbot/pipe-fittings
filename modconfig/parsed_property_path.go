@@ -55,15 +55,6 @@ dep_loop:
 	return isArray, propertyPath, nil
 }
 
-func AllDependentsFromExpression(expr hcl.Expression) {
-	traversals := expr.Variables()
-
-	for _, t := range traversals {
-		propertyPathStr := hclhelpers.TraversalAsString(t)
-		fmt.Println(propertyPathStr)
-	}
-}
-
 type ParsedPropertyPath struct {
 	Mod          string
 	ItemType     string
