@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"context"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -97,6 +98,7 @@ func (c *AwsCredential) Resolve(ctx context.Context) (Credential, error) {
 		return nil, err
 	}
 
+	// Don't modify existing credential, resolve to a new one
 	newCreds := &AwsCredential{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        c.FullName,
@@ -177,6 +179,26 @@ func (c *SlackCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *SlackCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.ShortName == "default" && c.Token == nil {
+		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")
+		if slackTokenEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &SlackCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:  c.Type,
+				Token: &slackTokenEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
 	return c, nil
 }
 

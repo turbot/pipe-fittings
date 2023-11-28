@@ -28,6 +28,30 @@ func TestAwsCredential(t *testing.T) {
 	assert.Nil(newAwsCreds.SessionToken)
 }
 
+func TestSlackDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	slackCred := SlackCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := slackCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newSlackCreds := newCreds.(*SlackCredential)
+	assert.Nil(newSlackCreds.Token)
+
+	os.Setenv("SLACK_TOKEN", "foobar")
+
+	newCreds, err = slackCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newSlackCreds = newCreds.(*SlackCredential)
+	assert.Equal("foobar", *newSlackCreds.Token)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
