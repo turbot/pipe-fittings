@@ -17,8 +17,8 @@ variable "var_two_parent" {
 }
 
 pipeline "json" {
-    step "echo" "json" {
-        json = jsonencode({
+    step "transform" "json" {
+        value = jsonencode({
             Version = "2012-10-17"
             Statement = [
             {
@@ -33,7 +33,7 @@ pipeline "json" {
     }
 
     output "foo" {
-        value = step.echo.json.json
+        value = step.transform.json.value
     }
 }
 
@@ -43,12 +43,12 @@ pipeline "foo" {
     #
     # we parse the HCL files from top to bottom, so putting this step `baz` after `bar` is the easier path
     # reversing is the a harder parse
-    step "echo" "baz" {
-        text = step.echo.bar
+    step "transform" "baz" {
+        value = step.transform.bar
     }
 
-    step "echo" "bar" {
-        text = "test"
+    step "transform" "bar" {
+        value = "test"
     }
 }
 

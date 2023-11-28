@@ -3,11 +3,11 @@ mod "mod_child_b" {
 }
 
 pipeline "this_pipeline_is_in_the_child" {
-    step "echo" "foo" {
-        text = "foo"
+    step "transform" "foo" {
+        value = "foo"
     }
 
     output "foo_a" {
-        value = step.echo.foo.text
+        value = step.transform.foo.value
     }
 }
