@@ -1,5 +1,5 @@
 pipeline "invalid_step_attribute" {
-    step "echo" "foo" {
+    step "transform" "foo" {
         abc = "foo"
     }
 }
