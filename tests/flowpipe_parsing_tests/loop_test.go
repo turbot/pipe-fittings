@@ -31,7 +31,7 @@ func TestLoop(t *testing.T) {
 	}
 
 	// the second step (the one that has the loop) depends on the first one
-	assert.Equal("echo.base", pipeline.Steps[1].GetDependsOn()[0])
+	assert.Equal("transform.base", pipeline.Steps[1].GetDependsOn()[0])
 
 	pipeline = pipelines["local.pipeline.simple_http_loop"]
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["loop"])
