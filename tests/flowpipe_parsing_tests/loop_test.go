@@ -23,15 +23,15 @@ func TestLoop(t *testing.T) {
 	pipeline := pipelines["local.pipeline.simple_loop"]
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["loop"])
 
-	pipeline = pipelines["local.pipeline.loop_depeneds_on_another_step"]
+	pipeline = pipelines["local.pipeline.loop_depends_on_another_step"]
 
 	if pipeline == nil {
-		assert.Fail("loop_depeneds_on_another_step not found")
+		assert.Fail("loop_depends_on_another_step not found")
 		return
 	}
 
 	// the second step (the one that has the loop) depends on the first one
-	assert.Equal("echo.base", pipeline.Steps[1].GetDependsOn()[0])
+	assert.Equal("sleep.base", pipeline.Steps[1].GetDependsOn()[0])
 
 	pipeline = pipelines["local.pipeline.simple_http_loop"]
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["loop"])
