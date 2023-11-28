@@ -11,8 +11,8 @@ trigger "schedule" "trigger_no_pipelines" {
 pipeline "simple_with_trigger_a" {
     description = "simple pipeline that will be referred to by a trigger"
 
-    step "echo" "simple_echo" {
-        text = "foo bar"
+    step "transform" "simple_echo" {
+        value = "foo bar"
     }
 }
 

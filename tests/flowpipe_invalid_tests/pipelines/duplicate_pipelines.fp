@@ -1,19 +1,19 @@
 pipeline "pipeline_007" {
-    step "echo" "name" {
-        text = "I am Pipe, FlowPipe - the original"
+    step "transform" "name" {
+        value = "I am Pipe, FlowPipe - the original"
     }
 
     output "val" {
-        value = step.echo.name.text
+        value = step.transform.name.value
     }
 }
 
 pipeline "pipeline_007" {
-    step "echo" "name" {
-        text = "I am Pipe, FlowPipe  - the dummy"
+    step "transform" "name" {
+        value = "I am Pipe, FlowPipe  - the dummy"
     }
 
     output "val" {
-        value = step.echo.name.text
+        value = step.transform.name.value
     }
 }

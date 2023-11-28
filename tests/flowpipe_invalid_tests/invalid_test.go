@@ -20,7 +20,7 @@ var tests = []testSetup{
 	{
 		title:         "bad output reference",
 		file:          "./pipelines/bad_output_reference.fp",
-		containsError: `invalid depends_on 'echo.does_not_exist' - does not exist for pipeline local.pipeline`,
+		containsError: `invalid depends_on 'transform.does_not_exist' - does not exist for pipeline local.pipeline`,
 	},
 	{
 		title:         "duplicate pipeline",
@@ -43,7 +43,7 @@ var tests = []testSetup{
 		containsError: `Unsupported argument: An argument named "if" is not expected here.`,
 	},
 	{
-		title:         "invalid step attribute (echo)",
+		title:         "invalid step attribute (transform)",
 		file:          "./pipelines/invalid_step_attribute.fp",
 		containsError: `Unsupported argument: An argument named "abc" is not expected here.`,
 	},
@@ -124,7 +124,7 @@ var tests = []testSetup{
 	},
 	{
 		title:         "invalid loop - bad definition for echo step loop",
-		file:          "./pipelines/loop_invalid_echo.fp",
+		file:          "./pipelines/loop_invalid_transform.fp",
 		containsError: "An argument named \"baz\" is not expected here",
 	},
 	{

@@ -1,11 +1,10 @@
 pipeline "simple_loop" {
       
-    step "echo" "repeat" {
-        text  = "iteration"
-        numeric = 1
+    step "transform" "repeat" {
+        value  = "iteration"
 
         loop {
-            numeric = result.numeric + 1
+            value = loop.index + 1
         }
     }
 }

@@ -12,7 +12,7 @@ pipeline "http_webhook_pipeline" {
     param "event" {
         type = string
     }
-    step "echo" "simple_echo" {
-        text = "event is: ${param.event}"
+    step "transform" "simple_echo" {
+        value = "event is: ${param.event}"
     }
 }

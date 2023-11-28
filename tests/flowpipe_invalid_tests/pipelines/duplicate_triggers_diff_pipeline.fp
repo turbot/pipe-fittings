@@ -1,16 +1,16 @@
 pipeline "simple_with_trigger" {
     description = "simple pipeline that will be referred to by a trigger"
 
-    step "echo" "simple_echo" {
-        text = "foo bar"
+    step "transform" "simple_echo" {
+        value = "foo bar"
     }
 }
 
 pipeline "simple_with_trigger_two" {
     description = "simple pipeline that will be referred to by a trigger"
 
-    step "echo" "simple_echo" {
-        text = "foo bar"
+    step "transform" "simple_echo" {
+        value = "foo bar"
     }
 }
 
