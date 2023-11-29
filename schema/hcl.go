@@ -111,7 +111,6 @@ const (
 	AttributeTypeFrom             = "from"
 	AttributeTypeHost             = "host"
 	AttributeTypePort             = "port"
-	AttributeTypeSenderCredential = "sender_credential" //nolint:gosec // Getting Potential hardcoded credentials warning
 	AttributeTypeSenderName       = "sender_name"
 	AttributeTypeSubject          = "subject"
 	AttributeTypeTo               = "to"

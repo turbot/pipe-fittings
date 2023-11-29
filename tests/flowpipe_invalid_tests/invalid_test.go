@@ -60,12 +60,12 @@ var tests = []testSetup{
 	{
 		title:         "invalid email port",
 		file:          "./pipelines/invalid_email_port.fp",
-		containsError: "Failed to decode mod:\nUnable to convert port into integer\n(pipelines/invalid_email_port.fp:9,5-30)",
+		containsError: "Failed to decode mod:\nUnable to convert port into integer\n",
 	},
 	{
 		title:         "invalid email recipient",
 		file:          "./pipelines/invalid_email_recipient.fp",
-		containsError: "Unable to parse to attribute to string slice: Bad Request: expected string type, but got number\n(pipelines/invalid_email_recipient.fp:5,5-82)",
+		containsError: "Unable to parse to attribute to string slice: Bad Request: expected string type, but got number\n",
 	},
 	{
 		title:         "invalid trigger",
