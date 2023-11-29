@@ -348,6 +348,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeRequestTimeoutMs,
 		},
 		{
+			Name: schema.AttributeTypeCaCertPem,
+		},
+		{
 			Name: schema.AttributeTypeInsecure,
 		},
 		{
