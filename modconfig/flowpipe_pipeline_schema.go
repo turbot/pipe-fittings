@@ -558,53 +558,6 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 	},
 }
 
-var PipelineStepEchoBlockSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{
-		{
-			Name: schema.AttributeTypeTitle,
-		},
-		{
-			Name: schema.AttributeTypeDescription,
-		},
-		{
-			Name: schema.AttributeTypeForEach,
-		},
-		{
-			Name: schema.AttributeTypeDependsOn,
-		},
-		{
-			Name: schema.AttributeTypeIf,
-		},
-		{
-			Name: schema.AttributeTypeText,
-		},
-		{
-			Name: schema.AttributeTypeNumeric,
-		},
-		{
-			Name: schema.AttributeTypeJson,
-		},
-	},
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type: schema.BlockTypeError,
-		},
-		{
-			Type:       schema.BlockTypePipelineOutput,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type: schema.BlockTypeLoop,
-		},
-		{
-			Type: schema.BlockTypeRetry,
-		},
-		{
-			Type: schema.BlockTypeThrow,
-		},
-	},
-}
-
 var PipelineStepTransformBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
