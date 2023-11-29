@@ -897,6 +897,7 @@ type PipelineStepHttp struct {
 	Url              *string                `json:"url" binding:"required"`
 	RequestTimeoutMs *int64                 `json:"request_timeout_ms,omitempty"`
 	Method           *string                `json:"method,omitempty"`
+	CaCertPem        *string                `json:"ca_cert_pem,omitempty"`
 	Insecure         *bool                  `json:"insecure,omitempty"`
 	RequestBody      *string                `json:"request_body,omitempty"`
 	RequestHeaders   map[string]interface{} `json:"request_headers,omitempty"`
@@ -995,6 +996,19 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 		inputs[schema.AttributeTypeRequestTimeoutMs] = timeoutMs
+	}
+
+	if p.UnresolvedAttributes[schema.AttributeTypeCaCertPem] == nil {
+		if p.CaCertPem != nil {
+			inputs[schema.AttributeTypeCaCertPem] = *p.CaCertPem
+		}
+	} else {
+		var caCertPem string
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCaCertPem], evalContext, &caCertPem)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+		inputs[schema.AttributeTypeCaCertPem] = caCertPem
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeInsecure] == nil {
@@ -1118,6 +1132,24 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					}
 					p.Method = &method
 				}
+			}
+		case schema.AttributeTypeCaCertPem:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				caCertPem, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeCaCertPem + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.CaCertPem = &caCertPem
 			}
 		case schema.AttributeTypeInsecure:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
