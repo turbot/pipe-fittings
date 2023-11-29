@@ -64,7 +64,6 @@ const (
 	BlockTypePipelineStepHttp      = "http"
 	BlockTypePipelineStepSleep     = "sleep"
 	BlockTypePipelineStepEmail     = "email"
-	BlockTypePipelineStepEcho      = "echo"
 	BlockTypePipelineStepTransform = "transform"
 	BlockTypePipelineStepQuery     = "query"
 	BlockTypePipelineStepExec      = "exec"
@@ -142,11 +141,6 @@ const (
 	AttributeTypeResponseBody     = "response_body"
 	AttributeTypeStatusCode       = "status_code"
 	AttributeTypeStatus           = "status"
-
-	// Used by echo step
-	AttributeTypeText    = "text"
-	AttributeTypeNumeric = "numeric"
-	AttributeTypeJson    = "json"
 
 	// Used byy Pipeline step
 	AttributeTypePipeline = "pipeline"

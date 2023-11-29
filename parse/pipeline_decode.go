@@ -578,8 +578,6 @@ func GetPipelineStepBlockSchema(stepType string) *hcl.BodySchema {
 		return modconfig.PipelineStepSleepBlockSchema
 	case schema.BlockTypePipelineStepEmail:
 		return modconfig.PipelineStepEmailBlockSchema
-	case schema.BlockTypePipelineStepEcho:
-		return modconfig.PipelineStepEchoBlockSchema
 	case schema.BlockTypePipelineStepTransform:
 		return modconfig.PipelineStepTransformBlockSchema
 	case schema.BlockTypePipelineStepQuery:

@@ -216,8 +216,6 @@ func NewPipelineStep(stepType, stepName string) PipelineStep {
 		step = &PipelineStepSleep{}
 	case schema.BlockTypePipelineStepEmail:
 		step = &PipelineStepEmail{}
-	case schema.BlockTypePipelineStepEcho:
-		step = &PipelineStepEcho{}
 	case schema.BlockTypePipelineStepTransform:
 		step = &PipelineStepTransform{}
 	case schema.BlockTypePipelineStepQuery:
@@ -1781,77 +1779,6 @@ func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
-type PipelineStepEcho struct {
-	PipelineStepBase
-	Text    string               `json:"text"`
-	Numeric float64              `json:"numeric"`
-	Json    json.SimpleJSONValue `json:"json"`
-}
-
-func (p *PipelineStepEcho) Equals(iOther PipelineStep) bool {
-	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
-		return true
-	}
-
-	other, ok := iOther.(*PipelineStepEcho)
-	if !ok {
-		return false
-	}
-
-	if !p.PipelineStepBase.Equals(&other.PipelineStepBase) {
-		return false
-	}
-
-	if p.Text != other.Text {
-		return false
-	}
-
-	// TODO: json test?
-	return true
-}
-
-func (p *PipelineStepEcho) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var textInput string
-
-	if p.UnresolvedAttributes[schema.AttributeTypeText] == nil {
-		textInput = p.Text
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeText], evalContext, &textInput)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var numericInput float64
-	if p.UnresolvedAttributes[schema.AttributeTypeNumeric] == nil {
-		numericInput = p.Numeric
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNumeric], evalContext, &numericInput)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var jsonInput json.SimpleJSONValue
-	if p.UnresolvedAttributes[schema.AttributeTypeJson] == nil {
-		jsonInput = p.Json
-	} else {
-		var ctyOutput cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeJson], evalContext, &ctyOutput)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		jsonInput = json.SimpleJSONValue{Value: ctyOutput}
-	}
-
-	return map[string]interface{}{
-		schema.AttributeTypeText:    textInput,
-		schema.AttributeTypeJson:    jsonInput,
-		schema.AttributeTypeNumeric: numericInput,
-	}, nil
-}
-
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStep) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
@@ -1932,64 +1859,6 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 	}
 
 	return val, hcl.Diagnostics{}
-}
-
-func (p *PipelineStepEcho) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-
-	diags := p.SetBaseAttributes(hclAttributes)
-
-	for name, attr := range hclAttributes {
-		switch name {
-		case schema.AttributeTypeText:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				text, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeText + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Text = text
-			}
-		case schema.AttributeTypeJson:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-			if val != cty.NilVal {
-				p.Json = json.SimpleJSONValue{Value: val}
-			}
-
-		case schema.AttributeTypeNumeric:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-			}
-
-			if val != cty.NilVal {
-				p.Numeric, _ = val.AsBigFloat().Float64()
-			}
-
-		default:
-			if !p.IsBaseAttribute(name) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Echo Step: " + attr.Name,
-					Subject:  &attr.Range,
-				})
-			}
-		}
-	}
-
-	return diags
 }
 
 type PipelineStepTransform struct {
@@ -2235,7 +2104,7 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Echo Step '" + attr.Name + "'",
+					Summary:  "Unsupported attribute for Query Step '" + attr.Name + "'",
 					Subject:  &attr.Range,
 				})
 			}
@@ -2386,7 +2255,7 @@ func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalC
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Echo Step: " + attr.Name,
+					Summary:  "Unsupported attribute for Pipeline Step: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}

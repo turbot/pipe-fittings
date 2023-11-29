@@ -17,8 +17,6 @@ type LoopDefn interface {
 
 func GetLoopDefn(stepType string) LoopDefn {
 	switch stepType {
-	case schema.BlockTypePipelineStepEcho:
-		return &LoopEchoStep{}
 	case schema.BlockTypePipelineStepHttp:
 		return &LoopHttpStep{}
 	case schema.BlockTypePipelineStepSleep:
@@ -120,30 +118,6 @@ func (l *LoopQueryStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (
 
 func (*LoopQueryStep) GetType() string {
 	return schema.BlockTypePipelineStepQuery
-}
-
-type LoopEchoStep struct {
-	Until   bool    `json:"until" hcl:"until" cty:"until"`
-	Numeric *int    `json:"numeric,omitempty" hcl:"numeric,optional" cty:"numeric"`
-	Text    *string `json:"text,omitempty" hcl:"text,optional" cty:"text"`
-}
-
-func (l *LoopEchoStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
-	if l.Numeric != nil {
-		input["numeric"] = *l.Numeric
-	}
-	if l.Text != nil {
-		input["text"] = *l.Text
-	}
-	return input, nil
-}
-
-func (l *LoopEchoStep) UntilReached() bool {
-	return l.Until
-}
-
-func (*LoopEchoStep) GetType() string {
-	return schema.BlockTypePipelineStepEcho
 }
 
 type LoopHttpStep struct {
