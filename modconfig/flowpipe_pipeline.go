@@ -268,13 +268,6 @@ func (ph *Pipeline) UnmarshalJSON(data []byte) error {
 				}
 				ph.Steps = append(ph.Steps, &step)
 
-			case schema.BlockTypePipelineStepEcho:
-				var step PipelineStepEcho
-				if err := json.Unmarshal(stepData, &step); err != nil {
-					return err
-				}
-				ph.Steps = append(ph.Steps, &step)
-
 			case schema.BlockTypePipelineStepTransform:
 				var step PipelineStepTransform
 				if err := json.Unmarshal(stepData, &step); err != nil {
