@@ -21,8 +21,8 @@ func TestRetry(t *testing.T) {
 	}
 
 	assert.NotNil(pipeline.Steps, "steps not found")
-	assert.NotNil(pipeline.Steps[0].GetRetryConfig(nil))
-	retryConfig, diags := pipeline.Steps[0].GetRetryConfig(nil)
+	assert.NotNil(pipeline.Steps[0].GetRetryConfig(nil, false))
+	retryConfig, diags := pipeline.Steps[0].GetRetryConfig(nil, false)
 	assert.Equal(0, len(diags))
 	assert.Equal(2, retryConfig.MaxAttempts)
 	assert.Equal("exponential", retryConfig.Strategy)
@@ -34,8 +34,7 @@ func TestRetry(t *testing.T) {
 	}
 
 	assert.NotNil(pipeline.Steps, "steps not found")
-	assert.Nil(pipeline.Steps[0].GetRetryConfig(nil))
-	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["retry"])
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["retry"], "we should have an unresolved retry block here because the there's an IF condition")
 
 	pipeline = pipelines["local.pipeline.retry_default"]
 	if pipeline == nil {
@@ -44,7 +43,7 @@ func TestRetry(t *testing.T) {
 	}
 
 	assert.NotNil(pipeline.Steps, "steps not found")
-	retryConfig, diags = pipeline.Steps[0].GetRetryConfig(nil)
+	retryConfig, diags = pipeline.Steps[0].GetRetryConfig(nil, false)
 	assert.Equal(0, len(diags))
 	assert.NotNil(retryConfig)
 	assert.Equal(3, retryConfig.MaxAttempts)
@@ -65,7 +64,7 @@ func TestRetryWithBackoff(t *testing.T) {
 		return
 	}
 
-	retryConfig, diags := pipeline.Steps[0].GetRetryConfig(nil)
+	retryConfig, diags := pipeline.Steps[0].GetRetryConfig(nil, false)
 
 	if len(diags) > 0 {
 		assert.Fail("diags found", diags)
@@ -83,7 +82,7 @@ func TestRetryWithBackoff(t *testing.T) {
 		return
 	}
 
-	retryConfig, diags = pipeline.Steps[0].GetRetryConfig(nil)
+	retryConfig, diags = pipeline.Steps[0].GetRetryConfig(nil, false)
 
 	if len(diags) > 0 {
 		assert.Fail("diags found", diags)
@@ -106,7 +105,7 @@ func TestRetryWithBackoff(t *testing.T) {
 		return
 	}
 
-	retryConfig, diags = pipeline.Steps[0].GetRetryConfig(nil)
+	retryConfig, diags = pipeline.Steps[0].GetRetryConfig(nil, false)
 
 	if len(diags) > 0 {
 		assert.Fail("diags found", diags)
