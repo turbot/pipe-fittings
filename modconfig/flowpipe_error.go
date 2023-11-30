@@ -8,7 +8,9 @@ import (
 )
 
 type RetryConfig struct {
-	If          *bool  `json:"if,omitempty" hcl:"if,optional" cty:"if"`
+	// This means that invalid attributes must be validated "manually"
+	If hcl.Body `json:"-" hcl:",remain"`
+
 	MaxAttempts int    `json:"max_attempts,omitempty" hcl:"max_attempts,optional" cty:"max_attempts"`
 	Strategy    string `json:"strategy,omitempty" hcl:"strategy,optional" cty:"strategy"`
 	MinInterval int    `json:"min_interval,omitempty" hcl:"min_interval,optional" cty:"min_interval"`
