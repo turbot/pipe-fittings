@@ -140,7 +140,7 @@ var tests = []testSetup{
 	{
 		title:         "retry - invalid attribute",
 		file:          "./pipelines/retry_invalid_attribute.fp",
-		containsError: "An argument named \"except\" is not expected here",
+		containsError: "Unsupported attribute except in retry block",
 	},
 	{
 		title:         "retry - invalid attribute value",
@@ -189,7 +189,10 @@ func TestSimpleInvalidResources(t *testing.T) {
 		fmt.Println("Running test: " + test.title)
 
 		_, _, err := load_mod.LoadPipelines(ctx, test.file)
-		assert.NotNil(err)
+		if err == nil {
+			assert.Fail("Test: " + test.title + " did not return an error")
+			continue
+		}
 		assert.Contains(err.Error(), test.containsError)
 	}
 }
