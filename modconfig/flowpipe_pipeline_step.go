@@ -1374,17 +1374,18 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 
 type PipelineStepEmail struct {
 	PipelineStepBase
-	To               []string `json:"to"`
-	From             *string  `json:"from"`
-	SenderCredential *string  `json:"sender_credential"`
-	Host             *string  `json:"host"`
-	Port             *int64   `json:"port"`
-	SenderName       *string  `json:"sender_name"`
-	Cc               []string `json:"cc"`
-	Bcc              []string `json:"bcc"`
-	Body             *string  `json:"body"`
-	ContentType      *string  `json:"content_type"`
-	Subject          *string  `json:"subject"`
+	To           []string `json:"to"`
+	From         *string  `json:"from"`
+	SmtpPassword *string  `json:"smtp_password"`
+	SmtpUsername *string  `json:"smtp_username"`
+	Host         *string  `json:"host"`
+	Port         *int64   `json:"port"`
+	SenderName   *string  `json:"sender_name"`
+	Cc           []string `json:"cc"`
+	Bcc          []string `json:"bcc"`
+	Body         *string  `json:"body"`
+	ContentType  *string  `json:"content_type"`
+	Subject      *string  `json:"subject"`
 }
 
 func (p *PipelineStepEmail) Equals(iOther PipelineStep) bool {
@@ -1405,7 +1406,8 @@ func (p *PipelineStepEmail) Equals(iOther PipelineStep) bool {
 	// Use reflect.DeepEqual to compare slices and pointers
 	return reflect.DeepEqual(p.To, other.To) &&
 		reflect.DeepEqual(p.From, other.From) &&
-		reflect.DeepEqual(p.SenderCredential, other.SenderCredential) &&
+		reflect.DeepEqual(p.SmtpUsername, other.SmtpUsername) &&
+		reflect.DeepEqual(p.SmtpPassword, other.SmtpPassword) &&
 		reflect.DeepEqual(p.Host, other.Host) &&
 		reflect.DeepEqual(p.Port, other.Port) &&
 		reflect.DeepEqual(p.SenderName, other.SenderName) &&
@@ -1438,11 +1440,21 @@ func (p *PipelineStepEmail) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
-	var senderCredential *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSenderCredential] == nil {
-		senderCredential = p.SenderCredential
+	var smtpUsername *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSmtpUsername] == nil {
+		smtpUsername = p.SmtpUsername
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSenderCredential], evalContext, &senderCredential)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSmtpUsername], evalContext, &smtpUsername)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	var smtpPassword *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSmtpPassword] == nil {
+		smtpPassword = p.SmtpPassword
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSmtpPassword], evalContext, &smtpPassword)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
@@ -1538,8 +1550,12 @@ func (p *PipelineStepEmail) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeFrom] = *from
 	}
 
-	if senderCredential != nil {
-		results[schema.AttributeTypeSenderCredential] = *senderCredential
+	if smtpUsername != nil {
+		results[schema.AttributeTypeSmtpUsername] = *smtpUsername
+	}
+
+	if smtpPassword != nil {
+		results[schema.AttributeTypeSmtpPassword] = *smtpPassword
 	}
 
 	if host != nil {
@@ -1622,7 +1638,7 @@ func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				p.From = &from
 			}
 
-		case schema.AttributeTypeSenderCredential:
+		case schema.AttributeTypeSmtpUsername:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -1630,15 +1646,34 @@ func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				senderCredential, err := hclhelpers.CtyToString(val)
+				smtpUsername, err := hclhelpers.CtyToString(val)
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeSenderCredential + " attribute to string",
+						Summary:  "Unable to parse " + schema.AttributeTypeSmtpUsername + " attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
-				p.SenderCredential = &senderCredential
+				p.SmtpUsername = &smtpUsername
+			}
+
+		case schema.AttributeTypeSmtpPassword:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				smtpPassword, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeSmtpPassword + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.SmtpPassword = &smtpPassword
 			}
 
 		case schema.AttributeTypeHost:

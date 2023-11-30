@@ -464,7 +464,11 @@ var PipelineStepEmailBlockSchema = &hcl.BodySchema{
 			Required: true,
 		},
 		{
-			Name:     schema.AttributeTypeSenderCredential,
+			Name:     schema.AttributeTypeSmtpUsername,
+			Required: true,
+		},
+		{
+			Name:     schema.AttributeTypeSmtpPassword,
 			Required: true,
 		},
 		{
