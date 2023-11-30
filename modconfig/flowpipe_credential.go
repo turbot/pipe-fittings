@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "aws.<dynamic>", "slack.<dynamic", "basic.<dynamic>", "gcp.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {

@@ -10,7 +10,6 @@ import (
 )
 
 type LoopDefn interface {
-	UntilReached() bool
 	GetType() string
 	UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error)
 }
@@ -45,10 +44,6 @@ type LoopEmailStep struct {
 	Body             *string   `json:"body,omitempty" hcl:"body,optional" cty:"body"`
 	ContentType      *string   `json:"content_type,omitempty" hcl:"content_type,optional" cty:"content_type"`
 	Subject          *string   `json:"subject,omitempty" hcl:"subject,optional" cty:"subject"`
-}
-
-func (l *LoopEmailStep) ShouldRun() bool {
-	return l.Until
 }
 
 func (l *LoopEmailStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
@@ -99,10 +94,6 @@ type LoopQueryStep struct {
 	Args              *[]interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
 }
 
-func (l *LoopQueryStep) UntilReached() bool {
-	return l.Until
-}
-
 func (l *LoopQueryStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.ConnnectionString != nil {
 		input["connection_string"] = *l.ConnnectionString
@@ -129,10 +120,6 @@ type LoopHttpStep struct {
 	RequestTimeoutMs *int                    `json:"request_timeout_ms,omitempty" hcl:"request_timeout_ms,optional" cty:"request_timeout_ms"`
 	CaCertPem        *string                 `json:"ca_cert_pem,omitempty" hcl:"ca_cert_pem,optional" cty:"ca_cert_pem"`
 	Insecure         *bool                   `json:"insecure,omitempty" hcl:"insecure,optional" cty:"insecure"`
-}
-
-func (l *LoopHttpStep) UntilReached() bool {
-	return l.Until
 }
 
 func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
@@ -170,10 +157,6 @@ type LoopSleepStep struct {
 	Duration *string `json:"duration,omitempty" hcl:"duration,optional" cty:"duration"`
 }
 
-func (l *LoopSleepStep) UntilReached() bool {
-	return l.Until
-}
-
 func (l *LoopSleepStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.Duration != nil {
 		input["duration"] = *l.Duration
@@ -189,10 +172,6 @@ type LoopPipelineStep struct {
 	Until bool `json:"until" hcl:"until" cty:"until"`
 }
 
-func (l *LoopPipelineStep) UntilReached() bool {
-	return l.Until
-}
-
 func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	return input, nil
 }
@@ -204,10 +183,6 @@ func (*LoopPipelineStep) GetType() string {
 type LoopTransformStep struct {
 	Until bool        `json:"until" hcl:"until" cty:"until"`
 	Value interface{} `json:"value,omitempty" hcl:"value,optional" cty:"value"`
-}
-
-func (l *LoopTransformStep) UntilReached() bool {
-	return l.Until
 }
 
 func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
