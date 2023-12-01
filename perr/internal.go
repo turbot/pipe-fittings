@@ -5,14 +5,19 @@ import (
 )
 
 const (
-	ErrorCodeInternal = "error_internal"
+	ErrorCodeInternal              = "error_internal"
+	ErrorCodeInternalTokenTooLarge = "error_internal_token_too_large"
 )
 
 func InternalWithMessage(msg string) ErrorModel {
+	return InternalWithMessageAndType(ErrorCodeInternal, msg)
+}
+
+func InternalWithMessageAndType(errorType string, msg string) ErrorModel {
 	id := reference()
 	e := ErrorModel{
 		Instance: id,
-		Type:     ErrorCodeInternal,
+		Type:     errorType,
 		Title:    "Internal Error",
 		Status:   http.StatusInternalServerError,
 		Detail:   msg,
