@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -411,6 +411,92 @@ func (c *VirusTotalCredential) GetTtl() int {
 }
 
 func (c *VirusTotalCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type ZendeskCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
+	Email     *string `json:"email,omitempty" cty:"email" hcl:"email,optional"`
+	Token     *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+}
+
+func (*ZendeskCredential) GetCredentialType() string {
+	return "zendesk"
+}
+
+func (c *ZendeskCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Subdomain != nil {
+		env["ZENDESK_SUBDOMAIN"] = cty.StringVal(*c.Subdomain)
+	}
+	if c.Email != nil {
+		env["ZENDESK_USER"] = cty.StringVal(*c.Email)
+	}
+	if c.Token != nil {
+		env["ZENDESK_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	return env
+}
+
+func (c *ZendeskCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *ZendeskCredential) Resolve(ctx context.Context) (Credential, error) {
+
+	var subdomainEnvVar, emailEnvVar, tokenEnvVar string
+	if c.Subdomain == nil {
+		subdomainEnvVar = os.Getenv("ZENDESK_SUBDOMAIN")
+	}
+	if c.Email == nil {
+		emailEnvVar = os.Getenv("ZENDESK_USER")
+	}
+	if c.Token == nil {
+		tokenEnvVar = os.Getenv("ZENDESK_TOKEN")
+	}
+
+	if c.ShortName == "default" {
+		if subdomainEnvVar != "" && emailEnvVar != "" && tokenEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &ZendeskCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:      c.Type,
+				Subdomain: &subdomainEnvVar,
+				Email:     &emailEnvVar,
+				Token:     &tokenEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *ZendeskCredential) GetTtl() int {
+	return -1
+}
+
+func (c *ZendeskCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 

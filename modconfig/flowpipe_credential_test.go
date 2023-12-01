@@ -124,6 +124,36 @@ func TestVirusTotalDefaultCredential(t *testing.T) {
 	assert.Equal("w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c", *newVirusTotalCreds.APIKey)
 }
 
+func TestZendeskDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	zendeskCred := ZendeskCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := zendeskCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newZendeskCreds := newCreds.(*ZendeskCredential)
+	assert.Nil(newZendeskCreds.Subdomain)
+	assert.Nil(newZendeskCreds.Email)
+	assert.Nil(newZendeskCreds.Token)
+
+	os.Setenv("ZENDESK_SUBDOMAIN", "dmi")
+	os.Setenv("ZENDESK_USER", "pam@dmi.com")
+	os.Setenv("ZENDESK_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
+
+	newCreds, err = zendeskCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newZendeskCreds = newCreds.(*ZendeskCredential)
+	assert.Equal("dmi", *newZendeskCreds.Subdomain)
+	assert.Equal("pam@dmi.com", *newZendeskCreds.Email)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newZendeskCreds.Token)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
