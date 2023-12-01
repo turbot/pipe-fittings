@@ -63,7 +63,7 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(configFolder stri
 	case *modconfig.PowerpipeWorkspaceProfile:
 		sampleContent = constants.DefaultPowerpipeWorkspaceContent
 	}
-	// always write the workspaces.spc.sample file
+	// always write the workspaces sample file; i.e. workspaces.spc.sample
 	err := os.MkdirAll(configFolder, 0755)
 	if err != nil {
 		return err

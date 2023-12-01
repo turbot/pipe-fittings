@@ -123,5 +123,5 @@ const DefaultFlowpipeWorkspaceContent = `
 #    log_level     = "info" # trace, debug, info, warn, error
 #    memory_max_mb = "1024" # the maximum memory to allow the CLI process in MB
 #  }
-}
+# }
 `
