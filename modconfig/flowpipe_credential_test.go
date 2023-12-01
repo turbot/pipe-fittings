@@ -154,6 +154,33 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newZendeskCreds.Token)
 }
 
+func TestTrelloDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	trelloCred := TrelloCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := trelloCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newTrelloCreds := newCreds.(*TrelloCredential)
+	assert.Nil(newTrelloCreds.APIKey)
+	assert.Nil(newTrelloCreds.Token)
+
+	os.Setenv("TRELLO_API_KEY", "dmgdhdfhfhfhi")
+	os.Setenv("TRELLO_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
+
+	newCreds, err = trelloCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newTrelloCreds = newCreds.(*TrelloCredential)
+	assert.Equal("dmgdhdfhfhfhi", *newTrelloCreds.APIKey)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newTrelloCreds.Token)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
