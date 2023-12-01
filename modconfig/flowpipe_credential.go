@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -216,6 +216,71 @@ func (c *SlackCredential) GetTtl() int {
 }
 
 func (c *SlackCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type AbuseIPDBCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+}
+
+func (*AbuseIPDBCredential) GetCredentialType() string {
+	return "abuseipdb"
+}
+
+func (c *AbuseIPDBCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["ABUSEIPDB_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	return env
+}
+
+func (c *AbuseIPDBCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *AbuseIPDBCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.ShortName == "default" && c.APIKey == nil {
+		abuseIPDBAPIKeyEnvVar := os.Getenv("ABUSEIPDB_API_KEY")
+		if abuseIPDBAPIKeyEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &AbuseIPDBCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:   c.Type,
+				APIKey: &abuseIPDBAPIKeyEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *AbuseIPDBCredential) GetTtl() int {
+	return -1
+}
+
+func (c *AbuseIPDBCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
