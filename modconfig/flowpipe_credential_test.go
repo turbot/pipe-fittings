@@ -100,6 +100,30 @@ func TestSendGridDefaultCredential(t *testing.T) {
 	assert.Equal("SGsomething", *newSendGridCreds.APIKey)
 }
 
+func TestVirusTotalDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	virusTotalCred := VirusTotalCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := virusTotalCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVirusTotalCreds := newCreds.(*VirusTotalCredential)
+	assert.Nil(newVirusTotalCreds.APIKey)
+
+	os.Setenv("VTCLI_APIKEY", "w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c")
+
+	newCreds, err = virusTotalCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVirusTotalCreds = newCreds.(*VirusTotalCredential)
+	assert.Equal("w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c", *newVirusTotalCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
