@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -281,6 +281,71 @@ func (c *AbuseIPDBCredential) GetTtl() int {
 }
 
 func (c *AbuseIPDBCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type SendGridCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+}
+
+func (*SendGridCredential) GetCredentialType() string {
+	return "sendgrid"
+}
+
+func (c *SendGridCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["SENDGRID_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	return env
+}
+
+func (c *SendGridCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *SendGridCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.ShortName == "default" && c.APIKey == nil {
+		sendGridAPIKeyEnvVar := os.Getenv("SENDGRID_API_KEY")
+		if sendGridAPIKeyEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &SendGridCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:   c.Type,
+				APIKey: &sendGridAPIKeyEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *SendGridCredential) GetTtl() int {
+	return -1
+}
+
+func (c *SendGridCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 

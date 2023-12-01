@@ -76,6 +76,30 @@ func TestAbuseIPDBDefaultCredential(t *testing.T) {
 	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBCreds.APIKey)
 }
 
+func TestSendGridDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	sendGridCred := SendGridCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := sendGridCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newSendGridCreds := newCreds.(*SendGridCredential)
+	assert.Nil(newSendGridCreds.APIKey)
+
+	os.Setenv("SENDGRID_API_KEY", "SGsomething")
+
+	newCreds, err = sendGridCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newSendGridCreds = newCreds.(*SendGridCredential)
+	assert.Equal("SGsomething", *newSendGridCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
