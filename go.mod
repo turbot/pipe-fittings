@@ -11,7 +11,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/gertd/go-pluralize v0.2.1
-	github.com/go-git/go-git/v5 v5.9.0
+	github.com/go-git/go-git/v5 v5.10.1
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/hcl/v2 v2.18.1
@@ -47,14 +47,14 @@ require (
 require (
 	github.com/aws/aws-sdk-go-v2 v1.23.1
 	github.com/aws/aws-sdk-go-v2/config v1.25.5
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/sethvargo/go-retry v0.2.4
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/terraform-components v0.0.0-20231108031935-358f803c1a8b
 	golang.org/x/sync v0.4.0
-	golang.org/x/text v0.13.0
+	golang.org/x/text v0.14.0
 )
 
 require (
@@ -70,7 +70,6 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
 	github.com/XiaoMi/pegasus-go-client v0.0.0-20210427083443-f3b6b08bc4c2 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/allegro/bigcache/v3 v3.1.0 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
@@ -170,7 +169,7 @@ require (
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/skeema/knownhosts v1.2.0 // indirect
+	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.10.0 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
@@ -195,12 +194,12 @@ require (
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.14.0 // indirect
+	golang.org/x/crypto v0.15.0 // indirect
 	golang.org/x/mod v0.13.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
-	golang.org/x/term v0.13.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/term v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
