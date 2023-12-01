@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -497,6 +497,84 @@ func (c *ZendeskCredential) GetTtl() int {
 }
 
 func (c *ZendeskCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type TrelloCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+}
+
+func (*TrelloCredential) GetCredentialType() string {
+	return "trello"
+}
+
+func (c *TrelloCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["TRELLO_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	if c.Token != nil {
+		env["TRELLO_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	return env
+}
+
+func (c *TrelloCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *TrelloCredential) Resolve(ctx context.Context) (Credential, error) {
+
+	var apiKeyEnvVar, tokenEnvVar string
+	if c.APIKey == nil {
+		apiKeyEnvVar = os.Getenv("TRELLO_API_KEY")
+	}
+	if c.Token == nil {
+		tokenEnvVar = os.Getenv("TRELLO_TOKEN")
+	}
+
+	if c.ShortName == "default" {
+		if apiKeyEnvVar != "" && tokenEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &TrelloCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:   c.Type,
+				APIKey: &apiKeyEnvVar,
+				Token:  &tokenEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *TrelloCredential) GetTtl() int {
+	return -1
+}
+
+func (c *TrelloCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
