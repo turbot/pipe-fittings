@@ -232,6 +232,30 @@ func TestUptimeRobotDefaultCredential(t *testing.T) {
 	assert.Equal("u1123455-ecaf32fwer633fdf4f33dd3c445", *newUptimeRobotCreds.APIKey)
 }
 
+func TestUrlscanDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	urlscanCred := UrlscanCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := urlscanCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUrlscanCreds := newCreds.(*UrlscanCredential)
+	assert.Nil(newUrlscanCreds.APIKey)
+
+	os.Setenv("URLSCAN_API_KEY", "4d7e9123-e127-56c1-8d6a-59cad2f12abc")
+
+	newCreds, err = urlscanCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUrlscanCreds = newCreds.(*UrlscanCredential)
+	assert.Equal("4d7e9123-e127-56c1-8d6a-59cad2f12abc", *newUrlscanCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
