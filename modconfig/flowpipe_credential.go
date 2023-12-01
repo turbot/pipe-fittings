@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -575,6 +575,84 @@ func (c *TrelloCredential) GetTtl() int {
 }
 
 func (c *TrelloCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type OktaCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
+	Domain   *string `json:"domain,omitempty" cty:"domain" hcl:"domain,optional"`
+}
+
+func (*OktaCredential) GetCredentialType() string {
+	return "okta"
+}
+
+func (c *OktaCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIToken != nil {
+		env["OKTA_TOKEN"] = cty.StringVal(*c.APIToken)
+	}
+	if c.Domain != nil {
+		env["OKTA_ORGURL"] = cty.StringVal(*c.Domain)
+	}
+	return env
+}
+
+func (c *OktaCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
+
+	var apiTokenEnvVar, domainEnvVar string
+	if c.APIToken == nil {
+		apiTokenEnvVar = os.Getenv("OKTA_TOKEN")
+	}
+	if c.Domain == nil {
+		domainEnvVar = os.Getenv("OKTA_ORGURL")
+	}
+
+	if c.ShortName == "default" {
+		if apiTokenEnvVar != "" && domainEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &OktaCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:     c.Type,
+				APIToken: &apiTokenEnvVar,
+				Domain:   &domainEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *OktaCredential) GetTtl() int {
+	return -1
+}
+
+func (c *OktaCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 

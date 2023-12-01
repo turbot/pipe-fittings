@@ -154,6 +154,33 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newZendeskCreds.Token)
 }
 
+func TestOktaDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	oktaCred := OktaCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := oktaCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOktaCreds := newCreds.(*OktaCredential)
+	assert.Nil(newOktaCreds.APIToken)
+	assert.Nil(newOktaCreds.Domain)
+
+	os.Setenv("OKTA_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+	os.Setenv("OKTA_ORGURL", "https://dev-50078045.okta.com")
+
+	newCreds, err = oktaCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOktaCreds = newCreds.(*OktaCredential)
+	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newOktaCreds.APIToken)
+	assert.Equal("https://dev-50078045.okta.com", *newOktaCreds.Domain)
+}
+
 func TestTrelloDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
