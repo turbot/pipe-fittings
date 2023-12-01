@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -718,6 +718,71 @@ func (c *UptimeRobotCredential) GetTtl() int {
 }
 
 func (c *UptimeRobotCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type UrlscanCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+}
+
+func (*UrlscanCredential) GetCredentialType() string {
+	return "urlscan"
+}
+
+func (c *UrlscanCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["URLSCAN_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	return env
+}
+
+func (c *UrlscanCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *UrlscanCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.ShortName == "default" && c.APIKey == nil {
+		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")
+		if urlscanAPIKeyEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &UrlscanCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:   c.Type,
+				APIKey: &urlscanAPIKeyEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *UrlscanCredential) GetTtl() int {
+	return -1
+}
+
+func (c *UrlscanCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
