@@ -256,6 +256,30 @@ func TestUrlscanDefaultCredential(t *testing.T) {
 	assert.Equal("4d7e9123-e127-56c1-8d6a-59cad2f12abc", *newUrlscanCreds.APIKey)
 }
 
+func TestClickUpDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	clickUpCred := ClickUpCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := clickUpCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newClickUpCreds := newCreds.(*ClickUpCredential)
+	assert.Nil(newClickUpCreds.APIToken)
+
+	os.Setenv("CLICKUP_TOKEN", "pk_616_L5H36X3CXXXXXXXWEAZZF0NM5")
+
+	newCreds, err = clickUpCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newClickUpCreds = newCreds.(*ClickUpCredential)
+	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpCreds.APIToken)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
