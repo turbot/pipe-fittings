@@ -208,6 +208,30 @@ func TestTrelloDefaultCredential(t *testing.T) {
 	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newTrelloCreds.Token)
 }
 
+func TestUptimeRobotDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	uptimeRobotCred := UptimeRobotCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := uptimeRobotCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUptimeRobotCreds := newCreds.(*UptimeRobotCredential)
+	assert.Nil(newUptimeRobotCreds.APIKey)
+
+	os.Setenv("UPTIMEROBOT_API_KEY", "u1123455-ecaf32fwer633fdf4f33dd3c445")
+
+	newCreds, err = uptimeRobotCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUptimeRobotCreds = newCreds.(*UptimeRobotCredential)
+	assert.Equal("u1123455-ecaf32fwer633fdf4f33dd3c445", *newUptimeRobotCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
