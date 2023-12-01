@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -783,6 +783,71 @@ func (c *UrlscanCredential) GetTtl() int {
 }
 
 func (c *UrlscanCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type ClickUpCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
+}
+
+func (*ClickUpCredential) GetCredentialType() string {
+	return "clickup"
+}
+
+func (c *ClickUpCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIToken != nil {
+		env["CLICKUP_TOKEN"] = cty.StringVal(*c.APIToken)
+	}
+	return env
+}
+
+func (c *ClickUpCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *ClickUpCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.ShortName == "default" && c.APIToken == nil {
+		clickUpAPITokenEnvVar := os.Getenv("CLICKUP_TOKEN")
+		if clickUpAPITokenEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &ClickUpCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:     c.Type,
+				APIToken: &clickUpAPITokenEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *ClickUpCredential) GetTtl() int {
+	return -1
+}
+
+func (c *ClickUpCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
