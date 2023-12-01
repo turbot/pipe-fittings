@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -653,6 +653,71 @@ func (c *OktaCredential) GetTtl() int {
 }
 
 func (c *OktaCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type UptimeRobotCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+}
+
+func (*UptimeRobotCredential) GetCredentialType() string {
+	return "uptimerobot"
+}
+
+func (c *UptimeRobotCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["UPTIMEROBOT_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	return env
+}
+
+func (c *UptimeRobotCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *UptimeRobotCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.ShortName == "default" && c.APIKey == nil {
+		uptimeRobotAPIKeyEnvVar := os.Getenv("UPTIMEROBOT_API_KEY")
+		if uptimeRobotAPIKeyEnvVar != "" {
+
+			// Don't modify existing credential, resolve to a new one
+			newCreds := &UptimeRobotCredential{
+				HclResourceImpl: HclResourceImpl{
+					FullName:        c.FullName,
+					UnqualifiedName: c.UnqualifiedName,
+					ShortName:       c.ShortName,
+					DeclRange:       c.DeclRange,
+					blockType:       c.blockType,
+				},
+				Type:   c.Type,
+				APIKey: &uptimeRobotAPIKeyEnvVar,
+			}
+
+			return newCreds, nil
+		}
+	}
+	return c, nil
+}
+
+func (c *UptimeRobotCredential) GetTtl() int {
+	return -1
+}
+
+func (c *UptimeRobotCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
