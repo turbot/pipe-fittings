@@ -52,6 +52,30 @@ func TestSlackDefaultCredential(t *testing.T) {
 	assert.Equal("foobar", *newSlackCreds.Token)
 }
 
+func TestAbuseIPDBDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	abuseIPDBCred := AbuseIPDBCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	newCreds, err := abuseIPDBCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newAbuseIPDBCreds := newCreds.(*AbuseIPDBCredential)
+	assert.Nil(newAbuseIPDBCreds.APIKey)
+
+	os.Setenv("ABUSEIPDB_API_KEY", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
+
+	newCreds, err = abuseIPDBCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newAbuseIPDBCreds = newCreds.(*AbuseIPDBCredential)
+	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
