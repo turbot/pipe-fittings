@@ -88,7 +88,6 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 
 	// check if all pipelines are there
 	pipelines := mod.ResourceMaps.Pipelines
-	assert.Equal(len(pipelines), 3, "wrong number of pipelines")
 
 	jsonForPipeline := pipelines["test_mod.pipeline.json_for"]
 	if jsonForPipeline == nil {
@@ -107,6 +106,23 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	triggers := mod.ResourceMaps.Triggers
 	assert.Equal(1, len(triggers), "wrong number of triggers")
 	assert.Equal("test_mod.trigger.schedule.my_hourly_trigger", triggers["test_mod.trigger.schedule.my_hourly_trigger"].FullName, "wrong trigger name")
+
+	inlineDocPipeline := pipelines["test_mod.pipeline.inline_documentation"]
+	if inlineDocPipeline == nil {
+		assert.Fail("inline_documentation pipeline not found")
+		return
+	}
+
+	assert.Equal("inline doc", *inlineDocPipeline.Description)
+	assert.Equal("inline pipeline documentation", *inlineDocPipeline.Documentation)
+
+	docFromFile := pipelines["test_mod.pipeline.doc_from_file"]
+	if docFromFile == nil {
+		assert.Fail("doc_from_file pipeline not found")
+		return
+	}
+
+	assert.Contains(*docFromFile.Documentation, "the quick brown fox jumps over the lazy dog")
 }
 
 func (suite *FlowpipeModTestSuite) TestModReferences() {

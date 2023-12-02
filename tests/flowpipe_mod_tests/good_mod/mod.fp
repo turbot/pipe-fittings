@@ -67,3 +67,13 @@ pipeline "simple_with_trigger" {
   }
 }
 
+
+pipeline "inline_documentation" {
+  description = "inline doc"
+  documentation = "inline pipeline documentation"
+}
+
+pipeline "doc_from_file" {
+  description = "inline doc"
+  documentation = file("./docs/test.md")
+}

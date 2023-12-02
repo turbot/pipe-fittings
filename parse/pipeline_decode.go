@@ -418,7 +418,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		return nil, res
 	}
 
-	diags = pipelineHcl.SetAttributes(pipelineOptions.Attributes)
+	diags = pipelineHcl.SetAttributes(pipelineOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.handleDecodeDiags(diags)
 		return nil, res

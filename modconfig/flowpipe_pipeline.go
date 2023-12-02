@@ -350,20 +350,16 @@ func (p *Pipeline) Equals(other *Pipeline) bool {
 		p.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
 
-func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes) hcl.Diagnostics {
+func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeDescription:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(nil)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse description attribute",
-						Subject:  &attr.Range,
-					})
+					diags = append(diags, err...)
 					continue
 				}
 
@@ -372,13 +368,9 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes) hcl.Diagnostics {
 			}
 		case schema.AttributeTypeTitle:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(nil)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse title attribute",
-						Subject:  &attr.Range,
-					})
+					diags = append(diags, err...)
 					continue
 				}
 
@@ -387,13 +379,9 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes) hcl.Diagnostics {
 			}
 		case schema.AttributeTypeDocumentation:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(nil)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse documentation attribute",
-						Subject:  &attr.Range,
-					})
+					diags = append(diags, err...)
 					continue
 				}
 
@@ -402,13 +390,9 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes) hcl.Diagnostics {
 			}
 		case schema.AttributeTypeTags:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(nil)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse tags attribute",
-						Subject:  &attr.Range,
-					})
+					diags = append(diags, err...)
 					continue
 				}
 
