@@ -188,25 +188,23 @@ func (c *SlackCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *SlackCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.Token == nil {
+	if c.Token == nil {
 		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")
-		if slackTokenEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &SlackCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:  c.Type,
-				Token: &slackTokenEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &SlackCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:  c.Type,
+			Token: &slackTokenEnvVar,
 		}
+
+		return newCreds, nil
 	}
 	return c, nil
 }
@@ -253,25 +251,23 @@ func (c *AbuseIPDBCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *AbuseIPDBCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.APIKey == nil {
+	if c.APIKey == nil {
 		abuseIPDBAPIKeyEnvVar := os.Getenv("ABUSEIPDB_API_KEY")
-		if abuseIPDBAPIKeyEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &AbuseIPDBCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:   c.Type,
-				APIKey: &abuseIPDBAPIKeyEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &AbuseIPDBCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &abuseIPDBAPIKeyEnvVar,
 		}
+
+		return newCreds, nil
 	}
 	return c, nil
 }
@@ -318,25 +314,23 @@ func (c *SendGridCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *SendGridCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.APIKey == nil {
+	if c.APIKey == nil {
 		sendGridAPIKeyEnvVar := os.Getenv("SENDGRID_API_KEY")
-		if sendGridAPIKeyEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &SendGridCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:   c.Type,
-				APIKey: &sendGridAPIKeyEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &SendGridCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &sendGridAPIKeyEnvVar,
 		}
+
+		return newCreds, nil
 	}
 	return c, nil
 }
@@ -383,25 +377,24 @@ func (c *VirusTotalCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *VirusTotalCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.APIKey == nil {
+	if c.APIKey == nil {
 		virusTotalAPIKeyEnvVar := os.Getenv("VTCLI_APIKEY")
-		if virusTotalAPIKeyEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &VirusTotalCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:   c.Type,
-				APIKey: &virusTotalAPIKeyEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &VirusTotalCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &virusTotalAPIKeyEnvVar,
 		}
+
+		return newCreds, nil
+
 	}
 	return c, nil
 }
@@ -457,38 +450,29 @@ func (c *ZendeskCredential) CtyValue() (cty.Value, error) {
 
 func (c *ZendeskCredential) Resolve(ctx context.Context) (Credential, error) {
 
-	var subdomainEnvVar, emailEnvVar, tokenEnvVar string
-	if c.Subdomain == nil {
-		subdomainEnvVar = os.Getenv("ZENDESK_SUBDOMAIN")
-	}
-	if c.Email == nil {
-		emailEnvVar = os.Getenv("ZENDESK_USER")
-	}
-	if c.Token == nil {
-		tokenEnvVar = os.Getenv("ZENDESK_TOKEN")
-	}
+	if c.Subdomain == nil && c.Email == nil && c.Token == nil {
+		subdomainEnvVar := os.Getenv("ZENDESK_SUBDOMAIN")
+		emailEnvVar := os.Getenv("ZENDESK_USER")
+		tokenEnvVar := os.Getenv("ZENDESK_TOKEN")
 
-	if c.ShortName == "default" {
-		if subdomainEnvVar != "" && emailEnvVar != "" && tokenEnvVar != "" {
-
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &ZendeskCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:      c.Type,
-				Subdomain: &subdomainEnvVar,
-				Email:     &emailEnvVar,
-				Token:     &tokenEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &ZendeskCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:      c.Type,
+			Subdomain: &subdomainEnvVar,
+			Email:     &emailEnvVar,
+			Token:     &tokenEnvVar,
 		}
+
+		return newCreds, nil
 	}
+
 	return c, nil
 }
 
@@ -539,34 +523,26 @@ func (c *TrelloCredential) CtyValue() (cty.Value, error) {
 
 func (c *TrelloCredential) Resolve(ctx context.Context) (Credential, error) {
 
-	var apiKeyEnvVar, tokenEnvVar string
-	if c.APIKey == nil {
-		apiKeyEnvVar = os.Getenv("TRELLO_API_KEY")
-	}
-	if c.Token == nil {
-		tokenEnvVar = os.Getenv("TRELLO_TOKEN")
-	}
-
-	if c.ShortName == "default" {
-		if apiKeyEnvVar != "" && tokenEnvVar != "" {
-
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &TrelloCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:   c.Type,
-				APIKey: &apiKeyEnvVar,
-				Token:  &tokenEnvVar,
-			}
-
-			return newCreds, nil
+	if c.APIKey == nil && c.Token == nil {
+		apiKeyEnvVar := os.Getenv("TRELLO_API_KEY")
+		tokenEnvVar := os.Getenv("TRELLO_TOKEN")
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &TrelloCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &apiKeyEnvVar,
+			Token:  &tokenEnvVar,
 		}
+
+		return newCreds, nil
 	}
+
 	return c, nil
 }
 
@@ -617,34 +593,27 @@ func (c *OktaCredential) CtyValue() (cty.Value, error) {
 
 func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
 
-	var apiTokenEnvVar, domainEnvVar string
-	if c.APIToken == nil {
-		apiTokenEnvVar = os.Getenv("OKTA_TOKEN")
-	}
-	if c.Domain == nil {
-		domainEnvVar = os.Getenv("OKTA_ORGURL")
-	}
+	if c.APIToken == nil && c.Domain == nil {
+		apiTokenEnvVar := os.Getenv("OKTA_TOKEN")
+		domainEnvVar := os.Getenv("OKTA_ORGURL")
 
-	if c.ShortName == "default" {
-		if apiTokenEnvVar != "" && domainEnvVar != "" {
-
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &OktaCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:     c.Type,
-				APIToken: &apiTokenEnvVar,
-				Domain:   &domainEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &OktaCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:     c.Type,
+			APIToken: &apiTokenEnvVar,
+			Domain:   &domainEnvVar,
 		}
+
+		return newCreds, nil
 	}
+
 	return c, nil
 }
 
@@ -690,26 +659,25 @@ func (c *UptimeRobotCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *UptimeRobotCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.APIKey == nil {
+	if c.APIKey == nil {
 		uptimeRobotAPIKeyEnvVar := os.Getenv("UPTIMEROBOT_API_KEY")
-		if uptimeRobotAPIKeyEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &UptimeRobotCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:   c.Type,
-				APIKey: &uptimeRobotAPIKeyEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &UptimeRobotCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &uptimeRobotAPIKeyEnvVar,
 		}
+
+		return newCreds, nil
 	}
+
 	return c, nil
 }
 
@@ -755,26 +723,24 @@ func (c *UrlscanCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *UrlscanCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.APIKey == nil {
+	if c.APIKey == nil {
 		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")
-		if urlscanAPIKeyEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &UrlscanCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:   c.Type,
-				APIKey: &urlscanAPIKeyEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &UrlscanCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &urlscanAPIKeyEnvVar,
 		}
+		return newCreds, nil
 	}
+
 	return c, nil
 }
 
@@ -820,26 +786,25 @@ func (c *ClickUpCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *ClickUpCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.ShortName == "default" && c.APIToken == nil {
+	if c.APIToken == nil {
 		clickUpAPITokenEnvVar := os.Getenv("CLICKUP_TOKEN")
-		if clickUpAPITokenEnvVar != "" {
 
-			// Don't modify existing credential, resolve to a new one
-			newCreds := &ClickUpCredential{
-				HclResourceImpl: HclResourceImpl{
-					FullName:        c.FullName,
-					UnqualifiedName: c.UnqualifiedName,
-					ShortName:       c.ShortName,
-					DeclRange:       c.DeclRange,
-					blockType:       c.blockType,
-				},
-				Type:     c.Type,
-				APIToken: &clickUpAPITokenEnvVar,
-			}
-
-			return newCreds, nil
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &ClickUpCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:     c.Type,
+			APIToken: &clickUpAPITokenEnvVar,
 		}
+
+		return newCreds, nil
 	}
+
 	return c, nil
 }
 

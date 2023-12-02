@@ -37,11 +37,12 @@ func TestSlackDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("SLACK_TOKEN")
 	newCreds, err := slackCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newSlackCreds := newCreds.(*SlackCredential)
-	assert.Nil(newSlackCreds.Token)
+	assert.Equal("", *newSlackCreds.Token)
 
 	os.Setenv("SLACK_TOKEN", "foobar")
 
@@ -61,11 +62,12 @@ func TestAbuseIPDBDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("ABUSEIPDB_API_KEY")
 	newCreds, err := abuseIPDBCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newAbuseIPDBCreds := newCreds.(*AbuseIPDBCredential)
-	assert.Nil(newAbuseIPDBCreds.APIKey)
+	assert.Equal("", *newAbuseIPDBCreds.APIKey)
 
 	os.Setenv("ABUSEIPDB_API_KEY", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
 
@@ -85,11 +87,12 @@ func TestSendGridDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("SENDGRID_API_KEY")
 	newCreds, err := sendGridCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newSendGridCreds := newCreds.(*SendGridCredential)
-	assert.Nil(newSendGridCreds.APIKey)
+	assert.Equal("", *newSendGridCreds.APIKey)
 
 	os.Setenv("SENDGRID_API_KEY", "SGsomething")
 
@@ -109,11 +112,12 @@ func TestVirusTotalDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("VTCLI_APIKEY")
 	newCreds, err := virusTotalCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newVirusTotalCreds := newCreds.(*VirusTotalCredential)
-	assert.Nil(newVirusTotalCreds.APIKey)
+	assert.Equal("", *newVirusTotalCreds.APIKey)
 
 	os.Setenv("VTCLI_APIKEY", "w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c")
 
@@ -133,13 +137,17 @@ func TestZendeskDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("ZENDESK_SUBDOMAIN")
+	os.Unsetenv("ZENDESK_USER")
+	os.Unsetenv("ZENDESK_TOKEN")
+
 	newCreds, err := zendeskCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newZendeskCreds := newCreds.(*ZendeskCredential)
-	assert.Nil(newZendeskCreds.Subdomain)
-	assert.Nil(newZendeskCreds.Email)
-	assert.Nil(newZendeskCreds.Token)
+	assert.Equal("", *newZendeskCreds.Subdomain)
+	assert.Equal("", *newZendeskCreds.Email)
+	assert.Equal("", *newZendeskCreds.Token)
 
 	os.Setenv("ZENDESK_SUBDOMAIN", "dmi")
 	os.Setenv("ZENDESK_USER", "pam@dmi.com")
@@ -163,12 +171,15 @@ func TestOktaDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("OKTA_TOKEN")
+	os.Unsetenv("OKTA_ORGURL")
+
 	newCreds, err := oktaCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOktaCreds := newCreds.(*OktaCredential)
-	assert.Nil(newOktaCreds.APIToken)
-	assert.Nil(newOktaCreds.Domain)
+	assert.Equal("", *newOktaCreds.APIToken)
+	assert.Equal("", *newOktaCreds.Domain)
 
 	os.Setenv("OKTA_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
 	os.Setenv("OKTA_ORGURL", "https://dev-50078045.okta.com")
@@ -190,12 +201,15 @@ func TestTrelloDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("TRELLO_API_KEY")
+	os.Unsetenv("TRELLO_TOKEN")
+
 	newCreds, err := trelloCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newTrelloCreds := newCreds.(*TrelloCredential)
-	assert.Nil(newTrelloCreds.APIKey)
-	assert.Nil(newTrelloCreds.Token)
+	assert.Equal("", *newTrelloCreds.APIKey)
+	assert.Equal("", *newTrelloCreds.Token)
 
 	os.Setenv("TRELLO_API_KEY", "dmgdhdfhfhfhi")
 	os.Setenv("TRELLO_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
@@ -217,11 +231,12 @@ func TestUptimeRobotDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("UPTIMEROBOT_API_KEY")
 	newCreds, err := uptimeRobotCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newUptimeRobotCreds := newCreds.(*UptimeRobotCredential)
-	assert.Nil(newUptimeRobotCreds.APIKey)
+	assert.Equal("", *newUptimeRobotCreds.APIKey)
 
 	os.Setenv("UPTIMEROBOT_API_KEY", "u1123455-ecaf32fwer633fdf4f33dd3c445")
 
@@ -241,11 +256,12 @@ func TestUrlscanDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("URLSCAN_API_KEY")
 	newCreds, err := urlscanCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newUrlscanCreds := newCreds.(*UrlscanCredential)
-	assert.Nil(newUrlscanCreds.APIKey)
+	assert.Equal("", *newUrlscanCreds.APIKey)
 
 	os.Setenv("URLSCAN_API_KEY", "4d7e9123-e127-56c1-8d6a-59cad2f12abc")
 
@@ -265,11 +281,12 @@ func TestClickUpDefaultCredential(t *testing.T) {
 		},
 	}
 
+	os.Unsetenv("CLICKUP_TOKEN")
 	newCreds, err := clickUpCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newClickUpCreds := newCreds.(*ClickUpCredential)
-	assert.Nil(newClickUpCreds.APIToken)
+	assert.Equal("", *newClickUpCreds.APIToken)
 
 	os.Setenv("CLICKUP_TOKEN", "pk_616_L5H36X3CXXXXXXXWEAZZF0NM5")
 
