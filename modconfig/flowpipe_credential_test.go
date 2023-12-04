@@ -422,6 +422,31 @@ func TestMicrosoftTeamsDefaultCredential(t *testing.T) {
 	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newMSTeamsCreds.AccessToken)
 }
 
+func TestGithubDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	githubCred := GithubCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("GITHUB_TOKEN")
+	newCreds, err := githubCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGithubAccessTokenCreds := newCreds.(*GithubCredential)
+	assert.Equal("", *newGithubAccessTokenCreds.AccessToken)
+
+	os.Setenv("GITHUB_TOKEN", "ghpat-ljgllghhegweroyuouo67u5476070owetylh")
+
+	newCreds, err = githubCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGithubAccessTokenCreds = newCreds.(*GithubCredential)
+	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenCreds.AccessToken)
+}
+
 func TestPipesDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
