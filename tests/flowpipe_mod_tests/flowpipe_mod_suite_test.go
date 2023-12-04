@@ -380,7 +380,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert := assert.New(suite.T())
 
-	os.Setenv("P_VAR_var_six", "set from env var")
+	os.Setenv("FP_VAR_var_six", "set from env var")
 
 	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", map[string]modconfig.Credential{}, ".fp")
 
