@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "jira.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "jira.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1191,6 +1191,81 @@ func (c *PipesCredential) GetTtl() int {
 }
 
 func (c *PipesCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type JiraCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Token      *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+	APIBaseURL *string `json:"api_base_url,omitempty" cty:"api_base_url" hcl:"api_base_url,optional"`
+	UserEmail  *string `json:"user_email,omitempty" cty:"user_email" hcl:"user_email,optional"`
+}
+
+func (*JiraCredential) GetCredentialType() string {
+	return "jira"
+}
+
+func (c *JiraCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["JIRA_PERSONAL_ACCESS_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	if c.APIBaseURL != nil {
+		env["JIRA_URL"] = cty.StringVal(*c.APIBaseURL)
+	}
+	if c.UserEmail != nil {
+		env["JIRA_USER"] = cty.StringVal(*c.UserEmail)
+	}
+	return env
+}
+
+func (c *JiraCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *JiraCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.Token == nil && c.APIBaseURL == nil && c.UserEmail == nil {
+		jiraTokenEnvVar := os.Getenv("JIRA_PERSONAL_ACCESS_TOKEN")
+		jiraURLEnvVar := os.Getenv("JIRA_URL")
+		jiraUserEnvVar := os.Getenv("JIRA_USER")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &JiraCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:       c.Type,
+			Token:      &jiraTokenEnvVar,
+			APIBaseURL: &jiraURLEnvVar,
+			UserEmail:  &jiraUserEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *JiraCredential) GetTtl() int {
+	return -1
+}
+
+func (c *JiraCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
