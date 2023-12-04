@@ -3,6 +3,7 @@ package cmdconfig
 import (
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -15,9 +16,9 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	// the rest are set up in BootstrapViper
 
 	// set viper default for workspace profile, using ArgWorkspaceProfile env var
-	SetDefaultFromEnv(constants.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
+	SetDefaultFromEnv(app_specific.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
 	// set viper default for install dir, using ArgInstallDir env var
-	SetDefaultFromEnv(constants.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
+	SetDefaultFromEnv(app_specific.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	globalWorkspaceProfileDir, err := getGlobalWorkspaceDir()
 	if err != nil {
