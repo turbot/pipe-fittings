@@ -422,6 +422,31 @@ func TestMicrosoftTeamsDefaultCredential(t *testing.T) {
 	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newMSTeamsCreds.AccessToken)
 }
 
+func TestPipesDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	pipesCred := PipesCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("PIPES_TOKEN")
+	newCreds, err := pipesCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPipesCreds := newCreds.(*PipesCredential)
+	assert.Equal("", *newPipesCreds.Token)
+
+	os.Setenv("PIPES_TOKEN", "tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+
+	newCreds, err = pipesCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPipesCreds = newCreds.(*PipesCredential)
+	assert.Equal("tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newPipesCreds.Token)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
