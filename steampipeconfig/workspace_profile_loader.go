@@ -20,21 +20,25 @@ func defaultWorkspaceSampleFileName() string {
 }
 
 type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
-	workspaceProfiles          map[string]T
-	globalWorkspaceProfilePath string
-	localWorkspaceProfilePath  string
-	DefaultProfile             T
-	ConfiguredProfile          T
+	workspaceProfiles map[string]T
+	// list of config locaitons, in order or INCREASING precedence
+	workspaceProfilePaths []string
+	DefaultProfile        T
+	ConfiguredProfile     T
 }
 
-func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](globalWorkspaceProfilePath, localWorkspaceProfilePath string) (*WorkspaceProfileLoader[T], error) {
+func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePaths ...string) (*WorkspaceProfileLoader[T], error) {
 	loader := &WorkspaceProfileLoader[T]{
-		globalWorkspaceProfilePath: globalWorkspaceProfilePath,
-		localWorkspaceProfilePath:  localWorkspaceProfilePath,
+		workspaceProfilePaths: workspaceProfilePaths,
 	}
 
-	// write the workspaces.spc.sample file
-	if err := loader.ensureDefaultWorkspaceFile(globalWorkspaceProfilePath); err != nil {
+	// must be at config one location
+	if len(workspaceProfilePaths) == 0 {
+		return nil, fmt.Errorf("no workspace profile locations specified")
+	}
+
+	// write the workspaces.spc.sample file to the lowest precedence location (assumed to be the gloabl config folder)
+	if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths[0]); err != nil {
 		return nil,
 			sperr.WrapWithMessage(
 				err,
@@ -101,30 +105,33 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 }
 
 func (l *WorkspaceProfileLoader[T]) load() error {
-	// load all workspaces in the global config location
-	globalWorkspaces, err := parse.LoadWorkspaceProfiles[T](l.globalWorkspaceProfilePath)
-	if err != nil {
-		return err
-	}
-	// load all workspaces in the mod location
-	localWorkspaces, err := parse.LoadWorkspaceProfiles[T](l.localWorkspaceProfilePath)
-	if err != nil {
-		return err
+	// load workspaces from all locations
+	var workspacesPrecedenceList = make([]map[string]T, len(l.workspaceProfilePaths))
+
+	for i, configPath := range l.workspaceProfilePaths {
+		// load all workspaces in the global config location
+		workspaces, err := parse.LoadWorkspaceProfiles[T](configPath)
+		if err != nil {
+			return err
+		}
+
+		workspacesPrecedenceList[i] = workspaces
 	}
 
 	// determine the default workspace
-	if err := l.setDefault(localWorkspaces, globalWorkspaces); err != nil {
+	if err := l.setDefault(workspacesPrecedenceList); err != nil {
 		return err
 	}
 
-	l.setWorkspaces(localWorkspaces, globalWorkspaces)
+	l.setWorkspaces(workspacesPrecedenceList)
 
 	// try to set the configured workspace
 	if viper.IsSet(constants.ArgWorkspaceProfile) {
-		configuredProfile, ok := l.get(viper.GetString(constants.ArgWorkspaceProfile))
+		name := viper.GetString(constants.ArgWorkspaceProfile)
+		configuredProfile, ok := l.get(name)
 		if !ok {
 			// could not find configured profile
-			return err
+			return fmt.Errorf("the configured profile '%s' does not exist", name)
 		}
 		l.ConfiguredProfile = configuredProfile
 	}
@@ -132,21 +139,31 @@ func (l *WorkspaceProfileLoader[T]) load() error {
 	return nil
 }
 
-func (l *WorkspaceProfileLoader[T]) setDefault(localWorkspaces map[string]T, globalWorkspaces map[string]T) error {
-	// if there is a 'local' workspace defined in localWorkspaces, use it as the default
-	defaultProfile, ok := localWorkspaces["local"]
+func (l *WorkspaceProfileLoader[T]) setDefault(workspacesPrecedenceList []map[string]T) error {
+	// the first element in the workspacesPrecedenceList is the global config location
+	globalWorkspaces := workspacesPrecedenceList[0]
+
+	// get the global default workspace
+	// no local profile - look for a global default
+	defaultWorkspace, ok := globalWorkspaces["default"]
 	if !ok {
-		// no local profile - look for a global default
-		defaultProfile, ok = globalWorkspaces["default"]
-		if !ok {
-			var diags hcl.Diagnostics
-			defaultProfile, diags = modconfig.NewDefaultWorkspaceProfile[T]()
-			if diags.HasErrors() {
-				return plugin.DiagsToError("failed to create default workspace", diags)
+		var diags hcl.Diagnostics
+		defaultWorkspace, diags = modconfig.NewDefaultWorkspaceProfile[T]()
+		if diags.HasErrors() {
+			return plugin.DiagsToError("failed to create default workspace", diags)
+		}
+	}
+
+	if len(workspacesPrecedenceList) > 1 {
+		for _, workspaces := range workspacesPrecedenceList[1:] {
+			// if there is a 'local' workspace defined in localWorkspaces, use it as the default
+			if localDefault, ok := workspaces["local"]; ok {
+				defaultWorkspace = localDefault
+				break
 			}
 		}
 	}
-	l.DefaultProfile = defaultProfile
+	l.DefaultProfile = defaultWorkspace
 	return nil
 }
 
@@ -181,14 +198,12 @@ func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	return w
 }
 
-func (l *WorkspaceProfileLoader[T]) setWorkspaces(globalWorkspaces, localWorkspaces map[string]T) {
+func (l *WorkspaceProfileLoader[T]) setWorkspaces(workspacesPrecedenceList []map[string]T) {
 	l.workspaceProfiles = make(map[string]T)
-	// assign global workspaces
-	for k, v := range globalWorkspaces {
-		l.workspaceProfiles[k] = v
-	}
-	// assign local workspaces with higher precedence (i.e. these overwrite global workspaces with same name)
-	for k, v := range localWorkspaces {
-		l.workspaceProfiles[k] = v
+
+	for _, workspaces := range workspacesPrecedenceList {
+		for k, v := range workspaces {
+			l.workspaceProfiles[k] = v
+		}
 	}
 }
