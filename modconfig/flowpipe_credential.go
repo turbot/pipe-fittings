@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1191,6 +1191,69 @@ func (c *PipesCredential) GetTtl() int {
 }
 
 func (c *PipesCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type GithubCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
+}
+
+func (*GithubCredential) GetCredentialType() string {
+	return "github"
+}
+
+func (c *GithubCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.AccessToken != nil {
+		env["GITHUB_TOKEN"] = cty.StringVal(*c.AccessToken)
+	}
+	return env
+}
+
+func (c *GithubCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *GithubCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.AccessToken == nil {
+		githubAccessTokenEnvVar := os.Getenv("GITHUB_TOKEN")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &GithubCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:        c.Type,
+			AccessToken: &githubAccessTokenEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *GithubCredential) GetTtl() int {
+	return -1
+}
+
+func (c *GithubCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
