@@ -11,7 +11,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
-	"log"
+	"log/slog"
 )
 
 func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
@@ -73,7 +73,7 @@ func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePro
 		// if there are no unresolved blocks, we are done
 		unresolvedBlocks := len(parseCtx.UnresolvedBlocks)
 		if unresolvedBlocks == 0 {
-			log.Printf("[TRACE] parse complete after %d decode passes", attempts+1)
+			slog.Debug("parse complete", "decode passes", attempts+1)
 			break
 		}
 		// if the number of unresolved blocks has NOT reduced, fail

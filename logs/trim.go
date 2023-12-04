@@ -1,7 +1,7 @@
 package logs
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -15,12 +15,12 @@ func TrimLogs() {
 	fileLocation := filepaths.EnsureLogDir()
 	files, err := os.ReadDir(fileLocation)
 	if err != nil {
-		log.Println("[TRACE] error listing db log directory", err)
+		slog.Debug("error listing db log directory", err)
 	}
 	for _, file := range files {
 		fi, err := file.Info()
 		if err != nil {
-			log.Printf("[TRACE] error reading file info of %s. continuing\n", file.Name())
+			slog.Debug("error reading file info. continuing", "file", file.Name())
 			continue
 		}
 
@@ -34,7 +34,7 @@ func TrimLogs() {
 			logPath := filepath.Join(fileLocation, fileName)
 			err := os.Remove(logPath)
 			if err != nil {
-				log.Printf("[TRACE] failed to delete log file %s\n", logPath)
+				slog.Debug("failed to delete log file", " logPath", logPath)
 			}
 		}
 	}

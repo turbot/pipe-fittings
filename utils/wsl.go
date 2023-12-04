@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"runtime"
 	"strings"
@@ -24,7 +24,7 @@ func IsWSL() bool {
 	// https://github.com/Microsoft/WSL/issues/2299#issuecomment-361366982
 	osReleaseContent, err := os.ReadFile("/proc/version")
 	if err != nil {
-		log.Println("[TRACE] could not read /proc/version for evaluating WSL: ", err)
+		slog.Debug("could not read /proc/version for evaluating WSL: ", err)
 		// WSL systems will always have the /proc/version file.
 		// if we can't read the file, then this must be some other
 		// flavour of linux which doesn't use it - or there's something

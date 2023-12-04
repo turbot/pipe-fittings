@@ -2,7 +2,7 @@ package contexthelpers
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 )
@@ -12,7 +12,7 @@ func StartCancelHandler(cancel context.CancelFunc) {
 	signal.Notify(sigIntChannel, os.Interrupt)
 	go func() {
 		<-sigIntChannel
-		log.Println("[TRACE] cancel handler got SIGINT")
+		slog.Debug("cancel handler got SIGINT")
 		// call context cancellation function
 		cancel()
 		// leave the channel open - any subsequent interrupts hits will be ignored

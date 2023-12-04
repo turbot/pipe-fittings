@@ -4,23 +4,23 @@ import (
 	"context"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"log"
+	"log/slog"
 )
 
 var EventCount int64 = 0
 
 func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
-	log.Printf("[TRACE] handleFileWatcherEvent")
+	slog.Debug("handleFileWatcherEvent")
 	prevResourceMaps, resourceMaps, errAndWarnings := w.reloadResourceMaps(ctx)
 
 	if errAndWarnings.GetError() != nil {
-		log.Printf("[TRACE] handleFileWatcherEvent reloadResourceMaps returned error - call PublishDashboardEvent")
+		slog.Debug("handleFileWatcherEvent reloadResourceMaps returned error - call PublishDashboardEvent")
 		// call error hook
 		if w.OnFileWatcherError != nil {
 			w.OnFileWatcherError(ctx, errAndWarnings.Error)
 		}
 
-		log.Printf("[TRACE] back from PublishDashboardEvent")
+		slog.Debug("back from PublishDashboardEvent")
 		// Flag on workspace?
 		return
 	}

@@ -1,7 +1,7 @@
 package steampipeconfig
 
 import (
-	"log"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/turbot/go-kit/helpers"
@@ -69,7 +69,7 @@ func loadConfig(configFolder string, flowpipeConfig *modconfig.FlowpipeConfig, o
 	})
 
 	if err != nil {
-		log.Printf("[WARN] loadConfig: failed to get config file paths: %v\n", err)
+		slog.Warn("loadConfig: failed to get config file paths", "error", err)
 		return error_helpers.NewErrorsAndWarning(err)
 	}
 	if len(configPaths) == 0 {
@@ -78,7 +78,7 @@ func loadConfig(configFolder string, flowpipeConfig *modconfig.FlowpipeConfig, o
 
 	fileData, diags := parse.LoadFileData(configPaths...)
 	if diags.HasErrors() {
-		log.Printf("[WARN] loadConfig: failed to load all config files: %v\n", err)
+		slog.Warn("loadConfig: failed to load all config files", "error", err)
 		return error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
 	}
 
@@ -101,7 +101,7 @@ func loadConfig(configFolder string, flowpipeConfig *modconfig.FlowpipeConfig, o
 			credential, moreDiags := parse.DecodeCredential(block)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
-				log.Printf("[WARN] loadConfig: failed to decode credential block: %v\n", err)
+				slog.Warn("loadConfig: failed to decode credential block", "error", err)
 			}
 
 			flowpipeConfig.Credentials[credential.GetUnqualifiedName()] = credential

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/turbot/pipe-fittings/logs"
-	"log"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
@@ -42,7 +42,7 @@ func RunTasks(ctx context.Context, cmd *cobra.Command, args []string, options ..
 
 	// if there are any notifications from the previous run - display them
 	if err := runner.displayNotifications(cmd, args); err != nil {
-		log.Println("[TRACE] faced error displaying notifications:", err)
+		slog.Debug("faced error displaying notifications:", err)
 	}
 
 	// asynchronously run the task runner
@@ -51,7 +51,7 @@ func RunTasks(ctx context.Context, cmd *cobra.Command, args []string, options ..
 		// check if a legacy notifications file exists
 		exists := files.FileExists(filepaths.LegacyNotificationsFilePath())
 		if exists {
-			log.Println("[TRACE] found legacy notification file. removing")
+			slog.Debug("found legacy notification file. removing")
 			// if the legacy file exists, remove it
 			os.Remove(filepaths.LegacyNotificationsFilePath())
 		}
@@ -80,7 +80,7 @@ func newRunner(config *taskRunConfig) *Runner {
 	if err != nil {
 		// this error should never happen
 		// log this and carry on
-		log.Println("[TRACE] error loading state,", err)
+		slog.Debug("error loading state,", err)
 	}
 	r.currentState = state
 	return r

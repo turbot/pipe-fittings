@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/db_client/backend"
 	"github.com/turbot/pipe-fittings/utils"
 	"golang.org/x/sync/semaphore"
-	"log"
+	"log/slog"
 )
 
 // define func type for StartQuery
@@ -106,7 +106,7 @@ func (c *DbClient) RegisterNotificationListener(func(notification *pgconn.Notifi
 
 // Close closes the connection to the database and shuts down the backend
 func (c *DbClient) Close(context.Context) error {
-	log.Printf("[TRACE] DbClient.Close %v", c.UserPool)
+	slog.Debug("DbClient.Close user pool")
 	c.closePools()
 
 	return nil
@@ -115,8 +115,8 @@ func (c *DbClient) Close(context.Context) error {
 // TODO KAI STEAMPIPE ONLY <MISC>
 // Unimplemented (sql.DB does not have a mechanism to reset pools) - refreshDbClient terminates the current connection and opens up a new connection to the service.
 func (c *DbClient) ResetPools(ctx context.Context) {
-	log.Println("[TRACE] db_client.ResetPools start")
-	defer log.Println("[TRACE] db_client.ResetPools end")
+	slog.Debug("db_client.ResetPools start")
+	defer slog.Debug("db_client.ResetPools end")
 
 	// c.UserPool.Reset()
 	// c.ManagementPool.Reset()

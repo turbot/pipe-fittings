@@ -3,7 +3,7 @@ package cloud
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"path"
 	"strings"
 
@@ -82,7 +82,7 @@ func uploadSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnaps
 
 	// resolve the snapshot title
 	title := resolveSnapshotTitle(snapshot)
-	log.Printf("[TRACE] Uploading snapshot with title %s", title)
+	slog.Debug("Uploading snapshot", "title", title)
 	// populate map of tags tags been set?
 	tags := getTags()
 

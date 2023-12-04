@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"log"
+	"log/slog"
 	"net/url"
 	"time"
 
@@ -62,7 +62,7 @@ func (c *versionChecker) doCheckRequest(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != 200 {
-		log.Printf("[TRACE] Unknown response during version check: %d\n", resp.StatusCode)
+		slog.Debug("Unknown response during version check", "StatusCode", resp.StatusCode)
 		return http.NewErr(resp)
 	}
 

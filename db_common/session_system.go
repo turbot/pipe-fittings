@@ -5,10 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
-
 	"github.com/turbot/pipe-fittings/constants/runtime"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"log/slog"
 )
 
 // SystemClientExecutor is the executor function that is called within a transaction
@@ -30,7 +29,7 @@ func ExecuteSystemClientCall(ctx context.Context, conn *sql.Conn, executor Syste
 			// set back the original application name
 			_, e = tx.ExecContext(ctx, fmt.Sprintf("SET application_name TO '%s'", runtime.ClientConnectionAppName))
 			if e != nil {
-				log.Println("[TRACE] could not reset application_name", e)
+				slog.Debug("could not reset application_name", e)
 			}
 		}()
 

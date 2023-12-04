@@ -171,7 +171,7 @@ Essentially, --workspace acme/dev is equivalent to:
 func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	// TODO KAI FIX ME <WORKSPACE>
 	//if IsCloudWorkspaceIdentifier(name) {
-	//	log.Printf("[TRACE] getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
+	//	slog.Debug("getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
 	//	return &modconfig.SteampipeWorkspaceProfile{
 	//		SnapshotLocation:  utils.ToStringPointer(name),
 	//		WorkspaceDatabase: utils.ToStringPointer(name),

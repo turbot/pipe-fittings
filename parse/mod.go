@@ -6,7 +6,7 @@ import (
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/perr"
-	"log"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -193,7 +193,7 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 		// if there are no unresolved blocks, we are done
 		unresolvedBlocks := len(parseCtx.UnresolvedBlocks)
 		if unresolvedBlocks == 0 {
-			log.Printf("[TRACE] parse complete after %d decode passes", attempts+1)
+			slog.Debug("parse complete", "decode passes", attempts+1)
 			break
 		}
 		// if the number of unresolved blocks has NOT reduced, fail

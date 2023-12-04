@@ -43,4 +43,6 @@ var (
 
 	EnvMemoryMaxMb       = app_specific.BuildEnv("MEMORY_MAX_MB")
 	EnvMemoryMaxMbPlugin = app_specific.BuildEnv("PLUGIN_MEMORY_MAX_MB")
+
+	EnvLogLevel = app_specific.BuildEnv("LOG_LEVEL")
 )

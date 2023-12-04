@@ -3,7 +3,7 @@ package task
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -64,7 +64,7 @@ func (r *Runner) loadCachedVersions() (*AvailableVersionCache, error) {
 		// if Go couldn't close the file handle, no matter - this was just good practise
 		// if Go couldn't remove the notification file, it'll get truncated next time we try to write to it
 		// worst case is that the notification gets shown more than once
-		log.Println("[TRACE] could not close/delete notification file", err)
+		slog.Debug("could not close/delete notification file", err)
 	}
 	return notifications, nil
 }

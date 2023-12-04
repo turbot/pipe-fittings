@@ -2,8 +2,6 @@ package initialisation
 
 import (
 	"context"
-	"log"
-
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
@@ -18,6 +16,7 @@ import (
 	"github.com/turbot/pipe-fittings/workspace"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"github.com/turbot/steampipe-plugin-sdk/v5/telemetry"
+	"log/slog"
 )
 
 type InitData struct {
@@ -65,7 +64,7 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 		}
 	}()
 
-	log.Printf("[INFO] Initializing...")
+	slog.Info("Initializing...")
 
 	// code after this depends of i.Workspace being defined. make sure that it is
 	if i.Workspace == nil {
@@ -86,7 +85,7 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	// install mod dependencies if needed
 	if viper.GetBool(constants.ArgModInstall) {
 		statushooks.SetStatus(ctx, "Installing workspace dependencies")
-		log.Printf("[INFO] Installing workspace dependencies")
+		slog.Info("Installing workspace dependencies")
 
 		opts := modinstaller.NewInstallOpts(i.Workspace.Mod)
 		// use force install so that errors are ignored during installation
@@ -120,7 +119,7 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	//}
 
 	statushooks.SetStatus(ctx, "Connecting to steampipe database")
-	log.Printf("[INFO] Connecting to steampipe database")
+	slog.Info("Connecting to steampipe database")
 	connectionString := viper.GetString(constants.ArgConnectionString)
 	if connectionString == "" {
 		i.Result.Error = sperr.New("connection string is not set")
@@ -134,7 +133,7 @@ func (i *InitData) Init(ctx context.Context, opts ...db_client.ClientOption) {
 	}
 
 	// TODO KAI STEAMPIPE ONLY <CACHE>
-	log.Printf("[INFO] ValidateClientCacheSettings")
+	slog.Info("ValidateClientCacheSettings")
 	//if errorsAndWarnings := db_common.ValidateClientCacheSettings(client); errorsAndWarnings != nil {
 	//	if errorsAndWarnings.GetError() != nil {
 	//		i.Result.Error = errorsAndWarnings.GetError()
