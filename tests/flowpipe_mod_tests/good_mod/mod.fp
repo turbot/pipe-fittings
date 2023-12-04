@@ -7,6 +7,10 @@ mod "test_mod" {
     }
   }
 
+  tags = {
+    foo = "bar"
+    green = "day"
+  }
 }
 
 trigger "schedule" "my_hourly_trigger" {
