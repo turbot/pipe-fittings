@@ -297,6 +297,31 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpCreds.APIToken)
 }
 
+func TestPagerDutyDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	pagerDutyCred := PagerDutyCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("PAGERDUTY_TOKEN")
+	newCreds, err := pagerDutyCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPagerDutyCreds := newCreds.(*PagerDutyCredential)
+	assert.Equal("", *newPagerDutyCreds.Token)
+
+	os.Setenv("PAGERDUTY_TOKEN", "u+AtBdqvNtestTokeNcg")
+
+	newCreds, err = pagerDutyCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPagerDutyCreds = newCreds.(*PagerDutyCredential)
+	assert.Equal("u+AtBdqvNtestTokeNcg", *newPagerDutyCreds.Token)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
