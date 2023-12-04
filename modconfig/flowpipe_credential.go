@@ -37,7 +37,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1002,6 +1002,69 @@ func (c *IP2LocationCredential) GetTtl() int {
 }
 
 func (c *IP2LocationCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type IPstackCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
+}
+
+func (*IPstackCredential) GetCredentialType() string {
+	return "ipstack"
+}
+
+func (c *IPstackCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.AccessKey != nil {
+		env["IPSTACK_ACCESS_KEY"] = cty.StringVal(*c.AccessKey)
+	}
+	return env
+}
+
+func (c *IPstackCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *IPstackCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.AccessKey == nil {
+		ipstackAccessKeyEnvVar := os.Getenv("IPSTACK_ACCESS_KEY")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &IPstackCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:      c.Type,
+			AccessKey: &ipstackAccessKeyEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *IPstackCredential) GetTtl() int {
+	return -1
+}
+
+func (c *IPstackCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 

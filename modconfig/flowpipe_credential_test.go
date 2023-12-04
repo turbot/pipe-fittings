@@ -372,6 +372,31 @@ func TestIP2LocationDefaultCredential(t *testing.T) {
 	assert.Equal("12345678901A23BC4D5E6FG78HI9J101", *newIP2LocationCreds.APIKey)
 }
 
+func TestIPstackDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	ipstackCred := IPstackCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("IPSTACK_ACCESS_KEY")
+	newCreds, err := ipstackCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIPstackCreds := newCreds.(*IPstackCredential)
+	assert.Equal("", *newIPstackCreds.AccessKey)
+
+	os.Setenv("IPSTACK_ACCESS_KEY", "1234801bfsffsdf123455e6cfaf2")
+
+	newCreds, err = ipstackCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIPstackCreds = newCreds.(*IPstackCredential)
+	assert.Equal("1234801bfsffsdf123455e6cfaf2", *newIPstackCreds.AccessKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
