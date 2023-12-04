@@ -1,9 +1,7 @@
 package dashboardtypes
 
 import (
-	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
 	"log/slog"
 	"sync"
 
@@ -47,7 +45,7 @@ func (d *ResolvedRuntimeDependency) Resolve() error {
 	d.valueLock.Lock()
 	defer d.valueLock.Unlock()
 
-	slog.Log(context.Background(), constants.LevelTrace, "ResolvedRuntimeDependency Resolve", "dep", d.Dependency.PropertyPath, "chan", d.valueChannel)
+	slog.Debug("ResolvedRuntimeDependency Resolve", "dep", d.Dependency.PropertyPath, "chan", d.valueChannel)
 
 	// if we are already resolved, do nothing
 	if d.hasValue() {

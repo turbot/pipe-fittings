@@ -1,7 +1,6 @@
 package modconfig
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -62,7 +61,7 @@ func (q *Query) InitialiseFromFile(modPath, filePath string) (MappableResource, 
 
 	sql := string(sqlBytes)
 	if sql == "" {
-		slog.Log(context.Background(), constants.LevelTrace, "SQL file contains no query", "filePath", filePath)
+		slog.Debug("SQL file contains no query", "filePath", filePath)
 		return nil, nil, nil
 	}
 	// get a sluggified version of the filename

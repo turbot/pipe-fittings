@@ -1,9 +1,7 @@
 package workspace
 
 import (
-	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/schema"
 	"log/slog"
 	"os"
@@ -55,14 +53,14 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconf
 	}
 
 	if resource != nil {
-		slog.Log(context.Background(), constants.LevelTrace, "query string is a query provider resource", "resourceName", resource.Name())
+		slog.Debug("query string is a query provider resource", "resourceName", resource.Name())
 
 		// resolve the query for the query provider and return it
 		resolvedQuery, err := w.ResolveQueryFromQueryProvider(resource, args)
 		if err != nil {
 			return nil, nil, err
 		}
-		slog.Log(context.Background(), constants.LevelTrace, "resolved query: %s", sqlString)
+		slog.Debug("resolved query: %s", sqlString)
 		return resolvedQuery, resource, nil
 	}
 
@@ -102,7 +100,7 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconf
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
 func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider modconfig.QueryProvider, runtimeArgs *modconfig.QueryArgs) (*modconfig.ResolvedQuery, error) {
-	slog.Log(context.Background(), constants.LevelTrace, "ResolveQueryFromQueryProvider", "resourceName", queryProvider.Name())
+	slog.Debug("ResolveQueryFromQueryProvider", "resourceName", queryProvider.Name())
 
 	query := queryProvider.GetQuery()
 	sql := queryProvider.GetSQL()
@@ -131,7 +129,7 @@ func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider modconfig.QueryP
 	}
 
 	queryProviderSQL := typehelpers.SafeString(sql)
-	slog.Log(context.Background(), constants.LevelTrace, "control defines inline SQL")
+	slog.Debug("control defines inline SQL")
 
 	// if the SQL refers to a named query, this is the same as if the 'Query' property is set
 	if namedQueryProvider, ok := w.GetQueryProvider(queryProviderSQL); ok {

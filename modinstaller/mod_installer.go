@@ -548,7 +548,7 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath string) error {
 	// get the mod from git
 	gitUrl := getGitUrl(dependency.Name, i.GitUrlMode)
-	slog.Log(context.Background(), constants.LevelTrace, ">>> cloning", gitUrl, dependency.GitReference)
+	slog.Debug(">>> cloning", gitUrl, dependency.GitReference)
 	_, err := git.PlainClone(installPath,
 		false,
 		&git.CloneOptions{

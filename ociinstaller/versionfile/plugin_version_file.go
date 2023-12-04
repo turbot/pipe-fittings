@@ -1,11 +1,9 @@
 package versionfile
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -169,14 +167,14 @@ func recomposePluginVersionFile() *PluginVersionFile {
 	})
 
 	if err != nil {
-		slog.Log(context.Background(), constants.LevelTrace, "recomposePluginVersionFile failed - error while walking plugin directory for version files", err)
+		slog.Debug("recomposePluginVersionFile failed - error while walking plugin directory for version files", err)
 		return pvf
 	}
 
 	for _, versionFile := range versionFiles {
 		install, err := readPluginVersionFile(versionFile)
 		if err != nil {
-			slog.Log(context.Background(), constants.LevelTrace, "could not read file", versionFile)
+			slog.Debug("could not read file", versionFile)
 			continue
 		}
 		pvf.Plugins[install.Name] = install
@@ -188,13 +186,13 @@ func recomposePluginVersionFile() *PluginVersionFile {
 func readPluginVersionFile(versionFile string) (*InstalledVersion, error) {
 	data, err := os.ReadFile(versionFile)
 	if err != nil {
-		slog.Log(context.Background(), constants.LevelTrace, "could not read file", versionFile)
+		slog.Debug("could not read file", versionFile)
 		return nil, err
 	}
 	install := EmptyInstalledVersion()
 	if err := json.Unmarshal(data, &install); err != nil {
 		// this wasn't the version file (probably) - keep going
-		slog.Log(context.Background(), constants.LevelTrace, "unmarshal failed for file:", versionFile)
+		slog.Debug("unmarshal failed for file:", versionFile)
 		return nil, err
 	}
 	return install, nil

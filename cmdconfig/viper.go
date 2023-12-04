@@ -1,9 +1,7 @@
 package cmdconfig
 
 import (
-	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"log/slog"
 	"os"
 
@@ -11,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 )
 
@@ -43,7 +42,7 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 	// (and they cannot be set from hcl options)
 	if !loader.ConfiguredProfile.IsNil() {
 		if installDir := loader.ConfiguredProfile.GetInstallDir(); installDir != nil {
-			slog.Log(context.Background(), constants.LevelTrace, "setting install dir", "configured profile", loader.ConfiguredProfile.Name(), "install dir", *installDir)
+			slog.Debug("setting install dir", "configured profile", loader.ConfiguredProfile.Name(), "install dir", *installDir)
 			viper.SetDefault(constants.ArgInstallDir, *installDir)
 		}
 	}

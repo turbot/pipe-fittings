@@ -221,8 +221,8 @@ func getPluginImageData(layers []ocispec.Descriptor) (*PluginImage, error) {
 			break
 		}
 		// loop over to the next one
-		slog.Log(context.Background(), constants.LevelTrace, "could not find data for", mediaType)
-		slog.Log(context.Background(), constants.LevelTrace, "falling back to the next one, if any")
+		slog.Debug("could not find data for", mediaType)
+		slog.Debug("falling back to the next one, if any")
 	}
 	if len(res.BinaryFile) == 0 {
 		return nil, fmt.Errorf("invalid image - should contain 1 binary file per platform, found %d", len(foundLayers))
@@ -250,7 +250,7 @@ func getPluginImageData(layers []ocispec.Descriptor) (*PluginImage, error) {
 }
 
 func findLayersForMediaType(layers []ocispec.Descriptor, mediaType string) []ocispec.Descriptor {
-	slog.Log(context.Background(), constants.LevelTrace, "looking for", mediaType)
+	slog.Debug("looking for", mediaType)
 	var matchedLayers []ocispec.Descriptor
 
 	for _, layer := range layers {

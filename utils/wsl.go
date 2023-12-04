@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"context"
-	"github.com/turbot/pipe-fittings/constants"
 	"log/slog"
 	"os"
 	"runtime"
@@ -26,7 +24,7 @@ func IsWSL() bool {
 	// https://github.com/Microsoft/WSL/issues/2299#issuecomment-361366982
 	osReleaseContent, err := os.ReadFile("/proc/version")
 	if err != nil {
-		slog.Log(context.Background(), constants.LevelTrace, "could not read /proc/version for evaluating WSL: ", err)
+		slog.Debug("could not read /proc/version for evaluating WSL: ", err)
 		// WSL systems will always have the /proc/version file.
 		// if we can't read the file, then this must be some other
 		// flavour of linux which doesn't use it - or there's something

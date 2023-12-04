@@ -215,7 +215,7 @@ func (w *Workspace) setModfileExists() {
 	modFileExists := err != ErrorNoModDefinition
 
 	if modFileExists {
-		slog.Log(context.Background(), constants.LevelTrace, "modfile exists in workspace folder - creating pseudo-resources and loading files recursively ")
+		slog.Debug("modfile exists in workspace folder - creating pseudo-resources and loading files recursively ")
 		// only load/watch recursively if a mod sp file exists in the workspace folder
 		w.ListFlag = filehelpers.FilesRecursive
 		w.loadPseudoResources = true
@@ -225,7 +225,7 @@ func (w *Workspace) setModfileExists() {
 		viper.Set(constants.ArgModLocation, filepath.Dir(modFile))
 		w.Path = filepath.Dir(modFile)
 	} else {
-		slog.Log(context.Background(), constants.LevelTrace, "no modfile exists in workspace folder - NOT creating pseudoresources and only loading resource files from top level folder")
+		slog.Debug("no modfile exists in workspace folder - NOT creating pseudoresources and only loading resource files from top level folder")
 		w.ListFlag = filehelpers.Files
 		w.loadPseudoResources = false
 	}

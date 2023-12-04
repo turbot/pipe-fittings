@@ -69,7 +69,7 @@ func SaveToken(token string) error {
 
 func LoadToken() (string, error) {
 	if err := migrateDefaultTokenFile(); err != nil {
-		slog.Log(context.Background(), constants.LevelTrace, "ERROR during migrating token file", err)
+		slog.Debug("ERROR during migrating token file", err)
 	}
 	tokenPath := tokenFilePath(viper.GetString(constants.ArgCloudHost))
 	if !filehelpers.FileExists(tokenPath) {

@@ -1,8 +1,6 @@
 package workspace
 
 import (
-	"context"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"log/slog"
 )
@@ -18,7 +16,7 @@ func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider,
 		if qp := resource.(modconfig.QueryProvider); ok {
 			return qp, true
 		}
-		slog.Log(context.Background(), constants.LevelTrace, "GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
+		slog.Debug("GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
 	}
 
 	return nil, false

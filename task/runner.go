@@ -81,7 +81,7 @@ func newRunner(config *taskRunConfig) *Runner {
 	if err != nil {
 		// this error should never happen
 		// log this and carry on
-		slog.Log(context.Background(), constants.LevelTrace, "error loading state,", err)
+		slog.Debug("error loading state,", err)
 	}
 	r.currentState = state
 	return r
