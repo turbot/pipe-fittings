@@ -2,6 +2,7 @@ package cmdconfig
 
 import (
 	"github.com/spf13/viper"
+	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/filepaths"
@@ -20,7 +21,11 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	SetDefaultFromEnv(app_specific.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	// create loader and load the workspace
-	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](getWorkspaceLocations()...)
+	configPaths, err := getWorkspaceLocations()
+	if err != nil {
+		return nil, err
+	}
+	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](configPaths...)
 	if err != nil {
 		return nil, err
 	}
@@ -29,9 +34,23 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 }
 
 // build list of possible workspace locations
-func getWorkspaceLocations() []string {
+func getWorkspaceLocations() ([]string, error) {
+	// if config-path was passed, use that
+	configPaths := viper.GetStringSlice(constants.ArgConfigPath)
+	if len(configPaths) > 0 {
+		for i, p := range configPaths {
+			absPath, err := files.Tildefy(p)
+			if err != nil {
+				return nil, err
+			}
+			configPaths[i] = absPath
+
+		}
+		return configPaths, nil
+	}
+
 	return []string{
 		filepaths.GlobalWorkspaceProfileDir(viper.GetString(constants.ArgInstallDir)),
 		viper.GetString(constants.ArgModLocation),
-	}
+	}, nil
 }
