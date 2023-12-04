@@ -1229,7 +1229,7 @@ func (c *GithubCredential) CtyValue() (cty.Value, error) {
 
 func (c *GithubCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.AccessToken == nil {
-		pipesTokenEnvVar := os.Getenv("GITHUB_TOKEN")
+		githubAccessTokenEnvVar := os.Getenv("GITHUB_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
 		newCreds := &GithubCredential{
@@ -1241,7 +1241,7 @@ func (c *GithubCredential) Resolve(ctx context.Context) (Credential, error) {
 				blockType:       c.blockType,
 			},
 			Type:        c.Type,
-			AccessToken: &pipesTokenEnvVar,
+			AccessToken: &githubAccessTokenEnvVar,
 		}
 
 		return newCreds, nil
