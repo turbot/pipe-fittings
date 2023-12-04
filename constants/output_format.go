@@ -10,4 +10,6 @@ const (
 	OutputFormatBrief         = "brief"
 	OutputFormatSnapshot      = "snapshot"
 	OutputFormatSnapshotShort = "sps"
+	OutputFormatPretty        = "pretty"
+	OutputFormatPlain         = "plain"
 )
