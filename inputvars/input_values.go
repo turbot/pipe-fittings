@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
@@ -67,7 +68,7 @@ func CheckInputVariables(defs map[string]*modconfig.Variable, values terraform.I
 				diags = diags.Append(tfdiags.Sourceless(
 					tfdiags.Error,
 					"Invalid value for input variable",
-					fmt.Sprintf("The environment variable SP_VAR_%s does not contain a valid value for variable %q: %s.", name, name, err),
+					fmt.Sprintf("The environment variable %s%s does not contain a valid value for variable %q: %s.", app_specific.EnvAppPrefix, name, name, err),
 				))
 			case terraform.ValueFromCLIArg:
 				diags = diags.Append(tfdiags.Sourceless(
