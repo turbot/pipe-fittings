@@ -397,6 +397,31 @@ func TestIPstackDefaultCredential(t *testing.T) {
 	assert.Equal("1234801bfsffsdf123455e6cfaf2", *newIPstackCreds.AccessKey)
 }
 
+func TestMicrosoftTeamsDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	msTeamsCred := MicrosoftTeamsCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("TEAMS_ACCESS_TOKEN")
+	newCreds, err := msTeamsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newMSTeamsCreds := newCreds.(*MicrosoftTeamsCredential)
+	assert.Equal("", *newMSTeamsCreds.AccessToken)
+
+	os.Setenv("TEAMS_ACCESS_TOKEN", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
+
+	newCreds, err = msTeamsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newMSTeamsCreds = newCreds.(*MicrosoftTeamsCredential)
+	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newMSTeamsCreds.AccessToken)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
