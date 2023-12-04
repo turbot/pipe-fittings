@@ -1436,6 +1436,143 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "gcp",
 	}
+	credentials["abuseipdb.default"] = &AbuseIPDBCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "abuseipdb.default",
+			ShortName:       "default",
+			UnqualifiedName: "abuseipdb.default",
+		},
+		Type: "abuseipdb",
+	}
+
+	credentials["sendgrid.default"] = &SendGridCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "sendgrid.default",
+			ShortName:       "default",
+			UnqualifiedName: "sendgrid.default",
+		},
+		Type: "sendgrid",
+	}
+	credentials["virustotal.default"] = &VirusTotalCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "virustotal.default",
+			ShortName:       "default",
+			UnqualifiedName: "virustotal.default",
+		},
+		Type: "virustotal",
+	}
+	credentials["zendesk.default"] = &ZendeskCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "zendesk.default",
+			ShortName:       "default",
+			UnqualifiedName: "zendesk.default",
+		},
+		Type: "zendesk",
+	}
+	credentials["trello.default"] = &TrelloCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "trello.default",
+			ShortName:       "default",
+			UnqualifiedName: "trello.default",
+		},
+		Type: "trello",
+	}
+	credentials["okta.default"] = &OktaCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "okta.default",
+			ShortName:       "default",
+			UnqualifiedName: "okta.default",
+		},
+		Type: "okta",
+	}
+	credentials["uptimerobot.default"] = &UptimeRobotCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "uptimerobot.default",
+			ShortName:       "default",
+			UnqualifiedName: "uptimerobot.default",
+		},
+		Type: "uptimerobot",
+	}
+	credentials["urlscan.default"] = &UrlscanCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "urlscan.default",
+			ShortName:       "default",
+			UnqualifiedName: "urlscan.default",
+		},
+		Type: "urlscan",
+	}
+	credentials["clickup.default"] = &ClickUpCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "clickup.default",
+			ShortName:       "default",
+			UnqualifiedName: "clickup.default",
+		},
+		Type: "clickup",
+	}
+	credentials["pagerduty.default"] = &PagerDutyCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "pagerduty.default",
+			ShortName:       "default",
+			UnqualifiedName: "pagerduty.default",
+		},
+		Type: "pagerduty",
+	}
+	credentials["discord.default"] = &DiscordCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "discord.default",
+			ShortName:       "default",
+			UnqualifiedName: "discord.default",
+		},
+		Type: "discord",
+	}
+	credentials["ip2location.default"] = &IP2LocationCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "ip2location.default",
+			ShortName:       "default",
+			UnqualifiedName: "ip2location.default",
+		},
+		Type: "ip2location",
+	}
+	credentials["ipstack.default"] = &IPstackCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "ipstack.default",
+			ShortName:       "default",
+			UnqualifiedName: "ipstack.default",
+		},
+		Type: "ipstack",
+	}
+	credentials["teams.default"] = &MicrosoftTeamsCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "teams.default",
+			ShortName:       "default",
+			UnqualifiedName: "teams.default",
+		},
+		Type: "teams",
+	}
+	credentials["pipes.default"] = &PipesCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "pipes.default",
+			ShortName:       "default",
+			UnqualifiedName: "pipes.default",
+		},
+		Type: "pipes",
+	}
+	credentials["github.default"] = &GithubCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "github.default",
+			ShortName:       "default",
+			UnqualifiedName: "github.default",
+		},
+		Type: "github",
+	}
+	credentials["gitlab.default"] = &GitLabCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "gitlab.default",
+			ShortName:       "default",
+			UnqualifiedName: "gitlab.default",
+		},
+		Type: "gitlab",
+	}
 
 	return credentials
 }
@@ -1481,6 +1618,210 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "slack",
+		}
+		return credential
+	} else if credentialType == "abuseipdb" {
+		credential := &AbuseIPDBCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "abuseipdb",
+		}
+		return credential
+	} else if credentialType == "sendgrid" {
+		credential := &SendGridCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "sendgrid",
+		}
+		return credential
+	} else if credentialType == "virustotal" {
+		credential := &VirusTotalCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "virustotal",
+		}
+		return credential
+	} else if credentialType == "zendesk" {
+		credential := &ZendeskCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "zendesk",
+		}
+		return credential
+	} else if credentialType == "trello" {
+		credential := &TrelloCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "trello",
+		}
+		return credential
+	} else if credentialType == "okta" {
+		credential := &OktaCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "okta",
+		}
+		return credential
+	} else if credentialType == "uptimerobot" {
+		credential := &UptimeRobotCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "uptimerobot",
+		}
+		return credential
+	} else if credentialType == "urlscan" {
+		credential := &UrlscanCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "urlscan",
+		}
+		return credential
+	} else if credentialType == "clickup" {
+		credential := &ClickUpCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "clickup",
+		}
+		return credential
+	} else if credentialType == "pagerduty" {
+		credential := &PagerDutyCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "pagerduty",
+		}
+		return credential
+	} else if credentialType == "discord" {
+		credential := &DiscordCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "discord",
+		}
+		return credential
+	} else if credentialType == "ip2location" {
+		credential := &IP2LocationCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "ip2location",
+		}
+		return credential
+	} else if credentialType == "ipstack" {
+		credential := &IPstackCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "ipstack",
+		}
+		return credential
+	} else if credentialType == "teams" {
+		credential := &MicrosoftTeamsCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "teams",
+		}
+		return credential
+	} else if credentialType == "pipes" {
+		credential := &PipesCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "pipes",
+		}
+		return credential
+	} else if credentialType == "github" {
+		credential := &GithubCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "github",
+		}
+		return credential
+	} else if credentialType == "gitlab" {
+		credential := &GitLabCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "gitlab",
 		}
 		return credential
 	}
