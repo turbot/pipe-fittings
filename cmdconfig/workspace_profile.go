@@ -21,7 +21,7 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	SetDefaultFromEnv(app_specific.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	// create loader and load the workspace
-	configPaths, err := getWorkspaceLocations()
+	configPaths, err := GetConfigPath()
 	if err != nil {
 		return nil, err
 	}
@@ -33,8 +33,8 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	return loader, nil
 }
 
-// build list of possible workspace locations
-func getWorkspaceLocations() ([]string, error) {
+// GetConfigPath builds a list of possible config file locations
+func GetConfigPath() ([]string, error) {
 	// if config-path was passed, use that
 	configPaths := viper.GetStringSlice(constants.ArgConfigPath)
 	if len(configPaths) > 0 {
