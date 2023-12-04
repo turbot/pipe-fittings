@@ -83,10 +83,10 @@ func WaitForConnectionPing(ctx context.Context, connection *sql.Conn, waitOption
 	)
 
 	retryErr := retry.Do(ctx, retryBackoff, func(ctx context.Context) error {
-		slog.Log(ctx, constants.LevelTrace, "Pinging")
+		slog.Debug("Pinging")
 		pingErr := connection.PingContext(ctx)
 		if pingErr != nil {
-			slog.Log(ctx, constants.LevelTrace, "Pinging failed -> trying again")
+			slog.Debug("Pinging failed -> trying again")
 			return retry.RetryableError(pingErr)
 		}
 		return nil
@@ -126,7 +126,7 @@ func WaitForRecovery(ctx context.Context, connection *sql.Conn, waitOptions ...W
 	recoveryStatusUpdateOnce := &sync.Once{}
 
 	retryErr := retry.Do(ctx, retryBackoff, func(ctx context.Context) error {
-		slog.Log(ctx, constants.LevelTrace, "checking for recovery mode")
+		slog.Debug("checking for recovery mode")
 		row := connection.QueryRowContext(ctx, "select pg_is_in_recovery();")
 		var isInRecovery bool
 		if scanErr := row.Scan(&isInRecovery); scanErr != nil {
@@ -137,7 +137,7 @@ func WaitForRecovery(ctx context.Context, connection *sql.Conn, waitOptions ...W
 			return retry.RetryableError(scanErr)
 		}
 		if isInRecovery {
-			slog.Log(ctx, constants.LevelTrace, "service is in recovery")
+			slog.Debug("service is in recovery")
 
 			recoveryStatusUpdateOnce.Do(func() {
 				statushooks.SetStatus(ctx, "Database is recovering. This may take some time.")

@@ -98,5 +98,5 @@ func (c *NotificationListener) listenToPgNotificationsAsync(ctx context.Context)
 		}
 	}()
 
-	slog.Log(ctx, constants.LevelTrace, "InteractiveClient listenToPgNotificationsAsync DONE")
+	slog.Debug("InteractiveClient listenToPgNotificationsAsync DONE")
 }

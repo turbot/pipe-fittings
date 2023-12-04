@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/perr"
 	"log/slog"
 	"os"
@@ -331,7 +330,7 @@ func createPseudoResources(ctx context.Context, mod *modconfig.Mod, parseCtx *pa
 	// show errors as trace logging
 	if len(errors) > 0 {
 		for _, err := range errors {
-			slog.Log(ctx, constants.LevelTrace, "failed to convert local file into resource", "error", err)
+			slog.Debug("failed to convert local file into resource", "error", err)
 		}
 	}
 

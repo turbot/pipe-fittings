@@ -78,7 +78,7 @@ func (o *ociDownloader) Download(ctx context.Context, ref *SteampipeImageRef, im
 	mediaTypes = append(mediaTypes, SharedMediaTypes(imageType)...)
 	mediaTypes = append(mediaTypes, ConfigMediaTypes()...)
 
-	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Download:", "downloading", ref.ActualImageRef())
+	slog.Debug("ociDownloader.Download:", "downloading", ref.ActualImageRef())
 
 	// Download the files
 	imageDesc, _, configBytes, layers, err := o.Pull(ctx, ref.ActualImageRef(), mediaTypes, destDir)
@@ -221,7 +221,7 @@ func getPluginImageData(layers []ocispec.Descriptor) (*PluginImage, error) {
 			break
 		}
 		// loop over to the next one
-		slog.Debug("could not find data for", mediaType)
+		slog.Debug("could not find data", "mediaType", mediaType)
 		slog.Debug("falling back to the next one, if any")
 	}
 	if len(res.BinaryFile) == 0 {
@@ -250,7 +250,7 @@ func getPluginImageData(layers []ocispec.Descriptor) (*PluginImage, error) {
 }
 
 func findLayersForMediaType(layers []ocispec.Descriptor, mediaType string) []ocispec.Descriptor {
-	slog.Debug("looking for", mediaType)
+	slog.Debug("looking for mediatype", "mediaType", mediaType)
 	var matchedLayers []ocispec.Descriptor
 
 	for _, layer := range layers {

@@ -82,7 +82,7 @@ func uploadSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnaps
 
 	// resolve the snapshot title
 	title := resolveSnapshotTitle(snapshot)
-	slog.Log(ctx, constants.LevelTrace, "Uploading snapshot", "title", title)
+	slog.Debug("Uploading snapshot", "title", title)
 	// populate map of tags tags been set?
 	tags := getTags()
 

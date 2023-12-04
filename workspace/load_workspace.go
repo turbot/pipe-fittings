@@ -20,7 +20,7 @@ import (
 func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	t := time.Now()
 	defer func() {
-		slog.Log(ctx, constants.LevelTrace, "Workspace load complete", "duration (ms)", time.Since(t).Milliseconds())
+		slog.Debug("Workspace load complete", "duration (ms)", time.Since(t).Milliseconds())
 	}()
 	w, errAndWarnings := LoadWithParams(ctx, workspacePath, credentials, fileInclusions...)
 	if errAndWarnings.GetError() == nil {
@@ -44,7 +44,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 	// first hide spinner if it is there
 	statushooks.Done(ctx)
 	if err := promptForMissingVariables(ctx, missingVariablesError.MissingVariables, workspacePath); err != nil {
-		slog.Log(ctx, constants.LevelTrace, "Interactive variables prompting returned error %v", err)
+		slog.Debug("Interactive variables prompting returned error %v", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// ok we should have all variables now - reload workspace

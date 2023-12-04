@@ -34,7 +34,7 @@ func TrimLogs() {
 			logPath := filepath.Join(fileLocation, fileName)
 			err := os.Remove(logPath)
 			if err != nil {
-				slog.Debug("failed to delete log file %s\n", logPath)
+				slog.Debug("failed to delete log file", " logPath", logPath)
 			}
 		}
 	}

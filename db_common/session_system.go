@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/constants/runtime"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"log/slog"
@@ -30,7 +29,7 @@ func ExecuteSystemClientCall(ctx context.Context, conn *sql.Conn, executor Syste
 			// set back the original application name
 			_, e = tx.ExecContext(ctx, fmt.Sprintf("SET application_name TO '%s'", runtime.ClientConnectionAppName))
 			if e != nil {
-				slog.Log(ctx, constants.LevelTrace, "could not reset application_name", e)
+				slog.Debug("could not reset application_name", e)
 			}
 		}()
 

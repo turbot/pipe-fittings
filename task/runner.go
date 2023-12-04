@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/logs"
 	"log/slog"
 	"os"
@@ -43,7 +42,7 @@ func RunTasks(ctx context.Context, cmd *cobra.Command, args []string, options ..
 
 	// if there are any notifications from the previous run - display them
 	if err := runner.displayNotifications(cmd, args); err != nil {
-		slog.Log(ctx, constants.LevelTrace, "faced error displaying notifications:", err)
+		slog.Debug("faced error displaying notifications:", err)
 	}
 
 	// asynchronously run the task runner
@@ -52,7 +51,7 @@ func RunTasks(ctx context.Context, cmd *cobra.Command, args []string, options ..
 		// check if a legacy notifications file exists
 		exists := files.FileExists(filepaths.LegacyNotificationsFilePath())
 		if exists {
-			slog.Log(ctx, constants.LevelTrace, "found legacy notification file. removing")
+			slog.Debug("found legacy notification file. removing")
 			// if the legacy file exists, remove it
 			os.Remove(filepaths.LegacyNotificationsFilePath())
 		}

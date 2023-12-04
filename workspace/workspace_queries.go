@@ -60,7 +60,7 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconf
 		if err != nil {
 			return nil, nil, err
 		}
-		slog.Debug("resolved query: %s", sqlString)
+		slog.Debug("resolved query", "query", sqlString)
 		return resolvedQuery, resource, nil
 	}
 

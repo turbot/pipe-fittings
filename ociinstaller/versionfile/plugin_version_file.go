@@ -174,7 +174,7 @@ func recomposePluginVersionFile() *PluginVersionFile {
 	for _, versionFile := range versionFiles {
 		install, err := readPluginVersionFile(versionFile)
 		if err != nil {
-			slog.Debug("could not read file", versionFile)
+			slog.Debug("could not read file", "versionFile", versionFile)
 			continue
 		}
 		pvf.Plugins[install.Name] = install
@@ -186,13 +186,13 @@ func recomposePluginVersionFile() *PluginVersionFile {
 func readPluginVersionFile(versionFile string) (*InstalledVersion, error) {
 	data, err := os.ReadFile(versionFile)
 	if err != nil {
-		slog.Debug("could not read file", versionFile)
+		slog.Debug("could not read file", "versionFile", versionFile)
 		return nil, err
 	}
 	install := EmptyInstalledVersion()
 	if err := json.Unmarshal(data, &install); err != nil {
 		// this wasn't the version file (probably) - keep going
-		slog.Debug("unmarshal failed for file:", versionFile)
+		slog.Debug("unmarshal failed for file", "versionFile", versionFile)
 		return nil, err
 	}
 	return install, nil

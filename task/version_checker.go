@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/constants"
 	"io"
 	"log/slog"
 	"net/url"
@@ -63,7 +62,7 @@ func (c *versionChecker) doCheckRequest(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != 200 {
-		slog.Log(ctx, constants.LevelTrace, "Unknown response during version check", "StatusCode", resp.StatusCode)
+		slog.Debug("Unknown response during version check", "StatusCode", resp.StatusCode)
 		return http.NewErr(resp)
 	}
 
