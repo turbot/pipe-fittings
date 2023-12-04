@@ -422,7 +422,7 @@ func TestMicrosoftTeamsDefaultCredential(t *testing.T) {
 	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newMSTeamsCreds.AccessToken)
 }
 
-func TestGithubDefaultCredential(t *testing.T) {
+func TestGitHubDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	githubCred := GithubCredential{
@@ -445,6 +445,31 @@ func TestGithubDefaultCredential(t *testing.T) {
 
 	newGithubAccessTokenCreds = newCreds.(*GithubCredential)
 	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenCreds.AccessToken)
+}
+
+func TestGitLabDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	gitlabCred := GitLabCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("GITLAB_TOKEN")
+	newCreds, err := gitlabCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGitLabAccessTokenCreds := newCreds.(*GitLabCredential)
+	assert.Equal("", *newGitLabAccessTokenCreds.AccessToken)
+
+	os.Setenv("GITLAB_TOKEN", "glpat-ljgllghhegweroyuouo67u5476070owetylh")
+
+	newCreds, err = gitlabCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGitLabAccessTokenCreds = newCreds.(*GitLabCredential)
+	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenCreds.AccessToken)
 }
 
 func TestPipesDefaultCredential(t *testing.T) {
