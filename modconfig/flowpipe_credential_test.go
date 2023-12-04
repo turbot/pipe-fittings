@@ -322,6 +322,31 @@ func TestPagerDutyDefaultCredential(t *testing.T) {
 	assert.Equal("u+AtBdqvNtestTokeNcg", *newPagerDutyCreds.Token)
 }
 
+func TestDiscordDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	discordCred := DiscordCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("DISCORD_TOKEN")
+	newCreds, err := discordCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newDiscordCreds := newCreds.(*DiscordCredential)
+	assert.Equal("", *newDiscordCreds.Token)
+
+	os.Setenv("DISCORD_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+
+	newCreds, err = discordCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newDiscordCreds = newCreds.(*DiscordCredential)
+	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newDiscordCreds.Token)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
