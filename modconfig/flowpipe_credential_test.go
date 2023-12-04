@@ -347,6 +347,31 @@ func TestDiscordDefaultCredential(t *testing.T) {
 	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newDiscordCreds.Token)
 }
 
+func TestIP2LocationDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	ip2LocationCred := IP2LocationCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("IP2LOCATION_API_KEY")
+	newCreds, err := ip2LocationCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIP2LocationCreds := newCreds.(*IP2LocationCredential)
+	assert.Equal("", *newIP2LocationCreds.APIKey)
+
+	os.Setenv("IP2LOCATION_API_KEY", "12345678901A23BC4D5E6FG78HI9J101")
+
+	newCreds, err = ip2LocationCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIP2LocationCreds = newCreds.(*IP2LocationCredential)
+	assert.Equal("12345678901A23BC4D5E6FG78HI9J101", *newIP2LocationCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
