@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
@@ -82,7 +81,7 @@ func BackupsDir() string {
 // this is because of the slightly complex bootstrapping process required because the
 // install-dir may be set in the workspace profile
 func GlobalWorkspaceProfileDir(installDir string) (string, error) {
-	if workspaceProfileLocation, ok := os.LookupEnv(constants.EnvWorkspaceProfileLocation); ok {
+	if workspaceProfileLocation, ok := os.LookupEnv(app_specific.EnvWorkspaceProfileLocation); ok {
 		return filehelpers.Tildefy(workspaceProfileLocation)
 	}
 	return filepath.Join(installDir, "config"), nil
