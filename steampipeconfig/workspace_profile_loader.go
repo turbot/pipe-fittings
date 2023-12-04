@@ -105,7 +105,7 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 }
 
 func (l *WorkspaceProfileLoader[T]) load() error {
-	// load workspaces from all locatons
+	// load workspaces from all locations
 	var workspacesPrecedenceList = make([]map[string]T, len(l.workspaceProfilePaths))
 
 	for i, configPath := range l.workspaceProfilePaths {
