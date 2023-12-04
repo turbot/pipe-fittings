@@ -977,7 +977,7 @@ func (c *IP2LocationCredential) CtyValue() (cty.Value, error) {
 
 func (c *IP2LocationCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.APIKey == nil {
-		ip2locationTokenEnvVar := os.Getenv("IP2LOCATION_API_KEY")
+		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATION_API_KEY")
 
 		// Don't modify existing credential, resolve to a new one
 		newCreds := &IP2LocationCredential{
@@ -989,7 +989,7 @@ func (c *IP2LocationCredential) Resolve(ctx context.Context) (Credential, error)
 				blockType:       c.blockType,
 			},
 			Type:   c.Type,
-			APIKey: &ip2locationTokenEnvVar,
+			APIKey: &ip2locationAPIKeyEnvVar,
 		}
 
 		return newCreds, nil
