@@ -55,7 +55,7 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconf
 	}
 
 	if resource != nil {
-		slog.Log(context.Background(), constants.LevelTrace, "query string is a query provider resource: %s", resource.Name())
+		slog.Log(context.Background(), constants.LevelTrace, "query string is a query provider resource", "resourceName", resource.Name())
 
 		// resolve the query for the query provider and return it
 		resolvedQuery, err := w.ResolveQueryFromQueryProvider(resource, args)
@@ -102,7 +102,7 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconf
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
 func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider modconfig.QueryProvider, runtimeArgs *modconfig.QueryArgs) (*modconfig.ResolvedQuery, error) {
-	slog.Log(context.Background(), constants.LevelTrace, "ResolveQueryFromQueryProvider for %s", queryProvider.Name())
+	slog.Log(context.Background(), constants.LevelTrace, "ResolveQueryFromQueryProvider", "resourceName", queryProvider.Name())
 
 	query := queryProvider.GetQuery()
 	sql := queryProvider.GetSQL()

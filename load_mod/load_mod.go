@@ -331,7 +331,7 @@ func createPseudoResources(ctx context.Context, mod *modconfig.Mod, parseCtx *pa
 	// show errors as trace logging
 	if len(errors) > 0 {
 		for _, err := range errors {
-			slog.Log(ctx, constants.LevelTrace, "failed to convert local file into resource: %v", err)
+			slog.Log(ctx, constants.LevelTrace, "failed to convert local file into resource", "error", err)
 		}
 	}
 

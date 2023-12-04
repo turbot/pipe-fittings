@@ -237,7 +237,7 @@ func (c *Connection) GetEmptyAggregatorError() string {
 }
 
 func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []string {
-	slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren for aggregator connection %s", c.Name)
+	slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren for aggregator connection", "connection", c.Name)
 	c.Connections = make(map[string]*Connection)
 	var failures []string
 	for _, childPattern := range c.ConnectionNames {
@@ -250,13 +250,13 @@ func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []st
 				slog.Warn(msg)
 				failures = append(failures, msg)
 			} else {
-				slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren found matching connection %s", childPattern)
+				slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren found matching connection", "childPattern", childPattern)
 				c.Connections[childPattern] = childConnection
 			}
 			continue
 		}
 
-		slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren no connection matches %s - treating as a wildcard", childPattern)
+		slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren no connection matches pattern - treating as a wildcard", "childPattern", childPattern)
 		// otherwise treat the connection name as a wildcard and see what matches
 		for name, connection := range connectionMap {
 			// if this is an aggregator connection, skip (this will also avoid us adding ourselves)

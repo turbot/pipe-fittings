@@ -370,7 +370,7 @@ func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, req
 	} else {
 		// update the install data
 		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.Constraint, parent)
-		slog.Log(ctx, constants.LevelTrace, "not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.Constraint.Original, dependencyMod.Version)
+		slog.Log(ctx, constants.LevelTrace, fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.Constraint.Original, dependencyMod.Version))
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
@@ -449,7 +449,7 @@ func (i *ModInstaller) loadDependencyMod(ctx context.Context, modVersion *versio
 }
 
 func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstallRoot string, dependencyPath string) (*modconfig.Mod, error) {
-	slog.Log(ctx, constants.LevelTrace, "loadDependencyModFromRoot: trying to load %s from root %s", dependencyPath, modInstallRoot)
+	slog.Log(ctx, constants.LevelTrace, "loadDependencyModFromRoot", "dependencyPath", dependencyPath, "modInstallRoot", modInstallRoot)
 
 	modPath := path.Join(modInstallRoot, dependencyPath)
 	modDefinition, err := parse.LoadModfile(modPath)

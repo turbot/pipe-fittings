@@ -14,11 +14,11 @@ func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider,
 	}
 	// try to find the resource
 	if resource, ok := w.GetResource(parsedName); ok {
-		// found a resource - is itr a query provider
+		// found a resource - is it a query provider
 		if qp := resource.(modconfig.QueryProvider); ok {
 			return qp, true
 		}
-		slog.Log(context.Background(), constants.LevelTrace, "GetQueryProviderImpl found a resource for '%s' but it is not a query provider", queryName)
+		slog.Log(context.Background(), constants.LevelTrace, "GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
 	}
 
 	return nil, false

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -92,8 +91,6 @@ func (i *UIInput) Input(ctx context.Context, opts *terraform.InputOpts) (string,
 
 		return v, nil
 	}
-
-	slog.Debug("command: asking for input: %q", opts.Query)
 
 	// Listen for interrupts so we can cancel the input ask
 	sigCh := make(chan os.Signal, 1)

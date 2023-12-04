@@ -14,7 +14,7 @@ func InstallAssets(ctx context.Context, assetsLocation string) error {
 	tempDir := NewTempDir(assetsLocation)
 	defer func() {
 		if err := tempDir.Delete(); err != nil {
-			slog.Log(ctx, constants.LevelTrace, "Failed to delete temp dir '%s' after installing assets: %s", tempDir, err)
+			slog.Log(ctx, constants.LevelTrace, "Failed to delete temp dir after installing assets", "tempDir", tempDir, "error", err)
 		}
 	}()
 

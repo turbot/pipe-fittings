@@ -75,7 +75,7 @@ func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePro
 		// if there are no unresolved blocks, we are done
 		unresolvedBlocks := len(parseCtx.UnresolvedBlocks)
 		if unresolvedBlocks == 0 {
-			slog.Log(context.Background(), constants.LevelTrace, "parse complete after %d decode passes", attempts+1)
+			slog.Log(context.Background(), constants.LevelTrace, "parse complete", "decode passes", attempts+1)
 			break
 		}
 		// if the number of unresolved blocks has NOT reduced, fail

@@ -106,7 +106,7 @@ func (c *DbClient) RegisterNotificationListener(func(notification *pgconn.Notifi
 
 // Close closes the connection to the database and shuts down the backend
 func (c *DbClient) Close(context.Context) error {
-	slog.Log(context.Background(), constants.LevelTrace, "DbClient.Close %v", c.UserPool)
+	slog.Log(context.Background(), constants.LevelTrace, "DbClient.Close user pool")
 	c.closePools()
 
 	return nil

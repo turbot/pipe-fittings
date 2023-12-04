@@ -194,7 +194,7 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 		// if there are no unresolved blocks, we are done
 		unresolvedBlocks := len(parseCtx.UnresolvedBlocks)
 		if unresolvedBlocks == 0 {
-			slog.Log(ctx, constants.LevelTrace, "parse complete after %d decode passes", attempts+1)
+			slog.Log(ctx, constants.LevelTrace, "parse complete", "decode passes", attempts+1)
 			break
 		}
 		// if the number of unresolved blocks has NOT reduced, fail

@@ -63,7 +63,7 @@ func (c *versionChecker) doCheckRequest(ctx context.Context) error {
 	}
 
 	if resp.StatusCode != 200 {
-		slog.Log(ctx, constants.LevelTrace, "Unknown response during version check: %d\n", resp.StatusCode)
+		slog.Log(ctx, constants.LevelTrace, "Unknown response during version check", "StatusCode", resp.StatusCode)
 		return http.NewErr(resp)
 	}
 

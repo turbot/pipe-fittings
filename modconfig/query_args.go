@@ -322,7 +322,7 @@ func (q *QueryArgs) resolveNamedParameters(queryProvider QueryProvider) (argVals
 	// verify we have param defs for all provided args
 	for arg := range q.ArgMap {
 		if _, ok := argsWithParamDef[arg]; !ok {
-			slog.Log(context.Background(), constants.LevelTrace, "no parameter definition found for argument '%s'", arg)
+			slog.Log(context.Background(), constants.LevelTrace, "no parameter definition found", "argument", arg)
 		}
 	}
 

@@ -50,12 +50,12 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 	if filehelpers.FileExists(lockPath) {
 		fileContent, err := os.ReadFile(lockPath)
 		if err != nil {
-			slog.Log(context.Background(), constants.LevelTrace, "error reading %s: %s\n", lockPath, err.Error())
+			slog.Log(context.Background(), constants.LevelTrace, "error reading lock file", "lockPath", lockPath, "error", err)
 			return nil, err
 		}
 		err = json.Unmarshal(fileContent, &installCache)
 		if err != nil {
-			slog.Log(context.Background(), constants.LevelTrace, "failed to unmarshal %s: %s\n", lockPath, err.Error())
+			slog.Log(context.Background(), constants.LevelTrace, "failed to unmarshal  lock file", "lockPath", lockPath, "error", err)
 			return nil, err
 		}
 	}

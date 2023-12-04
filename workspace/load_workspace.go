@@ -20,7 +20,7 @@ import (
 func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	t := time.Now()
 	defer func() {
-		slog.Log(ctx, constants.LevelTrace, "Workspace load took %dms\n", time.Since(t).Milliseconds())
+		slog.Log(ctx, constants.LevelTrace, "Workspace load complete", "duration (ms)", time.Since(t).Milliseconds())
 	}()
 	w, errAndWarnings := LoadWithParams(ctx, workspacePath, credentials, fileInclusions...)
 	if errAndWarnings.GetError() == nil {

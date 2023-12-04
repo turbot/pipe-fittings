@@ -51,7 +51,7 @@ func ResolveArgs(qp QueryProvider, runtimeArgs *QueryArgs) ([]any, error) {
 	if namedArgCount := len(mergedArgs.ArgMap); namedArgCount > 0 {
 		// if named args are provided and the query does not define params, we cannot resolve the args
 		if len(qp.GetParams()) == 0 {
-			slog.Log(context.Background(), constants.LevelTrace, "%s defines %d named %s but has no parameters definitions", qp.Name(), namedArgCount, utils.Pluralize("arg", namedArgCount))
+			slog.Log(context.Background(), constants.LevelTrace, fmt.Sprintf("%s defines %d named %s but has no parameters definitions", qp.Name(), namedArgCount, utils.Pluralize("arg", namedArgCount)))
 		} else {
 			// do params contain named params?
 			argVals, missingParams, err = mergedArgs.resolveNamedParameters(qp)

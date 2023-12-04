@@ -22,7 +22,7 @@ func TrimLogs() {
 	for _, file := range files {
 		fi, err := file.Info()
 		if err != nil {
-			slog.Log(context.Background(), constants.LevelTrace, "error reading file info of %s. continuing\n", file.Name())
+			slog.Log(context.Background(), constants.LevelTrace, "error reading file info. continuing", "file", file.Name())
 			continue
 		}
 
