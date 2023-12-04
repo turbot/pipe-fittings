@@ -12,4 +12,5 @@ const (
 	OutputFormatSnapshotShort = "sps"
 	OutputFormatPretty        = "pretty"
 	OutputFormatPlain         = "plain"
+	OutputFormatYAML          = "yaml"
 )
