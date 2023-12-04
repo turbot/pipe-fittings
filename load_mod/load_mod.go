@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/perr"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -203,7 +204,7 @@ func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.M
 	// get the source files
 	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
 	if err != nil {
-		log.Printf("[WARN] LoadMod: failed to get mod file paths: %v\n", err)
+		slog.Warn("LoadMod: failed to get mod file paths", "error", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
@@ -252,7 +253,7 @@ func LoadModResourceNames(ctx context.Context, mod *modconfig.Mod, parseCtx *par
 
 	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
 	if err != nil {
-		log.Printf("[WARN] LoadModResourceNames: failed to get mod file paths: %v\n", err)
+		slog.Warn("LoadModResourceNames: failed to get mod file paths", "error", err)
 		return nil, err
 	}
 
@@ -330,7 +331,7 @@ func createPseudoResources(ctx context.Context, mod *modconfig.Mod, parseCtx *pa
 	// show errors as trace logging
 	if len(errors) > 0 {
 		for _, err := range errors {
-			log.Printf("[TRACE] failed to convert local file into resource: %v", err)
+			slog.Log(ctx, constants.LevelTrace, "failed to convert local file into resource: %v", err)
 		}
 	}
 

@@ -74,12 +74,12 @@ func (c *DbClient) ExecuteSync(ctx context.Context, query string, args ...any) (
 
 		// TODO KAI we do this in session close - move to steampipe from Session.Close <SESSION>
 		//if error_helpers.IsContextCanceled(ctx) {
-		//	log.Printf("[TRACE] DatabaseSession.Close wait for connection cleanup")
+		//	slog.Log(ctx, constants.LevelTrace, "DatabaseSession.Close wait for connection cleanup")
 		//	select {
 		//	case <-time.After(5 * time.Second):
-		//		log.Printf("[TRACE] DatabaseSession.Close timed out waiting for connection cleanup")
+		//		slog.Log(ctx, constants.LevelTrace, "DatabaseSession.Close timed out waiting for connection cleanup")
 		//		// case <-s.Connection.Conn().PgConn().CleanupDone():
-		//		// 	log.Printf("[TRACE] DatabaseSession.Close connection cleanup complete")
+		//		// 	slog.Log(ctx, constants.LevelTrace, "DatabaseSession.Close connection cleanup complete")
 		//	}
 		//}
 		dbConn.Close()

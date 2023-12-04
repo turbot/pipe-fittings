@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/containerd/containerd/remotes"
@@ -78,7 +78,7 @@ func (o *ociDownloader) Download(ctx context.Context, ref *SteampipeImageRef, im
 	mediaTypes = append(mediaTypes, SharedMediaTypes(imageType)...)
 	mediaTypes = append(mediaTypes, ConfigMediaTypes()...)
 
-	log.Println("[TRACE] ociDownloader.Download:", "downloading", ref.ActualImageRef())
+	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Download:", "downloading", ref.ActualImageRef())
 
 	// Download the files
 	imageDesc, _, configBytes, layers, err := o.Pull(ctx, ref.ActualImageRef(), mediaTypes, destDir)
@@ -221,8 +221,8 @@ func getPluginImageData(layers []ocispec.Descriptor) (*PluginImage, error) {
 			break
 		}
 		// loop over to the next one
-		log.Println("[TRACE] could not find data for", mediaType)
-		log.Println("[TRACE] falling back to the next one, if any")
+		slog.Log(context.Background(), constants.LevelTrace, "could not find data for", mediaType)
+		slog.Log(context.Background(), constants.LevelTrace, "falling back to the next one, if any")
 	}
 	if len(res.BinaryFile) == 0 {
 		return nil, fmt.Errorf("invalid image - should contain 1 binary file per platform, found %d", len(foundLayers))
@@ -250,7 +250,7 @@ func getPluginImageData(layers []ocispec.Descriptor) (*PluginImage, error) {
 }
 
 func findLayersForMediaType(layers []ocispec.Descriptor, mediaType string) []ocispec.Descriptor {
-	log.Println("[TRACE] looking for", mediaType)
+	slog.Log(context.Background(), constants.LevelTrace, "looking for", mediaType)
 	var matchedLayers []ocispec.Descriptor
 
 	for _, layer := range layers {

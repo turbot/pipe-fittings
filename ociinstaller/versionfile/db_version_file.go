@@ -2,7 +2,7 @@ package versionfile
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -45,7 +45,7 @@ func readDatabaseVersionFile(path string) (*DatabaseVersionFile, error) {
 	file, _ := os.ReadFile(path)
 	var data DatabaseVersionFile
 	if err := json.Unmarshal(file, &data); err != nil {
-		log.Println("[ERROR]", "Error while reading DB version file", err)
+		slog.Error("Error while reading DB version file", "error", err)
 		return nil, err
 	}
 	if data.FdwExtension == (InstalledVersion{}) {
@@ -71,7 +71,7 @@ func (f *DatabaseVersionFile) Save() error {
 func (f *DatabaseVersionFile) write(path string) error {
 	versionFileJSON, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
-		log.Println("[ERROR]", "Error while writing version file", err)
+		slog.Error("Error while writing version file", "error", err)
 		return err
 	}
 	return os.WriteFile(path, versionFileJSON, 0644) //nolint:gosec // TODO: check file permission

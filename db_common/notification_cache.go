@@ -3,7 +3,7 @@ package db_common
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
@@ -34,7 +34,7 @@ func NewNotificationListener(ctx context.Context, conn *pgx.Conn) (*Notification
 	listenSql := fmt.Sprintf("listen %s", constants.PostgresNotificationChannel)
 	_, err := conn.Exec(ctx, listenSql)
 	if err != nil {
-		log.Printf("[INFO] Error listening to notification channel: %s", err)
+		slog.Info("Error listening to notification channel", "error", err)
 		conn.Close(ctx)
 		return nil, err
 	}
@@ -69,34 +69,34 @@ func (c *NotificationListener) RegisterListener(onNotification func(*pgconn.Noti
 }
 
 func (c *NotificationListener) listenToPgNotificationsAsync(ctx context.Context) {
-	log.Printf("[INFO] notificationListener listenToPgNotificationsAsync")
+	slog.Info("notificationListener listenToPgNotificationsAsync")
 
 	go func() {
 		for ctx.Err() == nil {
-			log.Printf("[INFO] Wait for notification")
+			slog.Info("Wait for notification")
 			notification, err := c.conn.WaitForNotification(ctx)
 			if err != nil && !error_helpers.IsContextCancelledError(err) {
-				log.Printf("[WARN] Error waiting for notification: %s", err)
+				slog.Warn("Error waiting for notification", "error", err)
 				return
 			}
 
 			if notification != nil {
-				log.Printf("[INFO] got notification")
+				slog.Info("got notification")
 				c.mut.Lock()
 				// if we have a callback, call it
 				if c.onNotification != nil {
-					log.Printf("[INFO] call notification handler")
+					slog.Info("call notification handler")
 					c.onNotification(notification)
 				} else {
 					// otherwise cache the notification
-					log.Printf("[INFO] cache notification")
+					slog.Info("cache notification")
 					c.notifications = append(c.notifications, notification)
 				}
 				c.mut.Unlock()
-				log.Printf("[INFO] Handled notification")
+				slog.Info("Handled notification")
 			}
 		}
 	}()
 
-	log.Printf("[TRACE] InteractiveClient listenToPgNotificationsAsync DONE")
+	slog.Log(ctx, constants.LevelTrace, "InteractiveClient listenToPgNotificationsAsync DONE")
 }

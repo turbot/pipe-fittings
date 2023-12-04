@@ -1,7 +1,9 @@
 package logs
 
 import (
-	"log"
+	"context"
+	"github.com/turbot/pipe-fittings/constants"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -15,12 +17,12 @@ func TrimLogs() {
 	fileLocation := filepaths.EnsureLogDir()
 	files, err := os.ReadDir(fileLocation)
 	if err != nil {
-		log.Println("[TRACE] error listing db log directory", err)
+		slog.Log(context.Background(), constants.LevelTrace, "error listing db log directory", err)
 	}
 	for _, file := range files {
 		fi, err := file.Info()
 		if err != nil {
-			log.Printf("[TRACE] error reading file info of %s. continuing\n", file.Name())
+			slog.Log(context.Background(), constants.LevelTrace, "error reading file info of %s. continuing\n", file.Name())
 			continue
 		}
 
@@ -34,7 +36,7 @@ func TrimLogs() {
 			logPath := filepath.Join(fileLocation, fileName)
 			err := os.Remove(logPath)
 			if err != nil {
-				log.Printf("[TRACE] failed to delete log file %s\n", logPath)
+				slog.Log(context.Background(), constants.LevelTrace, "failed to delete log file %s\n", logPath)
 			}
 		}
 	}

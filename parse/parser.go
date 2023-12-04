@@ -3,7 +3,7 @@ package parse
 import (
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -137,7 +137,7 @@ func addPseudoResourcesToMod(pseudoResources []modconfig.MappableResource, hclRe
 		name := r.GetUnqualifiedName()
 		if _, ok := hclResources[name]; ok {
 			res.AddWarning(fmt.Sprintf("%s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename))
-			log.Printf("[TRACE] %s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename)
+			slog.Warn("%s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename)
 			continue
 		}
 		// add pseudo resource to mod

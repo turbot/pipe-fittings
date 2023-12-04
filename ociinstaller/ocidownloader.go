@@ -3,7 +3,8 @@ package ociinstaller
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"github.com/turbot/pipe-fittings/constants"
+	"log/slog"
 	"strings"
 
 	"github.com/containerd/containerd/remotes"
@@ -45,7 +46,7 @@ Returns
 func (o *ociDownloader) Pull(ctx context.Context, ref string, mediaTypes []string, destDir string) (*ocispec.Descriptor, *ocispec.Descriptor, []byte, []ocispec.Descriptor, error) {
 	split := strings.Split(ref, ":")
 	tag := split[len(split)-1]
-	log.Println("[TRACE] ociDownloader.Pull:", "preparing to pull ref", ref, "tag", tag, "destDir", destDir)
+	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "preparing to pull ref", ref, "tag", tag, "destDir", destDir)
 
 	// Create the target file store
 	memoryStore := memory.New()
@@ -76,40 +77,40 @@ func (o *ociDownloader) Pull(ctx context.Context, ref string, mediaTypes []strin
 	}
 
 	// Copy from the remote repository to the file store
-	log.Println("[TRACE] ociDownloader.Pull:", "pulling...")
+	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "pulling...")
 
 	copyOpt := oras.DefaultCopyOptions
 	manifestDescriptor, err := oras.Copy(ctx, repo, tag, fileStore, tag, copyOpt)
 	if err != nil {
-		log.Println("[TRACE] ociDownloader.Pull:", "failed to pull", ref, err)
+		slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "failed to pull", ref, err)
 		return nil, nil, nil, nil, err
 	}
-	log.Println("[TRACE] ociDownloader.Pull:", "manifest", manifestDescriptor.Digest, manifestDescriptor.MediaType)
+	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "manifest", manifestDescriptor.Digest, manifestDescriptor.MediaType)
 
 	// FIXME: this seems redundant as oras.Copy() already downloads all artifacts, but that's the only I found
 	// to access the manifest config. Also, it shouldn't be an issue as files are not re-downloaded.
 	manifestJson, err := content.FetchAll(ctx, fileStore, manifestDescriptor)
 	if err != nil {
-		log.Println("[TRACE] ociDownloader.Pull:", "failed to fetch manifest", manifestDescriptor)
+		slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "failed to fetch manifest", manifestDescriptor)
 		return nil, nil, nil, nil, err
 	}
-	log.Println("[TRACE] ociDownloader.Pull:", "manifest content", string(manifestJson))
+	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "manifest content", string(manifestJson))
 
 	// Parse the fetched manifest
 	var manifest ocispec.Manifest
 	err = json.Unmarshal(manifestJson, &manifest)
 	if err != nil {
-		log.Println("[TRACE] ociDownloader.Pull:", "failed to unmarshall manifest", manifestJson)
+		slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "failed to unmarshall manifest", manifestJson)
 		return nil, nil, nil, nil, err
 	}
 
 	// Fetch the config from the file store
 	configData, err := content.FetchAll(ctx, fileStore, manifest.Config)
 	if err != nil {
-		log.Println("[TRACE] ociDownloader.Pull:", "failed to fetch config", manifest.Config.MediaType, err)
+		slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "failed to fetch config", manifest.Config.MediaType, err)
 		return nil, nil, nil, nil, err
 	}
-	log.Println("[TRACE] ociDownloader.Pull:", "config", string(configData))
+	slog.Log(ctx, constants.LevelTrace, "ociDownloader.Pull:", "config", string(configData))
 
 	return &manifestDescriptor, &manifest.Config, configData, manifest.Layers, err
 }

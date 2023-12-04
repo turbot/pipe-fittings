@@ -2,7 +2,7 @@ package installationstate
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -35,13 +35,13 @@ func Load() (InstallationState, error) {
 
 	stateFileContent, err := os.ReadFile(filepaths.StateFilePath())
 	if err != nil {
-		log.Println("[INFO] Could not read update state file")
+		slog.Info("Could not read update state file")
 		return currentState, err
 	}
 
 	err = json.Unmarshal(stateFileContent, &currentState)
 	if err != nil {
-		log.Println("[INFO] Could not parse update state file")
+		slog.Info("Could not parse update state file")
 		return currentState, err
 	}
 

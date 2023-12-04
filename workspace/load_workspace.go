@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -20,7 +20,7 @@ import (
 func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	t := time.Now()
 	defer func() {
-		log.Printf("[TRACE] Workspace load took %dms\n", time.Since(t).Milliseconds())
+		slog.Log(ctx, constants.LevelTrace, "Workspace load took %dms\n", time.Since(t).Milliseconds())
 	}()
 	w, errAndWarnings := LoadWithParams(ctx, workspacePath, credentials, fileInclusions...)
 	if errAndWarnings.GetError() == nil {
@@ -44,7 +44,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 	// first hide spinner if it is there
 	statushooks.Done(ctx)
 	if err := promptForMissingVariables(ctx, missingVariablesError.MissingVariables, workspacePath); err != nil {
-		log.Printf("[TRACE] Interactive variables prompting returned error %v", err)
+		slog.Log(ctx, constants.LevelTrace, "Interactive variables prompting returned error %v", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// ok we should have all variables now - reload workspace

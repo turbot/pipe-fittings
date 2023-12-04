@@ -2,7 +2,8 @@ package contexthelpers
 
 import (
 	"context"
-	"log"
+	"github.com/turbot/pipe-fittings/constants"
+	"log/slog"
 	"os"
 	"os/signal"
 )
@@ -12,7 +13,7 @@ func StartCancelHandler(cancel context.CancelFunc) {
 	signal.Notify(sigIntChannel, os.Interrupt)
 	go func() {
 		<-sigIntChannel
-		log.Println("[TRACE] cancel handler got SIGINT")
+		slog.Log(context.Background(), constants.LevelTrace, "cancel handler got SIGINT")
 		// call context cancellation function
 		cancel()
 		// leave the channel open - any subsequent interrupts hits will be ignored

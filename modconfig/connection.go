@@ -1,9 +1,11 @@
 package modconfig
 
 import (
+	"context"
 	"fmt"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"log"
+	"log/slog"
+
 	"path"
 	"reflect"
 	"strings"
@@ -235,7 +237,7 @@ func (c *Connection) GetEmptyAggregatorError() string {
 }
 
 func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []string {
-	log.Printf("[TRACE] Connection.PopulateChildren for aggregator connection %s", c.Name)
+	slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren for aggregator connection %s", c.Name)
 	c.Connections = make(map[string]*Connection)
 	var failures []string
 	for _, childPattern := range c.ConnectionNames {
@@ -245,16 +247,16 @@ func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []st
 			if childConnection.PluginInstance != c.PluginInstance {
 				msg := fmt.Sprintf("aggregator connection %s specifies child connection %s but it has a different plugin instance",
 					c.Name, childPattern)
-				log.Println("[WARN]", msg)
+				slog.Warn(msg)
 				failures = append(failures, msg)
 			} else {
-				log.Printf("[TRACE] Connection.PopulateChildren found matching connection %s", childPattern)
+				slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren found matching connection %s", childPattern)
 				c.Connections[childPattern] = childConnection
 			}
 			continue
 		}
 
-		log.Printf("[TRACE] Connection.PopulateChildren no connection matches %s - treating as a wildcard", childPattern)
+		slog.Log(context.Background(), constants.LevelTrace, "Connection.PopulateChildren no connection matches %s - treating as a wildcard", childPattern)
 		// otherwise treat the connection name as a wildcard and see what matches
 		for name, connection := range connectionMap {
 			// if this is an aggregator connection, skip (this will also avoid us adding ourselves)
@@ -269,7 +271,7 @@ func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []st
 				// verify that this connection is the same plugin instance
 				if connection.PluginInstance == c.PluginInstance {
 					c.Connections[name] = connection
-					log.Printf("[TRACE] connection '%s' matches pattern '%s'", name, childPattern)
+					slog.Log(context.Background(), constants.LevelTrace, "connection '%s' matches pattern '%s'", name, childPattern)
 				}
 			}
 		}

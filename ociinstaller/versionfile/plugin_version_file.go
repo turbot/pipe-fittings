@@ -1,10 +1,12 @@
 package versionfile
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/turbot/pipe-fittings/constants"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -79,11 +81,11 @@ func (f *PluginVersionFile) Save() error {
 func (f *PluginVersionFile) write(path string) error {
 	versionFileJSON, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
-		log.Println("[ERROR]", "Error while writing version file", err)
+		slog.Error("Error while writing version file", "error", err)
 		return err
 	}
 	if len(versionFileJSON) == 0 {
-		log.Println("[ERROR]", "Cannot write 0 bytes to file")
+		slog.Error("Cannot write 0 bytes to file")
 		// return sperr.WrapWithMessage(ErrNoContent, "cannot write versions file")
 		return fmt.Errorf("cannot write versions file")
 	}
@@ -167,14 +169,14 @@ func recomposePluginVersionFile() *PluginVersionFile {
 	})
 
 	if err != nil {
-		log.Println("[TRACE] recomposePluginVersionFile failed - error while walking plugin directory for version files", err)
+		slog.Log(context.Background(), constants.LevelTrace, "recomposePluginVersionFile failed - error while walking plugin directory for version files", err)
 		return pvf
 	}
 
 	for _, versionFile := range versionFiles {
 		install, err := readPluginVersionFile(versionFile)
 		if err != nil {
-			log.Println("[TRACE] could not read file", versionFile)
+			slog.Log(context.Background(), constants.LevelTrace, "could not read file", versionFile)
 			continue
 		}
 		pvf.Plugins[install.Name] = install
@@ -186,13 +188,13 @@ func recomposePluginVersionFile() *PluginVersionFile {
 func readPluginVersionFile(versionFile string) (*InstalledVersion, error) {
 	data, err := os.ReadFile(versionFile)
 	if err != nil {
-		log.Println("[TRACE] could not read file", versionFile)
+		slog.Log(context.Background(), constants.LevelTrace, "could not read file", versionFile)
 		return nil, err
 	}
 	install := EmptyInstalledVersion()
 	if err := json.Unmarshal(data, &install); err != nil {
 		// this wasn't the version file (probably) - keep going
-		log.Println("[TRACE] unmarshal failed for file:", versionFile)
+		slog.Log(context.Background(), constants.LevelTrace, "unmarshal failed for file:", versionFile)
 		return nil, err
 	}
 	return install, nil

@@ -1,17 +1,19 @@
 package parse
 
 import (
+	"context"
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
-	"log"
+	"log/slog"
 )
 
 func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
@@ -73,7 +75,7 @@ func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePro
 		// if there are no unresolved blocks, we are done
 		unresolvedBlocks := len(parseCtx.UnresolvedBlocks)
 		if unresolvedBlocks == 0 {
-			log.Printf("[TRACE] parse complete after %d decode passes", attempts+1)
+			slog.Log(context.Background(), constants.LevelTrace, "parse complete after %d decode passes", attempts+1)
 			break
 		}
 		// if the number of unresolved blocks has NOT reduced, fail

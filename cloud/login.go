@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path"
 
@@ -36,7 +36,7 @@ func WebLogin(ctx context.Context) (string, error) {
 	fmt.Printf("Verify login at %s\n", browserUrl) //nolint:forbidigo // acceptable
 
 	if err = utils.OpenBrowser(browserUrl); err != nil {
-		log.Println("[INFO] failed to open login web page")
+		slog.Info("failed to open login web page")
 	}
 
 	return id, nil
@@ -69,7 +69,7 @@ func SaveToken(token string) error {
 
 func LoadToken() (string, error) {
 	if err := migrateDefaultTokenFile(); err != nil {
-		log.Println("[TRACE] ERROR during migrating token file", err)
+		slog.Log(context.Background(), constants.LevelTrace, "ERROR during migrating token file", err)
 	}
 	tokenPath := tokenFilePath(viper.GetString(constants.ArgCloudHost))
 	if !filehelpers.FileExists(tokenPath) {

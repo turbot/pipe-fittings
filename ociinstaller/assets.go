@@ -3,7 +3,7 @@ package ociinstaller
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/turbot/pipe-fittings/constants"
@@ -14,7 +14,7 @@ func InstallAssets(ctx context.Context, assetsLocation string) error {
 	tempDir := NewTempDir(assetsLocation)
 	defer func() {
 		if err := tempDir.Delete(); err != nil {
-			log.Printf("[TRACE] Failed to delete temp dir '%s' after installing assets: %s", tempDir, err)
+			slog.Log(ctx, constants.LevelTrace, "Failed to delete temp dir '%s' after installing assets: %s", tempDir, err)
 		}
 	}()
 

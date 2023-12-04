@@ -1,9 +1,11 @@
 package modconfig
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/turbot/pipe-fittings/constants"
+	"log/slog"
 	"strings"
 
 	typehelpers "github.com/turbot/go-kit/types"
@@ -320,7 +322,7 @@ func (q *QueryArgs) resolveNamedParameters(queryProvider QueryProvider) (argVals
 	// verify we have param defs for all provided args
 	for arg := range q.ArgMap {
 		if _, ok := argsWithParamDef[arg]; !ok {
-			log.Printf("[TRACE] no parameter definition found for argument '%s'", arg)
+			slog.Log(context.Background(), constants.LevelTrace, "no parameter definition found for argument '%s'", arg)
 		}
 	}
 

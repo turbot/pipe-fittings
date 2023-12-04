@@ -3,7 +3,7 @@ package modinstaller
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -141,7 +141,7 @@ func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error
 
 	// if this is a dry run, return now
 	if i.dryRun {
-		log.Printf("[TRACE] UninstallWorkspaceDependencies - dry-run=true, returning before saving mod file and cache\n")
+		slog.Log(ctx, constants.LevelTrace, "UninstallWorkspaceDependencies - dry-run=true, returning before saving mod file and cache\n")
 		return nil
 	}
 
@@ -170,7 +170,7 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 	defer func() {
 		if err != nil && i.force {
 			// suppress the error since this is a forced install
-			log.Println("[TRACE] suppressing error in InstallWorkspaceDependencies because force is enabled", err)
+			slog.Log(ctx, constants.LevelTrace, "suppressing error in InstallWorkspaceDependencies because force is enabled", err)
 			err = nil
 		}
 		// tidy unused mods
@@ -191,7 +191,7 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 		// ignore if this is a force install
 		// TODO: raise warnings for errors getting suppressed [https://github.com/turbot/steampipe/issues/3364]
-		log.Println("[TRACE] suppressing mod validation error", validationErrors)
+		slog.Log(ctx, constants.LevelTrace, "suppressing mod validation error", validationErrors)
 	}
 
 	// if mod args have been provided, add them to the workspace mod requires
@@ -206,7 +206,7 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 
 	// if this is a dry run, return now
 	if i.dryRun {
-		log.Printf("[TRACE] InstallWorkspaceDependencies - dry-run=true, returning before saving mod file and cache\n")
+		slog.Log(ctx, constants.LevelTrace, "InstallWorkspaceDependencies - dry-run=true, returning before saving mod file and cache\n")
 		return nil
 	}
 
@@ -259,7 +259,7 @@ func (i *ModInstaller) commitShadow(ctx context.Context) error {
 		}
 		source := filepath.Join(i.shadowDirPath, entry.Name())
 		destination := filepath.Join(i.modsPath, entry.Name())
-		log.Println("[TRACE] copying", source, destination)
+		slog.Log(ctx, constants.LevelTrace, "copying", source, destination)
 		if err := copy.Copy(source, destination); err != nil {
 			// return sperr.WrapWithRootMessage(err, "could not commit shadow directory '%s'", entry.Name())
 			return fmt.Errorf("could not commit shadow directory '%s': %w", entry.Name(), err)
@@ -370,7 +370,7 @@ func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, req
 	} else {
 		// update the install data
 		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.Constraint, parent)
-		log.Printf("[TRACE] not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.Constraint.Original, dependencyMod.Version)
+		slog.Log(ctx, constants.LevelTrace, "not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.Constraint.Original, dependencyMod.Version)
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
@@ -449,7 +449,7 @@ func (i *ModInstaller) loadDependencyMod(ctx context.Context, modVersion *versio
 }
 
 func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstallRoot string, dependencyPath string) (*modconfig.Mod, error) {
-	log.Printf("[TRACE] loadDependencyModFromRoot: trying to load %s from root %s", dependencyPath, modInstallRoot)
+	slog.Log(ctx, constants.LevelTrace, "loadDependencyModFromRoot: trying to load %s from root %s", dependencyPath, modInstallRoot)
 
 	modPath := path.Join(modInstallRoot, dependencyPath)
 	modDefinition, err := parse.LoadModfile(modPath)
@@ -520,7 +520,7 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 	// if the target path exists, use the exiting file
 	// if it does not exist (the usual case), install it
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
-		log.Println("[TRACE] installing", dependencyPath, "in", destPath)
+		slog.Log(ctx, constants.LevelTrace, "installing", dependencyPath, "in", destPath)
 		if err := i.installFromGit(dependency, destPath); err != nil {
 			return nil, err
 		}
@@ -548,7 +548,7 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath string) error {
 	// get the mod from git
 	gitUrl := getGitUrl(dependency.Name, i.GitUrlMode)
-	log.Println("[TRACE] >>> cloning", gitUrl, dependency.GitReference)
+	slog.Log(context.Background(), constants.LevelTrace, ">>> cloning", gitUrl, dependency.GitReference)
 	_, err := git.PlainClone(installPath,
 		false,
 		&git.CloneOptions{

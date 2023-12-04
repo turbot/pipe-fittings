@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/turbot/pipe-fittings/utils"
@@ -45,11 +45,11 @@ func writeAsPEM(location string, pemType string, b []byte) error {
 		Bytes: b,
 	})
 	if err != nil {
-		log.Println("[INFO] Failed to encode to PEM")
+		slog.Info("Failed to encode to PEM")
 		return err
 	}
 	if err := os.WriteFile(location, pemData.Bytes(), 0600); err != nil {
-		log.Println("[INFO] Failed to save pem at", location)
+		slog.Info("Failed to save pem at", "location", location)
 		return err
 	}
 	return nil
