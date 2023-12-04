@@ -88,12 +88,6 @@ func GlobalWorkspaceProfileDir(installDir string) (string, error) {
 
 }
 
-// LocalWorkspaceProfileDir returns the path to the local workspace profiles directory.
-// i.e. the workspace profiles which may be specified in the mod-location
-func LocalWorkspaceProfileDir(modLocation string) (string, error) {
-	return filepath.Join(modLocation, app_specific.WorkspaceDataDir, "config"), nil
-}
-
 // EnsureDatabaseDir returns the path to the db directory (creates if missing)
 func EnsureDatabaseDir() string {
 	return ensureInstallSubDir("db")

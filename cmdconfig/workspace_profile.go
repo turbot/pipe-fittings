@@ -25,13 +25,8 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 		return nil, err
 	}
 
-	localWorkspaceProfileDir, err := getLocalWorkspaceDir()
-	if err != nil {
-		return nil, err
-	}
-
 	// create loader and load the workspace
-	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](globalWorkspaceProfileDir, localWorkspaceProfileDir)
+	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](globalWorkspaceProfileDir, viper.GetString(constants.ArgModLocation))
 	if err != nil {
 		return nil, err
 	}
@@ -46,12 +41,4 @@ func getGlobalWorkspaceDir() (string, error) {
 		return "", err
 	}
 	return filepaths.GlobalWorkspaceProfileDir(installDir)
-}
-
-func getLocalWorkspaceDir() (string, error) {
-	modDir, err := filehelpers.Tildefy(viper.GetString(constants.ArgModLocation))
-	if err != nil {
-		return "", err
-	}
-	return filepaths.LocalWorkspaceProfileDir(modDir)
 }
