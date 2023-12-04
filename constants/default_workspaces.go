@@ -97,7 +97,7 @@ const DefaultPowerpipeWorkspaceContent = `
 const DefaultFlowpipeWorkspaceContent = `
 #
 # For detailed descriptions, see the reference documentation
-# at https://steampipe.io/docs/reference/config-files/workspace
+# at https://flowpipe.io/docs/reference/config-files/workspace
 #
 
 # workspace "all_options" {
@@ -111,7 +111,7 @@ const DefaultFlowpipeWorkspaceContent = `
 #  host        = "http://localhost:7103"  # unset means "serverless" - run from pwd/mod-location
 #  insecure    = false   # Skip TLS verification (default false)
 #
-#options "server" {
+# options "server" { 
 #    port        = 7103
 #    listen      = "local"   # 'local' or 'network' (future - support postgres listen_addresses style)
 #  }
