@@ -35,7 +35,7 @@ type FlowpipeWorkspaceProfile struct {
 func (p *FlowpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
 	return hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
-		Summary:  fmt.Sprintf("options not supported"),
+		Summary:  "Flowpipe workspaces do not support options",
 		Subject:  hclhelpers.BlockRangePointer(block),
 	}}
 }
@@ -136,7 +136,7 @@ func (p *FlowpipeWorkspaceProfile) IsNil() bool {
 func (p *FlowpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {
 	return nil, hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
-		Summary:  fmt.Sprintf("options not supported"),
+		Summary:  "Flowpipe workspaces do not support options",
 		Subject:  hclhelpers.BlockRangePointer(block),
 	}}
 }
