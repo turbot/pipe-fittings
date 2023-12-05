@@ -560,8 +560,8 @@ type OktaCredential struct {
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
-	Domain   *string `json:"domain,omitempty" cty:"domain" hcl:"domain,optional"`
+	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+	Domain *string `json:"domain,omitempty" cty:"domain" hcl:"domain,optional"`
 }
 
 func (*OktaCredential) GetCredentialType() string {
@@ -570,8 +570,8 @@ func (*OktaCredential) GetCredentialType() string {
 
 func (c *OktaCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.APIToken != nil {
-		env["OKTA_TOKEN"] = cty.StringVal(*c.APIToken)
+	if c.Token != nil {
+		env["OKTA_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	if c.Domain != nil {
 		env["OKTA_ORGURL"] = cty.StringVal(*c.Domain)
@@ -593,7 +593,7 @@ func (c *OktaCredential) CtyValue() (cty.Value, error) {
 
 func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
 
-	if c.APIToken == nil && c.Domain == nil {
+	if c.Token == nil && c.Domain == nil {
 		apiTokenEnvVar := os.Getenv("OKTA_TOKEN")
 		domainEnvVar := os.Getenv("OKTA_ORGURL")
 
@@ -606,9 +606,9 @@ func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:     c.Type,
-			APIToken: &apiTokenEnvVar,
-			Domain:   &domainEnvVar,
+			Type:   c.Type,
+			Token:  &apiTokenEnvVar,
+			Domain: &domainEnvVar,
 		}
 
 		return newCreds, nil
@@ -758,7 +758,7 @@ type ClickUpCredential struct {
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
+	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
 func (*ClickUpCredential) GetCredentialType() string {
@@ -767,8 +767,8 @@ func (*ClickUpCredential) GetCredentialType() string {
 
 func (c *ClickUpCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.APIToken != nil {
-		env["CLICKUP_TOKEN"] = cty.StringVal(*c.APIToken)
+	if c.Token != nil {
+		env["CLICKUP_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	return env
 }
@@ -786,7 +786,7 @@ func (c *ClickUpCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *ClickUpCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.APIToken == nil {
+	if c.Token == nil {
 		clickUpAPITokenEnvVar := os.Getenv("CLICKUP_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
@@ -798,8 +798,8 @@ func (c *ClickUpCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:     c.Type,
-			APIToken: &clickUpAPITokenEnvVar,
+			Type:  c.Type,
+			Token: &clickUpAPITokenEnvVar,
 		}
 
 		return newCreds, nil
@@ -1200,7 +1200,7 @@ type GithubCredential struct {
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
+	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
 func (*GithubCredential) GetCredentialType() string {
@@ -1209,8 +1209,8 @@ func (*GithubCredential) GetCredentialType() string {
 
 func (c *GithubCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.AccessToken != nil {
-		env["GITHUB_TOKEN"] = cty.StringVal(*c.AccessToken)
+	if c.Token != nil {
+		env["GITHUB_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	return env
 }
@@ -1228,7 +1228,7 @@ func (c *GithubCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *GithubCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.AccessToken == nil {
+	if c.Token == nil {
 		githubAccessTokenEnvVar := os.Getenv("GITHUB_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
@@ -1240,8 +1240,8 @@ func (c *GithubCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:        c.Type,
-			AccessToken: &githubAccessTokenEnvVar,
+			Type:  c.Type,
+			Token: &githubAccessTokenEnvVar,
 		}
 
 		return newCreds, nil
@@ -1263,7 +1263,7 @@ type GitLabCredential struct {
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
+	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
 func (*GitLabCredential) GetCredentialType() string {
@@ -1272,8 +1272,8 @@ func (*GitLabCredential) GetCredentialType() string {
 
 func (c *GitLabCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.AccessToken != nil {
-		env["GITLAB_TOKEN"] = cty.StringVal(*c.AccessToken)
+	if c.Token != nil {
+		env["GITLAB_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	return env
 }
@@ -1291,7 +1291,7 @@ func (c *GitLabCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *GitLabCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.AccessToken == nil {
+	if c.Token == nil {
 		gitlabAccessTokenEnvVar := os.Getenv("GITLAB_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
@@ -1303,8 +1303,8 @@ func (c *GitLabCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:        c.Type,
-			AccessToken: &gitlabAccessTokenEnvVar,
+			Type:  c.Type,
+			Token: &gitlabAccessTokenEnvVar,
 		}
 
 		return newCreds, nil

@@ -178,7 +178,7 @@ func TestOktaDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newOktaCreds := newCreds.(*OktaCredential)
-	assert.Equal("", *newOktaCreds.APIToken)
+	assert.Equal("", *newOktaCreds.Token)
 	assert.Equal("", *newOktaCreds.Domain)
 
 	os.Setenv("OKTA_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
@@ -188,7 +188,7 @@ func TestOktaDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newOktaCreds = newCreds.(*OktaCredential)
-	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newOktaCreds.APIToken)
+	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newOktaCreds.Token)
 	assert.Equal("https://dev-50078045.okta.com", *newOktaCreds.Domain)
 }
 
@@ -286,7 +286,7 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newClickUpCreds := newCreds.(*ClickUpCredential)
-	assert.Equal("", *newClickUpCreds.APIToken)
+	assert.Equal("", *newClickUpCreds.Token)
 
 	os.Setenv("CLICKUP_TOKEN", "pk_616_L5H36X3CXXXXXXXWEAZZF0NM5")
 
@@ -294,7 +294,7 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newClickUpCreds = newCreds.(*ClickUpCredential)
-	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpCreds.APIToken)
+	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpCreds.Token)
 }
 
 func TestPagerDutyDefaultCredential(t *testing.T) {
@@ -436,7 +436,7 @@ func TestGitHubDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newGithubAccessTokenCreds := newCreds.(*GithubCredential)
-	assert.Equal("", *newGithubAccessTokenCreds.AccessToken)
+	assert.Equal("", *newGithubAccessTokenCreds.Token)
 
 	os.Setenv("GITHUB_TOKEN", "ghpat-ljgllghhegweroyuouo67u5476070owetylh")
 
@@ -444,7 +444,7 @@ func TestGitHubDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newGithubAccessTokenCreds = newCreds.(*GithubCredential)
-	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenCreds.AccessToken)
+	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenCreds.Token)
 }
 
 func TestGitLabDefaultCredential(t *testing.T) {
@@ -461,7 +461,7 @@ func TestGitLabDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newGitLabAccessTokenCreds := newCreds.(*GitLabCredential)
-	assert.Equal("", *newGitLabAccessTokenCreds.AccessToken)
+	assert.Equal("", *newGitLabAccessTokenCreds.Token)
 
 	os.Setenv("GITLAB_TOKEN", "glpat-ljgllghhegweroyuouo67u5476070owetylh")
 
@@ -469,7 +469,7 @@ func TestGitLabDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newGitLabAccessTokenCreds = newCreds.(*GitLabCredential)
-	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenCreds.AccessToken)
+	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenCreds.Token)
 }
 
 func TestPipesDefaultCredential(t *testing.T) {
