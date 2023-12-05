@@ -21,7 +21,7 @@ func defaultWorkspaceSampleFileName() string {
 
 type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
 	workspaceProfiles map[string]T
-	// list of config locaitons, in order or INCREASING precedence
+	// list of config locations, in order or DECREASING precedence
 	workspaceProfilePaths []string
 	DefaultProfile        T
 	ConfiguredProfile     T
@@ -106,9 +106,12 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 
 func (l *WorkspaceProfileLoader[T]) load() error {
 	// load workspaces from all locations
-	var workspacesPrecedenceList = make([]map[string]T, len(l.workspaceProfilePaths))
+	var workspacesPrecedenceList = make([]map[string]T, len(l.
+		workspaceProfilePaths))
 
-	for i, configPath := range l.workspaceProfilePaths {
+	// load from the config paths in reverse order (i.e. lowest precedence first)
+	for i := len(l.workspaceProfilePaths) - 1; i >= 0; i-- {
+		configPath := l.workspaceProfilePaths[i]
 		// load all workspaces in the global config location
 		workspaces, err := parse.LoadWorkspaceProfiles[T](configPath)
 		if err != nil {

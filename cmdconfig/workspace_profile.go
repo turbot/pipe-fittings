@@ -1,13 +1,14 @@
 package cmdconfig
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"strings"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
@@ -33,24 +34,24 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	return loader, nil
 }
 
-// GetConfigPath builds a list of possible config file locations
+// GetConfigPath builds a list of possible config file locations, starting with the HIGHEST priority
 func GetConfigPath() ([]string, error) {
 	// if config-path was passed, use that
-	configPaths := viper.GetStringSlice(constants.ArgConfigPath)
-	if len(configPaths) > 0 {
-		for i, p := range configPaths {
-			absPath, err := files.Tildefy(p)
-			if err != nil {
-				return nil, err
-			}
-			configPaths[i] = absPath
-
-		}
-		return configPaths, nil
+	configPaths := strings.Split(viper.GetString(constants.ArgConfigPath), ":")
+	if len(configPaths) == 0 {
+		return nil, fmt.Errorf("no config paths specified")
 	}
+	for i, p := range configPaths {
+		// special case for "." - use the mod location
+		if p == "." {
+			p = viper.GetString(constants.ArgModLocation)
+		}
+		absPath, err := files.Tildefy(p)
+		if err != nil {
+			return nil, err
+		}
+		configPaths[i] = absPath
 
-	return []string{
-		filepaths.GlobalWorkspaceProfileDir(viper.GetString(constants.ArgInstallDir)),
-		viper.GetString(constants.ArgModLocation),
-	}, nil
+	}
+	return configPaths, nil
 }

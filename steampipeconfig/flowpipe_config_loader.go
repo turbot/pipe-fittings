@@ -34,7 +34,9 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 
 	var credentialMap = map[string]modconfig.Credential{}
 	var res = modconfig.NewFlowpipeConfig()
-	for _, configPath := range configPaths {
+	// load from the config paths in reverse order (i.e. lowest precedence first)
+	for i := len(configPaths) - 1; i >= 0; i-- {
+		configPath := configPaths[i]
 
 		c, ew := loadCredentials(configPath, loadOptions)
 
