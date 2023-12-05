@@ -1,8 +1,6 @@
 package app_specific
 
-import (
-	"github.com/Masterminds/semver/v3"
-)
+import "github.com/Masterminds/semver/v3"
 
 // Application specific constants which MUST be set by the application
 
@@ -16,14 +14,16 @@ var AppVersion *semver.Version
 var DefaultVarsFileName string
 
 // TODO KAI  we need to provide a default (for now) as the flowpipe test code does not (always)
-// call SetAppSpecificConstants so this may be empty we need a proper solution to this
+//
+//	call SetAppSpecificConstants so this may be empty
+//
+// we need a proper solution to this
 var ModFileName string = "mod.sp"
 
 var WorkspaceIgnoreFile string
 var WorkspaceDataDir string
 var InstallDir string
 var DefaultInstallDir string
-var DefaultConfigPath string
 
 // db client app names
 

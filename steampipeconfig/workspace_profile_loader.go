@@ -21,7 +21,7 @@ func defaultWorkspaceSampleFileName() string {
 
 type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
 	workspaceProfiles map[string]T
-	// list of config locations, in order or DECREASING precedence
+	// list of config locaitons, in order or INCREASING precedence
 	workspaceProfilePaths []string
 	DefaultProfile        T
 	ConfiguredProfile     T
@@ -37,16 +37,13 @@ func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePat
 		return nil, fmt.Errorf("no workspace profile locations specified")
 	}
 
-	// if a config paths location was NOT passed, write the workspaces.spc.sample file to the lowest precedence location
-	// (assumed to be the gloabl config folder)
-	if !viper.IsSet(constants.ArgConfigPath) {
-		if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths[0]); err != nil {
-			return nil,
-				sperr.WrapWithMessage(
-					err,
-					"could not create sample workspace",
-				)
-		}
+	// write the workspaces.spc.sample file to the lowest precedence location (assumed to be the gloabl config folder)
+	if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths[0]); err != nil {
+		return nil,
+			sperr.WrapWithMessage(
+				err,
+				"could not create sample workspace",
+			)
 	}
 
 	// do the load
@@ -109,22 +106,16 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 
 func (l *WorkspaceProfileLoader[T]) load() error {
 	// load workspaces from all locations
+	var workspacesPrecedenceList = make([]map[string]T, len(l.workspaceProfilePaths))
 
-	var workspacesPrecedenceList = make([]map[string]T, 0, len(l.workspaceProfilePaths))
-
-	// load from the config paths in reverse order (i.e. lowest precedence first)
-	for _, configPath := range l.workspaceProfilePaths {
-
+	for i, configPath := range l.workspaceProfilePaths {
 		// load all workspaces in the global config location
 		workspaces, err := parse.LoadWorkspaceProfiles[T](configPath)
 		if err != nil {
 			return err
 		}
 
-		// add to workspacesPrecedenceList
-		if len(workspaces) > 0 {
-			workspacesPrecedenceList = append(workspacesPrecedenceList, workspaces)
-		}
+		workspacesPrecedenceList[i] = workspaces
 	}
 
 	// determine the default workspace
@@ -149,15 +140,13 @@ func (l *WorkspaceProfileLoader[T]) load() error {
 }
 
 func (l *WorkspaceProfileLoader[T]) setDefault(workspacesPrecedenceList []map[string]T) error {
-
-	// workspacesPrecedenceList is in order of decreasing precedence
-	// the final  element in the workspacesPrecedenceList is the global config location
-	globalWorkspaces := workspacesPrecedenceList[len(workspacesPrecedenceList)-1]
+	// the first element in the workspacesPrecedenceList is the global config location
+	globalWorkspaces := workspacesPrecedenceList[0]
 
 	// get the global default workspace
+	// no local profile - look for a global default
 	defaultWorkspace, ok := globalWorkspaces["default"]
 	if !ok {
-		// create an empty default
 		var diags hcl.Diagnostics
 		defaultWorkspace, diags = modconfig.NewDefaultWorkspaceProfile[T]()
 		if diags.HasErrors() {
@@ -165,17 +154,8 @@ func (l *WorkspaceProfileLoader[T]) setDefault(workspacesPrecedenceList []map[st
 		}
 	}
 
-	// tactical - if config path was set, look for a local default in the 'globalWorkspaces'
-	// (which is actually just the lowest precedence location)
-	if viper.IsSet(constants.ArgConfigPath) {
-		if localDefault, ok := globalWorkspaces["local"]; ok {
-			defaultWorkspace = localDefault
-		}
-	}
-
 	if len(workspacesPrecedenceList) > 1 {
-		for i := len(workspacesPrecedenceList) - 2; i >= 0; i-- {
-			workspaces := workspacesPrecedenceList[i]
+		for _, workspaces := range workspacesPrecedenceList[1:] {
 			// if there is a 'local' workspace defined in localWorkspaces, use it as the default
 			if localDefault, ok := workspaces["local"]; ok {
 				defaultWorkspace = localDefault
@@ -221,10 +201,7 @@ func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 func (l *WorkspaceProfileLoader[T]) setWorkspaces(workspacesPrecedenceList []map[string]T) {
 	l.workspaceProfiles = make(map[string]T)
 
-	// workspacesPrecedenceList is in order of decreasing precedence
-	// iterate _back_ through the list
-	for i := len(workspacesPrecedenceList) - 1; i >= 0; i-- {
-		workspaces := workspacesPrecedenceList[i]
+	for _, workspaces := range workspacesPrecedenceList {
 		for k, v := range workspaces {
 			l.workspaceProfiles[k] = v
 		}

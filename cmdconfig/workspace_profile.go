@@ -1,14 +1,12 @@
 package cmdconfig
 
 import (
-	"fmt"
 	"github.com/spf13/viper"
-	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
-	"strings"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
@@ -22,11 +20,7 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	SetDefaultFromEnv(app_specific.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	// create loader and load the workspace
-	configPaths, err := GetConfigPath()
-	if err != nil {
-		return nil, err
-	}
-	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](configPaths...)
+	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](getWorkspaceLocations()...)
 	if err != nil {
 		return nil, err
 	}
@@ -34,31 +28,10 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	return loader, nil
 }
 
-// GetConfigPath builds a list of possible config file locations, starting with the HIGHEST priority
-func GetConfigPath() ([]string, error) {
-	// config-path is a colon separated path of decreasing precedence that config (fpc) files are loaded from
-	// default to the cmod locaiton and the global config dir
-	// if config-path was passed, use that
-	configPathArg := app_specific.DefaultConfigPath
-	if viper.IsSet(constants.ArgConfigPath) {
-		configPathArg = viper.GetString(constants.ArgConfigPath)
+// build list of possible workspace locations
+func getWorkspaceLocations() []string {
+	return []string{
+		filepaths.GlobalWorkspaceProfileDir(viper.GetString(constants.ArgInstallDir)),
+		viper.GetString(constants.ArgModLocation),
 	}
-	if len(configPathArg) == 0 {
-		return nil, fmt.Errorf("no config path specified")
-	}
-	configPaths := strings.Split(viper.GetString(constants.ArgConfigPath), ":")
-
-	for i, p := range configPaths {
-		// special case for "." - use the mod location
-		if p == "." {
-			p = viper.GetString(constants.ArgModLocation)
-		}
-		absPath, err := files.Tildefy(p)
-		if err != nil {
-			return nil, err
-		}
-		configPaths[i] = absPath
-
-	}
-	return configPaths, nil
 }

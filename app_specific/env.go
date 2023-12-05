@@ -29,7 +29,6 @@ var EnvUpdateCheck,
 	EnvConfigDump,
 	EnvMemoryMaxMb,
 	EnvMemoryMaxMbPlugin,
-	EnvConfigPath,
 	EnvLogLevel string
 
 func SetAppSpecificEnvVarKeys(envAppPrefix string) {
@@ -63,7 +62,6 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvConfigDump = buildEnv("CONFIG_DUMP")
 	EnvMemoryMaxMb = buildEnv("MEMORY_MAX_MB")
 	EnvMemoryMaxMbPlugin = buildEnv("PLUGIN_MEMORY_MAX_MB")
-	EnvConfigPath = buildEnv("CONFIG_PATH")
 	EnvLogLevel = buildEnv("LOG_LEVEL")
 }
 
