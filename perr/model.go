@@ -56,6 +56,8 @@ func FromHttpError(err error, statusCode int) ErrorModel {
 		return ServiceUnavailableWithMessage(errorMsg)
 	case http.StatusTooManyRequests:
 		return TooManyRequestsWithMessage(errorMsg)
+	case http.StatusMethodNotAllowed:
+		return MethodNotAllowedWithMessage(errorMsg)
 	default:
 		return InternalWithMessage(errorMsg)
 	}
