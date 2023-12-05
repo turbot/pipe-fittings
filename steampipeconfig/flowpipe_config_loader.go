@@ -1,6 +1,7 @@
 package steampipeconfig
 
 import (
+	"github.com/turbot/pipe-fittings/filepaths"
 	"log/slog"
 
 	filehelpers "github.com/turbot/go-kit/files"
@@ -61,6 +62,7 @@ func loadCredentials(configFolder string, opts *loadConfigOptions) (map[string]m
 	configPaths, err := filehelpers.ListFiles(configFolder, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
 		Include: opts.include,
+		Exclude: []string{filepaths.WorkspaceLockFileName},
 	})
 
 	if err != nil {
