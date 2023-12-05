@@ -85,6 +85,7 @@ const (
 	ArgWhere                   = "where"
 	ArgWorkspaceDatabase       = "workspace-database"
 	ArgWorkspaceProfile        = "workspace"
+	ArgConfigPath              = "config-path"
 )
 
 // BoolToOnOff converts a boolean value onto the string "on" or "off"
