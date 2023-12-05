@@ -36,11 +36,18 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 
 // GetConfigPath builds a list of possible config file locations, starting with the HIGHEST priority
 func GetConfigPath() ([]string, error) {
+	// config-path is a colon separated path of decreasing precedence that config (fpc) files are loaded from
+	// default to the cmod locaiton and the global config dir
 	// if config-path was passed, use that
-	configPaths := strings.Split(viper.GetString(constants.ArgConfigPath), ":")
-	if len(configPaths) == 0 {
-		return nil, fmt.Errorf("no config paths specified")
+	configPathArg := app_specific.DefaultConfigPath
+	if viper.IsSet(constants.ArgConfigPath) {
+		configPathArg = viper.GetString(constants.ArgConfigPath)
 	}
+	if len(configPathArg) == 0 {
+		return nil, fmt.Errorf("no config path specified")
+	}
+	configPaths := strings.Split(viper.GetString(constants.ArgConfigPath), ":")
+
 	for i, p := range configPaths {
 		// special case for "." - use the mod location
 		if p == "." {

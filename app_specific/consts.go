@@ -23,6 +23,7 @@ var WorkspaceIgnoreFile string
 var WorkspaceDataDir string
 var InstallDir string
 var DefaultInstallDir string
+var DefaultConfigPath string
 
 // db client app names
 
