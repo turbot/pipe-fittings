@@ -7,6 +7,7 @@ import (
 const (
 	ErrorCodeInternal              = "error_internal"
 	ErrorCodeInternalTokenTooLarge = "error_internal_token_too_large"
+	ErrorCodeJsonSyntaxError       = "error_json_syntax_error"
 )
 
 func InternalWithMessage(msg string) ErrorModel {
