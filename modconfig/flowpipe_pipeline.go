@@ -441,7 +441,6 @@ type PipelineOutput struct {
 	Description     string         `json:"description,omitempty"`
 	DependsOn       []string       `json:"depends_on,omitempty"`
 	Resolved        bool           `json:"resolved,omitempty"`
-	Sensitive       bool           `json:"sensitive,omitempty"`
 	Value           interface{}    `json:"value,omitempty"`
 	UnresolvedValue hcl.Expression `json:"-"`
 }
@@ -469,11 +468,6 @@ func (p *PipelineOutput) Equals(other *PipelineOutput) bool {
 
 	// Compare Resolved field
 	if p.Resolved != other.Resolved {
-		return false
-	}
-
-	// Compare Sensitive field
-	if p.Sensitive != other.Sensitive {
 		return false
 	}
 

@@ -52,7 +52,6 @@ const (
 	BlockTypeThrow             = "throw"
 
 	AttributeTypeValue     = "value"
-	AttributeTypeSensitive = "sensitive"
 
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
