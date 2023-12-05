@@ -46,7 +46,7 @@ func GetConfigPath() ([]string, error) {
 	if len(configPathArg) == 0 {
 		return nil, fmt.Errorf("no config path specified")
 	}
-	configPaths := strings.Split(configPathArg, ":")
+	configPaths := strings.Split(viper.GetString(constants.ArgConfigPath), ":")
 
 	for i, p := range configPaths {
 		// special case for "." - use the mod location
