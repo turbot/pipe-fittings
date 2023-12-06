@@ -41,7 +41,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1324,6 +1324,77 @@ func (c *GitLabCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type VaultCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+	Address *string `json:"address,omitempty" cty:"address" hcl:"address,optional"`
+}
+
+func (*VaultCredential) GetCredentialType() string {
+	return "vault"
+}
+
+func (c *VaultCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["VAULT_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	if c.Address != nil {
+		env["VAULT_ADDR"] = cty.StringVal(*c.Address)
+	}
+	return env
+}
+
+func (c *VaultCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *VaultCredential) Resolve(ctx context.Context) (Credential, error) {
+
+	if c.Token == nil && c.Address == nil {
+		tokenEnvVar := os.Getenv("VAULT_TOKEN")
+		addressEnvVar := os.Getenv("VAULT_ADDR")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &VaultCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:    c.Type,
+			Token:   &tokenEnvVar,
+			Address: &addressEnvVar,
+		}
+
+		return newCreds, nil
+	}
+
+	return c, nil
+}
+
+func (c *VaultCredential) GetTtl() int {
+	return -1
+}
+
+func (c *VaultCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type GcpCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -1655,6 +1726,14 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "gitlab",
 	}
+	credentials["vault.default"] = &VaultCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "vault.default",
+			ShortName:       "default",
+			UnqualifiedName: "vault.default",
+		},
+		Type: "vault",
+	}
 
 	return credentials
 }
@@ -1904,6 +1983,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "gitlab",
+		}
+		return credential
+	} else if credentialType == "vault" {
+		credential := &VaultCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "vault",
 		}
 		return credential
 	}
