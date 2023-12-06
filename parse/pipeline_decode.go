@@ -492,18 +492,27 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 		stepRegisters = append(stepRegisters, step.GetFullyQualifiedName())
 	}
 
-	var credentialRegisters []string
+	// var credentialRegisters []string
+
+	// Get all the default credential names and add it into credential register
+	credentialRegisters := modconfig.DefaultCredentialNames()
+
 	for k := range credentials {
 		parts := strings.Split(k, ".")
-		if len(parts) != 3 {
+		if len(parts) != 2 {
 			continue
 		}
 
-		cred := parts[1] + "." + parts[2]
-		credentialRegisters = append(credentialRegisters, cred)
+		// cred := parts[1] + "." + parts[2]
+		// credentialRegisters = append(credentialRegisters, cred)
+
+		// If any new credentials found, add it in the credential register
+		if !helpers.StringSliceContains(credentialRegisters, k) {
+			credentialRegisters = append(credentialRegisters, k)
+		}
 	}
 
-	credentialRegisters = append(credentialRegisters, modconfig.DefaultCredentialNames()...)
+	// credentialRegisters = append(credentialRegisters, modconfig.DefaultCredentialNames()...)
 
 	for _, step := range pipelineHcl.Steps {
 		dependsOn := step.GetDependsOn()
