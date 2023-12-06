@@ -527,6 +527,40 @@ func TestVaultDefaultCredential(t *testing.T) {
 	assert.Equal("http://127.0.0.1:8200", *newVaultCreds.Address)
 }
 
+func TestJiraDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	jiraCred := JiraCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("JIRA_API_TOKEN")
+	os.Unsetenv("JIRA_URL")
+	os.Unsetenv("JIRA_USER")
+
+	newCreds, err := jiraCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJiraCreds := newCreds.(*JiraCredential)
+	assert.Equal("", *newJiraCreds.APIToken)
+	assert.Equal("", *newJiraCreds.BaseURL)
+	assert.Equal("", *newJiraCreds.Username)
+
+	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
+	os.Setenv("JIRA_USER", "test@turbot.com")
+
+	newCreds, err = jiraCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJiraCreds = newCreds.(*JiraCredential)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
+	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
+	assert.Equal("test@turbot.com", *newJiraCreds.Username)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
