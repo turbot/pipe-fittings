@@ -138,8 +138,8 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	}
 
 	os.Unsetenv("ZENDESK_SUBDOMAIN")
-	os.Unsetenv("ZENDESK_USER")
-	os.Unsetenv("ZENDESK_TOKEN")
+	os.Unsetenv("ZENDESK_EMAIL")
+	os.Unsetenv("ZENDESK_API_TOKEN")
 
 	newCreds, err := zendeskCred.Resolve(context.TODO())
 	assert.Nil(err)
@@ -150,8 +150,8 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	assert.Equal("", *newZendeskCreds.Token)
 
 	os.Setenv("ZENDESK_SUBDOMAIN", "dmi")
-	os.Setenv("ZENDESK_USER", "pam@dmi.com")
-	os.Setenv("ZENDESK_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
+	os.Setenv("ZENDESK_EMAIL", "pam@dmi.com")
+	os.Setenv("ZENDESK_API_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
 
 	newCreds, err = zendeskCred.Resolve(context.TODO())
 	assert.Nil(err)
