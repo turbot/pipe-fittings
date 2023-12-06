@@ -1,27 +1,25 @@
 package steampipeconfig
 
 import (
+	"github.com/turbot/pipe-fittings/filepaths"
 	"log/slog"
-	"path/filepath"
 
+	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
-
-	filehelpers "github.com/turbot/go-kit/files"
+	"golang.org/x/exp/maps"
 )
 
 type loadConfigOptions struct {
 	include []string
 }
 
-func LoadFlowpipeConfig(modLocation string) (*modconfig.FlowpipeConfig, *error_helpers.ErrorAndWarnings) {
-
+func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error_helpers.ErrorAndWarnings) {
 	errorsAndWarnings := error_helpers.NewErrorsAndWarning(nil)
 	defer func() {
 		if r := recover(); r != nil {
@@ -35,20 +33,14 @@ func LoadFlowpipeConfig(modLocation string) (*modconfig.FlowpipeConfig, *error_h
 	include := filehelpers.InclusionsFromExtensions(connectionConfigExtensions)
 	loadOptions := &loadConfigOptions{include: include}
 
-	flowpipeConfig := modconfig.NewFlowpipeConfig()
+	var res = modconfig.NewFlowpipeConfig()
+	var credentialMap = res.Credentials
+	// load from the config paths in reverse order (i.e. lowest precedence first)
+	for i := len(configPaths) - 1; i >= 0; i-- {
+		configPath := configPaths[i]
 
-	ew := loadConfig(filepaths.EnsureConfigDir(), flowpipeConfig, loadOptions)
+		c, ew := loadCredentials(configPath, loadOptions)
 
-	if ew != nil {
-		if ew.GetError() != nil {
-			return nil, ew
-		}
-		// merge the warning from this call
-		errorsAndWarnings.AddWarning(ew.Warnings...)
-	}
-
-	if modLocation != "" {
-		ew := loadConfig(filepath.Join(modLocation, ".flowpipe/config"), flowpipeConfig, loadOptions)
 		if ew != nil {
 			if ew.GetError() != nil {
 				return nil, ew
@@ -56,42 +48,47 @@ func LoadFlowpipeConfig(modLocation string) (*modconfig.FlowpipeConfig, *error_h
 			// merge the warning from this call
 			errorsAndWarnings.AddWarning(ew.Warnings...)
 		}
+		// copy creds over the top of credentialMap (i.e. with greater precedence)
+		maps.Copy(credentialMap, c)
 	}
-
-	return flowpipeConfig, errorsAndWarnings
+	if len(credentialMap) > 0 {
+		res.Credentials = credentialMap
+	}
+	return res, errorsAndWarnings
 }
 
-func loadConfig(configFolder string, flowpipeConfig *modconfig.FlowpipeConfig, opts *loadConfigOptions) *error_helpers.ErrorAndWarnings {
-
+func loadCredentials(configFolder string, opts *loadConfigOptions) (map[string]modconfig.Credential, *error_helpers.ErrorAndWarnings) {
+	var res = map[string]modconfig.Credential{}
 	configPaths, err := filehelpers.ListFiles(configFolder, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
 		Include: opts.include,
+		Exclude: []string{filepaths.WorkspaceLockFileName},
 	})
 
 	if err != nil {
-		slog.Warn("loadConfig: failed to get config file paths", "error", err)
-		return error_helpers.NewErrorsAndWarning(err)
+		slog.Warn("loadCredentials: failed to get config file paths", "error", err)
+		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	if len(configPaths) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	fileData, diags := parse.LoadFileData(configPaths...)
 	if diags.HasErrors() {
-		slog.Warn("loadConfig: failed to load all config files", "error", err)
-		return error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
+		slog.Warn("loadCredentials: failed to load all config files", "error", err)
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
 	}
 
 	body, diags := parse.ParseHclFiles(fileData)
 	if diags.HasErrors() {
-		return error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
 	}
 
 	// do a partial decode
 	content, moreDiags := body.Content(parse.ConfigBlockSchema)
 	if moreDiags.HasErrors() {
 		diags = append(diags, moreDiags...)
-		return error_helpers.DiagsToErrorsAndWarnings("Failed to load config", diags)
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load config", diags)
 	}
 
 	for _, block := range content.Blocks {
@@ -101,15 +98,15 @@ func loadConfig(configFolder string, flowpipeConfig *modconfig.FlowpipeConfig, o
 			credential, moreDiags := parse.DecodeCredential(block)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
-				slog.Warn("loadConfig: failed to decode credential block", "error", err)
+				slog.Warn("loadCredentials: failed to decode credential block", "error", err)
 			}
 
-			flowpipeConfig.Credentials[credential.GetUnqualifiedName()] = credential
+			res[credential.GetUnqualifiedName()] = credential
 		}
 	}
 
 	if len(diags) > 0 {
-		return error_helpers.DiagsToErrorsAndWarnings("Failed to load Flowpipe config", diags)
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load Flowpipe config", diags)
 	}
-	return nil
+	return res, nil
 }
