@@ -497,6 +497,70 @@ func TestPipesDefaultCredential(t *testing.T) {
 	assert.Equal("tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newPipesCreds.Token)
 }
 
+func TestVaultDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	vaultCred := VaultCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("VAULT_TOKEN")
+	os.Unsetenv("VAULT_ADDR")
+
+	newCreds, err := vaultCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultCreds := newCreds.(*VaultCredential)
+	assert.Equal("", *newVaultCreds.Token)
+	assert.Equal("", *newVaultCreds.Address)
+
+	os.Setenv("VAULT_TOKEN", "hsv-fhhwskfkwh")
+	os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200")
+
+	newCreds, err = vaultCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultCreds = newCreds.(*VaultCredential)
+	assert.Equal("hsv-fhhwskfkwh", *newVaultCreds.Token)
+	assert.Equal("http://127.0.0.1:8200", *newVaultCreds.Address)
+}
+
+func TestJiraDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	jiraCred := JiraCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("JIRA_API_TOKEN")
+	os.Unsetenv("JIRA_URL")
+	os.Unsetenv("JIRA_USER")
+
+	newCreds, err := jiraCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJiraCreds := newCreds.(*JiraCredential)
+	assert.Equal("", *newJiraCreds.APIToken)
+	assert.Equal("", *newJiraCreds.BaseURL)
+	assert.Equal("", *newJiraCreds.Username)
+
+	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
+	os.Setenv("JIRA_USER", "test@turbot.com")
+
+	newCreds, err = jiraCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJiraCreds = newCreds.(*JiraCredential)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
+	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
+	assert.Equal("test@turbot.com", *newJiraCreds.Username)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
