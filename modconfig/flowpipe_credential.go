@@ -2,12 +2,16 @@ package modconfig
 
 import (
 	"context"
+	"encoding/json"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
+	"golang.org/x/oauth2/google"
 )
 
 type Credential interface {
@@ -37,7 +41,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "jira.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "jira.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -428,10 +432,10 @@ func (c *ZendeskCredential) getEnv() map[string]cty.Value {
 		env["ZENDESK_SUBDOMAIN"] = cty.StringVal(*c.Subdomain)
 	}
 	if c.Email != nil {
-		env["ZENDESK_USER"] = cty.StringVal(*c.Email)
+		env["ZENDESK_EMAIL"] = cty.StringVal(*c.Email)
 	}
 	if c.Token != nil {
-		env["ZENDESK_TOKEN"] = cty.StringVal(*c.Token)
+		env["ZENDESK_API_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	return env
 }
@@ -452,8 +456,8 @@ func (c *ZendeskCredential) Resolve(ctx context.Context) (Credential, error) {
 
 	if c.Subdomain == nil && c.Email == nil && c.Token == nil {
 		subdomainEnvVar := os.Getenv("ZENDESK_SUBDOMAIN")
-		emailEnvVar := os.Getenv("ZENDESK_USER")
-		tokenEnvVar := os.Getenv("ZENDESK_TOKEN")
+		emailEnvVar := os.Getenv("ZENDESK_EMAIL")
+		tokenEnvVar := os.Getenv("ZENDESK_API_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
 		newCreds := &ZendeskCredential{
@@ -560,8 +564,8 @@ type OktaCredential struct {
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
-	Domain   *string `json:"domain,omitempty" cty:"domain" hcl:"domain,optional"`
+	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+	Domain *string `json:"domain,omitempty" cty:"domain" hcl:"domain,optional"`
 }
 
 func (*OktaCredential) GetCredentialType() string {
@@ -570,8 +574,8 @@ func (*OktaCredential) GetCredentialType() string {
 
 func (c *OktaCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.APIToken != nil {
-		env["OKTA_TOKEN"] = cty.StringVal(*c.APIToken)
+	if c.Token != nil {
+		env["OKTA_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	if c.Domain != nil {
 		env["OKTA_ORGURL"] = cty.StringVal(*c.Domain)
@@ -593,7 +597,7 @@ func (c *OktaCredential) CtyValue() (cty.Value, error) {
 
 func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
 
-	if c.APIToken == nil && c.Domain == nil {
+	if c.Token == nil && c.Domain == nil {
 		apiTokenEnvVar := os.Getenv("OKTA_TOKEN")
 		domainEnvVar := os.Getenv("OKTA_ORGURL")
 
@@ -606,9 +610,9 @@ func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:     c.Type,
-			APIToken: &apiTokenEnvVar,
-			Domain:   &domainEnvVar,
+			Type:   c.Type,
+			Token:  &apiTokenEnvVar,
+			Domain: &domainEnvVar,
 		}
 
 		return newCreds, nil
@@ -758,7 +762,7 @@ type ClickUpCredential struct {
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
+	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
 func (*ClickUpCredential) GetCredentialType() string {
@@ -767,8 +771,8 @@ func (*ClickUpCredential) GetCredentialType() string {
 
 func (c *ClickUpCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.APIToken != nil {
-		env["CLICKUP_TOKEN"] = cty.StringVal(*c.APIToken)
+	if c.Token != nil {
+		env["CLICKUP_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	return env
 }
@@ -786,7 +790,7 @@ func (c *ClickUpCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *ClickUpCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.APIToken == nil {
+	if c.Token == nil {
 		clickUpAPITokenEnvVar := os.Getenv("CLICKUP_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
@@ -798,8 +802,8 @@ func (c *ClickUpCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:     c.Type,
-			APIToken: &clickUpAPITokenEnvVar,
+			Type:  c.Type,
+			Token: &clickUpAPITokenEnvVar,
 		}
 
 		return newCreds, nil
@@ -1194,15 +1198,212 @@ func (c *PipesCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type GithubCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+}
+
+func (*GithubCredential) GetCredentialType() string {
+	return "github"
+}
+
+func (c *GithubCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["GITHUB_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	return env
+}
+
+func (c *GithubCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *GithubCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.Token == nil {
+		githubAccessTokenEnvVar := os.Getenv("GITHUB_TOKEN")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &GithubCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:  c.Type,
+			Token: &githubAccessTokenEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *GithubCredential) GetTtl() int {
+	return -1
+}
+
+func (c *GithubCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type GitLabCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+}
+
+func (*GitLabCredential) GetCredentialType() string {
+	return "gitlab"
+}
+
+func (c *GitLabCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["GITLAB_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	return env
+}
+
+func (c *GitLabCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *GitLabCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.Token == nil {
+		gitlabAccessTokenEnvVar := os.Getenv("GITLAB_TOKEN")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &GitLabCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:  c.Type,
+			Token: &gitlabAccessTokenEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *GitLabCredential) GetTtl() int {
+	return -1
+}
+
+func (c *GitLabCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+type VaultCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
+	Address *string `json:"address,omitempty" cty:"address" hcl:"address,optional"`
+}
+
+func (*VaultCredential) GetCredentialType() string {
+	return "vault"
+}
+
+func (c *VaultCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["VAULT_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	if c.Address != nil {
+		env["VAULT_ADDR"] = cty.StringVal(*c.Address)
+	}
+	return env
+}
+
+func (c *VaultCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *VaultCredential) Resolve(ctx context.Context) (Credential, error) {
+
+	if c.Token == nil && c.Address == nil {
+		tokenEnvVar := os.Getenv("VAULT_TOKEN")
+		addressEnvVar := os.Getenv("VAULT_ADDR")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &VaultCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:    c.Type,
+			Token:   &tokenEnvVar,
+			Address: &addressEnvVar,
+		}
+
+		return newCreds, nil
+	}
+
+	return c, nil
+}
+
+func (c *VaultCredential) GetTtl() int {
+	return -1
+}
+
+func (c *VaultCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type JiraCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
-	Token      *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
-	APIBaseURL *string `json:"api_base_url,omitempty" cty:"api_base_url" hcl:"api_base_url,optional"`
-	UserEmail  *string `json:"user_email,omitempty" cty:"user_email" hcl:"user_email,optional"`
+	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
+	BaseURL  *string `json:"base_url,omitempty" cty:"base_url" hcl:"base_url,optional"`
+	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 }
 
 func (*JiraCredential) GetCredentialType() string {
@@ -1211,14 +1412,14 @@ func (*JiraCredential) GetCredentialType() string {
 
 func (c *JiraCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
-	if c.Token != nil {
-		env["JIRA_PERSONAL_ACCESS_TOKEN"] = cty.StringVal(*c.Token)
+	if c.APIToken != nil {
+		env["JIRA_API_TOKEN"] = cty.StringVal(*c.APIToken)
 	}
-	if c.APIBaseURL != nil {
-		env["JIRA_URL"] = cty.StringVal(*c.APIBaseURL)
+	if c.BaseURL != nil {
+		env["JIRA_URL"] = cty.StringVal(*c.BaseURL)
 	}
-	if c.UserEmail != nil {
-		env["JIRA_USER"] = cty.StringVal(*c.UserEmail)
+	if c.Username != nil {
+		env["JIRA_USER"] = cty.StringVal(*c.Username)
 	}
 	return env
 }
@@ -1236,8 +1437,8 @@ func (c *JiraCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *JiraCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.Token == nil && c.APIBaseURL == nil && c.UserEmail == nil {
-		jiraTokenEnvVar := os.Getenv("JIRA_PERSONAL_ACCESS_TOKEN")
+	if c.APIToken == nil && c.BaseURL == nil && c.Username == nil {
+		jiraAPITokenEnvVar := os.Getenv("JIRA_API_TOKEN")
 		jiraURLEnvVar := os.Getenv("JIRA_URL")
 		jiraUserEnvVar := os.Getenv("JIRA_USER")
 
@@ -1250,10 +1451,10 @@ func (c *JiraCredential) Resolve(ctx context.Context) (Credential, error) {
 				DeclRange:       c.DeclRange,
 				blockType:       c.blockType,
 			},
-			Type:       c.Type,
-			Token:      &jiraTokenEnvVar,
-			APIBaseURL: &jiraURLEnvVar,
-			UserEmail:  &jiraUserEnvVar,
+			Type:     c.Type,
+			APIToken: &jiraAPITokenEnvVar,
+			BaseURL:  &jiraURLEnvVar,
+			Username: &jiraUserEnvVar,
 		}
 
 		return newCreds, nil
@@ -1277,6 +1478,8 @@ type GcpCredential struct {
 
 	Credentials *string `json:"credentials,omitempty" cty:"credentials" hcl:"credentials,optional"`
 	Ttl         *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
+
+	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
 func (*GcpCredential) GetCredentialType() string {
@@ -1301,7 +1504,83 @@ func (c *GcpCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *GcpCredential) Resolve(ctx context.Context) (Credential, error) {
-	return c, nil
+
+	// First check if the credential file is supplied
+	var credentialFile string
+	if c.Credentials != nil && *c.Credentials != "" {
+		credentialFile = *c.Credentials
+	} else {
+		credentialFile = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+		if credentialFile == "" {
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				return nil, perr.InternalWithMessage("failed to get user home directory " + err.Error())
+			}
+
+			// If not, check if the default credential file exists
+			credentialFile = filepath.Join(homeDir, ".config/gcloud/application_default_credentials.json")
+		}
+	}
+
+	if credentialFile == "" {
+		return c, nil
+	}
+
+	// Try to resolve this credential file
+	creds, err := os.ReadFile(credentialFile)
+	if err != nil {
+		return nil, perr.InternalWithMessage("failed to read credential file " + err.Error())
+	}
+
+	var credData map[string]interface{}
+	if err := json.Unmarshal(creds, &credData); err != nil {
+		return nil, perr.InternalWithMessage("failed to parse credential file " + err.Error())
+	}
+
+	// Service Account / Authorized User flow
+	if credData["type"] == "service_account" || credData["type"] == "authorized_user" {
+		// Get a token source using the service account key file
+
+		credentialParam := google.CredentialsParams{
+			Scopes: []string{"https://www.googleapis.com/auth/cloud-platform"},
+		}
+
+		credentials, err := google.CredentialsFromJSONWithParams(context.TODO(), creds, credentialParam)
+		if err != nil {
+			return nil, perr.InternalWithMessage("failed to get credentials from JSON " + err.Error())
+		}
+
+		tokenSource := credentials.TokenSource
+
+		// Get the token
+		token, err := tokenSource.Token()
+		if err != nil {
+			return nil, perr.InternalWithMessage("failed to get token from token source " + err.Error())
+		}
+
+		newCreds := &GcpCredential{
+			AccessToken: &token.AccessToken,
+			Credentials: &credentialFile,
+		}
+		return newCreds, nil
+	}
+
+	// oauth2 flow (untested)
+	config, err := google.ConfigFromJSON(creds, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return nil, perr.InternalWithMessage("failed to get config from JSON " + err.Error())
+	}
+
+	token, err := config.Exchange(context.Background(), "authorization-code")
+	if err != nil {
+		return nil, perr.InternalWithMessage("failed to get token from config " + err.Error())
+	}
+
+	newCreds := &GcpCredential{
+		AccessToken: &token.AccessToken,
+		Credentials: &credentialFile,
+	}
+	return newCreds, nil
 }
 
 func (c *GcpCredential) Validate() hcl.Diagnostics {
@@ -1385,6 +1664,159 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "gcp",
 	}
+	credentials["abuseipdb.default"] = &AbuseIPDBCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "abuseipdb.default",
+			ShortName:       "default",
+			UnqualifiedName: "abuseipdb.default",
+		},
+		Type: "abuseipdb",
+	}
+
+	credentials["sendgrid.default"] = &SendGridCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "sendgrid.default",
+			ShortName:       "default",
+			UnqualifiedName: "sendgrid.default",
+		},
+		Type: "sendgrid",
+	}
+	credentials["virustotal.default"] = &VirusTotalCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "virustotal.default",
+			ShortName:       "default",
+			UnqualifiedName: "virustotal.default",
+		},
+		Type: "virustotal",
+	}
+	credentials["zendesk.default"] = &ZendeskCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "zendesk.default",
+			ShortName:       "default",
+			UnqualifiedName: "zendesk.default",
+		},
+		Type: "zendesk",
+	}
+	credentials["trello.default"] = &TrelloCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "trello.default",
+			ShortName:       "default",
+			UnqualifiedName: "trello.default",
+		},
+		Type: "trello",
+	}
+	credentials["okta.default"] = &OktaCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "okta.default",
+			ShortName:       "default",
+			UnqualifiedName: "okta.default",
+		},
+		Type: "okta",
+	}
+	credentials["uptimerobot.default"] = &UptimeRobotCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "uptimerobot.default",
+			ShortName:       "default",
+			UnqualifiedName: "uptimerobot.default",
+		},
+		Type: "uptimerobot",
+	}
+	credentials["urlscan.default"] = &UrlscanCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "urlscan.default",
+			ShortName:       "default",
+			UnqualifiedName: "urlscan.default",
+		},
+		Type: "urlscan",
+	}
+	credentials["clickup.default"] = &ClickUpCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "clickup.default",
+			ShortName:       "default",
+			UnqualifiedName: "clickup.default",
+		},
+		Type: "clickup",
+	}
+	credentials["pagerduty.default"] = &PagerDutyCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "pagerduty.default",
+			ShortName:       "default",
+			UnqualifiedName: "pagerduty.default",
+		},
+		Type: "pagerduty",
+	}
+	credentials["discord.default"] = &DiscordCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "discord.default",
+			ShortName:       "default",
+			UnqualifiedName: "discord.default",
+		},
+		Type: "discord",
+	}
+	credentials["ip2location.default"] = &IP2LocationCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "ip2location.default",
+			ShortName:       "default",
+			UnqualifiedName: "ip2location.default",
+		},
+		Type: "ip2location",
+	}
+	credentials["ipstack.default"] = &IPstackCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "ipstack.default",
+			ShortName:       "default",
+			UnqualifiedName: "ipstack.default",
+		},
+		Type: "ipstack",
+	}
+	credentials["teams.default"] = &MicrosoftTeamsCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "teams.default",
+			ShortName:       "default",
+			UnqualifiedName: "teams.default",
+		},
+		Type: "teams",
+	}
+	credentials["pipes.default"] = &PipesCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "pipes.default",
+			ShortName:       "default",
+			UnqualifiedName: "pipes.default",
+		},
+		Type: "pipes",
+	}
+	credentials["github.default"] = &GithubCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "github.default",
+			ShortName:       "default",
+			UnqualifiedName: "github.default",
+		},
+		Type: "github",
+	}
+	credentials["gitlab.default"] = &GitLabCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "gitlab.default",
+			ShortName:       "default",
+			UnqualifiedName: "gitlab.default",
+		},
+		Type: "gitlab",
+	}
+	credentials["vault.default"] = &VaultCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "vault.default",
+			ShortName:       "default",
+			UnqualifiedName: "vault.default",
+		},
+		Type: "vault",
+	}
+	credentials["jira.default"] = &JiraCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "jira.default",
+			ShortName:       "default",
+			UnqualifiedName: "jira.default",
+		},
+		Type: "jira",
+	}
 
 	return credentials
 }
@@ -1430,6 +1862,234 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "slack",
+		}
+		return credential
+	} else if credentialType == "abuseipdb" {
+		credential := &AbuseIPDBCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "abuseipdb",
+		}
+		return credential
+	} else if credentialType == "sendgrid" {
+		credential := &SendGridCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "sendgrid",
+		}
+		return credential
+	} else if credentialType == "virustotal" {
+		credential := &VirusTotalCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "virustotal",
+		}
+		return credential
+	} else if credentialType == "zendesk" {
+		credential := &ZendeskCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "zendesk",
+		}
+		return credential
+	} else if credentialType == "trello" {
+		credential := &TrelloCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "trello",
+		}
+		return credential
+	} else if credentialType == "okta" {
+		credential := &OktaCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "okta",
+		}
+		return credential
+	} else if credentialType == "uptimerobot" {
+		credential := &UptimeRobotCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "uptimerobot",
+		}
+		return credential
+	} else if credentialType == "urlscan" {
+		credential := &UrlscanCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "urlscan",
+		}
+		return credential
+	} else if credentialType == "clickup" {
+		credential := &ClickUpCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "clickup",
+		}
+		return credential
+	} else if credentialType == "pagerduty" {
+		credential := &PagerDutyCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "pagerduty",
+		}
+		return credential
+	} else if credentialType == "discord" {
+		credential := &DiscordCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "discord",
+		}
+		return credential
+	} else if credentialType == "ip2location" {
+		credential := &IP2LocationCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "ip2location",
+		}
+		return credential
+	} else if credentialType == "ipstack" {
+		credential := &IPstackCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "ipstack",
+		}
+		return credential
+	} else if credentialType == "teams" {
+		credential := &MicrosoftTeamsCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "teams",
+		}
+		return credential
+	} else if credentialType == "pipes" {
+		credential := &PipesCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "pipes",
+		}
+		return credential
+	} else if credentialType == "github" {
+		credential := &GithubCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "github",
+		}
+		return credential
+	} else if credentialType == "gitlab" {
+		credential := &GitLabCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "gitlab",
+		}
+		return credential
+	} else if credentialType == "vault" {
+		credential := &VaultCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "vault",
+		}
+		return credential
+	} else if credentialType == "jira" {
+		credential := &JiraCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "jira",
 		}
 		return credential
 	}

@@ -2,7 +2,7 @@ package dashboardtypes
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/turbot/go-kit/helpers"
@@ -45,7 +45,7 @@ func (d *ResolvedRuntimeDependency) Resolve() error {
 	d.valueLock.Lock()
 	defer d.valueLock.Unlock()
 
-	log.Printf("[TRACE] ResolvedRuntimeDependency Resolve dep %s chan %p", d.Dependency.PropertyPath, d.valueChannel)
+	slog.Debug("ResolvedRuntimeDependency Resolve", "dep", d.Dependency.PropertyPath, "chan", d.valueChannel)
 
 	// if we are already resolved, do nothing
 	if d.hasValue() {

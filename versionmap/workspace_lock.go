@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"log"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -48,12 +48,12 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 	if filehelpers.FileExists(lockPath) {
 		fileContent, err := os.ReadFile(lockPath)
 		if err != nil {
-			log.Printf("[TRACE] error reading %s: %s\n", lockPath, err.Error())
+			slog.Debug("error reading lock file", "lockPath", lockPath, "error", err)
 			return nil, err
 		}
 		err = json.Unmarshal(fileContent, &installCache)
 		if err != nil {
-			log.Printf("[TRACE] failed to unmarshal %s: %s\n", lockPath, err.Error())
+			slog.Debug("failed to unmarshal  lock file", "lockPath", lockPath, "error", err)
 			return nil, err
 		}
 	}
@@ -129,7 +129,7 @@ func (l *WorkspaceLock) validateAndFixFolderNamingFormat(modName string, version
 	desiredVersionString := fmt.Sprintf("v%s", version.String())
 	if desiredVersionString != currentVersionString {
 		desiredDir := fmt.Sprintf("%s@%s", parts[0], desiredVersionString)
-		log.Printf("[TRACE] renaming dependency mod folder %s to %s", modDir, desiredDir)
+		slog.Debug("renaming dependency mod folder %s to %s", modDir, desiredDir)
 		return os.Rename(modDir, desiredDir)
 	}
 	return nil

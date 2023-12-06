@@ -3,7 +3,7 @@ package parse
 import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -127,11 +127,11 @@ func decodeConnectionPluginProperty(connectionContent *hcl.BodyContent, connecti
 		return res.Diags
 	}
 	if len(res.Depends) > 0 {
-		log.Printf("[INFO] decodeConnectionPluginProperty plugin property is HCL reference")
+		slog.Info("decodeConnectionPluginProperty plugin property is HCL reference")
 		// if this is a plugin reference, extract the plugin instance
 		pluginInstance, ok := getPluginInstanceFromDependency(maps.Values(res.Depends))
 		if !ok {
-			log.Printf("[INFO] failed to resolve plugin property")
+			slog.Info("failed to resolve plugin property")
 			// return the original diagnostics
 			return diags
 		}

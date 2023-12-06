@@ -18,6 +18,7 @@ type Require struct {
 	Plugins                          []*PluginVersion        `hcl:"plugin,block"`
 	DeprecatedSteampipeVersionString string                  `hcl:"steampipe,optional"`
 	Steampipe                        *SteampipeRequire       `hcl:"steampipe,block"`
+	Flowpipe                         *FlowpipeRequire        `hcl:"flowpipe,block"`
 	Mods                             []*ModVersionConstraint `hcl:"mod,block"`
 	// map keyed by name [and alias]
 	modMap map[string]*ModVersionConstraint
@@ -84,6 +85,11 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 
 	if r.Steampipe != nil {
 		moreDiags := r.Steampipe.initialise(requireBlock)
+		diags = append(diags, moreDiags...)
+	}
+
+	if r.Flowpipe != nil {
+		moreDiags := r.Flowpipe.initialise(requireBlock)
 		diags = append(diags, moreDiags...)
 	}
 
@@ -245,5 +251,11 @@ func (r *Require) SteampipeVersionConstraint() *semver.Constraints {
 		return nil
 	}
 	return r.Steampipe.Constraint
+}
 
+func (r *Require) FlowpipeVersionConstraint() *semver.Constraints {
+	if r.Flowpipe == nil {
+		return nil
+	}
+	return r.Flowpipe.Constraint
 }

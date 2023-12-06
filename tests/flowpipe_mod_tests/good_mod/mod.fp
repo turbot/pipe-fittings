@@ -1,5 +1,16 @@
 mod "test_mod" {
   title = "my_mod"
+
+  require {
+    flowpipe {
+      min_version = "0.1.0"
+    }
+  }
+
+  tags = {
+    foo = "bar"
+    green = "day"
+  }
 }
 
 trigger "schedule" "my_hourly_trigger" {

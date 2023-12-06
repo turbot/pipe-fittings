@@ -1,7 +1,7 @@
 package modconfig
 
 import (
-	"log"
+	"log/slog"
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2/hcldec"
@@ -16,7 +16,7 @@ import (
 func GetCtyTypes(item interface{}) map[string]cty.Type {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("[WARN] GetCtyTypes failed with panic: %v", r)
+			slog.Warn("GetCtyTypes failed with panic", "panic", r)
 		}
 	}()
 	var res = make(map[string]cty.Type)

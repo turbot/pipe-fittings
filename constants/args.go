@@ -79,11 +79,13 @@ const (
 	ArgUpdateCheck             = "update-check"
 	ArgVarFile                 = "var-file"
 	ArgVariable                = "var"
+	ArgVerbose                 = "verbose"
 	ArgVersion                 = "version"
 	ArgWatch                   = "watch"
 	ArgWhere                   = "where"
 	ArgWorkspaceDatabase       = "workspace-database"
 	ArgWorkspaceProfile        = "workspace"
+	ArgConfigPath              = "config-path"
 )
 
 // BoolToOnOff converts a boolean value onto the string "on" or "off"

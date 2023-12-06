@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -94,8 +93,6 @@ func goSliceToPostgresString(val reflect.Value) (string, error) {
 }
 
 func pgArraySuffixFromElem(elem any) string {
-	k := reflect.ValueOf(elem).Kind()
-	log.Println(k)
 	switch elem.(type) {
 	case string:
 		return "text[]"

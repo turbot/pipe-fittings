@@ -86,6 +86,9 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 		return
 	}
 
+	assert.Equal("0.1.0", mod.Require.Flowpipe.MinVersionString)
+	assert.Equal("day", mod.Tags["green"])
+
 	// check if all pipelines are there
 	pipelines := mod.ResourceMaps.Pipelines
 
@@ -377,7 +380,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert := assert.New(suite.T())
 
-	os.Setenv("P_VAR_var_six", "set from env var")
+	os.Setenv("FP_VAR_var_six", "set from env var")
 
 	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", map[string]modconfig.Credential{}, ".fp")
 

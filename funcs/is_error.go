@@ -20,14 +20,39 @@ var IsErrorFunc = function.New(&function.Spec{
 	},
 	Type: function.StaticReturnType(cty.Bool),
 	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+		if len(args) == 0 {
+			return cty.False, nil
+		}
+
 		val := args[0]
+
+		if val.IsNull() {
+			return cty.False, nil
+		}
+
+		if !val.Type().IsMapType() && !val.Type().IsObjectType() {
+			return cty.False, nil
+		}
 
 		valueMap := val.AsValueMap()
 		if valueMap == nil {
-			return cty.True, nil
+			return cty.False, nil
 		}
 
 		if valueMap["errors"].IsNull() {
+			return cty.False, nil
+		}
+
+		if valueMap["errors"].Type().IsListType() && valueMap["errors"].Type().IsSetType() {
+			return cty.False, nil
+		}
+
+		errorSlice := valueMap["errors"].AsValueSlice()
+		if errorSlice == nil {
+			return cty.False, nil
+		}
+
+		if len(errorSlice) == 0 {
 			return cty.False, nil
 		}
 

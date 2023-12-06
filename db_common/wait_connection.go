@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -83,10 +83,10 @@ func WaitForConnectionPing(ctx context.Context, connection *sql.Conn, waitOption
 	)
 
 	retryErr := retry.Do(ctx, retryBackoff, func(ctx context.Context) error {
-		log.Println("[TRACE] Pinging")
+		slog.Debug("Pinging")
 		pingErr := connection.PingContext(ctx)
 		if pingErr != nil {
-			log.Println("[TRACE] Pinging failed -> trying again")
+			slog.Debug("Pinging failed -> trying again")
 			return retry.RetryableError(pingErr)
 		}
 		return nil
@@ -126,18 +126,18 @@ func WaitForRecovery(ctx context.Context, connection *sql.Conn, waitOptions ...W
 	recoveryStatusUpdateOnce := &sync.Once{}
 
 	retryErr := retry.Do(ctx, retryBackoff, func(ctx context.Context) error {
-		log.Println("[TRACE] checking for recovery mode")
+		slog.Debug("checking for recovery mode")
 		row := connection.QueryRowContext(ctx, "select pg_is_in_recovery();")
 		var isInRecovery bool
 		if scanErr := row.Scan(&isInRecovery); scanErr != nil {
 			if error_helpers.IsContextCancelledError(scanErr) {
 				return scanErr
 			}
-			log.Println("[ERROR] checking for recover mode", scanErr)
+			slog.Error("checking for recover mode", "error", scanErr)
 			return retry.RetryableError(scanErr)
 		}
 		if isInRecovery {
-			log.Println("[TRACE] service is in recovery")
+			slog.Debug("service is in recovery")
 
 			recoveryStatusUpdateOnce.Do(func() {
 				statushooks.SetStatus(ctx, "Database is recovering. This may take some time.")

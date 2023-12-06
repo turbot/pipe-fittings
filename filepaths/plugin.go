@@ -2,7 +2,7 @@ package filepaths
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -18,7 +18,7 @@ func GetPluginPath(pluginImageRef, pluginAlias string) (string, error) {
 	// if the plugin folder is missing, it is possible the plugin path was truncated to create a schema name
 	// - so search for a folder which when truncated would match the schema
 	if _, err := os.Stat(pluginFolder); os.IsNotExist(err) {
-		log.Printf("[TRACE] plugin path %s not found - searching for folder using hashed name\n", pluginFolder)
+		slog.Debug("plugin path not found - searching for folder using hashed name", "plugin path", pluginFolder)
 		if pluginFolder, err = FindPluginFolder(pluginImageRef); err != nil {
 			return "", err
 		} else if pluginFolder == "" {

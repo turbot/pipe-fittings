@@ -167,6 +167,11 @@ var tests = []testSetup{
 		file:          "./pipelines/container_step_invalid_attribute.fp",
 		containsError: "Source is not yet implemented",
 	},
+	{
+		title:         "invalid pipeline output attribute - sensitive",
+		file:          "./pipelines/output_invalid_attribute.fp",
+		containsError: "Unsupported argument: An argument named \"sensitive\" is not expected here.",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

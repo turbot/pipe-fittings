@@ -2,7 +2,7 @@ package workspace
 
 import (
 	"github.com/turbot/pipe-fittings/modconfig"
-	"log"
+	"log/slog"
 )
 
 func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider, bool) {
@@ -12,11 +12,11 @@ func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider,
 	}
 	// try to find the resource
 	if resource, ok := w.GetResource(parsedName); ok {
-		// found a resource - is itr a query provider
+		// found a resource - is it a query provider
 		if qp := resource.(modconfig.QueryProvider); ok {
 			return qp, true
 		}
-		log.Printf("[TRACE] GetQueryProviderImpl found a resource for '%s' but it is not a query provider", queryName)
+		slog.Debug("GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
 	}
 
 	return nil, false

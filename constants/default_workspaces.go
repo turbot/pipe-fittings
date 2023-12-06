@@ -97,11 +97,10 @@ const DefaultPowerpipeWorkspaceContent = `
 const DefaultFlowpipeWorkspaceContent = `
 #
 # For detailed descriptions, see the reference documentation
-# at https://steampipe.io/docs/reference/config-files/workspace
+# at https://flowpipe.io/docs/reference/config-files/workspace
 #
 
 # workspace "all_options" {
-#  max_parallel        = 5
 #  output              = "table"         # Default output format; one of: table, yaml, json (default table)
 #
 #  watch               = true
@@ -111,17 +110,13 @@ const DefaultFlowpipeWorkspaceContent = `
 #  host        = "http://localhost:7103"  # unset means "serverless" - run from pwd/mod-location
 #  insecure    = false   # Skip TLS verification (default false)
 #
-#options "server" {
-#    port        = 7103
-#    listen      = "local"   # 'local' or 'network' (future - support postgres listen_addresses style)
-#  }
+#   port        = 7103
+#   listen      = "local"   # 'local' or 'network' (future - support postgres listen_addresses style)
 #
-#  # should these be "global" options instead of workspace options?
-#  options "general" {
-#    update_check  = "true" # true, false
-#    telemetry     = "info" # info, none
-#    log_level     = "info" # trace, debug, info, warn, error
-#    memory_max_mb = "1024" # the maximum memory to allow the CLI process in MB
+#   update_check  = "true" # true, false
+#   telemetry     = "info" # info, none
+#   log_level     = "info" # trace, debug, info, warn, error
+#   memory_max_mb = "1024" # the maximum memory to allow the CLI process in MB
 #  }
 # }
 `

@@ -2009,7 +2009,6 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 	if p.UnresolvedAttributes[schema.AttributeTypeValue] == nil {
 		value = p.Value
 	} else {
-
 		var transformValueCtyValue cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &transformValueCtyValue)
 		if diags.HasErrors() {
@@ -2022,6 +2021,15 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 		value = goVal
 	}
+
+	// if test, ok := value.([]any); ok {
+	// 	if len(test) == 0 {
+	// 		test = make([]any, 0)
+	// 		return map[string]interface{}{
+	// 			schema.AttributeTypeValue: test,
+	// 		}, nil
+	// 	}
+	// }
 
 	return map[string]interface{}{
 		schema.AttributeTypeValue: value,

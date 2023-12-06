@@ -1,12 +1,14 @@
 package cmdconfig
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
-	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"strings"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
@@ -15,22 +17,16 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	// the rest are set up in BootstrapViper
 
 	// set viper default for workspace profile, using ArgWorkspaceProfile env var
-	SetDefaultFromEnv(constants.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
+	SetDefaultFromEnv(app_specific.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
 	// set viper default for install dir, using ArgInstallDir env var
-	SetDefaultFromEnv(constants.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
-
-	globalWorkspaceProfileDir, err := getGlobalWorkspaceDir()
-	if err != nil {
-		return nil, err
-	}
-
-	localWorkspaceProfileDir, err := getLocalWorkspaceDir()
-	if err != nil {
-		return nil, err
-	}
+	SetDefaultFromEnv(app_specific.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	// create loader and load the workspace
-	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](globalWorkspaceProfileDir, localWorkspaceProfileDir)
+	configPaths, err := GetConfigPath()
+	if err != nil {
+		return nil, err
+	}
+	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](configPaths...)
 	if err != nil {
 		return nil, err
 	}
@@ -38,19 +34,31 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	return loader, nil
 }
 
-func getGlobalWorkspaceDir() (string, error) {
-	// TODO kai shouldn't need as everything in viper is tildefied
-	installDir, err := filehelpers.Tildefy(viper.GetString(constants.ArgInstallDir))
-	if err != nil {
-		return "", err
+// GetConfigPath builds a list of possible config file locations, starting with the HIGHEST priority
+func GetConfigPath() ([]string, error) {
+	// config-path is a colon separated path of decreasing precedence that config (fpc) files are loaded from
+	// default to the cmod locaiton and the global config dir
+	// if config-path was passed, use that
+	configPathArg := app_specific.DefaultConfigPath
+	if viper.IsSet(constants.ArgConfigPath) {
+		configPathArg = viper.GetString(constants.ArgConfigPath)
 	}
-	return filepaths.GlobalWorkspaceProfileDir(installDir)
-}
+	if len(configPathArg) == 0 {
+		return nil, fmt.Errorf("no config path specified")
+	}
+	configPaths := strings.Split(configPathArg, ":")
 
-func getLocalWorkspaceDir() (string, error) {
-	modDir, err := filehelpers.Tildefy(viper.GetString(constants.ArgModLocation))
-	if err != nil {
-		return "", err
+	for i, p := range configPaths {
+		// special case for "." - use the mod location
+		if p == "." {
+			p = viper.GetString(constants.ArgModLocation)
+		}
+		absPath, err := files.Tildefy(p)
+		if err != nil {
+			return nil, err
+		}
+		configPaths[i] = absPath
+
 	}
-	return filepaths.LocalWorkspaceProfileDir(modDir)
+	return configPaths, nil
 }

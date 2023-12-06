@@ -138,8 +138,8 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	}
 
 	os.Unsetenv("ZENDESK_SUBDOMAIN")
-	os.Unsetenv("ZENDESK_USER")
-	os.Unsetenv("ZENDESK_TOKEN")
+	os.Unsetenv("ZENDESK_EMAIL")
+	os.Unsetenv("ZENDESK_API_TOKEN")
 
 	newCreds, err := zendeskCred.Resolve(context.TODO())
 	assert.Nil(err)
@@ -150,8 +150,8 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	assert.Equal("", *newZendeskCreds.Token)
 
 	os.Setenv("ZENDESK_SUBDOMAIN", "dmi")
-	os.Setenv("ZENDESK_USER", "pam@dmi.com")
-	os.Setenv("ZENDESK_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
+	os.Setenv("ZENDESK_EMAIL", "pam@dmi.com")
+	os.Setenv("ZENDESK_API_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
 
 	newCreds, err = zendeskCred.Resolve(context.TODO())
 	assert.Nil(err)
@@ -178,7 +178,7 @@ func TestOktaDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newOktaCreds := newCreds.(*OktaCredential)
-	assert.Equal("", *newOktaCreds.APIToken)
+	assert.Equal("", *newOktaCreds.Token)
 	assert.Equal("", *newOktaCreds.Domain)
 
 	os.Setenv("OKTA_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
@@ -188,7 +188,7 @@ func TestOktaDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newOktaCreds = newCreds.(*OktaCredential)
-	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newOktaCreds.APIToken)
+	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newOktaCreds.Token)
 	assert.Equal("https://dev-50078045.okta.com", *newOktaCreds.Domain)
 }
 
@@ -286,7 +286,7 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newClickUpCreds := newCreds.(*ClickUpCredential)
-	assert.Equal("", *newClickUpCreds.APIToken)
+	assert.Equal("", *newClickUpCreds.Token)
 
 	os.Setenv("CLICKUP_TOKEN", "pk_616_L5H36X3CXXXXXXXWEAZZF0NM5")
 
@@ -294,7 +294,7 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newClickUpCreds = newCreds.(*ClickUpCredential)
-	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpCreds.APIToken)
+	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpCreds.Token)
 }
 
 func TestPagerDutyDefaultCredential(t *testing.T) {
@@ -422,6 +422,56 @@ func TestMicrosoftTeamsDefaultCredential(t *testing.T) {
 	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newMSTeamsCreds.AccessToken)
 }
 
+func TestGitHubDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	githubCred := GithubCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("GITHUB_TOKEN")
+	newCreds, err := githubCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGithubAccessTokenCreds := newCreds.(*GithubCredential)
+	assert.Equal("", *newGithubAccessTokenCreds.Token)
+
+	os.Setenv("GITHUB_TOKEN", "ghpat-ljgllghhegweroyuouo67u5476070owetylh")
+
+	newCreds, err = githubCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGithubAccessTokenCreds = newCreds.(*GithubCredential)
+	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenCreds.Token)
+}
+
+func TestGitLabDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	gitlabCred := GitLabCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("GITLAB_TOKEN")
+	newCreds, err := gitlabCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGitLabAccessTokenCreds := newCreds.(*GitLabCredential)
+	assert.Equal("", *newGitLabAccessTokenCreds.Token)
+
+	os.Setenv("GITLAB_TOKEN", "glpat-ljgllghhegweroyuouo67u5476070owetylh")
+
+	newCreds, err = gitlabCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGitLabAccessTokenCreds = newCreds.(*GitLabCredential)
+	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenCreds.Token)
+}
+
 func TestPipesDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
@@ -447,6 +497,36 @@ func TestPipesDefaultCredential(t *testing.T) {
 	assert.Equal("tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newPipesCreds.Token)
 }
 
+func TestVaultDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	vaultCred := VaultCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("VAULT_TOKEN")
+	os.Unsetenv("VAULT_ADDR")
+
+	newCreds, err := vaultCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultCreds := newCreds.(*VaultCredential)
+	assert.Equal("", *newVaultCreds.Token)
+	assert.Equal("", *newVaultCreds.Address)
+
+	os.Setenv("VAULT_TOKEN", "hsv-fhhwskfkwh")
+	os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200")
+
+	newCreds, err = vaultCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultCreds = newCreds.(*VaultCredential)
+	assert.Equal("hsv-fhhwskfkwh", *newVaultCreds.Token)
+	assert.Equal("http://127.0.0.1:8200", *newVaultCreds.Address)
+}
+
 func TestJiraDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
@@ -464,9 +544,9 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newJiraCreds := newCreds.(*JiraCredential)
-	assert.Equal("", *newJiraCreds.Token)
-	assert.Equal("", *newJiraCreds.APIBaseURL)
-	assert.Equal("", *newJiraCreds.UserEmail)
+	assert.Equal("", *newJiraCreds.APIToken)
+	assert.Equal("", *newJiraCreds.BaseURL)
+	assert.Equal("", *newJiraCreds.Username)
 
 	os.Setenv("JIRA_PERSONAL_ACCESS_TOKEN", "ATATT3xFfGF0PQiGFiLjR3ndDlSzpyTJlwmKKhVa_idyFZjz5_9_1RIXBpO8qPPV-EFgE3zCLt-LKYwO40A6wwl3Uc1deCF4eSRnI-ajPnJ5MMKYNS0sOtL7OJlRfQReH0ZRvyzbpK1_BcJflPss4EEU24HYZIRngi-eqn8ksH5jWhgnxtPSZhU=4FA94CC5")
 	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
@@ -476,9 +556,9 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newJiraCreds = newCreds.(*JiraCredential)
-	assert.Equal("ATATT3xFfGF0PQiGFiLjR3ndDlSzpyTJlwmKKhVa_idyFZjz5_9_1RIXBpO8qPPV-EFgE3zCLt-LKYwO40A6wwl3Uc1deCF4eSRnI-ajPnJ5MMKYNS0sOtL7OJlRfQReH0ZRvyzbpK1_BcJflPss4EEU24HYZIRngi-eqn8ksH5jWhgnxtPSZhU=4FA94CC5", *newJiraCreds.Token)
-	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.APIBaseURL)
-	assert.Equal("test@turbot.com", *newJiraCreds.UserEmail)
+	assert.Equal("ATATT3xFfGF0PQiGFiLjR3ndDlSzpyTJlwmKKhVa_idyFZjz5_9_1RIXBpO8qPPV-EFgE3zCLt-LKYwO40A6wwl3Uc1deCF4eSRnI-ajPnJ5MMKYNS0sOtL7OJlRfQReH0ZRvyzbpK1_BcJflPss4EEU24HYZIRngi-eqn8ksH5jWhgnxtPSZhU=4FA94CC5", *newJiraCreds.APIToken)
+	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
+	assert.Equal("test@turbot.com", *newJiraCreds.Username)
 }
 
 func XTestAwsCredentialRole(t *testing.T) {
