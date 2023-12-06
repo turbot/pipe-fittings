@@ -33,8 +33,8 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 	include := filehelpers.InclusionsFromExtensions(connectionConfigExtensions)
 	loadOptions := &loadConfigOptions{include: include}
 
-	var credentialMap = map[string]modconfig.Credential{}
 	var res = modconfig.NewFlowpipeConfig()
+	var credentialMap = res.Credentials
 	// load from the config paths in reverse order (i.e. lowest precedence first)
 	for i := len(configPaths) - 1; i >= 0; i-- {
 		configPath := configPaths[i]
