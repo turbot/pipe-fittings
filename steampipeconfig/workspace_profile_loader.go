@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
@@ -142,7 +143,7 @@ func (l *WorkspaceProfileLoader[T]) load() error {
 		configuredProfile, ok := l.get(name)
 		if !ok {
 			// could not find configured profile
-			return fmt.Errorf("the configured profile '%s' does not exist", name)
+			return fmt.Errorf("workspace '%s' not found in config path %s", name, strings.Join(l.workspaceProfilePaths, ", "))
 		}
 		l.ConfiguredProfile = configuredProfile
 	}
