@@ -28,7 +28,6 @@ const (
 	ArgForce                   = "force"
 	ArgForeground              = "foreground"
 	ArgFunctions               = "functions"
-	ArgGitUrlMode              = "git-url-mode"
 	ArgHeader                  = "header"
 	ArgHelp                    = "help"
 	ArgHost                    = "host"

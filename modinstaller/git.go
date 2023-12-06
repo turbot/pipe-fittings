@@ -1,7 +1,6 @@
 package modinstaller
 
 import (
-	"errors"
 	"sort"
 	"strings"
 
@@ -11,32 +10,11 @@ import (
 	"github.com/go-git/go-git/v5/storage/memory"
 )
 
-type GitUrlMode string
-
-// String is used both by fmt.Print and by Cobra in help text
-func (e *GitUrlMode) String() string {
-	return string(*e)
-}
-
-// Set must have pointer receiver so it doesn't change the value of a copy
-func (e *GitUrlMode) Set(v string) error {
-	switch v {
-	case "https", "ssh":
-		*e = GitUrlMode(v)
-		return nil
-	default:
-		return errors.New(`must be one of "https" or "ssh"`)
-	}
-}
-
-// Type is only used in help text
-func (e *GitUrlMode) Type() string {
-	return "GitUrlMode"
-}
+type GitUrlMode int
 
 const (
-	GitUrlModeHTTPS GitUrlMode = "https"
-	GitUrlModeSSH   GitUrlMode = "ssh"
+	GitUrlModeHTTPS GitUrlMode = iota
+	GitUrlModeSSH
 )
 
 func getGitUrl(modName string, urlMode GitUrlMode) string {
@@ -97,10 +75,17 @@ func getTags(repo string) ([]string, error) {
 	return tags, nil
 }
 
-func getTagVersionsFromGit(repo string, includePrerelease bool) (semver.Collection, error) {
+func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Collection, error) {
+	// first try https
+	repo := getGitUrl(modName, GitUrlModeHTTPS)
 	tags, err := getTags(repo)
 	if err != nil {
-		return nil, err
+		// if that fails try ssh
+		repo = getGitUrl(modName, GitUrlModeSSH)
+		tags, err = getTags(repo)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	versions := make(semver.Collection, len(tags))
