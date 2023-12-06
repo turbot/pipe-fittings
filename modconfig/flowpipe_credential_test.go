@@ -497,6 +497,36 @@ func TestPipesDefaultCredential(t *testing.T) {
 	assert.Equal("tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newPipesCreds.Token)
 }
 
+func TestVaultDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	vaultCred := VaultCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("VAULT_TOKEN")
+	os.Unsetenv("VAULT_ADDR")
+
+	newCreds, err := vaultCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultCreds := newCreds.(*VaultCredential)
+	assert.Equal("", *newVaultCreds.Token)
+	assert.Equal("", *newVaultCreds.Address)
+
+	os.Setenv("VAULT_TOKEN", "hsv-fhhwskfkwh")
+	os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200")
+
+	newCreds, err = vaultCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultCreds = newCreds.(*VaultCredential)
+	assert.Equal("hsv-fhhwskfkwh", *newVaultCreds.Token)
+	assert.Equal("http://127.0.0.1:8200", *newVaultCreds.Address)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
