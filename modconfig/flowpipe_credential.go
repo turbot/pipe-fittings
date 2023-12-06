@@ -432,10 +432,10 @@ func (c *ZendeskCredential) getEnv() map[string]cty.Value {
 		env["ZENDESK_SUBDOMAIN"] = cty.StringVal(*c.Subdomain)
 	}
 	if c.Email != nil {
-		env["ZENDESK_USER"] = cty.StringVal(*c.Email)
+		env["ZENDESK_EMAIL"] = cty.StringVal(*c.Email)
 	}
 	if c.Token != nil {
-		env["ZENDESK_TOKEN"] = cty.StringVal(*c.Token)
+		env["ZENDESK_API_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	return env
 }
@@ -456,8 +456,8 @@ func (c *ZendeskCredential) Resolve(ctx context.Context) (Credential, error) {
 
 	if c.Subdomain == nil && c.Email == nil && c.Token == nil {
 		subdomainEnvVar := os.Getenv("ZENDESK_SUBDOMAIN")
-		emailEnvVar := os.Getenv("ZENDESK_USER")
-		tokenEnvVar := os.Getenv("ZENDESK_TOKEN")
+		emailEnvVar := os.Getenv("ZENDESK_EMAIL")
+		tokenEnvVar := os.Getenv("ZENDESK_API_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
 		newCreds := &ZendeskCredential{
