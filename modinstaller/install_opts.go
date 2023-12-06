@@ -14,7 +14,6 @@ type InstallOpts struct {
 	ModArgs      []string
 	DryRun       bool
 	Force        bool
-	GitUrlMode   GitUrlMode
 }
 
 func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *InstallOpts {
