@@ -536,7 +536,7 @@ func TestJiraDefaultCredential(t *testing.T) {
 		},
 	}
 
-	os.Unsetenv("JIRA_PERSONAL_ACCESS_TOKEN")
+	os.Unsetenv("JIRA_API_TOKEN")
 	os.Unsetenv("JIRA_URL")
 	os.Unsetenv("JIRA_USER")
 
@@ -548,7 +548,7 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert.Equal("", *newJiraCreds.BaseURL)
 	assert.Equal("", *newJiraCreds.Username)
 
-	os.Setenv("JIRA_PERSONAL_ACCESS_TOKEN", "ATATT3xFfGF0PQiGFiLjR3ndDlSzpyTJlwmKKhVa_idyFZjz5_9_1RIXBpO8qPPV-EFgE3zCLt-LKYwO40A6wwl3Uc1deCF4eSRnI-ajPnJ5MMKYNS0sOtL7OJlRfQReH0ZRvyzbpK1_BcJflPss4EEU24HYZIRngi-eqn8ksH5jWhgnxtPSZhU=4FA94CC5")
+	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
 	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
 	os.Setenv("JIRA_USER", "test@turbot.com")
 
@@ -556,7 +556,7 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert.Nil(err)
 
 	newJiraCreds = newCreds.(*JiraCredential)
-	assert.Equal("ATATT3xFfGF0PQiGFiLjR3ndDlSzpyTJlwmKKhVa_idyFZjz5_9_1RIXBpO8qPPV-EFgE3zCLt-LKYwO40A6wwl3Uc1deCF4eSRnI-ajPnJ5MMKYNS0sOtL7OJlRfQReH0ZRvyzbpK1_BcJflPss4EEU24HYZIRngi-eqn8ksH5jWhgnxtPSZhU=4FA94CC5", *newJiraCreds.APIToken)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
 	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
 	assert.Equal("test@turbot.com", *newJiraCreds.Username)
 }
