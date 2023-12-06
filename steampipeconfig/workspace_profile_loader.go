@@ -38,9 +38,10 @@ func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePat
 	}
 
 	// if a config paths location was NOT passed, write the workspaces.spc.sample file to the lowest precedence location
-	// (assumed to be the gloabl config folder)
+	// (assumed to be the global config folder)
 	if !viper.IsSet(constants.ArgConfigPath) {
-		if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths[0]); err != nil {
+
+		if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths); err != nil {
 			return nil,
 				sperr.WrapWithMessage(
 					err,
@@ -58,7 +59,8 @@ func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePat
 	return loader, nil
 }
 
-func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(configFolder string) error {
+func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfilePaths []string) error {
+	globalConfigPath := workspaceProfilePaths[len(workspaceProfilePaths)-1]
 	var empty T
 
 	var sampleContent string
@@ -71,12 +73,12 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(configFolder stri
 		sampleContent = constants.DefaultPowerpipeWorkspaceContent
 	}
 	// always write the workspaces sample file; i.e. workspaces.spc.sample
-	err := os.MkdirAll(configFolder, 0755)
+	err := os.MkdirAll(globalConfigPath, 0755)
 	if err != nil {
 		return err
 	}
 
-	defaultWorkspaceSampleFile := filepath.Join(configFolder, defaultWorkspaceSampleFileName())
+	defaultWorkspaceSampleFile := filepath.Join(globalConfigPath, defaultWorkspaceSampleFileName())
 	//nolint: gosec // this file is safe to be read by all users
 	err = os.WriteFile(defaultWorkspaceSampleFile, []byte(sampleContent), 0755)
 	if err != nil {
@@ -149,40 +151,25 @@ func (l *WorkspaceProfileLoader[T]) load() error {
 }
 
 func (l *WorkspaceProfileLoader[T]) setDefault(workspacesPrecedenceList []map[string]T) error {
-
 	// workspacesPrecedenceList is in order of decreasing precedence
-	// the final  element in the workspacesPrecedenceList is the global config location
-	globalWorkspaces := workspacesPrecedenceList[len(workspacesPrecedenceList)-1]
 
-	// get the global default workspace
-	defaultWorkspace, ok := globalWorkspaces["default"]
-	if !ok {
-		// create an empty default
-		var diags hcl.Diagnostics
-		defaultWorkspace, diags = modconfig.NewDefaultWorkspaceProfile[T]()
-		if diags.HasErrors() {
-			return plugin.DiagsToError("failed to create default workspace", diags)
-		}
+	// create an empty default
+	var diags hcl.Diagnostics
+	defaultWorkspace, diags := modconfig.NewDefaultWorkspaceProfile[T]()
+	if diags.HasErrors() {
+		return plugin.DiagsToError("failed to create default workspace", diags)
 	}
 
-	// tactical - if config path was set, look for a local default in the 'globalWorkspaces'
-	// (which is actually just the lowest precedence location)
-	if viper.IsSet(constants.ArgConfigPath) {
-		if localDefault, ok := globalWorkspaces["local"]; ok {
+	// now travers the list of paths in reverse order (i.e. order if INCREASING precedence)
+	for i := len(workspacesPrecedenceList) - 1; i >= 0; i-- {
+		workspaces := workspacesPrecedenceList[i]
+		// if there is a 'default' workspace defined in localWorkspaces, use it as the default
+		if localDefault, ok := workspaces["default"]; ok {
 			defaultWorkspace = localDefault
+			break
 		}
 	}
 
-	if len(workspacesPrecedenceList) > 1 {
-		for i := len(workspacesPrecedenceList) - 2; i >= 0; i-- {
-			workspaces := workspacesPrecedenceList[i]
-			// if there is a 'local' workspace defined in localWorkspaces, use it as the default
-			if localDefault, ok := workspaces["local"]; ok {
-				defaultWorkspace = localDefault
-				break
-			}
-		}
-	}
 	l.DefaultProfile = defaultWorkspace
 	return nil
 }
