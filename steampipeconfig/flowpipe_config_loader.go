@@ -7,7 +7,6 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
@@ -27,8 +26,7 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 		}
 	}()
 
-	//nolint:gocritic // appendAssign: append result not assigned to the same slice - this is fine could be temporary as well
-	connectionConfigExtensions := append(constants.YamlExtensions, app_specific.ConfigExtension, constants.JsonExtension)
+	connectionConfigExtensions := []string{app_specific.ConfigExtension}
 
 	include := filehelpers.InclusionsFromExtensions(connectionConfigExtensions)
 	loadOptions := &loadConfigOptions{include: include}

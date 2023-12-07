@@ -59,6 +59,29 @@ type StepRetry struct {
 // Input to the step or pipeline execution
 type Input map[string]interface{}
 
+func (i *Input) AsCtyMap() (map[string]cty.Value, error) {
+	if i == nil {
+		return map[string]cty.Value{}, nil
+	}
+
+	variables := make(map[string]cty.Value)
+
+	for key, value := range *i {
+		if value == nil || key == "step_name" {
+			continue
+		}
+
+		ctyVal, err := hclhelpers.ConvertInterfaceToCtyValue(value)
+		if err != nil {
+			return nil, err
+		}
+
+		variables[key] = ctyVal
+	}
+
+	return variables, nil
+}
+
 // Output is the output from a step execution.
 type Output struct {
 	Status string      `json:"status,omitempty"`
@@ -102,26 +125,12 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 			continue
 		}
 
-		// Check if the value is a Go native data type
-		switch v := value.(type) {
-		case string, int, float32, float64, int8, int16, int32, int64, bool, []string, []int, []float32, []float64, []int8, []int16, []int32, []int64, []bool:
-			ctyType, err := gocty.ImpliedType(v)
-			if err != nil {
-				return nil, err
-			}
-
-			variables[key], err = gocty.ToCtyValue(v, ctyType)
-			if err != nil {
-				return nil, err
-			}
-		case []interface{}, map[string]interface{}:
-			val, err := hclhelpers.ConvertMapOrSliceToCtyValue(v)
-			if err != nil {
-				return nil, err
-			}
-			variables[key] = val
+		ctyVal, err := hclhelpers.ConvertInterfaceToCtyValue(value)
+		if err != nil {
+			return nil, err
 		}
 
+		variables[key] = ctyVal
 	}
 
 	if o.Errors != nil {
