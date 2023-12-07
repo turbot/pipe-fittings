@@ -41,7 +41,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "opsgenie.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>", "opsgenie.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "opsgenie.default", "azure.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>", "opsgenie.<dynamic>", "azure.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1539,6 +1539,98 @@ func (c *OpsgenieCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type AzureCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	ClientID     *string `json:"client_id,omitempty" cty:"client_id" hcl:"client_id,optional"`
+	ClientSecret *string `json:"client_secret,omitempty" cty:"client_secret" hcl:"client_secret,optional"`
+	Environment  *string `json:"environment,omitempty" cty:"environment" hcl:"environment,optional"`
+	TenantID     *string `json:"tenant_id,omitempty" cty:"tenant_id" hcl:"tenant_id,optional"`
+}
+
+func (*AzureCredential) GetCredentialType() string {
+	return "azure"
+}
+
+func (c *AzureCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.ClientID != nil {
+		env["AZURE_CLIENT_ID"] = cty.StringVal(*c.ClientID)
+	}
+	if c.ClientSecret != nil {
+		env["AZURE_CLIENT_SECRET"] = cty.StringVal(*c.ClientSecret)
+	}
+	if c.Environment != nil {
+		env["AZURE_ENVIRONMENT"] = cty.StringVal(*c.Environment)
+	}
+	if c.TenantID != nil {
+		env["AZURE_TENANT_ID"] = cty.StringVal(*c.TenantID)
+	}
+	return env
+}
+
+func (c *AzureCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *AzureCredential) Resolve(ctx context.Context) (Credential, error) {
+	var clientIDEnvVar, clientSecretEnvVar, environmentEnvVar, tenantIDEnvVar string
+	if c.ClientID == nil {
+		clientIDEnvVar = os.Getenv("AZURE_CLIENT_ID")
+	}
+	if c.ClientSecret == nil {
+		clientSecretEnvVar = os.Getenv("AZURE_CLIENT_SECRET")
+	}
+	if c.Environment == nil {
+		environmentEnvVar = os.Getenv("AZURE_ENVIRONMENT")
+
+		// If neither are set though default to AzurePublicCloud
+		if environmentEnvVar == "" {
+			environmentEnvVar = "AzurePublicCloud"
+		}
+	}
+	if c.TenantID == nil {
+		tenantIDEnvVar = os.Getenv("AZURE_TENANT_ID")
+	}
+
+	// Don't modify existing credential, resolve to a new one
+	newCreds := &AzureCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        c.FullName,
+			UnqualifiedName: c.UnqualifiedName,
+			ShortName:       c.ShortName,
+			DeclRange:       c.DeclRange,
+			blockType:       c.blockType,
+		},
+		Type:         c.Type,
+		ClientID:     &clientIDEnvVar,
+		ClientSecret: &clientSecretEnvVar,
+		Environment:  &environmentEnvVar,
+		TenantID:     &tenantIDEnvVar,
+	}
+
+	return newCreds, nil
+}
+
+func (c *AzureCredential) GetTtl() int {
+	return -1
+}
+
+func (c *AzureCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type GcpCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -1894,6 +1986,14 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "opsgenie",
 	}
+	credentials["azure.default"] = &AzureCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "azure.default",
+			ShortName:       "default",
+			UnqualifiedName: "azure.default",
+		},
+		Type: "azure",
+	}
 
 	return credentials
 }
@@ -2179,6 +2279,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "opsgenie",
+		}
+		return credential
+	} else if credentialType == "azure" {
+		credential := &AzureCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "azure",
 		}
 		return credential
 	}
