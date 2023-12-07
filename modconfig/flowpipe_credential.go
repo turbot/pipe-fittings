@@ -41,7 +41,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "opsgenie.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>", "opsgenie.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1470,6 +1470,75 @@ func (c *JiraCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type OpsgenieCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	AlertAPIKey    *string `json:"alert_api_key,omitempty" cty:"alert_api_key" hcl:"alert_api_key,optional"`
+	IncidentAPIKey *string `json:"incident_api_key,omitempty" cty:"incident_api_key" hcl:"incident_api_key,optional"`
+}
+
+func (*OpsgenieCredential) GetCredentialType() string {
+	return "opsgenie"
+}
+
+func (c *OpsgenieCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.AlertAPIKey != nil {
+		env["OPSGENIE_ALERT_API_KEY"] = cty.StringVal(*c.AlertAPIKey)
+	}
+	if c.IncidentAPIKey != nil {
+		env["OPSGENIE_INCIDENT_API_KEY"] = cty.StringVal(*c.IncidentAPIKey)
+	}
+	return env
+}
+
+func (c *OpsgenieCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *OpsgenieCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.AlertAPIKey == nil && c.IncidentAPIKey == nil {
+		alertAPIKeyEnvVar := os.Getenv("OPSGENIE_ALERT_API_KEY")
+		incidentAPIKeyEnvVar := os.Getenv("OPSGENIE_INCIDENT_API_KEY")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &OpsgenieCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:           c.Type,
+			AlertAPIKey:    &alertAPIKeyEnvVar,
+			IncidentAPIKey: &incidentAPIKeyEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *OpsgenieCredential) GetTtl() int {
+	return -1
+}
+
+func (c *OpsgenieCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type GcpCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -1817,6 +1886,14 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "jira",
 	}
+	credentials["opsgenie.default"] = &OpsgenieCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "opsgenie.default",
+			ShortName:       "default",
+			UnqualifiedName: "opsgenie.default",
+		},
+		Type: "opsgenie",
+	}
 
 	return credentials
 }
@@ -2090,6 +2167,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "jira",
+		}
+		return credential
+	} else if credentialType == "opsgenie" {
+		credential := &OpsgenieCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "opsgenie",
 		}
 		return credential
 	}
