@@ -925,7 +925,7 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.D
 		dependsOn = append(dependsOn, do...)
 	}
 
-	p.DependsOn = append(p.DependsOn, dependsOn...)
+	p.AppendDependsOn(dependsOn...)
 
 	return diags
 }
