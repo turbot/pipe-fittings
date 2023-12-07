@@ -4,7 +4,6 @@ pipeline "http_step" {
     method             = "post"
     insecure           = true
     ca_cert_pem        = "test"
-    request_timeout_ms = 2000
 
     request_body = jsonencode({
       name = "turbie"
