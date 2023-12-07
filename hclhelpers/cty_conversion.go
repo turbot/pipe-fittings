@@ -812,6 +812,8 @@ func ctyTupleToArrayOfPgStrings(val cty.Value) ([]string, error) {
 
 func ctyTupleToSliceOfInterfaces(val cty.Value) ([]interface{}, error) {
 	var res []interface{}
+
+	found := false
 	it := val.ElementIterator()
 	for it.Next() {
 		_, v := it.Element()
@@ -821,7 +823,14 @@ func ctyTupleToSliceOfInterfaces(val cty.Value) ([]interface{}, error) {
 			return nil, err
 		}
 		res = append(res, target)
+
+		found = true
 	}
+
+	if !found {
+		res = []interface{}{}
+	}
+
 	return res, nil
 }
 
