@@ -492,27 +492,21 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 		stepRegisters = append(stepRegisters, step.GetFullyQualifiedName())
 	}
 
-	// var credentialRegisters []string
-
-	// Get all the default credential names and add it into credential register
-	credentialRegisters := modconfig.DefaultCredentialNames()
-
+	var credentialRegisters, availableCredentialTypes []string
 	for k := range credentials {
 		parts := strings.Split(k, ".")
 		if len(parts) != 2 {
 			continue
 		}
 
-		// cred := parts[1] + "." + parts[2]
-		// credentialRegisters = append(credentialRegisters, cred)
+		// Add the credential to the register
+		credentialRegisters = append(credentialRegisters, k)
 
-		// If any new credentials found, add it in the credential register
-		if !helpers.StringSliceContains(credentialRegisters, k) {
-			credentialRegisters = append(credentialRegisters, k)
+		// Get a list of available / supported credential types
+		if !helpers.StringSliceContains(availableCredentialTypes, parts[0]) {
+			availableCredentialTypes = append(availableCredentialTypes, parts[0])
 		}
 	}
-
-	// credentialRegisters = append(credentialRegisters, modconfig.DefaultCredentialNames()...)
 
 	for _, step := range pipelineHcl.Steps {
 		dependsOn := step.GetDependsOn()
@@ -529,6 +523,19 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 
 		credentialDependsOn := step.GetCredentialDependsOn()
 		for _, dep := range credentialDependsOn {
+			// Check if the credential type is supported, if <dynamic>
+			parts := strings.Split(dep, ".")
+			if len(parts) == 2 && parts[1] == "<dynamic>" {
+				if !helpers.StringSliceContains(availableCredentialTypes, parts[0]) {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("invalid depends_on '%s' - credential type not supported for pipeline %s", dep, pipelineHcl.Name()),
+						Detail:   fmt.Sprintf("valid credential types are: %s", strings.Join(availableCredentialTypes, ", ")),
+					})
+				}
+				continue
+			}
+
 			if !helpers.StringSliceContains(credentialRegisters, dep) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
