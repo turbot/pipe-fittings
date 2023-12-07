@@ -561,6 +561,36 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert.Equal("test@turbot.com", *newJiraCreds.Username)
 }
 
+func TestOpsgenieDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	opsgenieCred := OpsgenieCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("OPSGENIE_ALERT_API_KEY")
+	os.Unsetenv("OPSGENIE_INCIDENT_API_KEY")
+
+	newCreds, err := opsgenieCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpsgenieCreds := newCreds.(*OpsgenieCredential)
+	assert.Equal("", *newOpsgenieCreds.AlertAPIKey)
+	assert.Equal("", *newOpsgenieCreds.IncidentAPIKey)
+
+	os.Setenv("OPSGENIE_ALERT_API_KEY", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("OPSGENIE_INCIDENT_API_KEY", "jkgdgjdgjldjgdjlgjdlgjlgjldjgldjlgjdl")
+
+	newCreds, err = opsgenieCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpsgenieCreds = newCreds.(*OpsgenieCredential)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newOpsgenieCreds.AlertAPIKey)
+	assert.Equal("jkgdgjdgjldjgdjlgjdlgjlgjldjgldjlgjdl", *newOpsgenieCreds.IncidentAPIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
