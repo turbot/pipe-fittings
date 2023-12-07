@@ -26,11 +26,9 @@ type InstallData struct {
 	// list of dependencies which have been uninstalled
 	Uninstalled  versionmap.DependencyVersionMap
 	WorkspaceMod *modconfig.Mod
-
-	GitUrlMode GitUrlMode
 }
 
-func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modconfig.Mod, urlMode GitUrlMode) *InstallData {
+func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modconfig.Mod) *InstallData {
 	return &InstallData{
 		Lock:         workspaceLock,
 		WorkspaceMod: workspaceMod,
@@ -40,7 +38,6 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 		Upgraded:     make(versionmap.DependencyVersionMap),
 		Downgraded:   make(versionmap.DependencyVersionMap),
 		Uninstalled:  make(versionmap.DependencyVersionMap),
-		GitUrlMode:   urlMode,
 	}
 }
 
@@ -90,7 +87,7 @@ func (d *InstallData) getAvailableModVersions(modName string, includePrerelease 
 	}
 	// so we have not cached this yet - retrieve from Git
 	var err error
-	availableVersions, err = getTagVersionsFromGit(getGitUrl(modName, d.GitUrlMode), includePrerelease)
+	availableVersions, err = getTagVersionsFromGit(modName, includePrerelease)
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("could not retrieve version data from Git URL " + modName + " - " + err.Error())
 	}
