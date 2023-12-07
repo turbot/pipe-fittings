@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/zclconf/go-cty/cty"
 
@@ -267,7 +268,6 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 	assert := assert.New(suite.T())
 
-	token := "sfhshfhslfh"
 	credentials := map[string]modconfig.Credential{
 		"slack.slack_static": &modconfig.SlackCredential{
 			HclResourceImpl: modconfig.HclResourceImpl{
@@ -276,7 +276,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 				UnqualifiedName: "slack.slack_static",
 			},
 			Type:  "slack",
-			Token: &token,
+			Token: types.String("sfhshfhslfh"),
 		},
 	}
 
