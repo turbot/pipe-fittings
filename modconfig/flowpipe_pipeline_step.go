@@ -84,9 +84,10 @@ func (i *Input) AsCtyMap() (map[string]cty.Value, error) {
 
 // Output is the output from a step execution.
 type Output struct {
-	Status string      `json:"status,omitempty"`
-	Data   OutputData  `json:"data,omitempty"`
-	Errors []StepError `json:"errors,omitempty"`
+	Status      string      `json:"status,omitempty"`
+	FailureMode string      `json:"failure_mode,omitempty"`
+	Data        OutputData  `json:"data,omitempty"`
+	Errors      []StepError `json:"errors,omitempty"`
 }
 
 type OutputData map[string]interface{}
@@ -925,7 +926,7 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.D
 		dependsOn = append(dependsOn, do...)
 	}
 
-	p.DependsOn = append(p.DependsOn, dependsOn...)
+	p.AppendDependsOn(dependsOn...)
 
 	return diags
 }
@@ -949,14 +950,13 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 type PipelineStepHttp struct {
 	PipelineStepBase
 
-	Url              *string                `json:"url" binding:"required"`
-	RequestTimeoutMs *int64                 `json:"request_timeout_ms,omitempty"`
-	Method           *string                `json:"method,omitempty"`
-	CaCertPem        *string                `json:"ca_cert_pem,omitempty"`
-	Insecure         *bool                  `json:"insecure,omitempty"`
-	RequestBody      *string                `json:"request_body,omitempty"`
-	RequestHeaders   map[string]interface{} `json:"request_headers,omitempty"`
-	BasicAuthConfig  *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
+	Url             *string                `json:"url" binding:"required"`
+	Method          *string                `json:"method,omitempty"`
+	CaCertPem       *string                `json:"ca_cert_pem,omitempty"`
+	Insecure        *bool                  `json:"insecure,omitempty"`
+	RequestBody     *string                `json:"request_body,omitempty"`
+	RequestHeaders  map[string]interface{} `json:"request_headers,omitempty"`
+	BasicAuthConfig *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
 }
 
 func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
@@ -976,11 +976,6 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 
 	// Compare Url field
 	if reflect.DeepEqual(p.Url, other.Url) {
-		return false
-	}
-
-	// Compare RequestTimeoutMs field
-	if reflect.DeepEqual(p.RequestTimeoutMs, other.RequestTimeoutMs) {
 		return false
 	}
 
@@ -1038,19 +1033,6 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 		inputs[schema.AttributeTypeMethod] = strings.ToLower(method)
-	}
-
-	if p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs] == nil {
-		if p.RequestTimeoutMs != nil {
-			inputs[schema.AttributeTypeRequestTimeoutMs] = *p.RequestTimeoutMs
-		}
-	} else {
-		var timeoutMs int64
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs], evalContext, &timeoutMs)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		inputs[schema.AttributeTypeRequestTimeoutMs] = timeoutMs
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeCaCertPem] == nil {
@@ -1142,21 +1124,6 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					})
 				}
 				p.Url = &urlString
-			}
-		case schema.AttributeTypeRequestTimeoutMs:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				int64Val, stepDiags := hclhelpers.CtyToInt64(val)
-				if stepDiags.HasErrors() {
-					diags = append(diags, stepDiags...)
-					continue
-				}
-				p.RequestTimeoutMs = int64Val
 			}
 
 		case schema.AttributeTypeMethod:

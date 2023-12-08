@@ -591,6 +591,32 @@ func TestOpsgenieDefaultCredential(t *testing.T) {
 	assert.Equal("jkgdgjdgjldjgdjlgjdlgjlgjldjgldjlgjdl", *newOpsgenieCreds.IncidentAPIKey)
 }
 
+func TestOpenAIDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	openAICred := OpenAICredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("OPENAI_API_KEY")
+
+	newCreds, err := openAICred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpenAICreds := newCreds.(*OpenAICredential)
+	assert.Equal("", *newOpenAICreds.APIKey)
+
+	os.Setenv("OPENAI_API_KEY", "sk-jwgthNa...")
+
+	newCreds, err = openAICred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpenAICreds = newCreds.(*OpenAICredential)
+	assert.Equal("sk-jwgthNa...", *newOpenAICreds.APIKey)
+}
+
 func TestAzureDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
