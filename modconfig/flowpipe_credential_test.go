@@ -608,7 +608,7 @@ func TestOpenAIDefaultCredential(t *testing.T) {
 	newOpenAICreds := newCreds.(*OpenAICredential)
 	assert.Equal("", *newOpenAICreds.APIKey)
 
-	os.Setenv("APIKey", "sk-jwgthNa...")
+	os.Setenv("OPENAI_API_KEY", "sk-jwgthNa...")
 
 	newCreds, err = openAICred.Resolve(context.TODO())
 	assert.Nil(err)
