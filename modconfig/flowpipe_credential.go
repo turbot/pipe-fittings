@@ -1658,9 +1658,9 @@ func (c *AzureCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.Environment == nil {
 		environmentEnvVar = os.Getenv("AZURE_ENVIRONMENT")
 
-		// If neither are set though default to AzurePublicCloud
+		// If neither are set though default to AzureCloud
 		if environmentEnvVar == "" {
-			environmentEnvVar = "AzurePublicCloud"
+			environmentEnvVar = "AzureCloud"
 		}
 	}
 	if c.TenantID == nil {

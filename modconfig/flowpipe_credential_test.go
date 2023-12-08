@@ -637,7 +637,7 @@ func TestAzureDefaultCredential(t *testing.T) {
 	newAzureCreds := newCreds.(*AzureCredential)
 	assert.Equal("", *newAzureCreds.ClientID)
 	assert.Equal("", *newAzureCreds.ClientSecret)
-	assert.Equal("AzurePublicCloud", *newAzureCreds.Environment)
+	assert.Equal("AzureCloud", *newAzureCreds.Environment)
 	assert.Equal("", *newAzureCreds.TenantID)
 
 	os.Setenv("AZURE_CLIENT_ID", "wwe4w3543rertfe")
@@ -675,7 +675,7 @@ func TestAzureDefaultCredentialWithoutEnvironmentConfigured(t *testing.T) {
 	newAzureCreds := newCreds.(*AzureCredential)
 	assert.Equal("", *newAzureCreds.ClientID)
 	assert.Equal("", *newAzureCreds.ClientSecret)
-	assert.Equal("AzurePublicCloud", *newAzureCreds.Environment)
+	assert.Equal("AzureCloud", *newAzureCreds.Environment)
 	assert.Equal("", *newAzureCreds.TenantID)
 
 	os.Setenv("AZURE_CLIENT_ID", "wwe4w3543rertfe")
@@ -688,7 +688,7 @@ func TestAzureDefaultCredentialWithoutEnvironmentConfigured(t *testing.T) {
 	newAzureCreds = newCreds.(*AzureCredential)
 	assert.Equal("wwe4w3543rertfe", *newAzureCreds.ClientID)
 	assert.Equal("gdget3464tergrgsdf", *newAzureCreds.ClientSecret)
-	assert.Equal("AzurePublicCloud", *newAzureCreds.Environment)
+	assert.Equal("AzureCloud", *newAzureCreds.Environment)
 	assert.Equal("gdgdghdfhdhfh", *newAzureCreds.TenantID)
 }
 
