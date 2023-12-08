@@ -73,7 +73,6 @@ const (
 
 	// error block
 	AttributeTypeIgnore  = "ignore"
-	AttributeTypeRetries = "retries"
 
 	// Common step attributes
 	AttributeTypeTitle       = "title"

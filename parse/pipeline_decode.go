@@ -93,22 +93,6 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 						}
 						ignore = target
 					}
-				case schema.AttributeTypeRetries:
-					val, moreDiags := attributeVal.Expr.Value(parseCtx.EvalCtx)
-					if len(moreDiags) > 0 {
-						diags = append(diags, moreDiags...)
-					} else {
-						var target int
-						if err := gocty.FromCtyValue(val, &target); err != nil {
-							diags = append(diags, &hcl.Diagnostic{
-								Severity: hcl.DiagError,
-								Summary:  "Error decoding retries attribute",
-								Detail:   err.Error(),
-								Subject:  &block.DefRange,
-							})
-						}
-						retries = target
-					}
 				default:
 					return nil, hcl.Diagnostics{&hcl.Diagnostic{
 						Severity: hcl.DiagError,
