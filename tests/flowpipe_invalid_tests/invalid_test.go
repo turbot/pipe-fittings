@@ -175,7 +175,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid error block attribute - ignored",
 		file:          "./pipelines/invalid_error_attribute.fp",
-		containsError: "Unsupported attribute ignored provided for block type error",
+		containsError: "Unsupported attribute 'ignored' provided for block type error",
 	},
 }
 

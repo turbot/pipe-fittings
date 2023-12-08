@@ -112,7 +112,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 				default:
 					return nil, hcl.Diagnostics{&hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unsupported attribute " + attributeName + " provided for block type " + schema.BlockTypeError,
+						Summary:  "Unsupported attribute '" + attributeName + "' provided for block type " + schema.BlockTypeError,
 						Subject:  &block.DefRange,
 					}}
 				}
