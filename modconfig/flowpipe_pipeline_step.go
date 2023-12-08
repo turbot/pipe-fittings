@@ -84,9 +84,10 @@ func (i *Input) AsCtyMap() (map[string]cty.Value, error) {
 
 // Output is the output from a step execution.
 type Output struct {
-	Status string      `json:"status,omitempty"`
-	Data   OutputData  `json:"data,omitempty"`
-	Errors []StepError `json:"errors,omitempty"`
+	Status      string      `json:"status,omitempty"`
+	FailureMode string      `json:"failure_mode,omitempty"`
+	Data        OutputData  `json:"data,omitempty"`
+	Errors      []StepError `json:"errors,omitempty"`
 }
 
 type OutputData map[string]interface{}
