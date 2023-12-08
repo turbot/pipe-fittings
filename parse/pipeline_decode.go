@@ -75,40 +75,48 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 			ignore := false
 			retries := 0
 
-			if attr, exists := attributes[schema.AttributeTypeIgnore]; exists {
-				val, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-				} else {
-					var target bool
-					if err := gocty.FromCtyValue(val, &target); err != nil {
-						diags = append(diags, &hcl.Diagnostic{
-							Severity: hcl.DiagError,
-							Summary:  "Error decoding ignore attribute",
-							Detail:   err.Error(),
-							Subject:  &block.DefRange,
-						})
+			for attributeName, attributeVal := range attributes {
+				switch attributeName {
+				case schema.AttributeTypeIgnore:
+					val, moreDiags := attributeVal.Expr.Value(parseCtx.EvalCtx)
+					if len(moreDiags) > 0 {
+						diags = append(diags, moreDiags...)
+					} else {
+						var target bool
+						if err := gocty.FromCtyValue(val, &target); err != nil {
+							diags = append(diags, &hcl.Diagnostic{
+								Severity: hcl.DiagError,
+								Summary:  "Error decoding ignore attribute",
+								Detail:   err.Error(),
+								Subject:  &block.DefRange,
+							})
+						}
+						ignore = target
 					}
-					ignore = target
+				case schema.AttributeTypeRetries:
+					val, moreDiags := attributeVal.Expr.Value(parseCtx.EvalCtx)
+					if len(moreDiags) > 0 {
+						diags = append(diags, moreDiags...)
+					} else {
+						var target int
+						if err := gocty.FromCtyValue(val, &target); err != nil {
+							diags = append(diags, &hcl.Diagnostic{
+								Severity: hcl.DiagError,
+								Summary:  "Error decoding retries attribute",
+								Detail:   err.Error(),
+								Subject:  &block.DefRange,
+							})
+						}
+						retries = target
+					}
+				default:
+					return nil, hcl.Diagnostics{&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unsupported attribute '" + attributeName + "' provided for block type " + schema.BlockTypeError,
+						Subject:  &block.DefRange,
+					}}
 				}
-			}
 
-			if attr, exists := attributes[schema.AttributeTypeRetries]; exists {
-				val, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-				} else {
-					var target int
-					if err := gocty.FromCtyValue(val, &target); err != nil {
-						diags = append(diags, &hcl.Diagnostic{
-							Severity: hcl.DiagError,
-							Summary:  "Error decoding retries attribute",
-							Detail:   err.Error(),
-							Subject:  &block.DefRange,
-						})
-					}
-					retries = target
-				}
 			}
 
 			errorConfig := &modconfig.ErrorConfig{
