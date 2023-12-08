@@ -41,7 +41,7 @@ type AwsCredential struct {
 }
 
 func DefaultCredentialNames() []string {
-	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "opsgenie.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>", "opsgenie.<dynamic>"}
+	return []string{"aws.default", "slack.default", "basic.default", "gcp.default", "abuseipdb.default", "sendgrid.default", "virustotal.default", "zendesk.default", "trello.default", "okta.default", "uptimerobot.default", "urlscan.default", "clickup.default", "pagerduty.default", "discord.default", "ip2location.default", "ipstack.default", "teams.default", "pipes.default", "github.default", "gitlab.default", "vault.default", "jira.default", "opsgenie.default", "openai.default", "aws.<dynamic>", "slack.<dynamic>", "basic.<dynamic>", "gcp.<dynamic>", "abuseipdb.<dynamic>", "sendgrid.<dynamic>", "virustotal.<dynamic>", "zendesk.<dynamic>", "trello.<dynamic>", "okta.<dynamic>", "uptimerobot.<dynamic>", "urlscan.<dynamic>", "clickup.<dynamic>", "pagerduty.<dynamic>", "discord.<dynamic>", "ip2location.<dynamic>", "ipstack.<dynamic>", "teams.<dynamic>", "pipes.<dynamic>", "github.<dynamic>", "gitlab.<dynamic>", "vault.<dynamic>", "jira.<dynamic>", "opsgenie.<dynamic>", "openai.<dynamic>"}
 }
 
 func (*AwsCredential) GetCredentialType() string {
@@ -1539,6 +1539,69 @@ func (c *OpsgenieCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type OpenAICredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+}
+
+func (*OpenAICredential) GetCredentialType() string {
+	return "openai"
+}
+
+func (c *OpenAICredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["OPENAI_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	return env
+}
+
+func (c *OpenAICredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *OpenAICredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.APIKey == nil {
+		apiKeyEnvVar := os.Getenv("OPENAI_API_KEY")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &OpenAICredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &apiKeyEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *OpenAICredential) GetTtl() int {
+	return -1
+}
+
+func (c *OpenAICredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type GcpCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -1894,6 +1957,14 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "opsgenie",
 	}
+	credentials["openai.default"] = &OpenAICredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "openai.default",
+			ShortName:       "default",
+			UnqualifiedName: "openai.default",
+		},
+		Type: "openai",
+	}
 
 	return credentials
 }
@@ -2179,6 +2250,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "opsgenie",
+		}
+		return credential
+	} else if credentialType == "openai" {
+		credential := &OpenAICredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "openai",
 		}
 		return credential
 	}
