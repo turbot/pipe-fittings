@@ -492,7 +492,8 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 		stepRegisters = append(stepRegisters, step.GetFullyQualifiedName())
 	}
 
-	var credentialRegisters, availableCredentialTypes []string
+	var credentialRegisters []string
+	availableCredentialTypes := map[string]bool{}
 	for k := range credentials {
 		parts := strings.Split(k, ".")
 		if len(parts) != 2 {
@@ -502,10 +503,13 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 		// Add the credential to the register
 		credentialRegisters = append(credentialRegisters, k)
 
-		// Get a list of available / supported credential types
-		if !helpers.StringSliceContains(availableCredentialTypes, parts[0]) {
-			availableCredentialTypes = append(availableCredentialTypes, parts[0])
-		}
+		// List out the supported credential types
+		availableCredentialTypes[parts[0]] = true
+	}
+
+	var credentialTypes []string
+	for k := range availableCredentialTypes {
+		credentialTypes = append(credentialTypes, k)
 	}
 
 	for _, step := range pipelineHcl.Steps {
@@ -525,12 +529,16 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 		for _, dep := range credentialDependsOn {
 			// Check if the credential type is supported, if <dynamic>
 			parts := strings.Split(dep, ".")
+			if len(parts) != 2 {
+				continue
+			}
+
 			if len(parts) == 2 && parts[1] == "<dynamic>" {
-				if !helpers.StringSliceContains(availableCredentialTypes, parts[0]) {
+				if !availableCredentialTypes[parts[0]] {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  fmt.Sprintf("invalid depends_on '%s' - credential type not supported for pipeline %s", dep, pipelineHcl.Name()),
-						Detail:   fmt.Sprintf("valid credential types are: %s", strings.Join(availableCredentialTypes, ", ")),
+						Summary:  fmt.Sprintf("invalid depends_on '%s' - credential type '%s' not supported for pipeline %s", dep, parts[0], pipelineHcl.Name()),
+						Detail:   fmt.Sprintf("valid credential types are: %s", strings.Join(credentialTypes, ", ")),
 					})
 				}
 				continue

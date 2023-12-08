@@ -119,6 +119,11 @@ var tests = []testSetup{
 		modDir:        "./mods/invalid_creds_reference",
 		containsError: "invalid depends_on 'aws.abc' - credential does not exist for pipeline mod_with_creds.pipeline.with_creds",
 	},
+	{
+		title:         "Invalid credential type reference",
+		modDir:        "./mods/invalid_cred_types",
+		containsError: "invalid depends_on 'foo.<dynamic>' - credential type 'foo' not supported for pipeline invalid_cred_types.pipeline.with_invalid_cred_type_static",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
