@@ -13,7 +13,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
-	"github.com/zclconf/go-cty/cty/gocty"
 )
 
 func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *modconfig.Pipeline) (modconfig.PipelineStep, hcl.Diagnostics) {
@@ -54,84 +53,6 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	moreDiags = step.SetBlockConfig(stepOptions.Blocks, parseCtx.EvalCtx)
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
-	}
-
-	if errorBlocks := stepOptions.Blocks.ByType()[schema.BlockTypeError]; len(errorBlocks) > 0 {
-		if len(errorBlocks) > 1 {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Multiple error blocks found for step " + stepName,
-				Subject:  &block.DefRange,
-			})
-		} else {
-
-			errorBlock := errorBlocks[0]
-
-			attributes, moreDiags := errorBlock.Body.JustAttributes()
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-			}
-
-			ignore := false
-			retries := 0
-
-			for attributeName, attributeVal := range attributes {
-				switch attributeName {
-				case schema.AttributeTypeIgnore:
-					val, moreDiags := attributeVal.Expr.Value(parseCtx.EvalCtx)
-					if len(moreDiags) > 0 {
-						diags = append(diags, moreDiags...)
-					} else {
-						var target bool
-						if err := gocty.FromCtyValue(val, &target); err != nil {
-							diags = append(diags, &hcl.Diagnostic{
-								Severity: hcl.DiagError,
-								Summary:  "Error decoding ignore attribute",
-								Detail:   err.Error(),
-								Subject:  &block.DefRange,
-							})
-						}
-						ignore = target
-					}
-				case schema.AttributeTypeRetries:
-					val, moreDiags := attributeVal.Expr.Value(parseCtx.EvalCtx)
-					if len(moreDiags) > 0 {
-						diags = append(diags, moreDiags...)
-					} else {
-						var target int
-						if err := gocty.FromCtyValue(val, &target); err != nil {
-							diags = append(diags, &hcl.Diagnostic{
-								Severity: hcl.DiagError,
-								Summary:  "Error decoding retries attribute",
-								Detail:   err.Error(),
-								Subject:  &block.DefRange,
-							})
-						}
-						retries = target
-					}
-				default:
-					return nil, hcl.Diagnostics{&hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unsupported attribute '" + attributeName + "' provided for block type " + schema.BlockTypeError,
-						Subject:  &block.DefRange,
-					}}
-				}
-
-			}
-
-			errorConfig := &modconfig.ErrorConfig{
-				Ignore:  ignore,
-				Retries: retries,
-			}
-
-			step.SetErrorConfig(errorConfig)
-		}
-	} else {
-		errorConfig := &modconfig.ErrorConfig{
-			Ignore:  false,
-			Retries: 0,
-		}
-		step.SetErrorConfig(errorConfig)
 	}
 
 	stepOutput := map[string]*modconfig.PipelineOutput{}
