@@ -73,7 +73,6 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 			}
 
 			ignore := false
-			retries := 0
 
 			for attributeName, attributeVal := range attributes {
 				switch attributeName {
@@ -104,16 +103,14 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 			}
 
 			errorConfig := &modconfig.ErrorConfig{
-				Ignore:  ignore,
-				Retries: retries,
+				Ignore: ignore,
 			}
 
 			step.SetErrorConfig(errorConfig)
 		}
 	} else {
 		errorConfig := &modconfig.ErrorConfig{
-			Ignore:  false,
-			Retries: 0,
+			Ignore: false,
 		}
 		step.SetErrorConfig(errorConfig)
 	}

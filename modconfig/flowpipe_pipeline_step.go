@@ -283,8 +283,7 @@ type PipelineStep interface {
 }
 
 type ErrorConfig struct {
-	Ignore  bool `json:"ignore"`
-	Retries int  `json:"retries"`
+	Ignore bool `json:"ignore"`
 }
 
 type BasicAuthConfig struct {
@@ -320,11 +319,6 @@ func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
 
 	// Compare Ignore
 	if ec.Ignore != other.Ignore {
-		return false
-	}
-
-	// Compare Retries
-	if ec.Retries != other.Retries {
 		return false
 	}
 
