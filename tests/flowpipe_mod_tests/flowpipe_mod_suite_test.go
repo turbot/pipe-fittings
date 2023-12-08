@@ -7,7 +7,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/tests/test_init"
+	"github.com/zclconf/go-cty/cty"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
@@ -172,8 +175,19 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert := assert.New(suite.T())
 
-	os.Setenv("TOKEN", "foobarbaz")
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", map[string]modconfig.Credential{}, ".fp")
+	credentials := map[string]modconfig.Credential{
+		"aws.default": &modconfig.AwsCredential{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        "aws.default",
+				ShortName:       "default",
+				UnqualifiedName: "aws.default",
+			},
+			Type: "aws",
+		},
+	}
+
+	os.Setenv("ACCESS_KEY", "foobarbaz")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", credentials, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -195,14 +209,25 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert.Nil(err)
 
 	assert.Equal("foobarbaz", stepInputs["value"], "token should be set to foobarbaz")
-	os.Unsetenv("TOKEN")
+	os.Unsetenv("ACCESS_KEY")
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
-	// This is the same test with TestModWithCreds but with no TOKEN env var set, the value for the second step should be nil
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", map[string]modconfig.Credential{}, ".fp")
+	credentials := map[string]modconfig.Credential{
+		"aws.default": &modconfig.AwsCredential{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        "aws.default",
+				ShortName:       "default",
+				UnqualifiedName: "aws.default",
+			},
+			Type: "aws",
+		},
+	}
+
+	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", credentials, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -228,7 +253,18 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_dynamic_creds", map[string]modconfig.Credential{}, ".fp")
+	credentials := map[string]modconfig.Credential{
+		"aws.aws_static": &modconfig.AwsCredential{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        "aws.static",
+				ShortName:       "static",
+				UnqualifiedName: "aws.static",
+			},
+			Type: "aws",
+		},
+	}
+
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_dynamic_creds", credentials, ".fp")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -246,6 +282,57 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	pipeline := pipelines["mod_with_dynamic_creds.pipeline.cred_aws"]
 
 	assert.Equal("aws.<dynamic>", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
+	assert := assert.New(suite.T())
+
+	credentials := map[string]modconfig.Credential{
+		"slack.slack_static": &modconfig.SlackCredential{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        "slack.slack_static",
+				ShortName:       "slack_static",
+				UnqualifiedName: "slack.slack_static",
+			},
+			Type:  "slack",
+			Token: types.String("sfhshfhslfh"),
+		},
+	}
+
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds_resolved", credentials, ".fp", ".fpc")
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_creds_resolved.pipeline.staic_creds_test"]
+	assert.Equal("slack.slack_static", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+
+	paramVal := cty.ObjectVal(map[string]cty.Value{
+		"slack": cty.ObjectVal(map[string]cty.Value{
+			"slack_static": cty.ObjectVal(map[string]cty.Value{
+				"token": cty.StringVal("sfhshfhslfh"),
+			}),
+		}),
+	})
+
+	evalContext := &hcl.EvalContext{}
+	evalContext.Variables = map[string]cty.Value{}
+	evalContext.Variables["credential"] = paramVal
+
+	stepInputs, err := pipeline.Steps[0].GetInputs(evalContext)
+	assert.Nil(err)
+
+	assert.Equal("sfhshfhslfh", stepInputs["value"], "token should be set to sfhshfhslfh")
 }
 
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {

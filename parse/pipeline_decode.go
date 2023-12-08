@@ -501,17 +501,24 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 	}
 
 	var credentialRegisters []string
+	availableCredentialTypes := map[string]bool{}
 	for k := range credentials {
 		parts := strings.Split(k, ".")
-		if len(parts) != 3 {
+		if len(parts) != 2 {
 			continue
 		}
 
-		cred := parts[1] + "." + parts[2]
-		credentialRegisters = append(credentialRegisters, cred)
+		// Add the credential to the register
+		credentialRegisters = append(credentialRegisters, k)
+
+		// List out the supported credential types
+		availableCredentialTypes[parts[0]] = true
 	}
 
-	credentialRegisters = append(credentialRegisters, modconfig.DefaultCredentialNames()...)
+	var credentialTypes []string
+	for k := range availableCredentialTypes {
+		credentialTypes = append(credentialTypes, k)
+	}
 
 	for _, step := range pipelineHcl.Steps {
 		dependsOn := step.GetDependsOn()
@@ -528,6 +535,23 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 
 		credentialDependsOn := step.GetCredentialDependsOn()
 		for _, dep := range credentialDependsOn {
+			// Check if the credential type is supported, if <dynamic>
+			parts := strings.Split(dep, ".")
+			if len(parts) != 2 {
+				continue
+			}
+
+			if parts[1] == "<dynamic>" {
+				if !availableCredentialTypes[parts[0]] {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("invalid depends_on '%s' - credential type '%s' not supported for pipeline %s", dep, parts[0], pipelineHcl.Name()),
+						Detail:   fmt.Sprintf("valid credential types are: %s", strings.Join(credentialTypes, ", ")),
+					})
+				}
+				continue
+			}
+
 			if !helpers.StringSliceContains(credentialRegisters, dep) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
