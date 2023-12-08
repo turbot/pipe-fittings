@@ -172,6 +172,11 @@ var tests = []testSetup{
 		file:          "./pipelines/output_invalid_attribute.fp",
 		containsError: "Unsupported argument: An argument named \"sensitive\" is not expected here.",
 	},
+	{
+		title:         "invalid error block attribute - ignored",
+		file:          "./pipelines/invalid_error_attribute.fp",
+		containsError: "Unsupported attribute ignored provided for block type error",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
