@@ -120,9 +120,14 @@ var tests = []testSetup{
 		containsError: "invalid depends_on 'aws.abc' - credential does not exist for pipeline mod_with_creds.pipeline.with_creds",
 	},
 	{
-		title:         "Invalid credential type reference",
-		modDir:        "./mods/invalid_cred_types",
-		containsError: "invalid depends_on 'foo.<dynamic>' - credential type 'foo' not supported for pipeline invalid_cred_types.pipeline.with_invalid_cred_type_static",
+		title:         "Invalid credential type reference - dynamic",
+		modDir:        "./mods/invalid_cred_types_dynamic",
+		containsError: "invalid depends_on 'foo.<dynamic>' - credential type 'foo' not supported for pipeline invalid_cred_types_dynamic.pipeline.with_invalid_cred_type_dynamic",
+	},
+	{
+		title:         "Invalid credential type reference - static",
+		modDir:        "./mods/invalid_cred_types_static",
+		containsError: "invalid depends_on 'foo.default' - credential does not exist for pipeline invalid_cred_types_static.pipeline.with_invalid_cred_type_static",
 	},
 }
 
