@@ -541,7 +541,7 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 				continue
 			}
 
-			if len(parts) == 2 && parts[1] == "<dynamic>" {
+			if parts[1] == "<dynamic>" {
 				if !availableCredentialTypes[parts[0]] {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
