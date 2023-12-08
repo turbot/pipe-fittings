@@ -78,7 +78,6 @@ pipeline "simple_with_trigger" {
   }
 }
 
-
 pipeline "inline_documentation" {
   description = "inline doc"
   documentation = "inline pipeline documentation"
@@ -87,4 +86,22 @@ pipeline "inline_documentation" {
 pipeline "doc_from_file" {
   description = "inline doc"
   documentation = file("./docs/test.md")
+}
+
+pipeline "step_with_if_and_depends" {
+
+  step "transform" "one" {
+    value = "one"
+  }
+
+  step "transform" "two" {
+    value = "two"
+  }
+
+  step "transform" "three" {
+    depends_on = [step.transform.one, step.transform.two]
+    
+    if = step.transform.one.value == "one"
+    value = "${step.transform.one.value} ${step.transform.two.value}"
+  }
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path"
+	"slices"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -129,6 +130,24 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	}
 
 	assert.Contains(*docFromFile.Documentation, "the quick brown fox jumps over the lazy dog")
+
+	pipeline := pipelines["test_mod.pipeline.step_with_if_and_depends"]
+	if pipeline == nil {
+		assert.Fail("step_with_if_and_depends pipeline not found")
+		return
+	}
+
+	// get the last step
+	step := pipeline.Steps[len(pipeline.Steps)-1]
+	assert.Equal("three", step.GetName())
+
+	dependsOn := step.GetDependsOn()
+	assert.Equal(2, len(dependsOn))
+
+	slices.Sort[[]string, string](dependsOn)
+
+	assert.Equal("transform.one", dependsOn[0])
+	assert.Equal("transform.two", dependsOn[1])
 }
 
 func (suite *FlowpipeModTestSuite) TestModReferences() {

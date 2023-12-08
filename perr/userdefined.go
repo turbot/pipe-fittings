@@ -30,7 +30,7 @@ func UserDefinedWithTypeAndMessage(errorType string, msg string) ErrorModel {
 	e := ErrorModel{
 		Instance: reference(),
 		Type:     errorType,
-		Title:    "Bad Request",
+		Title:    "User Defined",
 		Status:   StatusUserDefined,
 		Detail:   msg,
 	}

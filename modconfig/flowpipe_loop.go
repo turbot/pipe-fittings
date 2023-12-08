@@ -112,14 +112,13 @@ func (*LoopQueryStep) GetType() string {
 }
 
 type LoopHttpStep struct {
-	Until            bool                    `json:"until" hcl:"until" cty:"until"`
-	URL              *string                 `json:"url,omitempty" hcl:"url,optional" cty:"url"`
-	Method           *string                 `json:"method,omitempty" hcl:"method,optional" cty:"method"`
-	RequestBody      *string                 `json:"request_body,omitempty" hcl:"request_body,optional" cty:"request_body"`
-	RequestHeaders   *map[string]interface{} `json:"request_headers,omitempty" hcl:"request_headers,optional" cty:"request_headers"`
-	RequestTimeoutMs *int                    `json:"request_timeout_ms,omitempty" hcl:"request_timeout_ms,optional" cty:"request_timeout_ms"`
-	CaCertPem        *string                 `json:"ca_cert_pem,omitempty" hcl:"ca_cert_pem,optional" cty:"ca_cert_pem"`
-	Insecure         *bool                   `json:"insecure,omitempty" hcl:"insecure,optional" cty:"insecure"`
+	Until          bool                    `json:"until" hcl:"until" cty:"until"`
+	URL            *string                 `json:"url,omitempty" hcl:"url,optional" cty:"url"`
+	Method         *string                 `json:"method,omitempty" hcl:"method,optional" cty:"method"`
+	RequestBody    *string                 `json:"request_body,omitempty" hcl:"request_body,optional" cty:"request_body"`
+	RequestHeaders *map[string]interface{} `json:"request_headers,omitempty" hcl:"request_headers,optional" cty:"request_headers"`
+	CaCertPem      *string                 `json:"ca_cert_pem,omitempty" hcl:"ca_cert_pem,optional" cty:"ca_cert_pem"`
+	Insecure       *bool                   `json:"insecure,omitempty" hcl:"insecure,optional" cty:"insecure"`
 }
 
 func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
@@ -134,9 +133,6 @@ func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (I
 	}
 	if l.RequestHeaders != nil {
 		input["request_headers"] = *l.RequestHeaders
-	}
-	if l.RequestTimeoutMs != nil {
-		input["request_timeout_ms"] = *l.RequestTimeoutMs
 	}
 	if l.CaCertPem != nil {
 		input["ca_cert_pem"] = *l.CaCertPem

@@ -36,7 +36,6 @@ func TestHttpStepLoad(t *testing.T) {
 
 	assert.Equal("https://myapi.com/vi/api/do-something", stepInputs[schema.AttributeTypeUrl], "wrong url")
 	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
-	assert.Equal(int64(2000), stepInputs[schema.AttributeTypeRequestTimeoutMs], "wrong request_timeout_ms")
 	assert.Equal("test", stepInputs[schema.AttributeTypeCaCertPem], "wrong cert")
 	assert.Equal(true, stepInputs[schema.AttributeTypeInsecure], "wrong insecure")
 	assert.Equal("{\"app\":\"flowpipe\",\"name\":\"turbie\"}", stepInputs[schema.AttributeTypeRequestBody], "wrong request_body")

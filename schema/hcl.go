@@ -51,7 +51,7 @@ const (
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
 
-	AttributeTypeValue     = "value"
+	AttributeTypeValue = "value"
 
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
@@ -103,16 +103,16 @@ const (
 	AttributeTypeConnectionString = "connection_string"
 
 	// Used by email step
-	AttributeTypeBcc              = "bcc"
-	AttributeTypeBody             = "body"
-	AttributeTypeCc               = "cc"
-	AttributeTypeContentType      = "content_type"
-	AttributeTypeFrom             = "from"
-	AttributeTypeHost             = "host"
-	AttributeTypePort             = "port"
-	AttributeTypeSenderName       = "sender_name"
-	AttributeTypeSubject          = "subject"
-	AttributeTypeTo               = "to"
+	AttributeTypeBcc         = "bcc"
+	AttributeTypeBody        = "body"
+	AttributeTypeCc          = "cc"
+	AttributeTypeContentType = "content_type"
+	AttributeTypeFrom        = "from"
+	AttributeTypeHost        = "host"
+	AttributeTypePort        = "port"
+	AttributeTypeSenderName  = "sender_name"
+	AttributeTypeSubject     = "subject"
+	AttributeTypeTo          = "to"
 
 	AttributeTypeToken         = "token"
 	AttributeTypeSigningSecret = "signing_secret"
@@ -128,17 +128,16 @@ const (
 	AttributeTypeDuration = "duration"
 
 	// Used by http step
-	AttributeTypeUrl              = "url"
-	AttributeTypeMethod           = "method"
-	AttributeTypeRequestBody      = "request_body"
-	AttributeTypeRequestHeaders   = "request_headers"
-	AttributeTypeRequestTimeoutMs = "request_timeout_ms"
-	AttributeTypeCaCertPem        = "ca_cert_pem"
-	AttributeTypeInsecure         = "insecure"
-	AttributeTypeResponseHeaders  = "response_headers"
-	AttributeTypeResponseBody     = "response_body"
-	AttributeTypeStatusCode       = "status_code"
-	AttributeTypeStatus           = "status"
+	AttributeTypeUrl             = "url"
+	AttributeTypeMethod          = "method"
+	AttributeTypeRequestBody     = "request_body"
+	AttributeTypeRequestHeaders  = "request_headers"
+	AttributeTypeCaCertPem       = "ca_cert_pem"
+	AttributeTypeInsecure        = "insecure"
+	AttributeTypeResponseHeaders = "response_headers"
+	AttributeTypeResponseBody    = "response_body"
+	AttributeTypeStatusCode      = "status_code"
+	AttributeTypeStatus          = "status"
 
 	// Used byy Pipeline step
 	AttributeTypePipeline = "pipeline"
