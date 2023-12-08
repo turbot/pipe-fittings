@@ -812,7 +812,7 @@ func (p *PipelineStepBase) GetErrorConfig(evalContext *hcl.EvalContext, ifResolu
 				return nil, diags
 			}
 
-			// If the `if` attribute returns "false" then we return nil for the retry config, thus we won't be retrying it
+			// If the `if` attribute returns "false" then we return nil for the error config since it doesn't apply
 			if !ifValue.True() {
 				return nil, hcl.Diagnostics{}
 			}
