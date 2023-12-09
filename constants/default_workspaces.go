@@ -105,16 +105,12 @@ const DefaultFlowpipeWorkspaceContent = `
 #
 #  watch               = true
 #  input               = true
-#  progress            = true  # is the the flag to enable the real-time "friendly" pipeline view ?
 #
 #  host        = "http://localhost:7103"  # unset means "serverless" - run from pwd/mod-location
-#  insecure    = false   # Skip TLS verification (default false)
 #
 #   port        = 7103
 #   listen      = "local"   # 'local' or 'network' (future - support postgres listen_addresses style)
 #
-#   update_check  = "true" # true, false
-#   telemetry     = "info" # info, none
 #   log_level     = "info" # trace, debug, info, warn, error
 #   memory_max_mb = "1024" # the maximum memory to allow the CLI process in MB
 #  }
