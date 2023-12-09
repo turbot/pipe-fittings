@@ -20,7 +20,23 @@ func TestStepErrorConfig(t *testing.T) {
 		assert.Fail("bad_http pipeline not found")
 		return
 	}
+}
 
+func TestStepErrorConfigWithIf(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/error.fp")
+	assert.Nil(err, "error found")
+
+	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
+
+	if pipelines["local.pipeline.bad_http_ignored_with_if"] == nil {
+		assert.Fail("bad_http pipeline not found")
+		return
+	}
+
+	pipeline := pipelines["local.pipeline.bad_http_ignored_with_if"]
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["error"])
 }
 
 func TestStepErrorConfigRetries(t *testing.T) {
@@ -43,7 +59,12 @@ func TestStepErrorConfigRetries(t *testing.T) {
 		return
 	}
 
-	errorConfig := step.GetErrorConfig()
+	errorConfig, diags := step.GetErrorConfig(nil, true)
+	if diags.HasErrors() {
+		assert.Fail("diags has errors")
+		return
+	}
+
 	if errorConfig == nil {
 		assert.Fail("error config not found")
 		return

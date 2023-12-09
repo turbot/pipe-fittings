@@ -72,8 +72,7 @@ const (
 	BlockTypePipelineStepInput     = "input"
 
 	// error block
-	AttributeTypeIgnore  = "ignore"
-	AttributeTypeRetries = "retries"
+	AttributeTypeIgnore = "ignore"
 
 	// Common step attributes
 	AttributeTypeTitle       = "title"
