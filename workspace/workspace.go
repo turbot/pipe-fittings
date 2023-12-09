@@ -256,7 +256,6 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 		errorsAndWarnings.Error = err
 		return errorsAndWarnings
 	}
-
 	parseCtx.Credentials = w.Credentials
 
 	// add evaluated variables to the context
@@ -326,6 +325,8 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 		// load files specified by inclusions
 		Include: filehelpers.InclusionsFromExtensions(w.FileInclusions),
 	})
+
+	parseCtx.Credentials = w.Credentials
 
 	return parseCtx, nil
 }

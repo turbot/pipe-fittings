@@ -139,6 +139,7 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 			child.AddVariablesToEvalContext()
 		}
 	}
+	child.Credentials = parent.Credentials
 
 	return child
 }

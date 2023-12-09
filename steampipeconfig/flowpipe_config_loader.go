@@ -1,8 +1,9 @@
 package steampipeconfig
 
 import (
-	"github.com/turbot/pipe-fittings/filepaths"
 	"log/slog"
+
+	"github.com/turbot/pipe-fittings/filepaths"
 
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
