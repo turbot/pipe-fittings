@@ -1,2 +1,2 @@
-# pipes-fittings
+# pipes-component
 Shared Pipes Component
