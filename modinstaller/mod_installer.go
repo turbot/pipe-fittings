@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
@@ -545,14 +546,23 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	// get the mod from git = first try https
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
 	slog.Debug(">>> cloning", gitUrl, dependency.GitReference)
+
+	gitHubToken := os.Getenv("GITHUB_TOKEN")
+	cloneOptions := git.CloneOptions{
+		URL:           gitUrl,
+		ReferenceName: dependency.GitReference,
+		Depth:         1,
+		SingleBranch:  true,
+	}
+
+	if gitHubToken != "" {
+		cloneOptions.Auth = &http.BasicAuth{
+			Username: gitHubToken,
+		}
+	}
+
 	_, err := git.PlainClone(installPath,
-		false,
-		&git.CloneOptions{
-			URL:           gitUrl,
-			ReferenceName: dependency.GitReference,
-			Depth:         1,
-			SingleBranch:  true,
-		})
+		false, &cloneOptions)
 
 	if err != nil {
 		// if that failed, try ssh
