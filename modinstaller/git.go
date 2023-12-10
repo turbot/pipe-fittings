@@ -1,14 +1,12 @@
 package modinstaller
 
 import (
-	"os"
 	"sort"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 )
 
@@ -60,20 +58,8 @@ func getTags(repo string) ([]string, error) {
 		URLs: []string{repo},
 	})
 
-	gitHubToken := os.Getenv("GITHUB_TOKEN")
-	var listOption git.ListOptions
-	if gitHubToken != "" {
-		listOption = git.ListOptions{
-			Auth: &http.BasicAuth{
-				Username: gitHubToken,
-			},
-		}
-	} else {
-		listOption = git.ListOptions{}
-	}
 	// load remote references
-	refs, err := rem.List(&listOption)
-
+	refs, err := rem.List(&git.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
