@@ -1,2 +1,3 @@
-# pipes-component
-Shared Pipes Component
+# pipe-fittings
+
+Shared Pipes (Steampipe & Flowpipe) Components
