@@ -1,7 +1,6 @@
 package cmdconfig
 
 import (
-	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -25,9 +24,6 @@ func (c *CmdBuilder) AddStringFlag(name string, defaultValue string, desc string
 // Note:this also stores the config key in filePathViperKeys,
 // ensuring the value of the key has `~` converted to the home dir
 func (c *CmdBuilder) AddFilepathFlag(name string, defaultValue string, desc string, opts ...FlagOption) *CmdBuilder {
-	defaultValue, err := filehelpers.Tildefy(defaultValue)
-	error_helpers.FailOnError(err)
-
 	c.cmd.Flags().String(name, defaultValue, desc)
 	c.bindings[name] = c.cmd.Flags().Lookup(name)
 	for _, o := range opts {

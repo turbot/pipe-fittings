@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -76,7 +77,7 @@ func setPreRunHook(cfg *CmdBuilder) {
 
 		// tildefy all paths in viper
 		// NOTE: this will tildefy any config key which has been added using cmdbuilder.AddFilepathArg
-		if err := tildefyPaths(); err != nil {
+		if err := tildefyPaths(args); err != nil {
 			// we can panic here since this is bootstrap code and not execution path specific
 			panic(fmt.Sprintf("failed to resolve the hgome director for all config values: %s", err.Error()))
 		}
@@ -127,19 +128,25 @@ func setPostRunHook(cfg *CmdBuilder) {
 }
 
 // tildefyPaths cleans all path config values and replaces '~' with the home directory
-func tildefyPaths() error {
+func tildefyPaths(args []string) error {
 	var err error
+	argsMap := helpers.SliceToLookup(args)
+
 	for argName := range filePathViperKeys {
+
 		if argVal := viper.GetString(argName); argVal != "" {
-			// NOTE: we only tildefy if the value is set - the default value will already be tildefied
-			// (we do this because of an issue with viper where setting the default value leads to IsSet returning true
-			// so we avoid calling it)
-			if viper.IsSet(argName) {
-				if argVal, err = filehelpers.Tildefy(argVal); err != nil {
-					return err
-				}
-				// if the value was already set re-set
+
+			if argVal, err = filehelpers.Tildefy(argVal); err != nil {
+				return err
+			}
+			// was this arg passed as an arg
+			// NOTE: we use this
+			if _, commandLineArgs := argsMap[argName]; commandLineArgs {
+				// if the value was already set from the command line re-set
 				viper.Set(argName, argVal)
+			} else {
+				// otherwise just update the default
+				viper.SetDefault(argName, argVal)
 			}
 		}
 	}
