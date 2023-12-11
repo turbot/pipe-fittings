@@ -1406,7 +1406,7 @@ func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 type PipelineStepSleep struct {
 	PipelineStepBase
-	Duration string `json:"duration"`
+	Duration any `json:"duration"`
 }
 
 func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
@@ -1428,7 +1428,7 @@ func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var durationInput string
+	var durationInput any
 
 	if p.UnresolvedAttributes[schema.AttributeTypeDuration] == nil {
 		durationInput = p.Duration
@@ -1458,7 +1458,7 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				duration, err := hclhelpers.CtyToString(val)
+				duration, err := hclhelpers.CtyToGo(val)
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
