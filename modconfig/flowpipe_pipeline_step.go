@@ -1491,6 +1491,25 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
+func (p *PipelineStepSleep) Validate() hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	if p.Duration != nil {
+		switch p.Duration.(type) {
+		case string, int, int64, float64:
+			// valid duration
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Value of the attribute '" + schema.AttributeTypeDuration + "' must be a string or number: " + p.GetFullyQualifiedName(),
+			})
+		}
+	}
+
+	return diags
+}
+
 type PipelineStepEmail struct {
 	PipelineStepBase
 	To           []string `json:"to"`
