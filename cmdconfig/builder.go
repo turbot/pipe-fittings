@@ -12,9 +12,9 @@ import (
 var CustomPreRunHook func(cmd *cobra.Command, args []string) error
 var CustomPostRunHook func(cmd *cobra.Command, args []string) error
 
-// global array of config keys which contain filepaths
+// global map of config keys which contain filepaths
 // this is populated by AddFilepathFlag and AddPersistentFilepathFlag
-var filePathViperKeys []string
+var filePathViperKeys = map[string]struct{}{}
 
 type CmdBuilder struct {
 	cmd      *cobra.Command
@@ -129,17 +129,17 @@ func setPostRunHook(cfg *CmdBuilder) {
 // tildefyPaths cleans all path config values and replaces '~' with the home directory
 func tildefyPaths() error {
 	var err error
-	for _, argName := range filePathViperKeys {
+	for argName := range filePathViperKeys {
 		if argVal := viper.GetString(argName); argVal != "" {
-			if argVal, err = filehelpers.Tildefy(argVal); err != nil {
-				return err
-			}
+			// NOTE: we only tildefy if the value is set - the default value will already be tildefied
+			// (we do this because of an issue with viper where setting the default value leads to IsSet returning true
+			// so we avoid calling it)
 			if viper.IsSet(argName) {
+				if argVal, err = filehelpers.Tildefy(argVal); err != nil {
+					return err
+				}
 				// if the value was already set re-set
 				viper.Set(argName, argVal)
-			} else {
-				// otherwise just update the default
-				viper.SetDefault(argName, argVal)
 			}
 		}
 	}

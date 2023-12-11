@@ -3,7 +3,9 @@ package cmdconfig
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"log/slog"
 )
 
 // persistent flags
@@ -19,10 +21,15 @@ func (c *CmdBuilder) AddPersistentStringFlag(name string, defaultValue string, d
 // Note:this also stores the config key in filePathViperKeys,
 // ensuring the value of the key has `~` converted to the home dir
 func (c *CmdBuilder) AddPersistentFilepathFlag(name string, defaultValue string, desc string) *CmdBuilder {
+	defaultValue, err := filehelpers.Tildefy(defaultValue)
+	error_helpers.FailOnError(err)
+
 	c.cmd.PersistentFlags().String(name, defaultValue, desc)
+	s := viper.IsSet(name)
+	slog.Debug("is set", "name", name, "isSet", s)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
-	// add the key to the list of keys to tildefy
-	filePathViperKeys = append(filePathViperKeys, name)
+	// add the key to the map of keys to tildefy
+	filePathViperKeys[name] = struct{}{}
 
 	return c
 }

@@ -2,6 +2,8 @@ package cmdconfig
 
 import (
 	"fmt"
+	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"log/slog"
 	"os"
 
@@ -43,9 +45,12 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 	if !loader.ConfiguredProfile.IsNil() {
 		if installDir := loader.ConfiguredProfile.GetInstallDir(); installDir != nil {
 			slog.Debug("setting install dir", "configured profile", loader.ConfiguredProfile.Name(), "install dir", *installDir)
-			viper.SetDefault(constants.ArgInstallDir, *installDir)
+			setDefault(constants.ArgInstallDir, *installDir)
 		}
 	}
+	modLocation := viper.GetString(constants.ArgModLocation)
+	slog.Debug("mod directory", "modLocation", modLocation)
+
 }
 
 // for keys which do not have a corresponding command flag, we need a separate defaulting mechanism
@@ -53,20 +58,37 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 // MUST have a default (unless we want the zero value to take effect)
 func setBaseDefaults(configDefaults map[string]any) {
 	for k, v := range configDefaults {
-		viper.SetDefault(k, v)
+		setDefault(k, v)
 	}
 }
 
+// set the viper default for the given key
+// NOTE: if the key is a filepath, tildefy it
+func setDefault(k string, v any) {
+	if _, isFilePath := filePathViperKeys[k]; isFilePath {
+		var err error
+		v, err = filehelpers.Tildefy(v.(string))
+		error_helpers.FailOnError(err)
+	}
+	viper.SetDefault(k, v)
+}
+
 func SetDefaultsFromEnv(envMappings map[string]EnvMapping) {
+	modLocation := viper.GetString(constants.ArgModLocation)
+	slog.Debug("mod directory", "modLocation", modLocation)
+
 	for envVar, mapping := range envMappings {
 		SetConfigFromEnv(envVar, mapping.ConfigVar, mapping.VarType)
 	}
+	modLocation = viper.GetString(constants.ArgModLocation)
+	slog.Debug("mod directory", "modLocation", modLocation)
+
 }
 
 // SetDefaultsFromConfig overrides viper default values from hcl config values
 func SetDefaultsFromConfig(configMap map[string]any) {
 	for k, v := range configMap {
-		viper.SetDefault(k, v)
+		setDefault(k, v)
 	}
 }
 
@@ -85,14 +107,14 @@ func SetDefaultFromEnv(k string, configVar string, varType EnvVarType) {
 	if val, ok := os.LookupEnv(k); ok {
 		switch varType {
 		case EnvVarTypeString:
-			viper.SetDefault(configVar, val)
+			setDefault(configVar, val)
 		case EnvVarTypeBool:
 			if boolVal, err := types.ToBool(val); err == nil {
-				viper.SetDefault(configVar, boolVal)
+				setDefault(configVar, boolVal)
 			}
 		case EnvVarTypeInt:
 			if intVal, err := types.ToInt64(val); err == nil {
-				viper.SetDefault(configVar, intVal)
+				setDefault(configVar, intVal)
 			}
 		default:
 			// must be an invalid value in the map above
