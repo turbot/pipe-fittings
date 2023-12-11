@@ -1433,10 +1433,18 @@ func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	if p.UnresolvedAttributes[schema.AttributeTypeDuration] == nil {
 		durationInput = p.Duration
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &durationInput)
+
+		var sleepDurationCtyValue cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &sleepDurationCtyValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
+
+		goVal, err := hclhelpers.CtyToGo(sleepDurationCtyValue)
+		if err != nil {
+			return nil, err
+		}
+		durationInput = goVal
 	}
 
 	return map[string]interface{}{
