@@ -69,7 +69,7 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 		return nil, res
 	}
 
-	body, diags := ParseHclFiles(fileData)
+	body, rawHclFiles, diags := ParseHclFiles(fileData)
 
 	res.addDiags(diags)
 	if diags.HasErrors() {
@@ -106,6 +106,8 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 	diags = mod.OnDecoded(block, nil)
 	res.addDiags(diags)
 
+	mod.RawHclFiles = rawHclFiles
+
 	return mod, res
 }
 
@@ -121,7 +123,7 @@ func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mo
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
 // NOTE: the mod definition has already been parsed (or a default created) and is in opts.RunCtx.RootMod
 func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources []modconfig.MappableResource, parseCtx *ModParseContext) (*modconfig.Mod, *error_helpers.ErrorAndWarnings) {
-	body, diags := ParseHclFiles(fileData)
+	body, rawHclFiles, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
 		return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to load all mod source files", diags))
 	}
@@ -136,6 +138,7 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 	if mod == nil {
 		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("ParseMod called with no Current Mod set in ModParseContext"))
 	}
+	mod.RawHclFiles = rawHclFiles
 	// get names of all resources defined in hcl which may also be created as pseudo resources
 	hclResources, err := loadMappableResourceNames(content)
 	if err != nil {

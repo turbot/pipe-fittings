@@ -41,13 +41,15 @@ func LoadFileData(paths ...string) (map[string][]byte, hcl.Diagnostics) {
 }
 
 // ParseHclFiles parses hcl file data and returns the hcl body object
-func ParseHclFiles(fileData map[string][]byte) (hcl.Body, hcl.Diagnostics) {
+func ParseHclFiles(fileData map[string][]byte) (hcl.Body, map[string]*hcl.File, hcl.Diagnostics) {
 	var parsedConfigFiles []*hcl.File
 	var diags hcl.Diagnostics
 	parser := hclparse.NewParser()
 
 	// build ordered list of files so that we parse in a repeatable order
 	filePaths := buildOrderedFileNameList(fileData)
+
+	rawHclFiles := make(map[string]*hcl.File, len(filePaths))
 
 	for _, filePath := range filePaths {
 		var file *hcl.File
@@ -67,9 +69,10 @@ func ParseHclFiles(fileData map[string][]byte) (hcl.Body, hcl.Diagnostics) {
 			continue
 		}
 		parsedConfigFiles = append(parsedConfigFiles, file)
+		rawHclFiles[filePath] = file
 	}
 
-	return hcl.MergeFiles(parsedConfigFiles), diags
+	return hcl.MergeFiles(parsedConfigFiles), rawHclFiles, diags
 }
 
 func buildOrderedFileNameList(fileData map[string][]byte) []string {
@@ -170,7 +173,7 @@ func loadMappableResourceNames(content *hcl.BodyContent) (map[string]bool, error
 // and returns the resource names
 func ParseModResourceNames(fileData map[string][]byte) (*modconfig.WorkspaceResources, error) {
 	var resources = modconfig.NewWorkspaceResources()
-	body, diags := ParseHclFiles(fileData)
+	body, _, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
 		return nil, plugin.DiagsToError("Failed to load all mod source files", diags)
 	}

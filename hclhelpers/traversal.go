@@ -1,6 +1,7 @@
 package hclhelpers
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -63,6 +64,97 @@ func TraversalAsStringSlice(traversal hcl.Traversal) []string {
 	return parts
 }
 
+// operationToString maps an operation to its string representation
+func operationToString(op *hclsyntax.Operation) string {
+	switch op {
+	case hclsyntax.OpLogicalOr:
+		return "||"
+	case hclsyntax.OpLogicalAnd:
+		return "&&"
+	case hclsyntax.OpLogicalNot:
+		return "!"
+	case hclsyntax.OpEqual:
+		return "=="
+	case hclsyntax.OpNotEqual:
+		return "!="
+	case hclsyntax.OpGreaterThan:
+		return ">"
+	case hclsyntax.OpGreaterThanOrEqual:
+		return ">="
+	case hclsyntax.OpLessThan:
+		return "<"
+	case hclsyntax.OpLessThanOrEqual:
+		return "<="
+	case hclsyntax.OpAdd:
+		return "+"
+	case hclsyntax.OpSubtract:
+		return "-"
+	case hclsyntax.OpMultiply:
+		return "*"
+	case hclsyntax.OpDivide:
+		return "/"
+	case hclsyntax.OpModulo:
+		return "%"
+	case hclsyntax.OpNegate:
+		return "-"
+	default:
+		return "unknown operation"
+	}
+}
+
+func ExpressionAsLiteralSlice(expr hcl.Expression) ([]string, error) {
+	allParts := make([]string, 0)
+
+	switch v := expr.(type) {
+	case *hclsyntax.TemplateExpr:
+		for _, p := range v.Parts {
+			parts, err := ExpressionAsLiteralSlice(p)
+			if err != nil {
+				return nil, err
+			}
+
+			_, ok := p.(*hclsyntax.LiteralValueExpr)
+			if !ok {
+				allParts = append(allParts, "${"+strings.Join(parts, ".")+"}")
+			} else {
+				allParts = append(allParts, parts...)
+			}
+		}
+
+	case *hclsyntax.BinaryOpExpr:
+		parts, err := ExpressionAsLiteralSlice(v.LHS)
+		if err != nil {
+			return nil, err
+		}
+
+		allParts = append(allParts, parts...)
+
+		allParts = append(allParts, operationToString(v.Op))
+
+		parts, err = ExpressionAsLiteralSlice(v.RHS)
+		if err != nil {
+			return nil, err
+		}
+
+		allParts = append(allParts, parts...)
+
+	case *hclsyntax.LiteralValueExpr:
+		goVal, err := CtyToGo(v.Val)
+		if err != nil {
+			return nil, err
+		}
+		allParts = append(allParts, fmt.Sprintf("%v", goVal))
+
+	default:
+		for _, tss := range expr.Variables() {
+			parts := TraversalAsStringSlice(tss)
+			partString := strings.Join(parts, ".")
+			allParts = append(allParts, partString)
+		}
+	}
+
+	return allParts, nil
+}
 func AttributeAsLiteral(attr *hcl.Attribute) string {
 	// This is one attempt .. but difficult to implement because we merged all our hcl files into one single body,
 	// tracking back which one is which is difficult to track
@@ -71,28 +163,13 @@ func AttributeAsLiteral(attr *hcl.Attribute) string {
 	// fmt.Printf("Original expression: %s\n", string(source))
 	// manual reconstruction of the expression
 
-	allParts := make([]string, 0)
+	if attr == nil {
+		return ""
+	}
 
-	templateExpr, ok := attr.Expr.(*hclsyntax.TemplateExpr)
-	if ok {
-		for _, p := range templateExpr.Parts {
-			literalExpr, ok := p.(*hclsyntax.LiteralValueExpr)
-			if ok {
-				allParts = append(allParts, literalExpr.Val.AsString())
-			} else {
-				for _, tss := range p.Variables() {
-					parts := TraversalAsStringSlice(tss)
-					partString := "${" + strings.Join(parts, ".") + "}"
-					allParts = append(allParts, partString)
-				}
-			}
-		}
-	} else {
-		for _, tss := range attr.Expr.Variables() {
-			parts := TraversalAsStringSlice(tss)
-			partString := strings.Join(parts, ".")
-			allParts = append(allParts, partString)
-		}
+	allParts, err := ExpressionAsLiteralSlice(attr.Expr)
+	if err != nil {
+		return "Unable to evaluate expression " + err.Error()
 	}
 
 	return strings.Join(allParts, "")

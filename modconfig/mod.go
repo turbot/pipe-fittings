@@ -29,6 +29,8 @@ type Mod struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
+	RawHclFiles map[string]*hcl.File `json:"-"`
+
 	// attributes
 	Categories []string `cty:"categories" hcl:"categories,optional" column:"categories,jsonb"`
 	Color      *string  `cty:"color" hcl:"color" column:"color,text"`

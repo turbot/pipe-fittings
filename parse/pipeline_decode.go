@@ -45,7 +45,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		return step, diags
 	}
 
-	moreDiags := step.SetAttributes(stepOptions.Attributes, parseCtx.EvalCtx)
+	moreDiags := step.SetAttributes(stepOptions.Attributes, parseCtx.CurrentMod, parseCtx.EvalCtx)
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}

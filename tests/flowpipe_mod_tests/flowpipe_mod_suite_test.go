@@ -166,6 +166,20 @@ func (suite *FlowpipeModTestSuite) TestSimpleMod() {
 
 	assert.Equal("0.1.0", mod.Require.Flowpipe.MinVersionString)
 	assert.Equal("day", mod.Tags["green"])
+
+	pipeline := mod.ResourceMaps.Pipelines["test_mod.pipeline.simple"]
+
+	for _, step := range pipeline.Steps {
+		if step.GetName() == "echo" {
+			assert.Equal("\"literal foo\"", step.(*modconfig.PipelineStepTransform).ValueRaw)
+		} else if step.GetName() == "eval" {
+			assert.Equal("param.foo", step.(*modconfig.PipelineStepTransform).ValueRaw)
+		} else if step.GetName() == "eval_with_literal" {
+			assert.Equal("\"literal ${param.foo} end literal\"", step.(*modconfig.PipelineStepTransform).ValueRaw)
+		} else if step.GetName() == "name" {
+			assert.Equal("param.name == \"foo\"", *step.(*modconfig.PipelineStepTransform).IfRaw)
+		}
+	}
 }
 
 func (suite *FlowpipeModTestSuite) TestModReferences() {

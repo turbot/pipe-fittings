@@ -78,7 +78,7 @@ func loadCredentials(configFolder string, opts *loadConfigOptions) (map[string]m
 		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
 	}
 
-	body, diags := parse.ParseHclFiles(fileData)
+	body, _, diags := parse.ParseHclFiles(fileData)
 	if diags.HasErrors() {
 		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
 	}

@@ -2,6 +2,8 @@ package parse
 
 import (
 	"fmt"
+	"log/slog"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
@@ -11,7 +13,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
-	"log/slog"
 )
 
 func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
@@ -41,7 +42,7 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
 	}
 
-	body, diags := ParseHclFiles(fileData)
+	body, _, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
 		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
 	}

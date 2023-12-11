@@ -270,7 +270,7 @@ type PipelineStep interface {
 	AppendDependsOn(...string)
 	AppendCredentialDependsOn(...string)
 	GetForEach() hcl.Expression
-	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	SetAttributes(hcl.Attributes, *Mod, *hcl.EvalContext) hcl.Diagnostics
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	SetErrorConfig(*ErrorConfig)
 	GetErrorConfig(*hcl.EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
@@ -456,6 +456,9 @@ type PipelineStepBase struct {
 	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
 	ThrowConfig         []ThrowConfig              `json:"throw,omitempty"`
 	OutputConfig        map[string]*PipelineOutput `json:"-"`
+
+	// Raw
+	IfRaw *string `json:"if,omitempty"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -935,7 +938,7 @@ func decodeDependsOn(attr *hcl.Attribute) ([]hcl.Traversal, hcl.Diagnostics) {
 	return ret, diags
 }
 
-func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.Diagnostics {
+func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, mod *Mod) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	var hclDependsOn []hcl.Traversal
 	if attr, exists := hclAttributes[schema.AttributeTypeDependsOn]; exists {
@@ -1011,6 +1014,14 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.D
 		do, dgs := hclhelpers.ExpressionToDepends(attr.Expr, ValidDependsOnTypes)
 		diags = append(diags, dgs...)
 		dependsOn = append(dependsOn, do...)
+
+		rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+		if rawHclFile != nil {
+			rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+			rawValStr := string(rawVal)
+			p.IfRaw = &rawValStr
+		}
+
 	}
 
 	p.AppendDependsOn(dependsOn...)
@@ -1037,13 +1048,25 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 type PipelineStepHttp struct {
 	PipelineStepBase
 
-	Url             *string                `json:"url" binding:"required"`
-	Method          *string                `json:"method,omitempty"`
-	CaCertPem       *string                `json:"ca_cert_pem,omitempty"`
-	Insecure        *bool                  `json:"insecure,omitempty"`
-	RequestBody     *string                `json:"request_body,omitempty"`
-	RequestHeaders  map[string]interface{} `json:"request_headers,omitempty"`
-	BasicAuthConfig *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
+	Url    *string `json:"-" binding:"required"`
+	UrlRaw *string `json:"url,omitempty"`
+
+	Method    *string `json:"-"`
+	MethodRaw *string `json:"method,omitempty"`
+
+	CaCertPem    *string `json:"-"`
+	CaCertPemRaw *string `json:"ca_cert_pem,omitempty"`
+
+	Insecure    *bool   `json:"-"`
+	InsecureRaw *string `json:"insecure,omitempty"`
+
+	RequestBody    *string `json:"-"`
+	RequestBodyRaw *string `json:"request_body,omitempty"`
+
+	RequestHeaders    map[string]interface{} `json:"-"`
+	RequestHeadersRaw *string                `json:"request_headers,omitempty"`
+
+	BasicAuthConfig *BasicAuthConfig `json:"basic_auth_config,omitempty"`
 }
 
 func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
@@ -1189,8 +1212,8 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	return inputs, nil
 }
 
-func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -1211,6 +1234,13 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					})
 				}
 				p.Url = &urlString
+			}
+
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				rawValStr := string(rawVal)
+				p.UrlRaw = &rawValStr
 			}
 
 		case schema.AttributeTypeMethod:
@@ -1242,6 +1272,14 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					p.Method = &method
 				}
 			}
+
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				rawValStr := string(rawVal)
+				p.MethodRaw = &rawValStr
+			}
+
 		case schema.AttributeTypeCaCertPem:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -1260,6 +1298,14 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				}
 				p.CaCertPem = &caCertPem
 			}
+
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				rawValStr := string(rawVal)
+				p.CaCertPemRaw = &rawValStr
+			}
+
 		case schema.AttributeTypeInsecure:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -1280,6 +1326,13 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				p.Insecure = &insecure
 			}
 
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				rawValStr := string(rawVal)
+				p.InsecureRaw = &rawValStr
+			}
+
 		case schema.AttributeTypeRequestBody:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -1297,6 +1350,13 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					})
 				}
 				p.RequestBody = &requestBody
+			}
+
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				rawValStr := string(rawVal)
+				p.RequestBodyRaw = &rawValStr
 			}
 
 		case schema.AttributeTypeRequestHeaders:
@@ -1319,6 +1379,14 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					continue
 				}
 			}
+
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				rawValStr := string(rawVal)
+				p.RequestHeadersRaw = &rawValStr
+			}
+
 		default:
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
@@ -1444,9 +1512,9 @@ func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}, nil
 }
 
-func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -1704,8 +1772,8 @@ func (p *PipelineStepEmail) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	return results, nil
 }
 
-func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2096,9 +2164,9 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}, nil
 }
 
-func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2120,9 +2188,13 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 					})
 				}
 				p.Value = goVal
-				p.ValueRaw = goVal
-			} else {
-				p.ValueRaw = hclhelpers.AttributeAsLiteral(attr)
+
+			}
+
+			rawHclFile := mod.RawHclFiles[attr.NameRange.Filename]
+			if rawHclFile != nil {
+				rawVal := rawHclFile.Bytes[attr.Expr.Range().Start.Byte:attr.Expr.Range().End.Byte]
+				p.ValueRaw = string(rawVal)
 			}
 
 		default:
@@ -2232,8 +2304,8 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	return results, nil
 }
 
-func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2392,8 +2464,8 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 	return results, nil
 }
 
-func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2556,8 +2628,8 @@ func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[stri
 	}, nil
 }
 
-func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2843,8 +2915,8 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	return results, nil
 }
 
-func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	// TODO: Integrated 2023 hack - remove non appropriate attribute and add them to notify, notifies, option, options
 	for name, attr := range hclAttributes {
@@ -3310,8 +3382,8 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	return results, nil
 }
 
-func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, mod *Mod, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := p.SetBaseAttributes(hclAttributes, mod)
 
 	for name, attr := range hclAttributes {
 		switch name {
