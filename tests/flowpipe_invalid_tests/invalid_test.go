@@ -180,7 +180,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid sleep step attribute - duration",
 		file:          "./pipelines/invalid_sleep_attribute.fp",
-		containsError: "Value of the attribute 'duration' must be a string or number",
+		containsError: "Value of the attribute 'duration' must be a string or a whole number",
 	},
 }
 
