@@ -22,6 +22,7 @@ const (
 	ArgDatabasePort            = "database-port"
 	ArgDatabaseQueryTimeout    = "query-timeout"
 	ArgDatabaseStartTimeout    = "database-start-timeout"
+	ArgDetach                  = "detach"
 	ArgDisplayWidth            = "display-width"
 	ArgDryRun                  = "dry-run"
 	ArgExport                  = "export"
