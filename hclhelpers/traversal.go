@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 // TraversalAsString converts a traversal to a path string
@@ -60,6 +61,41 @@ func TraversalAsStringSlice(traversal hcl.Traversal) []string {
 		}
 	}
 	return parts
+}
+
+func AttributeAsLiteral(attr *hcl.Attribute) string {
+	// This is one attempt .. but difficult to implement because we merged all our hcl files into one single body,
+	// tracking back which one is which is difficult to track
+	// rng := attr.Expr.Range()
+	// source := file.Bytes[rng.Start.Byte:rng.End.Byte]
+	// fmt.Printf("Original expression: %s\n", string(source))
+	// manual reconstruction of the expression
+
+	allParts := make([]string, 0)
+
+	templateExpr, ok := attr.Expr.(*hclsyntax.TemplateExpr)
+	if ok {
+		for _, p := range templateExpr.Parts {
+			literalExpr, ok := p.(*hclsyntax.LiteralValueExpr)
+			if ok {
+				allParts = append(allParts, literalExpr.Val.AsString())
+			} else {
+				for _, tss := range p.Variables() {
+					parts := TraversalAsStringSlice(tss)
+					partString := "${" + strings.Join(parts, ".") + "}"
+					allParts = append(allParts, partString)
+				}
+			}
+		}
+	} else {
+		for _, tss := range attr.Expr.Variables() {
+			parts := TraversalAsStringSlice(tss)
+			partString := strings.Join(parts, ".")
+			allParts = append(allParts, partString)
+		}
+	}
+
+	return strings.Join(allParts, "")
 }
 
 func TraversalsEqual(t1, t2 hcl.Traversal) bool {

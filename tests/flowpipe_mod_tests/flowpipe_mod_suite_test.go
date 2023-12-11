@@ -150,6 +150,24 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert.Equal("transform.two", dependsOn[1])
 }
 
+func (suite *FlowpipeModTestSuite) TestSimpleMod() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./simple_mod", map[string]modconfig.Credential{}, ".fp")
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	assert.Equal("0.1.0", mod.Require.Flowpipe.MinVersionString)
+	assert.Equal("day", mod.Tags["green"])
+}
+
 func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 

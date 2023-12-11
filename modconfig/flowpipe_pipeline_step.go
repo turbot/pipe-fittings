@@ -2041,7 +2041,8 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 
 type PipelineStepTransform struct {
 	PipelineStepBase
-	Value any `json:"value"`
+	Value    interface{} `json:"-"`
+	ValueRaw interface{} `json:"value"`
 }
 
 func (p *PipelineStepTransform) Equals(iOther PipelineStep) bool {
@@ -2102,6 +2103,7 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeValue:
+
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2117,8 +2119,10 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 						Subject:  &attr.Range,
 					})
 				}
-
 				p.Value = goVal
+				p.ValueRaw = goVal
+			} else {
+				p.ValueRaw = hclhelpers.AttributeAsLiteral(attr)
 			}
 
 		default:
@@ -2137,9 +2141,9 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 
 type PipelineStepQuery struct {
 	PipelineStepBase
-	ConnnectionString *string       `json:"connection_string"`
-	Sql               *string       `json:"sql"`
-	Args              []interface{} `json:"args"`
+	ConnnectionString *string       `json:"connection_string,omitempty"`
+	Sql               *string       `json:"sql,omitempty"`
+	Args              []interface{} `json:"args,omitempty"`
 }
 
 func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {

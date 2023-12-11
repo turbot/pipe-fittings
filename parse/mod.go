@@ -3,13 +3,14 @@ package parse
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/perr"
 	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/perr"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -69,6 +70,7 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 	}
 
 	body, diags := ParseHclFiles(fileData)
+
 	res.addDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
