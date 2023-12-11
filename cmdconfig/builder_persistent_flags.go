@@ -21,8 +21,8 @@ func (c *CmdBuilder) AddPersistentStringFlag(name string, defaultValue string, d
 func (c *CmdBuilder) AddPersistentFilepathFlag(name string, defaultValue string, desc string) *CmdBuilder {
 	c.cmd.PersistentFlags().String(name, defaultValue, desc)
 	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
-	// add the key to the list of keys to tildefy
-	filePathViperKeys = append(filePathViperKeys, name)
+	// add the key to the map of keys to tildefy
+	filePathViperKeys[name] = struct{}{}
 
 	return c
 }

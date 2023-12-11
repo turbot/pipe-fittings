@@ -30,7 +30,7 @@ func (c *CmdBuilder) AddFilepathFlag(name string, defaultValue string, desc stri
 		o(c.cmd, name, name)
 	}
 
-	filePathViperKeys = append(filePathViperKeys, name)
+	filePathViperKeys[name] = struct{}{}
 
 	return c
 }

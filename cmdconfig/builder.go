@@ -6,15 +6,16 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
 var CustomPreRunHook func(cmd *cobra.Command, args []string) error
 var CustomPostRunHook func(cmd *cobra.Command, args []string) error
 
-// global array of config keys which contain filepaths
+// global map of config keys which contain filepaths
 // this is populated by AddFilepathFlag and AddPersistentFilepathFlag
-var filePathViperKeys []string
+var filePathViperKeys = map[string]struct{}{}
 
 type CmdBuilder struct {
 	cmd      *cobra.Command
@@ -76,7 +77,7 @@ func setPreRunHook(cfg *CmdBuilder) {
 
 		// tildefy all paths in viper
 		// NOTE: this will tildefy any config key which has been added using cmdbuilder.AddFilepathArg
-		if err := tildefyPaths(); err != nil {
+		if err := tildefyPaths(args); err != nil {
 			// we can panic here since this is bootstrap code and not execution path specific
 			panic(fmt.Sprintf("failed to resolve the hgome director for all config values: %s", err.Error()))
 		}
@@ -127,15 +128,22 @@ func setPostRunHook(cfg *CmdBuilder) {
 }
 
 // tildefyPaths cleans all path config values and replaces '~' with the home directory
-func tildefyPaths() error {
+func tildefyPaths(args []string) error {
 	var err error
-	for _, argName := range filePathViperKeys {
+	argsMap := helpers.SliceToLookup(args)
+
+	for argName := range filePathViperKeys {
+
 		if argVal := viper.GetString(argName); argVal != "" {
+
 			if argVal, err = filehelpers.Tildefy(argVal); err != nil {
 				return err
 			}
-			if viper.IsSet(argName) {
-				// if the value was already set re-set
+			// was this arg passed as an arg
+			// NOTE: we check args instead of viper.IsSet since viper.SetDefault actually causes IsSet to return true
+			// so if anything has already set default values, we would end up calling viper.Set instead of viper.SetDefault
+			if _, commandLineArgs := argsMap[argName]; commandLineArgs {
+				// if the value was already set from the command line re-set
 				viper.Set(argName, argVal)
 			} else {
 				// otherwise just update the default
