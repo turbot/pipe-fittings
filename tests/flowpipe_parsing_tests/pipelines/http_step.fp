@@ -17,3 +17,11 @@ pipeline "http_step" {
     }
   }
 }
+
+pipeline "http_step_with_request_timeout_string" {
+  step "http" "send_to_slack" {
+    url                = "https://myapi.com/vi/api/do-something"
+    method             = "post"
+    request_timeout_ms = "1s"
+  }
+}

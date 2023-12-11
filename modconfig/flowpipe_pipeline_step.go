@@ -1042,7 +1042,7 @@ type PipelineStepHttp struct {
 	CaCertPem        *string                `json:"ca_cert_pem,omitempty"`
 	Insecure         *bool                  `json:"insecure,omitempty"`
 	RequestBody      *string                `json:"request_body,omitempty"`
-	RequestTimeoutMs *int64                 `json:"request_timeout_ms,omitempty"`
+	RequestTimeoutMs interface{}            `json:"request_timeout_ms,omitempty"`
 	RequestHeaders   map[string]interface{} `json:"request_headers,omitempty"`
 	BasicAuthConfig  *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
 }
@@ -1167,15 +1167,20 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		inputs[schema.AttributeTypeRequestBody] = requestBody
 	}
 
-	var requestTimeoutMs int64
 	if p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs] == nil {
-		inputs[schema.AttributeTypeRequestTimeoutMs] = *p.RequestTimeoutMs
+		inputs[schema.AttributeTypeRequestTimeoutMs] = p.RequestTimeoutMs
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs], evalContext, &requestTimeoutMs)
+		var httpRequestTimeoutMs cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs], evalContext, &httpRequestTimeoutMs)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
-		inputs[schema.AttributeTypeRequestTimeoutMs] = requestTimeoutMs
+
+		goVal, err := hclhelpers.CtyToGo(httpRequestTimeoutMs)
+		if err != nil {
+			return nil, err
+		}
+		inputs[schema.AttributeTypeRequestTimeoutMs] = goVal
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders] == nil {
@@ -1326,14 +1331,13 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			}
 
 			if val != cty.NilVal {
-				requestTimeoutMs, ctyDiags := hclhelpers.CtyToInt64(val)
-				if ctyDiags.HasErrors() {
+				requestTimeoutMs, err := hclhelpers.CtyToGo(val)
+				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
 						Summary:  "Unable to convert '" + schema.AttributeTypeRequestTimeoutMs + "' into number",
 						Subject:  &attr.Range,
 					})
-					continue
 				}
 				p.RequestTimeoutMs = requestTimeoutMs
 			}
@@ -1439,6 +1443,25 @@ func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 		}
 		p.BasicAuthConfig = basicAuthConfig
+	}
+
+	return diags
+}
+
+func (p *PipelineStepHttp) Validate() hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	if p.RequestTimeoutMs != nil {
+		switch p.RequestTimeoutMs.(type) {
+		case string, int:
+			// valid duration
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Value of the attribute '" + schema.AttributeTypeRequestTimeoutMs + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+			})
+		}
 	}
 
 	return diags

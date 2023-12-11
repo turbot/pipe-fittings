@@ -15,7 +15,7 @@ func TestHttpStepLoad(t *testing.T) {
 	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/http_step.fp")
 	assert.Nil(err, "error found")
 
-	assert.GreaterOrEqual(len(pipelines), 1, "wrong number of pipelines")
+	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
 
 	if pipelines["local.pipeline.http_step"] == nil {
 		assert.Fail("http_step pipeline not found")
@@ -38,7 +38,37 @@ func TestHttpStepLoad(t *testing.T) {
 	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
 	assert.Equal("test", stepInputs[schema.AttributeTypeCaCertPem], "wrong cert")
 	assert.Equal(true, stepInputs[schema.AttributeTypeInsecure], "wrong insecure")
-	assert.Equal(int64(1000), stepInputs[schema.AttributeTypeRequestTimeoutMs], "wrong request timeout")
+	assert.Equal(1000, stepInputs[schema.AttributeTypeRequestTimeoutMs], "wrong request timeout")
 	assert.Equal("{\"app\":\"flowpipe\",\"name\":\"turbie\"}", stepInputs[schema.AttributeTypeRequestBody], "wrong request_body")
 	assert.Equal("flowpipe", stepInputs[schema.AttributeTypeRequestHeaders].(map[string]interface{})["User-Agent"], "wrong header")
+}
+
+func TestHttpStepValidateRequestTimeoutString(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/http_step.fp")
+	assert.Nil(err, "error found")
+
+	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
+
+	if pipelines["local.pipeline.http_step_with_request_timeout_string"] == nil {
+		assert.Fail("http_step_with_request_timeout_string pipeline not found")
+		return
+	}
+
+	pipelineHcl := pipelines["local.pipeline.http_step_with_request_timeout_string"]
+	step := pipelineHcl.GetStep("http.send_to_slack")
+	if step == nil {
+		assert.Fail("http.send_to_slack step not found")
+		return
+	}
+
+	stepInputs, err := step.GetInputs(nil)
+
+	assert.Nil(err, "error found")
+	assert.NotNil(stepInputs, "inputs not found")
+
+	assert.Equal("https://myapi.com/vi/api/do-something", stepInputs[schema.AttributeTypeUrl], "wrong url")
+	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
+	assert.Equal("1s", stepInputs[schema.AttributeTypeRequestTimeoutMs], "wrong request timeout")
 }
