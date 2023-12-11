@@ -1470,7 +1470,7 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeDuration + " attribute to string",
+						Summary:  "Unable to parse '" + schema.AttributeTypeDuration + "' attribute to interface",
 						Subject:  &attr.Range,
 					})
 				}
@@ -1481,7 +1481,7 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Sleep Step: " + attr.Name,
+					Summary:  "Unsupported attribute for " + schema.BlockTypePipelineStepSleep + " Step: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}
