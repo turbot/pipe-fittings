@@ -326,6 +326,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeDescription,
 		},
 		{
+			Name: schema.AttributeTypeTimeout,
+		},
+		{
 			Name: schema.AttributeTypeForEach,
 		},
 		{

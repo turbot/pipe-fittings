@@ -449,6 +449,7 @@ type PipelineStepBase struct {
 	Name                string                     `json:"name"`
 	Type                string                     `json:"step_type"`
 	PipelineName        string                     `json:"pipeline_name,omitempty"`
+	Timeout             interface{}                `json:"timeout,omitempty"`
 	DependsOn           []string                   `json:"depends_on,omitempty"`
 	CredentialDependsOn []string                   `json:"credential_depends_on,omitempty"`
 	Resolved            bool                       `json:"resolved,omitempty"`
@@ -727,6 +728,11 @@ func (p *PipelineStepBase) Equals(otherBase *PipelineStepBase) bool {
 
 	// Compare Type
 	if p.Type != otherBase.Type {
+		return false
+	}
+
+	// Compare Timeout
+	if p.Timeout != otherBase.Timeout {
 		return false
 	}
 
@@ -1024,6 +1030,7 @@ var ValidBaseStepAttributes = []string{
 	schema.AttributeTypeDependsOn,
 	schema.AttributeTypeForEach,
 	schema.AttributeTypeIf,
+	schema.AttributeTypeTimeout,
 }
 
 var ValidDependsOnTypes = []string{
@@ -1174,6 +1181,23 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		inputs[schema.AttributeTypeRequestHeaders] = requestHeaders
 	}
 
+	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil {
+		inputs[schema.AttributeTypeTimeout] = p.Timeout
+	} else {
+
+		var sleepDurationCtyValue cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &sleepDurationCtyValue)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+
+		goVal, err := hclhelpers.CtyToGo(sleepDurationCtyValue)
+		if err != nil {
+			return nil, err
+		}
+		inputs[schema.AttributeTypeTimeout] = goVal
+	}
+
 	if p.BasicAuthConfig != nil {
 		basicAuth, diags := p.BasicAuthConfig.GetInputs(evalContext, p.UnresolvedAttributes)
 		if diags.HasErrors() {
@@ -1297,6 +1321,25 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					})
 				}
 				p.RequestBody = &requestBody
+			}
+
+		case schema.AttributeTypeTimeout:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				duration, err := hclhelpers.CtyToGo(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse '" + schema.AttributeTypeTimeout + "' attribute to interface",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Timeout = duration
 			}
 
 		case schema.AttributeTypeRequestHeaders:
