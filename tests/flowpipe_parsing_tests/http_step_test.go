@@ -38,6 +38,7 @@ func TestHttpStepLoad(t *testing.T) {
 	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
 	assert.Equal("test", stepInputs[schema.AttributeTypeCaCertPem], "wrong cert")
 	assert.Equal(true, stepInputs[schema.AttributeTypeInsecure], "wrong insecure")
+	assert.Equal(int64(1000), stepInputs[schema.AttributeTypeRequestTimeoutMs], "wrong request timeout")
 	assert.Equal("{\"app\":\"flowpipe\",\"name\":\"turbie\"}", stepInputs[schema.AttributeTypeRequestBody], "wrong request_body")
 	assert.Equal("flowpipe", stepInputs[schema.AttributeTypeRequestHeaders].(map[string]interface{})["User-Agent"], "wrong header")
 }

@@ -1037,13 +1037,14 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 type PipelineStepHttp struct {
 	PipelineStepBase
 
-	Url             *string                `json:"url" binding:"required"`
-	Method          *string                `json:"method,omitempty"`
-	CaCertPem       *string                `json:"ca_cert_pem,omitempty"`
-	Insecure        *bool                  `json:"insecure,omitempty"`
-	RequestBody     *string                `json:"request_body,omitempty"`
-	RequestHeaders  map[string]interface{} `json:"request_headers,omitempty"`
-	BasicAuthConfig *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
+	Url              *string                `json:"url" binding:"required"`
+	Method           *string                `json:"method,omitempty"`
+	CaCertPem        *string                `json:"ca_cert_pem,omitempty"`
+	Insecure         *bool                  `json:"insecure,omitempty"`
+	RequestBody      *string                `json:"request_body,omitempty"`
+	RequestTimeoutMs *int64                 `json:"request_timeout_ms,omitempty"`
+	RequestHeaders   map[string]interface{} `json:"request_headers,omitempty"`
+	BasicAuthConfig  *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
 }
 
 func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
@@ -1078,6 +1079,11 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 
 	// Compare RequestBody field
 	if reflect.DeepEqual(p.RequestBody, other.RequestBody) {
+		return false
+	}
+
+	// Compare RequestTimeoutMs field
+	if reflect.DeepEqual(p.RequestTimeoutMs, other.RequestTimeoutMs) {
 		return false
 	}
 
@@ -1161,6 +1167,17 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		inputs[schema.AttributeTypeRequestBody] = requestBody
 	}
 
+	var requestTimeoutMs int64
+	if p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs] == nil {
+		inputs[schema.AttributeTypeRequestTimeoutMs] = *p.RequestTimeoutMs
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestTimeoutMs], evalContext, &requestTimeoutMs)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+		inputs[schema.AttributeTypeRequestTimeoutMs] = requestTimeoutMs
+	}
+
 	if p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders] == nil {
 		if p.RequestHeaders != nil {
 			inputs[schema.AttributeTypeRequestHeaders] = p.RequestHeaders
@@ -1206,7 +1223,7 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeUrl + " attribute to string",
+						Summary:  "Unable to parse '" + schema.AttributeTypeUrl + "' attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
@@ -1225,7 +1242,7 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeMethod + " attribute to string",
+						Summary:  "Unable to parse '" + schema.AttributeTypeMethod + "' attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
@@ -1242,6 +1259,7 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					p.Method = &method
 				}
 			}
+
 		case schema.AttributeTypeCaCertPem:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -1254,12 +1272,13 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeCaCertPem + " attribute to string",
+						Summary:  "Unable to parse '" + schema.AttributeTypeCaCertPem + "' attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
 				p.CaCertPem = &caCertPem
 			}
+
 		case schema.AttributeTypeInsecure:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -1292,11 +1311,31 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeRequestBody + " attribute to string",
+						Summary:  "Unable to parse '" + schema.AttributeTypeRequestBody + "' attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
 				p.RequestBody = &requestBody
+			}
+
+		case schema.AttributeTypeRequestTimeoutMs:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				requestTimeoutMs, ctyDiags := hclhelpers.CtyToInt64(val)
+				if ctyDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to convert '" + schema.AttributeTypeRequestTimeoutMs + "' into number",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.RequestTimeoutMs = requestTimeoutMs
 			}
 
 		case schema.AttributeTypeRequestHeaders:
@@ -1319,6 +1358,7 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					continue
 				}
 			}
+
 		default:
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{

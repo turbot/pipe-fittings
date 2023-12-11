@@ -127,16 +127,17 @@ const (
 	AttributeTypeDuration = "duration"
 
 	// Used by http step
-	AttributeTypeUrl             = "url"
-	AttributeTypeMethod          = "method"
-	AttributeTypeRequestBody     = "request_body"
-	AttributeTypeRequestHeaders  = "request_headers"
-	AttributeTypeCaCertPem       = "ca_cert_pem"
-	AttributeTypeInsecure        = "insecure"
-	AttributeTypeResponseHeaders = "response_headers"
-	AttributeTypeResponseBody    = "response_body"
-	AttributeTypeStatusCode      = "status_code"
-	AttributeTypeStatus          = "status"
+	AttributeTypeUrl              = "url"
+	AttributeTypeMethod           = "method"
+	AttributeTypeRequestBody      = "request_body"
+	AttributeTypeRequestHeaders   = "request_headers"
+	AttributeTypeCaCertPem        = "ca_cert_pem"
+	AttributeTypeInsecure         = "insecure"
+	AttributeTypeResponseHeaders  = "response_headers"
+	AttributeTypeRequestTimeoutMs = "request_timeout_ms"
+	AttributeTypeResponseBody     = "response_body"
+	AttributeTypeStatusCode       = "status_code"
+	AttributeTypeStatus           = "status"
 
 	// Used byy Pipeline step
 	AttributeTypePipeline = "pipeline"
