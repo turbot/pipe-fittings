@@ -1406,7 +1406,7 @@ func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 type PipelineStepSleep struct {
 	PipelineStepBase
-	Duration string `json:"duration"`
+	Duration interface{} `json:"duration"`
 }
 
 func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
@@ -1428,15 +1428,23 @@ func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var durationInput string
+	var durationInput interface{}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeDuration] == nil {
 		durationInput = p.Duration
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &durationInput)
+
+		var sleepDurationCtyValue cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &sleepDurationCtyValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
+
+		goVal, err := hclhelpers.CtyToGo(sleepDurationCtyValue)
+		if err != nil {
+			return nil, err
+		}
+		durationInput = goVal
 	}
 
 	return map[string]interface{}{
@@ -1458,11 +1466,11 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				duration, err := hclhelpers.CtyToString(val)
+				duration, err := hclhelpers.CtyToGo(val)
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeDuration + " attribute to string",
+						Summary:  "Unable to parse '" + schema.AttributeTypeDuration + "' attribute to interface",
 						Subject:  &attr.Range,
 					})
 				}
@@ -1473,10 +1481,29 @@ func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Sleep Step: " + attr.Name,
+					Summary:  "Unsupported attribute for " + schema.BlockTypePipelineStepSleep + " Step: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}
+		}
+	}
+
+	return diags
+}
+
+func (p *PipelineStepSleep) Validate() hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	if p.Duration != nil {
+		switch p.Duration.(type) {
+		case string, int:
+			// valid duration
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Value of the attribute '" + schema.AttributeTypeDuration + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+			})
 		}
 	}
 

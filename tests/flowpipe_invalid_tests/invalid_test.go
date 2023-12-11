@@ -177,6 +177,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_error_attribute.fp",
 		containsError: "Unsupported attribute 'ignored' in error block",
 	},
+	{
+		title:         "invalid sleep step attribute - duration",
+		file:          "./pipelines/invalid_sleep_attribute.fp",
+		containsError: "Value of the attribute 'duration' must be a string or a whole number",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
