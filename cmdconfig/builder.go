@@ -140,7 +140,8 @@ func tildefyPaths(args []string) error {
 				return err
 			}
 			// was this arg passed as an arg
-			// NOTE: we use this
+			// NOTE: we check args instead of viper.IsSet since viper.SetDefault actually causes IsSet to return true
+			// so if anything has already set default values, we would end up calling viper.Set instead of viper.SetDefault
 			if _, commandLineArgs := argsMap[argName]; commandLineArgs {
 				// if the value was already set from the command line re-set
 				viper.Set(argName, argVal)
