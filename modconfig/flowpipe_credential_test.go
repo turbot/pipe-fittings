@@ -617,6 +617,44 @@ func TestOpenAIDefaultCredential(t *testing.T) {
 	assert.Equal("sk-jwgthNa...", *newOpenAICreds.APIKey)
 }
 
+func TestAzureDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	azureCred := AzureCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("AZURE_CLIENT_ID")
+	os.Unsetenv("AZURE_CLIENT_SECRET")
+	os.Unsetenv("AZURE_TENANT_ID")
+	os.Unsetenv("AZURE_ENVIRONMENT")
+
+	newCreds, err := azureCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newAzureCreds := newCreds.(*AzureCredential)
+	assert.Equal("", *newAzureCreds.ClientID)
+	assert.Equal("", *newAzureCreds.ClientSecret)
+	assert.Equal("", *newAzureCreds.TenantID)
+	assert.Equal("", *newAzureCreds.Environment)
+
+	os.Setenv("AZURE_CLIENT_ID", "clienttoken")
+	os.Setenv("AZURE_CLIENT_SECRET", "clientsecret")
+	os.Setenv("AZURE_TENANT_ID", "tenantid")
+	os.Setenv("AZURE_ENVIRONMENT", "environmentvar")
+
+	newCreds, err = azureCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newAzureCreds = newCreds.(*AzureCredential)
+	assert.Equal("clienttoken", *newAzureCreds.ClientID)
+	assert.Equal("clientsecret", *newAzureCreds.ClientSecret)
+	assert.Equal("tenantid", *newAzureCreds.TenantID)
+	assert.Equal("environmentvar", *newAzureCreds.Environment)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)

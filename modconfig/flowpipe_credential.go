@@ -1722,6 +1722,89 @@ func (c *GcpCredential) GetTtl() int {
 	return *c.Ttl
 }
 
+type AzureCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	ClientID     *string `json:"client_id,omitempty" cty:"client_id" hcl:"client_id,optional"`
+	ClientSecret *string `json:"client_secret,omitempty" cty:"client_secret" hcl:"client_secret,optional"`
+	TenantID     *string `json:"tenant_id,omitempty" cty:"tenant_id" hcl:"tenant_id,optional"`
+	Environment  *string `json:"environment,omitempty" cty:"environment" hcl:"environment,optional"`
+}
+
+func (*AzureCredential) GetCredentialType() string {
+	return "azure"
+}
+
+func (c *AzureCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.ClientID != nil {
+		env["AZURE_CLIENT_ID"] = cty.StringVal(*c.ClientID)
+	}
+	if c.ClientSecret != nil {
+		env["AZURE_CLIENT_SECRET"] = cty.StringVal(*c.ClientSecret)
+	}
+	if c.TenantID != nil {
+		env["AZURE_TENANT_ID"] = cty.StringVal(*c.TenantID)
+	}
+	if c.Environment != nil {
+		env["AZURE_ENVIRONMENT"] = cty.StringVal(*c.Environment)
+	}
+	return env
+}
+
+func (c *AzureCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *AzureCredential) Resolve(ctx context.Context) (Credential, error) {
+
+	if c.ClientID == nil && c.ClientSecret == nil && c.TenantID == nil && c.Environment == nil {
+		clientIDEnvVar := os.Getenv("AZURE_CLIENT_ID")
+		clientSecretEnvVar := os.Getenv("AZURE_CLIENT_SECRET")
+		tenantIDEnvVar := os.Getenv("AZURE_TENANT_ID")
+		environmentEnvVar := os.Getenv("AZURE_ENVIRONMENT")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &AzureCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:         c.Type,
+			ClientID:     &clientIDEnvVar,
+			ClientSecret: &clientSecretEnvVar,
+			TenantID:     &tenantIDEnvVar,
+			Environment:  &environmentEnvVar,
+		}
+
+		return newCreds, nil
+	}
+
+	return c, nil
+}
+
+func (c *AzureCredential) GetTtl() int {
+	return -1
+}
+
+func (c *AzureCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -1960,6 +2043,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "openai.default",
 		},
 		Type: "openai",
+	}
+	credentials["azure.default"] = &AzureCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "azure.default",
+			ShortName:       "default",
+			UnqualifiedName: "azure.default",
+		},
+		Type: "azure",
 	}
 
 	return credentials
@@ -2258,6 +2349,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "openai",
+		}
+		return credential
+	} else if credentialType == "azure" {
+		credential := &AzureCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "azure",
 		}
 		return credential
 	}
