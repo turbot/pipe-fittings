@@ -23,7 +23,16 @@ func DiagsToError(prefix string, diags tfdiags.Diagnostics) error {
 	for _, diag := range diags {
 		if diag.Severity() == tfdiags.Error {
 			errorString := diag.Description().Summary
-			if diag.Description().Detail != "" {
+
+			// Override specific Terraform error messages
+			if diag.Description().Summary == "Variable declaration in .tfvars file" {
+				errorString = "Variable declaration in .fpvar file"
+				originalDetail := diag.Description().Detail
+				updatedDetail := strings.ReplaceAll(originalDetail, "A .tfvars", "An .fpvar")
+				updatedDetail = strings.ReplaceAll(updatedDetail, ".tf", ".fp")
+
+				errorString += fmt.Sprintf(": %s", updatedDetail)
+			} else if diag.Description().Detail != "" {
 				errorString += fmt.Sprintf(": %s", diag.Description().Detail)
 			}
 
