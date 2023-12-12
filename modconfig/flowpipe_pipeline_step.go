@@ -708,21 +708,7 @@ func (p *PipelineStepBase) GetUnresolvedBodies() map[string]hcl.Body {
 }
 
 func (p *PipelineStepBase) Validate() hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
-
-	if p.Timeout != nil {
-		switch p.Timeout.(type) {
-		case string, int:
-			// valid duration
-		default:
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Value of the attribute '" + schema.AttributeTypeTimeout + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
-			})
-		}
-	}
-
-	return diags
+	return hcl.Diagnostics{}
 }
 
 func (p *PipelineStepBase) Equals(otherBase *PipelineStepBase) bool {
