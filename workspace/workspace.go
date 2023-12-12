@@ -34,6 +34,7 @@ type Workspace struct {
 	Mod                 *modconfig.Mod
 
 	Mods map[string]*modconfig.Mod
+
 	// the input variables used in the parse
 	VariableValues map[string]string
 
