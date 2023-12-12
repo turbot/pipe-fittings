@@ -49,3 +49,7 @@ var EnvAppPrefix string
 
 // EnvInputVarPrefix is the prefix for environment variables that represent values for input variables.
 var EnvInputVarPrefix string
+
+// Update check
+var VersionCheckHost string // "hub.steampipe.io"
+var VersionCheckPath string // "api/cli/version/latest"
