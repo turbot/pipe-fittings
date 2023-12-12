@@ -2363,6 +2363,18 @@ func NewCredential(block *hcl.Block) Credential {
 			Type: "azure",
 		}
 		return credential
+	} else if credentialType == "gcp" {
+		credential := &GcpCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "gcp",
+		}
+		return credential
 	}
 
 	return nil
