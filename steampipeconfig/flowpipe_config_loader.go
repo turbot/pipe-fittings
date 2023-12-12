@@ -98,6 +98,7 @@ func loadCredentials(configFolder string, opts *loadConfigOptions) (map[string]m
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				slog.Warn("loadCredentials: failed to decode credential block", "error", err)
+				continue
 			}
 
 			res[credential.GetUnqualifiedName()] = credential
