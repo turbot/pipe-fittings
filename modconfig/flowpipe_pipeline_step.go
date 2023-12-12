@@ -3171,7 +3171,6 @@ type PipelineStepContainer struct {
 	Cmd               []string          `json:"cmd"`
 	Env               map[string]string `json:"env"`
 	EntryPoint        []string          `json:"entrypoint"`
-	Timeout           *int64            `json:"timeout"`
 	CpuShares         *int64            `json:"cpu_shares"`
 	Memory            *int64            `json:"memory"`
 	MemoryReservation *int64            `json:"memory_reservation"`
@@ -3197,6 +3196,12 @@ func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+
+	results, err := p.GetBaseInputs(evalContext)
+	if err != nil {
+		return nil, err
+	}
+
 	var image *string
 	if p.UnresolvedAttributes[schema.AttributeTypeImage] == nil {
 		image = p.Image
@@ -3265,16 +3270,6 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		entryPoint, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
 		if err != nil {
 			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse entrypoint attribute to []string: " + err.Error())
-		}
-	}
-
-	var timeout *int64
-	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil {
-		timeout = p.Timeout
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &timeout)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
 
@@ -3358,12 +3353,10 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	results := map[string]interface{}{
-		schema.LabelName:               p.Name,
-		schema.AttributeTypeCmd:        cmd,
-		schema.AttributeTypeEnv:        env,
-		schema.AttributeTypeEntryPoint: entryPoint,
-	}
+	results[schema.LabelName] = p.Name
+	results[schema.AttributeTypeCmd] = cmd
+	results[schema.AttributeTypeEnv] = env
+	results[schema.AttributeTypeEntryPoint] = entryPoint
 
 	if image != nil {
 		results[schema.AttributeTypeImage] = *image
@@ -3371,10 +3364,6 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 
 	if source != nil {
 		results[schema.AttributeTypeSource] = *source
-	}
-
-	if timeout != nil {
-		results[schema.AttributeTypeTimeout] = *timeout
 	}
 
 	if cpuShares != nil {
@@ -3509,25 +3498,6 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 					continue
 				}
 				p.EntryPoint = ep
-			}
-		case schema.AttributeTypeTimeout:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				timeout, ctyDiags := hclhelpers.CtyToInt64(val)
-				if ctyDiags.HasErrors() {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeTimeout + " attribute to integer",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.Timeout = timeout
 			}
 		case schema.AttributeTypeCpuShares:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3699,6 +3669,12 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 func (p *PipelineStepContainer) Validate() hcl.Diagnostics {
 
 	diags := hcl.Diagnostics{}
+
+	// validate the base attributes
+	stepBaseDiags := p.ValidateBaseAttributes()
+	if stepBaseDiags.HasErrors() {
+		diags = append(diags, stepBaseDiags...)
+	}
 
 	// The source indicates the path to a folder that contains the dockerfile or containerfile to build the container
 	// Currently the step does not support the source attribute.

@@ -710,6 +710,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeDescription,
 		},
 		{
+			Name: schema.AttributeTypeTimeout,
+		},
+		{
 			Name: schema.AttributeTypeForEach,
 		},
 		{
@@ -734,9 +737,6 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeEntryPoint,
-		},
-		{
-			Name: schema.AttributeTypeTimeout,
 		},
 		{
 			Name: schema.AttributeTypeCpuShares,
