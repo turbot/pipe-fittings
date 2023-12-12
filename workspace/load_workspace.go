@@ -52,8 +52,8 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 }
 
 func promptForMissingVariables(ctx context.Context, missingVariables []*modconfig.Variable, workspacePath string) error {
-	fmt.Println()                                       //nolint:forbidigo // TODO: check this lint issue
-	fmt.Println("Variables defined with no value set.") //nolint:forbidigo // TODO: check this lint issue
+	fmt.Println()                                       //nolint:forbidigo // UI formatting
+	fmt.Println("Variables defined with no value set.") //nolint:forbidigo // UI formatting
 	for _, v := range missingVariables {
 		variableName := v.ShortName
 		variableDisplayName := fmt.Sprintf("var.%s", v.ShortName)

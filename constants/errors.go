@@ -3,7 +3,8 @@ package constants
 import "log/slog"
 
 const (
-	LevelTrace = slog.Level(-8)
+	LogLevelTrace = slog.Level(-8)
+	LogLevelOff   = slog.Level(-16)
 )
 
 const (
