@@ -707,8 +707,22 @@ func (p *PipelineStepBase) GetUnresolvedBodies() map[string]hcl.Body {
 	return p.UnresolvedBodies
 }
 
-func (*PipelineStepBase) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
+func (p *PipelineStepBase) Validate() hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	if p.Timeout != nil {
+		switch p.Timeout.(type) {
+		case string, int:
+			// valid duration
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Value of the attribute '" + schema.AttributeTypeTimeout + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+			})
+		}
+	}
+
+	return diags
 }
 
 func (p *PipelineStepBase) Equals(otherBase *PipelineStepBase) bool {
@@ -1017,18 +1031,16 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalC
 		val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 		if stepDiags.HasErrors() {
 			diags = append(diags, stepDiags...)
-		} else {
-			if val != cty.NilVal {
-				duration, err := hclhelpers.CtyToGo(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse '" + schema.AttributeTypeTimeout + "' attribute to interface",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Timeout = duration
+		} else if val != cty.NilVal {
+			duration, err := hclhelpers.CtyToGo(val)
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse '" + schema.AttributeTypeTimeout + "' attribute to interface",
+					Subject:  &attr.Range,
+				})
 			}
+			p.Timeout = duration
 		}
 	}
 
@@ -1069,6 +1081,25 @@ func (p *PipelineStepBase) GetBaseInputs(evalContext *hcl.EvalContext) (map[stri
 	}
 
 	return inputs, nil
+}
+
+func (p *PipelineStepBase) ValidateBaseAttributes() hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	if p.Timeout != nil {
+		switch p.Timeout.(type) {
+		case string, int:
+			// valid duration
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Value of the attribute '" + schema.AttributeTypeTimeout + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+			})
+		}
+	}
+
+	return diags
 }
 
 var ValidBaseStepAttributes = []string{
