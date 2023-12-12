@@ -1478,6 +1478,11 @@ func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 	return diags
 }
 
+func (p *PipelineStepHttp) Validate() hcl.Diagnostics {
+	diags := p.ValidateBaseAttributes()
+	return diags
+}
+
 type PipelineStepSleep struct {
 	PipelineStepBase
 	Duration interface{} `json:"duration"`

@@ -31,3 +31,26 @@ pipeline "http_step_timeout_unresolved" {
     timeout = param.timeout
   }
 }
+
+pipeline "http_step_timeout_string" {
+
+  step "http" "send_to_slack" {
+    url     = "https://myapi.com/vi/api/do-something"
+    method  = "post"
+    timeout = "2s"
+  }
+}
+
+pipeline "http_step_timeout_string_unresolved" {
+
+  param "timeout" {
+    type    = string
+    default = "2s"
+  }
+
+  step "http" "send_to_slack" {
+    url     = "https://myapi.com/vi/api/do-something"
+    method  = "post"
+    timeout = param.timeout
+  }
+}

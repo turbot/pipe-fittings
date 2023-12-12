@@ -17,7 +17,7 @@ func TestHttpStepLoad(t *testing.T) {
 	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/http_step.fp")
 	assert.Nil(err, "error found")
 
-	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
+	assert.GreaterOrEqual(len(pipelines), 4, "wrong number of pipelines")
 
 	if pipelines["local.pipeline.http_step"] == nil {
 		assert.Fail("http_step pipeline not found")
@@ -50,7 +50,7 @@ func TestHttpStepLoadTimeoutUnresolved(t *testing.T) {
 	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/http_step.fp")
 	assert.Nil(err, "error found")
 
-	assert.GreaterOrEqual(len(pipelines), 2, "wrong number of pipelines")
+	assert.GreaterOrEqual(len(pipelines), 4, "wrong number of pipelines")
 
 	if pipelines["local.pipeline.http_step_timeout_unresolved"] == nil {
 		assert.Fail("http_step_timeout_unresolved pipeline not found")
@@ -80,4 +80,72 @@ func TestHttpStepLoadTimeoutUnresolved(t *testing.T) {
 	assert.Equal("https://myapi.com/vi/api/do-something", stepInputs[schema.AttributeTypeUrl], "wrong url")
 	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
 	assert.Equal(2000, stepInputs[schema.AttributeTypeTimeout], "wrong cert")
+}
+
+func TestHttpStepLoadTimeoutString(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/http_step.fp")
+	assert.Nil(err, "error found")
+
+	assert.GreaterOrEqual(len(pipelines), 4, "wrong number of pipelines")
+
+	if pipelines["local.pipeline.http_step_timeout_string"] == nil {
+		assert.Fail("http_step_timeout_string pipeline not found")
+		return
+	}
+
+	pipelineHcl := pipelines["local.pipeline.http_step_timeout_string"]
+	step := pipelineHcl.GetStep("http.send_to_slack")
+	if step == nil {
+		assert.Fail("http.send_to_slack step not found")
+		return
+	}
+
+	stepInputs, err := step.GetInputs(nil)
+
+	assert.Nil(err, "error found")
+	assert.NotNil(stepInputs, "inputs not found")
+
+	assert.Equal("https://myapi.com/vi/api/do-something", stepInputs[schema.AttributeTypeUrl], "wrong url")
+	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
+	assert.Equal("2s", stepInputs[schema.AttributeTypeTimeout], "wrong cert")
+}
+
+func TestHttpStepLoadTimeoutStringUnresolved(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/http_step.fp")
+	assert.Nil(err, "error found")
+
+	assert.GreaterOrEqual(len(pipelines), 4, "wrong number of pipelines")
+
+	if pipelines["local.pipeline.http_step_timeout_string_unresolved"] == nil {
+		assert.Fail("http_step_timeout_string_unresolved pipeline not found")
+		return
+	}
+
+	pipelineHcl := pipelines["local.pipeline.http_step_timeout_string_unresolved"]
+	step := pipelineHcl.GetStep("http.send_to_slack")
+	if step == nil {
+		assert.Fail("http.send_to_slack step not found")
+		return
+	}
+
+	paramVal := cty.ObjectVal(map[string]cty.Value{
+		"timeout": cty.StringVal("2s"),
+	})
+
+	evalContext := &hcl.EvalContext{}
+	evalContext.Variables = map[string]cty.Value{}
+	evalContext.Variables["param"] = paramVal
+
+	stepInputs, err := step.GetInputs(evalContext)
+
+	assert.Nil(err, "error found")
+	assert.NotNil(stepInputs, "inputs not found")
+
+	assert.Equal("https://myapi.com/vi/api/do-something", stepInputs[schema.AttributeTypeUrl], "wrong url")
+	assert.Equal("post", stepInputs[schema.AttributeTypeMethod], "wrong method")
+	assert.Equal("2s", stepInputs[schema.AttributeTypeTimeout], "wrong cert")
 }
