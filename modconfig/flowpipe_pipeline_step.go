@@ -251,6 +251,8 @@ func NewPipelineStep(stepType, stepName string) PipelineStep {
 
 // A common interface that all pipeline steps must implement
 type PipelineStep interface {
+	PipelineStepBaseInterface
+
 	Initialize()
 	GetFullyQualifiedName() string
 	GetName() string
@@ -260,15 +262,12 @@ type PipelineStep interface {
 	SetPipelineName(string)
 	GetPipelineName() string
 	IsResolved() bool
-	AddUnresolvedAttribute(string, hcl.Expression)
 	GetUnresolvedAttributes() map[string]hcl.Expression
 	AddUnresolvedBody(string, hcl.Body)
 	GetUnresolvedBodies() map[string]hcl.Body
 	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
 	GetDependsOn() []string
 	GetCredentialDependsOn() []string
-	AppendDependsOn(...string)
-	AppendCredentialDependsOn(...string)
 	GetForEach() hcl.Expression
 	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
@@ -280,6 +279,12 @@ type PipelineStep interface {
 	GetOutputConfig() map[string]*PipelineOutput
 	Equals(other PipelineStep) bool
 	Validate() hcl.Diagnostics
+}
+
+type PipelineStepBaseInterface interface {
+	AppendDependsOn(...string)
+	AppendCredentialDependsOn(...string)
+	AddUnresolvedAttribute(string, hcl.Expression)
 }
 
 type ErrorConfig struct {
@@ -941,7 +946,7 @@ func decodeDependsOn(attr *hcl.Attribute) ([]hcl.Traversal, hcl.Diagnostics) {
 	return ret, diags
 }
 
-func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.Diagnostics {
+func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	var hclDependsOn []hcl.Traversal
 	if attr, exists := hclAttributes[schema.AttributeTypeDependsOn]; exists {
@@ -1008,6 +1013,25 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.D
 		}
 	}
 
+	if attr, exists := hclAttributes[schema.AttributeTypeTimeout]; exists {
+		val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+		if stepDiags.HasErrors() {
+			diags = append(diags, stepDiags...)
+		} else {
+			if val != cty.NilVal {
+				duration, err := hclhelpers.CtyToGo(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse '" + schema.AttributeTypeTimeout + "' attribute to interface",
+						Subject:  &attr.Range,
+					})
+				}
+				p.Timeout = duration
+			}
+		}
+	}
+
 	// if attribute is always unresolved, or at least we treat it to be unresolved. Most of the
 	// usage will be testing the value that can only be had during the pipeline execution
 	if attr, exists := hclAttributes[schema.AttributeTypeIf]; exists {
@@ -1022,6 +1046,29 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes) hcl.D
 	p.AppendDependsOn(dependsOn...)
 
 	return diags
+}
+
+func (p *PipelineStepBase) GetBaseInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	inputs := map[string]interface{}{}
+
+	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil && p.Timeout != nil {
+		inputs[schema.AttributeTypeTimeout] = p.Timeout
+	} else if p.UnresolvedAttributes[schema.AttributeTypeTimeout] != nil {
+
+		var timeoutDurationCtyValue cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &timeoutDurationCtyValue)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+
+		goVal, err := hclhelpers.CtyToGo(timeoutDurationCtyValue)
+		if err != nil {
+			return nil, err
+		}
+		inputs[schema.AttributeTypeTimeout] = goVal
+	}
+
+	return inputs, nil
 }
 
 var ValidBaseStepAttributes = []string{
@@ -1099,6 +1146,12 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+
+	inputs, err := p.GetBaseInputs(evalContext)
+	if err != nil {
+		return nil, err
+	}
+
 	var urlInput string
 	if p.UnresolvedAttributes[schema.AttributeTypeUrl] == nil {
 		if p.Url == nil {
@@ -1111,10 +1164,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
-
-	inputs := map[string]interface{}{
-		schema.AttributeTypeUrl: urlInput,
-	}
+	inputs[schema.AttributeTypeUrl] = urlInput
 
 	if p.UnresolvedAttributes[schema.AttributeTypeMethod] == nil {
 		if p.Method != nil {
@@ -1181,23 +1231,6 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		inputs[schema.AttributeTypeRequestHeaders] = requestHeaders
 	}
 
-	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil {
-		inputs[schema.AttributeTypeTimeout] = p.Timeout
-	} else {
-
-		var sleepDurationCtyValue cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &sleepDurationCtyValue)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		goVal, err := hclhelpers.CtyToGo(sleepDurationCtyValue)
-		if err != nil {
-			return nil, err
-		}
-		inputs[schema.AttributeTypeTimeout] = goVal
-	}
-
 	if p.BasicAuthConfig != nil {
 		basicAuth, diags := p.BasicAuthConfig.GetInputs(evalContext, p.UnresolvedAttributes)
 		if diags.HasErrors() {
@@ -1214,7 +1247,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 }
 
 func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -1321,25 +1354,6 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 					})
 				}
 				p.RequestBody = &requestBody
-			}
-
-		case schema.AttributeTypeTimeout:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				duration, err := hclhelpers.CtyToGo(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse '" + schema.AttributeTypeTimeout + "' attribute to interface",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Timeout = duration
 			}
 
 		case schema.AttributeTypeRequestHeaders:
@@ -1497,7 +1511,7 @@ func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -1775,7 +1789,7 @@ func (p *PipelineStepEmail) GetInputs(evalContext *hcl.EvalContext) (map[string]
 }
 
 func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2027,7 +2041,7 @@ func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
-func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStep) (cty.Value, hcl.Diagnostics) {
+func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
 	// If there is a param in the expression, then we must assume that we can't resolve it at this stage.
@@ -2167,7 +2181,7 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 
 func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2299,7 +2313,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 }
 
 func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2459,7 +2473,7 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 }
 
 func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2623,7 +2637,7 @@ func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[stri
 }
 
 func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -2910,7 +2924,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 }
 
 func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	// TODO: Integrated 2023 hack - remove non appropriate attribute and add them to notify, notifies, option, options
 	for name, attr := range hclAttributes {
@@ -3377,7 +3391,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 }
 
 func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes)
+	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
 		switch name {
