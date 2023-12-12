@@ -182,6 +182,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_sleep_attribute.fp",
 		containsError: "Value of the attribute 'duration' must be a string or a whole number",
 	},
+	{
+		title:         "invalid http step base attribute - timeout",
+		file:          "./pipelines/invalid_http_timeout.fp",
+		containsError: "Value of the attribute 'timeout' must be a string or a whole number",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
