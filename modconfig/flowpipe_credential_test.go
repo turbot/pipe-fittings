@@ -356,14 +356,14 @@ func TestIP2LocationDefaultCredential(t *testing.T) {
 		},
 	}
 
-	os.Unsetenv("IP2LOCATION_API_KEY")
+	os.Unsetenv("IP2LOCATIONIO_API_KEY")
 	newCreds, err := ip2LocationCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newIP2LocationCreds := newCreds.(*IP2LocationCredential)
 	assert.Equal("", *newIP2LocationCreds.APIKey)
 
-	os.Setenv("IP2LOCATION_API_KEY", "12345678901A23BC4D5E6FG78HI9J101")
+	os.Setenv("IP2LOCATIONIO_API_KEY", "12345678901A23BC4D5E6FG78HI9J101")
 
 	newCreds, err = ip2LocationCred.Resolve(context.TODO())
 	assert.Nil(err)

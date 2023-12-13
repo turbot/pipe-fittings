@@ -958,7 +958,7 @@ func (*IP2LocationCredential) GetCredentialType() string {
 func (c *IP2LocationCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
 	if c.APIKey != nil {
-		env["IP2LOCATION_API_KEY"] = cty.StringVal(*c.APIKey)
+		env["IP2LOCATIONIO_API_KEY"] = cty.StringVal(*c.APIKey)
 	}
 	return env
 }
@@ -977,7 +977,7 @@ func (c *IP2LocationCredential) CtyValue() (cty.Value, error) {
 
 func (c *IP2LocationCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.APIKey == nil {
-		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATION_API_KEY")
+		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
 
 		// Don't modify existing credential, resolve to a new one
 		newCreds := &IP2LocationCredential{
