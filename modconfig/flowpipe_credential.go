@@ -942,7 +942,7 @@ func (c *DiscordCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-type IP2LocationCredential struct {
+type IP2LocationIOCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
@@ -951,11 +951,11 @@ type IP2LocationCredential struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (*IP2LocationCredential) GetCredentialType() string {
-	return "ip2location"
+func (*IP2LocationIOCredential) GetCredentialType() string {
+	return "ip2locationio"
 }
 
-func (c *IP2LocationCredential) getEnv() map[string]cty.Value {
+func (c *IP2LocationIOCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
 	if c.APIKey != nil {
 		env["IP2LOCATIONIO_API_KEY"] = cty.StringVal(*c.APIKey)
@@ -963,7 +963,7 @@ func (c *IP2LocationCredential) getEnv() map[string]cty.Value {
 	return env
 }
 
-func (c *IP2LocationCredential) CtyValue() (cty.Value, error) {
+func (c *IP2LocationIOCredential) CtyValue() (cty.Value, error) {
 	ctyValue, err := GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
@@ -975,12 +975,12 @@ func (c *IP2LocationCredential) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (c *IP2LocationCredential) Resolve(ctx context.Context) (Credential, error) {
+func (c *IP2LocationIOCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.APIKey == nil {
 		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
 
 		// Don't modify existing credential, resolve to a new one
-		newCreds := &IP2LocationCredential{
+		newCreds := &IP2LocationIOCredential{
 			HclResourceImpl: HclResourceImpl{
 				FullName:        c.FullName,
 				UnqualifiedName: c.UnqualifiedName,
@@ -997,11 +997,11 @@ func (c *IP2LocationCredential) Resolve(ctx context.Context) (Credential, error)
 	return c, nil
 }
 
-func (c *IP2LocationCredential) GetTtl() int {
+func (c *IP2LocationIOCredential) GetTtl() int {
 	return -1
 }
 
-func (c *IP2LocationCredential) Validate() hcl.Diagnostics {
+func (c *IP2LocationIOCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
@@ -1964,13 +1964,13 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "discord",
 	}
-	credentials["ip2location.default"] = &IP2LocationCredential{
+	credentials["ip2locationio.default"] = &IP2LocationIOCredential{
 		HclResourceImpl: HclResourceImpl{
-			FullName:        "ip2location.default",
+			FullName:        "ip2locationio.default",
 			ShortName:       "default",
-			UnqualifiedName: "ip2location.default",
+			UnqualifiedName: "ip2locationio.default",
 		},
-		Type: "ip2location",
+		Type: "ip2locationio",
 	}
 	credentials["ipstack.default"] = &IPstackCredential{
 		HclResourceImpl: HclResourceImpl{
@@ -2231,8 +2231,8 @@ func NewCredential(block *hcl.Block) Credential {
 			Type: "discord",
 		}
 		return credential
-	} else if credentialType == "ip2location" {
-		credential := &IP2LocationCredential{
+	} else if credentialType == "ip2locationio" {
+		credential := &IP2LocationIOCredential{
 			HclResourceImpl: HclResourceImpl{
 				FullName:        credentialFullName,
 				ShortName:       credentialName,
@@ -2240,7 +2240,7 @@ func NewCredential(block *hcl.Block) Credential {
 				DeclRange:       block.DefRange,
 				blockType:       block.Type,
 			},
-			Type: "ip2location",
+			Type: "ip2locationio",
 		}
 		return credential
 	} else if credentialType == "ipstack" {

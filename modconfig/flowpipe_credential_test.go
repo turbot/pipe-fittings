@@ -347,10 +347,10 @@ func TestDiscordDefaultCredential(t *testing.T) {
 	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newDiscordCreds.Token)
 }
 
-func TestIP2LocationDefaultCredential(t *testing.T) {
+func TestIP2LocationIODefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
-	ip2LocationCred := IP2LocationCredential{
+	ip2LocationCred := IP2LocationIOCredential{
 		HclResourceImpl: HclResourceImpl{
 			ShortName: "default",
 		},
@@ -360,7 +360,7 @@ func TestIP2LocationDefaultCredential(t *testing.T) {
 	newCreds, err := ip2LocationCred.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newIP2LocationCreds := newCreds.(*IP2LocationCredential)
+	newIP2LocationCreds := newCreds.(*IP2LocationIOCredential)
 	assert.Equal("", *newIP2LocationCreds.APIKey)
 
 	os.Setenv("IP2LOCATIONIO_API_KEY", "12345678901A23BC4D5E6FG78HI9J101")
@@ -368,7 +368,7 @@ func TestIP2LocationDefaultCredential(t *testing.T) {
 	newCreds, err = ip2LocationCred.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newIP2LocationCreds = newCreds.(*IP2LocationCredential)
+	newIP2LocationCreds = newCreds.(*IP2LocationIOCredential)
 	assert.Equal("12345678901A23BC4D5E6FG78HI9J101", *newIP2LocationCreds.APIKey)
 }
 
