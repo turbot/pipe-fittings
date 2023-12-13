@@ -159,7 +159,6 @@ const (
 	// Functions attributes
 	AttributeTypeRuntime  = "runtime"
 	AttributeTypeEnv      = "env"
-	AttributeTypeSrc      = "src"
 	AttributeTypeHandler  = "handler"
 	AttributeTypeFunction = "function"
 	AttributeTypeEvent    = "event"
