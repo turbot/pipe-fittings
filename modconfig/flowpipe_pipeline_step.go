@@ -2559,7 +2559,7 @@ type PipelineStepFunction struct {
 	Function cty.Value `json:"-"`
 
 	Runtime string `json:"runtime" cty:"runtime"`
-	Src     string `json:"src" cty:"src"`
+	Source  string `json:"source" cty:"source"`
 	Handler string `json:"handler" cty:"handler"`
 
 	Event map[string]interface{} `json:"event"`
@@ -2580,7 +2580,7 @@ func (p *PipelineStepFunction) Equals(iOther PipelineStep) bool {
 	return p.Name == other.Name &&
 		p.Runtime == other.Runtime &&
 		p.Handler == other.Handler &&
-		p.Src == other.Src
+		p.Source == other.Source
 }
 
 func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
@@ -2624,10 +2624,10 @@ func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[stri
 	}
 
 	var src string
-	if p.UnresolvedAttributes[schema.AttributeTypeSrc] == nil {
-		src = p.Src
+	if p.UnresolvedAttributes[schema.AttributeTypeSource] == nil {
+		src = p.Source
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSrc], evalContext, &src)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSource], evalContext, &src)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
@@ -2654,7 +2654,7 @@ func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[stri
 	}
 
 	results[schema.LabelName] = p.PipelineName + "." + p.GetFullyQualifiedName()
-	results[schema.AttributeTypeSrc] = src
+	results[schema.AttributeTypeSource] = src
 	results[schema.AttributeTypeRuntime] = runtime
 	results[schema.AttributeTypeHandler] = handler
 	results[schema.AttributeTypeEvent] = event
@@ -2668,7 +2668,7 @@ func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalC
 
 	for name, attr := range hclAttributes {
 		switch name {
-		case schema.AttributeTypeSrc:
+		case schema.AttributeTypeSource:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2676,7 +2676,7 @@ func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalC
 			}
 
 			if val != cty.NilVal {
-				p.Src = val.AsString()
+				p.Source = val.AsString()
 			}
 
 		case schema.AttributeTypeHandler:

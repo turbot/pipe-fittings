@@ -34,7 +34,7 @@ func TestFunctionStep(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("./my-function", inputs[schema.AttributeTypeSrc])
+	assert.Equal("./my-function", inputs[schema.AttributeTypeSource])
 	assert.Equal("nodejs", inputs[schema.AttributeTypeRuntime])
 	assert.Equal("my_file.my_handler", inputs[schema.AttributeTypeHandler])
 	assert.Equal(10, inputs[schema.AttributeTypeTimeout])
@@ -68,7 +68,7 @@ func TestFunctionStep(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("./my-function", inputs[schema.AttributeTypeSrc])
+	assert.Equal("./my-function", inputs[schema.AttributeTypeSource])
 	assert.Equal("nodejs", inputs[schema.AttributeTypeRuntime])
 	assert.Equal("my_file.my_handler", inputs[schema.AttributeTypeHandler])
 	assert.Equal(10, inputs[schema.AttributeTypeTimeout])
@@ -91,7 +91,7 @@ func TestFunctionStep(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("./my-function", inputs[schema.AttributeTypeSrc])
+	assert.Equal("./my-function", inputs[schema.AttributeTypeSource])
 	assert.Equal("nodejs", inputs[schema.AttributeTypeRuntime])
 	assert.Equal("my_file.my_handler", inputs[schema.AttributeTypeHandler])
 	assert.Equal("10s", inputs[schema.AttributeTypeTimeout])
@@ -125,7 +125,7 @@ func TestFunctionStep(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("./my-function", inputs[schema.AttributeTypeSrc])
+	assert.Equal("./my-function", inputs[schema.AttributeTypeSource])
 	assert.Equal("nodejs", inputs[schema.AttributeTypeRuntime])
 	assert.Equal("my_file.my_handler", inputs[schema.AttributeTypeHandler])
 	assert.Equal("10s", inputs[schema.AttributeTypeTimeout])

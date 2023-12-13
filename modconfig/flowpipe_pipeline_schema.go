@@ -668,7 +668,7 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeIf,
 		},
 		{
-			Name:     schema.AttributeTypeSrc,
+			Name:     schema.AttributeTypeSource,
 			Required: true,
 		},
 		{

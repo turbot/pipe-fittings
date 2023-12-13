@@ -1,7 +1,7 @@
 pipeline "function_step_test" {
   step "function" "my_func" {
     # Now
-    src     = "./my-function"
+    source  = "./my-function"
     runtime = "nodejs"
     handler = "my_file.my_handler"
     timeout = 10
@@ -37,7 +37,7 @@ pipeline "function_step_test_with_param" {
 
   step "function" "my_func" {
     # Now
-    src     = param.src
+    source  = param.src
     runtime = param.runtime
     handler = param.handler
     timeout = param.timeout
@@ -52,7 +52,7 @@ pipeline "function_step_test_with_param" {
 pipeline "function_step_test_string_timeout" {
   step "function" "my_func" {
     # Now
-    src     = "./my-function"
+    source  = "./my-function"
     runtime = "nodejs"
     handler = "my_file.my_handler"
     timeout = "10s"
@@ -87,7 +87,7 @@ pipeline "function_step_test_string_timeout_with_param" {
 
   step "function" "my_func" {
     # Now
-    src     = param.src
+    source  = param.src
     runtime = param.runtime
     handler = param.handler
     timeout = param.timeout
