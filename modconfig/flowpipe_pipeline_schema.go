@@ -656,6 +656,9 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeDescription,
 		},
 		{
+			Name: schema.AttributeTypeTimeout,
+		},
+		{
 			Name: schema.AttributeTypeForEach,
 		},
 		{
@@ -665,7 +668,7 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeIf,
 		},
 		{
-			Name:     schema.AttributeTypeSrc,
+			Name:     schema.AttributeTypeSource,
 			Required: true,
 		},
 		{
