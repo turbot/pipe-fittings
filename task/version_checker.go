@@ -14,10 +14,12 @@ import (
 )
 
 type CLIVersionCheckResponse struct {
-	NewVersion   string    `json:"latest_version,omitempty"` // `json:"current_version"`
-	DownloadURL  string    `json:"download_url,omitempty"`   // `json:"download_url"`
-	ChangelogURL string    `json:"html,omitempty"`           // `json:"changelog_url"`
-	Alerts       []*string `json:"alerts,omitempty"`
+	// TODO graza remove comments? what are they there for???
+	NewVersion   string `json:"latest_version,omitempty"` // `json:"current_version"`
+	DownloadURL  string `json:"download_url,omitempty"`   // `json:"download_url"`
+	ChangelogURL string `json:"html,omitempty"`           // `json:"changelog_url"`
+	// TODO graza not used?? check with binaek and remove
+	Alerts []*string `json:"alerts,omitempty"`
 }
 
 // VersionChecker :: the version checker struct composition container.

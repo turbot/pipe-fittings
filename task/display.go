@@ -22,7 +22,7 @@ func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin m
 	utils.LogTime("Runner.saveAvailableVersions start")
 	defer utils.LogTime("Runner.saveAvailableVersions end")
 
-	if cli == nil /*&& len(plugin) == 0 */ {
+	if cli == nil {
 		// nothing to save
 		return nil
 	}
@@ -30,7 +30,6 @@ func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin m
 	notifs := &AvailableVersionCache{
 		StructVersion: AvailableVersionsCacheStructVersion,
 		CliCache:      cli,
-		//PluginCache:   plugin,
 	}
 	// create the file - if it exists, it will be truncated by os.Create
 	f, err := os.Create(filepaths.AvailableVersionsFilePath())
@@ -51,6 +50,7 @@ func (r *Runner) hasAvailableVersion() bool {
 func (r *Runner) loadCachedVersions() (*AvailableVersionCache, error) {
 	utils.LogTime("Runner.getNotifications start")
 	defer utils.LogTime("Runner.getNotifications end")
+	// TODO graza why not put this in the update check file (later)
 	f, err := os.Open(filepaths.AvailableVersionsFilePath())
 	if err != nil {
 		return nil, err
@@ -76,16 +76,19 @@ func (r *Runner) displayNotifications(cmd *cobra.Command, cmdArgs []string) erro
 	utils.LogTime("Runner.displayNotifications start")
 	defer utils.LogTime("Runner.displayNotifications end")
 
+	// TODO graza make a hook ShouldShowNotificaitons which steampipe and flowpipe can implement
 	if !showNotificationsForCommand(cmd, cmdArgs) {
 		// do not do anything - just return
 		return nil
 	}
 
+	// TODO graza combine with loadAvailableVersions
 	if !r.hasAvailableVersion() {
 		// nothing to display
 		return nil
 	}
 
+	// TODO graza rename loadCachedVersions to loadAvailableVersions
 	cachedVersions, err := r.loadCachedVersions()
 	if err != nil {
 		return err
