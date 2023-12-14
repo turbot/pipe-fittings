@@ -2,13 +2,15 @@ package cmdconfig
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
-	"strings"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
@@ -36,10 +38,14 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 
 // GetConfigPath builds a list of possible config file locations, starting with the HIGHEST priority
 func GetConfigPath() ([]string, error) {
-	// config-path is a colon separated path of decreasing precedence that config (fpc) files are loaded from
-	// default to the cmod locaiton and the global config dir
-	// if config-path was passed, use that
 	configPathArg := app_specific.DefaultConfigPath
+
+	// config-path is a colon separated path of decreasing precedence that config (fpc) files are loaded from
+	// default to the cmod location and the global config dir
+	configPathEnv := app_specific.EnvConfigPath
+	if envVal, ok := os.LookupEnv(configPathEnv); ok {
+		configPathArg = envVal
+	}
 	if viper.IsSet(constants.ArgConfigPath) {
 		configPathArg = viper.GetString(constants.ArgConfigPath)
 	}
