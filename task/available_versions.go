@@ -8,7 +8,9 @@ import (
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"os"
-	//"github.com/turbot/pipe-fittings/plugin"
+	"strings"
+
+	// "github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -65,10 +67,11 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 
 	if newVersion.GreaterThan(app_specific.AppVersion) {
 		var downloadURLColor = color.New(color.FgYellow)
+		lowerAppName := strings.ToLower(app_specific.AppName) // TODO: check to see if there is a nicer way to write download url
 		var notificationLines = []string{
 			"",
-			fmt.Sprintf("A new version of Steampipe is available! %s → %s", constants.Bold(app_specific.AppVersion.String()), constants.Bold(newVersion)),
-			fmt.Sprintf("You can update by downloading from %s", downloadURLColor.Sprint("https://steampipe.io/downloads")),
+			fmt.Sprintf("A new version of %s is available! %s → %s", app_specific.AppName, constants.Bold(app_specific.AppVersion.String()), constants.Bold(newVersion)),
+			fmt.Sprintf("You can update by downloading from %s", downloadURLColor.Sprintf("https://%s.io/downloads", lowerAppName)),
 			"",
 		}
 		return notificationLines, nil
