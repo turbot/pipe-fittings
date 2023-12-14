@@ -14,8 +14,8 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/installationstate"
-	//"github.com/turbot/pipe-fittings/installationstate"
-	//"github.com/turbot/pipe-fittings/plugin"
+	// "github.com/turbot/pipe-fittings/installationstate"
+	// "github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -93,19 +93,19 @@ func (r *Runner) run(ctx context.Context) {
 	var availableCliVersion *CLIVersionCheckResponse
 
 	waitGroup := sync.WaitGroup{}
-
+	// TODO: graza look into maybe providing a job registration system rather than making all tasks optional
 	if r.options.runUpdateCheck {
 		// check whether an updated version is available
 		r.runJobAsync(ctx, func(c context.Context) {
-			availableCliVersion, _ = fetchAvailableCLIVerion(ctx, r.currentState.InstallationID)
+			availableCliVersion, _ = fetchAvailableCLIVersion(ctx, r.currentState.InstallationID)
 		}, &waitGroup)
 	}
 
-	// todo graza make optional? Later - provide a job registration mechanism
 	// TODO KAI find a home for TrimLogs <TASKS>
 	// remove log files older than 7 days
-	r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)
-
+	if r.options.runTrimLogs {
+		r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)
+	}
 	// wait for all jobs to complete
 	waitGroup.Wait()
 
