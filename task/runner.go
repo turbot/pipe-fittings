@@ -14,8 +14,8 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/installationstate"
-	//"github.com/turbot/pipe-fittings/installationstate"
-	//"github.com/turbot/pipe-fittings/plugin"
+	// "github.com/turbot/pipe-fittings/installationstate"
+	// "github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -92,29 +92,20 @@ func (r *Runner) run(ctx context.Context) {
 
 	var availableCliVersion *CLIVersionCheckResponse
 
-	// TODO KAI REMOVE PLUGIN <TASKS>
-	//var availablePluginVersions map[string]plugin.VersionCheckReport
-
 	waitGroup := sync.WaitGroup{}
-
+	// TODO: graza look into maybe providing a job registration system rather than making all tasks optional
 	if r.options.runUpdateCheck {
 		// check whether an updated version is available
 		r.runJobAsync(ctx, func(c context.Context) {
-			availableCliVersion, _ = fetchAvailableCLIVerion(ctx, r.currentState.InstallationID)
+			availableCliVersion, _ = fetchAvailableCLIVersion(ctx, r.currentState.InstallationID)
 		}, &waitGroup)
-
-		// TODO KAI REMOVE PLUGIN <TASKS>
-
-		// check whether an updated version is available
-		//r.runJobAsync(ctx, func(c context.Context) {
-		//	availablePluginVersions = plugin.GetAllUpdateReport(c, r.currentState.InstallationID)
-		//}, &waitGroup)
 	}
 
 	// TODO KAI find a home for TrimLogs <TASKS>
 	// remove log files older than 7 days
-	r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)
-
+	if r.options.runTrimLogs {
+		r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)
+	}
 	// wait for all jobs to complete
 	waitGroup.Wait()
 
@@ -161,28 +152,4 @@ func (r *Runner) shouldRun() bool {
 	durationElapsedSinceLastCheck := now.Sub(lastCheckedAt)
 
 	return durationElapsedSinceLastCheck > minimumDurationBetweenChecks
-}
-
-func showNotificationsForCommand(cmd *cobra.Command, cmdArgs []string) bool {
-	return !(isPluginUpdateCmd(cmd) ||
-		IsPluginManagerCmd(cmd) ||
-		isServiceStopCmd(cmd) ||
-		IsBatchQueryCmd(cmd, cmdArgs) ||
-		isCompletionCmd(cmd))
-}
-
-func isServiceStopCmd(cmd *cobra.Command) bool {
-	return cmd.Parent() != nil && cmd.Parent().Name() == "service" && cmd.Name() == "stop"
-}
-func isCompletionCmd(cmd *cobra.Command) bool {
-	return cmd.Name() == "completion"
-}
-func IsPluginManagerCmd(cmd *cobra.Command) bool {
-	return cmd.Name() == "plugin-manager"
-}
-func isPluginUpdateCmd(cmd *cobra.Command) bool {
-	return cmd.Name() == "update" && cmd.Parent() != nil && cmd.Parent().Name() == "plugin"
-}
-func IsBatchQueryCmd(cmd *cobra.Command, cmdArgs []string) bool {
-	return cmd.Name() == "query" && len(cmdArgs) > 0
 }

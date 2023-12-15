@@ -14,21 +14,20 @@ import (
 )
 
 type CLIVersionCheckResponse struct {
-	NewVersion   string    `json:"latest_version,omitempty"` // `json:"current_version"`
-	DownloadURL  string    `json:"download_url,omitempty"`   // `json:"download_url"`
-	ChangelogURL string    `json:"html,omitempty"`           // `json:"changelog_url"`
-	Alerts       []*string `json:"alerts,omitempty"`
+	NewVersion   string `json:"latest_version,omitempty"`
+	DownloadURL  string `json:"download_url,omitempty"`
+	ChangelogURL string `json:"html,omitempty"`
 }
 
 // VersionChecker :: the version checker struct composition container.
-// This MUST not be instantiated manually. Use `CreateVersionChecker` instead
+// versionChecker MUST not be instantiated manually. Use `CreateVersionChecker` instead
 type versionChecker struct {
 	checkResult *CLIVersionCheckResponse // a channel to store the HTTP response
 	signature   string                   // flags whether update check should be done
 }
 
 // get the latest available version of the CLI
-func fetchAvailableCLIVerion(ctx context.Context, installationId string) (*CLIVersionCheckResponse, error) {
+func fetchAvailableCLIVersion(ctx context.Context, installationId string) (*CLIVersionCheckResponse, error) {
 	v := new(versionChecker)
 	v.signature = installationId
 	err := v.doCheckRequest(ctx)
@@ -83,7 +82,7 @@ func (c *versionChecker) decodeResult(body string) *CLIVersionCheckResponse {
 func (c *versionChecker) versionCheckURL() url.URL {
 	var u url.URL
 
-	//https://hub.steampipe.io/api/cli/version/latest
+	// https://hub.steampipe.io/api/cli/version/latest
 	u.Scheme = "https"
 	u.Host = app_specific.VersionCheckHost
 	u.Path = app_specific.VersionCheckPath

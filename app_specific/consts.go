@@ -51,5 +51,5 @@ var EnvAppPrefix string
 var EnvInputVarPrefix string
 
 // Update check
-var VersionCheckHost string // "hub.steampipe.io"
-var VersionCheckPath string // "api/cli/version/latest"
+var VersionCheckHost string
+var VersionCheckPath string

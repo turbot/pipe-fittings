@@ -3,11 +3,11 @@ package task
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/go-kit/helpers"
 	"log/slog"
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/utils"
@@ -18,11 +18,11 @@ const (
 )
 
 // TODO KAI REMOVED PLUGIN <TASKS>
-func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin map[string]plugin.VersionCheckReport*/) error {
+func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse) error {
 	utils.LogTime("Runner.saveAvailableVersions start")
 	defer utils.LogTime("Runner.saveAvailableVersions end")
 
-	if cli == nil /*&& len(plugin) == 0 */ {
+	if cli == nil {
 		// nothing to save
 		return nil
 	}
@@ -30,7 +30,6 @@ func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin m
 	notifs := &AvailableVersionCache{
 		StructVersion: AvailableVersionsCacheStructVersion,
 		CliCache:      cli,
-		//PluginCache:   plugin,
 	}
 	// create the file - if it exists, it will be truncated by os.Create
 	f, err := os.Create(filepaths.AvailableVersionsFilePath())
@@ -42,15 +41,10 @@ func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse /*, plugin m
 	return encoder.Encode(notifs)
 }
 
-func (r *Runner) hasAvailableVersion() bool {
-	utils.LogTime("Runner.hasNotifications start")
-	defer utils.LogTime("Runner.hasNotifications end")
-	return files.FileExists(filepaths.AvailableVersionsFilePath())
-}
-
-func (r *Runner) loadCachedVersions() (*AvailableVersionCache, error) {
+func (r *Runner) loadAvailableVersions() (*AvailableVersionCache, error) {
 	utils.LogTime("Runner.getNotifications start")
 	defer utils.LogTime("Runner.getNotifications end")
+	// TODO graza why not put this in the update check file (later)
 	f, err := os.Open(filepaths.AvailableVersionsFilePath())
 	if err != nil {
 		return nil, err
@@ -76,22 +70,21 @@ func (r *Runner) displayNotifications(cmd *cobra.Command, cmdArgs []string) erro
 	utils.LogTime("Runner.displayNotifications start")
 	defer utils.LogTime("Runner.displayNotifications end")
 
-	if !showNotificationsForCommand(cmd, cmdArgs) {
+	if !r.options.showNotifications(cmd, cmdArgs) {
 		// do not do anything - just return
 		return nil
 	}
 
-	if !r.hasAvailableVersion() {
-		// nothing to display
-		return nil
-	}
-
-	cachedVersions, err := r.loadCachedVersions()
+	availableVersions, err := r.loadAvailableVersions()
 	if err != nil {
 		return err
 	}
 
-	table, err := cachedVersions.asTable()
+	if helpers.IsNil(availableVersions) {
+		return nil
+	}
+
+	table, err := availableVersions.asTable()
 	if err != nil {
 		return err
 	}
