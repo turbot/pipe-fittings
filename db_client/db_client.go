@@ -111,13 +111,3 @@ func (c *DbClient) Close(context.Context) error {
 
 	return nil
 }
-
-// TODO KAI STEAMPIPE ONLY <MISC>
-// Unimplemented (sql.DB does not have a mechanism to reset pools) - refreshDbClient terminates the current connection and opens up a new connection to the service.
-func (c *DbClient) ResetPools(ctx context.Context) {
-	slog.Debug("db_client.ResetPools start")
-	defer slog.Debug("db_client.ResetPools end")
-
-	// c.UserPool.Reset()
-	// c.ManagementPool.Reset()
-}
