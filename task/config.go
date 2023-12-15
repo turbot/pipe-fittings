@@ -44,6 +44,12 @@ func WithPreHook(f HookFn) TaskRunOption {
 	}
 }
 
+func WithShowNotificationsFunc(f ShouldShowNotificationsFunc) TaskRunOption {
+	return func(o *taskRunConfig) {
+		o.showNotifications = f
+	}
+}
+
 func shouldShowNotificationsDefault(_ *cobra.Command, _ []string) bool {
 	return true
 }
