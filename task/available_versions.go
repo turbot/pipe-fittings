@@ -7,9 +7,9 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"os"
-	"strings"
-
 	// "github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
@@ -67,11 +67,11 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 
 	if newVersion.GreaterThan(app_specific.AppVersion) {
 		var downloadURLColor = color.New(color.FgYellow)
-		lowerAppName := strings.ToLower(app_specific.AppName) // TODO: check to see if there is a nicer way to write download url
+		titleAppName := cases.Title(language.English).String(app_specific.AppName)
 		var notificationLines = []string{
 			"",
-			fmt.Sprintf("A new version of %s is available! %s → %s", app_specific.AppName, constants.Bold(app_specific.AppVersion.String()), constants.Bold(newVersion)),
-			fmt.Sprintf("You can update by downloading from %s", downloadURLColor.Sprintf("https://%s.io/downloads", lowerAppName)),
+			fmt.Sprintf("A new version of %s is available! %s → %s", titleAppName, constants.Bold(app_specific.AppVersion.String()), constants.Bold(newVersion)),
+			fmt.Sprintf("You can update by downloading from %s", downloadURLColor.Sprintf("https://%s.io/downloads", app_specific.AppName)),
 			"",
 		}
 		return notificationLines, nil
