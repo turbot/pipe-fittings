@@ -17,12 +17,30 @@ import (
 	"github.com/turbot/terraform-components/terraform"
 )
 
-func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+type LoadWorkspaceOption func(*LoadWorkspaceConfig)
+
+type LoadWorkspaceConfig struct {
+	credentials map[string]modconfig.Credential
+}
+
+func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
+	return &LoadWorkspaceConfig{
+		credentials: make(map[string]modconfig.Credential),
+	}
+}
+
+func WithCredentials(credentials map[string]modconfig.Credential) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.credentials = credentials
+	}
+}
+
+func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	t := time.Now()
 	defer func() {
 		slog.Debug("Workspace load complete", "duration (ms)", time.Since(t).Milliseconds())
 	}()
-	w, errAndWarnings := LoadWithParams(ctx, workspacePath, credentials, fileInclusions...)
+	w, errAndWarnings := Load(ctx, workspacePath, opts...)
 	if errAndWarnings.GetError() == nil {
 		return w, errAndWarnings
 	}
@@ -48,7 +66,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// ok we should have all variables now - reload workspace
-	return LoadWithParams(ctx, workspacePath, credentials, fileInclusions...)
+	return Load(ctx, workspacePath, opts...)
 }
 
 func promptForMissingVariables(ctx context.Context, missingVariables []*modconfig.Variable, workspacePath string) error {

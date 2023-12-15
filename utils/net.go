@@ -79,6 +79,7 @@ func LocalLoopbackAddresses() ([]string, error) {
 	return addresses, nil
 }
 
+// TODO KAI THIS SEEMS BROKEN
 func IsPortBindable(host string, port int) error {
 	timeout := 5 * time.Millisecond
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, fmt.Sprintf("%d", port)), timeout)
