@@ -153,27 +153,3 @@ func (r *Runner) shouldRun() bool {
 
 	return durationElapsedSinceLastCheck > minimumDurationBetweenChecks
 }
-
-func showNotificationsForCommand(cmd *cobra.Command, cmdArgs []string) bool {
-	return !(isPluginUpdateCmd(cmd) ||
-		IsPluginManagerCmd(cmd) ||
-		isServiceStopCmd(cmd) ||
-		IsBatchQueryCmd(cmd, cmdArgs) ||
-		isCompletionCmd(cmd))
-}
-
-func isServiceStopCmd(cmd *cobra.Command) bool {
-	return cmd.Parent() != nil && cmd.Parent().Name() == "service" && cmd.Name() == "stop"
-}
-func isCompletionCmd(cmd *cobra.Command) bool {
-	return cmd.Name() == "completion"
-}
-func IsPluginManagerCmd(cmd *cobra.Command) bool {
-	return cmd.Name() == "plugin-manager"
-}
-func isPluginUpdateCmd(cmd *cobra.Command) bool {
-	return cmd.Name() == "update" && cmd.Parent() != nil && cmd.Parent().Name() == "plugin"
-}
-func IsBatchQueryCmd(cmd *cobra.Command, cmdArgs []string) bool {
-	return cmd.Name() == "query" && len(cmdArgs) > 0
-}
