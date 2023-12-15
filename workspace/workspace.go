@@ -54,8 +54,7 @@ type Workspace struct {
 	exclusions  []string
 	modFilePath string
 	// should we load/watch files recursively
-	ListFlag       filehelpers.ListFlag
-	FileInclusions []string
+	ListFlag filehelpers.ListFlag
 
 	fileWatcherErrorHandler func(context.Context, error)
 	watcherError            error
@@ -68,27 +67,27 @@ type Workspace struct {
 	OnFileWatcherEvent func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
 }
 
-// Load creates a Workspace and loads the workspace mod
+// Load_ creates a Workspace and loads the workspace mod
 
-func LoadWithParams(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	utils.LogTime("workspace.Load start")
-	defer utils.LogTime("workspace.Load end")
+func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, *error_helpers.ErrorAndWarnings) {
+	cfg := newLoadWorkspaceConfig()
+	for _, o := range opts {
+		o(cfg)
+	}
 
-	workspace, err := createShellWorkspace(workspacePath, fileInclusions)
+	utils.LogTime("workspace.Load_ start")
+	defer utils.LogTime("workspace.Load_ end")
+
+	workspace, err := createShellWorkspace(workspacePath)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
-	workspace.Credentials = credentials
+	workspace.Credentials = cfg.credentials
 
 	// load the workspace mod
 	errAndWarnings := workspace.loadWorkspaceMod(ctx)
 	return workspace, errAndWarnings
-}
-
-// Load creates a Workspace and loads the workspace mod
-func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	return LoadWithParams(ctx, workspacePath, map[string]modconfig.Credential{}, app_specific.ModDataExtension)
 }
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
@@ -102,7 +101,7 @@ func LoadVariables(ctx context.Context, workspacePath string, fileInclusions ...
 	defer utils.LogTime("workspace.LoadVariables end")
 
 	// create shell workspace
-	workspace, err := createShellWorkspace(workspacePath, fileInclusions)
+	workspace, err := createShellWorkspace(workspacePath)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -118,12 +117,11 @@ func LoadVariables(ctx context.Context, workspacePath string, fileInclusions ...
 	return variableMap.ToArray(), errorAndWarnings
 }
 
-func createShellWorkspace(workspacePath string, fileInclusions []string) (*Workspace, error) {
+func createShellWorkspace(workspacePath string) (*Workspace, error) {
 	// create shell workspace
 	workspace := &Workspace{
 		Path:           workspacePath,
 		VariableValues: make(map[string]string),
-		FileInclusions: fileInclusions,
 	}
 
 	// check whether the workspace contains a modfile
@@ -324,7 +322,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 		Flags:   w.ListFlag,
 		Exclude: w.exclusions,
 		// load files specified by inclusions
-		Include: filehelpers.InclusionsFromExtensions(w.FileInclusions),
+		Include: filehelpers.InclusionsFromExtensions([]string{app_specific.ModDataExtension}),
 	})
 
 	parseCtx.Credentials = w.Credentials
