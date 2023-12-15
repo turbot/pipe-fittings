@@ -14,7 +14,7 @@ type OptionsBlockFactory = func(*hcl.Block) (options.Options, hcl.Diagnostics)
 func SteampipeOptionsBlockMapping(block *hcl.Block) (options.Options, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 
-	switch block.Type {
+	switch block.Labels[0] {
 
 	case options.ConnectionBlock:
 		return new(options.Connection), nil

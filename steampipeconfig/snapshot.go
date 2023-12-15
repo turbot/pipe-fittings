@@ -1,4 +1,4 @@
-package dashboardtypes
+package steampipeconfig
 
 import (
 	"encoding/json"

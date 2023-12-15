@@ -25,8 +25,6 @@ var EnvUpdateCheck,
 	EnvTelemetry,
 	EnvIntrospection,
 	EnvWorkspaceProfileLocation,
-	// EnvConfigDump is an undocumented variable is subject to change in the future
-	EnvConfigDump,
 	EnvMemoryMaxMb,
 	EnvMemoryMaxMbPlugin,
 	EnvConfigPath,
@@ -60,7 +58,6 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvTelemetry = buildEnv("TELEMETRY")
 	EnvIntrospection = buildEnv("INTROSPECTION")
 	EnvWorkspaceProfileLocation = buildEnv("WORKSPACE_PROFILES_LOCATION")
-	EnvConfigDump = buildEnv("CONFIG_DUMP")
 	EnvMemoryMaxMb = buildEnv("MEMORY_MAX_MB")
 	EnvMemoryMaxMbPlugin = buildEnv("PLUGIN_MEMORY_MAX_MB")
 	EnvConfigPath = buildEnv("CONFIG_PATH")

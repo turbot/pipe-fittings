@@ -3,6 +3,8 @@ package ociinstaller
 import (
 	"fmt"
 	"strings"
+
+	"github.com/turbot/pipe-fittings/constants"
 )
 
 const (
@@ -167,4 +169,8 @@ func getFullImageRef(imagePath string) string {
 	default: //ex: us-docker.pkg.dev/steampipe/plugin/turbot/aws
 		return fmt.Sprintf("%s:%s", items[0], tag)
 	}
+}
+
+func (r *SteampipeImageRef) IsFromSteampipeHub() bool {
+	return strings.HasPrefix(r.DisplayImageRef(), constants.SteampipeHubOCIBase)
 }

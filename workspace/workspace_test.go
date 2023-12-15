@@ -478,7 +478,7 @@ package workspace
 //		t.Errorf("failed to build absolute config filepath from %s", test.source)
 //	}
 //
-//	actualWorkspace, err := Load(context.Background(), workspacePath)
+//	actualWorkspace, err := Load_(context.Background(), workspacePath)
 //	if err != nil {
 //		if test.expected != "ERROR" {
 //			t.Errorf(`Test: '%s'' FAILED : unexpected error %v`, name, err)
@@ -725,7 +725,7 @@ package workspace
 // func TestLoadWorkspace(t *testing.T) {
 // 	for name, test := range testCasesLoadWorkspace {
 // 		workspacePath, err := filepath.Abs(test.source)
-// 		workspace, err := Load(context.Background(), workspacePath)
+// 		workspace, err := Load_(context.Background(), workspacePath)
 
 // 		if err != nil {
 // 			if test.expected != "ERROR" {

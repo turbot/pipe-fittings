@@ -81,9 +81,11 @@ func LocalLoopbackAddresses() ([]string, error) {
 
 func IsPortBindable(host string, port int) error {
 	timeout := 5 * time.Millisecond
+	// if we can connect to the port, it is already in use so return an error
+	// if we can't connect to the port, it is free so return nil
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(host, fmt.Sprintf("%d", port)), timeout)
 	if err != nil {
-		return err
+		return nil
 	}
 	if conn != nil {
 		defer conn.Close()
