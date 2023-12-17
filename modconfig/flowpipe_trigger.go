@@ -293,7 +293,12 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
-			val, _ := attr.Expr.Value(evalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
 			t.Schedule = val.AsString()
 
 			// validate cron format
@@ -307,16 +312,37 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 				})
 			}
 		case schema.AttributeTypeSql:
-			val, _ := attr.Expr.Value(evalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
 			t.Sql = val.AsString()
 		case schema.AttributeTypeConnectionString:
-			val, _ := attr.Expr.Value(evalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
 			t.ConnectionString = val.AsString()
 		case schema.AttributeTypePrimaryKey:
-			val, _ := attr.Expr.Value(evalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
 			t.PrimaryKey = val.AsString()
+
 		case schema.AttributeTypeEvents:
-			val, _ := attr.Expr.Value(evalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
 			var err error
 			t.Events, err = hclhelpers.CtyTupleToArrayOfStrings(val)
 			if err != nil {
@@ -337,6 +363,15 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 			}
 		}
 	}
+
+	if t.PrimaryKey == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "[development] Primary key is required for Trigger Query",
+			Subject:  &hclAttributes[schema.AttributeTypePrimaryKey].Range,
+		})
+	}
+
 	return diags
 }
 
