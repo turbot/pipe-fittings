@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"github.com/spf13/cobra"
 )
 
 type TaskRunOption func(o *taskRunConfig)

@@ -101,7 +101,7 @@ func (r *Runner) run(ctx context.Context) {
 		}, &waitGroup)
 	}
 
-	// TODO KAI find a home for TrimLogs <TASKS>
+	// TODO find a home for TrimLogs - allow specification of arbitrary tasks via option?
 	// remove log files older than 7 days
 	if r.options.runTrimLogs {
 		r.runJobAsync(ctx, func(_ context.Context) { logs.TrimLogs() }, &waitGroup)

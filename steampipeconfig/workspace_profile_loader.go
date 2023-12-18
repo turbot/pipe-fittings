@@ -87,7 +87,6 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfileP
 }
 
 func (l *WorkspaceProfileLoader[T]) GetActiveWorkspaceProfile() T {
-	// TODO KAI nicer way to nil check
 	if !l.ConfiguredProfile.IsNil() {
 		return l.ConfiguredProfile
 	}
@@ -193,6 +192,7 @@ Essentially, --workspace acme/dev is equivalent to:
 */
 func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	// TODO KAI FIX ME <WORKSPACE>
+	// https://github.com/turbot/pipe-fittings/issues/154
 	//if IsCloudWorkspaceIdentifier(name) {
 	//	slog.Debug("getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
 	//	return &modconfig.SteampipeWorkspaceProfile{
