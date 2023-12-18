@@ -183,12 +183,6 @@ func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.
 	// set the file watcher error handler, which will get called when there are parsing errors
 	// after a file watcher event
 	w.fileWatcherErrorHandler = errorHandler
-	if w.fileWatcherErrorHandler == nil {
-		w.fileWatcherErrorHandler = func(ctx context.Context, err error) {
-			// TODO KAI remove display code?
-			error_helpers.ShowErrorWithMessage(ctx, err, "failed to reload mod from file watcher")
-		}
-	}
 
 	return nil
 }
