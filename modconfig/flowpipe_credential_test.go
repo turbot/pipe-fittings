@@ -655,6 +655,40 @@ func TestAzureDefaultCredential(t *testing.T) {
 	assert.Equal("environmentvar", *newAzureCreds.Environment)
 }
 
+func TestBitbucketDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	bitbucketCred := BitbucketCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("BITBUCKET_API_BASE_URL")
+	os.Unsetenv("BITBUCKET_USERNAME")
+	os.Unsetenv("BITBUCKET_PASSWORD")
+
+	newCreds, err := bitbucketCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newBitbucketCreds := newCreds.(*BitbucketCredential)
+	assert.Equal("", *newBitbucketCreds.BaseURL)
+	assert.Equal("", *newBitbucketCreds.Username)
+	assert.Equal("", *newBitbucketCreds.Password)
+
+	os.Setenv("BITBUCKET_API_BASE_URL", "https://api.bitbucket.org/2.0")
+	os.Setenv("BITBUCKET_USERNAME", "test@turbot.com")
+	os.Setenv("BITBUCKET_PASSWORD", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+
+	newCreds, err = bitbucketCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newBitbucketCreds = newCreds.(*BitbucketCredential)
+	assert.Equal("https://api.bitbucket.org/2.0", *newBitbucketCreds.BaseURL)
+	assert.Equal("test@turbot.com", *newBitbucketCreds.Username)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newBitbucketCreds.Password)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
