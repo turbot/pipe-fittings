@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/zclconf/go-cty/cty"
 
@@ -210,6 +211,30 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 
 	assert.Equal("foobarbaz", stepInputs["value"], "token should be set to foobarbaz")
 	os.Unsetenv("ACCESS_KEY")
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithCredsResolved111111() {
+	assert := assert.New(suite.T())
+
+	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
+
+	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", flowpipeConfig.Credentials, ".fp")
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	credentials := w.Credentials
+	slackCreds := credentials["slack.slack_creds"]
+	slackCredsCty, e := slackCreds.CtyValue()
+	assert.Nil(e)
+
+	credsMap := slackCredsCty.AsValueMap()
+	tokenVal := credsMap["token"].AsString()
+	assert.Equal("abcdefghi", tokenVal)
+
+	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
