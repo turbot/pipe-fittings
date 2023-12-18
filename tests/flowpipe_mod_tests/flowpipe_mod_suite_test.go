@@ -213,15 +213,15 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	os.Unsetenv("ACCESS_KEY")
 }
 
-func (suite *FlowpipeModTestSuite) TestModWithCredsResolved111111() {
+func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	assert := assert.New(suite.T())
 
 	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
 
-	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds"})
+	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", flowpipeConfig.Credentials, ".fp")
+	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds_using_context_function", flowpipeConfig.Credentials, ".fp")
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 

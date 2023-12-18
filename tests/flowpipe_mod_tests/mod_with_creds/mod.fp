@@ -11,11 +11,3 @@ pipeline "with_creds" {
     value = env("ACCESS_KEY")
   }
 }
-
-pipeline "with_slack_creds" {
-  
-  step "transform" "from_env" {
-    value = credential.slack.slack_creds.token
-  }
-}
-
