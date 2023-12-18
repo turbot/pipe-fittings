@@ -11,4 +11,3 @@ pipeline "with_creds" {
     value = env("ACCESS_KEY")
   }
 }
-

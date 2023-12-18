@@ -56,9 +56,9 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 	return res, errorsAndWarnings
 }
 
-func loadCredentials(configFolder string, opts *loadConfigOptions) (map[string]modconfig.Credential, *error_helpers.ErrorAndWarnings) {
+func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]modconfig.Credential, *error_helpers.ErrorAndWarnings) {
 	var res = map[string]modconfig.Credential{}
-	configPaths, err := filehelpers.ListFiles(configFolder, &filehelpers.ListOptions{
+	configPaths, err := filehelpers.ListFiles(configPath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
 		Include: opts.include,
 		Exclude: []string{filepaths.WorkspaceLockFileName},
@@ -94,7 +94,7 @@ func loadCredentials(configFolder string, opts *loadConfigOptions) (map[string]m
 		switch block.Type {
 
 		case schema.BlockTypeCredential:
-			credential, moreDiags := parse.DecodeCredential(block)
+			credential, moreDiags := parse.DecodeCredential(configPath, block)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				slog.Warn("loadCredentials: failed to decode credential block", "error", err)

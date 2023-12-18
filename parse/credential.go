@@ -5,10 +5,12 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/zclconf/go-cty/cty"
 )
 
-func DecodeCredential(block *hcl.Block) (modconfig.Credential, hcl.Diagnostics) {
+func DecodeCredential(configPath string, block *hcl.Block) (modconfig.Credential, hcl.Diagnostics) {
 
 	if len(block.Labels) != 2 {
 		diags := hcl.Diagnostics{
@@ -41,7 +43,13 @@ func DecodeCredential(block *hcl.Block) (modconfig.Credential, hcl.Diagnostics) 
 
 	body := r.(*hclsyntax.Body)
 
-	diags = decodeHclBody(body, nil, nil, credential)
+	// build an eval context just containing functions
+	evalCtx := &hcl.EvalContext{
+		Functions: funcs.ContextFunctions(configPath),
+		Variables: make(map[string]cty.Value),
+	}
+
+	diags = decodeHclBody(body, evalCtx, nil, credential)
 	if len(diags) > 0 {
 		return nil, diags
 	}
