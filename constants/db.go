@@ -47,8 +47,7 @@ const (
 // schema names
 const (
 
-	// legacy schema names
-	// these are schema names which were used previously
+	// LegacyInternalSchema is the schema name used previously
 	// but are not relevant anymore and need to be dropped
 	LegacyInternalSchema = "internal"
 
@@ -63,6 +62,8 @@ const (
 	RateLimiterDefinitionTable = "steampipe_plugin_limiter"
 	// PluginInstanceTable is the table used to store plugin configs
 	PluginInstanceTable = "steampipe_plugin"
+	// PluginColumnTable is the table used to store plugin column schema
+	PluginColumnTable = "steampipe_plugin_column"
 
 	// ConnectionTable is the table used to store steampipe connection state
 	LegacyConnectionStateTable       = "steampipe_connection_state"
