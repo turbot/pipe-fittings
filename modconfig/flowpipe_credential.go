@@ -1805,6 +1805,81 @@ func (c *AzureCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type BitbucketCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	BaseURL  *string `json:"base_url,omitempty" cty:"base_url" hcl:"base_url,optional"`
+	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
+	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
+}
+
+func (*BitbucketCredential) GetCredentialType() string {
+	return "bitbucket"
+}
+
+func (c *BitbucketCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.BaseURL != nil {
+		env["BITBUCKET_API_BASE_URL"] = cty.StringVal(*c.BaseURL)
+	}
+	if c.Username != nil {
+		env["BITBUCKET_USERNAME"] = cty.StringVal(*c.Username)
+	}
+	if c.Password != nil {
+		env["BITBUCKET_PASSWORD"] = cty.StringVal(*c.Password)
+	}
+	return env
+}
+
+func (c *BitbucketCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *BitbucketCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.Password == nil && c.BaseURL == nil && c.Username == nil {
+		bitbucketURLEnvVar := os.Getenv("BITBUCKET_API_BASE_URL")
+		bitbucketUsernameEnvVar := os.Getenv("BITBUCKET_USERNAME")
+		bitbucketPasswordEnvVar := os.Getenv("BITBUCKET_PASSWORD")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &BitbucketCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:     c.Type,
+			Password: &bitbucketPasswordEnvVar,
+			BaseURL:  &bitbucketURLEnvVar,
+			Username: &bitbucketUsernameEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *BitbucketCredential) GetTtl() int {
+	return -1
+}
+
+func (c *BitbucketCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -2051,6 +2126,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "azure.default",
 		},
 		Type: "azure",
+	}
+	credentials["bitbucket.default"] = &BitbucketCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "bitbucket.default",
+			ShortName:       "default",
+			UnqualifiedName: "bitbucket.default",
+		},
+		Type: "bitbucket",
 	}
 
 	return credentials
@@ -2373,6 +2456,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "gcp",
+		}
+		return credential
+	} else if credentialType == "bitbucket" {
+		credential := &BitbucketCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "bitbucket",
 		}
 		return credential
 	}
