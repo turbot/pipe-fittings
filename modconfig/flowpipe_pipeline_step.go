@@ -3687,17 +3687,6 @@ func (p *PipelineStepContainer) Validate() hcl.Diagnostics {
 		diags = append(diags, stepBaseDiags...)
 	}
 
-	// The source indicates the path to a folder that contains the dockerfile or containerfile to build the container
-	// Currently the step does not support the source attribute.
-	// So, if passed in the step, return an error
-	// TODO: Remove once it is supported
-	if p.Source != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Source is not yet implemented: " + p.GetFullyQualifiedName(),
-		})
-	}
-
 	// Either source or image must be specified, but not both
 	if p.Image != nil && p.Source != nil {
 		diags = append(diags, &hcl.Diagnostic{
