@@ -1,15 +1,18 @@
 pipeline "query" {
 
     step "query" "query_1" {
-        sql = "select * from foo"
+        sql               = "select * from foo"
         connection_string = "this is a connection string"
+        timeout           = 60000 // in ms
     }
 }
 
 pipeline "query_with_args" {
     step "query" "query_1" {
-        sql = "select * from foo where bar = $1 and baz = $2"
+        sql               = "select * from foo where bar = $1 and baz = $2"
         connection_string = "this is a connection string"
+        timeout           = 60000 // in ms
+
         args = [
             "two",
             10
@@ -27,8 +30,9 @@ pipeline "query_with_args_expr" {
     }
 
     step "query" "query_1" {
-        sql = "select * from foo where bar = $1 and baz = $2"
+        sql               = "select * from foo where bar = $1 and baz = $2"
         connection_string = "this is a connection string"
+        timeout           = 60000 // in ms
 
         args = [
             param.bar,

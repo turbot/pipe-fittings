@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 func TestQueryStep(t *testing.T) {
@@ -32,7 +33,9 @@ func TestQueryStep(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("select * from foo", inputs["sql"])
+	assert.Equal("select * from foo", inputs[schema.AttributeTypeSql])
+	assert.Equal("this is a connection string", inputs[schema.AttributeTypeConnectionString])
+	assert.Equal(60000, inputs[schema.AttributeTypeTimeout])
 }
 
 func TestQueryStepWithArgs(t *testing.T) {
@@ -59,11 +62,12 @@ func TestQueryStepWithArgs(t *testing.T) {
 		assert.Fail("error getting inputs")
 		return
 	}
-	assert.Equal("select * from foo where bar = $1 and baz = $2", inputs["sql"])
+	assert.Equal("select * from foo where bar = $1 and baz = $2", inputs[schema.AttributeTypeSql])
+	assert.Equal(60000, inputs[schema.AttributeTypeTimeout])
 
-	assert.Equal("this is a connection string", inputs["connection_string"])
+	assert.Equal("this is a connection string", inputs[schema.AttributeTypeConnectionString])
 
-	args, ok := inputs["args"].([]interface{})
+	args, ok := inputs[schema.AttributeTypeArgs].([]interface{})
 	if !ok {
 		assert.Fail("args not found")
 		return
