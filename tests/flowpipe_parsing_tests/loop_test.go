@@ -36,4 +36,6 @@ func TestLoop(t *testing.T) {
 	pipeline = pipelines["local.pipeline.simple_http_loop"]
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["loop"])
 
+	pipeline = pipelines["local.pipeline.loop_resolved"]
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["loop"], "although the loop is fully resolved in HCL's parsing (because of the try function) we still need it in the unresolved block so we can evaluate during runtime")
 }
