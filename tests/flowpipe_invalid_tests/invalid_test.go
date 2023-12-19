@@ -163,11 +163,6 @@ var tests = []testSetup{
 		containsError: "The argument \"if\" is required, but no definition was found",
 	},
 	{
-		title:         "invalid container step attribute - source",
-		file:          "./pipelines/container_step_invalid_attribute.fp",
-		containsError: "Source is not yet implemented",
-	},
-	{
 		title:         "invalid pipeline output attribute - sensitive",
 		file:          "./pipelines/output_invalid_attribute.fp",
 		containsError: "Unsupported argument: An argument named \"sensitive\" is not expected here.",
