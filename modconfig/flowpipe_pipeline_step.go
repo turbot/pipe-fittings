@@ -2278,6 +2278,11 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 
 func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
+	results, err := p.GetBaseInputs(evalContext)
+	if err != nil {
+		return nil, err
+	}
+
 	var sql *string
 	if p.UnresolvedAttributes[schema.AttributeTypeSql] == nil {
 		if p.Sql == nil {
@@ -2303,8 +2308,6 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
-
-	results := map[string]interface{}{}
 
 	if sql != nil {
 		results[schema.AttributeTypeSql] = *sql
@@ -2399,6 +2402,12 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 		}
 	}
 
+	return diags
+}
+
+func (p *PipelineStepQuery) Validate() hcl.Diagnostics {
+	// validate the base attributes
+	diags := p.ValidateBaseAttributes()
 	return diags
 }
 
