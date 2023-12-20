@@ -1919,28 +1919,35 @@ func (c *DatadogCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *DatadogCredential) Resolve(ctx context.Context) (Credential, error) {
-	if c.APIKey == nil && c.AppKey == nil {
-		datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
-		datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")
+	datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
+	datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")
 
-		// Don't modify existing credential, resolve to a new one
-		newCreds := &DatadogCredential{
-			HclResourceImpl: HclResourceImpl{
-				FullName:        c.FullName,
-				UnqualifiedName: c.UnqualifiedName,
-				ShortName:       c.ShortName,
-				DeclRange:       c.DeclRange,
-				blockType:       c.blockType,
-			},
-			Type:   c.Type,
-			APIKey: &datadogAPIKeyEnvVar,
-			AppKey: &datadogAppKeyEnvVar,
-			APIUrl: c.APIUrl,
-		}
-
-		return newCreds, nil
+	// Don't modify existing credential, resolve to a new one
+	newCreds := &DatadogCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        c.FullName,
+			UnqualifiedName: c.UnqualifiedName,
+			ShortName:       c.ShortName,
+			DeclRange:       c.DeclRange,
+			blockType:       c.blockType,
+		},
+		Type:   c.Type,
+		APIUrl: c.APIUrl,
 	}
-	return c, nil
+
+	if c.APIKey == nil && datadogAPIKeyEnvVar == "" {
+		return nil, perr.InternalWithMessage("datadog api_key is required")
+	} else if c.APIKey == nil {
+		newCreds.APIKey = &datadogAPIKeyEnvVar
+	}
+
+	if c.AppKey == nil && datadogAppKeyEnvVar == "" {
+		return nil, perr.InternalWithMessage("datadog app_key is required")
+	} else if c.AppKey == nil {
+		newCreds.AppKey = &datadogAppKeyEnvVar
+	}
+
+	return newCreds, nil
 }
 
 func (c *DatadogCredential) GetTtl() int {
