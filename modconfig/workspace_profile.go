@@ -2,12 +2,13 @@ package modconfig
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
 
 type WorkspaceProfile interface {
@@ -38,8 +39,6 @@ func NewWorkspaceProfile[T WorkspaceProfile](block *hcl.Block) (T, hcl.Diagnosti
 		res = &FlowpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	case *SteampipeWorkspaceProfile:
 		res = &SteampipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
-	case *PowerpipeWorkspaceProfile:
-		res = &PowerpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,

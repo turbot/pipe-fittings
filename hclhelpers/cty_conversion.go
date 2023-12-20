@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -884,13 +885,20 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 			return cty.NilVal, err
 		}
 		return val, nil
+
 	case reflect.Slice:
 		return ConvertSliceToCtyValue(v)
+
 	case reflect.Map:
 		return ConvertMapInterfaceToCtyValue(v)
 
 	// Add more cases here for other types as needed.
 	default:
+		if t, ok := v.(time.Time); ok {
+			rfc3339Time := t.Format(time.RFC3339)
+			return cty.StringVal(rfc3339Time), nil
+		}
+
 		// If the type is not recognized, return a cty.NilVal as a placeholder
 		return cty.NilVal, nil
 	}
