@@ -1937,10 +1937,14 @@ func (c *DatadogCredential) Resolve(ctx context.Context) (Credential, error) {
 
 	if c.APIKey == nil {
 		newCreds.APIKey = &datadogAPIKeyEnvVar
+	} else {
+		newCreds.APIKey = c.APIKey
 	}
 
 	if c.AppKey == nil {
 		newCreds.AppKey = &datadogAppKeyEnvVar
+	} else {
+		newCreds.AppKey = c.AppKey
 	}
 
 	return newCreds, nil
