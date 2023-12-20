@@ -702,7 +702,7 @@ func TestDatadogDefaultCredential(t *testing.T) {
 	os.Unsetenv("DD_CLIENT_APP_KEY")
 
 	newCreds, err := datadogCred.Resolve(context.TODO())
-	assert.EqualError(err, "Internal Error: datadog api_key is required")
+	assert.ErrorContains(err, "datadog api_key is required")
 	assert.Nil(newCreds)
 
 	os.Setenv("DD_CLIENT_API_KEY", "b1cf23432fwef23fg24grg31gr")
