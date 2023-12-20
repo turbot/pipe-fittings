@@ -12,7 +12,7 @@ func SetAppSpecificConstants() {
 	}
 
 	app_specific.AppName = "flowpipe"
-	// TODO unify version logic with steampipe and powerpipe
+	// TODO unify version logic with steampipe
 	//app_specific.AppVersion
 	app_specific.AutoVariablesExtension = ".auto.fpvars"
 	//app_specific.ClientConnectionAppNamePrefix
