@@ -1935,15 +1935,11 @@ func (c *DatadogCredential) Resolve(ctx context.Context) (Credential, error) {
 		APIUrl: c.APIUrl,
 	}
 
-	if c.APIKey == nil && datadogAPIKeyEnvVar == "" {
-		return nil, perr.InternalWithMessage("datadog api_key is required")
-	} else if c.APIKey == nil {
+	if c.APIKey == nil {
 		newCreds.APIKey = &datadogAPIKeyEnvVar
 	}
 
-	if c.AppKey == nil && datadogAppKeyEnvVar == "" {
-		return nil, perr.InternalWithMessage("datadog app_key is required")
-	} else if c.AppKey == nil {
+	if c.AppKey == nil {
 		newCreds.AppKey = &datadogAppKeyEnvVar
 	}
 
