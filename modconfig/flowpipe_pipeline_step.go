@@ -556,11 +556,14 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 					diags = append(diags, moreDiags...)
 				}
 			} else {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("Loop block is fully resolved. A fully resolved loop block may lead to an infinite loop. Step type %s", stepType),
-					Subject:  &loopBlock.DefRange,
-				})
+				// still need to add the loop to "unresolved" body even if it's fully resolved. Consider this scenario:
+				//     loop {
+				// 			until = try(result.response_body.next, null) == null
+				// 			url   = try(result.response_body.next, "")
+				//		}
+				//
+				// The above fragment will not result in diagnostics error.
+				p.AddUnresolvedBody(schema.BlockTypeLoop, loopBlock.Body)
 			}
 		}
 	}

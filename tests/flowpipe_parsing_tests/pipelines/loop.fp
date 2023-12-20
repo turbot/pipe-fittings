@@ -43,3 +43,15 @@ pipeline "loop_depends_on_another_step" {
     }
   }
 }
+
+pipeline "loop_resolved" {
+
+  step "http" "repeat" {
+    url = "https://does.not.matter"
+    loop {
+      until = try(result.response_body.next, null) == null
+      url   = try(result.response_body.next, "")
+    }  
+  }
+  
+}
