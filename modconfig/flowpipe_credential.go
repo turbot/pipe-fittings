@@ -1880,6 +1880,77 @@ func (c *BitbucketCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type DatadogCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+	AppKey *string `json:"app_key,omitempty" cty:"app_key" hcl:"app_key,optional"`
+	APIUrl *string `json:"api_url,omitempty" cty:"api_url" hcl:"api_url,optional"`
+}
+
+func (*DatadogCredential) GetCredentialType() string {
+	return "datadog"
+}
+
+func (c *DatadogCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["DD_CLIENT_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	if c.AppKey != nil {
+		env["DD_CLIENT_APP_KEY"] = cty.StringVal(*c.AppKey)
+	}
+	return env
+}
+
+func (c *DatadogCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *DatadogCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.APIKey == nil && c.AppKey == nil {
+		datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
+		datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &DatadogCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &datadogAPIKeyEnvVar,
+			AppKey: &datadogAppKeyEnvVar,
+			APIUrl: c.APIUrl,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *DatadogCredential) GetTtl() int {
+	return -1
+}
+
+func (c *DatadogCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -2134,6 +2205,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "bitbucket.default",
 		},
 		Type: "bitbucket",
+	}
+	credentials["datadog.default"] = &DatadogCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "datadog.default",
+			ShortName:       "default",
+			UnqualifiedName: "datadog.default",
+		},
+		Type: "datadog",
 	}
 
 	return credentials
@@ -2468,6 +2547,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "bitbucket",
+		}
+		return credential
+	} else if credentialType == "datadog" {
+		credential := &DatadogCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "datadog",
 		}
 		return credential
 	}
