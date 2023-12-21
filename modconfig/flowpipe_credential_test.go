@@ -719,6 +719,36 @@ func TestDatadogDefaultCredential(t *testing.T) {
 	assert.Equal("1a2345bc23fwefrg13g233f", *newDatadogCreds.AppKey)
 }
 
+func TestFreshdeskDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	freshdeskCred := FreshdeskCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("FRESHDESK_API_KEY")
+	os.Unsetenv("FRESHDESK_SUBDOMAIN")
+
+	newCreds, err := freshdeskCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newFreshdeskCreds := newCreds.(*FreshdeskCredential)
+	assert.Equal("", *newFreshdeskCreds.APIKey)
+	assert.Equal("", *newFreshdeskCreds.Subdomain)
+
+	os.Setenv("FRESHDESK_API_KEY", "b1cf23432fwef23fg24grg31gr")
+	os.Setenv("FRESHDESK_SUBDOMAIN", "sub-domain")
+
+	newCreds, err = freshdeskCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newFreshdeskCreds = newCreds.(*FreshdeskCredential)
+	assert.Equal("b1cf23432fwef23fg24grg31gr", *newFreshdeskCreds.APIKey)
+	assert.Equal("sub-domain", *newFreshdeskCreds.Subdomain)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)

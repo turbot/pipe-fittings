@@ -1958,6 +1958,82 @@ func (c *DatadogCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type FreshdeskCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey    *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
+}
+
+func (*FreshdeskCredential) GetCredentialType() string {
+	return "freshdesk"
+}
+
+func (c *FreshdeskCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["FRESHDESK_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	if c.Subdomain != nil {
+		env["FRESHDESK_SUBDOMAIN"] = cty.StringVal(*c.Subdomain)
+	}
+	return env
+}
+
+func (c *FreshdeskCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *FreshdeskCredential) Resolve(ctx context.Context) (Credential, error) {
+	freshdeskAPIKeyEnvVar := os.Getenv("FRESHDESK_API_KEY")
+	freshdeskSubdomainEnvVar := os.Getenv("FRESHDESK_SUBDOMAIN")
+
+	// Don't modify existing credential, resolve to a new one
+	newCreds := &FreshdeskCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        c.FullName,
+			UnqualifiedName: c.UnqualifiedName,
+			ShortName:       c.ShortName,
+			DeclRange:       c.DeclRange,
+			blockType:       c.blockType,
+		},
+		Type: c.Type,
+	}
+
+	if c.APIKey == nil {
+		newCreds.APIKey = &freshdeskAPIKeyEnvVar
+	} else {
+		newCreds.APIKey = c.APIKey
+	}
+
+	if c.Subdomain == nil {
+		newCreds.Subdomain = &freshdeskSubdomainEnvVar
+	} else {
+		newCreds.Subdomain = c.Subdomain
+	}
+
+	return newCreds, nil
+}
+
+func (c *FreshdeskCredential) GetTtl() int {
+	return -1
+}
+
+func (c *FreshdeskCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
