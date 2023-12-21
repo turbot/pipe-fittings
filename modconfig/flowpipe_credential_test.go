@@ -749,6 +749,38 @@ func TestFreshdeskDefaultCredential(t *testing.T) {
 	assert.Equal("sub-domain", *newFreshdeskCreds.Subdomain)
 }
 
+func TestGuardrailsDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	guardrailsCred := GuardrailsCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("TURBOT_ACCESS_KEY")
+	os.Unsetenv("TURBOT_SECRET_KEY")
+	os.Unsetenv("TURBOT_WORKSPACE")
+
+	newCreds, err := guardrailsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGuardrailsCreds := newCreds.(*GuardrailsCredential)
+	assert.Equal("", *newGuardrailsCreds.AccessKey)
+	assert.Equal("", *newGuardrailsCreds.SecretKey)
+
+	os.Setenv("TURBOT_ACCESS_KEY", "c8e2c2ed-1ca8-429b-b369-123")
+	os.Setenv("TURBOT_SECRET_KEY", "a3d8385d-47f7-40c5-a90c-123")
+	os.Setenv("TURBOT_WORKSPACE", "https://my_workspace.saas.turbot.com")
+
+	newCreds, err = guardrailsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGuardrailsCreds = newCreds.(*GuardrailsCredential)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-123", *newGuardrailsCreds.AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-123", *newGuardrailsCreds.SecretKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)

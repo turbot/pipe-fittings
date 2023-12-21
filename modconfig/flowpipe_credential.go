@@ -2034,6 +2034,94 @@ func (c *FreshdeskCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type GuardrailsCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
+	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
+	Workspace *string `json:"workspace,omitempty" cty:"workspace" hcl:"workspace,optional"`
+}
+
+func (*GuardrailsCredential) GetCredentialType() string {
+	return "guardrails"
+}
+
+func (c *GuardrailsCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.AccessKey != nil {
+		env["TURBOT_ACCESS_KEY"] = cty.StringVal(*c.AccessKey)
+	}
+	if c.SecretKey != nil {
+		env["TURBOT_SECRET_KEY"] = cty.StringVal(*c.SecretKey)
+	}
+	if c.Workspace != nil {
+		env["TURBOT_WORKSPACE"] = cty.StringVal(*c.Workspace)
+	}
+	return env
+}
+
+func (c *GuardrailsCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *GuardrailsCredential) Resolve(ctx context.Context) (Credential, error) {
+	guardrailsAccessKeyEnvVar := os.Getenv("TURBOT_ACCESS_KEY")
+	guardrailsSecretKeyEnvVar := os.Getenv("TURBOT_SECRET_KEY")
+	guardrailsWorkspaceEnvVar := os.Getenv("TURBOT_WORKSPACE")
+
+	// Don't modify existing credential, resolve to a new one
+	newCreds := &GuardrailsCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        c.FullName,
+			UnqualifiedName: c.UnqualifiedName,
+			ShortName:       c.ShortName,
+			DeclRange:       c.DeclRange,
+			blockType:       c.blockType,
+		},
+		Type:      c.Type,
+		Workspace: c.Workspace,
+	}
+
+	if c.AccessKey == nil {
+		newCreds.AccessKey = &guardrailsAccessKeyEnvVar
+	} else {
+		newCreds.AccessKey = c.AccessKey
+	}
+
+	if c.SecretKey == nil {
+		newCreds.SecretKey = &guardrailsSecretKeyEnvVar
+	} else {
+		newCreds.SecretKey = c.SecretKey
+	}
+
+	if c.Workspace == nil {
+		newCreds.Workspace = &guardrailsWorkspaceEnvVar
+	} else {
+		newCreds.Workspace = c.Workspace
+	}
+
+	return newCreds, nil
+}
+
+func (c *GuardrailsCredential) GetTtl() int {
+	return -1
+}
+
+func (c *GuardrailsCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -2296,6 +2384,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "datadog.default",
 		},
 		Type: "datadog",
+	}
+	credentials["guardrails.default"] = &GuardrailsCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "guardrails.default",
+			ShortName:       "default",
+			UnqualifiedName: "guardrails.default",
+		},
+		Type: "guardrails",
 	}
 
 	return credentials
@@ -2642,6 +2738,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "datadog",
+		}
+		return credential
+	} else if credentialType == "guardrails" {
+		credential := &GuardrailsCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "guardrails",
 		}
 		return credential
 	}
