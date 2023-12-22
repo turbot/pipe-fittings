@@ -2385,6 +2385,14 @@ func DefaultCredentials() map[string]Credential {
 		},
 		Type: "datadog",
 	}
+	credentials["freshdesk.default"] = &FreshdeskCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "freshdesk.default",
+			ShortName:       "default",
+			UnqualifiedName: "freshdesk.default",
+		},
+		Type: "freshdesk",
+	}
 	credentials["guardrails.default"] = &GuardrailsCredential{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        "guardrails.default",
@@ -2738,6 +2746,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "datadog",
+		}
+		return credential
+	} else if credentialType == "freshdesk" {
+		credential := &FreshdeskCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "freshdesk",
 		}
 		return credential
 	} else if credentialType == "guardrails" {
