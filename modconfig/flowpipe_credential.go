@@ -2122,6 +2122,49 @@ func (c *GuardrailsCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type MastodonCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	Server      *string `json:"server,omitempty" cty:"server" hcl:"server,optional"`
+	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
+}
+
+func (*MastodonCredential) GetCredentialType() string {
+	return "mastodon"
+}
+
+func (c *MastodonCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	return env
+}
+
+func (c *MastodonCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *MastodonCredential) Resolve(ctx context.Context) (Credential, error) {
+	return c, nil
+}
+
+func (c *MastodonCredential) GetTtl() int {
+	return -1
+}
+
+func (c *MastodonCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -2400,6 +2443,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "guardrails.default",
 		},
 		Type: "guardrails",
+	}
+	credentials["mastodon.default"] = &MastodonCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "mastodon.default",
+			ShortName:       "default",
+			UnqualifiedName: "mastodon.default",
+		},
+		Type: "mastodon",
 	}
 
 	return credentials
@@ -2770,6 +2821,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "guardrails",
+		}
+		return credential
+	} else if credentialType == "mastodon" {
+		credential := &MastodonCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "mastodon",
 		}
 		return credential
 	}
