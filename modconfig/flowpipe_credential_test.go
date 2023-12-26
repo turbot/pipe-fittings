@@ -781,6 +781,40 @@ func TestGuardrailsDefaultCredential(t *testing.T) {
 	assert.Equal("a3d8385d-47f7-40c5-a90c-123", *newGuardrailsCreds.SecretKey)
 }
 
+func TestServiceNowDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	guardrailsCred := ServiceNowCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("SERVICENOW_INSTANCE_URL")
+	os.Unsetenv("SERVICENOW_USERNAME")
+	os.Unsetenv("SERVICENOW_PASSWORD")
+
+	newCreds, err := guardrailsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newServiceNowCreds := newCreds.(*ServiceNowCredential)
+	assert.Equal("", *newServiceNowCreds.InstanceURL)
+	assert.Equal("", *newServiceNowCreds.Username)
+	assert.Equal("", *newServiceNowCreds.Password)
+
+	os.Setenv("SERVICENOW_INSTANCE_URL", "https://a1b2c3d4.service-now.com")
+	os.Setenv("SERVICENOW_USERNAME", "john.hill")
+	os.Setenv("SERVICENOW_PASSWORD", "j0t3-$j@H3")
+
+	newCreds, err = guardrailsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newServiceNowCreds = newCreds.(*ServiceNowCredential)
+	assert.Equal("https://a1b2c3d4.service-now.com", *newServiceNowCreds.InstanceURL)
+	assert.Equal("john.hill", *newServiceNowCreds.Username)
+	assert.Equal("j0t3-$j@H3", *newServiceNowCreds.Password)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
