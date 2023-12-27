@@ -14,7 +14,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func NewPipelineHcl(mod *Mod, block *hcl.Block) *Pipeline {
+func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
 
 	pipelineFullName := block.Labels[0]
 
@@ -68,11 +68,16 @@ type Pipeline struct {
 	// Unparsed JSON raw message, needed so we can unmarshall the step JSON into the correct struct
 	StepsRawJson json.RawMessage `json:"-"`
 
-	Steps []PipelineStep `json:"steps,omitempty"`
+	Steps        []PipelineStep            `json:"steps,omitempty"`
+	OutputConfig []PipelineOutput          `json:"outputs,omitempty"`
+	Params       map[string]*PipelineParam `json:"params"`
+	Filename     string                    `json:"filename"`
+	Linenumber   int                       `json:"linenumber"`
+}
 
-	OutputConfig []PipelineOutput `json:"outputs,omitempty"`
-
-	Params map[string]*PipelineParam `json:"params"`
+func (p *Pipeline) SetSetFileReference(filename string, linenumber int) {
+	p.Filename = filename
+	p.Linenumber = linenumber
 }
 
 func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {

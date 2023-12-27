@@ -334,7 +334,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	res := newDecodeResult()
 
 	// get shell pipelineHcl
-	pipelineHcl := modconfig.NewPipelineHcl(mod, block)
+	pipelineHcl := modconfig.NewPipeline(mod, block)
 
 	pipelineOptions, diags := block.Body.Content(modconfig.PipelineBlockSchema)
 	if diags.HasErrors() {
@@ -364,6 +364,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 				return pipelineHcl, res
 			}
 
+			step.SetSetFileReference(block.DefRange.Filename, block.DefRange.Start.Line)
 			pipelineHcl.Steps = append(pipelineHcl.Steps, step)
 
 		case schema.BlockTypePipelineOutput:
@@ -409,6 +410,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		// the resource to be there
 		return pipelineHcl, res
 	}
+	pipelineHcl.SetSetFileReference(block.DefRange.Filename, block.DefRange.Start.Line)
 
 	return pipelineHcl, res
 }
