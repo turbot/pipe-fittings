@@ -18,21 +18,29 @@ type Trigger struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
+	FileName        string `json:"file_name"`
+	StartLineNumber int    `json:"start_line_number"`
+	EndLineNumber   int    `json:"end_line_number"`
+
 	// 27/09/23 - Args is introduces combination of both parse time and runtime arguments. "var" should be resolved
 	// at parse time, the vars all should be supplied when we start the system. However, args can also contain
 	// runtime variable, i.e. self.request_body, self.rows
 	//
-	ArgsRaw hcl.Expression `json:"-"`
-
-	Pipeline cty.Value `json:"-"`
-	RawBody  hcl.Body  `json:"-" hcl:",remain"`
-
-	Config TriggerConfig `json:"-"`
+	ArgsRaw  hcl.Expression `json:"-"`
+	Pipeline cty.Value      `json:"-"`
+	RawBody  hcl.Body       `json:"-" hcl:",remain"`
+	Config   TriggerConfig  `json:"-"`
 }
 
-func (p *Trigger) Equals(other *Trigger) bool {
-	return p.FullName == other.FullName &&
-		p.GetMetadata().ModFullName == other.GetMetadata().ModFullName
+func (t *Trigger) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	t.FileName = fileName
+	t.StartLineNumber = startLineNumber
+	t.EndLineNumber = endLineNumber
+}
+
+func (t *Trigger) Equals(other *Trigger) bool {
+	return t.FullName == other.FullName &&
+		t.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
 
 func (t *Trigger) GetPipeline() cty.Value {

@@ -322,6 +322,15 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return triggerHcl, res
 	}
 
+	body, ok := block.Body.(*hclsyntax.Body)
+	if ok {
+		triggerHcl.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
+	} else {
+		// This shouldn't happen, but if it does, try our best effort to set the file reference. It will get the start line correctly
+		// but not the end line
+		triggerHcl.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+	}
+
 	moreDiags := parseCtx.AddTrigger(triggerHcl)
 	res.addDiags(moreDiags)
 
