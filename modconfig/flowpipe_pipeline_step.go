@@ -279,7 +279,7 @@ type PipelineStep interface {
 	GetOutputConfig() map[string]*PipelineOutput
 	Equals(other PipelineStep) bool
 	Validate() hcl.Diagnostics
-	SetSetFileReference(filename string, linenumber int)
+	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 }
 
 type PipelineStepBaseInterface interface {
@@ -463,8 +463,9 @@ type PipelineStepBase struct {
 	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
 	ThrowConfig         []ThrowConfig              `json:"throw,omitempty"`
 	OutputConfig        map[string]*PipelineOutput `json:"-"`
-	Filename            string                     `json:"filename"`
-	Linenumber          int                        `json:"linenumber"`
+	FileName            string                     `json:"file_name"`
+	StartLineNumber     int                        `json:"start_line_number"`
+	EndLineNumber       int                        `json:"end_line_number"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -477,9 +478,10 @@ func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedBodies = make(map[string]hcl.Body)
 }
 
-func (p *PipelineStepBase) SetSetFileReference(filename string, linenumber int) {
-	p.Filename = filename
-	p.Linenumber = linenumber
+func (p *PipelineStepBase) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	p.FileName = fileName
+	p.StartLineNumber = startLineNumber
+	p.EndLineNumber = endLineNumber
 }
 
 func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolution bool) (*RetryConfig, hcl.Diagnostics) {

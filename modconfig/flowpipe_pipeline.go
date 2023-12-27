@@ -68,16 +68,18 @@ type Pipeline struct {
 	// Unparsed JSON raw message, needed so we can unmarshall the step JSON into the correct struct
 	StepsRawJson json.RawMessage `json:"-"`
 
-	Steps        []PipelineStep            `json:"steps,omitempty"`
-	OutputConfig []PipelineOutput          `json:"outputs,omitempty"`
-	Params       map[string]*PipelineParam `json:"params"`
-	Filename     string                    `json:"filename"`
-	Linenumber   int                       `json:"linenumber"`
+	Steps           []PipelineStep            `json:"steps,omitempty"`
+	OutputConfig    []PipelineOutput          `json:"outputs,omitempty"`
+	Params          map[string]*PipelineParam `json:"params"`
+	FileName        string                    `json:"file_name"`
+	StartLineNumber int                       `json:"start_line_number"`
+	EndLineNumber   int                       `json:"end_line_number"`
 }
 
-func (p *Pipeline) SetSetFileReference(filename string, linenumber int) {
-	p.Filename = filename
-	p.Linenumber = linenumber
+func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	p.FileName = fileName
+	p.StartLineNumber = startLineNumber
+	p.EndLineNumber = endLineNumber
 }
 
 func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {

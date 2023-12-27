@@ -364,7 +364,14 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 				return pipelineHcl, res
 			}
 
-			step.SetSetFileReference(block.DefRange.Filename, block.DefRange.Start.Line)
+			body, ok := block.Body.(*hclsyntax.Body)
+			if ok {
+				step.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
+			} else {
+				// This shouldn't happen, but if it does, try our best effort to set the file reference. It will get the start line correctly
+				// but not the end line
+				step.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+			}
 			pipelineHcl.Steps = append(pipelineHcl.Steps, step)
 
 		case schema.BlockTypePipelineOutput:
@@ -410,7 +417,15 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		// the resource to be there
 		return pipelineHcl, res
 	}
-	pipelineHcl.SetSetFileReference(block.DefRange.Filename, block.DefRange.Start.Line)
+
+	body, ok := block.Body.(*hclsyntax.Body)
+	if ok {
+		pipelineHcl.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
+	} else {
+		// This shouldn't happen, but if it does, try our best effort to set the file reference. It will get the start line correctly
+		// but not the end line
+		pipelineHcl.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+	}
 
 	return pipelineHcl, res
 }
