@@ -815,6 +815,32 @@ func TestServiceNowDefaultCredential(t *testing.T) {
 	assert.Equal("j0t3-$j@H3", *newServiceNowCreds.Password)
 }
 
+func TestJumpCloudDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	jumpCloudCred := JumpCloudCredential{
+		HclResourceImpl: HclResourceImpl{
+			ShortName: "default",
+		},
+	}
+
+	os.Unsetenv("JUMPCLOUD_API_KEY")
+
+	newCreds, err := jumpCloudCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJumpCloudCreds := newCreds.(*JumpCloudCredential)
+	assert.Equal("", *newJumpCloudCreds.APIKey)
+
+	os.Setenv("JUMPCLOUD_API_KEY", "sk-jwgthNa...")
+
+	newCreds, err = jumpCloudCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJumpCloudCreds = newCreds.(*JumpCloudCredential)
+	assert.Equal("sk-jwgthNa...", *newJumpCloudCreds.APIKey)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)

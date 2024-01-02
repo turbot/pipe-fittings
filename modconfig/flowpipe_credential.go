@@ -2209,6 +2209,69 @@ func (c *ServiceNowCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type JumpCloudCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
+}
+
+func (*JumpCloudCredential) GetCredentialType() string {
+	return "jumpcloud"
+}
+
+func (c *JumpCloudCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.APIKey != nil {
+		env["JUMPCLOUD_API_KEY"] = cty.StringVal(*c.APIKey)
+	}
+	return env
+}
+
+func (c *JumpCloudCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *JumpCloudCredential) Resolve(ctx context.Context) (Credential, error) {
+	if c.APIKey == nil {
+		apiKeyEnvVar := os.Getenv("JUMPCLOUD_API_KEY")
+
+		// Don't modify existing credential, resolve to a new one
+		newCreds := &JumpCloudCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        c.FullName,
+				UnqualifiedName: c.UnqualifiedName,
+				ShortName:       c.ShortName,
+				DeclRange:       c.DeclRange,
+				blockType:       c.blockType,
+			},
+			Type:   c.Type,
+			APIKey: &apiKeyEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
+func (c *JumpCloudCredential) GetTtl() int {
+	return -1
+}
+
+func (c *JumpCloudCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type BasicCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -2495,6 +2558,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "servicenow.default",
 		},
 		Type: "servicenow",
+	}
+	credentials["jumpcloud.default"] = &JumpCloudCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "jumpcloud.default",
+			ShortName:       "default",
+			UnqualifiedName: "jumpcloud.default",
+		},
+		Type: "jumpcloud",
 	}
 
 	return credentials
@@ -2877,6 +2948,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "servicenow",
+		}
+		return credential
+	} else if credentialType == "jumpcloud" {
+		credential := &JumpCloudCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "jumpcloud",
 		}
 		return credential
 	}
