@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"sort"
 	"strings"
 
 	typeHelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -22,28 +20,6 @@ type schemaRecord struct {
 	DataType          string
 	ColumnDescription string
 	TableDescription  string
-}
-
-func LoadForeignSchemaNames(ctx context.Context, conn *sql.Conn) ([]string, error) {
-	res, err := conn.QueryContext(ctx, "SELECT DISTINCT foreign_table_schema FROM information_schema.foreign_tables WHERE foreign_server_name='steampipe'")
-	if err != nil {
-		return nil, err
-	}
-	defer res.Close()
-
-	var foreignSchemaNames []string
-	var schema string
-	for res.Next() {
-		if err := res.Scan(&schema); err != nil {
-			return nil, err
-		}
-		// ignore internal schema and legacy command schema
-		if schema != constants.InternalSchema && schema != constants.LegacyCommandSchema {
-			foreignSchemaNames = append(foreignSchemaNames, schema)
-		}
-	}
-	sort.Strings(foreignSchemaNames)
-	return foreignSchemaNames, nil
 }
 
 func LoadSchemaMetadata(ctx context.Context, conn *sql.Conn, query string) (*SchemaMetadata, error) {

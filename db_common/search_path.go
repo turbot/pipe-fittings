@@ -6,14 +6,13 @@ import (
 	"strings"
 
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/constants"
 )
 
 func EnsureInternalSchemaSuffix(searchPath []string) []string {
 	// remove the InternalSchema
-	searchPath = helpers.RemoveFromStringSlice(searchPath, constants.InternalSchema)
+	searchPath = helpers.RemoveFromStringSlice(searchPath, localconstants.InternalSchema)
 	// append the InternalSchema
-	searchPath = append(searchPath, constants.InternalSchema)
+	searchPath = append(searchPath, localconstants.InternalSchema)
 	return searchPath
 }
 

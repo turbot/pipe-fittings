@@ -1,4 +1,4 @@
-package dashboardtypes
+package snapshot
 
 import (
 	"encoding/json"
