@@ -65,7 +65,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 //	}
 //}
 
-func (w *Workspace) reloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, *error_helpers.ErrorAndWarnings) {
+func (w *Workspace) reloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, error_helpers.ErrorAndWarnings) {
 	w.loadLock.Lock()
 	defer w.loadLock.Unlock()
 

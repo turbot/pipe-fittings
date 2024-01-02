@@ -32,7 +32,7 @@ func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx 
 	return variableMap, nil
 }
 
-func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, *error_helpers.ErrorAndWarnings) {
+func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	// now resolve all input variables
 	inputValues, errorsAndWarnings := getInputVariables(ctx, parseCtx, variableMap, validate)
 	if errorsAndWarnings.Error == nil {
@@ -43,7 +43,7 @@ func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, var
 	return variableMap, errorsAndWarnings
 }
 
-func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, *error_helpers.ErrorAndWarnings) {
+func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, error_helpers.ErrorAndWarnings) {
 	variableFileArgs := viper.GetStringSlice(constants.ArgVarFile)
 	variableArgs := viper.GetStringSlice(constants.ArgVariable)
 
@@ -80,7 +80,7 @@ func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, var
 	return parsedValues, newVariableValidationResult(diags)
 }
 
-func newVariableValidationResult(diags tfdiags.Diagnostics) *error_helpers.ErrorAndWarnings {
+func newVariableValidationResult(diags tfdiags.Diagnostics) error_helpers.ErrorAndWarnings {
 	warnings := plugin.DiagsToWarnings(diags.ToHCL())
 	var err error
 	if diags.HasErrors() {
