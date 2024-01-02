@@ -69,7 +69,7 @@ type Workspace struct {
 
 // Load_ creates a Workspace and loads the workspace mod
 
-func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, *error_helpers.ErrorAndWarnings) {
+func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, error_helpers.ErrorAndWarnings) {
 	cfg := newLoadWorkspaceConfig()
 	for _, o := range opts {
 		o(cfg)
@@ -92,7 +92,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
 // this is use for the variable list command
-func LoadVariables(ctx context.Context, workspacePath string, fileInclusions ...string) ([]*modconfig.Variable, *error_helpers.ErrorAndWarnings) {
+func LoadVariables(ctx context.Context, workspacePath string, fileInclusions ...string) ([]*modconfig.Variable, error_helpers.ErrorAndWarnings) {
 	if len(fileInclusions) == 0 {
 		// default to the mod data extension (
 		fileInclusions = []string{app_specific.ModDataExtension}
@@ -224,7 +224,7 @@ func (w *Workspace) setModfileExists() {
 	}
 }
 
-func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAndWarnings {
+func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAndWarnings {
 	// check if your workspace path is home dir and if modfile exists - if yes then warn and ask user to continue or not
 	if err := HomeDirectoryModfileCheck(ctx, w.Path); err != nil {
 		return error_helpers.NewErrorsAndWarning(err)
@@ -279,7 +279,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) *error_helpers.ErrorAn
 	return errorsAndWarnings
 }
 
-func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool) (*modconfig.ModVariableMap, *error_helpers.ErrorAndWarnings) {
+func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	// build a run context just to use to load variable definitions
 	variablesParseCtx, err := w.getParseContext(ctx)
 	if err != nil {
@@ -289,7 +289,7 @@ func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool)
 	return w.getVariableValues(ctx, variablesParseCtx, validateMissing)
 }
 
-func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, *error_helpers.ErrorAndWarnings) {
+func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	// load variable definitions
 	variableMap, err := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
 	if err != nil {

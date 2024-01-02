@@ -118,7 +118,7 @@ func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mo
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
 // NOTE: the mod definition has already been parsed (or a default created) and is in opts.RunCtx.RootMod
-func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources []modconfig.MappableResource, parseCtx *ModParseContext) (*modconfig.Mod, *error_helpers.ErrorAndWarnings) {
+func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources []modconfig.MappableResource, parseCtx *ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
 	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
 		return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to load all mod source files", diags))
@@ -150,7 +150,7 @@ func ParseMod(ctx context.Context, fileData map[string][]byte, pseudoResources [
 	}
 
 	// collect warnings as we parse
-	var res = &error_helpers.ErrorAndWarnings{}
+	var res = error_helpers.ErrorAndWarnings{}
 
 	// add pseudo resources to the mod
 	errorsAndWarnings := addPseudoResourcesToMod(pseudoResources, hclResources, mod)

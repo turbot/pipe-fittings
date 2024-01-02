@@ -35,7 +35,7 @@ func WithCredentials(credentials map[string]modconfig.Credential) LoadWorkspaceO
 	}
 }
 
-func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, *error_helpers.ErrorAndWarnings) {
+func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, error_helpers.ErrorAndWarnings) {
 	t := time.Now()
 	defer func() {
 		slog.Debug("Workspace load complete", "duration (ms)", time.Since(t).Milliseconds())

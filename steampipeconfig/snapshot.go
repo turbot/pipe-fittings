@@ -1,4 +1,4 @@
-package snapshot
+package steampipeconfig
 
 import (
 	"encoding/json"
