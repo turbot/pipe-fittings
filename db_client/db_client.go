@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/db_client/backend"
 	"github.com/turbot/pipe-fittings/utils"
-	"golang.org/x/sync/semaphore"
 	"log/slog"
 )
 
@@ -28,9 +26,6 @@ type DbClient struct {
 	// steampipe overrides this with startQueryWithRetries
 	startQueryFunc startQueryFunc
 
-	// concurrency management for db session access
-	parallelSessionInitLock *semaphore.Weighted
-
 	// the backend type of the dbclient backend
 	backend backend.DBClientBackendType
 
@@ -43,6 +38,8 @@ type DbClient struct {
 	// if a custom search path or a prefix is used, store it here
 	CustomSearchPath []string
 	SearchPathPrefix []string
+	SearchPathSuffix []string
+
 	// the default user search path
 	UserSearchPath []string
 }
@@ -57,12 +54,9 @@ func NewDbClient(ctx context.Context, connectionString string, opts ...ClientOpt
 	}
 
 	client := &DbClient{
-		// a weighted semaphore to control the maximum number parallel
-		// initializations under way
-		parallelSessionInitLock: semaphore.NewWeighted(constants.MaxParallelClientInits),
-		connectionString:        connectionString,
-		backend:                 backendType,
-		rowReader:               backend.RowReaderFactory(backendType),
+		connectionString: connectionString,
+		backend:          backendType,
+		rowReader:        backend.RowReaderFactory(backendType),
 	}
 
 	// set the start query func
