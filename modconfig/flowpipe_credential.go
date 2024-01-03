@@ -27,6 +27,11 @@ type Credential interface {
 	getEnv() map[string]cty.Value
 }
 
+type CredentialImport struct {
+	HclResource
+	ResourceWithMetadata
+}
+
 type AwsCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl

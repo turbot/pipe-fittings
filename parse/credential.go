@@ -61,3 +61,40 @@ func DecodeCredential(configPath string, block *hcl.Block) (modconfig.Credential
 
 	return credential, diags
 }
+
+func DecodeCredentialImport(configPath string, block *hcl.Block) (*modconfig.CredentialImport, hcl.Diagnostics) {
+	if len(block.Labels) != 1 {
+		diags := hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid credential import block - expected 1 label, found %d", len(block.Labels)),
+				Subject:  &block.DefRange,
+			},
+		}
+		return nil, diags
+	}
+
+	credentialImportName := block.Labels[0]
+
+	credentialImport := &modconfig.CredentialImport{}
+
+	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
+	if len(diags) > 0 {
+		return nil, diags
+	}
+
+	body := r.(*hclsyntax.Body)
+	// build an eval context just containing functions
+	evalCtx := &hcl.EvalContext{
+		Functions: funcs.ContextFunctions(configPath),
+		Variables: make(map[string]cty.Value),
+	}
+
+	diags = decodeHclBody(body, evalCtx, nil, credentialImport)
+	if len(diags) > 0 {
+		return nil, diags
+	}
+
+	return credentialImport, diags
+
+}

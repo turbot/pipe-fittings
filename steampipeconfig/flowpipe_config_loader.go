@@ -90,6 +90,7 @@ func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]mod
 		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load config", diags)
 	}
 
+	credentialImports := map[string]modconfig.CredentialImport{}
 	for _, block := range content.Blocks {
 		switch block.Type {
 
@@ -102,6 +103,14 @@ func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]mod
 			}
 
 			res[credential.GetUnqualifiedName()] = credential
+		case schema.BlockTypeCredentialImport:
+			credentialImport, moreDiags := parse.DecodeCredentialImport(configPath, block)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				slog.Warn("loadCredentials: failed to decode credential import block", "error", err)
+				continue
+			}
+			credentialImports[credentialImport.GetUnqualifiedName()] = credentialImport
 		}
 	}
 

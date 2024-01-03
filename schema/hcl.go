@@ -46,6 +46,7 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeCredential        = "credential"
+	BlockTypeCredentialImport  = "credential_import"
 	BlockTypeNotify            = "notify"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
