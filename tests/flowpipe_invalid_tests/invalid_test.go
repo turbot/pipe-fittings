@@ -43,6 +43,11 @@ var tests = []testSetup{
 		containsError: `Unsupported argument: An argument named "if" is not expected here.`,
 	},
 	{
+		title:         "invalid schedule trigger - unsupported attribute 'execution_mode'",
+		file:          "./pipelines/invalid_schedule_trigger.fp",
+		containsError: `Unsupported argument: An argument named "execution_mode" is not expected here.`,
+	},
+	{
 		title:         "invalid step attribute (transform)",
 		file:          "./pipelines/invalid_step_attribute.fp",
 		containsError: `Unsupported argument: An argument named "abc" is not expected here.`,

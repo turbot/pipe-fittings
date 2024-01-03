@@ -79,3 +79,8 @@ trigger "query" "query_trigger_interval" {
     param_two_int = 2
   }
 }
+
+trigger "http" "trigger_with_execution_mode" {
+  pipeline       = pipeline.simple_with_trigger
+  execution_mode = "synchronous"
+}

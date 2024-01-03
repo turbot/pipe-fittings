@@ -108,6 +108,21 @@ func TestPipelineWithTrigger(t *testing.T) {
 	assert.Equal("insert", qt.Events[0])
 	assert.Contains(qt.Sql, "where create_date < now() - interval")
 	assert.Equal("daily", qt.Schedule)
+
+	triggerWithExecutionMode := triggers["local.trigger.http.trigger_with_execution_mode"]
+	if triggerWithExecutionMode == nil {
+		assert.Fail("trigger_with_execution_mode trigger not found")
+		return
+	}
+
+	trig, ok := triggerWithExecutionMode.Config.(*modconfig.TriggerHttp)
+	if !ok {
+		assert.Fail("trigger_with_execution_mode trigger is not a http trigger")
+		return
+	}
+
+	assert.Equal("synchronous", trig.ExecutionMode)
+
 }
 
 func TestPipelineWithTriggerSelf(t *testing.T) {
