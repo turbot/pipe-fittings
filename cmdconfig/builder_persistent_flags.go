@@ -15,18 +15,6 @@ func (c *CmdBuilder) AddPersistentStringFlag(name string, defaultValue string, d
 	return c
 }
 
-// AddPersistentFilepathFlag is a helper function to add a persistent string flag containing a file path to a command
-// Note:this also stores the config key in filePathViperKeys,
-// ensuring the value of the key has `~` converted to the home dir
-func (c *CmdBuilder) AddPersistentFilepathFlag(name string, defaultValue string, desc string) *CmdBuilder {
-	c.cmd.PersistentFlags().String(name, defaultValue, desc)
-	error_helpers.FailOnError(viper.BindPFlag(name, c.cmd.PersistentFlags().Lookup(name)))
-	// add the key to the map of keys to tildefy
-	filePathViperKeys[name] = struct{}{}
-
-	return c
-}
-
 // AddPersistentIntFlag is a helper function to add an integer flag to a command
 func (c *CmdBuilder) AddPersistentIntFlag(name string, defaultValue int, desc string) *CmdBuilder {
 	c.cmd.PersistentFlags().Int(name, defaultValue, desc)
