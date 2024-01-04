@@ -392,6 +392,8 @@ type TriggerHttp struct {
 	ExecutionMode string `json:"execution_mode"`
 }
 
+var validExecutionMode = []string{"synchronous", "asynchronous"}
+
 func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
 	if diags.HasErrors() {
@@ -418,6 +420,16 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 			}
 
 			t.ExecutionMode = val.AsString()
+
+			if !slices.Contains(validExecutionMode, t.ExecutionMode) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid execution mode",
+					Detail:   "The execution mode must be one of: " + strings.Join(validExecutionMode, ","),
+					Subject:  &attr.Range,
+				})
+			}
+
 		default:
 			if !trigger.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{

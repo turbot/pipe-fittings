@@ -192,6 +192,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_query_trigger.fp",
 		containsError: "expected exactly 5 fields, found 1: [days]", // if not valid interval we assume it's a cron statement
 	},
+	{
+		title:         "invalid execution mode in http trigger",
+		file:          "./pipelines/invalid_http_trigger_execution_mode.fp",
+		containsError: "The execution mode must be one of: synchronous,asynchronous",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
