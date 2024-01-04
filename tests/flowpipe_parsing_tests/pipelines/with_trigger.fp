@@ -11,6 +11,11 @@ trigger "schedule" "my_hourly_trigger" {
   pipeline = pipeline.simple_with_trigger
 }
 
+trigger "schedule" "my_hourly_trigger_interval" {
+  schedule = "daily"
+  pipeline = pipeline.simple_with_trigger
+}
+
 
 trigger "schedule" "trigger_with_args" {
   schedule = "5 * * * *"

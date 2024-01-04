@@ -78,6 +78,11 @@ var tests = []testSetup{
 		containsError: "Failed to decode mod:\nMissing required argument: The argument \"pipeline\" is required, but no definition was found.",
 	},
 	{
+		title:         "invalid trigger - cron",
+		file:          "./pipelines/invalid_trigger_bad_cron.fp",
+		containsError: "bad cron format. Specify valid intervals hourly, daily, weekly, monthly or valid cron expression:",
+	},
+	{
 		title:         "invalid approval - notify and notifies specified",
 		file:          "./pipelines/approval_notify_and_notifies.fp",
 		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",

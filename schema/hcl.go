@@ -191,7 +191,6 @@ const (
 
 	// All Possible Trigger Types
 	TriggerTypeSchedule = "schedule"
-	TriggerTypeInterval = "interval"
 	TriggerTypeQuery    = "query"
 	TriggerTypeHttp     = "http"
 

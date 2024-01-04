@@ -46,6 +46,20 @@ func TestPipelineWithTrigger(t *testing.T) {
 
 	assert.Equal("5 * * * *", st.Schedule)
 
+	scheduleTrigger = triggers["local.trigger.schedule.my_hourly_trigger_interval"]
+	if scheduleTrigger == nil {
+		assert.Fail("my_hourly_trigger_interval trigger not found")
+		return
+	}
+
+	st, ok = scheduleTrigger.Config.(*modconfig.TriggerSchedule)
+	if !ok {
+		assert.Fail("my_hourly_trigger trigger is not a schedule trigger")
+		return
+	}
+
+	assert.Equal("daily", st.Schedule)
+
 	triggerWithArgs := triggers["local.trigger.schedule.trigger_with_args"]
 	if triggerWithArgs == nil {
 		assert.Fail("trigger_with_args trigger not found")

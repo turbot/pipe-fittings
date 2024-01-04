@@ -207,12 +207,16 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 
 			t.Schedule = val.AsString()
 
-			// validate cron format
+			if helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
+				continue
+			}
+
+			// if it's not an interval, assume it's a cron and attempt to validate the cron expression
 			_, err := cron.ParseStandard(t.Schedule)
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Invalid cron expression: " + t.Schedule,
+					Summary:  "Invalid cron expression: " + t.Schedule + ". Specify valid intervals hourly, daily, weekly, monthly or valid cron expression",
 					Detail:   err.Error(),
 					Subject:  &attr.Range,
 				})
@@ -230,59 +234,7 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	return diags
 }
 
-type TriggerInterval struct {
-	Schedule string `json:"schedule"`
-}
-
 var validIntervals = []string{"hourly", "daily", "weekly", "monthly"}
-
-func (t *TriggerInterval) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
-	if diags.HasErrors() {
-		return diags
-	}
-
-	for name, attr := range hclAttributes {
-		switch name {
-		case schema.AttributeTypeSchedule:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
-			}
-
-			if val.Type() != cty.String {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "The given interval is not a string",
-					Detail:   "The given interval is not a string",
-					Subject:  &attr.Range,
-				})
-				continue
-			}
-			t.Schedule = val.AsString()
-
-			if !helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Invalid interval",
-					Detail:   "The interval must be one of: " + strings.Join(validIntervals, ","),
-					Subject:  &attr.Range,
-				})
-			}
-
-		default:
-			if !trigger.IsBaseAttribute(name) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Trigger Interval: " + attr.Name,
-					Subject:  &attr.Range,
-				})
-			}
-		}
-	}
-	return diags
-}
 
 type TriggerQuery struct {
 	Sql              string   `json:"sql"`
@@ -470,8 +422,6 @@ func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Tr
 	switch triggerType {
 	case schema.TriggerTypeSchedule:
 		trigger.Config = &TriggerSchedule{}
-	case schema.TriggerTypeInterval:
-		trigger.Config = &TriggerInterval{}
 	case schema.TriggerTypeQuery:
 		trigger.Config = &TriggerQuery{}
 	case schema.TriggerTypeHttp:
@@ -488,8 +438,6 @@ func GetTriggerTypeFromTriggerConfig(config TriggerConfig) string {
 	switch config.(type) {
 	case *TriggerSchedule:
 		return schema.TriggerTypeSchedule
-	case *TriggerInterval:
-		return schema.TriggerTypeInterval
 	case *TriggerQuery:
 		return schema.TriggerTypeQuery
 	case *TriggerHttp:

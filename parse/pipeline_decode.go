@@ -573,8 +573,6 @@ func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 	switch triggerType {
 	case schema.TriggerTypeSchedule:
 		return modconfig.TriggerScheduleBlockSchema
-	case schema.TriggerTypeInterval:
-		return modconfig.TriggerIntervalBlockSchema
 	case schema.TriggerTypeQuery:
 		return modconfig.TriggerQueryBlockSchema
 	case schema.TriggerTypeHttp:
