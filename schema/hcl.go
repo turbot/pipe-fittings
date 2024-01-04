@@ -182,6 +182,9 @@ const (
 	AttributeTypePrimaryKey = "primary_key"
 	AttributeTypeEvents     = "events"
 
+	// HTTP Trigger attributes
+	AttributeTypeExecutionMode = "execution_mode"
+
 	// Input step attributes
 	AttributeTypePrompt    = "prompt"
 	AttributeTypeSlackType = "slack_type"
