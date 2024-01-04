@@ -60,9 +60,6 @@ func TestPipelineWithTrigger(t *testing.T) {
 
 	assert.NotNil(twa, "trigger_with_args trigger is nil")
 
-	// assert.Equal("one", triggerWithArgs.Args["param_one"])
-	// assert.Equal(2, triggerWithArgs.Args["param_two_int"])
-
 	queryTrigger := triggers["local.trigger.query.query_trigger"]
 	if queryTrigger == nil {
 		assert.Fail("query_trigger trigger not found")
@@ -94,6 +91,23 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
+	queryTrigger = triggers["local.trigger.query.query_trigger_interval"]
+	if queryTrigger == nil {
+		assert.Fail("query_trigger_interval trigger not found")
+		return
+	}
+
+	qt, ok = queryTrigger.Config.(*modconfig.TriggerQuery)
+	if !ok {
+		assert.Fail("query_trigger trigger is not a query trigger")
+		return
+	}
+
+	assert.Equal("access_key_id", qt.PrimaryKey)
+	assert.Len(qt.Events, 1)
+	assert.Equal("insert", qt.Events[0])
+	assert.Contains(qt.Sql, "where create_date < now() - interval")
+	assert.Equal("daily", qt.Schedule)
 }
 
 func TestPipelineWithTriggerSelf(t *testing.T) {

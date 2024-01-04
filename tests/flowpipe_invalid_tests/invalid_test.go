@@ -182,6 +182,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_timeout.fp",
 		containsError: "Value of the attribute 'timeout' must be a string or a whole number",
 	},
+	{
+		title:         "invalid shedule in query trigger",
+		file:          "./pipelines/invalid_query_trigger.fp",
+		containsError: "expected exactly 5 fields, found 1: [days]", // if not valid interval we assume it's a cron statement
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

@@ -309,7 +309,11 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 
 			t.Schedule = val.AsString()
 
-			// validate cron format
+			if slices.Contains(validIntervals, t.Schedule) {
+				continue
+			}
+
+			// assume it's a cron expression
 			_, err := cron.ParseStandard(t.Schedule)
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
