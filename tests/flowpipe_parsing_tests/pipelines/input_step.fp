@@ -12,6 +12,7 @@ integration "email" "email_integration" {
 
 pipeline "pipeline_with_input" {
   step "input" "input" {
+    type   = "button"
     prompt = "Choose an option:"
 
     notify {
@@ -29,7 +30,7 @@ pipeline "pipeline_with_unresolved_notify" {
   }
 
   step "input" "input" {
-
+    type = "button"
     prompt = "Choose an option:"
 
     notify {
@@ -48,7 +49,7 @@ pipeline "pipeline_with_email_notify" {
   }
 
   step "input" "input" {
-
+    type = "button"
     # prompt = "Choose an option:"
 
     notify {

@@ -6,6 +6,8 @@ integration "email" "email_integration" {
 
 pipeline "approval" {
   step "input" "input" {
+    type = "button"
+
     notify {
       integration = integration.email.email_integration
       channel = "foo"

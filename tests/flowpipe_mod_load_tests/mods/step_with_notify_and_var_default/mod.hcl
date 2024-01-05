@@ -40,6 +40,8 @@ integration "email" "email_integration" {
 pipeline "approval_with_variables" {
 
   step "input" "input" {
+    type = "button"
+
     notify {
       integration = integration.slack.my_slack_app
       channel     = var.channel_name

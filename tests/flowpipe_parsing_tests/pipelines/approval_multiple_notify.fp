@@ -11,7 +11,7 @@ integration "email" "email_dummy_app" {
 pipeline "approval_multiple_notify_pipeline" {
 
   step "input" "input_multiple_notify" {
-
+    type   = "button"
     prompt = "Are you sure?"
 
     notify {

@@ -22,7 +22,7 @@ pipeline "approval_with_notifies" {
   }
 
   step "input" "input" {
-
+    type = "button"
     notifies = [
       {
         integration = integration.slack.my_slack_app
@@ -52,7 +52,7 @@ pipeline "approval_with_notifies_depend_another_step" {
     value = "some val"
   }
   step "input" "input" {
-
+    type = "button"
     notifies = [
       {
         integration = integration.slack.my_slack_app
@@ -70,7 +70,7 @@ pipeline "approval_with_notifies_depend_another_step" {
 
 pipeline "approval_with_invalid_notifies" {
   step "input" "input" {
-
+    type = "button"
     notifies = [
       {
         integration = integration.slack.my_slack_app
@@ -87,7 +87,7 @@ pipeline "approval_with_invalid_notifies" {
 
 pipeline "approval_with_invalid_email_notifies" {
   step "input" "input" {
-
+    type = "button"
     notifies = [
       {
         integration = integration.slack.my_slack_app
@@ -103,7 +103,7 @@ pipeline "approval_with_invalid_email_notifies" {
 
 pipeline "approval_with_invalid_email" {
   step "input" "input" {
-
+    type = "button"
     notifies = [
       {
         integration = integration.email.email_integration
@@ -115,7 +115,7 @@ pipeline "approval_with_invalid_email" {
 
 pipeline "approval_with_invalid_slack" {
   step "input" "input" {
-
+    type = "button"
     notifies = [
       {
         integration = integration.slack.my_slack_app

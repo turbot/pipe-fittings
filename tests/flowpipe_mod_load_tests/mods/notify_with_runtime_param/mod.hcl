@@ -32,6 +32,8 @@ pipeline "notify_with_runtime_param" {
   }
 
   step "input" "input" {
+    type = "button"
+
     notify {
       integration = step.pipeline.get_integration.integration
       channel     = param.channel_name
