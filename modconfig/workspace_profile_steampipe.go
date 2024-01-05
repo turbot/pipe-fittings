@@ -33,7 +33,6 @@ type SteampipeWorkspaceProfile struct {
 	Cache             *bool                      `hcl:"cache" cty:"cache"`
 	CacheTTL          *int                       `hcl:"cache_ttl" cty:"cache_ttl"`
 	Base              *SteampipeWorkspaceProfile `hcl:"base"`
-
 	// options
 	QueryOptions     *options.Query                     `cty:"query-options"`
 	CheckOptions     *options.Check                     `cty:"check-options"`
