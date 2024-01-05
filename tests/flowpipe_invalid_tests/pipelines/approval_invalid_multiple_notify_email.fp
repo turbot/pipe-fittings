@@ -13,6 +13,7 @@ integration "email" "email_dummy_app2" {
 pipeline "approval_invalid_multiple_notify" {
 
   step "input" "invalid_multiple_notify" {
+    type = "button"
 
     prompt = "Are you sure?"
 

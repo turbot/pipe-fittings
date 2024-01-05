@@ -29,6 +29,8 @@ pipeline "approval_with_depends_on" {
   }
 
   step "input" "input" {
+    type = "button"
+
     notify {
       integration = step.pipeline.get_integration.integration
       channel     = var.channel_name

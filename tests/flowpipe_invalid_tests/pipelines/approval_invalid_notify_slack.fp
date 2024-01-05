@@ -7,6 +7,8 @@ integration "slack" "my_slack_app" {
 
 pipeline "approval" {
   step "input" "input" {
+    type = "button"
+
     notify {
       integration = integration.slack.my_slack_app
       to = "foo"

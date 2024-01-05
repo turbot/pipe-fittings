@@ -22,7 +22,7 @@ integration "email" "email_integration" {
 
 pipeline "approval" {
   step "input" "input" {
-    
+    type = "button"
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"
@@ -32,7 +32,7 @@ pipeline "approval" {
 
 pipeline "approval_email" {
   step "input" "input_email" {
-    
+    type = "button"
     notify {
       integration = integration.email.email_integration
       to = "victor@turbot.com"
@@ -47,7 +47,7 @@ pipeline "approval_dynamic_integration" {
   }
 
   step "input" "input" {
-    
+    type = "button"
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"

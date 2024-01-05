@@ -2783,9 +2783,10 @@ func (p *PipelineStepFunction) Validate() hcl.Diagnostics {
 type PipelineStepInput struct {
 	PipelineStepBase
 
-	Prompt *string `json:"prompt"`
-
-	Options []string `json:"options" cty:"options"`
+	InputType string   `json:"type" cty:"type"`
+	Prompt    *string  `json:"prompt" cty:"prompt"`
+	Options   []string `json:"options" cty:"options"`
+	// TODO: figure out OptionList as can have more than one option block
 
 	// We can have more than one notify block
 	/*
@@ -2849,6 +2850,8 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 
 	results := map[string]interface{}{}
+
+	results[schema.AttributeTypeType] = p.InputType
 
 	if prompt != nil {
 		results[schema.AttributeTypePrompt] = *prompt
@@ -2981,9 +2984,25 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
-	// TODO: Integrated 2023 hack - remove non appropriate attribute and add them to notify, notifies, option, options
 	for name, attr := range hclAttributes {
 		switch name {
+		case schema.AttributeTypeType:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				t, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeType + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+				p.InputType = t
+			}
 		case schema.AttributeTypePrompt:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -2995,7 +3014,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeFrom + " attribute to string",
+						Summary:  "Unable to parse " + schema.AttributeTypePrompt + " attribute to string",
 						Subject:  &attr.Range,
 					})
 				}
@@ -3014,7 +3033,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				if ctyErr != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeTo + " attribute to string slice",
+						Summary:  "Unable to parse " + schema.AttributeTypeOptions + " attribute to string slice",
 						Detail:   ctyErr.Error(),
 						Subject:  &attr.Range,
 					})
@@ -3042,15 +3061,14 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				p.Notifies = val
 			}
 
-			// TODO: add back this check after tidy up
-			// default:
-			// 	if !p.IsBaseAttribute(name) {
-			// 		diags = append(diags, &hcl.Diagnostic{
-			// 			Severity: hcl.DiagError,
-			// 			Summary:  "Unsupported attribute for Function Step: " + attr.Name,
-			// 			Subject:  &attr.Range,
-			// 		})
-			// 	}
+		default:
+			if !p.IsBaseAttribute(name) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unsupported attribute for Input Step: " + attr.Name,
+					Subject:  &attr.Range,
+				})
+			}
 		}
 	}
 

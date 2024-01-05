@@ -31,6 +31,7 @@ pipeline "approval_with_notifies_and_notify" {
   }
 
   step "input" "input" {
+    type = "button"
 
     notify {
       integration = integration.slack.my_slack_app
