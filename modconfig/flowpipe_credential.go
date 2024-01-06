@@ -3,8 +3,13 @@ package modconfig
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -2209,6 +2214,142 @@ func (c *ServiceNowCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
+type SalesforceCredential struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
+
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+
+	InstanceURL  *string `json:"instance_url,omitempty" cty:"instance_url" hcl:"instance_url,optional"`
+	ClientID     *string `json:"client_id,omitempty" cty:"client_id" hcl:"client_id,optional"`
+	ClientSecret *string `json:"client_secret,omitempty" cty:"client_secret" hcl:"client_secret,optional"`
+	AccessToken  *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
+}
+
+func (*SalesforceCredential) GetCredentialType() string {
+	return "salesforce"
+}
+
+func (c *SalesforceCredential) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.InstanceURL != nil {
+		env["SALESFORCE_INSTANCE_URL"] = cty.StringVal(*c.InstanceURL)
+	}
+	if c.ClientID != nil {
+		env["SALESFORCE_CLIENT_ID"] = cty.StringVal(*c.ClientID)
+	}
+	if c.ClientSecret != nil {
+		env["SALESFORCE_CLIENT_SECRET"] = cty.StringVal(*c.ClientSecret)
+	}
+	return env
+}
+
+func (c *SalesforceCredential) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *SalesforceCredential) Resolve(ctx context.Context) (Credential, error) {
+	salesforceInstanceURLEnvVar := os.Getenv("SALESFORCE_INSTANCE_URL")
+	salesforceClientIDEnvVar := os.Getenv("SALESFORCE_CLIENT_ID")
+	salesforceClientSecretEnvVar := os.Getenv("SALESFORCE_CLIENT_SECRET")
+
+	// Don't modify existing credential, resolve to a new one
+	newCreds := &SalesforceCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        c.FullName,
+			UnqualifiedName: c.UnqualifiedName,
+			ShortName:       c.ShortName,
+			DeclRange:       c.DeclRange,
+			blockType:       c.blockType,
+		},
+		Type: c.Type,
+	}
+
+	if c.InstanceURL == nil {
+		newCreds.InstanceURL = &salesforceInstanceURLEnvVar
+	} else {
+		newCreds.InstanceURL = c.InstanceURL
+	}
+
+	if c.ClientID == nil {
+		newCreds.ClientID = &salesforceClientIDEnvVar
+	} else {
+		newCreds.ClientID = c.ClientID
+	}
+
+	if c.ClientSecret == nil {
+		newCreds.ClientSecret = &salesforceClientSecretEnvVar
+	} else {
+		newCreds.ClientSecret = c.ClientSecret
+	}
+
+	if *newCreds.InstanceURL == "" || *newCreds.ClientID == "" || *newCreds.ClientSecret == "" {
+		return newCreds, nil
+	}
+
+	url := fmt.Sprintf("%s/services/oauth2/token", *newCreds.InstanceURL)
+	method := "POST"
+
+	payload := strings.NewReader(fmt.Sprintf(
+		"grant_type=client_credentials&client_id=%s&client_secret=%s",
+		*newCreds.ClientID,
+		*newCreds.ClientSecret,
+	))
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// Make the request
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// Read the body
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the body
+	var result map[string]interface{}
+	json.Unmarshal([]byte(body), &result)
+
+	// Get the access token
+	accessToken, ok := result["access_token"].(string)
+	if !ok {
+		// TODO: Unsure on how to handle failed authentication
+		return newCreds, errors.New(result["error_description"].(string))
+	}
+
+	// Set the access token
+	newCreds.AccessToken = &accessToken
+
+	return newCreds, nil
+}
+
+func (c *SalesforceCredential) GetTtl() int {
+	return -1
+}
+
+func (c *SalesforceCredential) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
 type JumpCloudCredential struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -2558,6 +2699,14 @@ func DefaultCredentials() map[string]Credential {
 			UnqualifiedName: "servicenow.default",
 		},
 		Type: "servicenow",
+	}
+	credentials["salesforce.default"] = &SalesforceCredential{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "salesforce.default",
+			ShortName:       "default",
+			UnqualifiedName: "salesforce.default",
+		},
+		Type: "salesforce",
 	}
 	credentials["jumpcloud.default"] = &JumpCloudCredential{
 		HclResourceImpl: HclResourceImpl{
@@ -2948,6 +3097,18 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "servicenow",
+		}
+		return credential
+	} else if credentialType == "salesforce" {
+		credential := &SalesforceCredential{
+			HclResourceImpl: HclResourceImpl{
+				FullName:        credentialFullName,
+				ShortName:       credentialName,
+				UnqualifiedName: credentialFullName,
+				DeclRange:       block.DefRange,
+				blockType:       block.Type,
+			},
+			Type: "salesforce",
 		}
 		return credential
 	} else if credentialType == "jumpcloud" {
