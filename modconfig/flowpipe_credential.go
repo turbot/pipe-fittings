@@ -3,8 +3,13 @@ package modconfig
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -2218,6 +2223,7 @@ type SalesforceCredential struct {
 	InstanceURL  *string `json:"instance_url,omitempty" cty:"instance_url" hcl:"instance_url,optional"`
 	ClientID     *string `json:"client_id,omitempty" cty:"client_id" hcl:"client_id,optional"`
 	ClientSecret *string `json:"client_secret,omitempty" cty:"client_secret" hcl:"client_secret,optional"`
+	AccessToken  *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
 func (*SalesforceCredential) GetCredentialType() string {
@@ -2284,6 +2290,54 @@ func (c *SalesforceCredential) Resolve(ctx context.Context) (Credential, error) 
 	} else {
 		newCreds.ClientSecret = c.ClientSecret
 	}
+
+	if *newCreds.InstanceURL == "" || *newCreds.ClientID == "" || *newCreds.ClientSecret == "" {
+		return newCreds, nil
+	}
+
+	url := fmt.Sprintf("%s/services/oauth2/token", *newCreds.InstanceURL)
+	method := "POST"
+
+	payload := strings.NewReader(fmt.Sprintf(
+		"grant_type=client_credentials&client_id=%s&client_secret=%s",
+		*newCreds.ClientID,
+		*newCreds.ClientSecret,
+	))
+
+	client := &http.Client{}
+	req, err := http.NewRequest(method, url, payload)
+
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// Make the request
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// Read the body
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the body
+	var result map[string]interface{}
+	json.Unmarshal([]byte(body), &result)
+
+	// Get the access token
+	accessToken, ok := result["access_token"].(string)
+	if !ok {
+		// TODO: Unsure on how to handle failed authentication
+		return newCreds, errors.New(result["error_description"].(string))
+	}
+
+	// Set the access token
+	newCreds.AccessToken = &accessToken
 
 	return newCreds, nil
 }

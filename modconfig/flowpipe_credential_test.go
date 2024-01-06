@@ -818,7 +818,7 @@ func TestServiceNowDefaultCredential(t *testing.T) {
 func TestSalesforceDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
-	guardrailsCred := SalesforceCredential{
+	salesforceCred := SalesforceCredential{
 		HclResourceImpl: HclResourceImpl{
 			ShortName: "default",
 		},
@@ -828,7 +828,7 @@ func TestSalesforceDefaultCredential(t *testing.T) {
 	os.Unsetenv("SALESFORCE_CLIENT_ID")
 	os.Unsetenv("SALESFORCE_CLIENT_SECRET")
 
-	newCreds, err := guardrailsCred.Resolve(context.TODO())
+	newCreds, err := salesforceCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newSalesforceCreds := newCreds.(*SalesforceCredential)
@@ -836,15 +836,15 @@ func TestSalesforceDefaultCredential(t *testing.T) {
 	assert.Equal("", *newSalesforceCreds.ClientID)
 	assert.Equal("", *newSalesforceCreds.ClientSecret)
 
-	os.Setenv("SALESFORCE_INSTANCE_URL", "https://turbot3-dev-ed.develop.my.salesforce.com/")
+	os.Setenv("SALESFORCE_INSTANCE_URL", "https://turbot3-dev-ed.develop.my.salesforce.com")
 	os.Setenv("SALESFORCE_CLIENT_ID", "3MVG95mg0lk4bath_MK3RaP9PthaPfOMJPLJju_jf4ljK.bQp3d_")
 	os.Setenv("SALESFORCE_CLIENT_SECRET", "19D4B68F8139F7F9659DA78123413451A3AB1370491AAE754B5C6CC258FB")
 
-	newCreds, err = guardrailsCred.Resolve(context.TODO())
+	newCreds, err = salesforceCred.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newSalesforceCreds = newCreds.(*SalesforceCredential)
-	assert.Equal("https://turbot3-dev-ed.develop.my.salesforce.com/", *newSalesforceCreds.InstanceURL)
+	assert.Equal("https://turbot3-dev-ed.develop.my.salesforce.com", *newSalesforceCreds.InstanceURL)
 	assert.Equal("3MVG95mg0lk4bath_MK3RaP9PthaPfOMJPLJju_jf4ljK.bQp3d_", *newSalesforceCreds.ClientID)
 	assert.Equal("19D4B68F8139F7F9659DA78123413451A3AB1370491AAE754B5C6CC258FB", *newSalesforceCreds.ClientSecret)
 }
