@@ -3002,15 +3002,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 					})
 					continue
 				}
-				if !constants.IsValidInputType(t) {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Attribute " + schema.AttributeTypeType + " specified with invalid value " + t,
-						Subject:  &attr.Range,
-					})
-				} else {
-					p.InputType = t
-				}
+				p.InputType = t
 			}
 		case schema.AttributeTypePrompt:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
@@ -3162,8 +3154,15 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 }
 
 func (p *PipelineStepInput) Validate() hcl.Diagnostics {
-
 	diags := hcl.Diagnostics{}
+
+	if !constants.IsValidInputType(p.InputType) {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attribute " + schema.AttributeTypeType + " specified with invalid value " + p.InputType,
+		})
+	}
+
 	if len(p.NotifyList) > 0 && p.Notifies != cty.NilVal {
 		if !p.Notifies.Type().IsTupleType() {
 			diags = append(diags, &hcl.Diagnostic{
