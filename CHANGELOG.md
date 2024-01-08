@@ -6,7 +6,13 @@ Shared Pipes Component
 
 *What's new?*
 
-* New credentials support: Turbot Guardrails, BitBucket, Datadog, Freshdesk, JumpCloud, ServiceNow. 
+* Added credentials support for the following plugins: 
+  - BitBucket
+  - Datadog
+  - Freshdesk
+  - JumpCloud
+  - ServiceNow 
+  - Turbot Guardrails 
 
 *Enhancements*
 
