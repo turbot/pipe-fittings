@@ -3000,8 +3000,17 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 						Summary:  "Unable to parse " + schema.AttributeTypeType + " attribute to string",
 						Subject:  &attr.Range,
 					})
+					continue
 				}
-				p.InputType = t
+				if !constants.IsValidInputType(t) {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Attribute " + schema.AttributeTypeType + " specified with invalid value " + t,
+						Subject:  &attr.Range,
+					})
+				} else {
+					p.InputType = t
+				}
 			}
 		case schema.AttributeTypePrompt:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
