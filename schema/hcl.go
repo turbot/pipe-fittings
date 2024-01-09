@@ -50,6 +50,7 @@ const (
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
+	BlockTypeCapture           = "capture"
 
 	AttributeTypeValue = "value"
 

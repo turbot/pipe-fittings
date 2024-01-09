@@ -197,7 +197,7 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name:     schema.AttributeTypePipeline,
-			Required: true,
+			Required: false,
 		},
 		{
 			Name: schema.AttributeTypeArgs,
@@ -213,6 +213,12 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeConnectionString,
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       schema.BlockTypeCapture,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
