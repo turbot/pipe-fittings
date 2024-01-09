@@ -15,6 +15,15 @@ pipeline "pipeline_with_input" {
     type   = "button"
     prompt = "Choose an option:"
 
+    options = [
+      {
+        "value": "yes"
+      },
+      {
+        "value": "no"
+      }
+    ]
+
     notify {
       integration = integration.slack.integrated_app
       channel     = "#general"
@@ -31,6 +40,8 @@ pipeline "pipeline_with_unresolved_notify" {
 
   step "input" "input" {
     type = "button"
+    option "test" {}
+    option "test2" {}
     prompt = "Choose an option:"
 
     notify {
@@ -50,6 +61,8 @@ pipeline "pipeline_with_email_notify" {
 
   step "input" "input" {
     type = "button"
+    option "test" {}
+
     # prompt = "Choose an option:"
 
     notify {

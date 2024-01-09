@@ -14,6 +14,8 @@ pipeline "approval_multiple_notify_pipeline" {
     type   = "button"
     prompt = "Are you sure?"
 
+    option "yes" {}
+
     notify {
       integration = integration.slack.slack_dummy_app
       channel     = "#general"

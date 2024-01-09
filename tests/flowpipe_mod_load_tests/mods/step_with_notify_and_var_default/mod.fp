@@ -42,6 +42,15 @@ pipeline "approval_with_variables" {
   step "input" "input" {
     type = "button"
 
+    options = [
+      {
+        value = "yes"
+      },
+      {
+        value = "no"
+      },
+    ]
+
     notify {
       integration = integration.slack.my_slack_app
       channel     = var.channel_name

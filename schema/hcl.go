@@ -50,6 +50,7 @@ const (
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
+	BlockTypeOption            = "option"
 
 	AttributeTypeValue = "value"
 
@@ -153,6 +154,8 @@ const (
 	AttributeTypeSmtpTls          = "smtp_tls"
 	AttributeTypeSmtpUsername     = "smtp_username"
 	AttributeTypeSmtpsPort        = "smtps_port"
+	AttributeTypeLabel            = "label"
+	AttributeTypeSelected         = "selected"
 
 	AttributeTypeMessage = "message"
 

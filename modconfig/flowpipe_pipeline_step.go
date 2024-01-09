@@ -448,6 +448,63 @@ func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
 	return diags
 }
 
+type PipelineStepInputOption struct {
+	Label    *string `json:"label" hcl:"label,optional"`
+	Value    *string `json:"value" hcl:"value,optional"`
+	Selected *bool   `json:"selected,omitempty" hcl:"selected,optional"`
+}
+
+func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInputOption, error) {
+	var output []PipelineStepInputOption
+
+	opts := value.AsValueSlice()
+
+	for _, opt := range opts {
+		valueMap := opt.AsValueMap()
+
+		isValid := false
+		option := PipelineStepInputOption{}
+		for k, v := range valueMap {
+			switch k {
+			case schema.AttributeTypeValue:
+				if !v.IsNull() {
+					isValid = true
+					val := v.AsString()
+					option.Value = &val
+				}
+			case schema.AttributeTypeLabel:
+				if !v.IsNull() {
+					label := v.AsString()
+					option.Label = &label
+				}
+			case schema.AttributeTypeSelected:
+				if !v.IsNull() && v.Type() == cty.Bool {
+					isSelected := v.True()
+					option.Selected = &isSelected
+				}
+			default:
+				return nil, perr.BadRequestWithMessage(k + " is not a valid attribute for input options")
+			}
+		}
+
+		if isValid {
+			output = append(output, option)
+		} else {
+			return nil, perr.BadRequestWithMessage("input options must declare a value")
+		}
+	}
+
+	return output, nil
+}
+
+func (p *PipelineStepInputOption) Validate() hcl.Diagnostics {
+	var diags hcl.Diagnostics
+
+	// TODO: Figure out validation(s)
+
+	return diags
+}
+
 // A common base struct that all pipeline steps must embed
 type PipelineStepBase struct {
 	Title               *string                    `json:"title,omitempty"`
@@ -2783,10 +2840,9 @@ func (p *PipelineStepFunction) Validate() hcl.Diagnostics {
 type PipelineStepInput struct {
 	PipelineStepBase
 
-	InputType string   `json:"type" cty:"type"`
-	Prompt    *string  `json:"prompt" cty:"prompt"`
-	Options   []string `json:"options" cty:"options"`
-	// TODO: figure out OptionList as can have more than one option block
+	InputType  string  `json:"type" cty:"type"`
+	Prompt     *string `json:"prompt" cty:"prompt"`
+	OptionList []PipelineStepInputOption
 
 	// We can have more than one notify block
 	/*
@@ -2841,7 +2897,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	var options []string
 	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil {
-		options = p.Options
+		// options = p.Options
 	} else {
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &options)
 		if diags.HasErrors() {
@@ -3030,7 +3086,8 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				options, ctyErr := hclhelpers.CtyToGoStringSlice(val, val.Type())
+				// TODO: VALIDATE IT IS A SLICE - HOW?
+				opts, ctyErr := CtyValueToPipelineStepInputOptionList(val)
 				if ctyErr != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
@@ -3040,7 +3097,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 					})
 					continue
 				}
-				p.Options = options
+				p.OptionList = append(p.OptionList, opts...)
 			}
 
 		case schema.AttributeTypeNotifies:
@@ -3156,10 +3213,19 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
+	// validate type
 	if !constants.IsValidInputType(p.InputType) {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Attribute " + schema.AttributeTypeType + " specified with invalid value " + p.InputType,
+		})
+	}
+
+	// validate has options
+	if len(p.OptionList) == 0 {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Input " + p.Name + " has no options defined",
 		})
 	}
 
@@ -3197,8 +3263,30 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
+	hasAttrOptions := len(p.OptionList) > 0
+
 	for _, b := range blocks {
 		switch b.Type {
+		case schema.BlockTypeOption:
+			opt := PipelineStepInputOption{}
+			if hasAttrOptions {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Option blocks and options attribute are mutually exclusive",
+					Subject:  &b.DefRange,
+				})
+				continue
+			}
+			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &opt)
+			if len(moreDiags) > 0 {
+				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeOption, b.Body)
+				if len(moreDiags) > 0 {
+					diags = append(diags, moreDiags...)
+					continue
+				}
+			}
+			p.OptionList = append(p.OptionList, opt)
+
 		case schema.BlockTypeNotify:
 			notify := PipelineStepInputNotify{}
 			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &notify)
