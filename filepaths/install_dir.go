@@ -87,16 +87,6 @@ func EnsureDashboardAssetsDir() string {
 	return ensureInstallSubDir(filepath.Join("dashboard", "assets"))
 }
 
-// LegacyDashboardAssetsDir returns the path to the legacy report assets folder
-func LegacyDashboardAssetsDir() string {
-	return installSubDir("report")
-}
-
-// LegacyStateFilePath returns the path of the legacy update-check.json state file
-func LegacyStateFilePath() string {
-	return filepath.Join(EnsureInternalDir(), legacyStateFileName)
-}
-
 // StateFilePath returns the path of the update_check.json state file
 func StateFilePath() string {
 	return filepath.Join(EnsureInternalDir(), stateFileName)

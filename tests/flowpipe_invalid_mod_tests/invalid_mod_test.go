@@ -3,6 +3,7 @@ package invalid_mod_tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -146,12 +147,15 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 
 		fmt.Println("Running test " + test.title)
 
-		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, map[string]modconfig.Credential{}, ".fp")
+		_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]modconfig.Credential{}))
 		assert.NotNil(errorAndWarning.Error)
-		assert.Contains(errorAndWarning.Error.Error(), test.containsError)
+		if errorAndWarning.Error != nil {
+			assert.Contains(errorAndWarning.Error.Error(), test.containsError)
+		}
 
 		if test.errorType != "" {
-			err, ok := errorAndWarning.Error.(perr.ErrorModel)
+			var err perr.ErrorModel
+			ok := errors.As(errorAndWarning.Error, &err)
 			if !ok {
 				assert.Fail("should be a pcerr.ErrorModel")
 				return

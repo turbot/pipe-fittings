@@ -9,14 +9,13 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/dashboardtypes"
 	"github.com/turbot/pipe-fittings/export"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-func PublishSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnapshot, share bool) (string, error) {
+func PublishSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSnapshot, share bool) (string, error) {
 	snapshotLocation := viper.GetString(constants.ArgSnapshotLocation)
 	// snapshotLocation must be set (validation should ensure this)
 	if snapshotLocation == "" {
@@ -40,7 +39,7 @@ func PublishSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnap
 	return fmt.Sprintf("\nSnapshot saved to %s\n", filePath), nil
 }
 
-func exportSnapshot(snapshot *dashboardtypes.SteampipeSnapshot) (string, error) {
+func exportSnapshot(snapshot *steampipeconfig.SteampipeSnapshot) (string, error) {
 	exporter := &export.SnapshotExporter{}
 
 	fileName := export.GenerateDefaultExportFileName(snapshot.FileNameRoot, exporter.FileExtension())
@@ -54,7 +53,7 @@ func exportSnapshot(snapshot *dashboardtypes.SteampipeSnapshot) (string, error) 
 	return filePath, nil
 }
 
-func uploadSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnapshot, share bool) (string, error) {
+func uploadSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSnapshot, share bool) (string, error) {
 	client := newSteampipeCloudClient(viper.GetString(constants.ArgCloudToken))
 
 	cloudWorkspace := viper.GetString(constants.ArgSnapshotLocation)
@@ -92,7 +91,7 @@ func uploadSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnaps
 	}
 
 	// strip verbose/sensitive fields
-	err = dashboardtypes.StripSnapshot(cloudSnapshot)
+	err = steampipeconfig.StripSnapshot(cloudSnapshot)
 	if err != nil {
 		return "", sperr.Wrap(err)
 	}
@@ -121,7 +120,7 @@ func uploadSnapshot(ctx context.Context, snapshot *dashboardtypes.SteampipeSnaps
 	return snapshotUrl, nil
 }
 
-func resolveSnapshotTitle(snapshot *dashboardtypes.SteampipeSnapshot) string {
+func resolveSnapshotTitle(snapshot *steampipeconfig.SteampipeSnapshot) string {
 	if titleArg := viper.GetString(constants.ArgSnapshotTitle); titleArg != "" {
 		return titleArg
 	}

@@ -25,12 +25,6 @@ var InstallDir string
 var DefaultInstallDir string
 var DefaultConfigPath string
 
-// db client app names
-
-var ClientConnectionAppNamePrefix string
-var ServiceConnectionAppNamePrefix string
-var ClientSystemConnectionAppNamePrefix string
-
 // extensions
 
 var ConfigExtension string

@@ -19,7 +19,7 @@ type loadConfigOptions struct {
 	include []string
 }
 
-func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error_helpers.ErrorAndWarnings) {
+func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, error_helpers.ErrorAndWarnings) {
 	errorsAndWarnings := error_helpers.NewErrorsAndWarning(nil)
 	defer func() {
 		if r := recover(); r != nil {
@@ -39,14 +39,11 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 		configPath := configPaths[i]
 
 		c, ew := loadCredentials(configPath, loadOptions)
-
-		if ew != nil {
-			if ew.GetError() != nil {
-				return nil, ew
-			}
-			// merge the warning from this call
-			errorsAndWarnings.AddWarning(ew.Warnings...)
+		if ew.GetError() != nil {
+			return nil, ew
 		}
+		// merge the warning from this call
+		errorsAndWarnings.AddWarning(ew.Warnings...)
 		// copy creds over the top of credentialMap (i.e. with greater precedence)
 		maps.Copy(credentialMap, c)
 	}
@@ -56,7 +53,7 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 	return res, errorsAndWarnings
 }
 
-func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]modconfig.Credential, *error_helpers.ErrorAndWarnings) {
+func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]modconfig.Credential, error_helpers.ErrorAndWarnings) {
 	var res = map[string]modconfig.Credential{}
 	configPaths, err := filehelpers.ListFiles(configPath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
@@ -69,7 +66,7 @@ func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]mod
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	if len(configPaths) == 0 {
-		return nil, nil
+		return nil, error_helpers.ErrorAndWarnings{}
 	}
 
 	fileData, diags := parse.LoadFileData(configPaths...)
@@ -108,5 +105,5 @@ func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]mod
 	if len(diags) > 0 {
 		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load Flowpipe config", diags)
 	}
-	return res, nil
+	return res, error_helpers.ErrorAndWarnings{}
 }

@@ -76,7 +76,7 @@ func (suite *FlowpipeModLoadTestSuite) TearDownSuite() {
 func (suite *FlowpipeModLoadTestSuite) TestInputStepContainsNotifyBlockThatHasVarOnIt() {
 	assert := assert.New(suite.T())
 
-	workspace, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mods/step_with_notify_and_var_default", map[string]modconfig.Credential{}, ".hcl", ".sp")
+	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/step_with_notify_and_var_default", workspace.WithCredentials(map[string]modconfig.Credential{}))
 	assert.Nil(errorAndWarning.Error)
 
 	mod := workspace.Mod
@@ -107,7 +107,7 @@ func (suite *FlowpipeModLoadTestSuite) TestInputStepContainsNotifyBlockThatHasVa
 func (suite *FlowpipeModLoadTestSuite) TestNotifyDependsAnotherStep() {
 	assert := assert.New(suite.T())
 
-	workspace, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mods/notify_depends_another_step", map[string]modconfig.Credential{}, ".hcl", ".sp")
+	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_depends_another_step", workspace.WithCredentials(map[string]modconfig.Credential{}))
 	assert.Nil(errorAndWarning.Error)
 
 	mod := workspace.Mod
@@ -123,7 +123,7 @@ func (suite *FlowpipeModLoadTestSuite) TestNotifyDependsAnotherStep() {
 func (suite *FlowpipeModLoadTestSuite) TestNotifyWithRuntimeParam() {
 	assert := assert.New(suite.T())
 
-	workspace, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mods/notify_with_runtime_param", map[string]modconfig.Credential{}, ".hcl", ".sp")
+	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_with_runtime_param", workspace.WithCredentials(map[string]modconfig.Credential{}))
 	assert.Nil(errorAndWarning.Error)
 
 	mod := workspace.Mod
