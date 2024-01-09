@@ -26,14 +26,14 @@ type Dashboard struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width   *int              `cty:"width" hcl:"width"  column:"width,text"`
-	Display *string           `cty:"display" hcl:"display" column:"display,text"`
-	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
-	UrlPath string            `cty:"url_path"  column:"url_path,jsonb"`
-	Base    *Dashboard        `hcl:"base"`
-	// store children in a way which can be serialised via cty
-	ChildNames []string `cty:"children" column:"children,jsonb"`
-	// map of all inputs in our resource tree
+	Width      *int              `column:"width,text" cty:"width" hcl:"width" json:"width,omitempty"`
+	Display    *string           `column:"display,text" cty:"display" hcl:"display" json:"display,omitempty"`
+	Inputs     []*DashboardInput `column:"inputs,jsonb" cty:"inputs" json:"inputs,omitempty"`
+	UrlPath    string            `column:"url_path,jsonb" cty:"url_path" json:"url_path,omitempty"`
+	Base       *Dashboard        `hcl:"base" json:"-"`
+	ChildNames []string          `column:"children,jsonb" cty:"children" json:"children,omitempty"`
+
+	// Non-exported fields don't receive tags
 	selfInputsMap          map[string]*DashboardInput
 	runtimeDependencyGraph *topsort.Graph
 }
