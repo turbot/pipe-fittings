@@ -2,10 +2,10 @@ package constants
 
 // Argument name constants
 const (
-	ArgAll                     = "all"
-	ArgArg                     = "arg"
-	ArgAutoComplete            = "auto-complete"
-	ArgBrowser                 = "browser"
+	//ArgAll          = "all"
+	ArgArg          = "arg"
+	ArgAutoComplete = "auto-complete"
+	//ArgBrowser                 = "browser"
 	ArgCacheMaxTtl             = "cache-max-ttl"
 	ArgCacheTtl                = "cache-ttl"
 	ArgClear                   = "clear"

@@ -2,6 +2,7 @@ package printers
 
 import (
 	"context"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/cmdconfig"
@@ -37,5 +38,5 @@ func GetPrinter[T any](cmd *cobra.Command, opts ...GetPrinterOption) (ResourcePr
 	case constants.OutputFormatYAML:
 		return NewYamlPrinter[T]()
 	}
-	return nil, nil
+	return nil, fmt.Errorf("unknown output format %q", format)
 }
