@@ -92,11 +92,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
 // this is use for the variable list command
-func LoadVariables(ctx context.Context, workspacePath string, fileInclusions ...string) ([]*modconfig.Variable, error_helpers.ErrorAndWarnings) {
-	if len(fileInclusions) == 0 {
-		// default to the mod data extension (
-		fileInclusions = []string{app_specific.ModDataExtension}
-	}
+func LoadVariables(ctx context.Context, workspacePath string) ([]*modconfig.Variable, error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.LoadVariables start")
 	defer utils.LogTime("workspace.LoadVariables end")
 
