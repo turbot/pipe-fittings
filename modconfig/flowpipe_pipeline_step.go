@@ -2895,16 +2895,6 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
-	var options []string
-	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil {
-		// options = p.Options
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &options)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
 	results := map[string]interface{}{}
 
 	results[schema.AttributeTypeType] = p.InputType
@@ -2913,8 +2903,8 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypePrompt] = *prompt
 	}
 
-	if options != nil {
-		results[schema.AttributeTypeOptions] = options
+	if len(p.OptionList) > 0 {
+		results[schema.AttributeTypeOptions] = p.OptionList
 	}
 
 	/**
@@ -3086,12 +3076,11 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				// TODO: VALIDATE IT IS A SLICE - HOW?
 				opts, ctyErr := CtyValueToPipelineStepInputOptionList(val)
 				if ctyErr != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeOptions + " attribute to string slice",
+						Summary:  "Unable to parse " + schema.AttributeTypeOptions + " attribute to InputOption slice",
 						Detail:   ctyErr.Error(),
 						Subject:  &attr.Range,
 					})
@@ -3284,6 +3273,9 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 					diags = append(diags, moreDiags...)
 					continue
 				}
+			}
+			if helpers.IsNil(opt.Value) {
+				opt.Value = &b.Labels[0]
 			}
 			p.OptionList = append(p.OptionList, opt)
 
