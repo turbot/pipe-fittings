@@ -1158,6 +1158,83 @@ func (p *PipelineStepBase) ValidateBaseAttributes() hcl.Diagnostics {
 	return diags
 }
 
+func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attributeName string, body hcl.Body) hcl.Diagnostics {
+	resolvedDiags := 0
+
+	unresolvedDiags := hcl.Diagnostics{}
+
+	for _, e := range diags {
+		if e.Severity == hcl.DiagError {
+			if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
+				traversals := e.Expression.Variables()
+				dependsOnAdded := false
+				for _, traversal := range traversals {
+					parts := hclhelpers.TraversalAsStringSlice(traversal)
+					if len(parts) > 0 {
+						// When the expression/traversal is referencing an index, the index is also included in the parts
+						// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
+						if parts[0] == schema.BlockTypePipelineStep {
+							if len(parts) < 3 {
+								return diags
+							}
+							dependsOn := parts[1] + "." + parts[2]
+							p.AppendDependsOn(dependsOn)
+							dependsOnAdded = true
+						} else if parts[0] == schema.BlockTypeCredential {
+							if len(parts) < 2 {
+								return diags
+							}
+
+							if len(parts) == 2 {
+								// dynamic references:
+								// step "transform" "aws" {
+								// 	value   = credential.aws[param.cred].env
+								// }
+								dependsOn := parts[1] + ".<dynamic>"
+								p.AppendCredentialDependsOn(dependsOn)
+								dependsOnAdded = true
+							} else {
+								dependsOn := parts[1] + "." + parts[2]
+								p.AppendCredentialDependsOn(dependsOn)
+								dependsOnAdded = true
+							}
+						}
+					}
+				}
+				if dependsOnAdded {
+					resolvedDiags++
+				}
+			} else if e.Detail == `There is no variable named "result".` && (attributeName == schema.BlockTypeLoop || attributeName == schema.BlockTypeRetry || attributeName == schema.BlockTypeThrow) {
+				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
+				resolvedDiags++
+			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" || e.Detail == `There is no variable named "loop".` || e.Detail == `There is no variable named "retry".` {
+				// hcl.decodeBody returns 2 error messages:
+				// 1. There's no variable named "param", AND
+				// 2. Unsuitable value: value must be known
+				resolvedDiags++
+			} else {
+				unresolvedDiags = append(unresolvedDiags, e)
+			}
+		}
+	}
+
+	// check if all diags have been resolved
+	if resolvedDiags == len(diags) {
+		if attributeName == schema.BlockTypeThrow {
+			return hcl.Diagnostics{}
+		} else {
+			// * Don't forget to add this, if you change the logic ensure that the code flow still
+			// * calls AddUnresolvedBody
+			p.AddUnresolvedBody(attributeName, body)
+			return hcl.Diagnostics{}
+		}
+	}
+
+	// There's an error here
+	return unresolvedDiags
+
+}
+
 var ValidBaseStepAttributes = []string{
 	schema.AttributeTypeTitle,
 	schema.AttributeTypeDescription,
@@ -2903,6 +2980,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypePrompt] = *prompt
 	}
 
+	// TODO: Handle Unresolved Options Attribute/Option Body/Blocks
 	if len(p.OptionList) > 0 {
 		results[schema.AttributeTypeOptions] = p.OptionList
 	}
@@ -3122,81 +3200,57 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
-func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attributeName string, body hcl.Body) hcl.Diagnostics {
-	resolvedDiags := 0
+func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
 
-	unresolvedDiags := hcl.Diagnostics{}
+	hasAttrOptions := len(p.OptionList) > 0 || p.UnresolvedAttributes["options"] != nil
 
-	for _, e := range diags {
-		if e.Severity == hcl.DiagError {
-			if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
-				traversals := e.Expression.Variables()
-				dependsOnAdded := false
-				for _, traversal := range traversals {
-					parts := hclhelpers.TraversalAsStringSlice(traversal)
-					if len(parts) > 0 {
-						// When the expression/traversal is referencing an index, the index is also included in the parts
-						// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
-						if parts[0] == schema.BlockTypePipelineStep {
-							if len(parts) < 3 {
-								return diags
-							}
-							dependsOn := parts[1] + "." + parts[2]
-							p.AppendDependsOn(dependsOn)
-							dependsOnAdded = true
-						} else if parts[0] == schema.BlockTypeCredential {
-							if len(parts) < 2 {
-								return diags
-							}
-
-							if len(parts) == 2 {
-								// dynamic references:
-								// step "transform" "aws" {
-								// 	value   = credential.aws[param.cred].env
-								// }
-								dependsOn := parts[1] + ".<dynamic>"
-								p.AppendCredentialDependsOn(dependsOn)
-								dependsOnAdded = true
-							} else {
-								dependsOn := parts[1] + "." + parts[2]
-								p.AppendCredentialDependsOn(dependsOn)
-								dependsOnAdded = true
-							}
-						}
-					}
-				}
-				if dependsOnAdded {
-					resolvedDiags++
-				}
-			} else if e.Detail == `There is no variable named "result".` && (attributeName == schema.BlockTypeLoop || attributeName == schema.BlockTypeRetry || attributeName == schema.BlockTypeThrow) {
-				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
-				resolvedDiags++
-			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" || e.Detail == `There is no variable named "loop".` || e.Detail == `There is no variable named "retry".` {
-				// hcl.decodeBody returns 2 error messages:
-				// 1. There's no variable named "param", AND
-				// 2. Unsuitable value: value must be known
-				resolvedDiags++
-			} else {
-				unresolvedDiags = append(unresolvedDiags, e)
+	for _, b := range blocks {
+		switch b.Type {
+		case schema.BlockTypeOption:
+			opt := PipelineStepInputOption{}
+			if hasAttrOptions {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Option blocks and options attribute are mutually exclusive",
+					Subject:  &b.DefRange,
+				})
+				continue
 			}
+			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &opt)
+			if len(moreDiags) > 0 {
+				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeOption, b.Body)
+				if len(moreDiags) > 0 {
+					diags = append(diags, moreDiags...)
+					continue
+				}
+			}
+			if helpers.IsNil(opt.Value) {
+				opt.Value = &b.Labels[0]
+			}
+			p.OptionList = append(p.OptionList, opt)
+
+		case schema.BlockTypeNotify:
+			notify := PipelineStepInputNotify{}
+			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &notify)
+			if len(moreDiags) > 0 {
+				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeNotify, b.Body)
+				if len(moreDiags) > 0 {
+					diags = append(diags, moreDiags...)
+					continue
+				}
+			}
+			p.NotifyList = append(p.NotifyList, notify)
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unsupported block type for Input Step: " + b.Type,
+				Subject:  &b.DefRange,
+			})
 		}
 	}
 
-	// check if all diags have been resolved
-	if resolvedDiags == len(diags) {
-		if attributeName == schema.BlockTypeThrow {
-			return hcl.Diagnostics{}
-		} else {
-			// * Don't forget to add this, if you change the logic ensure that the code flow still
-			// * calls AddUnresolvedBody
-			p.AddUnresolvedBody(attributeName, body)
-			return hcl.Diagnostics{}
-		}
-	}
-
-	// There's an error here
-	return unresolvedDiags
-
+	return diags
 }
 
 func (p *PipelineStepInput) Validate() hcl.Diagnostics {
@@ -3243,59 +3297,6 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 			}
-		}
-	}
-
-	return diags
-}
-
-func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
-
-	hasAttrOptions := len(p.OptionList) > 0
-
-	for _, b := range blocks {
-		switch b.Type {
-		case schema.BlockTypeOption:
-			opt := PipelineStepInputOption{}
-			if hasAttrOptions {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Option blocks and options attribute are mutually exclusive",
-					Subject:  &b.DefRange,
-				})
-				continue
-			}
-			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &opt)
-			if len(moreDiags) > 0 {
-				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeOption, b.Body)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-					continue
-				}
-			}
-			if helpers.IsNil(opt.Value) {
-				opt.Value = &b.Labels[0]
-			}
-			p.OptionList = append(p.OptionList, opt)
-
-		case schema.BlockTypeNotify:
-			notify := PipelineStepInputNotify{}
-			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &notify)
-			if len(moreDiags) > 0 {
-				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeNotify, b.Body)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-					continue
-				}
-			}
-			p.NotifyList = append(p.NotifyList, notify)
-		default:
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Unsupported block type for Input Step: " + b.Type,
-				Subject:  &b.DefRange,
-			})
 		}
 	}
 
