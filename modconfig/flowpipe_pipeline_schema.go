@@ -196,13 +196,6 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Required: true,
 		},
 		{
-			Name:     schema.AttributeTypePipeline,
-			Required: false,
-		},
-		{
-			Name: schema.AttributeTypeArgs,
-		},
-		{
 			Name: schema.AttributeTypeSql,
 		},
 		{
