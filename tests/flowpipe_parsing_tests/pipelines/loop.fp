@@ -28,6 +28,34 @@ pipeline "simple_http_loop" {
   }
 }
 
+pipeline "pipeline_loop_test" {
+
+  param "message" {
+    type    = string
+    default = "welcome"
+  }
+
+  output "greet_world" {
+    value = "Hello world! ${param.message}"
+  }
+}
+
+pipeline "simple_pipeline_loop" {
+  step "pipeline" "repeat_pipeline_loop_test" {
+    pipeline = pipeline.pipeline_loop_test
+    args = {
+      message = "from parent"
+    }
+
+    loop {
+      until = loop.index > 5
+      args = {
+        message = "from parent"
+      }
+    }
+  }
+}
+
 pipeline "loop_depends_on_another_step" {
 
   step "sleep" "base" {
@@ -38,7 +66,7 @@ pipeline "loop_depends_on_another_step" {
     duration = "iteration"
 
     loop {
-      until = loop.index > 5
+      until    = loop.index > 5
       duration = step.sleep.base.duration + 1 + loop.index
     }
   }
@@ -51,7 +79,7 @@ pipeline "loop_resolved" {
     loop {
       until = try(result.response_body.next, null) == null
       url   = try(result.response_body.next, "")
-    }  
+    }
   }
-  
+
 }
