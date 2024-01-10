@@ -202,6 +202,16 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_trigger_execution_mode.fp",
 		containsError: "The execution mode must be one of: synchronous,asynchronous",
 	},
+	{
+		title:         "invalid input type",
+		file:          "./pipelines/invalid_input_type.fp",
+		containsError: "Attribute type specified with invalid value not_valid",
+	},
+	{
+		title:         "invalid input - option block(s) and options both set",
+		file:          "./pipelines/invalid_input_option_and_options.fp",
+		containsError: "Option blocks and options attribute are mutually exclusive",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

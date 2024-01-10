@@ -15,6 +15,15 @@ pipeline "pipeline_with_input" {
     type   = "button"
     prompt = "Choose an option:"
 
+    options = [
+      {
+        "value": "yes"
+      },
+      {
+        "value": "no"
+      }
+    ]
+
     notify {
       integration = integration.slack.integrated_app
       channel     = "#general"
@@ -31,6 +40,8 @@ pipeline "pipeline_with_unresolved_notify" {
 
   step "input" "input" {
     type = "button"
+    option "test" {}
+    option "test2" {}
     prompt = "Choose an option:"
 
     notify {
@@ -50,6 +61,8 @@ pipeline "pipeline_with_email_notify" {
 
   step "input" "input" {
     type = "button"
+    option "test" {}
+
     # prompt = "Choose an option:"
 
     notify {
@@ -57,5 +70,46 @@ pipeline "pipeline_with_email_notify" {
       to          = param.to
     }
 
+  }
+}
+
+pipeline "pipeline_with_option_blocks" {
+  step "input" "example" {
+    prompt = "Choose an option:"
+    type   = "button"
+
+    option "hello" {}
+    option "world" {
+      label = "World"
+      value = "world"
+    }
+
+    notify {
+      integration = integration.slack.integrated_app
+      channel     = "#general"
+    }
+  }
+}
+
+pipeline "pipeline_with_options" {
+  step "input" "example" {
+    prompt = "Choose an option:"
+    type   = "button"
+
+    options = [
+      {
+        label = "HELLO",
+        value = "hello"
+      },
+      {
+        label = "WORLD",
+        value = "world"
+      }
+    ]
+
+    notify {
+      integration = integration.slack.integrated_app
+      channel     = "#general"
+    }
   }
 }

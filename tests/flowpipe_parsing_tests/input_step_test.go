@@ -2,6 +2,9 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"slices"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -164,4 +167,62 @@ func TestEmailInputStep(t *testing.T) {
 	assert.Equal(587, integration[schema.AttributeTypeSmtpPort].(int))
 	assert.Equal("awesomebob@blahblah.com", integration[schema.AttributeTypeSmtpUsername].(string))
 	assert.Equal("HelloBob@2023", integration[schema.AttributeTypeSmtpPassword].(string))
+}
+
+func TestInputStepOptionBlocks(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
+	assert.Nil(err, "error found")
+	if pipelines["local.pipeline.pipeline_with_option_blocks"] == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	pipelineDef := pipelines["local.pipeline.pipeline_with_option_blocks"]
+	assert.Equal("input", pipelineDef.Steps[0].GetType())
+
+	var inStep *modconfig.PipelineStepInput
+	if out, ok := pipelineDef.Steps[0].(*modconfig.PipelineStepInput); ok {
+		inStep = out
+	} else {
+		assert.Fail("failed converting step to PipelineStepInput")
+	}
+
+	expectedValues := []string{"hello", "world"}
+	assert.Equal(len(expectedValues), len(inStep.OptionList))
+	for _, opt := range inStep.OptionList {
+		if !slices.Contains(expectedValues, types.SafeString(opt.Value)) {
+			assert.Fail("unexpected value in OptionsList " + types.SafeString(opt.Value))
+		}
+	}
+}
+
+func TestInputStepOptionsAttribute(t *testing.T) {
+	assert := assert.New(t)
+
+	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/input_step.fp")
+	assert.Nil(err, "error found")
+	if pipelines["local.pipeline.pipeline_with_option_blocks"] == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	pipelineDef := pipelines["local.pipeline.pipeline_with_options"]
+	assert.Equal("input", pipelineDef.Steps[0].GetType())
+
+	var inStep *modconfig.PipelineStepInput
+	if out, ok := pipelineDef.Steps[0].(*modconfig.PipelineStepInput); ok {
+		inStep = out
+	} else {
+		assert.Fail("failed converting step to PipelineStepInput")
+	}
+
+	expectedValues := []string{"hello", "world"}
+	assert.Equal(len(expectedValues), len(inStep.OptionList))
+	for _, opt := range inStep.OptionList {
+		if !slices.Contains(expectedValues, types.SafeString(opt.Value)) {
+			assert.Fail("unexpected value in OptionsList " + types.SafeString(opt.Value))
+		}
+	}
 }
