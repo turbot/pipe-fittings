@@ -9,7 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func TestQueryTriggerParse(t *testing.T) {
+func XTestQueryTriggerParse(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := context.Background()

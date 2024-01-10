@@ -235,7 +235,6 @@ type TriggerQuery struct {
 	Schedule         string                          `json:"schedule"`
 	ConnectionString string                          `json:"connection_string"`
 	PrimaryKey       string                          `json:"primary_key"`
-	Events           []string                        `json:"events"`
 	Captures         map[string]*TriggerQueryCapture `json:"captures"`
 }
 
@@ -301,23 +300,6 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 
 			t.PrimaryKey = val.AsString()
 
-		case schema.AttributeTypeEvents:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
-			}
-
-			var err error
-			t.Events, err = hclhelpers.CtyTupleToArrayOfStrings(val)
-			if err != nil {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unable to parse " + schema.AttributeTypeEvents + " Trigger attribute to Go values",
-					Detail:   err.Error(),
-					Subject:  &attr.Range,
-				})
-			}
 		default:
 			if !trigger.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
@@ -418,10 +400,38 @@ func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Block
 			triggerCapture.Pipeline = val
 		}
 
+		if attr, exists := hclAttributes[schema.AttributeTypeArgs]; exists {
+			if attr.Expr != nil {
+				triggerCapture.ArgsRaw = attr.Expr
+			}
+		}
+
 		t.Captures[captureBlockType] = triggerCapture
 	}
 
 	return diags
+}
+
+func (c *TriggerQueryCapture) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Diagnostics) {
+
+	if c.ArgsRaw == nil {
+		return Input{}, hcl.Diagnostics{}
+	}
+
+	value, diags := c.ArgsRaw.Value(evalContext)
+
+	if diags.HasErrors() {
+		return Input{}, diags
+	}
+
+	retVal, err := hclhelpers.CtyToGoMapInterface(value)
+	if err != nil {
+		return Input{}, hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Unable to parse " + schema.AttributeTypeArgs + " Trigger attribute to Go values",
+		}}
+	}
+	return retVal, diags
 }
 
 type TriggerHttp struct {
