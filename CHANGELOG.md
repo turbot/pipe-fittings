@@ -4,7 +4,7 @@ Shared Pipes Component
 
 ## v0.2.0 [tbd]
 
-*What's new?*
+_What's new?_
 
 * Added credentials support for the following plugins: 
   - BitBucket
@@ -12,14 +12,14 @@ Shared Pipes Component
   - Freshdesk
   - JumpCloud
   - ServiceNow 
-  - Turbot Guardrails 
+  - Turbot Guardrails
+* Added Query Trigger mod resource
 
-*Enhancements*
+_Enhancements_
 
 * Container step now supports 'Source' in addition to 'Image'.
-* Query trigger schedule now works with cron expression and interval string (hourly, daily, weekly).
 
-*Bug fixes*
+_Bug fixes_
 
 * Fixed an issue in the bootstrap process for identifying the config path.
 
