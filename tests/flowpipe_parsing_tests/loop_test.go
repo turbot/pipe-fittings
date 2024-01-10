@@ -65,6 +65,7 @@ func TestLoopPipelineStep(t *testing.T) {
 
 	unresolvedBodies := pipeline.Steps[0].GetUnresolvedBodies()["loop"]
 	loopAttributes, err := unresolvedBodies.JustAttributes()
+	assert.Nil(err)
 	assert.Equal(2, len(loopAttributes))
 
 	// Expected value to be not nil to make sure that the args attribute gets parsed
