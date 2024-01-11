@@ -87,10 +87,6 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 
 	assert.Equal("access_key_id", qt.PrimaryKey)
-	assert.Len(qt.Events, 1)
-	assert.Equal("insert", qt.Events[0])
-	// assert.Equal("one", queryTrigger.Args["param_one"])
-	// assert.Equal(2, queryTrigger.Args["param_two_int"])
 	assert.Contains(qt.Sql, "where create_date < now() - interval")
 
 	httpTriggerWithArgs := triggers["local.trigger.http.trigger_with_args"]
@@ -118,8 +114,6 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 
 	assert.Equal("access_key_id", qt.PrimaryKey)
-	assert.Len(qt.Events, 1)
-	assert.Equal("insert", qt.Events[0])
 	assert.Contains(qt.Sql, "where create_date < now() - interval")
 	assert.Equal("daily", qt.Schedule)
 

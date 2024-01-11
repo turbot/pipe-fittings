@@ -51,6 +51,7 @@ const (
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
 	BlockTypeOption            = "option"
+	BlockTypeCapture           = "capture"
 
 	AttributeTypeValue = "value"
 
@@ -183,7 +184,6 @@ const (
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
 	AttributeTypePrimaryKey = "primary_key"
-	AttributeTypeEvents     = "events"
 
 	// HTTP Trigger attributes
 	AttributeTypeExecutionMode = "execution_mode"
