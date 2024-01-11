@@ -47,6 +47,8 @@ func (p StringPrinter[T]) PrintResource(_ context.Context, r PrintableResource[T
 				return fmt.Errorf("error printing resource")
 			}
 		}
+
+		// TODO just call String() and manually sanitize
 	}
 	return nil
 }

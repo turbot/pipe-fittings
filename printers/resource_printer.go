@@ -29,10 +29,10 @@ func GetPrinter[T any](cmd *cobra.Command, opts ...GetPrinterOption) (ResourcePr
 
 	switch format {
 	case constants.OutputFormatPretty, constants.OutputFormatPlain:
-		if cfg.commandUsesTable(key) {
-			return NewTablePrinter[T]()
+		if cfg.commandUsesStringPrinter(key) {
+			return NewStringPrinter[T]()
 		}
-		return NewStringPrinter[T]()
+		return NewTablePrinter[T]()
 	case constants.OutputFormatJSON:
 		return NewJsonPrinter[T]()
 	case constants.OutputFormatYAML:

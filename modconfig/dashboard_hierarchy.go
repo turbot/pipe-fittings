@@ -24,8 +24,8 @@ type DashboardHierarchy struct {
 	EdgeNames []string          `json:"edges"`
 
 	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
-	Width      *int                          `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type       *string                       `cty:"type" hcl:"type" column:"type,text" json:"-"`
+	Width      *int                          `cty:"width" hcl:"width" column:"width,string"  json:"-"`
+	Type       *string                       `cty:"type" hcl:"type" column:"type,string"  json:"-"`
 	Display    *string                       `cty:"display" hcl:"display" json:"-"`
 
 	Base *DashboardHierarchy `hcl:"base" json:"-"`

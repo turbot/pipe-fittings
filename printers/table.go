@@ -48,6 +48,9 @@ func (t *TableColumnDefinition) Formatter() string {
 		return "%t"
 	case "string":
 		return "%s"
+		// TODO KAI check this
+	case "json":
+		return "%v"
 	}
 	return "%s"
 }

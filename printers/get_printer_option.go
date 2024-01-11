@@ -5,22 +5,22 @@ import "github.com/turbot/go-kit/helpers"
 type GetPrinterOption func(*GetPrinterConfig)
 
 type GetPrinterConfig struct {
-	tableCommands map[string]struct{}
+	stringPrinterCommands map[string]struct{}
 }
 
-func (c GetPrinterConfig) commandUsesTable(key string) bool {
-	_, usesTable := c.tableCommands[key]
+func (c GetPrinterConfig) commandUsesStringPrinter(key string) bool {
+	_, usesTable := c.stringPrinterCommands[key]
 	return usesTable
 }
 
 func newGetPrinterConfig() *GetPrinterConfig {
 	return &GetPrinterConfig{
-		tableCommands: make(map[string]struct{}),
+		stringPrinterCommands: make(map[string]struct{}),
 	}
 }
 
-func WithTableCommands(tableCommands []string) GetPrinterOption {
+func WithStringPrinterCommands(stringPrinterCommands []string) GetPrinterOption {
 	return func(m *GetPrinterConfig) {
-		m.tableCommands = helpers.SliceToLookup(tableCommands)
+		m.stringPrinterCommands = helpers.SliceToLookup(stringPrinterCommands)
 	}
 }

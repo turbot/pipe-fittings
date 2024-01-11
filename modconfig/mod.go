@@ -31,8 +31,8 @@ type Mod struct {
 
 	// attributes
 	Categories []string `cty:"categories" hcl:"categories,optional" column:"categories,jsonb"`
-	Color      *string  `cty:"color" hcl:"color" column:"color,text"`
-	Icon       *string  `cty:"icon" hcl:"icon" column:"icon,text"`
+	Color      *string  `cty:"color" hcl:"color" column:"color,string" `
+	Icon       *string  `cty:"icon" hcl:"icon" column:"icon,string" `
 
 	// blocks
 	Require       *Require   `hcl:"require,block"`
@@ -48,7 +48,7 @@ type Mod struct {
 	// NOTE: this is the relative path to th emod location from the depdemncy install dir (.steampipe/mods)
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty@v1.0.0
 	// (NOTE: pointer so it is nil in introspection tables if unpopulated)
-	DependencyPath *string `column:"dependency_path,text"`
+	DependencyPath *string `column:"dependency_path,string" `
 	// DependencyName return the name of the mod as a dependency, i.e. the mod dependency path, _without_ the version
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty
 	DependencyName string
