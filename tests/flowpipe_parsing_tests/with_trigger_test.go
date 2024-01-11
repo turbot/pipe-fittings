@@ -67,6 +67,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("trigger_with_args trigger not found")
 		return
 	}
+	assert.Nil(triggerWithArgs.Enabled)
 
 	twa, ok := triggerWithArgs.Config.(*modconfig.TriggerSchedule)
 	if !ok {
