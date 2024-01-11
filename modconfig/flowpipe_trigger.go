@@ -33,6 +33,7 @@ type Trigger struct {
 	Pipeline cty.Value     `json:"-"`
 	RawBody  hcl.Body      `json:"-" hcl:",remain"`
 	Config   TriggerConfig `json:"-"`
+	Enabled  *bool         `json:"-"`
 }
 
 func (t *Trigger) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -79,6 +80,7 @@ var ValidBaseTriggerAttributes = []string{
 	schema.AttributeTypeTitle,
 	schema.AttributeTypeDocumentation,
 	schema.AttributeTypeTags,
+	schema.AttributeTypeEnabled,
 }
 
 func (t *Trigger) IsBaseAttribute(name string) bool {
@@ -148,6 +150,15 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 			diags = append(diags, err...)
 		} else {
 			t.Pipeline = val
+		}
+	}
+
+	if attr, exists := hclAttributes[schema.AttributeTypeEnabled]; exists {
+		triggerEnabled, moreDiags := hclhelpers.AttributeToBool(attr, evalContext, true)
+		if moreDiags != nil && moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+		} else {
+			t.Enabled = triggerEnabled
 		}
 	}
 
@@ -304,7 +315,7 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 			if !trigger.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Trigger Interval: " + attr.Name,
+					Summary:  "Unsupported attribute for Trigger Query: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}

@@ -37,6 +37,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("my_hourly_trigger trigger not found")
 		return
 	}
+	assert.Equal(false, *scheduleTrigger.Enabled)
 
 	st, ok := scheduleTrigger.Config.(*modconfig.TriggerSchedule)
 	if !ok {
@@ -51,6 +52,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("my_hourly_trigger_interval trigger not found")
 		return
 	}
+	assert.Equal(true, *scheduleTrigger.Enabled)
 
 	st, ok = scheduleTrigger.Config.(*modconfig.TriggerSchedule)
 	if !ok {
@@ -94,6 +96,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("trigger_with_args trigger not found")
 		return
 	}
+	assert.Equal(true, *httpTriggerWithArgs.Enabled)
 
 	_, ok = httpTriggerWithArgs.Config.(*modconfig.TriggerHttp)
 	if !ok {
@@ -106,6 +109,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("query_trigger_interval trigger not found")
 		return
 	}
+	assert.Equal(true, *queryTrigger.Enabled)
 
 	qt, ok = queryTrigger.Config.(*modconfig.TriggerQuery)
 	if !ok {
