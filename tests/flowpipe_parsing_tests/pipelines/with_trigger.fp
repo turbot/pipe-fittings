@@ -7,11 +7,13 @@ pipeline "simple_with_trigger" {
 }
 
 trigger "schedule" "my_hourly_trigger" {
+  enabled  = false
   schedule = "5 * * * *"
   pipeline = pipeline.simple_with_trigger
 }
 
 trigger "schedule" "my_hourly_trigger_interval" {
+  enabled  = true
   schedule = "daily"
   pipeline = pipeline.simple_with_trigger
 }
@@ -29,6 +31,7 @@ trigger "schedule" "trigger_with_args" {
 
 trigger "http" "trigger_with_args" {
   pipeline = pipeline.simple_with_trigger
+  enabled  = true
 
   args = {
     param_one     = "one"
@@ -39,6 +42,7 @@ trigger "http" "trigger_with_args" {
 
 trigger "query" "query_trigger" {
   schedule = "5 * * * *"
+
   sql = <<EOQ
         select
             access_key_id,
@@ -53,8 +57,9 @@ trigger "query" "query_trigger" {
 }
 
 trigger "query" "query_trigger_interval" {
+  enabled  = true
   schedule = "daily"
-  sql = <<EOQ
+  sql      = <<EOQ
         select
             access_key_id,
             user_name,
