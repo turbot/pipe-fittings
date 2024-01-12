@@ -16,16 +16,16 @@ type DashboardCategory struct {
 	// TACTICAL: include a title property (with a different name to the property in HclResourceImpl  for clarity)
 	// This is purely to ensure the title is included in the panel properties of snapshots
 	// Note: this will be parsed from HCL, but we must set this explicitly in setBaseProperties if there is a base
-	CategoryTitle *string                               `cty:"title" hcl:"title" json:"title,omitempty"`
-	Color         *string                               `cty:"color" hcl:"color" json:"color,omitempty"`
-	Depth         *int                                  `cty:"depth" hcl:"depth" json:"depth,omitempty"`
-	Icon          *string                               `cty:"icon" hcl:"icon" json:"icon,omitempty"`
-	HREF          *string                               `cty:"href" hcl:"href" json:"href,omitempty"`
-	Fold          *DashboardCategoryFold                `cty:"fold" hcl:"fold,block" json:"fold,omitempty"`
+	CategoryTitle *string                               `cty:"title" hcl:"title" snapshot:"title" json:"title,omitempty"`
+	Color         *string                               `cty:"color" hcl:"color" snapshot:"color" json:"color,omitempty"`
+	Depth         *int                                  `cty:"depth" hcl:"depth" snapshot:"depth" json:"depth,omitempty"`
+	Icon          *string                               `cty:"icon" hcl:"icon" snapshot:"icon" json:"icon,omitempty"`
+	HREF          *string                               `cty:"href" hcl:"href" snapshot:"href" json:"href,omitempty"`
+	Fold          *DashboardCategoryFold                `cty:"fold" hcl:"fold,block" snapshot:"fold" json:"fold,omitempty"`
 	PropertyList  DashboardCategoryPropertyList         `cty:"property_list" hcl:"property,block" column:"properties,jsonb" json:"-"`
-	Properties    map[string]*DashboardCategoryProperty `cty:"properties" json:"properties,omitempty"`
-	PropertyOrder []string                              `cty:"property_order" hcl:"property_order,optional" json:"property_order,omitempty"`
-	Base          *DashboardCategory                    `hcl:"base" json:"-"`
+	Properties    map[string]*DashboardCategoryProperty `cty:"properties"  snapshot:"properties" json:"properties,omitempty"`
+	PropertyOrder []string                              `cty:"property_order" hcl:"property_order,optional"  snapshot:"property_order" json:"property_order,omitempty"`
+	Base          *DashboardCategory                    `hcl:"base" json:"base,omitempty"`
 }
 
 func NewDashboardCategory(block *hcl.Block, mod *Mod, shortName string) HclResource {

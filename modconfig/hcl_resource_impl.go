@@ -14,10 +14,8 @@ type HclResourceImpl struct {
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
 
-	// TODO KAI check how added JSON tags affect snapshot
-
-	FullName        string            `column:"qualified_name,string" cty:"name" json:"-"`
-	Title           *string           `column:"title,string" cty:"title" hcl:"title" json:"-"`
+	FullName        string            `cty:"name" column:"qualified_name,text" json:"-"`
+	Title           *string           `cty:"title" hcl:"title" column:"title,text" json:"-"`
 	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name"`
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
 	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"-"`
