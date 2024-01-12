@@ -19,7 +19,7 @@ type Control struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Severity *string `cty:"severity" hcl:"severity"  column:"severity,string"  snapshot:"severity" json:"severity,omitempty"`
+	Severity *string `cty:"severity" hcl:"severity"  column:"severity,string" snapshot:"severity" json:"severity,omitempty"`
 
 	// dashboard specific properties
 	Base    *Control `hcl:"base" json:"-"`

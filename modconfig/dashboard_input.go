@@ -24,8 +24,8 @@ type DashboardInput struct {
 	InputName string `cty:"input_name" json:"unqualified_name"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width     *int            `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type      *string         `cty:"type" hcl:"type" column:"type,text" json:"-"`
+	Width     *int            `cty:"width" hcl:"width" column:"width,string"  json:"-"`
+	Type      *string         `cty:"type" hcl:"type" column:"type,string"  json:"-"`
 	Display   *string         `cty:"display" hcl:"display" json:"-"`
 	Base      *DashboardInput `hcl:"base" json:"-"`
 	dashboard *Dashboard

@@ -15,7 +15,7 @@ type HclResourceImpl struct {
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
 
 	FullName        string            `cty:"name" column:"qualified_name,text" json:"-"`
-	Title           *string           `cty:"title" hcl:"title" column:"title,text" json:"-"`
+	Title           *string           `cty:"title" hcl:"title" column:"title,string"  json:"-"`
 	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name"`
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
 	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"-"`

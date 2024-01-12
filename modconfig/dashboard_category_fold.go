@@ -5,7 +5,7 @@ import (
 )
 
 type DashboardCategoryFold struct {
-	Title     *string `cty:"title" hcl:"title"  snapshot:"title" json:"title,omitempty"`
+	Title     *string `cty:"title" hcl:"title" snapshot:"title" json:"title,omitempty"`
 	Threshold *int    `cty:"threshold" hcl:"threshold" snapshot:"threshold" json:"threshold,omitempty"`
 	Icon      *string `cty:"icon" hcl:"icon" snapshot:"icon" json:"icon,omitempty"`
 }
