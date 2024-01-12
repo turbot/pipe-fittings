@@ -322,14 +322,6 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 		}
 	}
 
-	if t.PrimaryKey == "" {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "[development] Primary key is required for Trigger Query",
-			Subject:  &hclAttributes[schema.AttributeTypePrimaryKey].Range,
-		})
-	}
-
 	return diags
 }
 

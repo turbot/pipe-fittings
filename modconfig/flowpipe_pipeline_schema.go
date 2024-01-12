@@ -198,8 +198,8 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypeSchedule,
-			Required: true,
+			// Schedule is not a required attribute for Query Trigger, default to every 15 minutes
+			Name: schema.AttributeTypeSchedule,
 		},
 		{
 			Name: schema.AttributeTypeSql,
