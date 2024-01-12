@@ -46,18 +46,18 @@ func TestLoopPipelineStep(t *testing.T) {
 	pipelines, _, err := load_mod.LoadPipelines(context.TODO(), "./pipelines/loop.fp")
 	assert.Nil(err, "error found")
 
-	if pipelines["local.pipeline.simple_pipeline_loop"] == nil {
-		assert.Fail("simple_pipeline_loop pipeline not found")
+	if pipelines["local.pipeline.simple_pipeline_loop_unresolved"] == nil {
+		assert.Fail("simple_pipeline_loop_unresolved pipeline not found")
 		return
 	}
 
 	// we should have one unresolved body for the loop
-	pipeline := pipelines["local.pipeline.simple_pipeline_loop"]
+	pipeline := pipelines["local.pipeline.simple_pipeline_loop_unresolved"]
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["loop"])
 
-	pipeline = pipelines["local.pipeline.simple_pipeline_loop"]
+	pipeline = pipelines["local.pipeline.simple_pipeline_loop_unresolved"]
 	if pipeline == nil {
-		assert.Fail("simple_pipeline_loop not found")
+		assert.Fail("simple_pipeline_loop_unresolved not found")
 		return
 	}
 
