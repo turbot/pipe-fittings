@@ -19,15 +19,14 @@ type Control struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Severity *string `column:"severity,text" cty:"severity" hcl:"severity" json:"severity,omitempty"`
+	Severity *string `cty:"severity" hcl:"severity"  column:"severity,text" json:"severity,omitempty"`
 
 	// dashboard specific properties
 	Base    *Control `hcl:"base" json:"-"`
-	Width   *int     `column:"width,text" cty:"width" hcl:"width" json:"width,omitempty"`
-	Type    *string  `column:"type,text" cty:"type" hcl:"type" json:"type,omitempty"`
-	Display *string  `cty:"display" hcl:"display" json:"display,omitempty"`
+	Width   *int     `cty:"width" hcl:"width" column:"width,text" json:"-"`
+	Type    *string  `cty:"type" hcl:"type" column:"type,text" json:"-"`
+	Display *string  `cty:"display" hcl:"display" json:"-"`
 
-	// Non-exported fields don't receive tags
 	parents []ModTreeItem
 }
 
