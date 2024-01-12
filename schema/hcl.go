@@ -184,6 +184,7 @@ const (
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
 	AttributeTypePrimaryKey = "primary_key"
+	AttributeTypeEnabled    = "enabled"
 
 	// HTTP Trigger attributes
 	AttributeTypeExecutionMode = "execution_mode"

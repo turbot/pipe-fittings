@@ -43,3 +43,17 @@ trigger "query" "query_trigger" {
     }
   }
 }
+
+
+// No schedule = every 15 minutes
+trigger "query" "query_trigger_no_schedule" {
+  sql = <<EOQ
+        select
+            access_key_id,
+            user_name,
+            create_date,
+            ctx ->> 'connection_name' as connection
+        from aws_iam_access_key
+        where create_date < now() - interval '90 days'
+    EOQ
+}

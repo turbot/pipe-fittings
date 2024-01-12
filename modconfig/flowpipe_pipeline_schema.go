@@ -138,6 +138,9 @@ var TriggerScheduleBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeArgs,
 		},
+		{
+			Name: schema.AttributeTypeEnabled,
+		},
 	},
 }
 
@@ -170,6 +173,9 @@ var TriggerIntervalBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeArgs,
 		},
+		{
+			Name: schema.AttributeTypeEnabled,
+		},
 	},
 }
 
@@ -192,8 +198,8 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypeSchedule,
-			Required: true,
+			// Schedule is not a required attribute for Query Trigger, default to every 15 minutes
+			Name: schema.AttributeTypeSchedule,
 		},
 		{
 			Name: schema.AttributeTypeSql,
@@ -203,6 +209,9 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeConnectionString,
+		},
+		{
+			Name: schema.AttributeTypeEnabled,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -240,6 +249,9 @@ var TriggerHttpBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeArgs,
+		},
+		{
+			Name: schema.AttributeTypeEnabled,
 		},
 	},
 }

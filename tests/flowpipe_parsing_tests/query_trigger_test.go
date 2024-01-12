@@ -9,24 +9,27 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func XTestQueryTriggerParse(t *testing.T) {
+// TODO: a comprehensive query trigger test
+// 1. Test capture group
+// 1. Test pipeline reference
+func TestQueryTriggerParse(t *testing.T) {
 	assert := assert.New(t)
 
 	ctx := context.Background()
 	_, triggers, err := load_mod.LoadPipelines(ctx, "./pipelines/query_trigger.fp")
 	assert.Nil(err, "error found")
 
-	scheduleTrigger := triggers["local.trigger.schedule.my_hourly_trigger"]
-	if scheduleTrigger == nil {
-		assert.Fail("my_hourly_trigger trigger not found")
+	queryTrigger := triggers["local.trigger.query.query_trigger_no_schedule"]
+	if queryTrigger == nil {
+		assert.Fail("query_trigger_no_schedule trigger not found")
 		return
 	}
 
-	st, ok := scheduleTrigger.Config.(*modconfig.TriggerSchedule)
+	st, ok := queryTrigger.Config.(*modconfig.TriggerQuery)
 	if !ok {
-		assert.Fail("my_hourly_trigger trigger is not a schedule trigger")
+		assert.Fail("query_trigger_no_schedule trigger is not a query trigger")
 		return
 	}
 
-	assert.Equal("5 * * * *", st.Schedule)
+	assert.Equal("", st.Schedule)
 }
