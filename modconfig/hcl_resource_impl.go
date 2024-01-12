@@ -14,14 +14,16 @@ type HclResourceImpl struct {
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
 
-	FullName        string            `cty:"name" column:"qualified_name,text" json:"-"`
-	Title           *string           `cty:"title" hcl:"title" column:"title,text" json:"-"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name"`
-	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
-	Description     *string           `cty:"description" hcl:"description" column:"description,text" json:"-"`
-	Documentation   *string           `cty:"documentation" hcl:"documentation" column:"documentation,text" json:"-"`
-	DeclRange       hcl.Range         `json:"-"`
-	Tags            map[string]string `cty:"tags" hcl:"tags,optional" column:"tags,jsonb" json:"-"`
+	// TODO KAI check how added JSON tags affect snapshot
+
+	FullName        string            `column:"qualified_name,string" cty:"name" json:"name"`
+	Title           *string           `column:"title,string" cty:"title" hcl:"title" json:"title"`
+	ShortName       string            `cty:"short_name" hcl:"name,label" json:"short_name"`
+	UnqualifiedName string            `cty:"unqualified_name" json:"unqualified_name"`
+	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"description"`
+	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation"`
+	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
+	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags"`
 
 	base                HclResource
 	blockType           string

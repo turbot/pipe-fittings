@@ -19,12 +19,12 @@ type Control struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Severity *string `cty:"severity" hcl:"severity"  column:"severity,text" json:"severity,omitempty"`
+	Severity *string `cty:"severity" hcl:"severity"  column:"severity,string"  json:"severity,omitempty"`
 
 	// dashboard specific properties
 	Base    *Control `hcl:"base" json:"-"`
-	Width   *int     `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type    *string  `cty:"type" hcl:"type" column:"type,text" json:"-"`
+	Width   *int     `cty:"width" hcl:"width" column:"width,string"  json:"-"`
+	Type    *string  `cty:"type" hcl:"type" column:"type,string"  json:"-"`
 	Display *string  `cty:"display" hcl:"display" json:"-"`
 
 	parents []ModTreeItem

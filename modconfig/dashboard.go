@@ -26,8 +26,8 @@ type Dashboard struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width   *int              `cty:"width" hcl:"width"  column:"width,text"`
-	Display *string           `cty:"display" hcl:"display" column:"display,text"`
+	Width   *int              `cty:"width" hcl:"width"  column:"width,string" `
+	Display *string           `cty:"display" hcl:"display" column:"display,string" `
 	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
 	UrlPath string            `cty:"url_path"  column:"url_path,jsonb"`
 	Base    *Dashboard        `hcl:"base"`

@@ -11,11 +11,11 @@ import (
 type ResourceReference struct {
 	ResourceWithMetadataImpl
 
-	To        string `cty:"reference_to" column:"reference_to,text"`
-	From      string `cty:"reference_from" column:"reference_from,text"`
-	BlockType string `cty:"from_block_type" column:"from_block_type,text"`
-	BlockName string `cty:"from_block_name" column:"from_block_name,text"`
-	Attribute string `cty:"from_attribute" column:"from_attribute,text"`
+	To        string `cty:"reference_to" column:"reference_to,string" `
+	From      string `cty:"reference_from" column:"reference_from,string" `
+	BlockType string `cty:"from_block_type" column:"from_block_type,string" `
+	BlockName string `cty:"from_block_name" column:"from_block_name,string" `
+	Attribute string `cty:"from_attribute" column:"from_attribute,string" `
 	name      string
 }
 
