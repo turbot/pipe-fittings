@@ -27,8 +27,8 @@ type Benchmark struct {
 
 	// dashboard specific properties
 	Base    *Benchmark `hcl:"base" json:"-"`
-	Width   *int       `cty:"width" hcl:"width" column:"width,string"  json:"-"`
-	Type    *string    `cty:"type" hcl:"type" column:"type,string"  json:"-"`
+	Width   *int       `cty:"width" hcl:"width" column:"width,text" json:"-"`
+	Type    *string    `cty:"type" hcl:"type" column:"type,text" json:"-"`
 	Display *string    `cty:"display" hcl:"display" json:"-"`
 }
 

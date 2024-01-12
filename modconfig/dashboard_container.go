@@ -18,7 +18,7 @@ type DashboardContainer struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width   *int              `cty:"width" hcl:"width"  column:"width,string" `
+	Width   *int              `cty:"width" hcl:"width"  column:"width,text"`
 	Display *string           `cty:"display" hcl:"display"`
 	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
 	// store children in a way which can be serialised via cty
