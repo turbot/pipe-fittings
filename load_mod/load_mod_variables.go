@@ -27,9 +27,8 @@ func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx 
 		return nil, errAndWarnings.GetError()
 	}
 
-	variableMap := modconfig.NewModVariableMap(mod)
+	return modconfig.NewModVariableMap(mod)
 
-	return variableMap, nil
 }
 
 func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {

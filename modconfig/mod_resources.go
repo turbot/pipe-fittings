@@ -18,7 +18,6 @@ type ResourceMaps struct {
 	// the parent mod
 	Mod *Mod
 
-	// all mods (including deps)
 	Benchmarks            map[string]*Benchmark
 	Controls              map[string]*Control
 	Dashboards            map[string]*Dashboard
@@ -37,12 +36,13 @@ type ResourceMaps struct {
 	DashboardNodes        map[string]*DashboardNode
 	GlobalDashboardInputs map[string]*DashboardInput
 	Locals                map[string]*Local
-	Mods                  map[string]*Mod
-	Queries               map[string]*Query
-	References            map[string]*ResourceReference
+	Variables             map[string]*Variable
+	// all mods (including deps)
+	Mods       map[string]*Mod
+	Queries    map[string]*Query
+	References map[string]*ResourceReference
 	// map of snapshot paths, keyed by snapshot name
 	Snapshots map[string]string
-	Variables map[string]*Variable
 
 	// flowpipe
 	Pipelines    map[string]*Pipeline
@@ -474,7 +474,8 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.GlobalDashboardInputs[longName]
 	case schema.BlockTypeQuery:
 		resource, found = m.Queries[longName]
-	case schema.BlockTypeVariable:
+	// note the special case for variables - "var" rather than "variable"
+	case schema.AttributeVar:
 		resource, found = m.Variables[longName]
 	case schema.BlockTypePipeline:
 		resource, found = m.Pipelines[longName]
@@ -892,8 +893,7 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 		m.DashboardTexts[name] = r
 
 	case *Variable:
-		// NOTE: add variable by unqualified name
-		name := r.UnqualifiedName
+		name := r.Name()
 		if existing, ok := m.Variables[name]; ok {
 			diags = append(diags, checkForDuplicate(existing, item)...)
 			break
