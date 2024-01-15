@@ -20,13 +20,10 @@ type DashboardCard struct {
 	Icon  *string `cty:"icon" hcl:"icon" column:"icon,string" snapshot:"icon" json:"icon,omitempty"`
 	HREF  *string `cty:"href" hcl:"href" snapshot:"href" json:"href,omitempty"`
 
-	Width   *int           `cty:"width" hcl:"width" column:"width,string"  json:"width"`
-	Type    *string        `cty:"type" hcl:"type" column:"type,string"  json:"type"`
-	Display *string        `cty:"display" hcl:"display" json:"display"`
-	Base    *DashboardCard `hcl:"base" json:"base"`
-
-	//nolint:unused // TODO: unused attribute
-	metadata *ResourceMetadata
+	Width   *int           `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string        `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string        `cty:"display" hcl:"display" json:"display,omitempty"`
+	Base    *DashboardCard `hcl:"base" json:"base,omitempty"`
 }
 
 func NewDashboardCard(block *hcl.Block, mod *Mod, shortName string) HclResource {
