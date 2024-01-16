@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 func TestPipelineWithTrigger(t *testing.T) {
@@ -99,11 +100,26 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 	assert.Equal(true, *httpTriggerWithArgs.Enabled)
 
-	_, ok = httpTriggerWithArgs.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithArgs.Config.(*modconfig.TriggerHttp)
 	if !ok {
-		assert.Fail("trigger_with_args trigger is not a schedule trigger")
+		assert.Fail("trigger_with_args trigger is not a HTTP trigger")
 		return
 	}
+
+	triggerMethods := httpTrigConfig.Method
+	assert.Equal(1, len(triggerMethods))
+
+	methodInfo := triggerMethods["get"]
+	assert.NotNil(methodInfo, "method 'get' not found")
+
+	pipelineInfo := methodInfo.Pipeline.AsValueMap()
+	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
+
+	argsInfo, err := methodInfo.GetArgs(nil)
+	assert.Nil(err)
+	assert.NotNil(argsInfo)
+	assert.Equal("one", argsInfo["param_one"])
+	assert.Equal(2, argsInfo["param_two_int"])
 
 	queryTrigger = triggers["local.trigger.query.query_trigger_interval"]
 	if queryTrigger == nil {
@@ -134,8 +150,12 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
-	assert.Equal("synchronous", trig.ExecutionMode)
+	triggerMethods = trig.Method
+	assert.Equal(1, len(triggerMethods))
 
+	methodInfo = triggerMethods["get"]
+	assert.NotNil(methodInfo, "method 'get' not found")
+	assert.Equal("synchronous", methodInfo.ExecutionMode)
 }
 
 func TestPipelineWithTriggerSelf(t *testing.T) {

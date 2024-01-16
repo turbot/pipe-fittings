@@ -241,17 +241,13 @@ var TriggerHttpBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypePipeline,
-			Required: true,
-		},
-		{
-			Name: schema.AttributeTypeExecutionMode,
-		},
-		{
-			Name: schema.AttributeTypeArgs,
-		},
-		{
 			Name: schema.AttributeTypeEnabled,
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       schema.BlockTypeMethod,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
