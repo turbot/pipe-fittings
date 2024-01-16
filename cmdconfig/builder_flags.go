@@ -1,6 +1,7 @@
 package cmdconfig
 
 import (
+	"github.com/spf13/pflag"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -90,4 +91,14 @@ func (c *CmdBuilder) AddModLocationFlag() *CmdBuilder {
 	cwd, err := os.Getwd()
 	error_helpers.FailOnError(err)
 	return c.AddStringFlag(constants.ArgModLocation, cwd, "Path to the workspace working directory")
+}
+
+func (c *CmdBuilder) AddVarFlag(value pflag.Value, name string, usage string, opts ...FlagOption) *CmdBuilder {
+	c.cmd.Flags().Var(value, name, usage)
+
+	c.bindings[name] = c.cmd.Flags().Lookup(name)
+	for _, o := range opts {
+		o(c.cmd, name, name)
+	}
+	return c
 }
