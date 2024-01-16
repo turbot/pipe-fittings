@@ -16,14 +16,14 @@ type HclResourceImpl struct {
 
 	// TODO KAI check how added JSON tags affect snapshot
 
-	FullName        string            `column:"qualified_name,string" cty:"name" json:"name"`
-	Title           *string           `column:"title,string" cty:"title" hcl:"title" json:"title"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"short_name"`
-	UnqualifiedName string            `cty:"unqualified_name" json:"unqualified_name"`
-	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"description"`
-	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation"`
+	FullName        string            `column:"qualified_name,string" cty:"name" json:"-"`
+	Title           *string           `column:"title,string" cty:"title" hcl:"title" json:"-"`
+	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name"`
+	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
+	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"-"`
+	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"-"`
 	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
-	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags"`
+	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"-"`
 
 	base                HclResource
 	blockType           string
