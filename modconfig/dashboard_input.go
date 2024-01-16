@@ -15,7 +15,7 @@ type DashboardInput struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	DashboardName string                  `column:"dashboard,string" json:"dashboard"`
+	DashboardName string                  `column:"dashboard,string" json:"-"`
 	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty"`
 	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty"`
 	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty"`
