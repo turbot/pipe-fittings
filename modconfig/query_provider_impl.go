@@ -110,6 +110,7 @@ func (q *QueryProviderImpl) GetResolvedQuery(runtimeArgs *QueryArgs) (*ResolvedQ
 	}
 
 	return &ResolvedQuery{
+		Name:       q.Name(),
 		ExecuteSQL: sql,
 		RawSQL:     sql,
 		Args:       argsArray,

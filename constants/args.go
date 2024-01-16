@@ -60,7 +60,7 @@ const (
 	ArgSearchPathPrefix    = "search-path-prefix"
 	ArgSeparator           = "separator"
 	ArgServiceCacheEnabled = "service-cache-enabled"
-	ArgServiceMode         = "service-mode"
+	//ArgServiceMode         = "service-mode"
 	//ArgServicePassword         = "database-password"
 	//ArgServiceShowPassword     = "show-password"
 	ArgShare = "share"
