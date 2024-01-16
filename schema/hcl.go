@@ -51,6 +51,7 @@ const (
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
 	BlockTypeCapture           = "capture"
+	BlockTypeMethod            = "method"
 
 	AttributeTypeValue = "value"
 

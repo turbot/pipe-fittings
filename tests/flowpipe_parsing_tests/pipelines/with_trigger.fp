@@ -30,12 +30,15 @@ trigger "schedule" "trigger_with_args" {
 }
 
 trigger "http" "trigger_with_args" {
-  pipeline = pipeline.simple_with_trigger
-  enabled  = true
+  enabled = true
 
-  args = {
-    param_one     = "one"
-    param_two_int = 2
+  method "get" {
+    pipeline = pipeline.simple_with_trigger
+
+    args = {
+      param_one     = "one"
+      param_two_int = 2
+    }
   }
 }
 
@@ -73,6 +76,9 @@ trigger "query" "query_trigger_interval" {
 }
 
 trigger "http" "trigger_with_execution_mode" {
-  pipeline       = pipeline.simple_with_trigger
-  execution_mode = "synchronous"
+
+  method "get" {
+    pipeline       = pipeline.simple_with_trigger
+    execution_mode = "synchronous"
+  }
 }
