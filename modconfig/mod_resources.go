@@ -1019,10 +1019,11 @@ func (m *ResourceMaps) Merge(others []*ResourceMaps) *ResourceMaps {
 			res.Triggers[k] = v
 		}
 		for k, v := range source.Variables {
+			// TODO check why this was necessary and test variables thoroughly
 			// NOTE: only include variables from root mod  - we add in the others separately
-			if v.Mod.FullName == m.Mod.FullName {
-				res.Variables[k] = v
-			}
+			//if v.Mod.FullName == m.Mod.FullName {
+			res.Variables[k] = v
+			//}
 		}
 	}
 
