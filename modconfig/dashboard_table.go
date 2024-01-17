@@ -22,7 +22,7 @@ type DashboardTable struct {
 	Width      *int                             `cty:"width" hcl:"width" column:"width,string"  json:"-"`
 	Type       *string                          `cty:"type" hcl:"type" column:"type,string"  json:"-"`
 	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" column:"columns,jsonb" json:"-"`
-	Columns    map[string]*DashboardTableColumn `cty:"columns" json:"columns,omitempty"`
+	Columns    map[string]*DashboardTableColumn `cty:"columns" json:"columns,omitempty" snapshot:"columns"`
 	Display    *string                          `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base       *DashboardTable                  `hcl:"base" json:"-"`
 }

@@ -20,11 +20,11 @@ type DashboardGraph struct {
 
 	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"-"`
 	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"-"`
-	NodeNames []string          `json:"nodes"`
-	EdgeNames []string          `json:"edges"`
+	NodeNames []string          `json:"nodes" snapshot:"nodes"`
+	EdgeNames []string          `json:"edges" snapshot:"edges"`
 
-	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
-	Direction  *string                       `cty:"direction" hcl:"direction" column:"direction,string"  json:"direction"`
+	Categories map[string]*DashboardCategory `cty:"categories" json:"categories" snapshot:"categories"`
+	Direction  *string                       `cty:"direction" hcl:"direction" column:"direction,string" json:"direction" snapshot:"direction"`
 
 	// these properties are JSON serialised by the parent LeafRun
 	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"-"`

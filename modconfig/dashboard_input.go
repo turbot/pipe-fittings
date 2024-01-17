@@ -18,10 +18,10 @@ type DashboardInput struct {
 	DashboardName string                  `column:"dashboard,string" json:"-"`
 	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty"`
 	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty"`
-	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty"`
+	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty" snapshot:"options"`
 	// tactical - exists purely so we can put "unqualified_name" in the snbapshot panel for the input
 	// TODO remove when input names are refactored https://github.com/turbot/steampipe/issues/2863
-	InputName string `cty:"input_name" json:"unqualified_name"`
+	InputName string `cty:"input_name" json:"unqualified_name" snapshot:"unqualified_name"`
 
 	// these properties are JSON serialised by the parent LeafRun
 	Width     *int            `cty:"width" hcl:"width" column:"width,string"  json:"-"`
