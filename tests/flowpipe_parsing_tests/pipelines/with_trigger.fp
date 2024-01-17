@@ -32,7 +32,7 @@ trigger "schedule" "trigger_with_args" {
 trigger "http" "trigger_with_args" {
   enabled = true
 
-  method "get" {
+  method "post" {
     pipeline = pipeline.simple_with_trigger
 
     args = {
@@ -77,7 +77,7 @@ trigger "query" "query_trigger_interval" {
 
 trigger "http" "trigger_with_execution_mode" {
 
-  method "get" {
+  method "post" {
     pipeline       = pipeline.simple_with_trigger
     execution_mode = "synchronous"
   }

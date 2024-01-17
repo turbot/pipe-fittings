@@ -7,7 +7,7 @@ pipeline "simple_with_trigger" {
 }
 
 trigger "http" "http_trigger_with_self" {
-  method "get" {
+  method "post" {
     pipeline = pipeline.simple_with_trigger
 
     args = {

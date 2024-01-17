@@ -438,8 +438,9 @@ func (c *TriggerQueryCapture) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.
 }
 
 type TriggerHttp struct {
-	Url    string                        `json:"url"`
-	Method map[string]*TriggerHTTPMethod `json:"method"`
+	Url           string                        `json:"url"`
+	ExecutionMode string                        `json:"execution_mode"`
+	Method        map[string]*TriggerHTTPMethod `json:"method"`
 }
 
 type TriggerHTTPMethod struct {
@@ -477,6 +478,17 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 				continue
 			}
 
+			t.ExecutionMode = val.AsString()
+
+			if !slices.Contains(validExecutionMode, t.ExecutionMode) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid execution mode",
+					Detail:   "The execution mode must be one of: " + strings.Join(validExecutionMode, ","),
+					Subject:  &attr.Range,
+				})
+			}
+
 		default:
 			if !trigger.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
@@ -496,6 +508,41 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 
 	t.Method = make(map[string]*TriggerHTTPMethod)
 
+	// If no method blocks appear, only 'post' is supported, and the top-level `pipeline`, `args` and `execution_mode` will be applied
+	if len(hclBlocks) == 0 {
+		triggerMethod := &TriggerHTTPMethod{
+			Type: HttpMethodPost,
+		}
+
+		// Get the top-level pipeline
+		pipeline := trigger.GetPipeline()
+		if pipeline == cty.NilVal {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Bad Request",
+				Detail:   "Missing required attribute 'pipeline'",
+			})
+			return diags
+		}
+		triggerMethod.Pipeline = pipeline
+
+		// Get the top-level args
+		pipelineArgs := trigger.ArgsRaw
+		if pipelineArgs != nil {
+			triggerMethod.ArgsRaw = pipelineArgs
+		}
+
+		// Get the top-level execution_mode
+		if t.ExecutionMode != "" {
+			triggerMethod.ExecutionMode = t.ExecutionMode
+		}
+
+		t.Method[HttpMethodPost] = triggerMethod
+
+		return diags
+	}
+
+	// If the method blocks provided, we will consider the configuration provided in the method block
 	for _, methodBlock := range hclBlocks {
 
 		if len(methodBlock.Labels) != 1 {
