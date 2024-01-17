@@ -118,6 +118,11 @@ func (b *HclResourceImpl) GetUnqualifiedName() string {
 	return b.UnqualifiedName
 }
 
+// GetShortName implements HclResource
+func (b *HclResourceImpl) GetShortName() string {
+	return b.ShortName
+}
+
 // OnDecoded implements HclResource
 func (b *HclResourceImpl) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
 	return nil
