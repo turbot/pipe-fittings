@@ -109,8 +109,8 @@ func TestPipelineWithTrigger(t *testing.T) {
 	triggerMethods := httpTrigConfig.Method
 	assert.Equal(1, len(triggerMethods))
 
-	methodInfo := triggerMethods["get"]
-	assert.NotNil(methodInfo, "method 'get' not found")
+	methodInfo := triggerMethods["post"]
+	assert.NotNil(methodInfo, "method 'post' not found")
 
 	pipelineInfo := methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
@@ -153,8 +153,8 @@ func TestPipelineWithTrigger(t *testing.T) {
 	triggerMethods = trig.Method
 	assert.Equal(1, len(triggerMethods))
 
-	methodInfo = triggerMethods["get"]
-	assert.NotNil(methodInfo, "method 'get' not found")
+	methodInfo = triggerMethods["post"]
+	assert.NotNil(methodInfo, "method 'post' not found")
 	assert.Equal("synchronous", methodInfo.ExecutionMode)
 }
 
