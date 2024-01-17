@@ -202,6 +202,16 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_trigger_execution_mode.fp",
 		containsError: "The execution mode must be one of: synchronous,asynchronous",
 	},
+	{
+		title:         "invalid method types in http trigger",
+		file:          "./pipelines/invalid_http_trigger_method.fp",
+		containsError: "Method block type must be one of: post,get",
+	},
+	{
+		title:         "duplicate method blocks in http trigger",
+		file:          "./pipelines/invalid_http_trigger_duplicate_method.fp",
+		containsError: "Duplicate method block for type: post",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
