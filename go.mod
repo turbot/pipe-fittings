@@ -51,6 +51,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
+	github.com/jackc/pgx/v5 v5.5.2
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/steampipe-plugin-code v0.6.0
 	github.com/turbot/terraform-components v0.0.0-20231108031935-358f803c1a8b
@@ -140,6 +141,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
