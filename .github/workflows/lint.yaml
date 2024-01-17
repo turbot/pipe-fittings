@@ -31,6 +31,8 @@ jobs:
         with:
           version: v1.54.1
           args: --timeout=15m
+          skip-cache: true
+          skip-build-cache: true
 
       - name: Run tests
         run: make test
