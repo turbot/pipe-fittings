@@ -15,7 +15,7 @@ type DashboardInput struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	DashboardName string                  `column:"dashboard,string" json:"-"`
+	DashboardName string                  `column:"dashboard,string" json:"dashboard,omitempty"`
 	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty"`
 	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty"`
 	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty" snapshot:"options"`
@@ -24,9 +24,9 @@ type DashboardInput struct {
 	InputName string `cty:"input_name" json:"unqualified_name" snapshot:"unqualified_name"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width     *int            `cty:"width" hcl:"width" column:"width,string"  json:"-"`
-	Type      *string         `cty:"type" hcl:"type" column:"type,string"  json:"-"`
-	Display   *string         `cty:"display" hcl:"display" json:"-"`
+	Width     *int            `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type      *string         `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display   *string         `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base      *DashboardInput `hcl:"base" json:"-"`
 	dashboard *Dashboard
 }

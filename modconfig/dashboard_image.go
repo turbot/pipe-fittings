@@ -19,8 +19,8 @@ type DashboardImage struct {
 	Alt *string `cty:"alt" hcl:"alt" column:"alt,string"  json:"alt,omitempty"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"-"`
-	Display *string `cty:"display" hcl:"display" json:"-"`
+	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardImage `hcl:"base" json:"-"`
 }
