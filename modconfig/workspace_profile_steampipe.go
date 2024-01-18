@@ -51,9 +51,6 @@ type SteampipeWorkspaceProfile struct {
 	Separator *string `hcl:"separator"`
 	Timing    *bool   `hcl:"timing"`
 
-	// TODO check with John
-	Theme *string `hcl:"theme" cty:"theme"`
-
 	Base      *SteampipeWorkspaceProfile `hcl:"base"`
 	DeclRange hcl.Range
 }
@@ -165,11 +162,6 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.Timing == nil {
 		p.Timing = p.Base.Timing
 	}
-
-	// TODO check with John
-	if p.Theme == nil {
-		p.Theme = p.Base.Theme
-	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
@@ -206,9 +198,6 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetStringItem(p.Output, constants.ArgOutput)
 	res.SetStringItem(p.Separator, constants.ArgSeparator)
 	res.SetBoolItem(p.Timing, constants.ArgTiming)
-
-	// TODO check with John
-	res.SetStringItem(p.Theme, constants.ArgTheme)
 
 	return res
 }
