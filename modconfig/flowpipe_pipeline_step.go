@@ -3434,6 +3434,9 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}
 
 	if memorySwappiness != nil {
+		if !(*memorySwappiness >= 0 && *memorySwappiness <= 100) {
+			return nil, perr.BadRequestWithMessage("The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be between 0 and 100")
+		}
 		results[schema.AttributeTypeMemorySwappiness] = *memorySwappiness
 	}
 
@@ -3643,6 +3646,15 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 					})
 					continue
 				}
+
+				if !(*memorySwappiness >= 0 && *memorySwappiness <= 100) {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be between 0 and 100",
+						Subject:  &attr.Range,
+					})
+				}
+
 				p.MemorySwappiness = memorySwappiness
 			}
 		case schema.AttributeTypeUser:
