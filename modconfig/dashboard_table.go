@@ -37,7 +37,7 @@ func NewDashboardTable(block *hcl.Block, mod *Mod, shortName string) HclResource
 
 // NewQueryDashboardTable creates a Table to wrap a query.
 // This is used in order to execute queries as dashboards
-func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
+func NewQueryDashboardTable(qp QueryProvider, args *QueryArgs) (*DashboardTable, error) {
 	parsedName, err := ParseResourceName(SnapshotQueryTableName)
 	if err != nil {
 		return nil, err
@@ -61,8 +61,10 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 					Mod: qp.GetMod(),
 				},
 			},
-			Query: qp.GetQuery(),
-			SQL:   qp.GetSQL(),
+			Query:  qp.GetQuery(),
+			SQL:    qp.GetSQL(),
+			Params: qp.GetParams(),
+			Args:   args,
 		},
 	}
 	return c, nil

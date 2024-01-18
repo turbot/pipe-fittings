@@ -51,7 +51,7 @@ func NewDashboard(block *hcl.Block, mod *Mod, shortName string) HclResource {
 
 // NewQueryDashboard creates a dashboard to wrap a query/control
 // this is used for snapshot generation
-func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
+func NewQueryDashboard(qp QueryProvider, args *QueryArgs) (*Dashboard, error) {
 	parsedName, title, err := getQueryDashboardName(qp)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 
 	dashboard.setUrlPath()
 
-	table, err := NewQueryDashboardTable(qp)
+	table, err := NewQueryDashboardTable(qp, args)
 	if err != nil {
 		return nil, err
 	}
