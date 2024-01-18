@@ -5,6 +5,7 @@ const (
 	ConfigKeyInteractive                 = "interactive"
 	ConfigKeyActiveCommand               = "cmd"
 	ConfigKeyActiveCommandArgs           = "cmd_args"
+	ConfigKeyQueryArgs                   = "query_args"
 	ConfigInteractiveVariables           = "interactive_var"
 	ConfigKeyIsTerminalTTY               = "is_terminal"
 	ConfigKeyServerSearchPath            = "server-search-path"
