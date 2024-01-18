@@ -21,6 +21,7 @@ type HclResource interface {
 	Name() string
 	GetTitle() string
 	GetUnqualifiedName() string
+	GetShortName() string
 	OnDecoded(*hcl.Block, ResourceMapsProvider) hcl.Diagnostics
 	GetDeclRange() *hcl.Range
 	BlockType() string

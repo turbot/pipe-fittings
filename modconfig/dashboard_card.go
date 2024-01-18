@@ -15,18 +15,15 @@ type DashboardCard struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Label *string `cty:"label" hcl:"label" column:"label,string"  json:"label,omitempty"`
-	Value *string `cty:"value" hcl:"value" column:"value,string"  json:"value,omitempty"`
-	Icon  *string `cty:"icon" hcl:"icon" column:"icon,string"  json:"icon,omitempty"`
-	HREF  *string `cty:"href" hcl:"href" json:"href,omitempty"`
+	Label *string `cty:"label" hcl:"label" column:"label,string" snapshot:"label" json:"label,omitempty"`
+	Value *string `cty:"value" hcl:"value" column:"value,string" snapshot:"value" json:"value,omitempty"`
+	Icon  *string `cty:"icon" hcl:"icon" column:"icon,string" snapshot:"icon" json:"icon,omitempty"`
+	HREF  *string `cty:"href" hcl:"href" snapshot:"href" json:"href,omitempty"`
 
-	Width   *int           `cty:"width" hcl:"width" column:"width,string"  json:"-"`
-	Type    *string        `cty:"type" hcl:"type" column:"type,string"  json:"-"`
-	Display *string        `cty:"display" hcl:"display" json:"-"`
-	Base    *DashboardCard `hcl:"base" json:"-"`
-
-	//nolint:unused // TODO: unused attribute
-	metadata *ResourceMetadata
+	Width   *int           `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string        `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string        `cty:"display" hcl:"display" json:"display,omitempty"`
+	Base    *DashboardCard `hcl:"base" json:"base,omitempty"`
 }
 
 func NewDashboardCard(block *hcl.Block, mod *Mod, shortName string) HclResource {

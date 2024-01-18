@@ -27,9 +27,9 @@ type Benchmark struct {
 
 	// dashboard specific properties
 	Base    *Benchmark `hcl:"base" json:"-"`
-	Width   *int       `cty:"width" hcl:"width" column:"width,string"  json:"-"`
-	Type    *string    `cty:"type" hcl:"type" column:"type,string"  json:"-"`
-	Display *string    `cty:"display" hcl:"display" json:"-"`
+	Width   *int       `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string    `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string    `cty:"display" hcl:"display" json:"display,omitempty"`
 }
 
 func NewRootBenchmarkWithChildren(mod *Mod, children []ModTreeItem) HclResource {

@@ -2,8 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/schema"
 	"strings"
+
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
@@ -26,8 +27,8 @@ type Dashboard struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width   *int              `cty:"width" hcl:"width"  column:"width,string" `
-	Display *string           `cty:"display" hcl:"display" column:"display,string" `
+	Width   *int              `cty:"width" hcl:"width"  column:"width,string" json:"width,omitempty"`
+	Display *string           `cty:"display" hcl:"display" column:"display,string" json:"display,omitempty"`
 	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
 	UrlPath string            `cty:"url_path"  column:"url_path,jsonb"`
 	Base    *Dashboard        `hcl:"base"`

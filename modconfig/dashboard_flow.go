@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
@@ -24,9 +25,9 @@ type DashboardFlow struct {
 
 	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
 
-	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"-"`
-	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"-"`
-	Display *string `cty:"display" hcl:"display" json:"-"`
+	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardFlow `hcl:"base" json:"-"`
 }
