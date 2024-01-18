@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-const sqliteConnectionStringPrefix = "sqlite://"
+const sqliteConnectionStringPrefix = "sqlite:"
 
 type SqliteBackend struct {
 	connectionString string

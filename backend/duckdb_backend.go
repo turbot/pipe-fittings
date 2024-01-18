@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-const duckDBConnectionStringPrefix = "duckdb://"
+const duckDBConnectionStringPrefix = "duckdb:"
 
 type DuckDBBackend struct {
 	connectionString string
