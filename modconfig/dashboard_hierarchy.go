@@ -23,7 +23,7 @@ type DashboardHierarchy struct {
 	NodeNames []string          `json:"nodes"`
 	EdgeNames []string          `json:"edges"`
 
-	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
+	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty"`
 	Width      *int                          `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
 	Type       *string                       `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
 	Display    *string                       `cty:"display" hcl:"display" json:"display,omitempty"`

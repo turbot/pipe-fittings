@@ -14,11 +14,11 @@ type QueryProviderImpl struct {
 	RuntimeDependencyProviderImpl
 	QueryProviderRemain hcl.Body `hcl:",remain" json:"-"`
 
-	SQL       *string     `cty:"sql" hcl:"sql" column:"sql,string" json:"-"`
+	SQL       *string     `cty:"sql" hcl:"sql" column:"sql,string" json:"sql,omitempty"`
 	Query     *Query      `cty:"query" hcl:"query" json:"-"`
-	Args      *QueryArgs  `cty:"args" column:"args,jsonb" json:"-"`
-	Params    []*ParamDef `cty:"params" column:"params,jsonb" json:"-"`
-	QueryName *string     `column:"query,string" json:"-"`
+	Args      *QueryArgs  `cty:"args" column:"args,jsonb" json:"args,omitempty"`
+	Params    []*ParamDef `cty:"params" column:"params,jsonb" json:"params,omitempty"`
+	QueryName *string     `column:"query,string" json:"query,omitempty"`
 
 	//nolint:unused // TODO: unused function
 	withs               []*DashboardWith

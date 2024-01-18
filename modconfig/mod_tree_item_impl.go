@@ -11,9 +11,9 @@ type ModTreeItemImpl struct {
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
 	Mod              *Mod    `cty:"mod" json:"-"`
-	ConnectionString *string `cty:"connection_string" hcl:"connection_string" json:"-"`
+	ConnectionString *string `cty:"connection_string" hcl:"connection_string" json:"connection_string,omitempty"`
 
-	Paths []NodePath `column:"path,jsonb" json:"-"`
+	Paths []NodePath `column:"path,jsonb" json:"paths,omitempty"`
 
 	// TODO DO WE EVER HAVE MULTIPLE PARENTS
 	parents  []ModTreeItem

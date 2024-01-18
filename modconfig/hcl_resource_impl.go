@@ -15,13 +15,13 @@ type HclResourceImpl struct {
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
 
 	FullName        string            `cty:"name" column:"qualified_name,text" json:"-"`
-	Title           *string           `cty:"title" hcl:"title" column:"title,string"  json:"-"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name"`
+	Title           *string           `cty:"title" hcl:"title" column:"title,string"  json:"title,omitempty"`
+	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name,omitempty"`
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
-	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"-"`
-	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"-"`
+	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"description,omitempty"`
+	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
 	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
-	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"-"`
+	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
 
 	base                HclResource
 	blockType           string
