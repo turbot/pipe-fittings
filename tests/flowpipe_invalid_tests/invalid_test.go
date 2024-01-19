@@ -217,6 +217,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_trigger_duplicate_method.fp",
 		containsError: "Duplicate method block for type: post",
 	},
+	// {
+	// 	title:         "invalid http trigger method",
+	// 	file:          "./pipelines/invalid_trigger_method.fp",
+	// 	containsError: "bad cron format. Specify valid intervals hourly, daily, weekly, monthly or valid cron expression:",
+	// },
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
