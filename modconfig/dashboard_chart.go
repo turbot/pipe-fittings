@@ -19,12 +19,12 @@ type DashboardChart struct {
 	Type       *string                          `cty:"type" hcl:"type" column:"type,string" json:"type,omitempty"`
 	Display    *string                          `cty:"display" hcl:"display" json:"display,omitempty"`
 	Legend     *DashboardChartLegend            `cty:"legend" hcl:"legend,block" column:"legend,jsonb" snapshot:"legend" json:"legend,omitempty"`
-	SeriesList DashboardChartSeriesList         `cty:"series_list" hcl:"series,block" column:"series,jsonb" json:"series_list,omitempty"`
+	SeriesList DashboardChartSeriesList         `cty:"series_list" hcl:"series,block" column:"series,jsonb" json:"series,omitempty"`
 	Axes       *DashboardChartAxes              `cty:"axes" hcl:"axes,block" column:"axes,jsonb" snapshot:"axes" json:"axes,omitempty"`
 	Grouping   *string                          `cty:"grouping" hcl:"grouping" snapshot:"grouping" json:"grouping,omitempty"`
 	Transform  *string                          `cty:"transform" hcl:"transform" snapshot:"transform" json:"transform,omitempty"`
-	Series     map[string]*DashboardChartSeries `cty:"series" snapshot:"series" json:"series,omitempty"`
-	Base       *DashboardChart                  `hcl:"base" json:"base,omitempty"`
+	Series     map[string]*DashboardChartSeries `cty:"series" snapshot:"series"`
+	Base       *DashboardChart                  `hcl:"base" json:"-"`
 }
 
 func NewDashboardChart(block *hcl.Block, mod *Mod, shortName string) HclResource {
