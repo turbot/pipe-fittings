@@ -719,7 +719,7 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 }
 
 func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
-	for _, b := range m.CurrentMod.ResourceWithMetadataBaseRemain.(*hclsyntax.Body).Blocks {
+	for _, b := range m.CurrentMod.ResourceWithMetadataImplRemain.(*hclsyntax.Body).Blocks {
 		if b.Type == schema.BlockTypeRequire {
 			return b
 		}

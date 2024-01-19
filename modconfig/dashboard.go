@@ -64,9 +64,6 @@ func NewQueryDashboard(qp QueryProvider, args *QueryArgs) (*Dashboard, error) {
 	}
 
 	var dashboard = &Dashboard{
-		ResourceWithMetadataImpl: ResourceWithMetadataImpl{
-			metadata: &ResourceMetadata{},
-		},
 		ModTreeItemImpl: ModTreeItemImpl{
 			HclResourceImpl: HclResourceImpl{
 				ShortName:       parsedName.Name,

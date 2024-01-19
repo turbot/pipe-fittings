@@ -45,9 +45,6 @@ func NewQueryDashboardTable(qp QueryProvider, args *QueryArgs) (*DashboardTable,
 	fullName := parsedName.ToFullName()
 
 	c := &DashboardTable{
-		ResourceWithMetadataImpl: ResourceWithMetadataImpl{
-			metadata: &ResourceMetadata{},
-		},
 		QueryProviderImpl: QueryProviderImpl{
 			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
 				ModTreeItemImpl: ModTreeItemImpl{

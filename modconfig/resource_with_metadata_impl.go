@@ -3,24 +3,26 @@ package modconfig
 import "github.com/hashicorp/hcl/v2"
 
 type ResourceWithMetadataImpl struct {
+	ResourceMetadata
 	// required to allow partial decoding
-	ResourceWithMetadataBaseRemain hcl.Body             `hcl:",remain" json:"-"`
-	References                     []*ResourceReference `json:"-"`
+	ResourceWithMetadataImplRemain hcl.Body             `hcl:",remain" json:"-"`
+	References                     []*ResourceReference `json:"references,omitempty"`
 
-	metadata  *ResourceMetadata
 	anonymous bool
 }
 
 // GetMetadata implements ResourceWithMetadata
 func (b *ResourceWithMetadataImpl) GetMetadata() *ResourceMetadata {
-	return b.metadata
+	return &b.ResourceMetadata
 }
 
 // SetMetadata implements ResourceWithMetadata
 func (b *ResourceWithMetadataImpl) SetMetadata(metadata *ResourceMetadata) {
-	b.metadata = metadata
-	// set anonymous property on metadata
-	b.metadata.Anonymous = b.anonymous
+	if metadata != nil {
+		b.ResourceMetadata = *metadata
+		// set anonymous property on metadata
+		b.ResourceMetadata.Anonymous = b.anonymous
+	}
 }
 
 // SetAnonymous implements ResourceWithMetadata
