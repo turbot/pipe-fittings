@@ -18,10 +18,10 @@ type DashboardHierarchy struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"-"`
-	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"-"`
-	NodeNames []string          `json:"nodes"`
-	EdgeNames []string          `json:"edges"`
+	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"nodes,omitempty"`
+	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"edges,omitempty"`
+	NodeNames []string
+	EdgeNames []string
 
 	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty"`
 	Width      *int                          `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`

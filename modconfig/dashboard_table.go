@@ -21,8 +21,8 @@ type DashboardTable struct {
 	// TODO remove - check introspection tables
 	Width      *int                             `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
 	Type       *string                          `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
-	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" column:"columns,jsonb" json:"-"`
-	Columns    map[string]*DashboardTableColumn `cty:"columns" json:"columns,omitempty" snapshot:"columns"`
+	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" column:"columns,jsonb" json:"columns,omitempty"`
+	Columns    map[string]*DashboardTableColumn `cty:"columns" snapshot:"columns"`
 	Display    *string                          `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base       *DashboardTable                  `hcl:"base" json:"-"`
 }
