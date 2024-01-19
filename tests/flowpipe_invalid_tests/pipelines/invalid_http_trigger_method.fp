@@ -16,4 +16,5 @@ trigger "http" "invalid_http_trigger_method" {
       event = "test"
     }
   }
+
 }
