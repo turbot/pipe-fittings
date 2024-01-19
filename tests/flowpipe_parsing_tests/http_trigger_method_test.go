@@ -46,7 +46,7 @@ func TestPipelineWithoutHTTPTriggerMethod(t *testing.T) {
 		return
 	}
 
-	triggerMethods := httpTrigConfig.Method
+	triggerMethods := httpTrigConfig.Methods
 	assert.Equal(1, len(triggerMethods))
 
 	methodInfo := triggerMethods["post"]
@@ -99,7 +99,7 @@ func TestPipelineWithHTTPGetMethod(t *testing.T) {
 		return
 	}
 
-	triggerMethods := httpTrigConfig.Method
+	triggerMethods := httpTrigConfig.Methods
 	assert.Equal(1, len(triggerMethods))
 
 	methodInfo := triggerMethods["get"]
@@ -152,7 +152,7 @@ func TestPipelineWithHTTPTriggerMethodMultiple(t *testing.T) {
 		return
 	}
 
-	triggerMethods := httpTrigConfig.Method
+	triggerMethods := httpTrigConfig.Methods
 	assert.Equal(2, len(triggerMethods))
 
 	methodInfo := triggerMethods["get"]
@@ -218,7 +218,7 @@ func TestPipelineWithHTTPTriggerPrecedence(t *testing.T) {
 		return
 	}
 
-	triggerMethods := httpTrigConfig.Method
+	triggerMethods := httpTrigConfig.Methods
 	assert.Equal(1, len(triggerMethods))
 
 	methodInfo := triggerMethods["post"]
