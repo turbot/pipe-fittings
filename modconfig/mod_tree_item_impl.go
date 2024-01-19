@@ -13,7 +13,7 @@ type ModTreeItemImpl struct {
 	Mod              *Mod    `cty:"mod" json:"-"`
 	ConnectionString *string `cty:"connection_string" hcl:"connection_string" json:"connection_string,omitempty"`
 
-	Paths []NodePath `column:"path,jsonb" json:"paths,omitempty"`
+	Paths []NodePath `column:"path,jsonb" json:"path,omitempty"`
 
 	// TODO DO WE EVER HAVE MULTIPLE PARENTS
 	parents  []ModTreeItem
