@@ -20,7 +20,7 @@ type DashboardContainer struct {
 
 	Width   *int              `cty:"width" hcl:"width"  column:"width,string" json:"width,omitempty"`
 	Display *string           `cty:"display" hcl:"display" json:"display,omitempty"`
-	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
+	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb" json:"inputs,omitempty"`
 	// store children in a way which can be serialised via cty
 	ChildNames []string `cty:"children" column:"children,jsonb" json:"children,omitempty"`
 

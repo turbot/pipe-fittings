@@ -23,7 +23,7 @@ type DashboardCard struct {
 	Width   *int           `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
 	Type    *string        `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
 	Display *string        `cty:"display" hcl:"display" json:"display,omitempty"`
-	Base    *DashboardCard `hcl:"base" json:"base,omitempty"`
+	Base    *DashboardCard `hcl:"base" json:"-"`
 }
 
 func NewDashboardCard(block *hcl.Block, mod *Mod, shortName string) HclResource {
