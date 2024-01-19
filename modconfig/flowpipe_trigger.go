@@ -440,7 +440,7 @@ func (c *TriggerQueryCapture) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.
 type TriggerHttp struct {
 	Url           string                        `json:"url"`
 	ExecutionMode string                        `json:"execution_mode"`
-	Method        map[string]*TriggerHTTPMethod `json:"method"`
+	Methods       map[string]*TriggerHTTPMethod `json:"methods"`
 }
 
 type TriggerHTTPMethod struct {
@@ -506,7 +506,7 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
-	t.Method = make(map[string]*TriggerHTTPMethod)
+	t.Methods = make(map[string]*TriggerHTTPMethod)
 
 	// If no method blocks appear, only 'post' is supported, and the top-level `pipeline`, `args` and `execution_mode` will be applied
 	if len(hclBlocks) == 0 {
@@ -537,7 +537,7 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 			triggerMethod.ExecutionMode = t.ExecutionMode
 		}
 
-		t.Method[HttpMethodPost] = triggerMethod
+		t.Methods[HttpMethodPost] = triggerMethod
 
 		return diags
 	}
@@ -582,7 +582,7 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 			continue
 		}
 
-		if t.Method[methodBlockType] != nil {
+		if t.Methods[methodBlockType] != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Duplicate method block",
@@ -649,7 +649,7 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 			}
 		}
 
-		t.Method[methodBlockType] = triggerMethod
+		t.Methods[methodBlockType] = triggerMethod
 	}
 
 	return diags

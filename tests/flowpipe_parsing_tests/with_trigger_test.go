@@ -106,7 +106,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
-	triggerMethods := httpTrigConfig.Method
+	triggerMethods := httpTrigConfig.Methods
 	assert.Equal(1, len(triggerMethods))
 
 	methodInfo := triggerMethods["post"]
@@ -150,7 +150,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
-	triggerMethods = trig.Method
+	triggerMethods = trig.Methods
 	assert.Equal(1, len(triggerMethods))
 
 	methodInfo = triggerMethods["post"]
