@@ -29,11 +29,11 @@ type Dashboard struct {
 
 	Width   *int              `cty:"width" hcl:"width"  column:"width,string" json:"width,omitempty"`
 	Display *string           `cty:"display" hcl:"display" column:"display,string" json:"display,omitempty"`
-	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
-	UrlPath string            `cty:"url_path"  column:"url_path,jsonb"`
-	Base    *Dashboard        `hcl:"base"`
+	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb" json:"inputs,omitempty"`
+	UrlPath string            `cty:"url_path"  column:"url_path,jsonb" json:"url_path,omitempty"`
+	Base    *Dashboard        `hcl:"base" json:"-"`
 	// store children in a way which can be serialised via cty
-	ChildNames []string `cty:"children" column:"children,jsonb"`
+	ChildNames []string `cty:"children" column:"children,jsonb" json:"children,omitempty"`
 	// map of all inputs in our resource tree
 	selfInputsMap          map[string]*DashboardInput
 	runtimeDependencyGraph *topsort.Graph
