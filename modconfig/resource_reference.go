@@ -11,11 +11,11 @@ import (
 type ResourceReference struct {
 	ResourceWithMetadataImpl
 
-	To        string `cty:"reference_to" column:"reference_to,string" `
-	From      string `cty:"reference_from" column:"reference_from,string" `
-	BlockType string `cty:"from_block_type" column:"from_block_type,string" `
-	BlockName string `cty:"from_block_name" column:"from_block_name,string" `
-	Attribute string `cty:"from_attribute" column:"from_attribute,string" `
+	To        string `cty:"reference_to" column:"reference_to,string" json:"reference_to,omitempty"`
+	From      string `cty:"reference_from" column:"reference_from,string" json:"reference_from,omitempty"`
+	BlockType string `cty:"from_block_type" column:"from_block_type,string" json:"from_block_type,omitempty"`
+	BlockName string `cty:"from_block_name" column:"from_block_name,string" json:"from_block_name,omitempty"`
+	Attribute string `cty:"from_attribute" column:"from_attribute,string" json:"from_attribute,omitempty"`
 	name      string
 }
 
@@ -42,9 +42,9 @@ func (r *ResourceReference) CloneWithNewFrom(from string) *ResourceReference {
 	}
 	ref.name = ref.buildName()
 	// clone metadata so we can mutate it
-	ref.ResourceWithMetadataImpl.metadata = ref.ResourceWithMetadataImpl.metadata.Clone()
+	ref.ResourceWithMetadataImpl.ResourceMetadata = ref.ResourceWithMetadataImpl.ResourceMetadata.Clone()
 	// set metadata name
-	ref.ResourceWithMetadataImpl.metadata.ResourceName = ref.name
+	ref.ResourceWithMetadataImpl.ResourceMetadata.ResourceName = ref.name
 	return ref
 }
 

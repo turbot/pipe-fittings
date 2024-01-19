@@ -17,8 +17,8 @@ type QueryArgs struct {
 	ArgMap map[string]string `cty:"args" json:"args,omitempty"`
 	// args list may be sparsely populated (in case of runtime dependencies)
 	// so use *string
-	ArgList    []*string            `cty:"args_list" json:"args_list"`
-	References []*ResourceReference `cty:"refs" json:"refs"`
+	ArgList    []*string            `cty:"args_list" json:"args_list,omitempty"`
+	References []*ResourceReference `cty:"refs" json:"refs,omitempty"`
 	// TACTICAL: map of positional and named args which are strings and therefor do NOT need JSON serialising
 	// (can be removed when we move to cty)
 	stringNamedArgs      map[string]struct{}

@@ -14,9 +14,9 @@ type HclResourceImpl struct {
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
 
-	FullName        string            `cty:"name" column:"qualified_name,text" json:"-"`
+	FullName        string            `cty:"name" column:"qualified_name,text" json:"qualified_name,omitempty"`
 	Title           *string           `cty:"title" hcl:"title" column:"title,string"  json:"title,omitempty"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name,omitempty"`
+	ShortName       string            `cty:"short_name" hcl:"name,label" json:"-"`
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
 	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"description,omitempty"`
 	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
@@ -156,7 +156,7 @@ func (b *HclResourceImpl) GetTags() map[string]string {
 	return map[string]string{}
 }
 
-// GetHclResourceBase implements HclResource
+// GetHclResourceImpl implements HclResource
 func (b *HclResourceImpl) GetHclResourceImpl() *HclResourceImpl {
 	return b
 }
