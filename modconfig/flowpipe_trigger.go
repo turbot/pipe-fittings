@@ -239,7 +239,7 @@ func (t *TriggerSchedule) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Bl
 	return diags
 }
 
-var validIntervals = []string{"hourly", "daily", "weekly", "monthly"}
+var validIntervals = []string{"hourly", "daily", "weekly", "5m", "10m", "15m", "30m", "60m", "1h", "2h", "4h", "6h", "12h", "24h"}
 
 type TriggerQuery struct {
 	Sql              string                          `json:"sql"`
