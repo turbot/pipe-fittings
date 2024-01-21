@@ -1,6 +1,10 @@
 package utils
 
-import "unicode"
+import (
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"unicode"
+)
 
 // ContainsUpper returns true if the string contains any uppercase characters
 func ContainsUpper(s string) bool {
@@ -12,4 +16,9 @@ func ContainsUpper(s string) bool {
 		}
 	}
 	return hasUpper
+}
+
+// ToTitleCase correctly returns a Title cased string
+func ToTitleCase(s string) string {
+	return cases.Title(language.English).String(s)
 }
