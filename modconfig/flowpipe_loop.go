@@ -165,10 +165,44 @@ func (*LoopSleepStep) GetType() string {
 }
 
 type LoopPipelineStep struct {
-	Until bool `json:"until" hcl:"until" cty:"until"`
+	Until bool        `json:"until" hcl:"until" cty:"until"`
+	Args  interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
 }
 
 func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+
+	expr, ok := l.Args.(hcl.Expression)
+	if ok {
+		val, err := expr.Value(nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if !val.IsNull() {
+			goVal, err := hclhelpers.CtyToGoMapInterface(val)
+			if err != nil {
+				return nil, err
+			}
+			input["args"] = goVal
+		}
+	} else {
+		hclAttr, ok := l.Args.(*hcl.Attribute)
+		if !ok {
+			input["args"] = l.Args
+		} else {
+			var ctyValue cty.Value
+			diags := gohcl.DecodeExpression(hclAttr.Expr, evalContext, &ctyValue)
+			if len(diags) > 0 {
+				return nil, error_helpers.HclDiagsToError("pipeline loop", diags)
+			}
+			goVal, err := hclhelpers.CtyToGoMapInterface(ctyValue)
+			if err != nil {
+				return nil, err
+			}
+			input["args"] = goVal
+		}
+	}
+
 	return input, nil
 }
 

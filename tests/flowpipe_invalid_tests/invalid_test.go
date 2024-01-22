@@ -73,6 +73,11 @@ var tests = []testSetup{
 		containsError: "Unable to parse to attribute to string slice: Bad Request: expected string type, but got number\n",
 	},
 	{
+		title:         "invalid container step attribute value - memory_swappiness",
+		file:          "./pipelines/container_step_invalid_memory_swappiness.fp",
+		containsError: "The value of 'memory_swappiness' attribute must be between 0 and 100",
+	},
+	{
 		title:         "invalid trigger",
 		file:          "./pipelines/invalid_trigger.fp",
 		containsError: "Failed to decode mod:\nMissing required argument: The argument \"pipeline\" is required, but no definition was found.",
@@ -193,7 +198,7 @@ var tests = []testSetup{
 		containsError: "Value of the attribute 'timeout' must be a string or a whole number",
 	},
 	{
-		title:         "invalid shedule in query trigger",
+		title:         "invalid schedule in query trigger",
 		file:          "./pipelines/invalid_query_trigger.fp",
 		containsError: "expected exactly 5 fields, found 1: [days]", // if not valid interval we assume it's a cron statement
 	},
@@ -211,6 +216,16 @@ var tests = []testSetup{
 		title:         "invalid input - option block(s) and options both set",
 		file:          "./pipelines/invalid_input_option_and_options.fp",
 		containsError: "Option blocks and options attribute are mutually exclusive",
+	},
+	{
+		title:         "invalid method types in http trigger",
+		file:          "./pipelines/invalid_http_trigger_method.fp",
+		containsError: "Method block type must be one of: post,get",
+	},
+	{
+		title:         "duplicate method blocks in http trigger",
+		file:          "./pipelines/invalid_http_trigger_duplicate_method.fp",
+		containsError: "Duplicate method block for type: post",
 	},
 }
 

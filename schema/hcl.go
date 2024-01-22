@@ -52,6 +52,7 @@ const (
 	BlockTypeThrow             = "throw"
 	BlockTypeOption            = "option"
 	BlockTypeCapture           = "capture"
+	BlockTypeMethod            = "method"
 
 	AttributeTypeValue = "value"
 
