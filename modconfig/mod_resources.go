@@ -3,8 +3,6 @@ package modconfig
 import (
 	"fmt"
 
-	"github.com/turbot/pipe-fittings/error_helpers"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
@@ -108,7 +106,8 @@ func (m *ResourceMaps) QueryProviders() []QueryProvider {
 		return true, nil
 	}
 
-	m.WalkResources(f) //nolint:errcheck // TODO: fix this error check
+	// resource func does not return an error
+	_ = m.WalkResources(f)
 
 	return res
 }
@@ -118,16 +117,17 @@ func (m *ResourceMaps) TopLevelResources() *ResourceMaps {
 	res := NewModResources(m.Mod)
 
 	f := func(item HclResource) (bool, error) {
-		if modItem, ok := item.(ModItem); ok && modItem.GetMod().FullName == m.Mod.FullName {
-			diags := res.AddResource(item)
-			if diags.HasErrors() {
-				return false, error_helpers.HclDiagsToError("TopLevelResources", diags)
+		if modItem, ok := item.(ModItem); ok {
+			if mod := modItem.GetMod(); mod != nil && mod.FullName == m.Mod.FullName {
+				// the only error we expect is a duplicate item error - ignore
+				_ = res.AddResource(item)
 			}
 		}
 		return true, nil
 	}
 
-	m.WalkResources(f) //nolint:errcheck // TODO: fix this error check
+	// resource func does not return an error
+	_ = m.WalkResources(f)
 
 	return res
 }
@@ -483,6 +483,15 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Triggers[longName]
 	case schema.BlockTypeIntegration:
 		resource, found = m.Integrations[longName]
+	case schema.BlockTypeMod:
+		for _, mod := range m.Mods {
+			if mod.ShortName == parsedName.Name {
+				resource = mod
+				found = true
+				break
+			}
+		}
+
 	}
 	return resource, found
 }
@@ -502,17 +511,16 @@ func (m *ResourceMaps) PopulateReferences() {
 				// if this resource is a RuntimeDependencyProvider, add references from any 'withs'
 				if nep, ok := resource.(NodeAndEdgeProvider); ok {
 					m.populateNodeEdgeProviderRefs(nep)
+				} else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
+					m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
 				}
-				// TODO: KAI commented out line here <FLOWPIPE>
-				// } else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
-				// 	m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
-				// }
 			}
 
 			// continue walking
 			return true, nil
 		}
-		m.WalkResources(resourceFunc) //nolint:errcheck // TODO: fix this error check
+		// resource func does not return an error
+		_ = m.WalkResources(resourceFunc)
 	}
 }
 
@@ -620,6 +628,12 @@ func (m *ResourceMaps) addControlOrQuery(provider QueryProvider) {
 // WalkResources calls resourceFunc for every resource in the mod
 // if any resourceFunc returns false or an error, return immediately
 func (m *ResourceMaps) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
+	// TODO KAI test this with all walk resources usages
+	for _, r := range m.Mods {
+		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
+			return err
+		}
+	}
 	for _, r := range m.Benchmarks {
 		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
 			return err

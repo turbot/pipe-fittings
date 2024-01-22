@@ -239,7 +239,8 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	// do not add variables (as they have already been added)
 	// if the resource is for a dependency mod, do not add locals
 	shouldAdd := func(item modconfig.HclResource) bool {
-		if item.BlockType() == schema.BlockTypeVariable ||
+		if item.BlockType() == schema.BlockTypeMod ||
+			item.BlockType() == schema.BlockTypeVariable ||
 			item.BlockType() == schema.BlockTypeLocals && item.(modconfig.ModItem).GetMod().ShortName != m.CurrentMod.ShortName {
 			return false
 		}

@@ -30,34 +30,34 @@ type Mod struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	// attributes
-	Categories []string `cty:"categories" hcl:"categories,optional" column:"categories,jsonb"`
-	Color      *string  `cty:"color" hcl:"color" column:"color,string" `
-	Icon       *string  `cty:"icon" hcl:"icon" column:"icon,string" `
+	Categories []string `cty:"categories" hcl:"categories,optional" json:"categories,omitempty"`
+	Color      *string  `cty:"color" hcl:"color" json:"color,omitempty"`
+	Icon       *string  `cty:"icon" hcl:"icon" json:"icon,omitempty"`
 
 	// blocks
-	Require       *Require   `hcl:"require,block"`
-	LegacyRequire *Require   `hcl:"requires,block"`
-	OpenGraph     *OpenGraph `hcl:"opengraph,block" column:"open_graph,jsonb"`
+	Require       *Require   `hcl:"require,block"  json:"-"`
+	LegacyRequire *Require   `hcl:"requires,block"  json:"-"`
+	OpenGraph     *OpenGraph `hcl:"opengraph,block" column:"open_graph,jsonb"  json:"-"`
 
 	// Depency attributes - set if this mod is loaded as a dependency
 
 	// the mod version
-	Version *semver.Version
+	Version *semver.Version `json:"-"`
 	// DependencyPath is the fully qualified mod name including version,
 	// which will by the map key in the workspace lock file
-	// NOTE: this is the relative path to th emod location from the depdemncy install dir (.steampipe/mods)
+	// NOTE: this is the relative path to the mod location from the depdemncy install dir (.steampipe/mods)
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty@v1.0.0
 	// (NOTE: pointer so it is nil in introspection tables if unpopulated)
-	DependencyPath *string `column:"dependency_path,string" `
+	DependencyPath *string `column:"dependency_path,string" json:"-"`
 	// DependencyName return the name of the mod as a dependency, i.e. the mod dependency path, _without_ the version
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty
-	DependencyName string
+	DependencyName string `json:"-"`
 
 	// ModPath is the installation location of the mod
-	ModPath string
+	ModPath string `json:"-"`
 
 	// convenient aggregation of all resources
-	ResourceMaps *ResourceMaps
+	ResourceMaps *ResourceMaps `json:"-"`
 
 	// the filepath of the mod.sp file (will be empty for default mod)
 	modFilePath string
