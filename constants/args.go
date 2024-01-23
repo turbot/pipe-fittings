@@ -83,6 +83,12 @@ const (
 	ArgWorkspaceDatabase = "workspace-database"
 	ArgWorkspaceProfile  = "workspace"
 	ArgConfigPath        = "config-path"
+
+	// Flowpipe concurrency
+	ArgMaxConcurrencyHttp      = "max-concurrency-http"
+	ArgMaxConcurrencyQuery     = "max-concurrency-query"
+	ArgMaxConcurrencyContainer = "max-concurrency-container"
+	ArgMaxConcurrencyFunction  = "max-concurrency-function"
 )
 
 // BoolToOnOff converts a boolean value onto the string "on" or "off"
