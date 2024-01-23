@@ -279,6 +279,9 @@ var PipelineBlockSchema = &hcl.BodySchema{
 			Name:     schema.AttributeTypeTags,
 			Required: false,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -375,6 +378,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeRequestHeaders,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -432,6 +438,9 @@ var PipelineStepSleepBlockSchema = &hcl.BodySchema{
 		{
 			Name:     schema.AttributeTypeDuration,
 			Required: true,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -513,6 +522,9 @@ var PipelineStepEmailBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeSubject,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -563,6 +575,9 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeArgs,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -603,6 +618,9 @@ var PipelineStepTransformBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeValue,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -647,6 +665,9 @@ var PipelineStepPipelineBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeArgs,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -704,6 +725,9 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeEvent,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -787,6 +811,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeWorkdir,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -837,6 +864,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Name:     schema.AttributeTypeType,
 			Required: true,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{

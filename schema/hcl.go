@@ -175,6 +175,7 @@ const (
 	AttributeTypeCmd               = "cmd"
 	AttributeTypeEntryPoint        = "entrypoint"
 	AttributeTypeTimeout           = "timeout"
+	AttributeTypeMaxConcurrency    = "max_concurrency"
 	AttributeTypeCpuShares         = "cpu_shares"
 	AttributeTypeMemory            = "memory"
 	AttributeTypeMemoryReservation = "memory_reservation"

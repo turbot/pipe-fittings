@@ -280,6 +280,7 @@ type PipelineStep interface {
 	Equals(other PipelineStep) bool
 	Validate() hcl.Diagnostics
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
+	GetMaxConcurrency() *int
 }
 
 type PipelineStepBaseInterface interface {
@@ -523,6 +524,7 @@ type PipelineStepBase struct {
 	FileName            string                     `json:"file_name"`
 	StartLineNumber     int                        `json:"start_line_number"`
 	EndLineNumber       int                        `json:"end_line_number"`
+	MaxConcurrency      *int                       `json:"max_concurrency,omitempty"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -1016,6 +1018,10 @@ func decodeDependsOn(attr *hcl.Attribute) ([]hcl.Traversal, hcl.Diagnostics) {
 	return ret, diags
 }
 
+func (p *PipelineStepBase) GetMaxConcurrency() *int {
+	return p.MaxConcurrency
+}
+
 func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	var hclDependsOn []hcl.Traversal
@@ -1080,6 +1086,16 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalC
 			diags = append(diags, moreDiags...)
 		} else {
 			p.Description = description
+		}
+	}
+
+	if attr, exists := hclAttributes[schema.AttributeTypeMaxConcurrency]; exists {
+		maxConcurrency, moreDiags := hclhelpers.AttributeToInt(attr, nil, false)
+		if moreDiags != nil && moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+		} else {
+			mcInt := int(*maxConcurrency)
+			p.MaxConcurrency = &mcInt
 		}
 	}
 
@@ -1242,6 +1258,7 @@ var ValidBaseStepAttributes = []string{
 	schema.AttributeTypeForEach,
 	schema.AttributeTypeIf,
 	schema.AttributeTypeTimeout,
+	schema.AttributeTypeMaxConcurrency,
 }
 
 var ValidDependsOnTypes = []string{

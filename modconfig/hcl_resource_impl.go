@@ -22,6 +22,7 @@ type HclResourceImpl struct {
 	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
 	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
 	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
+	MaxConcurrency  *int              `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource
 	blockType           string

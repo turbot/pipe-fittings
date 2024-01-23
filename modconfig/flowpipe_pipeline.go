@@ -410,6 +410,15 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.
 				}
 				p.Tags = resultMap
 			}
+
+		case schema.AttributeTypeMaxConcurrency:
+			maxConcurrency, moreDiags := hclhelpers.AttributeToInt(attr, nil, false)
+			if moreDiags != nil && moreDiags.HasErrors() {
+				diags = append(diags, moreDiags...)
+			} else {
+				mcInt := int(*maxConcurrency)
+				p.MaxConcurrency = &mcInt
+			}
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
