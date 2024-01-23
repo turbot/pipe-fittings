@@ -8,6 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/cmdconfig"
 	"github.com/turbot/pipe-fittings/constants"
 	"io"
+	"strings"
 )
 
 // Inspired by Kubernetes
@@ -18,25 +19,22 @@ type ResourcePrinter[T any] interface {
 	PrintResource(context.Context, PrintableResource[T], io.Writer) error
 }
 
-func GetPrinter[T any](cmd *cobra.Command, opts ...GetPrinterOption) (ResourcePrinter[T], error) {
-	cfg := newGetPrinterConfig()
-	for _, o := range opts {
-		o(cfg)
-	}
-
-	format := viper.GetString(constants.ArgOutput)
+func GetPrinter[T any](cmd *cobra.Command) (ResourcePrinter[T], error) {
+	f := viper.GetString(constants.ArgOutput)
 	key := cmdconfig.CommandFullKey(cmd)
-
-	switch format {
+	cmdType := strings.Split(key, ".")[len(strings.Split(key, "."))-1]
+	switch f {
 	case constants.OutputFormatPretty, constants.OutputFormatPlain:
-		if cfg.commandUsesStringPrinter(key) {
+		switch cmdType {
+		case "list":
+			return NewTablePrinter[T]()
+		default:
 			return NewStringPrinter[T]()
 		}
-		return NewTablePrinter[T]()
 	case constants.OutputFormatJSON:
 		return NewJsonPrinter[T]()
 	case constants.OutputFormatYAML:
 		return NewYamlPrinter[T]()
 	}
-	return nil, fmt.Errorf("unknown output format %q", format)
+	return nil, fmt.Errorf("unknown output format %q", f)
 }
