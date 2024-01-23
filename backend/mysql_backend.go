@@ -18,7 +18,7 @@ type MySQLBackend struct {
 	rowreader        RowReader
 }
 
-func NewMySQLBackend(ctx context.Context, connString string) Backend {
+func NewMySQLBackend(connString string) *MySQLBackend {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
 	connString = strings.TrimPrefix(connString, mysqlConnectionStringPrefix)
 

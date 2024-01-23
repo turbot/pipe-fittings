@@ -24,6 +24,10 @@ type SearchPathConfig struct {
 	SearchPathPrefix []string
 }
 
+func (c SearchPathConfig) Empty() bool {
+	return len(c.SearchPath) == 0 && len(c.SearchPathPrefix) == 0
+}
+
 type ConnectConfig struct {
 	PoolConfig       PoolConfig
 	SearchPathConfig SearchPathConfig

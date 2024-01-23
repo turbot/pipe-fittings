@@ -28,7 +28,7 @@ type PostgresBackend struct {
 	requiredSearchPath []string
 }
 
-func NewPostgresBackend(ctx context.Context, connString string) Backend {
+func NewPostgresBackend(connString string) *PostgresBackend {
 	return &PostgresBackend{
 		originalConnectionString: connString,
 		rowreader:                NewPgxRowReader(),
@@ -36,10 +36,10 @@ func NewPostgresBackend(ctx context.Context, connString string) Backend {
 }
 
 // Connect implements Backend.
-func (s *PostgresBackend) Connect(ctx context.Context, options ...ConnectOption) (*sql.DB, error) {
+func (b *PostgresBackend) Connect(ctx context.Context, options ...ConnectOption) (*sql.DB, error) {
 
-	connString := s.originalConnectionString
-	connector, err := NewPgxConnector(connString, s.afterConnectFunc)
+	connString := b.originalConnectionString
+	connector, err := NewPgxConnector(connString, b.afterConnectFunc)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "Unable to parse connection string")
 	}
@@ -51,27 +51,27 @@ func (s *PostgresBackend) Connect(ctx context.Context, options ...ConnectOption)
 	db.SetMaxOpenConns(config.PoolConfig.MaxOpenConns)
 
 	// resolve the required search path
-	if err := s.resolveDesiredSearchPath(ctx, db, config.SearchPathConfig); err != nil {
+	if err := b.resolveDesiredSearchPath(ctx, db, config.SearchPathConfig); err != nil {
 		return nil, err
 	}
 	return db, nil
 }
 
 // RowReader implements Backend.
-func (s *PostgresBackend) RowReader() RowReader {
-	return s.rowreader
+func (b *PostgresBackend) RowReader() RowReader {
+	return b.rowreader
 }
 
 // afterConnectFunc is called after the connection is established
-func (c *PostgresBackend) afterConnectFunc(ctx context.Context, conn driver.Conn) error {
-	if len(c.requiredSearchPath) == 0 {
+func (b *PostgresBackend) afterConnectFunc(ctx context.Context, conn driver.Conn) error {
+	if len(b.requiredSearchPath) == 0 {
 		return nil
 	}
 	connPc, ok := conn.(driver.ConnPrepareContext)
 	if !ok {
 		return fmt.Errorf("stdlib driver does not implement ConnPrepareContext")
 	}
-	ps, err := connPc.PrepareContext(ctx, "SET search_path TO "+strings.Join(c.requiredSearchPath, ","))
+	ps, err := connPc.PrepareContext(ctx, "SET search_path TO "+strings.Join(b.requiredSearchPath, ","))
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (c *PostgresBackend) afterConnectFunc(ctx context.Context, conn driver.Conn
 }
 
 // getSearchPath gets the current search path from the database
-func (c *PostgresBackend) getSearchPath(ctx context.Context, db *sql.DB) ([]string, error) {
+func (b *PostgresBackend) getSearchPath(ctx context.Context, db *sql.DB) ([]string, error) {
 	// Get a connection from the database
 	conn, err := db.Conn(ctx)
 	if err != nil {
@@ -122,7 +122,7 @@ func (c *PostgresBackend) getSearchPath(ctx context.Context, db *sql.DB) ([]stri
 }
 
 // resolveDesiredSearchPath resolves the desired search path from the prefix or the custom search path
-func (c *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.DB, cfg SearchPathConfig) error {
+func (b *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.DB, cfg SearchPathConfig) error {
 	if len(cfg.SearchPath) > 0 && len(cfg.SearchPathPrefix) > 0 {
 		return sperr.WrapWithMessage(ErrInvalidConfig, "cannot specify both search_path and search_path_prefix")
 	}
@@ -132,33 +132,33 @@ func (c *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.
 	}
 
 	if len(cfg.SearchPath) > 0 {
-		c.requiredSearchPath = c.cleanSearchPath(cfg.SearchPath)
+		b.requiredSearchPath = b.cleanSearchPath(cfg.SearchPath)
 		return nil
 	}
 
 	// must be that the SearchPathPrefix is set
-	requiredSearchPath, err := c.constructSearchPathFromPrefix(ctx, db, cfg)
+	requiredSearchPath, err := b.constructSearchPathFromPrefix(ctx, db, cfg)
 	if err != nil {
 		return err
 	}
-	c.requiredSearchPath = requiredSearchPath
+	b.requiredSearchPath = requiredSearchPath
 
 	return nil
 }
 
 // constructSearchPathFromPrefix constructs the search path from the prefix and the original search path
-func (c *PostgresBackend) constructSearchPathFromPrefix(ctx context.Context, db *sql.DB, cfg SearchPathConfig) ([]string, error) {
-	originalSearchPath, err := c.getSearchPath(ctx, db)
+func (b *PostgresBackend) constructSearchPathFromPrefix(ctx context.Context, db *sql.DB, cfg SearchPathConfig) ([]string, error) {
+	originalSearchPath, err := b.getSearchPath(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	searchPathPrefix := c.cleanSearchPath(cfg.SearchPathPrefix)
+	searchPathPrefix := b.cleanSearchPath(cfg.SearchPathPrefix)
 	return append(searchPathPrefix, originalSearchPath...), nil
 }
 
 // the prefix is prepended to the original search path
-func (c *PostgresBackend) cleanSearchPath(searchPath []string) []string {
+func (b *PostgresBackend) cleanSearchPath(searchPath []string) []string {
 	return helpers.RemoveFromStringSlice(searchPath, "")
 }
 

@@ -24,22 +24,63 @@ type Backend interface {
 func FromConnectionString(ctx context.Context, str string) (Backend, error) {
 	switch {
 	case IsPostgresConnectionString(str):
-		return NewPostgresBackend(ctx, str), nil
+		pgBackend := NewPostgresBackend(str)
+		// check if this is in fact a steampipe backend
+		if isSteampipeBackend(ctx, pgBackend) {
+			return NewSteampipeBackend(ctx, *pgBackend)
+		}
+		return pgBackend, nil
+
 	case IsMySqlConnectionString(str):
-		return NewMySQLBackend(ctx, str), nil
+		return NewMySQLBackend(str), nil
 	case IsDuckDBConnectionString(str):
-		return NewDuckDBBackend(ctx, str), nil
+		return NewDuckDBBackend(str), nil
 	case IsSqliteConnectionString(str):
-		return NewSqliteBackend(ctx, str), nil
+		return NewSqliteBackend(str), nil
+	default:
+
+		return nil, sperr.WrapWithMessage(ErrUnknownBackend, "could not evaluate backend: %s", str)
 	}
-	return nil, sperr.WrapWithMessage(ErrUnknownBackend, "could not evaluate backend: %s", str)
 }
 
-func HasBackend(connString string) bool {
-	if m, err := FromConnectionString(context.Background(), connString); m != nil && err == nil {
+func HasBackend(str string) bool {
+	switch {
+	case
+		IsPostgresConnectionString(str),
+		IsMySqlConnectionString(str),
+		IsDuckDBConnectionString(str),
+		IsSqliteConnectionString(str):
 		return true
+	default:
+
+		return false
 	}
-	return false
+}
+func isSteampipeBackend(ctx context.Context, s *PostgresBackend) bool {
+	db, err := s.Connect(ctx)
+	if err != nil {
+		return false
+	}
+	defer db.Close()
+
+	// Query to check if tables exist
+	query := `SELECT EXISTS (
+                  SELECT FROM 
+                      pg_tables
+                  WHERE 
+                      schemaname = 'steampipe_internal' AND 
+                      tablename  IN ('steampipe_plugin', 'steampipe_connection')
+              );`
+
+	// Execute the query
+	var exists bool
+	err = db.QueryRow(query).Scan(&exists)
+	if err != nil {
+		return false
+	}
+
+	// Check if tables exist
+	return exists
 }
 
 // IsPostgresConnectionString returns true if the connection string is for postgres
