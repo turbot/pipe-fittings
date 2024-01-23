@@ -83,7 +83,7 @@ func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
 // AddWorkspaceDatabaseFlag is helper function to add the workspace-databse flag to a command
 func (c *CmdBuilder) AddWorkspaceDatabaseFlag() *CmdBuilder {
 	return c.
-		AddStringFlag(constants.ArgWorkspaceDatabase, app_specific.DefaultWorkspaceDatabase, "Turbot Pipes workspace database")
+		AddStringFlag(constants.ArgDatabase, app_specific.DefaultWorkspaceDatabase, "Turbot Pipes workspace database")
 }
 
 // AddModLocationFlag is helper function to add the mod-location flag to a command

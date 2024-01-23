@@ -186,7 +186,7 @@ which will be used as both the database and snapshot location.
 Essentially, --workspace acme/dev is equivalent to:
 
 	workspace "acme/dev" {
-	  workspace_database = "acme/dev"
+	  database = "acme/dev"
 	  snapshot_location  = "acme/dev"
 	}
 */

@@ -37,9 +37,9 @@ type SteampipeWorkspaceProfile struct {
 	Progress *bool `hcl:"progress" cty:"progress"`
 
 	// "default" db settings
-	WorkspaceDatabase *string `hcl:"workspace_database" cty:"workspace_database"`
-	QueryTimeout      *int    `hcl:"query_timeout,optional" cty:"query_timeout"`
-	MaxParallel       *int    `hcl:"max_parallel" cty:"max-parallel"`
+	Database     *string `hcl:"database" cty:"database"`
+	QueryTimeout *int    `hcl:"query_timeout,optional" cty:"query_timeout"`
+	MaxParallel  *int    `hcl:"max_parallel" cty:"max-parallel"`
 
 	// (postgres-specific) search path settings
 	SearchPath       *string `hcl:"search_path" cty:"search_path"`
@@ -132,8 +132,8 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 		p.Progress = p.Base.Progress
 	}
 
-	if p.WorkspaceDatabase == nil {
-		p.WorkspaceDatabase = p.Base.WorkspaceDatabase
+	if p.Database == nil {
+		p.Database = p.Base.Database
 	}
 	if p.QueryTimeout == nil {
 		p.QueryTimeout = p.Base.QueryTimeout
@@ -187,7 +187,7 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetBoolItem(p.Input, constants.ArgInput)
 	res.SetBoolItem(p.Progress, constants.ArgProgress)
 
-	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
+	res.SetStringItem(p.Database, constants.ArgDatabase)
 	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
 
