@@ -187,7 +187,7 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetBoolItem(p.Input, constants.ArgInput)
 	res.SetBoolItem(p.Progress, constants.ArgProgress)
 
-	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
+	res.SetStringItem(p.WorkspaceDatabase, constants.ArgDatabase)
 	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
 

@@ -9,7 +9,7 @@ var EnvUpdateCheck,
 	EnvDatabaseStartTimeout,
 	EnvDashboardStartTimeout,
 	EnvSnapshotLocation,
-	EnvWorkspaceDatabase,
+	EnvDatabase,
 	EnvWorkspaceProfile,
 	EnvCloudHost,
 	EnvCloudToken,
@@ -42,7 +42,7 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvDatabaseStartTimeout = buildEnv("DATABASE_START_TIMEOUT")
 	EnvDashboardStartTimeout = buildEnv("DASHBOARD_START_TIMEOUT")
 	EnvSnapshotLocation = buildEnv("SNAPSHOT_LOCATION")
-	EnvWorkspaceDatabase = buildEnv("WORKSPACE_DATABASE")
+	EnvDatabase = buildEnv("DATABASE")
 	EnvWorkspaceProfile = buildEnv("WORKSPACE")
 	EnvCloudHost = buildEnv("CLOUD_HOST")
 	EnvCloudToken = buildEnv("CLOUD_TOKEN")
