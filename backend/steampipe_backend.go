@@ -32,16 +32,16 @@ func (b *SteampipeBackend) init(ctx context.Context) error {
 	defer db.Close()
 
 	// load plugin instances from steampipe_internal.steampipe_plugin
-	if err := b.loadPluginInstances(err, db); err != nil {
+	if err := b.loadPluginInstances(db); err != nil {
 		return err
 	}
 
 	// load connection names from steampipe_internal.steampipe_connection
-	return b.loadConnectionNames(err, db)
+	return b.loadConnectionNames(db)
 
 }
 
-func (b *SteampipeBackend) loadConnectionNames(err error, db *sql.DB) error {
+func (b *SteampipeBackend) loadConnectionNames(db *sql.DB) error {
 	query := `SELECT name FROM steampipe_internal.steampipe_connection WHERE state = 'ready';`
 
 	// Execute the query
@@ -49,6 +49,7 @@ func (b *SteampipeBackend) loadConnectionNames(err error, db *sql.DB) error {
 	if err != nil {
 		return sperr.WrapWithMessage(err, "failed to read connections from steampipe backend")
 	}
+	defer rows.Close()
 
 	// Iterate over the results
 	for rows.Next() {
@@ -67,7 +68,7 @@ func (b *SteampipeBackend) loadConnectionNames(err error, db *sql.DB) error {
 	return nil
 }
 
-func (b *SteampipeBackend) loadPluginInstances(err error, db *sql.DB) error {
+func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 	query := `SELECT plugin FROM steampipe_internal.steampipe_plugin;`
 
 	// Execute the query
@@ -75,6 +76,7 @@ func (b *SteampipeBackend) loadPluginInstances(err error, db *sql.DB) error {
 	if err != nil {
 		return sperr.WrapWithMessage(err, "failed to read installed plugin from steampipe backend")
 	}
+	defer rows.Close()
 
 	// Iterate over the results
 	for rows.Next() {
