@@ -15,7 +15,7 @@ type DuckDBBackend struct {
 	rowreader        RowReader
 }
 
-func NewDuckDBBackend(ctx context.Context, connString string) Backend {
+func NewDuckDBBackend(connString string) *DuckDBBackend {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
 	connString = strings.TrimPrefix(connString, duckDBConnectionStringPrefix)
 	return &DuckDBBackend{

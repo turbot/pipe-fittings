@@ -15,7 +15,7 @@ type SqliteBackend struct {
 	rowreader        RowReader
 }
 
-func NewSqliteBackend(ctx context.Context, connString string) Backend {
+func NewSqliteBackend(connString string) *SqliteBackend {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
 	connString = strings.TrimPrefix(connString, sqliteConnectionStringPrefix)
 	return &SqliteBackend{
