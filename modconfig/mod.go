@@ -37,7 +37,7 @@ type Mod struct {
 	// blocks
 	Require       *Require   `hcl:"require,block"  json:"-"`
 	LegacyRequire *Require   `hcl:"requires,block"  json:"-"`
-	OpenGraph     *OpenGraph `hcl:"opengraph,block" column:"open_graph,jsonb"  json:"-"`
+	OpenGraph     *OpenGraph `hcl:"opengraph,block" json:"open_graph,omitempty"`
 
 	// Depency attributes - set if this mod is loaded as a dependency
 
