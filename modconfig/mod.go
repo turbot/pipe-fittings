@@ -37,7 +37,7 @@ type Mod struct {
 	// blocks
 	Require       *Require   `hcl:"require,block"  json:"-"`
 	LegacyRequire *Require   `hcl:"requires,block"  json:"-"`
-	OpenGraph     *OpenGraph `hcl:"opengraph,block" column:"open_graph,jsonb"  json:"-"`
+	OpenGraph     *OpenGraph `hcl:"opengraph,block" json:"open_graph,omitempty"`
 
 	// Depency attributes - set if this mod is loaded as a dependency
 
@@ -48,7 +48,7 @@ type Mod struct {
 	// NOTE: this is the relative path to the mod location from the depdemncy install dir (.steampipe/mods)
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty@v1.0.0
 	// (NOTE: pointer so it is nil in introspection tables if unpopulated)
-	DependencyPath *string `column:"dependency_path,string" json:"-"`
+	DependencyPath *string `json:"dependency_path,omitempty"`
 	// DependencyName return the name of the mod as a dependency, i.e. the mod dependency path, _without_ the version
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty
 	DependencyName string `json:"-"`
