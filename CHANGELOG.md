@@ -17,7 +17,10 @@ _What's new?_
 
 _Enhancements_
 
-* Container step now supports 'Source' in addition to 'Image'.
+* Container step now supports `Source`` in addition to `Image`.
+* Added `enabled` attribute to Flowpipe Triggers.
+* Added `method` block to HTTP Trigger
+* More intervals (`5m`, `10m`, `15m`, `30m`, `60m`, `1h`, `2h`, `4h`, `6h`, `12h`, `24h`) are now supported for the Schedule and Query Triggers.
 
 _Bug fixes_
 
