@@ -110,3 +110,60 @@ func loadCredentials(configPath string, opts *loadConfigOptions) (map[string]mod
 	}
 	return res, nil
 }
+
+func loadCredentialImport(configPath string, opts *loadConfigOptions) (map[string]modconfig.CredentialImport, *error_helpers.ErrorAndWarnings) {
+	var res = map[string]modconfig.CredentialImport{}
+	configPaths, err := filehelpers.ListFiles(configPath, &filehelpers.ListOptions{
+		Flags:   filehelpers.FilesFlat,
+		Include: opts.include,
+		Exclude: []string{filepaths.WorkspaceLockFileName},
+	})
+
+	if err != nil {
+		slog.Warn("loadCredentialImport: failed to get config file paths", "error", err)
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+	if len(configPaths) == 0 {
+		return nil, nil
+	}
+
+	fileData, diags := parse.LoadFileData(configPaths...)
+	if diags.HasErrors() {
+		slog.Warn("loadCredentialImport: failed to load all config files", "error", err)
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
+	}
+
+	body, diags := parse.ParseHclFiles(fileData)
+	if diags.HasErrors() {
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
+	}
+
+	// do a partial decode
+	content, moreDiags := body.Content(parse.ConfigBlockSchema)
+	if moreDiags.HasErrors() {
+		diags = append(diags, moreDiags...)
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load config", diags)
+	}
+
+	for _, block := range content.Blocks {
+		switch block.Type {
+
+		case schema.BlockTypeCredentialImport:
+			credentialImport, moreDiags := parse.DecodeCredentialImport(configPath, block)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				slog.Warn("loadCredentialImport: failed to decode credential_import block", "error", err)
+				continue
+			}
+
+			if credentialImport != nil {
+				res[credentialImport.GetUnqualifiedName()] = *credentialImport
+			}
+		}
+	}
+
+	if len(diags) > 0 {
+		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load Flowpipe config", diags)
+	}
+	return res, nil
+}

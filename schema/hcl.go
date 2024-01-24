@@ -46,6 +46,7 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeCredential        = "credential"
+	BlockTypeCredentialImport  = "credential_import"
 	BlockTypeNotify            = "notify"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
@@ -294,6 +295,7 @@ var ValidResourceItemTypes = []string{
 	BlockTypeWith,
 	BlockTypeIntegration,
 	BlockTypeCredential,
+	BlockTypeCredentialImport,
 	// local is not an actual block name but is a resource type
 	"local",
 	// references
