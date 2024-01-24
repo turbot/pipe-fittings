@@ -29,7 +29,7 @@ func (s *SqliteBackend) Connect(_ context.Context, options ...ConnectOption) (*s
 	config := newConnectConfig(options)
 	db, err := sql.Open("sqlite3", s.connectionString)
 	if err != nil {
-		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")
+		return nil, sperr.WrapWithMessage(err, "could not connect to sqlite backend")
 	}
 	db.SetConnMaxIdleTime(config.PoolConfig.MaxConnIdleTime)
 	db.SetConnMaxLifetime(config.PoolConfig.MaxConnLifeTime)
