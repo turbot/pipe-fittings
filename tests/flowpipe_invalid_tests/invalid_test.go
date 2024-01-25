@@ -103,15 +103,25 @@ var tests = []testSetup{
 		containsError: "to must be specified for email integration",
 	},
 	{
-		title:         "invalid approval - slack integration invalid attribute",
-		file:          "./pipelines/approval_invalid_integration_slack_attribute.fp",
+		title:         "invalid integration - slack with invalid attribute",
+		file:          "./pipelines/invalid_integration_slack_attribute.fp",
 		containsError: "Unsupported attribute: 'from' not expected here.",
 	},
 	{
-		title:         "invalid approval - email integration invalid attribute",
-		file:          "./pipelines/approval_invalid_integration_email_attribute.fp",
+		title:         "invalid integration - email with invalid attribute",
+		file:          "./pipelines/invalid_integration_email_attribute.fp",
 		containsError: "Unsupported attribute: 'token' not expected here.",
 	},
+	// {
+	// 	title:         "invalid integration - email with missing smtp host",
+	// 	file:          "./pipelines/invalid_integration_email_missing_smtp_host.fp",
+	// 	containsError: "TODO GET ERROR",
+	// },
+	// {
+	// 	title:         "invalid integration - slack with no attributes",
+	// 	file:          "./pipelines/invalid_integration_slack_no_attributes.fp",
+	// 	containsError: "TODO GET ERROR",
+	// },
 	{
 		title:         "invalid approval - notify with missing integration attribute",
 		file:          "./pipelines/approval_invalid_notify_missing_integration.fp",

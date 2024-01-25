@@ -67,23 +67,28 @@ var IntegrationEmailBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeSmtpHost,
+			Name:     schema.AttributeTypeSmtpHost,
+			Required: true,
 		},
 		{
-			Name: schema.AttributeTypeSmtpPort,
+			Name:     schema.AttributeTypeSmtpPort,
+			Required: false,
 		},
 		{
 			Name:     schema.AttributeTypeSmtpsPort,
 			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeSmtpUsername,
+			Name:     schema.AttributeTypeSmtpUsername,
+			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeSmtpPassword,
+			Name:     schema.AttributeTypeSmtpPassword,
+			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeFrom,
+			Name:     schema.AttributeTypeFrom,
+			Required: true,
 		},
 		{
 			Name:     schema.AttributeTypeDefaultRecipient,
