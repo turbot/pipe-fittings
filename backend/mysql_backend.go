@@ -33,7 +33,7 @@ func (s *MySQLBackend) Connect(_ context.Context, options ...ConnectOption) (*sq
 	config := newConnectConfig(options)
 	db, err := sql.Open("mysql", s.connectionString)
 	if err != nil {
-		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")
+		return nil, sperr.WrapWithMessage(err, "could not connect to mysql backend")
 	}
 	db.SetConnMaxIdleTime(config.PoolConfig.MaxConnIdleTime)
 	db.SetConnMaxLifetime(config.PoolConfig.MaxConnLifeTime)
