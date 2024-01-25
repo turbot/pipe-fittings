@@ -103,14 +103,29 @@ var tests = []testSetup{
 		containsError: "to must be specified for email integration",
 	},
 	{
-		title:         "invalid approval - slack integration invalid attribute",
-		file:          "./pipelines/approval_invalid_integration_slack_attribute.fp",
-		containsError: "Unsupported attribute: 'from' not expected here.",
+		title:         "invalid integration - slack with invalid attribute",
+		file:          "./pipelines/invalid_integration_slack_attribute.fp",
+		containsError: "Unsupported argument: An argument named \"from\" is not expected here.",
 	},
 	{
-		title:         "invalid approval - email integration invalid attribute",
-		file:          "./pipelines/approval_invalid_integration_email_attribute.fp",
-		containsError: "Unsupported attribute: 'token' not expected here.",
+		title:         "invalid integration - email with invalid attribute",
+		file:          "./pipelines/invalid_integration_email_attribute.fp",
+		containsError: "Unsupported argument: An argument named \"token\" is not expected here.",
+	},
+	{
+		title:         "invalid integration - email with missing smtp host",
+		file:          "./pipelines/invalid_integration_email_missing_smtp_host.fp",
+		containsError: "The argument \"smtp_host\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid integration - slack with no attributes",
+		file:          "./pipelines/invalid_integration_slack_no_attributes.fp",
+		containsError: "requires one of the following attributes set: token, webhook_url",
+	},
+	{
+		title:         "invalid integration - slack with token and webhook url",
+		file:          "./pipelines/invalid_integration_slack_token_and_webhook.fp",
+		containsError: "Attributes token and webhook_url are mutually exclusive",
 	},
 	{
 		title:         "invalid approval - notify with missing integration attribute",

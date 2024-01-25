@@ -16,6 +16,7 @@ integration "slack" "my_slack_app_two" {
 
 integration "email" "email_integration" {
   smtp_host = "foo bar baz"
+  from = "test@test.com"
   default_subject = "bar foo baz"
   smtp_username = "baz bar foo"
 }

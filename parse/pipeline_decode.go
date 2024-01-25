@@ -223,7 +223,6 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 }
 
 func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.Integration, *DecodeResult) {
-
 	res := newDecodeResult()
 
 	if len(block.Labels) != 2 {
@@ -238,8 +237,8 @@ func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseC
 	}
 
 	integrationType := block.Labels[0]
-
-	integration := modconfig.NewIntegration(mod, block)
+	integrationName := block.Labels[1]
+	integration := modconfig.NewIntegration(mod, block, integrationType, integrationName)
 	if integration == nil {
 		res.handleDecodeDiags(hcl.Diagnostics{
 			{
@@ -250,14 +249,26 @@ func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseC
 		})
 		return nil, res
 	}
-	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
-	if len(diags) > 0 {
+
+	integrationSchema := GetIntegrationBlockSchema(integrationType)
+	if helpers.IsNil(integrationSchema) {
+		res.handleDecodeDiags(hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "invalid integration type: " + integrationType,
+				Subject:  &block.DefRange,
+			},
+		})
+		return integration, res
+	}
+
+	integrationOptions, diags := block.Body.Content(integrationSchema)
+	if diags.HasErrors() {
+		res.handleDecodeDiags(diags)
 		return nil, res
 	}
-	body := r.(*hclsyntax.Body)
-	res.handleDecodeDiags(diags)
 
-	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, integration)
+	diags = integration.SetAttributes(integrationOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.handleDecodeDiags(diags)
 		return integration, res
@@ -588,8 +599,8 @@ func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 	}
 }
 
-func GetIntegrationBlockSchema(triggerType string) *hcl.BodySchema {
-	switch triggerType {
+func GetIntegrationBlockSchema(integrationType string) *hcl.BodySchema {
+	switch integrationType {
 	case schema.IntegrationTypeSlack:
 		return modconfig.IntegrationSlackBlockSchema
 	case schema.IntegrationTypeEmail:

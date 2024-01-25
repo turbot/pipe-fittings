@@ -1,6 +1,8 @@
 package modconfig
 
 import (
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,6 +14,7 @@ type Integration interface {
 	ResourceWithMetadata
 	GetIntegrationType() string
 	CtyValue() (cty.Value, error)
+	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 }
 
 type SlackIntegration struct {
@@ -68,6 +71,61 @@ func (i *SlackIntegration) Equals(other *SlackIntegration) bool {
 	return true
 }
 
+func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	var diags hcl.Diagnostics
+	var whSet, tknSet bool
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeToken:
+			token, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.Token = token
+			tknSet = true
+		case schema.AttributeTypeSigningSecret:
+			ss, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.SigningSecret = ss
+		case schema.AttributeTypeWebhookUrl:
+			webhookUrl, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.WebhookUrl = webhookUrl
+			whSet = true
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unsupported attribute for Slack Integration: " + attr.Name,
+				Subject:  &attr.Range,
+			})
+		}
+	}
+
+	if tknSet && whSet {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attributes token and webhook_url are mutually exclusive: " + i.Name(),
+		})
+	}
+
+	if !tknSet && !whSet {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  i.Name() + " requires one of the following attributes set: token, webhook_url",
+		})
+	}
+
+	return diags
+}
+
 type EmailIntegration struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -75,14 +133,14 @@ type EmailIntegration struct {
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
 	// email
-	SmtpHost     *string `json:"smtp_host,omitempty" cty:"smtp_host" hcl:"smtp_host,optional"`
+	SmtpHost     *string `json:"smtp_host,omitempty" cty:"smtp_host" hcl:"smtp_host"`
 	SmtpTls      *string `json:"smtp_tls,omitempty" cty:"smtp_tls" hcl:"smtp_tls,optional"`
 	SmtpPort     *int    `json:"smtp_port,omitempty" cty:"smtp_port" hcl:"smtp_port,optional"`
 	SmtpsPort    *int    `json:"smtps_port,omitempty" cty:"smtps_port" hcl:"smtps_port,optional"`
 	SmtpUsername *string `json:"smtp_username,omitempty" cty:"smtp_username" hcl:"smtp_username,optional"`
 	SmtpPassword *string `json:"smtp_password,omitempty" cty:"smtp_password" hcl:"smtp_password,optional"`
 
-	From             *string `json:"from,omitempty" cty:"from" hcl:"from,optional"`
+	From             *string `json:"from,omitempty" cty:"from" hcl:"from"`
 	DefaultRecipient *string `json:"default_recipient,omitempty" cty:"default_recipient" hcl:"default_recipient,optional"`
 	DefaultSubject   *string `json:"default_subject,omitempty" cty:"default_subject" hcl:"default_subject,optional"`
 }
@@ -153,12 +211,91 @@ func (i *EmailIntegration) Equals(other *EmailIntegration) bool {
 	return true
 }
 
-func NewIntegration(mod *Mod, block *hcl.Block) Integration {
+func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	var diags hcl.Diagnostics
 
-	integrationType := block.Labels[0]
-	integrationName := block.Labels[1]
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeSmtpHost:
+			host, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.SmtpHost = host
+		case schema.AttributeTypeSmtpTls:
+			tls, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.SmtpTls = tls
+		case schema.AttributeTypeSmtpPort:
+			port, moreDiags := hclhelpers.AttributeToInt(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			portInt := int(*port)
+			i.SmtpPort = &portInt
+		case schema.AttributeTypeSmtpsPort:
+			port, moreDiags := hclhelpers.AttributeToInt(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			portInt := int(*port)
+			i.SmtpsPort = &portInt
+		case schema.AttributeTypeSmtpUsername:
+			uName, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.SmtpUsername = uName
+		case schema.AttributeTypeSmtpPassword:
+			pass, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.SmtpPassword = pass
+		case schema.AttributeTypeFrom:
+			from, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.From = from
+		case schema.AttributeTypeDefaultRecipient:
+			rec, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.DefaultRecipient = rec
+		case schema.AttributeTypeDefaultSubject:
+			subject, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.DefaultSubject = subject
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unsupported attribute for Email Integration: " + attr.Name,
+				Subject:  &attr.Range,
+			})
+		}
+	}
 
-	integrationName = integrationType + "." + integrationName
+	return diags
+}
+
+func NewIntegration(mod *Mod, block *hcl.Block, integrationType string, integrationName string) Integration {
+
+	integrationFullName := integrationType + "." + integrationName
 
 	// TODO: rethink this area, we need to be able to handle pipelines that are not in a mod
 	// TODO: we're trying to integrate the pipeline & trigger functionality into the mod system, so it will look
@@ -168,36 +305,31 @@ func NewIntegration(mod *Mod, block *hcl.Block) Integration {
 		if strings.HasPrefix(modName, "mod") {
 			modName = strings.TrimPrefix(modName, "mod.")
 		}
-		integrationName = modName + ".integration." + integrationName
+		integrationFullName = modName + ".integration." + integrationFullName
 	} else {
-		integrationName = "local.integration." + integrationName
+		integrationFullName = "local.integration." + integrationFullName
 	}
 
-	if integrationType == "slack" {
-		integration := &SlackIntegration{
-			HclResourceImpl: HclResourceImpl{
-				// The FullName is the full name of the resource, including the mod name
-				FullName:        integrationName,
-				UnqualifiedName: "integration." + block.Labels[0] + "." + block.Labels[1],
-				DeclRange:       block.DefRange,
-				blockType:       block.Type,
-			},
-			Type: "slack",
-		}
-		return integration
-	} else if integrationType == "email" {
-		integration := &EmailIntegration{
-			HclResourceImpl: HclResourceImpl{
-				// The FullName is the full name of the resource, including the mod name
-				FullName:        integrationName,
-				UnqualifiedName: "integration." + block.Labels[0] + "." + block.Labels[1],
-				DeclRange:       block.DefRange,
-				blockType:       block.Type,
-			},
-			Type: "email",
-		}
-		return integration
+	hclResourceImpl := HclResourceImpl{
+		// The FullName is the full name of the resource, including the mod name
+		FullName:        integrationFullName,
+		UnqualifiedName: "integration." + block.Labels[0] + "." + block.Labels[1],
+		DeclRange:       block.DefRange,
+		blockType:       block.Type,
 	}
 
-	return nil
+	switch integrationType {
+	case schema.IntegrationTypeSlack:
+		return &SlackIntegration{
+			HclResourceImpl: hclResourceImpl,
+			Type:            integrationType,
+		}
+	case schema.IntegrationTypeEmail:
+		return &EmailIntegration{
+			HclResourceImpl: hclResourceImpl,
+			Type:            integrationType,
+		}
+	default:
+		return nil
+	}
 }
