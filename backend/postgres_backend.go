@@ -29,11 +29,30 @@ type PostgresBackend struct {
 	requiredSearchPath []string
 }
 
-func NewPostgresBackend(connString string) *PostgresBackend {
-	return &PostgresBackend{
+func NewPostgresBackend(ctx context.Context, connString string) (*PostgresBackend, error) {
+	b := &PostgresBackend{
 		originalConnectionString: connString,
 		rowReader:                newPgxRowReader(),
 	}
+
+	if err := b.init(ctx); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (b *PostgresBackend) init(ctx context.Context) error {
+	db, err := b.Connect(ctx)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if err := b.loadSearchPath(ctx, db); err != nil {
+		return err
+	}
+
+	return b.loadSchemaNames(db)
 }
 
 // Connect implements Backend.
@@ -61,6 +80,11 @@ func (b *PostgresBackend) Connect(ctx context.Context, opts ...ConnectOption) (*
 // RowReader implements Backend.
 func (b *PostgresBackend) RowReader() RowReader {
 	return b.rowReader
+}
+
+// SearchPath implements Backend.
+func (b *PostgresBackend) SearchPath() []string {
+	return b.requiredSearchPath
 }
 
 // afterConnectFunc is called after the connection is established

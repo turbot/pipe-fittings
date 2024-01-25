@@ -32,40 +32,8 @@ func (b *SteampipeBackend) init(ctx context.Context) error {
 	defer db.Close()
 
 	// load plugin instances from steampipe_internal.steampipe_plugin
-	if err := b.loadPluginInstances(db); err != nil {
-		return err
-	}
+	return b.loadPluginInstances(db)
 
-	// load connection names from steampipe_internal.steampipe_connection
-	return b.loadConnectionNames(db)
-
-}
-
-func (b *SteampipeBackend) loadConnectionNames(db *sql.DB) error {
-	query := `SELECT name FROM steampipe_internal.steampipe_connection WHERE state = 'ready';`
-
-	// Execute the query
-	rows, err := db.Query(query)
-	if err != nil {
-		return sperr.WrapWithMessage(err, "failed to read connections from steampipe backend")
-	}
-	defer rows.Close()
-
-	// Iterate over the results
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return sperr.WrapWithMessage(err, "failed to read connections from steampipe backend")
-		}
-		// add the connection
-		b.connections = append(b.connections, name)
-	}
-
-	// Check for errors from iterating over rows
-	if err = rows.Err(); err != nil {
-		return sperr.WrapWithMessage(err, "failed to read connections from steampipe backend")
-	}
-	return nil
 }
 
 func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
