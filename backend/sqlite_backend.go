@@ -26,14 +26,14 @@ func NewSqliteBackend(connString string) *SqliteBackend {
 
 // Connect implements Backend.
 func (s *SqliteBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
-	config := newConnectConfig(options)
+	config := NewConnectConfig(options)
 	db, err := sql.Open("sqlite3", s.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to sqlite backend")
 	}
-	db.SetConnMaxIdleTime(config.PoolConfig.MaxConnIdleTime)
-	db.SetConnMaxLifetime(config.PoolConfig.MaxConnLifeTime)
-	db.SetMaxOpenConns(config.PoolConfig.MaxOpenConns)
+	db.SetConnMaxIdleTime(config.MaxConnIdleTime)
+	db.SetConnMaxLifetime(config.MaxConnLifeTime)
+	db.SetMaxOpenConns(config.MaxOpenConns)
 	return db, nil
 }
 

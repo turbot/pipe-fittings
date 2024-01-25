@@ -30,14 +30,14 @@ func NewMySQLBackend(connString string) *MySQLBackend {
 
 // Connect implements Backend.
 func (s *MySQLBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
-	config := newConnectConfig(options)
+	config := NewConnectConfig(options)
 	db, err := sql.Open("mysql", s.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to mysql backend")
 	}
-	db.SetConnMaxIdleTime(config.PoolConfig.MaxConnIdleTime)
-	db.SetConnMaxLifetime(config.PoolConfig.MaxConnLifeTime)
-	db.SetMaxOpenConns(config.PoolConfig.MaxOpenConns)
+	db.SetConnMaxIdleTime(config.MaxConnIdleTime)
+	db.SetConnMaxLifetime(config.MaxConnLifeTime)
+	db.SetMaxOpenConns(config.MaxOpenConns)
 	return db, nil
 }
 

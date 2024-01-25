@@ -85,7 +85,7 @@ func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 			return sperr.WrapWithMessage(err, "failed to read installed plugin from steampipe backend")
 		}
 		// add the connection
-		// TODO hack for now set version to latest
+		// TODO kai hack for now set version to latest
 		// update steampipe to include version information in steampipe_plugin
 		b.pluginInstances[name] = "latest"
 	}
