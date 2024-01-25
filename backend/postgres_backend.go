@@ -21,34 +21,54 @@ var postgresConnectionStringPrefixes = []string{"postgresql://", "postgres://"}
 
 type PostgresBackend struct {
 	originalConnectionString string
-	rowreader                RowReader
-
+	originalSearchPath       []string
+	schemaNames              []string
+	rowReader                RowReader
 	// if a custom search path or a prefix is used, store the resolved search path
 	// NOTE: only applies to postgres backend
 	requiredSearchPath []string
 }
 
-func NewPostgresBackend(connString string) *PostgresBackend {
-	return &PostgresBackend{
+func NewPostgresBackend(ctx context.Context, connString string) (*PostgresBackend, error) {
+	b := &PostgresBackend{
 		originalConnectionString: connString,
-		rowreader:                NewPgxRowReader(),
+		rowReader:                newPgxRowReader(),
 	}
+
+	if err := b.init(ctx); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (b *PostgresBackend) init(ctx context.Context) error {
+	db, err := b.Connect(ctx)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	if err := b.loadSearchPath(ctx, db); err != nil {
+		return err
+	}
+
+	return b.loadSchemaNames(db)
 }
 
 // Connect implements Backend.
-func (b *PostgresBackend) Connect(ctx context.Context, options ...ConnectOption) (*sql.DB, error) {
-
+func (b *PostgresBackend) Connect(ctx context.Context, opts ...ConnectOption) (*sql.DB, error) {
 	connString := b.originalConnectionString
 	connector, err := NewPgxConnector(connString, b.afterConnectFunc)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "Unable to parse connection string")
 	}
 
-	config := newConnectConfig(options)
+	config := NewConnectConfig(opts)
+
 	db := sql.OpenDB(connector)
-	db.SetConnMaxIdleTime(config.PoolConfig.MaxConnIdleTime)
-	db.SetConnMaxLifetime(config.PoolConfig.MaxConnLifeTime)
-	db.SetMaxOpenConns(config.PoolConfig.MaxOpenConns)
+	db.SetConnMaxIdleTime(config.MaxConnIdleTime)
+	db.SetConnMaxLifetime(config.MaxConnLifeTime)
+	db.SetMaxOpenConns(config.MaxOpenConns)
 
 	// resolve the required search path
 	if err := b.resolveDesiredSearchPath(ctx, db, config.SearchPathConfig); err != nil {
@@ -59,7 +79,12 @@ func (b *PostgresBackend) Connect(ctx context.Context, options ...ConnectOption)
 
 // RowReader implements Backend.
 func (b *PostgresBackend) RowReader() RowReader {
-	return b.rowreader
+	return b.rowReader
+}
+
+// SearchPath implements Backend.
+func (b *PostgresBackend) SearchPath() []string {
+	return b.requiredSearchPath
 }
 
 // afterConnectFunc is called after the connection is established
@@ -89,36 +114,71 @@ func (b *PostgresBackend) afterConnectFunc(ctx context.Context, conn driver.Conn
 	return nil
 }
 
-// getSearchPath gets the current search path from the database
-func (b *PostgresBackend) getSearchPath(ctx context.Context, db *sql.DB) ([]string, error) {
+// loadSearchPath gets the current search path from the database
+func (b *PostgresBackend) loadSearchPath(ctx context.Context, db *sql.DB) error {
 	// Get a connection from the database
 	conn, err := db.Conn(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer conn.Close()
 
 	// Execute the query
 	row := conn.QueryRowContext(ctx, "SHOW search_path")
 	if row.Err() != nil {
-		return nil, row.Err()
+		return row.Err()
 	}
 
-	var searchPath string
+	var searchPathStr string
 	// Scan the result into the searchPath variable
-	err = row.Scan(&searchPath)
+	err = row.Scan(&searchPathStr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Split the search path into individual paths
-	searchPaths := strings.Split(searchPath, ",")
+	// Split the search path into individual schemas
+	searchPath := strings.Split(searchPathStr, ",")
 	// Trim spaces from each path
-	for i, path := range searchPaths {
-		searchPaths[i] = strings.TrimSpace(path)
+	for i, path := range searchPath {
+		searchPath[i] = strings.TrimSpace(path)
 	}
 
-	return searchPaths, nil
+	b.originalSearchPath = searchPath
+	return nil
+}
+
+func (b *PostgresBackend) loadSchemaNames(db *sql.DB) error {
+	// SQL query to select all schema names
+	query := `SELECT schema_name FROM information_schema.schemata;`
+
+	// Execute the query
+	rows, err := db.Query(query)
+	if err != nil {
+		return sperr.WrapWithMessage(err, "failed to read schema names from the database")
+	}
+	defer rows.Close()
+
+	var schemaNames []string
+
+	// Iterate over the results
+	for rows.Next() {
+		var schemaName string
+		if err := rows.Scan(&schemaName); err != nil {
+			return sperr.WrapWithMessage(err, "failed to read a schema name from the database")
+		}
+		schemaNames = append(schemaNames, schemaName)
+	}
+
+	// Check for errors from iterating over rows
+	if err = rows.Err(); err != nil {
+		return sperr.WrapWithMessage(err, "error encountered while reading schema names from the database")
+	}
+
+	// Here, you can use the schemaNames slice which contains all the schema names
+	// For example, storing the schema names in the struct
+	b.schemaNames = schemaNames
+
+	return nil
 }
 
 // resolveDesiredSearchPath resolves the desired search path from the prefix or the custom search path
@@ -148,13 +208,8 @@ func (b *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.
 
 // constructSearchPathFromPrefix constructs the search path from the prefix and the original search path
 func (b *PostgresBackend) constructSearchPathFromPrefix(ctx context.Context, db *sql.DB, cfg SearchPathConfig) ([]string, error) {
-	originalSearchPath, err := b.getSearchPath(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
 	searchPathPrefix := b.cleanSearchPath(cfg.SearchPathPrefix)
-	return append(searchPathPrefix, originalSearchPath...), nil
+	return append(searchPathPrefix, b.originalSearchPath...), nil
 }
 
 // the prefix is prepended to the original search path
@@ -162,7 +217,7 @@ func (b *PostgresBackend) cleanSearchPath(searchPath []string) []string {
 	return helpers.RemoveFromStringSlice(searchPath, "")
 }
 
-func NewPgxRowReader() *pgxRowReader {
+func newPgxRowReader() *pgxRowReader {
 	return &pgxRowReader{
 		BasicRowReader: BasicRowReader{
 			CellReader: pgxReadCell,

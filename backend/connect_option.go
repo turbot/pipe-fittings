@@ -2,6 +2,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -28,19 +29,28 @@ func (c SearchPathConfig) Empty() bool {
 	return len(c.SearchPath) == 0 && len(c.SearchPathPrefix) == 0
 }
 
+func (c SearchPathConfig) String() string {
+	if c.Empty() {
+		return ""
+	}
+	if len(c.SearchPath) > 0 {
+		return fmt.Sprintf("search_path=%v", c.SearchPath)
+	}
+	return fmt.Sprintf("search_path_prefix=%v", c.SearchPathPrefix)
+}
+
 type ConnectConfig struct {
-	PoolConfig       PoolConfig
+	MaxConnLifeTime  time.Duration
+	MaxConnIdleTime  time.Duration
+	MaxOpenConns     int
 	SearchPathConfig SearchPathConfig
 }
 
-func newConnectConfig(opts []ConnectOption) *ConnectConfig {
+func NewConnectConfig(opts []ConnectOption) *ConnectConfig {
 	c := &ConnectConfig{
-		PoolConfig: PoolConfig{
-			MaxConnLifeTime: DefaultMaxConnLifeTime,
-			MaxConnIdleTime: DefaultMaxConnIdleTime,
-			MaxOpenConns:    DefaultMaxOpenConns,
-		},
-		SearchPathConfig: SearchPathConfig{},
+		MaxConnLifeTime: DefaultMaxConnLifeTime,
+		MaxConnIdleTime: DefaultMaxConnIdleTime,
+		MaxOpenConns:    DefaultMaxOpenConns,
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -50,9 +60,12 @@ func newConnectConfig(opts []ConnectOption) *ConnectConfig {
 
 type ConnectOption func(*ConnectConfig)
 
-func WithPoolConfig(config PoolConfig) ConnectOption {
+func WithConfig(other *ConnectConfig) ConnectOption {
 	return func(c *ConnectConfig) {
-		c.PoolConfig = config
+		c.SearchPathConfig = other.SearchPathConfig
+		c.MaxConnLifeTime = other.MaxConnLifeTime
+		c.MaxConnIdleTime = other.MaxConnIdleTime
+		c.MaxOpenConns = other.MaxOpenConns
 	}
 }
 

@@ -20,11 +20,17 @@ type Backend interface {
 	Connect(context.Context, ...ConnectOption) (*sql.DB, error)
 	RowReader() RowReader
 }
+type SearchPathProvider interface {
+	SearchPath() []string
+}
 
 func FromConnectionString(ctx context.Context, str string) (Backend, error) {
 	switch {
 	case IsPostgresConnectionString(str):
-		pgBackend := NewPostgresBackend(str)
+		pgBackend, err := NewPostgresBackend(ctx, str)
+		if err != nil {
+			return nil, err
+		}
 		// check if this is in fact a steampipe backend
 		if isSteampipeBackend(ctx, pgBackend) {
 			return NewSteampipeBackend(ctx, *pgBackend)

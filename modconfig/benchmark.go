@@ -32,23 +32,6 @@ type Benchmark struct {
 	Display *string    `cty:"display" hcl:"display" json:"display,omitempty"`
 }
 
-func NewRootBenchmarkWithChildren(mod *Mod, children []ModTreeItem) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, "benchmark", "root")
-	benchmark := &Benchmark{
-		ModTreeItemImpl: ModTreeItemImpl{
-			HclResourceImpl: HclResourceImpl{
-				ShortName:       "root",
-				FullName:        fullName,
-				UnqualifiedName: fmt.Sprintf("%s.%s", "benchmark", "root"),
-				blockType:       "benchmark",
-			},
-			Mod: mod,
-		},
-	}
-	benchmark.children = append(benchmark.children, children...)
-	return benchmark
-}
-
 func NewBenchmark(block *hcl.Block, mod *Mod, shortName string) HclResource {
 	benchmark := &Benchmark{
 		ModTreeItemImpl: NewModTreeItemImpl(block, mod, shortName),
