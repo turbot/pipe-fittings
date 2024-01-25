@@ -8,7 +8,6 @@ import (
 
 type SteampipeBackend struct {
 	PostgresBackend
-	connections     []string
 	pluginInstances map[string]string
 }
 
