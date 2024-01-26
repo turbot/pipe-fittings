@@ -9,13 +9,12 @@ import (
 	"path"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/tests/test_init"
-
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/workspace"
 )
 
