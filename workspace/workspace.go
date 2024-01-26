@@ -312,7 +312,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 		Flags:   w.ListFlag,
 		Exclude: w.exclusions,
 		// load files specified by inclusions
-		Include: filehelpers.InclusionsFromExtensions([]string{app_specific.ModDataExtension}),
+		Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
 	})
 
 	parseCtx.Credentials = w.Credentials
