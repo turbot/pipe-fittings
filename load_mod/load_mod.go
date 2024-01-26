@@ -269,11 +269,11 @@ func LoadModResourceNames(ctx context.Context, mod *modconfig.Mod, parseCtx *par
 	return resources.Merge(parsedResourceNames), nil
 }
 
-// TODO KAI WHO USES THIS
 // GetModFileExtensions returns list of all file extensions we care about
 // this will be the mod data extension, plus any registered extensions registered in fileToResourceMap
 func GetModFileExtensions() []string {
-	return append(modconfig.RegisteredFileExtensions(), app_specific.ModDataExtension, app_specific.VariablesExtension)
+	res := append(modconfig.RegisteredFileExtensions(), app_specific.ModDataExtensions...)
+	return append(res, app_specific.VariablesExtension)
 }
 
 // build list of all filepaths we need to parse/load the mod

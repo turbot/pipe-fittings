@@ -24,7 +24,7 @@ func SetAppSpecificConstants() {
 	app_specific.EnvInputVarPrefix = "FP_VAR_"
 	//app_specific.InstallDir
 	app_specific.ConfigExtension = ".fpc"
-	app_specific.ModDataExtension = ".fp"
+	app_specific.ModDataExtensions = ".fp"
 	app_specific.ModFileName = "mod.fp"
 	app_specific.VariablesExtension = ".fpvars"
 	//app_specific.ServiceConnectionAppNamePrefix
