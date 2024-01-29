@@ -9,7 +9,7 @@ import (
 type ModVariableMap struct {
 	// which mod have these variables been loaded for?
 	Mod *Mod
-	// top level variables
+	// top level variables, keyed by short name
 	RootVariables map[string]*Variable
 	// map of dependency variable maps, keyed by dependency NAME
 	DependencyVariables map[string]*ModVariableMap
@@ -30,6 +30,9 @@ func NewModVariableMap(mod *Mod) (*ModVariableMap, error) {
 
 	// add variables into map, modifying the key to be the variable short name
 	for name, variable := range mod.ResourceMaps.Variables {
+		if variable.Mod.ShortName != mod.ShortName {
+			continue
+		}
 		k, err := buildVariableMapKey(name)
 		if err != nil {
 			return nil, err
