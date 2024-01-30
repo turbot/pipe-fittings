@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
@@ -14,18 +15,22 @@ type FlowpipeWorkspaceProfile struct {
 	ProfileName string                    `hcl:"name,label" cty:"name"`
 	Base        *FlowpipeWorkspaceProfile `hcl:"base"`
 
-	Host        *string `hcl:"host" cty:"host"`
-	Input       *bool   `hcl:"input" cty:"input"`
-	Insecure    *bool   `hcl:"insecure" cty:"insecure"`
-	Listen      *string `hcl:"listen" cty:"port"`
-	LogLevel    *string `hcl:"log_level" cty:"log_level"`
-	MemoryMaxMb *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
-	Output      *string `hcl:"output" cty:"output"`
-	Port        *int    `hcl:"port" cty:"port"`
-	Progress    *bool   `hcl:"progress" cty:"progress"`
-	Telemetry   *string `hcl:"telemetry" cty:"telemetry"`
-	UpdateCheck *string `hcl:"update_check" cty:"update_check"`
-	Watch       *bool   `hcl:"watch" cty:"watch"`
+	Host                    *string `hcl:"host" cty:"host"`
+	Input                   *bool   `hcl:"input" cty:"input"`
+	Insecure                *bool   `hcl:"insecure" cty:"insecure"`
+	Listen                  *string `hcl:"listen" cty:"port"`
+	LogLevel                *string `hcl:"log_level" cty:"log_level"`
+	MemoryMaxMb             *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
+	Output                  *string `hcl:"output" cty:"output"`
+	Port                    *int    `hcl:"port" cty:"port"`
+	Progress                *bool   `hcl:"progress" cty:"progress"`
+	Telemetry               *string `hcl:"telemetry" cty:"telemetry"`
+	UpdateCheck             *string `hcl:"update_check" cty:"update_check"`
+	Watch                   *bool   `hcl:"watch" cty:"watch"`
+	MaxConcurrencyHttp      *int    `hcl:"max_concurrency_http" cty:"max_concurrency_http"`
+	MaxConcurrencyContainer *int    `hcl:"max_concurrency_container" cty:"max_concurrency_container"`
+	MaxConcurrencyFunction  *int    `hcl:"max_concurrency_function" cty:"max_concurrency_function"`
+	MaxConcurrencyQuery     *int    `hcl:"max_concurrency_query" cty:"max_concurrency_query"`
 
 	DeclRange hcl.Range
 }
@@ -98,6 +103,18 @@ func (p *FlowpipeWorkspaceProfile) setBaseProperties() {
 	if p.Watch == nil {
 		p.Watch = p.Base.Watch
 	}
+	if p.MaxConcurrencyContainer == nil {
+		p.MaxConcurrencyContainer = p.Base.MaxConcurrencyContainer
+	}
+	if p.MaxConcurrencyFunction == nil {
+		p.MaxConcurrencyFunction = p.Base.MaxConcurrencyFunction
+	}
+	if p.MaxConcurrencyHttp == nil {
+		p.MaxConcurrencyHttp = p.Base.MaxConcurrencyHttp
+	}
+	if p.MaxConcurrencyQuery == nil {
+		p.MaxConcurrencyQuery = p.Base.MaxConcurrencyQuery
+	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
@@ -116,6 +133,10 @@ func (p *FlowpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]inte
 	res.SetStringItem(p.Telemetry, constants.ArgTelemetry)
 	res.SetStringItem(p.UpdateCheck, constants.ArgUpdateCheck)
 	res.SetBoolItem(p.Watch, constants.ArgWatch)
+	res.SetIntItem(p.MaxConcurrencyContainer, constants.ArgMaxConcurrencyContainer)
+	res.SetIntItem(p.MaxConcurrencyFunction, constants.ArgMaxConcurrencyFunction)
+	res.SetIntItem(p.MaxConcurrencyHttp, constants.ArgMaxConcurrencyHttp)
+	res.SetIntItem(p.MaxConcurrencyQuery, constants.ArgMaxConcurrencyQuery)
 
 	return res
 }
