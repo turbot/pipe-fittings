@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"net/netip"
 	"strings"
@@ -284,6 +285,13 @@ func pgxReadCell(columnValue any, col *queryresult.ColumnDef) (any, error) {
 					result = f.Float64
 				}
 			}
+		case "JSON", "JSONB":
+			var dst any
+			err := json.Unmarshal(columnValue.([]byte), &dst)
+			if err != nil {
+				return nil, err
+			}
+			result = dst
 		}
 	}
 	return result, nil
