@@ -83,9 +83,22 @@ func (b *PostgresBackend) RowReader() RowReader {
 	return b.rowReader
 }
 
-// SearchPath implements Backend.
-func (b *PostgresBackend) SearchPath() []string {
+// OriginalSearchPath implements SearchPathProvider.
+func (b *PostgresBackend) OriginalSearchPath() []string {
+	return b.originalSearchPath
+}
+
+// RequiredSearchPath implements SearchPathProvider
+func (b *PostgresBackend) RequiredSearchPath() []string {
 	return b.requiredSearchPath
+}
+
+// ResolvedSearchPath implements SearchPathProvider
+func (b *PostgresBackend) ResolvedSearchPath() []string {
+	if len(b.requiredSearchPath) != 0 {
+		return b.requiredSearchPath
+	}
+	return b.originalSearchPath
 }
 
 // afterConnectFunc is called after the connection is established
