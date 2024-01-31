@@ -1,9 +1,16 @@
 package steampipeconfig
 
 import (
+	"fmt"
+	"log"
 	"log/slog"
+	"regexp"
 
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/function"
 
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
@@ -34,6 +41,8 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 
 	var res = modconfig.NewFlowpipeConfig()
 	var credentialMap = res.Credentials
+	credentialImportMap := map[string]modconfig.CredentialImport{}
+
 	// load from the config paths in reverse order (i.e. lowest precedence first)
 	for i := len(configPaths) - 1; i >= 0; i-- {
 		configPath := configPaths[i]
@@ -49,10 +58,111 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 		}
 		// copy creds over the top of credentialMap (i.e. with greater precedence)
 		maps.Copy(credentialMap, c)
+
+		ci, ew := loadCredentialImport(configPath, loadOptions)
+
+		if ew != nil {
+			if ew.GetError() != nil {
+				return nil, ew
+			}
+			// merge the warning from this call
+			errorsAndWarnings.AddWarning(ew.Warnings...)
+		}
+		// copy creds over the top of credentialMap (i.e. with greater precedence)
+		maps.Copy(credentialImportMap, ci)
+
 	}
 	if len(credentialMap) > 0 {
 		res.Credentials = credentialMap
 	}
+
+	credentials := make(map[string]modconfig.Credential)
+	if len(credentialImportMap) > 0 {
+		for _, credentialImport := range credentialImportMap {
+			if credentialImport.Source != nil {
+				filePaths, err := parse.ResolveCredentialImportSource(credentialImport.Source)
+				if err != nil {
+					// TODO: Build diags
+					return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to resolve the source path", hcl.Diagnostics{})
+				}
+
+				fileData, diags := parse.LoadFileData(filePaths...)
+				if diags.HasErrors() {
+					log.Printf("[WARN] loadConfig: failed to load all config files: %v\n", err)
+					return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
+				}
+
+				body, diags := parse.ParseHclFiles(fileData)
+				if diags.HasErrors() {
+					return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
+				}
+
+				// do a partial decode
+				content, moreDiags := body.Content(parse.ConfigBlockSchema)
+				if moreDiags.HasErrors() {
+					diags = append(diags, moreDiags...)
+					return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load config", diags)
+				}
+
+				for _, block := range content.Blocks {
+					if block.Type == "connection" {
+						connection, moreDiags := parse.DecodeConnection(block)
+						diags = append(diags, moreDiags...)
+						if moreDiags.HasErrors() {
+							continue
+						}
+
+						connectionType := connection.PluginAlias
+						connectionName := block.Labels[0]
+
+						if credentialImport.Connections != nil && len(credentialImport.Connections) > 0 {
+							if !isRequiredConnection(connectionName, credentialImport.Connections) {
+								continue
+							}
+						}
+
+						if credentialImport.Prefix != nil && *credentialImport.Prefix != "" {
+							connectionName = fmt.Sprintf("%s%s", *credentialImport.Prefix, connectionName)
+						}
+
+						credentialName := fmt.Sprintf("%s.%s", connectionType, connectionName)
+
+						// Parse the config string
+						configString := []byte(connection.Config)
+
+						// filename and range may not have been passed (for older versions of CLI)
+						filename := ""
+						startPos := hcl.Pos{}
+
+						body, diags := parseConfig(configString, filename, startPos)
+						if diags.HasErrors() {
+							return nil, error_helpers.DiagsToErrorsAndWarnings(fmt.Sprintf("failed to parse connection config for connection '%s'", connection.Name), diags)
+						}
+						evalCtx := &hcl.EvalContext{
+							Variables: make(map[string]cty.Value),
+							Functions: make(map[string]function.Function),
+						}
+
+						configStruct := modconfig.GithubCredential{}
+						moreDiags = gohcl.DecodeBody(body, evalCtx, &configStruct)
+						diags = append(diags, moreDiags...)
+						if diags.HasErrors() {
+							return nil, error_helpers.DiagsToErrorsAndWarnings(fmt.Sprintf("failed to parse connection config for connection '%s'", connection.Name), diags)
+						}
+
+						credentials[credentialName] = &configStruct
+					}
+				}
+			}
+		}
+	}
+
+	if len(credentials) > 0 {
+		for k, v := range credentials {
+			res.Credentials[k] = v
+		}
+	}
+
 	return res, errorsAndWarnings
 }
 
@@ -166,4 +276,21 @@ func loadCredentialImport(configPath string, opts *loadConfigOptions) (map[strin
 		return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load Flowpipe config", diags)
 	}
 	return res, nil
+}
+
+func isRequiredConnection(str string, patterns []string) bool {
+	for _, pattern := range patterns {
+		// Compile the pattern
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			slog.Warn("isRequiredConnection: error compiling the connection regex", "error", err)
+			continue
+		}
+
+		// Check if the string matches the pattern
+		if re.MatchString(str) {
+			return true
+		}
+	}
+	return false
 }

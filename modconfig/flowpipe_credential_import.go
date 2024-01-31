@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
-// The definition of a single Flowpipe Trigger
+// The definition of a single Flowpipe CredentialImport
 type CredentialImport struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
@@ -17,9 +17,9 @@ type CredentialImport struct {
 	StartLineNumber int    `json:"start_line_number"`
 	EndLineNumber   int    `json:"end_line_number"`
 
-	Source      *string  `json:"source"`
-	Connections []string `json:"connections"`
-	Prefix      *string  `json:"prefix"`
+	Source      *string  `json:"source" cty:"source" hcl:"source"`
+	Connections []string `json:"connections" cty:"connections" hcl:"connections,optional"`
+	Prefix      *string  `json:"prefix" cty:"prefix" hcl:"prefix,optional"`
 }
 
 func (c *CredentialImport) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {

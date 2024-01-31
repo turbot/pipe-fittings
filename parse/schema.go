@@ -33,7 +33,7 @@ var ConfigBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type:       schema.BlockTypeCredentialImport,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }

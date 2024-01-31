@@ -73,7 +73,7 @@ type Workspace struct {
 
 // Load creates a Workspace and loads the workspace mod
 
-func LoadWithParams(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, credentialImports map[string]modconfig.CredentialImport, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
+func LoadWithParams(ctx context.Context, workspacePath string, credentials map[string]modconfig.Credential, fileInclusions ...string) (*Workspace, *error_helpers.ErrorAndWarnings) {
 	utils.LogTime("workspace.Load start")
 	defer utils.LogTime("workspace.Load end")
 
@@ -83,7 +83,7 @@ func LoadWithParams(ctx context.Context, workspacePath string, credentials map[s
 	}
 
 	workspace.Credentials = credentials
-	workspace.CredentialImports = credentialImports
+	// workspace.CredentialImports = credentialImports
 
 	// load the workspace mod
 	errAndWarnings := workspace.loadWorkspaceMod(ctx)
@@ -92,7 +92,7 @@ func LoadWithParams(ctx context.Context, workspacePath string, credentials map[s
 
 // Load creates a Workspace and loads the workspace mod
 func Load(ctx context.Context, workspacePath string) (*Workspace, *error_helpers.ErrorAndWarnings) {
-	return LoadWithParams(ctx, workspacePath, map[string]modconfig.Credential{}, map[string]modconfig.CredentialImport{}, app_specific.ModDataExtension)
+	return LoadWithParams(ctx, workspacePath, map[string]modconfig.Credential{}, app_specific.ModDataExtension)
 }
 
 // LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
