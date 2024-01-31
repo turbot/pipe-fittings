@@ -1,10 +1,11 @@
 package cmdconfig
 
 import (
+	"os"
+
 	"github.com/spf13/pflag"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"os"
 )
 
 // basic flags
@@ -83,7 +84,7 @@ func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
 func (c *CmdBuilder) AddModLocationFlag() *CmdBuilder {
 	cwd, err := os.Getwd()
 	error_helpers.FailOnError(err)
-	return c.AddStringFlag(constants.ArgModLocation, cwd, "Path to the workspace working directory")
+	return c.AddStringFlag(constants.ArgModLocation, cwd, "Sets the workspace working directory. If not specified, the workspace directory will be set to the current working directory.")
 }
 
 func (c *CmdBuilder) AddVarFlag(value pflag.Value, name string, usage string, opts ...FlagOption) *CmdBuilder {
