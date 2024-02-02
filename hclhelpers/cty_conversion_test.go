@@ -154,3 +154,23 @@ func TestConvertInterfaceToCtyValue2(t *testing.T) {
 	assert.Equal(false, cty.GetAttr("baz").True())
 	assert.Equal(true, cty.GetAttr("quux").True())
 }
+
+func TestConvertInterfaceToCtyValueWithStruct(t *testing.T) {
+	assert := assert.New(t)
+
+	type Foo struct {
+		Bar string
+		Baz string
+	}
+
+	foo := Foo{
+		Bar: "bar",
+		Baz: "baz",
+	}
+
+	cty, err := ConvertInterfaceToCtyValue(foo)
+	assert.Nil(err)
+
+	assert.Equal("bar", cty.GetAttr("Bar").AsString())
+	assert.Equal("baz", cty.GetAttr("Baz").AsString())
+}
