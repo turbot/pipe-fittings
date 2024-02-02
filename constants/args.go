@@ -71,6 +71,7 @@ const (
 	ArgMaxConcurrencyQuery     = "max-concurrency-query"
 	ArgMaxConcurrencyContainer = "max-concurrency-container"
 	ArgMaxConcurrencyFunction  = "max-concurrency-function"
+	ArgProcessRetention        = "process-retention"
 )
 
 // BoolToOnOff converts a boolean value onto the string "on" or "off"
