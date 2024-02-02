@@ -4,6 +4,12 @@ Shared Pipes Component
 
 ## v0.3.0 [tbd]
 
+## v0.2.2 [2024-02-02]
+
+_Bug fixes_
+
+* Missing error handling during the conversion of Go struct to CTY value.
+
 ## v0.2.1 [2024-02-02]
 
 _Bug fixes_

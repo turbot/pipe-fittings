@@ -11,6 +11,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/sagikazarmark/slog-shim"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -905,7 +906,15 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 		ba, err := gjson.Marshal(v)
 		if err == nil {
 			var anyVal any
-			gjson.Unmarshal(ba, &anyVal)
+			err := gjson.Unmarshal(ba, &anyVal)
+			if err != nil {
+				slog.Debug("failed to unmarshal to any", "err", err)
+
+				// Otherwise .. print the string value
+				stringVal := fmt.Sprintf("%v", v)
+				val, err := gocty.ToCtyValue(stringVal, cty.String)
+				return val, err
+			}
 			return ConvertInterfaceToCtyValue(anyVal)
 		}
 
