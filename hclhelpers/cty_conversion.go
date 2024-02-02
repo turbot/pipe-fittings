@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	gjson "encoding/json"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
@@ -892,15 +894,25 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 	case reflect.Map:
 		return ConvertMapInterfaceToCtyValue(v)
 
-	// Add more cases here for other types as needed.
 	default:
+		// Try for time
 		if t, ok := v.(time.Time); ok {
 			rfc3339Time := t.Format(time.RFC3339)
 			return cty.StringVal(rfc3339Time), nil
 		}
 
-		// If the type is not recognized, return a cty.NilVal as a placeholder
-		return cty.NilVal, nil
+		// Is it a complex struct that can be marshalled to a JSON?
+		ba, err := gjson.Marshal(v)
+		if err == nil {
+			var anyVal any
+			gjson.Unmarshal(ba, &anyVal)
+			return ConvertInterfaceToCtyValue(anyVal)
+		}
+
+		// Otherwise .. print the string value
+		stringVal := fmt.Sprintf("%v", v)
+		val, err := gocty.ToCtyValue(stringVal, cty.String)
+		return val, err
 	}
 }
 

@@ -2,6 +2,14 @@
 
 Shared Pipes Component
 
+## v0.3.0 [tbd]
+
+## v0.2.1 [2024-02-02]
+
+_Bug fixes_
+
+* Incorrect conversion of Go struct to CTY value.
+
 ## v0.2.0 [2024-01-24]
 
 _What's new?_
