@@ -46,7 +46,7 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeCredential        = "credential"
-	BlockTypeCredentialImport  = "credential_import"
+	BlockTypeCredentialImport  = "credential_import" //nolint: gosec // just a constant declaration for credential_import
 	BlockTypeNotify            = "notify"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
