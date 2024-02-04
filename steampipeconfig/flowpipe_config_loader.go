@@ -2,9 +2,8 @@ package steampipeconfig
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
-	"regexp"
+	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -59,8 +58,8 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 		// copy creds over the top of credentialMap (i.e. with greater precedence)
 		maps.Copy(credentialMap, c)
 
+		// Credential import
 		ci, ew := loadCredentialImport(configPath, loadOptions)
-
 		if ew != nil {
 			if ew.GetError() != nil {
 				return nil, ew
@@ -68,7 +67,6 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 			// merge the warning from this call
 			errorsAndWarnings.AddWarning(ew.Warnings...)
 		}
-		// copy creds over the top of credentialMap (i.e. with greater precedence)
 		maps.Copy(credentialImportMap, ci)
 
 	}
@@ -88,7 +86,7 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 
 				fileData, diags := parse.LoadFileData(filePaths...)
 				if diags.HasErrors() {
-					log.Printf("[WARN] loadConfig: failed to load all config files: %v\n", err)
+					slog.Error("loadConfig: failed to load all config files", "error", err)
 					return nil, error_helpers.DiagsToErrorsAndWarnings("Failed to load all config files", diags)
 				}
 
@@ -105,7 +103,7 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 				}
 
 				for _, block := range content.Blocks {
-					if block.Type == "connection" {
+					if block.Type == schema.BlockTypeConnection {
 						connection, moreDiags := parse.DecodeConnection(block)
 						diags = append(diags, moreDiags...)
 						if moreDiags.HasErrors() {
@@ -124,8 +122,12 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 						if credentialImport.Prefix != nil && *credentialImport.Prefix != "" {
 							connectionName = fmt.Sprintf("%s%s", *credentialImport.Prefix, connectionName)
 						}
-
 						credentialName := fmt.Sprintf("%s.%s", connectionType, connectionName)
+
+						// Return error if the flowpipe already has a creds with same type and name
+						if res.Credentials[credentialName] != nil {
+							return nil, error_helpers.DiagsToErrorsAndWarnings(fmt.Sprintf("credential already exists '%s'", connectionName), diags)
+						}
 
 						// Parse the config string
 						configString := []byte(connection.Config)
@@ -143,14 +145,17 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 							Functions: make(map[string]function.Function),
 						}
 
-						configStruct := modconfig.GithubCredential{}
-						moreDiags = gohcl.DecodeBody(body, evalCtx, &configStruct)
+						configStruct := modconfig.ResolveConfigStruct(connectionType)
+						moreDiags = gohcl.DecodeBody(body, evalCtx, configStruct)
 						diags = append(diags, moreDiags...)
 						if diags.HasErrors() {
 							return nil, error_helpers.DiagsToErrorsAndWarnings(fmt.Sprintf("failed to parse connection config for connection '%s'", connection.Name), diags)
 						}
 
-						credentials[credentialName] = &configStruct
+						switch v := configStruct.(type) {
+						case *modconfig.GithubCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						}
 					}
 				}
 			}
@@ -280,15 +285,13 @@ func loadCredentialImport(configPath string, opts *loadConfigOptions) (map[strin
 
 func isRequiredConnection(str string, patterns []string) bool {
 	for _, pattern := range patterns {
-		// Compile the pattern
-		re, err := regexp.Compile(pattern)
+		match, err := filepath.Match(pattern, str)
 		if err != nil {
-			slog.Warn("isRequiredConnection: error compiling the connection regex", "error", err)
+			slog.Warn("isRequiredConnection: error matching pattern", "pattern", pattern, "error", err)
 			continue
 		}
 
-		// Check if the string matches the pattern
-		if re.MatchString(str) {
+		if match {
 			return true
 		}
 	}

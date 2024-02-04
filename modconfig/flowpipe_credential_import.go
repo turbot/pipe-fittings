@@ -1,6 +1,7 @@
 package modconfig
 
 import (
+	"reflect"
 	"slices"
 
 	"github.com/hashicorp/hcl/v2"
@@ -146,4 +147,18 @@ func NewCredentialImport(block *hcl.Block) *CredentialImport {
 			blockType:       block.Type,
 		},
 	}
+}
+
+func ResolveConfigStruct(connectionType string) any {
+	typeRegistry := map[string]reflect.Type{
+		"github": reflect.TypeOf((*GithubCredential)(nil)).Elem(),
+	}
+
+	t, exists := typeRegistry[connectionType]
+	if !exists {
+		return nil
+	}
+
+	// Use reflect.New to create a pointer to the type, rather than a value.
+	return reflect.New(t).Interface()
 }
