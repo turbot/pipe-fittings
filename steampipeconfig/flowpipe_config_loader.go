@@ -153,7 +153,67 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, *error
 						}
 
 						switch v := configStruct.(type) {
+						case *modconfig.AbuseIPDBCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.AwsCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.AzureCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.BitbucketCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.ClickUpCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.DatadogCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.DiscordCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.FreshdeskCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.GcpCredential:
+							credentials[credentialName] = modconfig.Credential(v)
 						case *modconfig.GithubCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.GitLabCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.GuardrailsCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.IP2LocationIOCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.IPstackCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.JiraCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.JumpCloudCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.OktaCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.OpenAICredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.OpsgenieCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.PagerDutyCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.PipesCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.SendGridCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.ServiceNowCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.SlackCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.MicrosoftTeamsCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.TrelloCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.UptimeRobotCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.UrlscanCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.VaultCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.VirusTotalCredential:
+							credentials[credentialName] = modconfig.Credential(v)
+						case *modconfig.ZendeskCredential:
 							credentials[credentialName] = modconfig.Credential(v)
 						}
 					}
