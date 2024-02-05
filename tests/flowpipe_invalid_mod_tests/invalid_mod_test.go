@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/workspace"
@@ -146,7 +146,7 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 
 		fmt.Println("Running test " + test.title)
 
-		_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]modconfig.Credential{}))
+		_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]credential.Credential{}))
 		assert.NotNil(errorAndWarning.Error)
 		if errorAndWarning.Error != nil {
 			assert.Contains(errorAndWarning.Error.Error(), test.containsError)

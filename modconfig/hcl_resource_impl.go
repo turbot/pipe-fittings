@@ -41,6 +41,17 @@ func NewHclResourceImpl(block *hcl.Block, mod *Mod, shortName string) HclResourc
 	}
 }
 
+func NewHclResourceImplNoMod(block *hcl.Block, resourceType, shortName string) HclResourceImpl {
+	fullName := fmt.Sprintf("%s.%s", resourceType, shortName)
+	return HclResourceImpl{
+		ShortName:       shortName,
+		FullName:        fullName,
+		UnqualifiedName: fmt.Sprintf("%s.%s", resourceType, shortName),
+		DeclRange:       hclhelpers.BlockRange(block),
+		blockType:       block.Type,
+	}
+}
+
 func (b *HclResourceImpl) Equals(other *HclResourceImpl) bool {
 	if b == nil || other == nil {
 		return false

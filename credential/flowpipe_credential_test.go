@@ -1,4 +1,4 @@
-package modconfig
+package credential
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 func TestAwsCredential(t *testing.T) {
@@ -32,8 +33,10 @@ func TestSlackDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	slackCred := SlackCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -57,8 +60,10 @@ func TestAbuseIPDBDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	abuseIPDBCred := AbuseIPDBCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -82,8 +87,10 @@ func TestSendGridDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	sendGridCred := SendGridCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -107,8 +114,10 @@ func TestVirusTotalDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	virusTotalCred := VirusTotalCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -132,8 +141,10 @@ func TestZendeskDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	zendeskCred := ZendeskCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -166,8 +177,10 @@ func TestOktaDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	oktaCred := OktaCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -196,8 +209,10 @@ func TestTrelloDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	trelloCred := TrelloCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -226,8 +241,10 @@ func TestUptimeRobotDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	uptimeRobotCred := UptimeRobotCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -251,8 +268,10 @@ func TestUrlscanDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	urlscanCred := UrlscanCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -276,8 +295,10 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	clickUpCred := ClickUpCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -301,8 +322,10 @@ func TestPagerDutyDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	pagerDutyCred := PagerDutyCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -326,8 +349,10 @@ func TestDiscordDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	discordCred := DiscordCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -351,8 +376,10 @@ func TestIP2LocationIODefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	ip2LocationCred := IP2LocationIOCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -376,8 +403,10 @@ func TestIPstackDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	ipstackCred := IPstackCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -401,8 +430,10 @@ func TestMicrosoftTeamsDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	msTeamsCred := MicrosoftTeamsCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -426,8 +457,10 @@ func TestGitHubDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	githubCred := GithubCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -451,8 +484,10 @@ func TestGitLabDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	gitlabCred := GitLabCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -476,8 +511,10 @@ func TestPipesDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	pipesCred := PipesCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -501,8 +538,10 @@ func TestVaultDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	vaultCred := VaultCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -531,8 +570,10 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	jiraCred := JiraCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -565,8 +606,10 @@ func TestOpsgenieDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	opsgenieCred := OpsgenieCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -595,8 +638,10 @@ func TestOpenAIDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	openAICred := OpenAICredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -621,8 +666,10 @@ func TestAzureDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	azureCred := AzureCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -659,8 +706,10 @@ func TestBitbucketDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	bitbucketCred := BitbucketCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -693,8 +742,10 @@ func TestDatadogDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	datadogCred := DatadogCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -723,8 +774,10 @@ func TestFreshdeskDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	freshdeskCred := FreshdeskCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -753,8 +806,10 @@ func TestGuardrailsDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	guardrailsCred := GuardrailsCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -785,8 +840,10 @@ func TestServiceNowDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	guardrailsCred := ServiceNowCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 
@@ -819,8 +876,10 @@ func TestJumpCloudDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	jumpCloudCred := JumpCloudCredential{
-		HclResourceImpl: HclResourceImpl{
-			ShortName: "default",
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
 		},
 	}
 

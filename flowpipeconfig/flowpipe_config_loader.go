@@ -1,9 +1,10 @@
-package steampipeconfig
+package flowpipeconfig
 
 import (
 	"log/slog"
 	"maps"
 
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/filepaths"
 
 	filehelpers "github.com/turbot/go-kit/files"
@@ -19,7 +20,7 @@ type loadConfigOptions struct {
 	include []string
 }
 
-func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, error_helpers.ErrorAndWarnings) {
+func LoadFlowpipeConfig(configPaths []string) (*FlowpipeConfig, error_helpers.ErrorAndWarnings) {
 	errorsAndWarnings := error_helpers.NewErrorsAndWarning(nil)
 	defer func() {
 		if r := recover(); r != nil {
@@ -32,7 +33,7 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, error_
 	include := filehelpers.InclusionsFromExtensions(connectionConfigExtensions)
 	loadOptions := &loadConfigOptions{include: include}
 
-	var res = modconfig.NewFlowpipeConfig()
+	var res = NewFlowpipeConfig()
 	var credentialMap = res.Credentials
 	var integrationMap = res.Integrations
 
@@ -57,8 +58,8 @@ func LoadFlowpipeConfig(configPaths []string) (*modconfig.FlowpipeConfig, error_
 	return res, errorsAndWarnings
 }
 
-func loadFlowpipeConfigBlocks(configPath string, opts *loadConfigOptions) (map[string]modconfig.Credential, map[string]modconfig.Integration, error_helpers.ErrorAndWarnings) {
-	var credentials = map[string]modconfig.Credential{}
+func loadFlowpipeConfigBlocks(configPath string, opts *loadConfigOptions) (map[string]credential.Credential, map[string]modconfig.Integration, error_helpers.ErrorAndWarnings) {
+	var credentials = map[string]credential.Credential{}
 	var integrations = map[string]modconfig.Integration{}
 
 	configPaths, err := filehelpers.ListFiles(configPath, &filehelpers.ListOptions{

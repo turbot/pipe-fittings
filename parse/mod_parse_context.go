@@ -9,6 +9,7 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -65,7 +66,7 @@ type ModParseContext struct {
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials map[string]modconfig.Credential
+	Credentials map[string]credential.Credential
 
 	ParentParseCtx *ModParseContext
 

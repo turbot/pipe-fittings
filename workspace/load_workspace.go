@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -20,16 +21,16 @@ import (
 type LoadWorkspaceOption func(*LoadWorkspaceConfig)
 
 type LoadWorkspaceConfig struct {
-	credentials map[string]modconfig.Credential
+	credentials map[string]credential.Credential
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
 	return &LoadWorkspaceConfig{
-		credentials: make(map[string]modconfig.Credential),
+		credentials: make(map[string]credential.Credential),
 	}
 }
 
-func WithCredentials(credentials map[string]modconfig.Credential) LoadWorkspaceOption {
+func WithCredentials(credentials map[string]credential.Credential) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.credentials = credentials
 	}

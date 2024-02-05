@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/credential"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
@@ -40,7 +41,7 @@ type Workspace struct {
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials map[string]modconfig.Credential
+	Credentials map[string]credential.Credential
 
 	CloudMetadata *steampipeconfig.CloudMetadata
 

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
@@ -456,7 +457,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	return pipelineHcl, res
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]modconfig.Credential) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string

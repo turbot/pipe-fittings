@@ -9,7 +9,8 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/credential"
+	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/zclconf/go-cty/cty"
 
@@ -80,7 +81,7 @@ func (suite *FlowpipeModTestSuite) TearDownSuite() {
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./good_mod", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./good_mod", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -154,7 +155,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_references", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_references", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -176,14 +177,16 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"aws.default": &modconfig.AwsCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "aws.default",
-				ShortName:       "default",
-				UnqualifiedName: "aws.default",
+	credentials := map[string]credential.Credential{
+		"aws.default": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
 			},
-			Type: "aws",
 		},
 	}
 
@@ -218,7 +221,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 
 	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
 
-	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials))
@@ -240,8 +243,16 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
 
-	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_integration"})
-	assert.Nil(err.Error)
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_integration"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
 
 	assert.Equal(1, len(flowpipeConfig.Integrations))
 	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
@@ -254,14 +265,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"aws.default": &modconfig.AwsCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "aws.default",
-				ShortName:       "default",
-				UnqualifiedName: "aws.default",
+	credentials := map[string]credential.Credential{
+		"aws.default": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
 			},
-			Type: "aws",
 		},
 	}
 
@@ -292,14 +305,16 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"aws.aws_static": &modconfig.AwsCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "aws.static",
-				ShortName:       "static",
-				UnqualifiedName: "aws.static",
+	credentials := map[string]credential.Credential{
+		"aws.aws_static": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.static",
+					ShortName:       "static",
+					UnqualifiedName: "aws.static",
+				},
+				Type: "aws",
 			},
-			Type: "aws",
 		},
 	}
 
@@ -326,14 +341,16 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"slack.slack_static": &modconfig.SlackCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "slack.slack_static",
-				ShortName:       "slack_static",
-				UnqualifiedName: "slack.slack_static",
+	credentials := map[string]credential.Credential{
+		"slack.slack_static": &credential.SlackCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "slack.slack_static",
+					ShortName:       "slack_static",
+					UnqualifiedName: "slack.slack_static",
+				},
+				Type: "slack",
 			},
-			Type:  "slack",
 			Token: types.String("sfhshfhslfh"),
 		},
 	}
@@ -377,7 +394,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_step_output", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_step_output", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -402,7 +419,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_one", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_one", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -465,7 +482,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_simple", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_simple", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -527,7 +544,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	os.Setenv("FP_VAR_var_six", "set from env var")
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_variable", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_variable", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)

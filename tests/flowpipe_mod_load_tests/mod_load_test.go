@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/workspace"
 )
@@ -76,7 +77,7 @@ func (suite *FlowpipeModLoadTestSuite) TearDownSuite() {
 func (suite *FlowpipeModLoadTestSuite) TestInputStepContainsNotifyBlockThatHasVarOnIt() {
 	assert := assert.New(suite.T())
 
-	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/step_with_notify_and_var_default", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/step_with_notify_and_var_default", workspace.WithCredentials(map[string]credential.Credential{}))
 	assert.Nil(errorAndWarning.Error)
 
 	mod := workspace.Mod
@@ -107,7 +108,7 @@ func (suite *FlowpipeModLoadTestSuite) TestInputStepContainsNotifyBlockThatHasVa
 func (suite *FlowpipeModLoadTestSuite) TestNotifyDependsAnotherStep() {
 	assert := assert.New(suite.T())
 
-	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_depends_another_step", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_depends_another_step", workspace.WithCredentials(map[string]credential.Credential{}))
 	assert.Nil(errorAndWarning.Error)
 
 	mod := workspace.Mod
@@ -123,7 +124,7 @@ func (suite *FlowpipeModLoadTestSuite) TestNotifyDependsAnotherStep() {
 func (suite *FlowpipeModLoadTestSuite) TestNotifyWithRuntimeParam() {
 	assert := assert.New(suite.T())
 
-	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_with_runtime_param", workspace.WithCredentials(map[string]modconfig.Credential{}))
+	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_with_runtime_param", workspace.WithCredentials(map[string]credential.Credential{}))
 	assert.Nil(errorAndWarning.Error)
 
 	mod := workspace.Mod
