@@ -155,6 +155,7 @@ type EmailIntegration struct {
 	From             *string `json:"from,omitempty" cty:"from" hcl:"from"`
 	DefaultRecipient *string `json:"default_recipient,omitempty" cty:"default_recipient" hcl:"default_recipient,optional"`
 	DefaultSubject   *string `json:"default_subject,omitempty" cty:"default_subject" hcl:"default_subject,optional"`
+	ResponseUrl      *string `json:"response_url,omitempty" cty:"response_url" hcl:"response_url,optional"`
 }
 
 func (i *EmailIntegration) GetIntegrationType() string {
@@ -298,6 +299,13 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				continue
 			}
 			i.DefaultSubject = subject
+		case schema.AttributeTypeResponseUrl:
+			url, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.ResponseUrl = url
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
