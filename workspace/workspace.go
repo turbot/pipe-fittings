@@ -40,8 +40,9 @@ type Workspace struct {
 	VariableValues map[string]string
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
-	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials map[string]credential.Credential
+	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
+	Credentials  map[string]credential.Credential
+	Integrations map[string]modconfig.Integration
 
 	CloudMetadata *steampipeconfig.CloudMetadata
 
@@ -85,6 +86,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	}
 
 	workspace.Credentials = cfg.credentials
+	workspace.Integrations = cfg.integrations
 
 	// load the workspace mod
 	errAndWarnings := workspace.loadWorkspaceMod(ctx)
