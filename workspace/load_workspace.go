@@ -21,18 +21,26 @@ import (
 type LoadWorkspaceOption func(*LoadWorkspaceConfig)
 
 type LoadWorkspaceConfig struct {
-	credentials map[string]credential.Credential
+	credentials  map[string]credential.Credential
+	integrations map[string]modconfig.Integration
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
 	return &LoadWorkspaceConfig{
-		credentials: make(map[string]credential.Credential),
+		credentials:  make(map[string]credential.Credential),
+		integrations: make(map[string]modconfig.Integration),
 	}
 }
 
 func WithCredentials(credentials map[string]credential.Credential) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.credentials = credentials
+	}
+}
+
+func WithIntegrations(integrations map[string]modconfig.Integration) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.integrations = integrations
 	}
 }
 

@@ -257,9 +257,18 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal(1, len(flowpipeConfig.Integrations))
 	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
+	assert.Equal(1, len(w.Integrations))
+	assert.NotNil(w.Integrations["slack.my_slack_app"])
+	if i, ok := w.Integrations["slack.my_slack_app"].(*modconfig.SlackIntegration); !ok {
+		assert.Fail("integration failed to parse to SlackIntegration")
+	} else {
+		assert.Equal("slack.my_slack_app", i.FullName)
+		assert.Equal("#infosec", *i.Channel)
+	}
+
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
