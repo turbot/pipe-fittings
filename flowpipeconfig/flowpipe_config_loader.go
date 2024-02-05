@@ -55,6 +55,7 @@ func LoadFlowpipeConfig(configPaths []string) (*FlowpipeConfig, error_helpers.Er
 	if len(credentialMap) > 0 {
 		res.Credentials = credentialMap
 	}
+
 	return res, errorsAndWarnings
 }
 
