@@ -2272,49 +2272,6 @@ func (c *JumpCloudCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-type BasicCredential struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
-
-	Type string `json:"type" cty:"type" hcl:"type,label"`
-
-	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
-	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
-}
-
-func (c *BasicCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	return env
-}
-
-func (*BasicCredential) GetCredentialType() string {
-	return "basic"
-}
-
-func (c *BasicCredential) CtyValue() (cty.Value, error) {
-	ctyValue, err := GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *BasicCredential) Resolve(ctx context.Context) (Credential, error) {
-	return c, nil
-}
-
-func (c *BasicCredential) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
-}
-
-func (c *BasicCredential) GetTtl() int {
-	return -1
-}
-
 func DefaultCredentials() map[string]Credential {
 	credentials := make(map[string]Credential)
 
@@ -2588,18 +2545,6 @@ func NewCredential(block *hcl.Block) Credential {
 				blockType:       block.Type,
 			},
 			Type: "aws",
-		}
-		return credential
-	} else if credentialType == "basic" {
-		credential := &BasicCredential{
-			HclResourceImpl: HclResourceImpl{
-				FullName:        credentialFullName,
-				ShortName:       credentialName,
-				UnqualifiedName: credentialFullName,
-				DeclRange:       block.DefRange,
-				blockType:       block.Type,
-			},
-			Type: "basic",
 		}
 		return credential
 	} else if credentialType == "slack" {
