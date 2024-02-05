@@ -5,28 +5,6 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
-var FlowpipeConfigBlockSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{},
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       schema.BlockTypePipeline,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeTrigger,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeIntegration,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeCredential,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-	},
-}
-
 var IntegrationSlackBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{

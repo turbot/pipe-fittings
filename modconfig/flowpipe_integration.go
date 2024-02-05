@@ -1,9 +1,10 @@
 package modconfig
 
 import (
+	"strings"
+
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/zclconf/go-cty/cty"
@@ -15,6 +16,7 @@ type Integration interface {
 	GetIntegrationType() string
 	CtyValue() (cty.Value, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
+	Validate() hcl.Diagnostics
 }
 
 type SlackIntegration struct {
@@ -27,6 +29,7 @@ type SlackIntegration struct {
 	Token         *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 	SigningSecret *string `json:"signing_secret,omitempty" cty:"signing_secret" hcl:"signing_secret,optional"`
 	WebhookUrl    *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
+	Channel       *string `json:"channel,omitempty" cty:"channel" hcl:"channel,optional"`
 }
 
 func (i *SlackIntegration) CtyValue() (cty.Value, error) {
@@ -35,6 +38,11 @@ func (i *SlackIntegration) CtyValue() (cty.Value, error) {
 
 func (i *SlackIntegration) GetIntegrationType() string {
 	return i.Type
+}
+
+func (i *SlackIntegration) Validate() hcl.Diagnostics {
+	// TODO: slack integration validation
+	return hcl.Diagnostics{}
 }
 
 func (i *SlackIntegration) Equals(other *SlackIntegration) bool {
@@ -64,6 +72,10 @@ func (i *SlackIntegration) Equals(other *SlackIntegration) bool {
 	}
 
 	if (i.WebhookUrl == nil && other.WebhookUrl != nil) || (i.WebhookUrl != nil && other.WebhookUrl == nil) || (i.WebhookUrl != nil && other.WebhookUrl != nil && *i.WebhookUrl != *other.WebhookUrl) {
+		return false
+	}
+
+	if (i.Channel == nil && other.Channel != nil) || (i.Channel != nil && other.Channel == nil) || (i.Channel != nil && other.Channel != nil && *i.Channel != *other.Channel) {
 		return false
 	}
 
@@ -151,6 +163,11 @@ func (i *EmailIntegration) GetIntegrationType() string {
 
 func (i *EmailIntegration) CtyValue() (cty.Value, error) {
 	return GetCtyValue(i)
+}
+
+func (i *EmailIntegration) Validate() hcl.Diagnostics {
+	// TODO: email integration validation
+	return hcl.Diagnostics{}
 }
 
 func (i *EmailIntegration) Equals(other *EmailIntegration) bool {
@@ -291,6 +308,36 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 	}
 
 	return diags
+}
+
+func NewIntegrationFromBlock(block *hcl.Block) Integration {
+	integrationType := block.Labels[0]
+	integrationName := block.Labels[1]
+
+	integrationFullName := integrationType + "." + integrationName
+
+	hclResourceImpl := HclResourceImpl{
+		FullName:        integrationFullName,
+		UnqualifiedName: integrationFullName,
+		ShortName:       integrationName,
+		DeclRange:       block.DefRange,
+		blockType:       block.Type,
+	}
+
+	switch integrationType {
+	case schema.IntegrationTypeSlack:
+		return &SlackIntegration{
+			HclResourceImpl: hclResourceImpl,
+			Type:            integrationType,
+		}
+	case schema.IntegrationTypeEmail:
+		return &EmailIntegration{
+			HclResourceImpl: hclResourceImpl,
+			Type:            integrationType,
+		}
+	}
+
+	return nil
 }
 
 func NewIntegration(mod *Mod, block *hcl.Block, integrationType string, integrationName string) Integration {

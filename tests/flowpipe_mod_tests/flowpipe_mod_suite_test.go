@@ -237,6 +237,20 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_integration"})
+	assert.Nil(err.Error)
+
+	assert.Equal(1, len(flowpipeConfig.Integrations))
+	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+}
+
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
