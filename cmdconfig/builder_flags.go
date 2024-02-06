@@ -2,7 +2,6 @@ package cmdconfig
 
 import (
 	"github.com/spf13/pflag"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"os"
@@ -78,12 +77,6 @@ func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
 	return c.
 		AddStringFlag(constants.ArgCloudHost, constants.DefaultCloudHost, "Turbot Pipes host").
 		AddStringFlag(constants.ArgCloudToken, "", "Turbot Pipes authentication token")
-}
-
-// AddWorkspaceDatabaseFlag is helper function to add the workspace-databse flag to a command
-func (c *CmdBuilder) AddWorkspaceDatabaseFlag() *CmdBuilder {
-	return c.
-		AddStringFlag(constants.ArgDatabase, app_specific.DefaultWorkspaceDatabase, "Turbot Pipes workspace database")
 }
 
 // AddModLocationFlag is helper function to add the mod-location flag to a command
