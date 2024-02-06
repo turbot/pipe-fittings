@@ -1,0 +1,6 @@
+notifier "admins" {
+  notify {
+    integration = integration.slack.my_slack_app 
+    channel = "#admins"
+  }
+}
