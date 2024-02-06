@@ -32,7 +32,7 @@ func (p TablePrinter[T]) PrintResource(_ context.Context, items PrintableResourc
 	return err
 }
 
-func (p TablePrinter[T]) PrintTable(table Table, writer io.Writer) error {
+func (p TablePrinter[T]) PrintTable(table *Table, writer io.Writer) error {
 	// Create a tabwriter
 	w := tabwriter.NewWriter(writer, 1, 1, 4, ' ', tabwriter.TabIndent)
 
