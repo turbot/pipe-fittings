@@ -79,7 +79,7 @@ func (b *ModTreeItemImpl) GetDatabase() *string {
 
 // GetSearchPath implements DatabaseItem
 func (b *ModTreeItemImpl) GetSearchPath() []string {
-	if b.SearchPath != nil {
+	if len(b.SearchPath) != 0 {
 		return b.SearchPath
 	}
 	if len(b.parents) > 0 {
@@ -90,7 +90,7 @@ func (b *ModTreeItemImpl) GetSearchPath() []string {
 
 // GetSearchPathPrefix implements DatabaseItem
 func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
-	if b.SearchPathPrefix != nil {
+	if len(b.SearchPathPrefix) != 0 {
 		return b.SearchPathPrefix
 	}
 	if len(b.parents) > 0 {
