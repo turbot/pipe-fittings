@@ -319,6 +319,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 	})
 
 	parseCtx.Credentials = w.Credentials
+	parseCtx.Integrations = w.Integrations
 
 	return parseCtx, nil
 }

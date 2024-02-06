@@ -66,7 +66,8 @@ type ModParseContext struct {
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials map[string]credential.Credential
+	Credentials  map[string]credential.Credential
+	Integrations map[string]modconfig.Integration
 
 	ParentParseCtx *ModParseContext
 
@@ -141,6 +142,7 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 		}
 	}
 	child.Credentials = parent.Credentials
+	child.Integrations = parent.Integrations
 
 	return child
 }
