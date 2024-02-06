@@ -34,7 +34,7 @@ var AutoVariablesExtension string
 
 // args
 
-var DefaultWorkspaceDatabase string
+var DefaultDatabase string
 
 // env vars
 
