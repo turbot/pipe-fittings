@@ -10,7 +10,6 @@ const (
 	ArgCloudHost               = "cloud-host"
 	ArgCloudToken              = "cloud-token"
 	ArgConnectionString        = "connection-string"
-	ArgDashboardListen         = "listen"
 	ArgDashboardPort           = "port"
 	ArgDashboardListen         = "dashboard-listen"
 	ArgDashboardPort           = "dashboard-port"
