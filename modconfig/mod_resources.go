@@ -46,6 +46,7 @@ type ResourceMaps struct {
 	Pipelines    map[string]*Pipeline
 	Triggers     map[string]*Trigger
 	Integrations map[string]Integration
+	Notifiers    map[string]Notifier
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -483,6 +484,8 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Triggers[longName]
 	case schema.BlockTypeIntegration:
 		resource, found = m.Integrations[longName]
+	// case schema.BlockTypeNotifier:
+	// 	resource, found = m.Notifiers[longName]
 	case schema.BlockTypeMod:
 		for _, mod := range m.Mods {
 			if mod.ShortName == parsedName.Name {

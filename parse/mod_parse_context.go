@@ -68,6 +68,7 @@ type ModParseContext struct {
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
 	Credentials  map[string]credential.Credential
 	Integrations map[string]modconfig.Integration
+	Notifiers    map[string]modconfig.Notifier
 
 	ParentParseCtx *ModParseContext
 

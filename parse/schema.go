@@ -35,6 +35,10 @@ var ConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeIntegration,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeNotifier,
+			LabelNames: []string{schema.LabelName},
+		},
 	},
 }
 

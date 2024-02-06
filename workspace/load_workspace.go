@@ -23,12 +23,14 @@ type LoadWorkspaceOption func(*LoadWorkspaceConfig)
 type LoadWorkspaceConfig struct {
 	credentials  map[string]credential.Credential
 	integrations map[string]modconfig.Integration
+	notifiers    map[string]modconfig.Notifier
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
 	return &LoadWorkspaceConfig{
 		credentials:  make(map[string]credential.Credential),
 		integrations: make(map[string]modconfig.Integration),
+		notifiers:    make(map[string]modconfig.Notifier),
 	}
 }
 
@@ -41,6 +43,12 @@ func WithCredentials(credentials map[string]credential.Credential) LoadWorkspace
 func WithIntegrations(integrations map[string]modconfig.Integration) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.integrations = integrations
+	}
+}
+
+func WithNotifiers(notifiers map[string]modconfig.Notifier) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.notifiers = notifiers
 	}
 }
 

@@ -47,6 +47,7 @@ const (
 	BlockTypeIntegration       = "integration"
 	BlockTypeCredential        = "credential"
 	BlockTypeNotify            = "notify"
+	BlockTypeNotifier          = "notifier"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"

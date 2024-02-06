@@ -43,6 +43,7 @@ type Workspace struct {
 	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
 	Credentials  map[string]credential.Credential
 	Integrations map[string]modconfig.Integration
+	Notifiers    map[string]modconfig.Notifier
 
 	CloudMetadata *steampipeconfig.CloudMetadata
 
@@ -87,6 +88,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 
 	workspace.Credentials = cfg.credentials
 	workspace.Integrations = cfg.integrations
+	workspace.Notifiers = cfg.notifiers
 
 	// load the workspace mod
 	errAndWarnings := workspace.loadWorkspaceMod(ctx)
@@ -320,6 +322,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 
 	parseCtx.Credentials = w.Credentials
 	parseCtx.Integrations = w.Integrations
+	parseCtx.Notifiers = w.Notifiers
 
 	return parseCtx, nil
 }

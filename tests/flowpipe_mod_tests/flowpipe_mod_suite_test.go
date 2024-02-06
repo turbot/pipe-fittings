@@ -243,7 +243,11 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_integration"})
+	// Load the config from 2 different directories to test that we can load from multiple directories where the integration is defined after
+	// we load the notifiers.
+	//
+	// ensure that "config_dir" is loaded first, that's where the notifier is.
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir", "./mod_with_integration"})
 	if err.Error != nil {
 		assert.FailNow(err.Error.Error())
 		return
@@ -256,6 +260,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 
 	assert.Equal(1, len(flowpipeConfig.Integrations))
 	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
+
+	assert.Equal(1, len(flowpipeConfig.Notifiers))
+	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].HclResourceImpl.FullName)
+
+	// Check the notify -> integration link
+	assert.Equal(1, len(flowpipeConfig.Notifiers["admins"].Notifies))
+	assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["signing_secret"].AsString())
+	assert.Equal("xoxp-111111", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["token"].AsString())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations))
 	assert.NotNil(w)
