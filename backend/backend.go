@@ -21,7 +21,9 @@ type Backend interface {
 	RowReader() RowReader
 }
 type SearchPathProvider interface {
-	SearchPath() []string
+	OriginalSearchPath() []string
+	RequiredSearchPath() []string
+	ResolvedSearchPath() []string
 }
 
 func FromConnectionString(ctx context.Context, str string) (Backend, error) {
