@@ -39,7 +39,7 @@ type HclResource interface {
 type ModTreeItem interface {
 	HclResource
 	ModItem
-	ConnectionStringItem
+	DatabaseItem
 
 	AddParent(ModTreeItem) error
 	GetParents() []ModTreeItem
@@ -50,8 +50,10 @@ type ModTreeItem interface {
 	GetModTreeItemImpl() *ModTreeItemImpl
 }
 
-type ConnectionStringItem interface {
-	GetConnectionString() *string
+type DatabaseItem interface {
+	GetDatabase() *string
+	GetSearchPath() []string
+	GetSearchPathPrefix() []string
 }
 
 type ModItem interface {

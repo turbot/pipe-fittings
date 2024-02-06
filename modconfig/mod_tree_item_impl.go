@@ -10,8 +10,10 @@ type ModTreeItemImpl struct {
 	// required to allow partial decoding
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
-	Mod              *Mod    `cty:"mod" json:"-"`
-	ConnectionString *string `cty:"connection_string" hcl:"connection_string" json:"connection_string,omitempty"`
+	Mod              *Mod     `cty:"mod" json:"-"`
+	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
+	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
+	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
 
 	Paths []NodePath `column:"path,jsonb" json:"path,omitempty"`
 
@@ -64,13 +66,35 @@ func (b *ModTreeItemImpl) GetMod() *Mod {
 	return b.Mod
 }
 
-// GetConnectionString implements ConnectionStringItem, ModTreeItem
-func (b *ModTreeItemImpl) GetConnectionString() *string {
-	if b.ConnectionString != nil {
-		return b.ConnectionString
+// GetDatabase implements DatabaseItem
+func (b *ModTreeItemImpl) GetDatabase() *string {
+	if b.Database != nil {
+		return b.Database
 	}
 	if len(b.parents) > 0 {
-		return b.parents[0].GetConnectionString()
+		return b.parents[0].GetDatabase()
+	}
+	return nil
+}
+
+// GetSearchPath implements DatabaseItem
+func (b *ModTreeItemImpl) GetSearchPath() []string {
+	if b.SearchPath != nil {
+		return b.SearchPath
+	}
+	if len(b.parents) > 0 {
+		return b.parents[0].GetSearchPath()
+	}
+	return nil
+}
+
+// GetSearchPathPrefix implements DatabaseItem
+func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
+	if b.SearchPathPrefix != nil {
+		return b.SearchPathPrefix
+	}
+	if len(b.parents) > 0 {
+		return b.parents[0].GetSearchPathPrefix()
 	}
 	return nil
 }
