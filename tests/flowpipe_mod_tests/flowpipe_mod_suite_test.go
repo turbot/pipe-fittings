@@ -340,6 +340,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 		assert.Fail("Step is not an input step")
 		return
 	}
+	assert.Equal("Do you want to approve?", *step.Prompt)
 
 	notifies := step.Notifier.AsValueMap()["notifies"].AsValueSlice()
 	assert.Len(notifies, 1)
@@ -347,6 +348,23 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.NotNil(notify)
 
 	integrations := notify["integration"].AsValueMap()
+	assert.NotNil(integrations)
+	assert.Equal("Q#$$#@#$$#W", integrations["signing_secret"].AsString())
+
+	step, ok = pipeline.Steps[1].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	assert.Equal("Do you want to approve (2)?", *step.Prompt)
+	notifies = step.Notifier.AsValueMap()["notifies"].AsValueSlice()
+
+	assert.Len(notifies, 1)
+	notify = notifies[0].AsValueMap()
+	assert.NotNil(notify)
+
+	integrations = notify["integration"].AsValueMap()
 	assert.NotNil(integrations)
 	assert.Equal("Q#$$#@#$$#W", integrations["signing_secret"].AsString())
 

@@ -14,6 +14,17 @@ pipeline "approval_with_notifies" {
     option "Approve" {}
     option "Deny" {}
   }
+
+  step "input" "my_step_2" {
+    notifier = notifier.admins
+
+    type     = "button"
+    prompt   = "Do you want to approve (2)?"
+
+    option "Approve" {}
+    option "Deny" {}
+  }
+
 }
 
 
