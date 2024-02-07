@@ -195,11 +195,11 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 		var vars map[string]cty.Value
 
 		switch parts[0] {
-		case "slack":
+		case schema.IntegrationTypeSlack:
 			vars = slack
-		case "email":
+		case schema.IntegrationTypeEmail:
 			vars = email
-		case "webform":
+		case schema.IntegrationTypeWebform:
 			vars = webform
 		default:
 			diags = append(diags, &hcl.Diagnostic{
@@ -228,13 +228,13 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 
 	integrationVariables := make(map[string]cty.Value)
 	if len(slack) > 0 {
-		integrationVariables["slack"] = cty.ObjectVal(slack)
+		integrationVariables[schema.IntegrationTypeSlack] = cty.ObjectVal(slack)
 	}
 	if len(email) > 0 {
-		integrationVariables["email"] = cty.ObjectVal(email)
+		integrationVariables[schema.IntegrationTypeEmail] = cty.ObjectVal(email)
 	}
 	if len(webform) > 0 {
-		integrationVariables["webform"] = cty.ObjectVal(webform)
+		integrationVariables[schema.IntegrationTypeWebform] = cty.ObjectVal(webform)
 	}
 
 	variables["integration"] = cty.ObjectVal(integrationVariables)

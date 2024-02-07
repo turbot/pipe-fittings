@@ -223,61 +223,6 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 	return o, diags
 }
 
-func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.Integration, *DecodeResult) {
-	res := newDecodeResult()
-
-	if len(block.Labels) != 2 {
-		res.handleDecodeDiags(hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid integration block - expected 2 labels, found %d", len(block.Labels)),
-				Subject:  &block.DefRange,
-			},
-		})
-		return nil, res
-	}
-
-	integrationType := block.Labels[0]
-	integrationName := block.Labels[1]
-	integration := modconfig.NewIntegration(mod, block, integrationType, integrationName)
-	if integration == nil {
-		res.handleDecodeDiags(hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid integration type '%s'", integrationType),
-				Subject:  &block.DefRange,
-			},
-		})
-		return nil, res
-	}
-
-	integrationSchema := GetIntegrationBlockSchema(integrationType)
-	if helpers.IsNil(integrationSchema) {
-		res.handleDecodeDiags(hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "invalid integration type: " + integrationType,
-				Subject:  &block.DefRange,
-			},
-		})
-		return integration, res
-	}
-
-	integrationOptions, diags := block.Body.Content(integrationSchema)
-	if diags.HasErrors() {
-		res.handleDecodeDiags(diags)
-		return nil, res
-	}
-
-	diags = integration.SetAttributes(integrationOptions.Attributes, parseCtx.EvalCtx)
-	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
-		return integration, res
-	}
-
-	return integration, res
-}
-
 func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Trigger, *DecodeResult) {
 
 	res := newDecodeResult()

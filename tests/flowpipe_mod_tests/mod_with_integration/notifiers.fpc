@@ -4,3 +4,14 @@ notifier "admins" {
     channel = "#admins"
   }
 }
+
+notifier "devs" {
+  notify {
+    integration = integration.slack.my_slack_app 
+    channel = "#devs"
+  }
+  notify {
+    integration = integration.slack.my_slack_app 
+    channel = "#admin"
+  }  
+}

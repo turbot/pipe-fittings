@@ -240,6 +240,53 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+	assert.Equal(5, len(w.Integrations))
+
+	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_notifies not found")
+		return
+	}
+
+	step, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	notifies := step.Notifier.AsValueMap()["notifies"].AsValueSlice()
+	assert.Len(notifies, 1)
+	notify := notifies[0].AsValueMap()
+	assert.NotNil(notify)
+	toCtys := notify["to"].AsValueSlice()
+	assert.Equal(2, len(toCtys))
+	assert.Equal("foo@bar.com", toCtys[0].AsString())
+	assert.Equal("baz@bar.com", toCtys[1].AsString())
+
+	integrations := notify["integration"].AsValueMap()
+	assert.NotNil(integrations)
+	assert.Equal("user@test.tld", integrations["default_recipient"].AsString())
+
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
 
@@ -258,10 +305,10 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 		return
 	}
 
-	assert.Equal(1, len(flowpipeConfig.Integrations))
+	assert.Equal(2, len(flowpipeConfig.Integrations))
 	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
 
-	assert.Equal(1, len(flowpipeConfig.Notifiers))
+	assert.Equal(2, len(flowpipeConfig.Notifiers))
 	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].HclResourceImpl.FullName)
 
 	// Check the notify -> integration link
@@ -269,10 +316,10 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["signing_secret"].AsString())
 	assert.Equal("xoxp-111111", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["token"].AsString())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
-	assert.Equal(1, len(w.Integrations))
+	assert.Equal(2, len(w.Integrations))
 	assert.NotNil(w.Integrations["slack.my_slack_app"])
 	if i, ok := w.Integrations["slack.my_slack_app"].(*modconfig.SlackIntegration); !ok {
 		assert.Fail("integration failed to parse to SlackIntegration")
@@ -281,6 +328,41 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 		assert.Equal("#infosec", *i.Channel)
 	}
 
+	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_notifies not found")
+		return
+	}
+
+	step, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	notifies := step.Notifier.AsValueMap()["notifies"].AsValueSlice()
+	assert.Len(notifies, 1)
+	notify := notifies[0].AsValueMap()
+	assert.NotNil(notify)
+
+	integrations := notify["integration"].AsValueMap()
+	assert.NotNil(integrations)
+	assert.Equal("Q#$$#@#$$#W", integrations["signing_secret"].AsString())
+
+	pipeline = pipelines["mod_with_integration.pipeline.approval_with_notifies_dynamic"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_notifies_dynamic not found")
+		return
+	}
+
+	step, ok = pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	assert.NotNil(step.UnresolvedAttributes["notifier"])
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {

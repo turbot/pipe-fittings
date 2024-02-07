@@ -5,25 +5,32 @@ mod "mod_with_integration" {
 
 pipeline "approval_with_notifies" {
 
-  param "slack_integration" {
-    default = true
+  step "input" "my_step" {
+    notifier = notifier["admins"]
+
+    type     = "button"
+    prompt   = "Do you want to approve?"
+
+    option "Approve" {}
+    option "Deny" {}
+  }
+}
+
+
+pipeline "approval_with_notifies_dynamic" {
+
+  param "notifier" {
+    type = "string"
+    default = "wrong"
   }
 
-  param "slack_channel" {
-    default = "foo"
+  step "input" "my_step" {
+    notifier = notifier[param.notifier]
+
+    type     = "button"
+    prompt   = "Do you want to approve?"
+
+    option "Approve" {}
+    option "Deny" {}
   }
-
-  // step "input" "input" {
-  //   type = "button"
-  //   option "test" {}
-
-  //   notifies = [
-  //     {
-  //       integration = integration.slack.my_slack_app
-  //       channel     = "foo"
-  //       # channel = param.slack_channel
-  //       # if      = param.slack_integration == null ? false : true
-  //     }
-  //   ]
-  // }
 }

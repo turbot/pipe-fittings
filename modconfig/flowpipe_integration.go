@@ -1,8 +1,6 @@
 package modconfig
 
 import (
-	"strings"
-
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 
@@ -343,48 +341,57 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
 		}
+	case schema.IntegrationTypeWebform:
+		return &WebformIntegration{
+			HclResourceImpl: hclResourceImpl,
+			Type:            integrationType,
+		}
 	}
 
 	return nil
 }
 
-func NewIntegration(mod *Mod, block *hcl.Block, integrationType string, integrationName string) Integration {
+type WebformIntegration struct {
+	HclResourceImpl
+	ResourceWithMetadataImpl
 
-	integrationFullName := integrationType + "." + integrationName
+	Type string `json:"type" cty:"type" hcl:"type,label"`
+}
 
-	// TODO: rethink this area, we need to be able to handle pipelines that are not in a mod
-	// TODO: we're trying to integrate the pipeline & trigger functionality into the mod system, so it will look
-	// TODO: like a clutch for now
-	if mod != nil {
-		modName := mod.Name()
-		if strings.HasPrefix(modName, "mod") {
-			modName = strings.TrimPrefix(modName, "mod.")
-		}
-		integrationFullName = modName + ".integration." + integrationFullName
-	} else {
-		integrationFullName = "local.integration." + integrationFullName
+func (i *WebformIntegration) GetIntegrationType() string {
+	return i.Type
+}
+
+func (i *WebformIntegration) CtyValue() (cty.Value, error) {
+	return GetCtyValue(i)
+}
+
+func (i *WebformIntegration) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+func (i *WebformIntegration) Equals(other *WebformIntegration) bool {
+	if i == nil && other == nil {
+		return true
+	}
+	if i == nil || other == nil {
+		return false
 	}
 
-	hclResourceImpl := HclResourceImpl{
-		// The FullName is the full name of the resource, including the mod name
-		FullName:        integrationFullName,
-		UnqualifiedName: "integration." + block.Labels[0] + "." + block.Labels[1],
-		DeclRange:       block.DefRange,
-		blockType:       block.Type,
+	// Check fields from embedded structs
+	if !i.HclResourceImpl.Equals(&other.HclResourceImpl) {
+		return false
 	}
 
-	switch integrationType {
-	case schema.IntegrationTypeSlack:
-		return &SlackIntegration{
-			HclResourceImpl: hclResourceImpl,
-			Type:            integrationType,
-		}
-	case schema.IntegrationTypeEmail:
-		return &EmailIntegration{
-			HclResourceImpl: hclResourceImpl,
-			Type:            integrationType,
-		}
-	default:
-		return nil
+	// Compare the fields specific to WebformIntegration
+	if i.Type != other.Type {
+		return false
 	}
+
+	// If all fields are equal, the structs are equal
+	return true
+}
+
+func (i *WebformIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	return hcl.Diagnostics{}
 }

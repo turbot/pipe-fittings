@@ -120,7 +120,6 @@ const (
 	AttributeTypeToken         = "token"
 	AttributeTypeSigningSecret = "signing_secret"
 	AttributeTypeWebhookUrl    = "webhook_url"
-	AttributeTypeNotifies      = "notifies"
 
 	AttributeTypeIntegration = "integration"
 	AttributeTypeCredential  = "credential"
@@ -159,6 +158,7 @@ const (
 	AttributeTypeSmtpsPort        = "smtps_port"
 	AttributeTypeLabel            = "label"
 	AttributeTypeSelected         = "selected"
+	AttributeTypeNotifier         = "notifier"
 
 	AttributeTypeMessage = "message"
 
@@ -202,9 +202,10 @@ const (
 	TriggerTypeHttp     = "http"
 
 	// Integration Types
-	IntegrationTypeSlack = "slack"
-	IntegrationTypeEmail = "email"
-	IntegrationTypeTeams = "teams"
+	IntegrationTypeSlack   = "slack"
+	IntegrationTypeEmail   = "email"
+	IntegrationTypeTeams   = "teams"
+	IntegrationTypeWebform = "webform"
 
 	LabelName = "name"
 	LabelType = "type"

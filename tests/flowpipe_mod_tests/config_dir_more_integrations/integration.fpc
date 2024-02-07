@@ -1,11 +1,14 @@
-integration "slack" "slack_with_token" {
-  token = "xoxp-abc123"
+
+integration "slack" "my_slack_app" {
+  token           = "xoxp-111111"
+  channel         = "#infosec"
+
+  # optional - if you want to verify the source
+  signing_secret  = "Q#$$#@#$$#W"
 }
 
-integration "slack" "slack_with_token_and_secret" {
-  token = "xoxp-abc123"
-  signing_secret = "W&EYrf78rqwf"
-}
+
+integration "webform" "default" {}
 
 integration "slack" "slack_with_webhook" {
   webhook_url = "https://hooks.slack.com/services/T1234567890/B0123456789/XXXXXXXXXX"
@@ -27,4 +30,11 @@ integration "email" "email_with_all" {
   from              = "turbie@flowpipe.io"
   default_recipient = "user@test.tld"
   default_subject   = "Flowpipe: Action Required"
+}
+
+notifier "admins" {
+  notify {
+    integration = integration.email.email_with_all 
+    to = ["foo@bar.com", "baz@bar.com"]
+  }
 }

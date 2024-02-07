@@ -88,71 +88,6 @@ var tests = []testSetup{
 		containsError: "bad cron format. Specify valid intervals hourly, daily, weekly, monthly or valid cron expression:",
 	},
 	{
-		title:         "invalid approval - notify and notifies specified",
-		file:          "./pipelines/approval_notify_and_notifies.fp",
-		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
-	},
-	{
-		title:         "invalid approval - slack notify missing channel",
-		file:          "./pipelines/approval_invalid_notify_slack.fp",
-		containsError: "channel must be specified for slack integration",
-	},
-	{
-		title:         "invalid approval - email notify missing to",
-		file:          "./pipelines/approval_invalid_notify_email.fp",
-		containsError: "to must be specified for email integration",
-	},
-	{
-		title:         "invalid integration - slack with invalid attribute",
-		file:          "./pipelines/invalid_integration_slack_attribute.fp",
-		containsError: "Unsupported argument: An argument named \"from\" is not expected here.",
-	},
-	{
-		title:         "invalid integration - email with invalid attribute",
-		file:          "./pipelines/invalid_integration_email_attribute.fp",
-		containsError: "Unsupported argument: An argument named \"token\" is not expected here.",
-	},
-	{
-		title:         "invalid integration - email with missing smtp host",
-		file:          "./pipelines/invalid_integration_email_missing_smtp_host.fp",
-		containsError: "The argument \"smtp_host\" is required, but no definition was found.",
-	},
-	{
-		title:         "invalid integration - slack with no attributes",
-		file:          "./pipelines/invalid_integration_slack_no_attributes.fp",
-		containsError: "requires one of the following attributes set: token, webhook_url",
-	},
-	{
-		title:         "invalid integration - slack with token and webhook url",
-		file:          "./pipelines/invalid_integration_slack_token_and_webhook.fp",
-		containsError: "Attributes token and webhook_url are mutually exclusive",
-	},
-	{
-		title:         "invalid approval - notify with missing integration attribute",
-		file:          "./pipelines/approval_invalid_notify_missing_integration.fp",
-		containsError: "Missing required argument: The argument \"integration\" is required, but no definition was found.",
-	},
-	{
-		title:         "invalid approval - notify with invalid integration that does not exist",
-		file:          "./pipelines/approval_invalid_notify_invalid_integration.fp",
-		containsError: "MISSING: integration.slack.missing_slack_integration",
-	},
-	{
-		title:         "invalid approval - step with multiple notify block with invalid slack attribute",
-		file:          "./pipelines/approval_invalid_multiple_notify_slack.fp",
-		containsError: "channel must be specified for slack integration",
-	},
-	{
-		title:         "invalid approval - step with multiple notify block with invalid email attribute",
-		file:          "./pipelines/approval_invalid_multiple_notify_email.fp",
-		containsError: "to must be specified for email integration",
-	},
-	{
-		title:         "invalid approval - multiple notify and notifies specified",
-		file:          "./pipelines/approval_multiple_notify_and_notifies.fp",
-		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
-	},
-	{
 		title:         "invalid loop - bad definition for echo step loop",
 		file:          "./pipelines/loop_invalid_transform.fp",
 		containsError: "An argument named \"baz\" is not expected here",
@@ -221,11 +156,6 @@ var tests = []testSetup{
 		title:         "invalid execution mode in http trigger",
 		file:          "./pipelines/invalid_http_trigger_execution_mode.fp",
 		containsError: "The execution mode must be one of: synchronous,asynchronous",
-	},
-	{
-		title:         "invalid input type",
-		file:          "./pipelines/invalid_input_type.fp",
-		containsError: "Attribute type specified with invalid value not_valid",
 	},
 	{
 		title:         "invalid input - option block(s) and options both set",
