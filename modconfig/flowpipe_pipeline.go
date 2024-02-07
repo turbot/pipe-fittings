@@ -3,6 +3,9 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/logrusorgru/aurora"
+	"github.com/turbot/pipe-fittings/printers"
+	"github.com/turbot/pipe-fittings/sanitize"
 	"reflect"
 	"strings"
 
@@ -459,6 +462,20 @@ type PipelineOutput struct {
 	Resolved        bool           `json:"resolved,omitempty"`
 	Value           interface{}    `json:"value,omitempty"`
 	UnresolvedValue hcl.Expression `json:"-"`
+}
+
+func (p PipelineOutput) GetShowData() *printers.Table {
+	var res = printers.NewTable().WithRow(
+		printers.FieldValue{Name: "Name", Value: p.Name, RenderKeyValueFunc: p.renderName},
+		printers.FieldValue{Name: "Description", Value: p.Description, Indent: 2},
+		printers.FieldValue{Name: "Type", Value: "any", Indent: 2})
+
+	return res
+}
+
+func (p PipelineOutput) renderName(opts sanitize.RenderOptions) string {
+	au := aurora.NewAurora(opts.ColorEnabled)
+	return fmt.Sprintf("%s:", au.Cyan(p.Name))
 }
 
 func (p *PipelineOutput) Equals(other *PipelineOutput) bool {

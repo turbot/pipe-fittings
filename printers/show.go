@@ -2,7 +2,6 @@ package printers
 
 import (
 	"fmt"
-	"github.com/google/martian/log"
 	"github.com/logrusorgru/aurora"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/sanitize"
@@ -12,11 +11,14 @@ import (
 )
 
 type Showable interface {
-	GetAsTable() *Table
+	GetShowData() *Table
+}
+type Listable interface {
+	GetListData() *Table
 }
 
 func Show(resource Showable, opts sanitize.RenderOptions) (string, error) {
-	data := resource.GetAsTable()
+	data := resource.GetShowData()
 	au := aurora.NewAurora(opts.ColorEnabled)
 	if len(data.Rows) != 1 {
 		return "", fmt.Errorf("expected 1 row, got %d", len(data.Rows))
@@ -43,42 +45,95 @@ func Show(resource Showable, opts sanitize.RenderOptions) (string, error) {
 	maxTitleLength += 2
 
 	for idx, c := range data.Columns {
+		fieldOpts := data.FieldOpts[c.Name]
 
-		// title
-		padFormat := fmt.Sprintf("%%-%ds", maxTitleLength)
-		// todo bold only for top level
-		title := fmt.Sprintf(padFormat, au.Blue(fmt.Sprintf("%s:", c.Name)).Bold())
+		// if render opts or this field specify an indent, apply it
+		globalIndent := opts.Indent
+		fieldIndent := fieldOpts.Indent
+		var indentString = strings.Repeat(" ", globalIndent+fieldIndent)
 
-		// value
+		var fieldString string
 
-		// TODO handle map, struct and array
-
-		columnVal := row.Cells[idx]
-
-		val := reflect.ValueOf(columnVal)
-
-		switch val.Kind() {
-		case reflect.Slice:
-			b.WriteString(fmt.Sprintf("%s\n", title))
-
-			s, err := showSlice(val, opts)
-			if err != nil {
-				return "", err
+		// if there is a key-value render func, use it to render the full key and value
+		if fieldOpts.RenderKeyValueFunc != nil {
+			fieldString = fieldOpts.RenderKeyValueFunc(opts)
+			// is this returned anything, add a newline
+			if len(fieldString) > 0 {
+				fieldString += "\n"
 			}
-			b.WriteString(s)
-		default:
+		} else {
+			fieldString = renderKeyValue(maxTitleLength, au, c, row.Cells[idx], fieldOpts, opts)
+		}
 
-			switch vt := columnVal.(type) {
-			case string, int, float64, bool:
-				b.WriteString(fmt.Sprintf("%s%v\n", title, vt))
-			case time.Time:
-				b.WriteString(fmt.Sprintf("%s%v\n", title, vt.Format(time.RFC3339)))
-			}
-
+		// if there is anything in the field string, add it to the builder, with indent
+		if len(fieldString) > 0 {
+			b.WriteString(indentString)
+			b.WriteString(fieldString)
 		}
 	}
 
 	return b.String(), nil
+}
+
+func renderKeyValue(maxTitleLength int, au aurora.Aurora, c TableColumnDefinition, columnValue any, fieldOpts FieldRenderOptions, opts sanitize.RenderOptions) string {
+	// key
+	padFormat := fmt.Sprintf("%%-%ds", maxTitleLength)
+	keyStr := fmt.Sprintf(padFormat, au.Blue(fmt.Sprintf("%s:", c.Name)))
+
+	// value
+	var valstr string
+
+	// if there is a value render func, use it to render the value
+	if fieldOpts.RenderValueFunc != nil {
+		valstr = fieldOpts.RenderValueFunc(opts) + "\n"
+	} else {
+		// ok manually render the value
+		var err error
+		valstr, err = renderValue(columnValue, opts)
+		if err != nil {
+			return ""
+		}
+	}
+	// now combine
+	return fmt.Sprintf("%s%s", keyStr, valstr)
+}
+
+func renderValue(value any, opts sanitize.RenderOptions) (string, error) {
+	val := reflect.ValueOf(value)
+
+	// if the element is showable, call show on it
+	if s, ok := value.(Showable); ok {
+		childOpts := opts.Clone()
+		childOpts.Indent += 2
+		return Show(s, childOpts)
+	}
+
+	var valStr string
+
+	switch val.Kind() {
+	case reflect.Slice:
+		sliceString, err := showSlice(val, opts)
+		if err != nil {
+			return "", err
+		}
+		// put a newline BEFORE the slice string
+		valStr = "\n" + sliceString
+
+		// TODO  handle map, struct
+	// case reflect.Map:
+	// case reflect.Struct:
+
+	default:
+		switch vt := value.(type) {
+		case time.Time:
+			valStr = fmt.Sprintf("%v\n", vt.Format(time.RFC3339))
+		default:
+			// todo dereference ptr?????
+			valStr = fmt.Sprintf("%v\n", vt)
+		}
+	}
+
+	return valStr, nil
 }
 
 func showSlice(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
@@ -87,59 +142,38 @@ func showSlice(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
 	for i := 0; i < val.Len(); i++ {
 		// Retrieve each element in the slice
 		elem := dereferencePointer(val.Index(i).Interface())
-		var elemString string
-		var err error
 
-		if s, ok := elem.(Showable); ok {
-			elemString, err = Show(s, opts)
-			if err != nil {
-				return "", err
-			}
-
-		} else {
-			elemVal := reflect.ValueOf(elem)
-			switch elemVal.Kind() {
-			case reflect.Slice:
-				elemString, err = showSlice(val, opts)
-				if err != nil {
-					return "", err
-				}
-			default:
-				elemString = fmt.Sprintf("%v\n", elem)
-			}
+		valStr, err := renderValue(elem, opts)
+		if err != nil {
+			return "", err
 		}
-
-		soFar := b.String()
-		log.Debugf("soFar: %s", soFar)
-		elemString = addBullet(elemString)
-		// now add the "- " to the first line and indenr all other lines
-		b.WriteString(elemString)
+		b.WriteString(valStr)
 
 	}
 	return b.String(), nil
 }
 
-// addBullet takes a multiline string.
-// It adds "- " to the start of the first line and indents all other lines to align with the bullet.
-func addBullet(s string) string {
-	lines := strings.Split(s, "\n")
-
-	// Process first line with bullet
-	if len(lines) > 0 {
-		lines[0] = "- " + lines[0]
-	}
-
-	// Process remaining lines
-	indent := strings.Repeat(" ", len("- "))
-	for i := 1; i < len(lines); i++ {
-		if len(lines[i]) > 0 {
-			lines[i] = indent + lines[i]
-		}
-	}
-
-	return strings.Join(lines, "\n")
-
-}
+//// addBullet takes a multiline string.
+//// It adds "- " to the start of the first line and indents all other lines to align with the bullet.
+//func addBullet(s string) string {
+//	lines := strings.Split(s, "\n")
+//
+//	// Process first line with bullet
+//	if len(lines) > 0 {
+//		lines[0] = "- " + lines[0]
+//	}
+//
+//	// Process remaining lines
+//	indent := strings.Repeat(" ", len("- "))
+//	for i := 1; i < len(lines); i++ {
+//		if len(lines[i]) > 0 {
+//			lines[i] = indent + lines[i]
+//		}
+//	}
+//
+//	return strings.Join(lines, "\n")
+//
+//}
 
 func renderField(key string, value any, level int, au aurora.Aurora) string {
 	if !helpers.IsNil(value) {
