@@ -6,7 +6,20 @@ type Notifier struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
-	Notifies []Notify
+	Notifies []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
+}
+
+func (c *Notifier) CtyValue() (cty.Value, error) {
+	ctyValue, err := GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+	return ctyValue, nil
+
+	// valueMap := ctyValue.AsValueMap()
+	// valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	// return cty.ObjectVal(valueMap), nil
 }
 
 type Notify struct {

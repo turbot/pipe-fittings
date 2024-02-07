@@ -9,12 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/tests/test_init"
 
 	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/turbot/pipe-fittings/credential"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/workspace"
 )
 
 type FlowpipeModLoadTestSuite struct {
@@ -72,72 +67,6 @@ func (suite *FlowpipeModLoadTestSuite) SetupSuite() {
 // end of the testing suite, after all tests have been run.
 func (suite *FlowpipeModLoadTestSuite) TearDownSuite() {
 	suite.TearDownSuiteRunCount++
-}
-
-func (suite *FlowpipeModLoadTestSuite) TestInputStepContainsNotifyBlockThatHasVarOnIt() {
-	assert := assert.New(suite.T())
-
-	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/step_with_notify_and_var_default", workspace.WithCredentials(map[string]credential.Credential{}))
-	assert.Nil(errorAndWarning.Error)
-
-	mod := workspace.Mod
-
-	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.approval_with_variables"]
-
-	if pipeline == nil {
-		assert.Fail("Pipeline approval_with_variables not found")
-		return
-	}
-	step, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
-	if !ok {
-		assert.Fail("Step is not an input step")
-		return
-	}
-	assert.Equal("input", step.Name)
-
-	if step.NotifyList == nil {
-		assert.Fail("notify block is nil")
-		return
-	}
-	assert.Equal(1, len(step.NotifyList))
-
-	assert.Equal("bar", *step.NotifyList[0].Channel, "this value - bar - is set from the default of the variable")
-	assert.Equal("this value is from pvar file", step.NotifyList[0].Integration.AsValueMap()["token"].AsString())
-}
-
-func (suite *FlowpipeModLoadTestSuite) TestNotifyDependsAnotherStep() {
-	assert := assert.New(suite.T())
-
-	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_depends_another_step", workspace.WithCredentials(map[string]credential.Credential{}))
-	assert.Nil(errorAndWarning.Error)
-
-	mod := workspace.Mod
-	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.approval_with_depends_on"]
-	if pipeline == nil {
-		assert.Fail("pipeline not found")
-		return
-	}
-
-	assert.Equal("pipeline.get_integration", pipeline.Steps[1].GetDependsOn()[0], "the second step (input step) has a dependency to pipeline.get_integration step")
-}
-
-func (suite *FlowpipeModLoadTestSuite) TestNotifyWithRuntimeParam() {
-	assert := assert.New(suite.T())
-
-	workspace, errorAndWarning := workspace.Load(suite.ctx, "./mods/notify_with_runtime_param", workspace.WithCredentials(map[string]credential.Credential{}))
-	assert.Nil(errorAndWarning.Error)
-
-	mod := workspace.Mod
-	pipeline := mod.ResourceMaps.Pipelines["local.pipeline.notify_with_runtime_param"]
-	if pipeline == nil {
-		assert.Fail("pipeline not found")
-		return
-	}
-
-	assert.Equal("pipeline.get_integration", pipeline.Steps[1].GetDependsOn()[0], "the second step (input step) has a dependency to pipeline.get_integration step")
-
-	unresolvedBodies := pipeline.Steps[1].GetUnresolvedBodies()
-	assert.NotNil(unresolvedBodies["notify"])
 }
 
 // In order for 'go test' to run this suite, we need to create

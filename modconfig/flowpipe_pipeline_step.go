@@ -339,12 +339,6 @@ func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttr
 	return b, nil
 }
 
-type PipelineStepInputNotify struct {
-	Channel     *string   `json:"channel,omitempty" hcl:"channel,optional"`
-	To          *string   `json:"to,omitempty" hcl:"to,optional"`
-	Integration cty.Value `json:"-" hcl:"integration"`
-}
-
 func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) (map[string]interface{}, error) {
 	notify := map[string]interface{}{}
 	integrationMap := map[string]interface{}{}
@@ -402,52 +396,52 @@ func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) (map[string]inte
 	return notify, nil
 }
 
-func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
-	var diags hcl.Diagnostics
+// func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
+// 	var diags hcl.Diagnostics
 
-	if p.Channel == nil && p.To == nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Either channel or to  must be specified",
-		})
-	}
+// 	if p.Channel == nil && p.To == nil {
+// 		diags = append(diags, &hcl.Diagnostic{
+// 			Severity: hcl.DiagError,
+// 			Summary:  "Either channel or to  must be specified",
+// 		})
+// 	}
 
-	if p.Integration == cty.NilVal {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "integration must be specified",
-		})
-	}
+// 	if p.Integration == cty.NilVal {
+// 		diags = append(diags, &hcl.Diagnostic{
+// 			Severity: hcl.DiagError,
+// 			Summary:  "integration must be specified",
+// 		})
+// 	}
 
-	if !p.Integration.Type().IsObjectType() {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "integration must be a map",
-		})
-	} else {
-		integrationMap := p.Integration.AsValueMap()
-		integrationType := integrationMap["type"].AsString()
-		if integrationType == "slack" && p.Channel == nil {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "channel must be specified for slack integration",
-			})
+// 	if !p.Integration.Type().IsObjectType() {
+// 		diags = append(diags, &hcl.Diagnostic{
+// 			Severity: hcl.DiagError,
+// 			Summary:  "integration must be a map",
+// 		})
+// 	} else {
+// 		integrationMap := p.Integration.AsValueMap()
+// 		integrationType := integrationMap["type"].AsString()
+// 		if integrationType == "slack" && p.Channel == nil {
+// 			diags = append(diags, &hcl.Diagnostic{
+// 				Severity: hcl.DiagError,
+// 				Summary:  "channel must be specified for slack integration",
+// 			})
 
-		} else if integrationType == "email" && p.To == nil {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "to must be specified for email integration",
-			})
-		} else if integrationType != "slack" && integrationType != "email" {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("unsupported integration type %s", integrationType),
-			})
-		}
-	}
+// 		} else if integrationType == "email" && p.To == nil {
+// 			diags = append(diags, &hcl.Diagnostic{
+// 				Severity: hcl.DiagError,
+// 				Summary:  "to must be specified for email integration",
+// 			})
+// 		} else if integrationType != "slack" && integrationType != "email" {
+// 			diags = append(diags, &hcl.Diagnostic{
+// 				Severity: hcl.DiagError,
+// 				Summary:  fmt.Sprintf("unsupported integration type %s", integrationType),
+// 			})
+// 		}
+// 	}
 
-	return diags
-}
+// 	return diags
+// }
 
 type PipelineStepInputOption struct {
 	Label    *string `json:"label" hcl:"label,optional"`
@@ -2938,29 +2932,7 @@ type PipelineStepInput struct {
 	Prompt     *string `json:"prompt" cty:"prompt"`
 	OptionList []PipelineStepInputOption
 
-	// We can have more than one notify block
-	/*
-			step "input" "input" {
-		    prompt = "Choose an option:"
-
-		    notify {
-		      integration = integration.slack.integrated_app
-		      channel     = "#general"
-		    }
-
-		    notify {
-		      integration = integration.email.email_integration
-		      to          = "awesomebob@blahblah.com"
-		    }
-		  }
-	*/
-	NotifyList []PipelineStepInputNotify
-
-	// This is odd but notifies is an attribute that can be set dynamically, i.e. input from another step. It's also a list of complex
-	// object, so we've decided for now it's the quickest way to implement it.
-	//
-	// We are unable to parse the Notifies for invalid
-	Notifies cty.Value
+	Notifier cty.Value `json:"-" cty:"notify"`
 }
 
 func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
@@ -3002,122 +2974,84 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeOptions] = p.OptionList
 	}
 
-	/**
-	if there is p.Notify then the Step Input will be like this
-	{
-		"notifies": [
-			{
-				"integration": {
-					"type": "slack",
-					"token": "xvcxfvdsfadf"
-				},
-				"channel": "foo"
-
-			}
-		]
-	}
-
-	if there is p.Notifies, the result will be like this:
-	{
-		"notifies": [
-			{
-				"integration": {
-					"type": "slack",
-					"token": "xvcxfvdsfadf"
-				},
-				"channel": "foo"
-
-			},
-			{
-				"integration": {
-					"type": "slack",
-					"token": "xvcxfvdsfadf"
-				},
-				"channel": "foo"
-
-			}
-		]
-	}
-	*/
-
 	// Resolve notify
-	var resolvedNotify []PipelineStepInputNotify
-	if p.UnresolvedBodies[schema.BlockTypeNotify] != nil {
-		notify := PipelineStepInputNotify{}
-		diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeNotify], evalContext, &notify)
-		if len(diags) > 0 {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		resolvedNotify = append(resolvedNotify, notify)
-	} else {
-		resolvedNotify = p.NotifyList
-	}
+	// var resolvedNotify []PipelineStepInputNotify
+	// if p.UnresolvedBodies[schema.BlockTypeNotify] != nil {
+	// 	notify := PipelineStepInputNotify{}
+	// 	diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeNotify], evalContext, &notify)
+	// 	if len(diags) > 0 {
+	// 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	// 	}
+	// 	resolvedNotify = append(resolvedNotify, notify)
+	// } else {
+	// 	resolvedNotify = p.NotifyList
+	// }
 
-	notifiesResult := []map[string]interface{}{}
-	for _, n := range resolvedNotify {
-		notify := map[string]interface{}{}
+	// notifiesResult := []map[string]interface{}{}
+	// for _, n := range resolvedNotify {
+	// 	notify := map[string]interface{}{}
 
-		integration := n.Integration
-		if integration.IsNull() {
-			return nil, perr.BadRequestWithMessage(p.Name + ": integration must be supplied")
-		}
+	// 	integration := n.Integration
+	// 	if integration.IsNull() {
+	// 		return nil, perr.BadRequestWithMessage(p.Name + ": integration must be supplied")
+	// 	}
 
-		valueMap := integration.AsValueMap()
-		integrationMap := map[string]interface{}{}
-		for key, value := range valueMap {
-			// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
-			if !value.IsNull() {
-				goVal, err := hclhelpers.CtyToGo(value)
-				if err != nil {
-					return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse integration attribute to Go values: " + err.Error())
-				}
-				if !helpers.IsNil(goVal) {
-					integrationMap[key] = goVal
-				}
-			}
-		}
-		notify[schema.AttributeTypeIntegration] = integrationMap
+	// 	valueMap := integration.AsValueMap()
+	// 	integrationMap := map[string]interface{}{}
+	// 	for key, value := range valueMap {
+	// 		// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
+	// 		if !value.IsNull() {
+	// 			goVal, err := hclhelpers.CtyToGo(value)
+	// 			if err != nil {
+	// 				return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse integration attribute to Go values: " + err.Error())
+	// 			}
+	// 			if !helpers.IsNil(goVal) {
+	// 				integrationMap[key] = goVal
+	// 			}
+	// 		}
+	// 	}
+	// 	notify[schema.AttributeTypeIntegration] = integrationMap
 
-		if !helpers.IsNil(n.Channel) {
-			notify[schema.AttributeTypeChannel] = *n.Channel
-		}
+	// 	if !helpers.IsNil(n.Channel) {
+	// 		notify[schema.AttributeTypeChannel] = *n.Channel
+	// 	}
 
-		if !helpers.IsNil(n.To) {
-			notify[schema.AttributeTypeTo] = *n.To
-		}
+	// 	if !helpers.IsNil(n.To) {
+	// 		notify[schema.AttributeTypeTo] = *n.To
+	// 	}
 
-		if len(notify) > 0 {
-			notifiesResult = append(notifiesResult, notify)
-		}
-	}
-	results[schema.AttributeTypeNotifies] = notifiesResult
+	// 	if len(notify) > 0 {
+	// 		notifiesResult = append(notifiesResult, notify)
+	// 	}
+	// }
+	// results[schema.AttributeTypeNotifies] = notifiesResult
 
 	// Resolve notifies
-	var resolvedNotifies cty.Value
-	if p.UnresolvedAttributes[schema.AttributeTypeNotifies] != nil {
-		var data cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNotifies], evalContext, &data)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		resolvedNotifies = data
-	} else {
-		resolvedNotifies = p.Notifies
-	}
+	// var resolvedNotifies cty.Value
+	// if p.UnresolvedAttributes[schema.AttributeTypeNotifies] != nil {
+	// 	var data cty.Value
+	// 	diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNotifies], evalContext, &data)
+	// 	if diags.HasErrors() {
+	// 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	// 	}
+	// 	resolvedNotifies = data
+	// } else {
+	// 	resolvedNotifies = p.Notifies
+	// }
 
-	if !resolvedNotifies.IsNull() {
-		notifiesValueSlice := resolvedNotifies.AsValueSlice()
+	// if !resolvedNotifies.IsNull() {
+	// 	notifiesValueSlice := resolvedNotifies.AsValueSlice()
 
-		notifiesResult := []map[string]interface{}{}
-		for _, v := range notifiesValueSlice {
-			notifyValueMap, err := CtyValueToPipelineStepInputNotifyValueMap(v)
-			if err != nil {
-				return nil, err
-			}
-			notifiesResult = append(notifiesResult, notifyValueMap)
-		}
-		results[schema.AttributeTypeNotifies] = notifiesResult
-	}
+	// 	notifiesResult := []map[string]interface{}{}
+	// 	for _, v := range notifiesValueSlice {
+	// 		notifyValueMap, err := CtyValueToPipelineStepInputNotifyValueMap(v)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		notifiesResult = append(notifiesResult, notifyValueMap)
+	// 	}
+	// 	results[schema.AttributeTypeNotifies] = notifiesResult
+	// }
 
 	return results, nil
 }
@@ -3162,7 +3096,6 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				}
 				p.Prompt = &prompt
 			}
-
 		case schema.AttributeTypeOptions:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -3183,8 +3116,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				}
 				p.OptionList = append(p.OptionList, opts...)
 			}
-
-		case schema.AttributeTypeNotifies:
+		case schema.AttributeTypeNotifier:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -3192,15 +3124,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				if !val.Type().IsTupleType() {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Attribute " + schema.AttributeTypeNotifies + " is not a tuple",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.Notifies = val
+				p.Notifier = val
 			}
 
 		default:
@@ -3247,17 +3171,6 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 			}
 			p.OptionList = append(p.OptionList, opt)
 
-		case schema.BlockTypeNotify:
-			notify := PipelineStepInputNotify{}
-			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &notify)
-			if len(moreDiags) > 0 {
-				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeNotify, b.Body)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-					continue
-				}
-			}
-			p.NotifyList = append(p.NotifyList, notify)
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -3287,34 +3200,6 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Input " + p.Name + " has no options defined",
 		})
-	}
-
-	if len(p.NotifyList) > 0 && p.Notifies != cty.NilVal {
-		if !p.Notifies.Type().IsTupleType() {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Attribute notifies is not a tuple for " + p.GetFullyQualifiedName(),
-			})
-		} else {
-			listVal := p.Notifies.AsValueSlice()
-			if len(listVal) > 0 {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Notify and Notifies attributes are mutually exclusive: " + p.GetFullyQualifiedName(),
-				})
-			}
-		}
-	}
-
-	// Only validate the notify block if there are no unresolved bodies
-	// TODO: this is not correct fix this
-	if len(p.NotifyList) > 0 && p.UnresolvedBodies[schema.BlockTypeNotify] == nil {
-		for _, n := range p.NotifyList {
-			moreDiags := n.Validate()
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-			}
-		}
 	}
 
 	return diags

@@ -250,7 +250,6 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 		errorsAndWarnings.Error = err
 		return errorsAndWarnings
 	}
-	parseCtx.Credentials = w.Credentials
 
 	// add evaluated variables to the context
 	parseCtx.AddInputVariableValues(inputVariables)

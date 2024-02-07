@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -395,6 +396,18 @@ func (m *ModParseContext) buildEvalContext() {
 		// now convert the referenceValues itself to a cty object
 		referenceValues[mod] = cty.ObjectVal(refTypeMap)
 	}
+
+	varValueNotifierMap := make(map[string]cty.Value)
+
+	for k, i := range m.Notifiers {
+		var err error
+		varValueNotifierMap[k], err = i.CtyValue()
+		if err != nil {
+			slog.Warn("failed to convert notifier to cty value", "notifier", i.Name(), "error", err)
+		}
+	}
+
+	referenceValues["notifier"] = cty.ObjectVal(varValueNotifierMap)
 
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(referenceValues)
