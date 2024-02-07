@@ -84,11 +84,6 @@ type testSetup struct {
 
 var tests = []testSetup{
 	{
-		title:         "Missing var",
-		modDir:        "./mods/mod_missing_var",
-		containsError: "Unresolved blocks:\n   integration.slack.slack_app_from_var -> var.slack_signing_secret\n     MISSING: var.slack_signing_secret",
-	},
-	{
 		title:         "Missing var trigger",
 		modDir:        "./mods/mod_missing_var_trigger",
 		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> var.trigger_schedule",

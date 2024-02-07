@@ -202,9 +202,10 @@ const (
 	TriggerTypeHttp     = "http"
 
 	// Integration Types
-	IntegrationTypeSlack = "slack"
-	IntegrationTypeEmail = "email"
-	IntegrationTypeTeams = "teams"
+	IntegrationTypeSlack   = "slack"
+	IntegrationTypeEmail   = "email"
+	IntegrationTypeTeams   = "teams"
+	IntegrationTypeWebform = "webform"
 
 	LabelName = "name"
 	LabelType = "type"

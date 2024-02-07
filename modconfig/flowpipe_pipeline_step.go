@@ -2974,84 +2974,17 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeOptions] = p.OptionList
 	}
 
-	// Resolve notify
-	// var resolvedNotify []PipelineStepInputNotify
-	// if p.UnresolvedBodies[schema.BlockTypeNotify] != nil {
-	// 	notify := PipelineStepInputNotify{}
-	// 	diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeNotify], evalContext, &notify)
-	// 	if len(diags) > 0 {
-	// 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
-	// 	}
-	// 	resolvedNotify = append(resolvedNotify, notify)
-	// } else {
-	// 	resolvedNotify = p.NotifyList
-	// }
+	var notifier cty.Value
+	if p.UnresolvedAttributes[schema.AttributeTypeNotifier] == nil {
+		notifier = p.Notifier
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNotifier], evalContext, &notifier)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
 
-	// notifiesResult := []map[string]interface{}{}
-	// for _, n := range resolvedNotify {
-	// 	notify := map[string]interface{}{}
-
-	// 	integration := n.Integration
-	// 	if integration.IsNull() {
-	// 		return nil, perr.BadRequestWithMessage(p.Name + ": integration must be supplied")
-	// 	}
-
-	// 	valueMap := integration.AsValueMap()
-	// 	integrationMap := map[string]interface{}{}
-	// 	for key, value := range valueMap {
-	// 		// TODO check for valid integration attributes, don't want base HCL attributes in the inputs
-	// 		if !value.IsNull() {
-	// 			goVal, err := hclhelpers.CtyToGo(value)
-	// 			if err != nil {
-	// 				return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse integration attribute to Go values: " + err.Error())
-	// 			}
-	// 			if !helpers.IsNil(goVal) {
-	// 				integrationMap[key] = goVal
-	// 			}
-	// 		}
-	// 	}
-	// 	notify[schema.AttributeTypeIntegration] = integrationMap
-
-	// 	if !helpers.IsNil(n.Channel) {
-	// 		notify[schema.AttributeTypeChannel] = *n.Channel
-	// 	}
-
-	// 	if !helpers.IsNil(n.To) {
-	// 		notify[schema.AttributeTypeTo] = *n.To
-	// 	}
-
-	// 	if len(notify) > 0 {
-	// 		notifiesResult = append(notifiesResult, notify)
-	// 	}
-	// }
-	// results[schema.AttributeTypeNotifies] = notifiesResult
-
-	// Resolve notifies
-	// var resolvedNotifies cty.Value
-	// if p.UnresolvedAttributes[schema.AttributeTypeNotifies] != nil {
-	// 	var data cty.Value
-	// 	diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNotifies], evalContext, &data)
-	// 	if diags.HasErrors() {
-	// 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
-	// 	}
-	// 	resolvedNotifies = data
-	// } else {
-	// 	resolvedNotifies = p.Notifies
-	// }
-
-	// if !resolvedNotifies.IsNull() {
-	// 	notifiesValueSlice := resolvedNotifies.AsValueSlice()
-
-	// 	notifiesResult := []map[string]interface{}{}
-	// 	for _, v := range notifiesValueSlice {
-	// 		notifyValueMap, err := CtyValueToPipelineStepInputNotifyValueMap(v)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 		notifiesResult = append(notifiesResult, notifyValueMap)
-	// 	}
-	// 	results[schema.AttributeTypeNotifies] = notifiesResult
-	// }
+	results[schema.AttributeTypeNotifier] = notifier
 
 	return results, nil
 }

@@ -7,3 +7,5 @@ integration "slack" "my_slack_app" {
   signing_secret  = "Q#$$#@#$$#W"
 }
 
+
+integration "webform" "default" {}

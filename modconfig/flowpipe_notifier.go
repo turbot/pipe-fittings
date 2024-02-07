@@ -31,5 +31,5 @@ type Notify struct {
 	Description *string  `json:"description,omitempty" cty:"description" hcl:"description,optional"`
 	Subject     *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
 	Title       *string  `json:"title,omitempty" cty:"title" hcl:"title,optional"`
-	To          *string  `json:"to,omitempty" cty:"to" hcl:"to,optional"`
+	To          []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
