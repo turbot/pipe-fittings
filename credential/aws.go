@@ -123,3 +123,39 @@ func (c *AwsCredential) CtyValue() (cty.Value, error) {
 
 	return cty.ObjectVal(valueMap), nil
 }
+
+// TODO: should we merge AwsConnectionConfig with AwsCredential? They have distinct usage but the data model is very similar
+type AwsConnectionConfig struct {
+	Regions               []string `cty:"regions" hcl:"regions,optional"`
+	DefaultRegion         *string  `cty:"default_region" hcl:"default_region,optional"`
+	Profile               *string  `cty:"profile" hcl:"profile,optional"`
+	AccessKey             *string  `cty:"access_key" hcl:"access_key,optional"`
+	SecretKey             *string  `cty:"secret_key" hcl:"secret_key,optional"`
+	SessionToken          *string  `cty:"session_token" hcl:"session_token,optional"`
+	MaxErrorRetryAttempts *int     `cty:"max_error_retry_attempts" hcl:"max_error_retry_attempts,optional"`
+	MinErrorRetryDelay    *int     `cty:"min_error_retry_delay" hcl:"min_error_retry_delay,optional"`
+	IgnoreErrorCodes      []string `cty:"ignore_error_codes" hcl:"ignore_error_codes,optional"`
+	EndpointUrl           *string  `cty:"endpoint_url" hcl:"endpoint_url,optional"`
+	S3ForcePathStyle      *bool    `cty:"s3_force_path_style" hcl:"s3_force_path_style,optional"`
+}
+
+func (c *AwsConnectionConfig) GetCredential(name string) Credential {
+
+	awsCred := &AwsCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Profile:      c.Profile,
+		AccessKey:    c.AccessKey,
+		SecretKey:    c.SecretKey,
+		SessionToken: c.SessionToken,
+	}
+
+	return awsCred
+
+}

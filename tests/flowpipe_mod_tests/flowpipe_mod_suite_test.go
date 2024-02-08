@@ -305,9 +305,13 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 		return
 	}
 
-	assert.Equal(1, len(flowpipeConfig.CredentialImports))
 	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe"].Prefix)
+
+	assert.Equal("aws.sp1_aws", flowpipeConfig.Credentials["aws.sp1_aws"].GetHclResourceImpl().FullName)
+	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.Credentials["aws.sp1_aws_keys1"].GetHclResourceImpl().FullName)
+	assert.Equal("abc", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).AccessKey)
+	assert.Equal("123", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).SecretKey)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {

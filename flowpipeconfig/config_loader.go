@@ -1,15 +1,20 @@
 package flowpipeconfig
 
 import (
+	"fmt"
 	"log/slog"
 	"maps"
+	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/function"
 
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
@@ -63,7 +68,140 @@ func LoadFlowpipeConfig(configPaths []string) (*FlowpipeConfig, error_helpers.Er
 		lastErrorLength = len(diags)
 	}
 
+	if errorsAndWarnings.Error != nil {
+		return res, errorsAndWarnings
+	}
+
+	err := res.importCredentials()
+	if err != nil {
+		slog.Error("failed to import credentials", "error", err)
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+
 	return res, errorsAndWarnings
+}
+
+func (f *FlowpipeConfig) importCredentials() error {
+	if len(f.CredentialImports) == 0 {
+		return nil
+	}
+
+	credentials := map[string]credential.Credential{}
+	for _, credentialImport := range f.CredentialImports {
+		if credentialImport.Source == nil {
+			continue
+		}
+
+		// This can't be encapsulated in CredentialImports due to crucial function the `parse` package
+		// it will result in circular dependency
+		filePaths, err := parse.ResolveCredentialImportSource(credentialImport.Source)
+		if err != nil {
+			return err
+		}
+
+		fileData, diags := parse.LoadFileData(filePaths...)
+		if diags.HasErrors() {
+			slog.Error("loadConfig: failed to load all config files", "error", err)
+			return error_helpers.HclDiagsToError("Flowpipe Config", diags)
+		}
+
+		body, diags := parse.ParseHclFiles(fileData)
+		if diags.HasErrors() {
+			return error_helpers.HclDiagsToError("Flowpipe Config", diags)
+		}
+
+		// do a partial decode
+		content, moreDiags := body.Content(parse.ConfigBlockSchema)
+		if moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+			return error_helpers.HclDiagsToError("Flowpipe Config", diags)
+		}
+
+		for _, block := range content.Blocks {
+			if block.Type == schema.BlockTypeConnection {
+				connection, moreDiags := parse.DecodeConnection(block)
+				diags = append(diags, moreDiags...)
+				if moreDiags.HasErrors() {
+					continue
+				}
+
+				connectionType := connection.PluginAlias
+				connectionName := block.Labels[0]
+
+				if credentialImport.Connections != nil && len(credentialImport.Connections) > 0 {
+					if !isRequiredConnection(connectionName, credentialImport.Connections) {
+						continue
+					}
+				}
+
+				if credentialImport.Prefix != nil && *credentialImport.Prefix != "" {
+					connectionName = fmt.Sprintf("%s%s", *credentialImport.Prefix, connectionName)
+				}
+				credentialName := fmt.Sprintf("%s.%s", connectionType, connectionName)
+
+				// Return error if the flowpipe already has a creds with same type and name
+				if f.Credentials[credentialName] != nil {
+					return perr.BadRequestWithMessage(fmt.Sprintf("Credential with name '%s' already exists", credentialName))
+				}
+
+				if credentials[credentialName] != nil {
+					return perr.BadRequestWithMessage(fmt.Sprintf("Credential with name '%s' already exists", credentialName))
+				}
+
+				// Parse the config string
+				configString := []byte(connection.Config)
+
+				// filename and range may not have been passed (for older versions of CLI)
+				filename := ""
+				startPos := hcl.Pos{}
+
+				body, diags := credential.ParseConfig(configString, filename, startPos)
+				if diags.HasErrors() {
+					return error_helpers.HclDiagsToError("Flowpipe Config", diags)
+				}
+				evalCtx := &hcl.EvalContext{
+					Variables: make(map[string]cty.Value),
+					Functions: make(map[string]function.Function),
+				}
+
+				configStruct, err := credential.InstantiateCredentialConfig(connectionType)
+				if err != nil {
+					return err
+				}
+
+				moreDiags = gohcl.DecodeBody(body, evalCtx, configStruct)
+				diags = append(diags, moreDiags...)
+				if diags.HasErrors() {
+					return error_helpers.HclDiagsToError("Flowpipe Config", diags)
+				}
+
+				cred := configStruct.GetCredential(credentialName)
+				if cred == nil {
+					return perr.InternalWithMessage("Failed to get credential")
+				}
+
+				credentials[credentialName] = cred
+			}
+		}
+	}
+
+	maps.Copy(f.Credentials, credentials)
+	return nil
+}
+
+func isRequiredConnection(str string, patterns []string) bool {
+	for _, pattern := range patterns {
+		match, err := filepath.Match(pattern, str)
+		if err != nil {
+			slog.Warn("isRequiredConnection: error matching pattern", "pattern", pattern, "error", err)
+			continue
+		}
+
+		if match {
+			return true
+		}
+	}
+	return false
 }
 
 func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadConfigOptions) hcl.Diagnostics {

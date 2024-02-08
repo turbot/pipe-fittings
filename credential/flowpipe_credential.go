@@ -60,6 +60,54 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 	return cred, nil
 }
 
+var credentialConfigTypeRegistry = map[string]reflect.Type{
+	"aws": reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
+	// "slack":         reflect.TypeOf((*SlackCredential)(nil)).Elem(),
+	// "abuseipdb":     reflect.TypeOf((*AbuseIPDBCredential)(nil)).Elem(),
+	// "sendgrid":      reflect.TypeOf((*SendGridCredential)(nil)).Elem(),
+	// "virustotal":    reflect.TypeOf((*VirusTotalCredential)(nil)).Elem(),
+	// "zendesk":       reflect.TypeOf((*ZendeskCredential)(nil)).Elem(),
+	// "trello":        reflect.TypeOf((*TrelloCredential)(nil)).Elem(),
+	// "okta":          reflect.TypeOf((*OktaCredential)(nil)).Elem(),
+	// "uptimerobot":   reflect.TypeOf((*UptimeRobotCredential)(nil)).Elem(),
+	// "urlscan":       reflect.TypeOf((*UrlscanCredential)(nil)).Elem(),
+	// "clickup":       reflect.TypeOf((*ClickUpCredential)(nil)).Elem(),
+	// "pagerduty":     reflect.TypeOf((*PagerDutyCredential)(nil)).Elem(),
+	// "discord":       reflect.TypeOf((*DiscordCredential)(nil)).Elem(),
+	// "ip2locationio": reflect.TypeOf((*IP2LocationIOCredential)(nil)).Elem(),
+	// "ipstack":       reflect.TypeOf((*IPstackCredential)(nil)).Elem(),
+	// "teams":         reflect.TypeOf((*MicrosoftTeamsCredential)(nil)).Elem(),
+	// "pipes":         reflect.TypeOf((*PipesCredential)(nil)).Elem(),
+	// "github":        reflect.TypeOf((*GithubCredential)(nil)).Elem(),
+	// "gitlab":        reflect.TypeOf((*GitLabCredential)(nil)).Elem(),
+	// "vault":         reflect.TypeOf((*VaultCredential)(nil)).Elem(),
+	// "jira":          reflect.TypeOf((*JiraCredential)(nil)).Elem(),
+	// "opsgenie":      reflect.TypeOf((*OpsgenieCredential)(nil)).Elem(),
+	// "openai":        reflect.TypeOf((*OpenAICredential)(nil)).Elem(),
+	// "azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
+	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
+	// "bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),
+	// "datadog":       reflect.TypeOf((*DatadogCredential)(nil)).Elem(),
+	// "freshdesk":     reflect.TypeOf((*FreshdeskCredential)(nil)).Elem(),
+	// "guardrails":    reflect.TypeOf((*GuardrailsCredential)(nil)).Elem(),
+	// "servicenow":    reflect.TypeOf((*ServiceNowCredential)(nil)).Elem(),
+	// "jumpcloud":     reflect.TypeOf((*JumpCloudCredential)(nil)).Elem(),
+}
+
+func InstantiateCredentialConfig(key string) (CredentialConfig, error) {
+	t, exists := credentialConfigTypeRegistry[key]
+	if !exists {
+		return nil, perr.BadRequestWithMessage("Invalid credential type " + key)
+	}
+	credConfigInterface := reflect.New(t).Interface()
+	credConfig, ok := credConfigInterface.(CredentialConfig)
+	if !ok {
+		return nil, perr.InternalWithMessage("Failed to create credential config")
+	}
+
+	return credConfig, nil
+}
+
 func DefaultCredentials() (map[string]Credential, error) {
 	credentials := make(map[string]Credential)
 
@@ -93,6 +141,10 @@ func NewCredential(block *hcl.Block) (Credential, error) {
 	}
 
 	return credential, err
+}
+
+type CredentialConfig interface {
+	GetCredential(string) Credential
 }
 
 type Credential interface {
