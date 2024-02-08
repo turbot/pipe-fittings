@@ -110,9 +110,21 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 	var integrations = map[string]modconfig.Integration{}
 	var notifiers = map[string]modconfig.Notifier{}
 
+	var credentialImports = map[string]credential.CredentialImport{}
+
 	// Parse credentials and integration first
 	for _, block := range content.Blocks {
 		switch block.Type {
+		case schema.BlockTypeCredentialImport:
+			credentialImport, moreDiags := parse.DecodeCredentialImport(configPath, block)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				slog.Debug("failed to decode credential import block")
+				continue
+			}
+
+			credentialImports[credentialImport.GetUnqualifiedName()] = *credentialImport
+
 		case schema.BlockTypeCredential:
 			credential, moreDiags := parse.DecodeCredential(configPath, block)
 			if len(moreDiags) > 0 {
@@ -162,6 +174,10 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 
 	if len(notifiers) > 0 {
 		maps.Copy(f.Notifiers, notifiers)
+	}
+
+	if len(credentialImports) > 0 {
+		maps.Copy(f.CredentialImports, credentialImports)
 	}
 
 	if len(diags) > 0 {

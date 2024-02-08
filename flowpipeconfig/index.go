@@ -8,9 +8,10 @@ import (
 )
 
 type FlowpipeConfig struct {
-	Credentials  map[string]credential.Credential
-	Integrations map[string]modconfig.Integration
-	Notifiers    map[string]modconfig.Notifier
+	CredentialImports map[string]credential.CredentialImport
+	Credentials       map[string]credential.Credential
+	Integrations      map[string]modconfig.Integration
+	Notifiers         map[string]modconfig.Notifier
 }
 
 func NewFlowpipeConfig() *FlowpipeConfig {
@@ -33,9 +34,10 @@ func NewFlowpipeConfig() *FlowpipeConfig {
 	}
 
 	fpConfig := FlowpipeConfig{
-		Credentials:  defaultCreds,
-		Integrations: defaultIntegrations,
-		Notifiers:    defaultNotifiers,
+		CredentialImports: make(map[string]credential.CredentialImport),
+		Credentials:       defaultCreds,
+		Integrations:      defaultIntegrations,
+		Notifiers:         defaultNotifiers,
 	}
 
 	return &fpConfig

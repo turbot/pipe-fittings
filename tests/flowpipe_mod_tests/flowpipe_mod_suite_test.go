@@ -287,6 +287,29 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
+	assert := assert.New(suite.T())
+
+	// Load the config from 2 different directories to test that we can load from multiple directories where the integration is defined after
+	// we load the notifiers.
+	//
+	// ensure that "config_dir" is loaded first, that's where the notifier is.
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_with_cred_import", "./empty_mod"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	assert.Equal(1, len(flowpipeConfig.CredentialImports))
+	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe"].Prefix)
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
 

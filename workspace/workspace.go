@@ -323,6 +323,8 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 	parseCtx.Integrations = w.Integrations
 	parseCtx.Notifiers = w.Notifiers
 
+	// I don't think we need CredentialImports here .. it's fully resolved to Credentials at startup
+
 	return parseCtx, nil
 }
 
