@@ -308,9 +308,19 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal(2, len(flowpipeConfig.Integrations))
 	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
 
-	assert.Equal(2, len(flowpipeConfig.Notifiers))
-	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].HclResourceImpl.FullName)
+	// ensure that the default integration exist
+	assert.Equal("webform.default", flowpipeConfig.Integrations["webform.default"].GetHclResourceImpl().FullName)
 
+	assert.Equal(3, len(flowpipeConfig.Notifiers))
+
+	// ensure that default notifier exist
+	assert.Equal("default", flowpipeConfig.Notifiers["default"].HclResourceImpl.FullName)
+	assert.Equal(1, len(flowpipeConfig.Notifiers["default"].Notifies))
+
+	// TODO: test this when we have webform up and running
+	//assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["default"].Notifies[0].Integration.AsValueMap()["name"].AsString())
+
+	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].HclResourceImpl.FullName)
 	// Check the notify -> integration link
 	assert.Equal(1, len(flowpipeConfig.Notifiers["admins"].Notifies))
 	assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["signing_secret"].AsString())

@@ -17,6 +17,23 @@ type Integration interface {
 	Validate() hcl.Diagnostics
 }
 
+func DefaultIntegrations() (map[string]Integration, error) {
+	integrations := make(map[string]Integration)
+
+	webhookIntegration := &WebformIntegration{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        schema.IntegrationTypeWebform + ".default",
+			ShortName:       "default",
+			UnqualifiedName: schema.IntegrationTypeWebform + ".default",
+		},
+		Type: schema.IntegrationTypeWebform,
+	}
+
+	integrations[schema.IntegrationTypeWebform+".default"] = webhookIntegration
+
+	return integrations, nil
+}
+
 type SlackIntegration struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl

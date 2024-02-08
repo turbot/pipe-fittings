@@ -9,6 +9,32 @@ type Notifier struct {
 	Notifies []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
 }
 
+func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifier, error) {
+	notifiers := make(map[string]Notifier)
+
+	notifier := Notifier{
+		HclResourceImpl: HclResourceImpl{
+			FullName:        "default",
+			ShortName:       "default",
+			UnqualifiedName: "default",
+		},
+	}
+
+	integrationCty, err := defaultWebformIntegration.CtyValue()
+	if err != nil {
+		return nil, err
+	}
+
+	notify := Notify{
+		Integration: integrationCty,
+	}
+	notifier.Notifies = []Notify{notify}
+
+	notifiers["default"] = notifier
+
+	return notifiers, nil
+}
+
 func (c *Notifier) CtyValue() (cty.Value, error) {
 	ctyValue, err := GetCtyValue(c)
 	if err != nil {

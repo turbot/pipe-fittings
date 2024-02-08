@@ -20,10 +20,22 @@ func NewFlowpipeConfig() *FlowpipeConfig {
 		return nil
 	}
 
+	defaultIntegrations, err := modconfig.DefaultIntegrations()
+	if err != nil {
+		slog.Error("Unable to create default integrations", "error", err)
+		return nil
+	}
+
+	defaultNotifiers, err := modconfig.DefaultNotifiers(defaultIntegrations["webform.default"])
+	if err != nil {
+		slog.Error("Unable to create default notifiers", "error", err)
+		return nil
+	}
+
 	fpConfig := FlowpipeConfig{
 		Credentials:  defaultCreds,
-		Integrations: make(map[string]modconfig.Integration),
-		Notifiers:    make(map[string]modconfig.Notifier),
+		Integrations: defaultIntegrations,
+		Notifiers:    defaultNotifiers,
 	}
 
 	return &fpConfig
