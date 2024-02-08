@@ -29,6 +29,13 @@ func GetPrinter[T any](cmd *cobra.Command) (ResourcePrinter[T], error) {
 		switch cmdType {
 		case "list":
 			return NewTablePrinter[T]()
+		case "show":
+			var empty T
+			if IsShowable(empty) {
+				return NewShowPrinter[T]()
+			}
+			return NewStringPrinter[T]()
+
 		default:
 			return NewStringPrinter[T]()
 		}

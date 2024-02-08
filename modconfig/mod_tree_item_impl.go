@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -110,4 +111,36 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 		return cty.Zero, nil
 	}
 	return GetCtyValue(b)
+}
+
+// GetShowData implements printers.Showable
+func (b *ModTreeItemImpl) GetShowData() *printers.TableRow {
+	var name = b.ShortName
+	if b.parents != nil {
+		name = b.Name()
+
+	}
+	res := printers.NewTableRow(
+		printers.FieldValue{Name: "Name", Value: name},
+		printers.FieldValue{Name: "Mod", Value: b.Mod.ShortName},
+		printers.FieldValue{Name: "Database", Value: b.Database},
+		printers.FieldValue{Name: "Search Path", Value: b.Mod.SearchPath},
+		printers.FieldValue{Name: "Search Path Prefix", Value: b.Mod.SearchPathPrefix},
+	)
+	res.Merge(b.HclResourceImpl.GetListData())
+	return res
+}
+
+// GetListData implements printers.Showable
+func (b *ModTreeItemImpl) GetListData() *printers.TableRow {
+	var name = b.ShortName
+	if b.parents != nil {
+		name = b.Name()
+	}
+	res := printers.NewTableRow(
+		printers.FieldValue{Name: "NAME", Value: name},
+		printers.FieldValue{Name: "MOD", Value: b.Mod.ShortName},
+	)
+	res.Merge(b.HclResourceImpl.GetListData())
+	return res
 }

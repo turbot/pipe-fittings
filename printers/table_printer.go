@@ -44,8 +44,8 @@ func (p TablePrinter[T]) PrintTable(table *Table, writer io.Writer) error {
 			tableHeaders += "\t"
 			tableFormatter += "\t"
 		}
-		tableHeaders += c.Name
-		tableFormatter += c.Formatter()
+		tableHeaders += c
+		tableFormatter += "%v"
 	}
 	tableHeaders += "\n"
 	tableFormatter += "\n"

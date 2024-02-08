@@ -464,53 +464,52 @@ type PipelineOutput struct {
 	UnresolvedValue hcl.Expression `json:"-"`
 }
 
-func (p PipelineOutput) GetShowData() *printers.Table {
-	var res = printers.NewTable().WithRow(
-		printers.FieldValue{Name: "Name", Value: p.Name, RenderKeyValueFunc: p.renderName},
-		printers.FieldValue{Name: "Description", Value: p.Description, Indent: 2},
+// GetShowData implements the Showable interface
+func (o PipelineOutput) GetShowData() *printers.TableRow {
+	return printers.NewTableRow(
+		printers.FieldValue{Name: "Name", Value: o.Name, RenderKeyValueFunc: o.renderName},
+		printers.FieldValue{Name: "Description", Value: o.Description, Indent: 2},
 		printers.FieldValue{Name: "Type", Value: "any", Indent: 2})
-
-	return res
 }
 
-func (p PipelineOutput) renderName(opts sanitize.RenderOptions) string {
+func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
 	au := aurora.NewAurora(opts.ColorEnabled)
-	return fmt.Sprintf("%s:", au.Cyan(p.Name))
+	return fmt.Sprintf("%s:", au.Cyan(o.Name))
 }
 
-func (p *PipelineOutput) Equals(other *PipelineOutput) bool {
+func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && other == nil {
+	if o == nil && other == nil {
 		return true
 	}
 
 	// If one of the pointers is nil while the other is not, they are not equal
-	if (p == nil && other != nil) || (p != nil && other == nil) {
+	if (o == nil && other != nil) || (o != nil && other == nil) {
 		return false
 	}
 
 	// Compare Name field
-	if p.Name != other.Name {
+	if o.Name != other.Name {
 		return false
 	}
 
 	// Compare DependsOn field using deep equality
-	if !reflect.DeepEqual(p.DependsOn, other.DependsOn) {
+	if !reflect.DeepEqual(o.DependsOn, other.DependsOn) {
 		return false
 	}
 
 	// Compare Resolved field
-	if p.Resolved != other.Resolved {
+	if o.Resolved != other.Resolved {
 		return false
 	}
 
 	// Compare Value field using deep equality
-	if !reflect.DeepEqual(p.Value, other.Value) {
+	if !reflect.DeepEqual(o.Value, other.Value) {
 		return false
 	}
 
 	// Compare UnresolvedValue field using deep equality
-	if !hclhelpers.ExpressionsEqual(p.UnresolvedValue, other.UnresolvedValue) {
+	if !hclhelpers.ExpressionsEqual(o.UnresolvedValue, other.UnresolvedValue) {
 		return false
 	}
 
