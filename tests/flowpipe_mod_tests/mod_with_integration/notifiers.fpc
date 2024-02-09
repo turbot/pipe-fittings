@@ -11,7 +11,7 @@ notifier "devs" {
     channel = "#devs"
   }
   notify {
-    integration = integration.slack.my_slack_app 
-    channel = "#admin"
-  }  
+    integration = integration.webform.default
+    to = ["billie", "joe", "mike"]
+  }    
 }

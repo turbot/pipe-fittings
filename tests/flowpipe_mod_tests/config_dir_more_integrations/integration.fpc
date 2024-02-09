@@ -7,9 +7,6 @@ integration "slack" "my_slack_app" {
   signing_secret  = "Q#$$#@#$$#W"
 }
 
-
-integration "webform" "default" {}
-
 integration "slack" "slack_with_webhook" {
   webhook_url = "https://hooks.slack.com/services/T1234567890/B0123456789/XXXXXXXXXX"
 }

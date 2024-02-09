@@ -339,109 +339,99 @@ func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttr
 	return b, nil
 }
 
-func CtyValueToPipelineStepInputNotifyValueMap(value cty.Value) (map[string]interface{}, error) {
-	notify := map[string]interface{}{}
-	integrationMap := map[string]interface{}{}
+func ctyValueToPipelineStepInputNotifyValueMap(value cty.Value) (Notifier, error) {
+	notifier := Notifier{}
 
-	var integrationType string
-
-	// Get the integration
 	valueMap := value.AsValueMap()
-	if !valueMap[schema.AttributeTypeIntegration].IsNull() {
-		integrationValueMap := valueMap[schema.AttributeTypeIntegration].AsValueMap()
+	notifiesCty := valueMap[schema.AttributeTypeNotifies]
 
-		for key, value := range integrationValueMap {
-			if !value.IsNull() {
-				goVal, err := hclhelpers.CtyToGo(value)
-				if err != nil {
-					return nil, perr.InternalWithMessage("Unable to convert " + key + " to goVal")
-				}
-				if !helpers.IsNil(goVal) {
-					integrationMap[key] = goVal
-				}
-
-				if key == schema.AttributeTypeType {
-					integrationType = goVal.(string)
-				}
-			}
-		}
-		notify[schema.AttributeTypeIntegration] = integrationMap
+	if notifiesCty == cty.NilVal {
+		return notifier, nil
 	}
 
-	// Get the other notifies attributes
-	// Also validates for the unsupported attributes for a specific notification type
-	for k, v := range valueMap {
-		switch k {
-		case schema.AttributeTypeChannel:
-			if integrationType != schema.IntegrationTypeSlack {
-				return nil, perr.BadRequestWithMessage("Unsupported attribute channel provided for " + integrationType + " type notification")
-			}
-			if !v.IsNull() {
-				notify[k] = v.AsString()
-			}
-		case schema.AttributeTypeTo:
-			if integrationType != schema.IntegrationTypeEmail {
-				return nil, perr.BadRequestWithMessage("Unsupported attribute to provided for " + integrationType + " type notification")
-			}
-			if !v.IsNull() {
-				notify[k] = v.AsString()
-			}
-		case schema.AttributeTypeIntegration:
-			// Do nothing. Already handled above
-		default:
-			return nil, perr.BadRequestWithMessage(k + " is not a valid attribute in notify/notifies")
+	notifiesCtySlice := notifiesCty.AsValueSlice()
+
+	for _, notifyCty := range notifiesCtySlice {
+		n, err := ctyValueToNotify(notifyCty)
+		if err != nil {
+			return notifier, err
 		}
+		notifier.Notifies = append(notifier.Notifies, n)
 	}
 
-	return notify, nil
+	return notifier, nil
 }
 
-// func (p *PipelineStepInputNotify) Validate() hcl.Diagnostics {
-// 	var diags hcl.Diagnostics
+func ctyValueToNotify(val cty.Value) (Notify, error) {
 
-// 	if p.Channel == nil && p.To == nil {
-// 		diags = append(diags, &hcl.Diagnostic{
-// 			Severity: hcl.DiagError,
-// 			Summary:  "Either channel or to  must be specified",
-// 		})
-// 	}
+	n := Notify{}
 
-// 	if p.Integration == cty.NilVal {
-// 		diags = append(diags, &hcl.Diagnostic{
-// 			Severity: hcl.DiagError,
-// 			Summary:  "integration must be specified",
-// 		})
-// 	}
+	if val.IsNull() {
+		return n, nil
+	}
 
-// 	if !p.Integration.Type().IsObjectType() {
-// 		diags = append(diags, &hcl.Diagnostic{
-// 			Severity: hcl.DiagError,
-// 			Summary:  "integration must be a map",
-// 		})
-// 	} else {
-// 		integrationMap := p.Integration.AsValueMap()
-// 		integrationType := integrationMap["type"].AsString()
-// 		if integrationType == "slack" && p.Channel == nil {
-// 			diags = append(diags, &hcl.Diagnostic{
-// 				Severity: hcl.DiagError,
-// 				Summary:  "channel must be specified for slack integration",
-// 			})
+	valMap := val.AsValueMap()
 
-// 		} else if integrationType == "email" && p.To == nil {
-// 			diags = append(diags, &hcl.Diagnostic{
-// 				Severity: hcl.DiagError,
-// 				Summary:  "to must be specified for email integration",
-// 			})
-// 		} else if integrationType != "slack" && integrationType != "email" {
-// 			diags = append(diags, &hcl.Diagnostic{
-// 				Severity: hcl.DiagError,
-// 				Summary:  fmt.Sprintf("unsupported integration type %s", integrationType),
-// 			})
-// 		}
-// 	}
+	cc := valMap["cc"]
+	if cc != cty.NilVal {
+		ccSlice := cc.AsValueSlice()
+		for _, c := range ccSlice {
+			n.Cc = append(n.Cc, c.AsString())
+		}
+	}
 
-// 	return diags
-// }
+	bcc := valMap["bcc"]
+	if bcc != cty.NilVal {
+		bccSlice := bcc.AsValueSlice()
+		for _, b := range bccSlice {
+			n.Bcc = append(n.Bcc, b.AsString())
+		}
+	}
+
+	channel := valMap["channel"]
+	if channel != cty.NilVal {
+		channel := channel.AsString()
+		n.Channel = &channel
+	}
+
+	description := valMap["description"]
+	if description != cty.NilVal {
+		description := description.AsString()
+		n.Description = &description
+	}
+
+	subject := valMap["subject"]
+	if subject != cty.NilVal {
+		subject := subject.AsString()
+		n.Subject = &subject
+	}
+
+	title := valMap["title"]
+	if title != cty.NilVal {
+		title := title.AsString()
+		n.Title = &title
+	}
+
+	to := valMap["to"]
+	if to != cty.NilVal {
+		toSlice := to.AsValueSlice()
+		for _, t := range toSlice {
+			n.To = append(n.To, t.AsString())
+		}
+	}
+
+	integration := valMap["integration"]
+
+	if integration != cty.NilVal {
+		integration, err := integrationFromCtyValue(integration)
+		if err != nil {
+			return n, err
+		}
+		n.Integration = integration
+	}
+
+	return n, nil
+}
 
 type PipelineStepInputOption struct {
 	Label    *string `json:"label" hcl:"label,optional"`
@@ -2932,7 +2922,8 @@ type PipelineStepInput struct {
 	Prompt     *string `json:"prompt" cty:"prompt"`
 	OptionList []PipelineStepInputOption
 
-	Notifier cty.Value `json:"-" cty:"notify"`
+	// Notifier cty.Value `json:"-" cty:"notify"`
+	Notifier Notifier `json:"notify" cty:"-"`
 }
 
 func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
@@ -2974,7 +2965,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeOptions] = p.OptionList
 	}
 
-	var notifier cty.Value
+	var notifier Notifier
 	if p.UnresolvedAttributes[schema.AttributeTypeNotifier] == nil {
 		notifier = p.Notifier
 	} else {
@@ -3057,7 +3048,16 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				p.Notifier = val
+				var err error
+				p.Notifier, err = ctyValueToPipelineStepInputNotifyValueMap(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute to InputNotifier",
+						Detail:   err.Error(),
+						Subject:  &attr.Range,
+					})
+				}
 			}
 
 		default:
