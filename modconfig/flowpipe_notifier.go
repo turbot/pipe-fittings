@@ -1,14 +1,19 @@
 package modconfig
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type Notifier struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
+	HclResourceImpl          `json:"-"`
+	ResourceWithMetadataImpl `json:"-"`
 
 	Notifies []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
 }
@@ -35,19 +40,22 @@ func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifie
 }
 
 func (c *Notifier) CtyValue() (cty.Value, error) {
-	notifierMap := make(map[string]cty.Value)
-	notifies := make([]cty.Value, 0)
+	notifies := []any{}
+
 	for _, notify := range c.Notifies {
-		notifyCtyValue, err := notify.CtyValue()
+		mapInterface, err := notify.MapInterface()
 		if err != nil {
 			return cty.NilVal, err
 		}
-		notifies = append(notifies, notifyCtyValue)
+
+		notifies = append(notifies, mapInterface)
 	}
 
-	notifierMap["notifies"] = cty.ListVal(notifies)
+	notifierMap := make(map[string]interface{}, 1)
+	notifierMap["notifies"] = notifies
 
-	return cty.ObjectVal(notifierMap), nil
+	notifierCtyVal, err := hclhelpers.ConvertInterfaceToCtyValue(notifierMap)
+	return notifierCtyVal, err
 }
 
 type Notify struct {
@@ -65,59 +73,141 @@ type Notify struct {
 	To          []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
-func (n *Notify) CtyValue() (cty.Value, error) {
-	notifyMap := make(map[string]interface{})
-
-	var err error
-	notifyMap["integration"], err = n.Integration.CtyValue()
-	if err != nil {
-		return cty.NilVal, err
+// UnmarshalJSON custom unmarshaller for Notify
+func (n *Notify) UnmarshalJSON(data []byte) error {
+	// Define a struct that mirrors Notify but with Integration as json.RawMessage
+	// to defer its unmarshalling
+	type Alias Notify
+	temp := &struct {
+		Integration json.RawMessage `json:"integration"`
+		*Alias
+	}{
+		Alias: (*Alias)(n), // Cast n to Alias type to unmarshal other fields
 	}
 
-	if n.Cc != nil {
-		ccCtys := make([]cty.Value, 0)
-		for _, cc := range n.Cc {
-			ccCtys = append(ccCtys, cty.StringVal(cc))
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return err
+	}
+
+	// Now, determine the type of Integration and unmarshal accordingly
+	// This assumes your JSON contains some type identifier for the integration.
+	// You might need a temporary struct to peek into the raw JSON to read that identifier
+	var typeIndicator struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(temp.Integration, &typeIndicator); err != nil {
+		return err
+	}
+
+	switch typeIndicator.Type {
+	case "slack":
+		var slackIntegration SlackIntegration
+		if err := json.Unmarshal(temp.Integration, &slackIntegration); err != nil {
+			return err
 		}
-		notifyMap["cc"] = cty.ListVal(ccCtys)
+		n.Integration = &slackIntegration
+	case "email":
+		var emailIntegration EmailIntegration
+		if err := json.Unmarshal(temp.Integration, &emailIntegration); err != nil {
+			return err
+		}
+		n.Integration = &emailIntegration
+	case "webform":
+		var webformIntegration WebformIntegration
+		if err := json.Unmarshal(temp.Integration, &webformIntegration); err != nil {
+			return err
+		}
+		n.Integration = &webformIntegration
+	default:
+		return perr.InternalWithMessage(fmt.Sprintf("unknown integration type: %s", typeIndicator.Type))
+	}
+
+	return nil
+}
+
+func (n *Notify) MapInterface() (map[string]interface{}, error) {
+	notifyMap := make(map[string]interface{})
+
+	if n.Cc != nil {
+		notifyMap["cc"] = n.Cc
 	}
 
 	if n.Bcc != nil {
 		notifyMap["bcc"] = n.Bcc
-		bccCtys := make([]cty.Value, 0)
-		for _, bcc := range n.Bcc {
-			bccCtys = append(bccCtys, cty.StringVal(bcc))
-		}
-
-		notifyMap["bcc"] = cty.ListVal(bccCtys)
 	}
 
 	if n.Channel != nil {
-		notifyMap["channel"] = cty.StringVal(*n.Channel)
+		notifyMap["channel"] = *n.Channel
 	}
 
 	if n.Description != nil {
-		notifyMap["description"] = cty.StringVal(*n.Description)
+		notifyMap["description"] = *n.Description
 	}
 
 	if n.Subject != nil {
-		notifyMap["subject"] = cty.StringVal(*n.Subject)
+		notifyMap["subject"] = *n.Subject
 	}
 
 	if n.Title != nil {
-		notifyMap["title"] = cty.StringVal(*n.Title)
+		notifyMap["title"] = *n.Title
 	}
 
 	if n.To != nil {
-		toCtys := make([]cty.Value, 0)
-		for _, to := range n.To {
-			toCtys = append(toCtys, cty.StringVal(to))
-		}
-
-		notifyMap["to"] = cty.ListVal(toCtys)
+		notifyMap["to"] = n.To
 	}
 
-	return cty.ObjectVal(notifyMap), nil
+	var err error
+	notifyMap["integration"], err = n.Integration.MapInterface()
+	if err != nil {
+		return nil, err
+	}
+
+	return notifyMap, nil
+}
+func (n *Notify) CtyValue() (cty.Value, error) {
+	notifyMap := make(map[string]interface{})
+
+	var err error
+
+	if n.Cc != nil {
+		notifyMap["cc"] = n.Cc
+	}
+
+	if n.Bcc != nil {
+		notifyMap["bcc"] = n.Bcc
+	}
+
+	if n.Channel != nil {
+		notifyMap["channel"] = *n.Channel
+	}
+
+	if n.Description != nil {
+		notifyMap["description"] = *n.Description
+	}
+
+	if n.Subject != nil {
+		notifyMap["subject"] = *n.Subject
+	}
+
+	if n.Title != nil {
+		notifyMap["title"] = *n.Title
+	}
+
+	if n.To != nil {
+		notifyMap["to"] = n.To
+	}
+
+	notifyMap["integration"], err = n.Integration.MapInterface()
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	ctyVal, err := hclhelpers.ConvertInterfaceToCtyValue(notifyMap)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	return ctyVal, nil
 }
 
 func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diagnostics {

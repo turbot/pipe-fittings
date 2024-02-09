@@ -16,6 +16,7 @@ type Integration interface {
 	ResourceWithMetadata
 	GetIntegrationType() string
 	CtyValue() (cty.Value, error)
+	MapInterface() (map[string]interface{}, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	Validate() hcl.Diagnostics
 }
@@ -38,8 +39,8 @@ func DefaultIntegrations() (map[string]Integration, error) {
 }
 
 type SlackIntegration struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
+	HclResourceImpl          `json:"-"`
+	ResourceWithMetadataImpl `json:"-"`
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
@@ -52,6 +53,24 @@ type SlackIntegration struct {
 
 func (i *SlackIntegration) CtyValue() (cty.Value, error) {
 	return GetCtyValue(i)
+}
+
+func (i *SlackIntegration) MapInterface() (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	res["type"] = i.Type
+	if i.Token != nil {
+		res["token"] = *i.Token
+	}
+	if i.SigningSecret != nil {
+		res["signing_secret"] = *i.SigningSecret
+	}
+	if i.WebhookUrl != nil {
+		res["webhook_url"] = *i.WebhookUrl
+	}
+	if i.Channel != nil {
+		res["channel"] = *i.Channel
+	}
+	return res, nil
 }
 
 func (i *SlackIntegration) GetIntegrationType() string {
@@ -157,8 +176,8 @@ func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 }
 
 type EmailIntegration struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
+	HclResourceImpl          `json:"-"`
+	ResourceWithMetadataImpl `json:"-"`
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
@@ -174,6 +193,42 @@ type EmailIntegration struct {
 	DefaultRecipient *string `json:"default_recipient,omitempty" cty:"default_recipient" hcl:"default_recipient,optional"`
 	DefaultSubject   *string `json:"default_subject,omitempty" cty:"default_subject" hcl:"default_subject,optional"`
 	ResponseUrl      *string `json:"response_url,omitempty" cty:"response_url" hcl:"response_url,optional"`
+}
+
+func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	res["type"] = i.Type
+	if i.SmtpHost != nil {
+		res["smtp_host"] = *i.SmtpHost
+	}
+	if i.SmtpTls != nil {
+		res["smtp_tls"] = *i.SmtpTls
+	}
+	if i.SmtpPort != nil {
+		res["smtp_port"] = *i.SmtpPort
+	}
+	if i.SmtpsPort != nil {
+		res["smtps_port"] = *i.SmtpsPort
+	}
+	if i.SmtpUsername != nil {
+		res["smtp_username"] = *i.SmtpUsername
+	}
+	if i.SmtpPassword != nil {
+		res["smtp_password"] = *i.SmtpPassword
+	}
+	if i.From != nil {
+		res["from"] = *i.From
+	}
+	if i.DefaultRecipient != nil {
+		res["default_recipient"] = *i.DefaultRecipient
+	}
+	if i.DefaultSubject != nil {
+		res["default_subject"] = *i.DefaultSubject
+	}
+	if i.ResponseUrl != nil {
+		res["response_url"] = *i.ResponseUrl
+	}
+	return res, nil
 }
 
 func (i *EmailIntegration) GetIntegrationType() string {
@@ -338,9 +393,18 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 
 func integrationFromCtyValue(val cty.Value) (Integration, error) {
 
-	integrationType := val.GetAttr("type").AsString()
+	if val.IsNull() || val == cty.NilVal {
+		return nil, perr.BadRequestWithMessage("Integration is required")
+	}
 
-	switch integrationType {
+	valMap := val.AsValueMap()
+	integrationType := valMap["type"]
+
+	if integrationType.IsNull() || integrationType == cty.NilVal {
+		return nil, perr.BadRequestWithMessage("Integration type is required")
+	}
+
+	switch integrationType.AsString() {
 	case schema.IntegrationTypeSlack:
 		return SlackIntegrationFromCtyValue(val)
 	case schema.IntegrationTypeEmail:
@@ -356,10 +420,12 @@ func SlackIntegrationFromCtyValue(val cty.Value) (*SlackIntegration, error) {
 
 	i.Type = val.GetAttr("type").AsString()
 
-	token := val.GetAttr("token")
-	signingSecret := val.GetAttr("signing_secret")
-	webhookUrl := val.GetAttr("webhook_url")
-	channel := val.GetAttr("channel")
+	valMap := val.AsValueMap()
+
+	token := valMap["token"]
+	signingSecret := valMap["signing_secret"]
+	webhookUrl := valMap["webhook_url"]
+	channel := valMap["channel"]
 
 	if !token.IsNull() {
 		tokenStr := token.AsString()
@@ -389,16 +455,18 @@ func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
 
 	i.Type = val.GetAttr("type").AsString()
 
-	smtpHost := val.GetAttr("smtp_host")
-	smtpTls := val.GetAttr("smtp_tls")
-	smtpPort := val.GetAttr("smtp_port")
-	smtpsPort := val.GetAttr("smtps_port")
-	smtpUsername := val.GetAttr("smtp_username")
-	smtpPassword := val.GetAttr("smtp_password")
-	from := val.GetAttr("from")
-	defaultRecipient := val.GetAttr("default_recipient")
-	defaultSubject := val.GetAttr("default_subject")
-	responseUrl := val.GetAttr("response_url")
+	valMap := val.AsValueMap()
+
+	smtpHost := valMap["smtp_host"]
+	smtpTls := valMap["smtp_tls"]
+	smtpPort := valMap["smtp_port"]
+	smtpsPort := valMap["smtps_port"]
+	smtpUsername := valMap["smtp_username"]
+	smtpPassword := valMap["smtp_password"]
+	from := valMap["from"]
+	defaultRecipient := valMap["default_recipient"]
+	defaultSubject := valMap["default_subject"]
+	responseUrl := valMap["response_url"]
 
 	if !smtpHost.IsNull() {
 		smtpHostStr := smtpHost.AsString()
@@ -499,8 +567,8 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 }
 
 type WebformIntegration struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
+	HclResourceImpl          `json:"-"`
+	ResourceWithMetadataImpl `json:"-"`
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 }
@@ -511,6 +579,12 @@ func (i *WebformIntegration) GetIntegrationType() string {
 
 func (i *WebformIntegration) CtyValue() (cty.Value, error) {
 	return GetCtyValue(i)
+}
+
+func (i *WebformIntegration) MapInterface() (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	res["type"] = i.Type
+	return res, nil
 }
 
 func (i *WebformIntegration) Validate() hcl.Diagnostics {

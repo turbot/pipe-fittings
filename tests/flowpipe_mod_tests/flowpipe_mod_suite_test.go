@@ -2,6 +2,7 @@ package pipeline_test
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path"
 	"slices"
@@ -240,6 +241,45 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	notifier := flowpipeConfig.Notifiers["devs"]
+
+	// marshall to JSON test
+	jsonBytes, err := json.Marshal(notifier)
+	if err != nil {
+		assert.Fail(err.Error())
+		return
+	}
+
+	assert.Nil(err)
+	assert.NotNil(jsonBytes)
+
+	// unmarshall from JSON test
+	var notifier2 modconfig.Notifier
+	err = json.Unmarshal(jsonBytes, &notifier2)
+	if err != nil {
+		assert.Fail(err.Error())
+		return
+	}
+
+	assert.Equal(2, len(notifier2.Notifies))
+	assert.Equal("#devs", *notifier2.Notifies[0].Channel)
+	assert.Equal("xoxp-111111", *notifier2.Notifies[0].Integration.(*modconfig.SlackIntegration).Token)
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	assert := assert.New(suite.T())
 
@@ -349,6 +389,26 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("Q#$$#@#$$#W", *flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.(*modconfig.SlackIntegration).SigningSecret)
 	assert.Equal("xoxp-111111", *flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.(*modconfig.SlackIntegration).Token)
 
+	devsNotifier := flowpipeConfig.Notifiers["devs"]
+	assert.Equal("devs", devsNotifier.HclResourceImpl.FullName)
+	assert.Equal(2, len(devsNotifier.Notifies))
+
+	dvCtyVal, err2 := devsNotifier.CtyValue()
+	if err2 != nil {
+		assert.Fail(err2.Error())
+		return
+	}
+
+	if dvCtyVal == cty.NilVal {
+		assert.Fail("cty value is nil")
+		return
+	}
+
+	devsNotifierMap := dvCtyVal.AsValueMap()
+	devsNotifiesSlice := devsNotifierMap["notifies"].AsValueSlice()
+	assert.Equal(2, len(devsNotifiesSlice))
+	assert.Equal("#devs", devsNotifiesSlice[0].AsValueMap()["channel"].AsString())
+
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -374,6 +434,17 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 		return
 	}
 	assert.Equal("Do you want to approve?", *step.Prompt)
+
+	// This notifier CtyValue function
+	ctyVal, err2 := step.Notifier.CtyValue()
+	if err2 != nil {
+		assert.Fail(err2.Error())
+		return
+	}
+
+	notifierMap := ctyVal.AsValueMap()
+	notifiesSlice := notifierMap["notifies"].AsValueSlice()
+	assert.Equal(1, len(notifiesSlice))
 
 	notifies := step.Notifier.Notifies
 	assert.Len(notifies, 1)
