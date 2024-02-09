@@ -244,12 +244,6 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 		return diags
 	}
 
-	var credentials = map[string]credential.Credential{}
-	var integrations = map[string]modconfig.Integration{}
-	var notifiers = map[string]modconfig.Notifier{}
-
-	var credentialImports = map[string]credential.CredentialImport{}
-
 	// Parse credentials and integration first
 	for _, block := range content.Blocks {
 		switch block.Type {
@@ -261,7 +255,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 				continue
 			}
 
-			credentialImports[credentialImport.GetUnqualifiedName()] = *credentialImport
+			f.CredentialImports[credentialImport.GetUnqualifiedName()] = *credentialImport
 
 		case schema.BlockTypeCredential:
 			credential, moreDiags := parse.DecodeCredential(configPath, block)
@@ -271,7 +265,8 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 				continue
 			}
 
-			credentials[credential.GetUnqualifiedName()] = credential
+			f.Credentials[credential.GetUnqualifiedName()] = credential
+
 		case schema.BlockTypeIntegration:
 			integration, moreDiags := parse.DecodeIntegration(configPath, block)
 			if len(moreDiags) > 0 {
@@ -280,7 +275,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 				continue
 			}
 
-			integrations[integration.GetUnqualifiedName()] = integration
+			f.Integrations[integration.GetUnqualifiedName()] = integration
 
 		case schema.BlockTypeNotifier:
 			evalContext, moreDiags := buildEvalContextWithIntegrationsOnly(configPath, f.Integrations)
@@ -296,26 +291,8 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 				continue
 			}
 
-			notifiers[notifier.GetUnqualifiedName()] = *notifier
+			f.Notifiers[notifier.GetUnqualifiedName()] = *notifier
 		}
-	}
-
-	// Copy over what's avaiable
-
-	if len(credentials) > 0 {
-		maps.Copy(f.Credentials, credentials)
-	}
-
-	if len(integrations) > 0 {
-		maps.Copy(f.Integrations, integrations)
-	}
-
-	if len(notifiers) > 0 {
-		maps.Copy(f.Notifiers, notifiers)
-	}
-
-	if len(credentialImports) > 0 {
-		maps.Copy(f.CredentialImports, credentialImports)
 	}
 
 	if len(diags) > 0 {

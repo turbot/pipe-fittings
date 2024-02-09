@@ -160,6 +160,7 @@ const (
 	AttributeTypeLabel            = "label"
 	AttributeTypeSelected         = "selected"
 	AttributeTypeNotifier         = "notifier"
+	AttributeTypeNotifies         = "notifies"
 
 	AttributeTypeMessage = "message"
 

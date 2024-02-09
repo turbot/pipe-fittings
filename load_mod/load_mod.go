@@ -105,9 +105,8 @@ func loadModDefinition(ctx context.Context, modPath string, modFile string, pars
 		// load the mod definition to get the dependencies
 		var res *parse.DecodeResult
 		mod, res = parse.ParseModDefinitionWithFileName(modPath, modFile, parseCtx.EvalCtx)
-		errorsAndWarnings = error_helpers.DiagsToErrorsAndWarnings("mod load failed", res.Diags)
 		if res.Diags.HasErrors() {
-			return nil, errorsAndWarnings
+			return nil, error_helpers.DiagsToErrorsAndWarnings("mod load failed", res.Diags)
 		}
 	} else {
 		// so there is no mod file - should we create a default?

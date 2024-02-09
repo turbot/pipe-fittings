@@ -56,6 +56,13 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 				diags = append(diags, moreDiags...)
 				continue
 			}
+
+			moreDiags = notify.SetAttributes(b.Body, evalCtx)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
 			notifier.Notifies = append(notifier.Notifies, notify)
 		default:
 			diags = append(diags, &hcl.Diagnostic{

@@ -272,19 +272,18 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 		return
 	}
 
-	notifies := step.Notifier.AsValueMap()["notifies"].AsValueSlice()
+	notifies := step.Notifier.Notifies
 	assert.Len(notifies, 1)
-	notify := notifies[0].AsValueMap()
+	notify := notifies[0]
 	assert.NotNil(notify)
-	toCtys := notify["to"].AsValueSlice()
-	assert.Equal(2, len(toCtys))
-	assert.Equal("foo@bar.com", toCtys[0].AsString())
-	assert.Equal("baz@bar.com", toCtys[1].AsString())
+	toList := notify.To
+	assert.Equal(2, len(toList))
+	assert.Equal("foo@bar.com", toList[0])
+	assert.Equal("baz@bar.com", toList[1])
 
-	integrations := notify["integration"].AsValueMap()
+	integrations := notify.Integration
 	assert.NotNil(integrations)
-	assert.Equal("user@test.tld", integrations["default_recipient"].AsString())
-
+	assert.Equal("user@test.tld", *integrations.(*modconfig.EmailIntegration).DefaultRecipient)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
@@ -317,10 +316,6 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
 
-	// Load the config from 2 different directories to test that we can load from multiple directories where the integration is defined after
-	// we load the notifiers.
-	//
-	// ensure that "config_dir" is loaded first, that's where the notifier is.
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir", "./mod_with_integration"})
 	if err.Error != nil {
 		assert.FailNow(err.Error.Error())
@@ -350,8 +345,9 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].HclResourceImpl.FullName)
 	// Check the notify -> integration link
 	assert.Equal(1, len(flowpipeConfig.Notifiers["admins"].Notifies))
-	assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["signing_secret"].AsString())
-	assert.Equal("xoxp-111111", flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.AsValueMap()["token"].AsString())
+
+	assert.Equal("Q#$$#@#$$#W", *flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.(*modconfig.SlackIntegration).SigningSecret)
+	assert.Equal("xoxp-111111", *flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.(*modconfig.SlackIntegration).Token)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 	assert.NotNil(w)
@@ -379,14 +375,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	}
 	assert.Equal("Do you want to approve?", *step.Prompt)
 
-	notifies := step.Notifier.AsValueMap()["notifies"].AsValueSlice()
+	notifies := step.Notifier.Notifies
 	assert.Len(notifies, 1)
-	notify := notifies[0].AsValueMap()
+	notify := notifies[0]
 	assert.NotNil(notify)
 
-	integrations := notify["integration"].AsValueMap()
-	assert.NotNil(integrations)
-	assert.Equal("Q#$$#@#$$#W", integrations["signing_secret"].AsString())
+	integration := notify.Integration
+	assert.NotNil(integration)
+	assert.Equal("Q#$$#@#$$#W", *integration.(*modconfig.SlackIntegration).SigningSecret)
 
 	step, ok = pipeline.Steps[1].(*modconfig.PipelineStepInput)
 	if !ok {
@@ -395,15 +391,15 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	}
 
 	assert.Equal("Do you want to approve (2)?", *step.Prompt)
-	notifies = step.Notifier.AsValueMap()["notifies"].AsValueSlice()
+	notifies = step.Notifier.Notifies
 
 	assert.Len(notifies, 1)
-	notify = notifies[0].AsValueMap()
+	notify = notifies[0]
 	assert.NotNil(notify)
 
-	integrations = notify["integration"].AsValueMap()
-	assert.NotNil(integrations)
-	assert.Equal("Q#$$#@#$$#W", integrations["signing_secret"].AsString())
+	integration = notify.Integration
+	assert.NotNil(integration)
+	assert.Equal("Q#$$#@#$$#W", *integration.(*modconfig.SlackIntegration).SigningSecret)
 
 	pipeline = pipelines["mod_with_integration.pipeline.approval_with_notifies_dynamic"]
 	if pipeline == nil {

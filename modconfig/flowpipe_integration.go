@@ -1,7 +1,10 @@
 package modconfig
 
 import (
+	"fmt"
+
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
@@ -331,6 +334,133 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 	}
 
 	return diags
+}
+
+func integrationFromCtyValue(val cty.Value) (Integration, error) {
+
+	integrationType := val.GetAttr("type").AsString()
+
+	switch integrationType {
+	case schema.IntegrationTypeSlack:
+		return SlackIntegrationFromCtyValue(val)
+	case schema.IntegrationTypeEmail:
+		return EmailIntegrationFromCtyValue(val)
+	case schema.IntegrationTypeWebform:
+		return WebformIntegrationFromCtyValue(val)
+	}
+	return nil, perr.BadRequestWithMessage(fmt.Sprintf("Unsupported integration type: %s", integrationType))
+}
+
+func SlackIntegrationFromCtyValue(val cty.Value) (*SlackIntegration, error) {
+	i := &SlackIntegration{}
+
+	i.Type = val.GetAttr("type").AsString()
+
+	token := val.GetAttr("token")
+	signingSecret := val.GetAttr("signing_secret")
+	webhookUrl := val.GetAttr("webhook_url")
+	channel := val.GetAttr("channel")
+
+	if !token.IsNull() {
+		tokenStr := token.AsString()
+		i.Token = &tokenStr
+	}
+
+	if !signingSecret.IsNull() {
+		signingSecretStr := signingSecret.AsString()
+		i.SigningSecret = &signingSecretStr
+	}
+
+	if !webhookUrl.IsNull() {
+		webhookUrlStr := webhookUrl.AsString()
+		i.WebhookUrl = &webhookUrlStr
+	}
+
+	if !channel.IsNull() {
+		channelStr := channel.AsString()
+		i.Channel = &channelStr
+	}
+
+	return i, nil
+}
+
+func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
+	i := &EmailIntegration{}
+
+	i.Type = val.GetAttr("type").AsString()
+
+	smtpHost := val.GetAttr("smtp_host")
+	smtpTls := val.GetAttr("smtp_tls")
+	smtpPort := val.GetAttr("smtp_port")
+	smtpsPort := val.GetAttr("smtps_port")
+	smtpUsername := val.GetAttr("smtp_username")
+	smtpPassword := val.GetAttr("smtp_password")
+	from := val.GetAttr("from")
+	defaultRecipient := val.GetAttr("default_recipient")
+	defaultSubject := val.GetAttr("default_subject")
+	responseUrl := val.GetAttr("response_url")
+
+	if !smtpHost.IsNull() {
+		smtpHostStr := smtpHost.AsString()
+		i.SmtpHost = &smtpHostStr
+	}
+
+	if !smtpTls.IsNull() {
+		smtpTlsStr := smtpTls.AsString()
+		i.SmtpTls = &smtpTlsStr
+	}
+
+	if !smtpPort.IsNull() {
+		smtpPortInt, _ := smtpPort.AsBigFloat().Int64()
+		n := int(smtpPortInt)
+		i.SmtpPort = &n
+	}
+
+	if !smtpsPort.IsNull() {
+		smtpsPortInt, _ := smtpsPort.AsBigFloat().Int64()
+		n := int(smtpsPortInt)
+		i.SmtpsPort = &n
+	}
+
+	if !smtpUsername.IsNull() {
+		smtpUsernameStr := smtpUsername.AsString()
+		i.SmtpUsername = &smtpUsernameStr
+	}
+
+	if !smtpPassword.IsNull() {
+		smtpPasswordStr := smtpPassword.AsString()
+		i.SmtpPassword = &smtpPasswordStr
+	}
+
+	if !from.IsNull() {
+		fromStr := from.AsString()
+		i.From = &fromStr
+	}
+
+	if !defaultRecipient.IsNull() {
+		defaultRecipientStr := defaultRecipient.AsString()
+		i.DefaultRecipient = &defaultRecipientStr
+	}
+
+	if !defaultSubject.IsNull() {
+		defaultSubjectStr := defaultSubject.AsString()
+		i.DefaultSubject = &defaultSubjectStr
+	}
+
+	if !responseUrl.IsNull() {
+		responseUrlStr := responseUrl.AsString()
+		i.ResponseUrl = &responseUrlStr
+	}
+
+	return i, nil
+}
+
+func WebformIntegrationFromCtyValue(val cty.Value) (*WebformIntegration, error) {
+	i := &WebformIntegration{}
+
+	i.Type = val.GetAttr("type").AsString()
+
+	return i, nil
 }
 
 func NewIntegrationFromBlock(block *hcl.Block) Integration {
