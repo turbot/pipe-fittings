@@ -2,24 +2,25 @@ package printers
 
 import (
 	"github.com/turbot/go-kit/helpers"
+	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/sanitize"
 	"reflect"
 )
 
 type TableRow struct {
-	Columns []string
-	Cells   []any
+	//Columns []string
+	Cells []any
 	// map of field name to field render options
 	Opts map[string]FieldRenderOptions
 }
 
 func NewTableRow(fields ...FieldValue) *TableRow {
 	row := &TableRow{
-		Columns: make([]string, 0, len(fields)),
-		Opts:    make(map[string]FieldRenderOptions),
+		//Columns: make([]string, 0, len(fields)),
+		Opts: make(map[string]FieldRenderOptions),
 	}
 	for _, f := range fields {
-		row.Columns = append(row.Columns, f.Name)
+		//row.Columns = append(row.Columns, f.Name)
 
 		value := f.Value
 		if !helpers.IsNil(value) {
@@ -35,17 +36,6 @@ func NewTableRow(fields ...FieldValue) *TableRow {
 	return row
 }
 
-func (r *TableRow) Merge(other *TableRow) {
-	if other == nil {
-		return
-	}
-	r.Columns = append(r.Columns, other.Columns...)
-	r.Cells = append(r.Cells, other.Cells...)
-	for k, v := range other.Opts {
-		r.Opts[k] = v
-	}
-}
-
 type FieldValue struct {
 	Name  string
 	Value any
@@ -56,7 +46,13 @@ type FieldValue struct {
 	// the number of spaces to indent the value
 	Indent int
 }
+
+func (f FieldValue) ValueString() string {
+	return typehelpers.ToString(f.Value)
+}
+
 type RenderFunc func(opts sanitize.RenderOptions) string
+
 type Table struct {
 	Rows      []TableRow
 	Columns   []string

@@ -465,8 +465,8 @@ type PipelineOutput struct {
 }
 
 // GetShowData implements the Showable interface
-func (o PipelineOutput) GetShowData() *printers.TableRow {
-	return printers.NewTableRow(
+func (o PipelineOutput) GetShowData() *printers.ShowData {
+	return printers.NewShowData(
 		printers.FieldValue{Name: "Name", Value: o.Name, RenderKeyValueFunc: o.renderName},
 		printers.FieldValue{Name: "Description", Value: o.Description, Indent: 2},
 		printers.FieldValue{Name: "Type", Value: "any", Indent: 2})

@@ -68,25 +68,26 @@ func (p ShowPrinter[T]) render(resource Showable, opts sanitize.RenderOptions) (
 	// add 2 for the colon and space
 	maxTitleLength += 2
 
-	for idx, columnName := range row.Columns {
-		fieldOpts := row.Opts[columnName]
+	for _, columnName := range row.Columns {
+		fieldVal := row.Fields[columnName]
 
+		displayName := row.displayNameMap[columnName]
 		// if render opts or this field specify an indent, apply it
 		globalIndent := opts.Indent
-		fieldIndent := fieldOpts.Indent
+		fieldIndent := fieldVal.Indent
 		var indentString = strings.Repeat(" ", globalIndent+fieldIndent)
 
 		var fieldString string
 
 		// if there is a key-value render func, use it to render the full key and value
-		if fieldOpts.RenderKeyValueFunc != nil {
-			fieldString = fieldOpts.RenderKeyValueFunc(opts)
+		if fieldVal.RenderKeyValueFunc != nil {
+			fieldString = fieldVal.RenderKeyValueFunc(opts)
 			// is this returned anything, add a newline
 			if len(fieldString) > 0 {
 				fieldString += "\n"
 			}
 		} else {
-			fieldString = p.renderKeyValue(maxTitleLength, au, columnName, row.Cells[idx], fieldOpts, opts)
+			fieldString = p.renderKeyValue(maxTitleLength, au, displayName, fieldVal, opts)
 		}
 
 		// if there is anything in the field string, add it to the builder, with indent
@@ -99,7 +100,7 @@ func (p ShowPrinter[T]) render(resource Showable, opts sanitize.RenderOptions) (
 	return b.String(), nil
 }
 
-func (p ShowPrinter[T]) renderKeyValue(maxTitleLength int, au aurora.Aurora, columnName string, columnValue any, fieldOpts FieldRenderOptions, opts sanitize.RenderOptions) string {
+func (p ShowPrinter[T]) renderKeyValue(maxTitleLength int, au aurora.Aurora, columnName string, fieldVal FieldValue, opts sanitize.RenderOptions) string {
 	// key
 	padFormat := fmt.Sprintf("%%-%ds", maxTitleLength)
 	keyStr := fmt.Sprintf(padFormat, au.Blue(fmt.Sprintf("%s:", columnName)))
@@ -108,12 +109,12 @@ func (p ShowPrinter[T]) renderKeyValue(maxTitleLength int, au aurora.Aurora, col
 	var valstr string
 
 	// if there is a value render func, use it to render the value
-	if fieldOpts.RenderValueFunc != nil {
-		valstr = fieldOpts.RenderValueFunc(opts) + "\n"
+	if fieldVal.RenderValueFunc != nil {
+		valstr = fieldVal.RenderValueFunc(opts) + "\n"
 	} else {
 		// ok manually render the value
 		var err error
-		valstr, err = p.renderValue(columnValue, opts)
+		valstr, err = p.renderValue(fieldVal.Value, opts)
 		if err != nil {
 			return ""
 		}
