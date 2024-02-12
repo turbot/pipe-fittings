@@ -17,6 +17,12 @@ func makeControl(mod *modconfig.Mod, name, title, description, sql string, tags 
 	return control
 }
 
+type testCase[T modconfig.HclResource] struct {
+	name   string
+	filter ResourceFilter
+	want   map[string]struct{}
+}
+
 func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 
 	var mod = modconfig.NewMod("test_mod", ".", hcl.Range{})
@@ -34,11 +40,6 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 		Mod: mod,
 	}
 
-	type testCase[T modconfig.HclResource] struct {
-		name   string
-		filter ResourceFilter
-		want   map[string]struct{}
-	}
 	controlTests := []testCase[*modconfig.Control]{
 		{
 			name: `where "name = 'control1'"`,
@@ -131,8 +132,12 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 		},
 	}
 	//var testFilter = "name like 'control1'"
-	var testFilter = "tags t1=val1_foo t2=something_else [NO MATCHES]"
+	var testFilter = ""
 
+	executeTests[*modconfig.Control](t, controlTests, testFilter, w)
+}
+
+func executeTests[T modconfig.HclResource](t *testing.T, controlTests []testCase[*modconfig.Control], testFilter string, w *Workspace) {
 	for _, tt := range controlTests {
 		// apply test filter if specified
 		if testFilter != "" && tt.name != testFilter {
@@ -140,7 +145,7 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 
-			got, err := FilterWorkspaceResourcesOfType[*modconfig.Control](w, tt.filter)
+			got, err := FilterWorkspaceResourcesOfType[T](w, tt.filter)
 			if err != nil {
 				t.Fatalf("FilterWorkspaceResourcesOfType() test '%s' error = %v", tt.name, err)
 			}

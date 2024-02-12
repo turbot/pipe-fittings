@@ -26,14 +26,6 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	}
 	// if resources have changed, update introspection tables
 	if !prevResourceMaps.Equals(resourceMaps) {
-
-		// TODO KAI STEAMPIPE workspaces should not know about introspection data - STEAMPIPE will need a hook here <INTROSPECTION>
-		// https://github.com/turbot/pipe-fittings/issues/153
-		// maybe workspace could provide a file changed hook which Steampipe uses
-
-		//// update the client with the new introspection data
-		//w.onNewIntrospectionData(ctx, client)
-
 		if w.onFileWatcherEventMessages != nil {
 			w.onFileWatcherEventMessages()
 		}
@@ -44,26 +36,6 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 		w.OnFileWatcherEvent(ctx, resourceMaps, prevResourceMaps)
 	}
 }
-
-// TODO KAI STEAMPIPE workspaces should not know about introspection data - STEAMPIPE will need a hook here <INTROSPECTION>
-// https://github.com/turbot/pipe-fittings/issues/153
-// maybe workspace could provide a file changed hook which Steampipe uses
-//func (w *Workspace) onNewIntrospectionData(ctx context.Context, client *db_client.DbClient) {
-//	if viper.GetString(constants.ArgIntrospection) == constants.IntrospectionNone {
-//		// nothing to do here
-//		return
-//	}
-//	client.ResetPools(ctx)
-//	res := client.AcquireSession(ctx)
-//	if res.Session != nil {
-//		res.Session.Close(error_helpers.IsContextCanceled(ctx))
-//	}
-//	if res != nil {
-//		fmt.Println()
-//		error_helpers.ShowErrorWithMessage(ctx, res.Error, "error when refreshing session data")
-//		error_helpers.ShowWarning(strings.Join(res.Warnings, "\n"))
-//	}
-//}
 
 func (w *Workspace) reloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, error_helpers.ErrorAndWarnings) {
 	w.loadLock.Lock()
