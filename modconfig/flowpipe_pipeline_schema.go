@@ -189,13 +189,15 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeSchedule,
 		},
 		{
-			Name: schema.AttributeTypeSql,
+			Name:     schema.AttributeTypeSql,
+			Required: true,
 		},
 		{
 			Name: schema.AttributeTypePrimaryKey,
 		},
 		{
-			Name: schema.AttributeTypeConnectionString,
+			Name:     schema.AttributeTypeConnectionString,
+			Required: true,
 		},
 		{
 			Name: schema.AttributeTypeEnabled,
