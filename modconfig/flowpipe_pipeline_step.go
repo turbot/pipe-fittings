@@ -2941,7 +2941,10 @@ func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	results := map[string]interface{}{}
+	results[schema.AttributeTypeType] = p.InputType
 
+	// prompt
 	var prompt *string
 	if p.UnresolvedAttributes[schema.AttributeTypePrompt] == nil {
 		prompt = p.Prompt
@@ -2951,20 +2954,30 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
-
-	results := map[string]interface{}{}
-
-	results[schema.AttributeTypeType] = p.InputType
-
 	if prompt != nil {
 		results[schema.AttributeTypePrompt] = *prompt
 	}
 
-	// TODO: Handle Unresolved Options Attribute/Option Body/Blocks
-	if len(p.OptionList) > 0 {
-		results[schema.AttributeTypeOptions] = p.OptionList
-	}
+	// options
+	var resolvedOpts []PipelineStepInputOption
+	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil && len(p.OptionList) > 0 {
+		resolvedOpts = p.OptionList
+	} else {
+		var opts cty.Value
+		var err error
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
 
+		resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
+		if err != nil {
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse options attribute: " + err.Error())
+		}
+	}
+	results[schema.AttributeTypeOptions] = resolvedOpts
+
+	// notifier
 	var notifier Notifier
 	if p.UnresolvedAttributes[schema.AttributeTypeNotifier] == nil {
 		notifier = p.Notifier
