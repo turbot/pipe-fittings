@@ -294,6 +294,14 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		triggerHcl.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
 	}
 
+	if len(diags) == 0 {
+		moreDiags := triggerHcl.Config.Validate()
+		if len(moreDiags) > 0 {
+			res.handleDecodeDiags(moreDiags)
+			return nil, res
+		}
+	}
+
 	moreDiags := parseCtx.AddTrigger(triggerHcl)
 	res.addDiags(moreDiags)
 

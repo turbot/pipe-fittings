@@ -174,6 +174,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 type TriggerConfig interface {
 	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
+	Validate() hcl.Diagnostics
 }
 
 type TriggerSchedule struct {
@@ -231,6 +232,19 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 			}
 		}
 	}
+	return diags
+}
+
+func (t *TriggerSchedule) Validate() hcl.Diagnostics {
+	var diags hcl.Diagnostics
+
+	if t.Schedule == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "missing required attribute: schedule",
+		})
+	}
+
 	return diags
 }
 
@@ -322,6 +336,25 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 		}
 	}
 
+	return diags
+}
+
+func (t *TriggerQuery) Validate() hcl.Diagnostics {
+	var diags hcl.Diagnostics
+
+	if t.ConnectionString == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "missing required attribute: connection_string",
+		})
+	}
+
+	if t.Sql == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "missing required attribute: sql",
+		})
+	}
 	return diags
 }
 
@@ -499,6 +532,12 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 			}
 		}
 	}
+
+	return diags
+}
+
+func (t *TriggerHttp) Validate() hcl.Diagnostics {
+	var diags hcl.Diagnostics
 
 	return diags
 }

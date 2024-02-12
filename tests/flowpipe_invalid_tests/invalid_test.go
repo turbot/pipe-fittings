@@ -172,6 +172,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_trigger_duplicate_method.fp",
 		containsError: "Duplicate method block for type: post",
 	},
+	{
+		title:         "duplicate method blocks in http trigger",
+		file:          "./pipelines/query_trigger_missing_connection_string.fp",
+		containsError: "missing required attribute: connection_string",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

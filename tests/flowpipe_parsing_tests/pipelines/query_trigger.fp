@@ -8,7 +8,8 @@ pipeline "simple_with_trigger" {
 }
 
 trigger "query" "query_trigger" {
-  schedule = "5 * * * *"
+  schedule          = "5 * * * *"
+  connection_string = "postgres://steampipe:@host.docker.internal:9193/steampipe"
 
   sql = <<EOQ
         select
@@ -47,6 +48,8 @@ trigger "query" "query_trigger" {
 
 // No schedule = every 15 minutes
 trigger "query" "query_trigger_no_schedule" {
+  connection_string = "postgres://steampipe:@host.docker.internal:9193/steampipe"
+
   sql = <<EOQ
         select
             access_key_id,
