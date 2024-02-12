@@ -1,0 +1,189 @@
+package workspace
+
+import (
+	"fmt"
+	"github.com/danwakefield/fnmatch"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/printers"
+	filter2 "github.com/turbot/steampipe-plugin-sdk/v5/filter"
+	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"golang.org/x/exp/maps"
+	"log"
+	"strings"
+)
+
+type ResourceFilter struct {
+	Where string
+	Tags  map[string]string
+}
+
+func (f *ResourceFilter) getPredicate() (func(resource modconfig.HclResource) bool, error) {
+	// If there is a 'where' clause, parse it
+	wherePredicate, err := f.parseFilter()
+	if err != nil {
+		return nil, err
+	}
+	tagPredicate := f.getTagPredicate()
+
+	// combine these
+	res := func(resource modconfig.HclResource) bool {
+		return wherePredicate(resource) && tagPredicate(resource)
+	}
+
+	return res, nil
+}
+
+func (f *ResourceFilter) getTagPredicate() func(resource modconfig.HclResource) bool {
+	if f.Tags == nil {
+		return func(resource modconfig.HclResource) bool {
+			return true
+		}
+	}
+	tagPredicate := func(resource modconfig.HclResource) bool {
+		tags := resource.GetTags()
+		for k, v := range f.Tags {
+			if tags[k] != v {
+				return false
+			}
+		}
+		return true
+
+	}
+	return tagPredicate
+}
+
+func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) bool, error) {
+	if f.Where == "" {
+		return func(resource modconfig.HclResource) bool {
+			return true
+		}, nil
+	}
+	parsed, err := filter2.Parse("", []byte(f.Where))
+	if err != nil {
+		log.Printf("err %v", err)
+		return nil, sperr.New("failed to parse 'where' property: %s", err.Error())
+	}
+
+	// convert table schema into a column map
+
+	filter := parsed.(filter2.ComparisonNode)
+
+	var column string
+	var values []string
+	var operator string
+
+	switch filter.Type {
+
+	case "compare", "like":
+		codeNodes, ok := filter.Values.([]filter2.CodeNode)
+		if !ok {
+			return nil, fmt.Errorf("failed to parse filter")
+		}
+		if len(codeNodes) != 2 {
+			return nil, fmt.Errorf("failed to parse filter")
+		}
+
+		column = codeNodes[0].Value
+		values = append(values, codeNodes[1].Value)
+		operator = filter.Operator.Value
+
+	case "in":
+		operator = filter.Operator.Value
+
+		codeNodes, ok := filter.Values.([]filter2.CodeNode)
+		if !ok || len(codeNodes) < 2 {
+			return nil, fmt.Errorf("failed to parse filter")
+		}
+		column = codeNodes[0].Value
+
+		// Build look up of values to dedupe
+		valuesMap := make(map[string]struct{}, len(codeNodes)-1)
+		for _, c := range codeNodes[1:] {
+			valuesMap[c.Value] = struct{}{}
+		}
+		values = maps.Keys(valuesMap)
+
+	default:
+		return nil, fmt.Errorf("failed to convert 'where' arg to qual")
+
+	}
+
+	// now build the predicate
+	p := func(resource modconfig.HclResource) bool {
+		data := resource.GetShowData()
+
+		if _, containsColumn := data.Fields[column]; !containsColumn {
+			return false
+		}
+
+		return evaluateFilter(data, column, operator, values)
+	}
+
+	return p, nil
+}
+
+func evaluateFilter(data *printers.ShowData, column string, operator string, values []string) bool {
+	switch operator {
+	case "=":
+		return data.Fields[column].ValueString() == values[0]
+	case "!=":
+		return data.Fields[column].ValueString() != values[0]
+	// TODO cast as number??
+	//case "<":
+	//case "<=":
+	//case ">":
+	//case ">=":
+	case "~~", "like":
+		return sqlLike(data.Fields[column].ValueString(), values[0], true)
+	case "!~~", "not like":
+		return !sqlLike(data.Fields[column].ValueString(), values[0], true)
+	case "~~*", "ilike":
+		return sqlLike(data.Fields[column].ValueString(), values[0], false)
+	case "!~~*", "not ilike":
+		return !sqlLike(data.Fields[column].ValueString(), values[0], false)
+	case "in":
+		for _, v := range values {
+			if data.Fields[column].ValueString() == v {
+				return true
+			}
+		}
+		return false
+	case "not in":
+		for _, v := range values {
+			if data.Fields[column].ValueString() == v {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
+}
+
+// Simulates SQL LIKE pattern matching in Go, with an option for case sensitivity.
+func sqlLike(input, pattern string, caseSensitive bool) bool {
+	flag := 0
+	if !caseSensitive {
+		flag = fnmatch.FNM_CASEFOLD
+	}
+	// convert he sql pattern to fnmatch pattern
+	fnmatchPattern := sqlLikeToFnmatch(pattern)
+	return fnmatch.Match(fnmatchPattern, input, flag)
+
+}
+
+// sqlLikeToFnmatch converts a SQL LIKE pattern to an fnmatch pattern
+func sqlLikeToFnmatch(pattern string) string {
+	// Replace SQL '%' wildcard with fnmatch '*' wildcard
+	pattern = strings.ReplaceAll(pattern, "%", "*")
+
+	// Replace SQL '_' wildcard with fnmatch '?' wildcard
+	pattern = strings.ReplaceAll(pattern, "_", "?")
+
+	// Handle escaped '%' and '_' characters
+	// This example assumes '\' is used as the escape character in the SQL pattern
+	pattern = strings.ReplaceAll(pattern, "\\%", "%")
+	pattern = strings.ReplaceAll(pattern, "\\_", "_")
+
+	return pattern
+}

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/printers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -226,4 +227,16 @@ func (c *Control) setBaseProperties() {
 	if c.Display == nil {
 		c.Display = c.Base.Display
 	}
+}
+
+// GetShowData implements printers.Showable
+func (c *Control) GetShowData() *printers.ShowData {
+
+	res := printers.NewShowData(
+		printers.FieldValue{Name: "Width", Value: c.Width},
+		printers.FieldValue{Name: "Type", Value: c.Type},
+		printers.FieldValue{Name: "Display", Value: c.Display},
+	)
+	res.Merge(c.QueryProviderImpl.GetShowData())
+	return res
 }

@@ -3,6 +3,7 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/printers"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -70,4 +71,14 @@ func (p *ParamDef) GetDefault() (any, error) {
 	var val any
 	err := json.Unmarshal([]byte(*p.Default), &val)
 	return val, err
+}
+
+// GetShowData implements printers.Showable
+func (p *ParamDef) GetShowData() *printers.ShowData {
+	res := printers.NewShowData(
+		printers.FieldValue{Name: "Name", Value: p.UnqualifiedName},
+		printers.FieldValue{Name: "Description", Value: p.Description},
+		printers.FieldValue{Name: "Default", Value: p.Default},
+	)
+	return res
 }

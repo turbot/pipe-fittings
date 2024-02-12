@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/printers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -84,4 +85,16 @@ func (r *ResourceReference) Equals(other *ResourceReference) bool {
 // the name must start with the 'resource type' as we parse it and use just the 'name' segment
 func (r *ResourceReference) Name() string {
 	return fmt.Sprintf("ref.%s", r.name)
+}
+
+// GetShowData implements printers.Showable
+func (r *ResourceReference) GetShowData() *printers.ShowData {
+	res := printers.NewShowData(
+		printers.FieldValue{Name: "To", Value: r.To},
+		printers.FieldValue{Name: "From", Value: r.From},
+		printers.FieldValue{Name: "BlockType", Value: r.BlockType},
+		printers.FieldValue{Name: "BlockName", Value: r.BlockName},
+		printers.FieldValue{Name: "Attribute", Value: r.Attribute},
+	)
+	return res
 }

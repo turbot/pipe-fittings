@@ -3,6 +3,7 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/printers"
 	"log/slog"
 	"strings"
 
@@ -383,4 +384,14 @@ func (q *QueryArgs) resolvePositionalParameters(queryProvider QueryProvider) (ar
 		}
 	}
 	return argValues, missingParams, nil
+}
+
+// GetShowData implements printers.Showable
+func (q *QueryArgs) GetShowData() *printers.ShowData {
+	res := printers.NewShowData(
+		printers.FieldValue{Name: "ArgMap", Value: q.ArgMap},
+		printers.FieldValue{Name: "ArgList", Value: q.ArgList},
+		printers.FieldValue{Name: "References", Value: q.References},
+	)
+	return res
 }

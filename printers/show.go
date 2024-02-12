@@ -2,7 +2,7 @@ package printers
 
 import "strings"
 
-// interface implemented by objectes ewhich support the `show` command for pretty/plain output format
+// Showable is an interface implemented by objects which support the `show` command for pretty/plain output format
 type Showable interface {
 	GetShowData() *ShowData
 }
@@ -23,7 +23,7 @@ func AsShowable(value any) Showable {
 	return nil
 }
 
-// interface implemented by objectes ewhich support the `list` command for pretty/plain output format
+// Listable is an interface implemented by objects which support the `list` command for pretty/plain output format
 type Listable interface {
 	GetListData() *ShowData
 }

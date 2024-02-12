@@ -124,10 +124,8 @@ func (b *ModTreeItemImpl) GetShowData() *printers.ShowData {
 		printers.FieldValue{Name: "Name", Value: name},
 		printers.FieldValue{Name: "Mod", Value: b.Mod.ShortName},
 		printers.FieldValue{Name: "Database", Value: b.Database},
-		printers.FieldValue{Name: "Search Path", Value: b.Mod.SearchPath},
-		printers.FieldValue{Name: "Search Path Prefix", Value: b.Mod.SearchPathPrefix},
 	)
-	res.Merge(b.HclResourceImpl.GetListData())
+	res.Merge(b.HclResourceImpl.GetShowData())
 	return res
 }
 
