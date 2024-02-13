@@ -33,7 +33,7 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.4
-	github.com/turbot/go-kit v0.9.0-rc.3
+	github.com/turbot/go-kit v0.10.0-rc.0
 	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.8.0
 	github.com/xlab/treeprint v1.2.0
@@ -47,11 +47,13 @@ require (
 require (
 	github.com/aws/aws-sdk-go-v2 v1.23.1
 	github.com/aws/aws-sdk-go-v2/config v1.25.5
+	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964
 	github.com/goccy/go-yaml v1.11.2
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/jackc/pgx/v5 v5.5.2
+	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/steampipe-plugin-code v0.6.0
 	github.com/turbot/terraform-components v0.0.0-20231108031935-358f803c1a8b
@@ -96,7 +98,6 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
-	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -169,7 +170,6 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sagikazarmark/locafero v0.3.0 // indirect
-	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect

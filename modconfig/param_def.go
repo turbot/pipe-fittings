@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/printers"
 )
 
 type ParamDef struct {
@@ -70,4 +71,14 @@ func (p *ParamDef) GetDefault() (any, error) {
 	var val any
 	err := json.Unmarshal([]byte(*p.Default), &val)
 	return val, err
+}
+
+// GetShowData implements printers.Showable
+func (p *ParamDef) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Name", p.UnqualifiedName),
+		printers.NewFieldValue("Description", p.Description),
+		printers.NewFieldValue("Default", p.Default),
+	)
+	return res
 }

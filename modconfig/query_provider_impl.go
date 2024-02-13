@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -69,7 +70,7 @@ func (q *QueryProviderImpl) SetParams(params []*ParamDef) {
 
 // ValidateQuery implements QueryProvider
 // returns an error if neither sql or query are set
-// it is overidden by resource types for which sql is optional
+// it is overridden by resource types for which sql is optional
 func (q *QueryProviderImpl) ValidateQuery() hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	// Top level resources (with the exceptions of controls and queries) are never executed directly,
@@ -194,4 +195,17 @@ func (q *QueryProviderImpl) populateQueryName() {
 	if q.Query != nil {
 		q.QueryName = &q.Query.FullName
 	}
+}
+
+// GetShowData implements printers.Showable
+func (q *QueryProviderImpl) GetShowData() *printers.RowData {
+
+	res := printers.NewRowData(
+		printers.NewFieldValue("SQL", q.SQL),
+		printers.NewFieldValue("Query", q.Query),
+		printers.NewFieldValue("Args", q.Args),
+		printers.NewFieldValue("Params", q.Params),
+	)
+	res.Merge(q.RuntimeDependencyProviderImpl.GetShowData())
+	return res
 }

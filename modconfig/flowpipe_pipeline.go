@@ -461,39 +461,52 @@ type PipelineOutput struct {
 	UnresolvedValue hcl.Expression `json:"-"`
 }
 
-func (p *PipelineOutput) Equals(other *PipelineOutput) bool {
+// GetShowData implements the Showable interface
+//func (o PipelineOutput) GetShowData() *printers.RowData {
+//	return printers.NewRowData(
+//		printers.NewFieldValue("Name", o.Name, printers.WithListKeyRender(o.renderName)),
+//		printers.NewFieldValue("Description", o.Description),
+//		printers.NewFieldValue("Type", "any"))
+//}
+
+//func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
+//	au := aurora.NewAurora(opts.ColorEnabled)
+//	return fmt.Sprintf("%s:", au.Cyan(o.Name))
+//}
+
+func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && other == nil {
+	if o == nil && other == nil {
 		return true
 	}
 
 	// If one of the pointers is nil while the other is not, they are not equal
-	if (p == nil && other != nil) || (p != nil && other == nil) {
+	if (o == nil && other != nil) || (o != nil && other == nil) {
 		return false
 	}
 
 	// Compare Name field
-	if p.Name != other.Name {
+	if o.Name != other.Name {
 		return false
 	}
 
 	// Compare DependsOn field using deep equality
-	if !reflect.DeepEqual(p.DependsOn, other.DependsOn) {
+	if !reflect.DeepEqual(o.DependsOn, other.DependsOn) {
 		return false
 	}
 
 	// Compare Resolved field
-	if p.Resolved != other.Resolved {
+	if o.Resolved != other.Resolved {
 		return false
 	}
 
 	// Compare Value field using deep equality
-	if !reflect.DeepEqual(p.Value, other.Value) {
+	if !reflect.DeepEqual(o.Value, other.Value) {
 		return false
 	}
 
 	// Compare UnresolvedValue field using deep equality
-	if !hclhelpers.ExpressionsEqual(p.UnresolvedValue, other.UnresolvedValue) {
+	if !hclhelpers.ExpressionsEqual(o.UnresolvedValue, other.UnresolvedValue) {
 		return false
 	}
 
