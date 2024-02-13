@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -14,6 +15,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/addrs"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
@@ -2959,20 +2961,47 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 
 	// options
+	var err error
 	var resolvedOpts []PipelineStepInputOption
-	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil && len(p.OptionList) > 0 {
+	unresolvedOptBlocks := make(map[string]int)
+	unresolvedBlockKeys := utils.SortedMapKeys(p.UnresolvedBodies)
+
+	for _, ubk := range unresolvedBlockKeys {
+		if strings.HasPrefix(ubk, schema.BlockTypeOption) && strings.Contains(ubk, ":") {
+			if optIndex, err := strconv.Atoi(strings.Split(ubk, ":")[1]); err != nil {
+				return results, perr.InternalWithMessage(fmt.Sprintf("unable to parse option index to int: %s", err.Error()))
+			} else {
+				unresolvedOptBlocks[ubk] = optIndex
+			}
+		}
+	}
+
+	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil && len(unresolvedOptBlocks) == 0 && len(p.OptionList) > 0 {
+		// everythings already resolved
 		resolvedOpts = p.OptionList
 	} else {
-		var opts cty.Value
-		var err error
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse options attribute: " + err.Error())
+		if p.UnresolvedAttributes[schema.AttributeTypeOptions] != nil {
+			// attribute needs resolving
+			var opts cty.Value
+			diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
+			if diags.HasErrors() {
+				return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			}
+			resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
+			if err != nil {
+				return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse options attribute: " + err.Error())
+			}
+		} else if len(unresolvedOptBlocks) > 0 {
+			// blocks need resolving
+			for key, optIndex := range unresolvedOptBlocks {
+				var o PipelineStepInputOption
+				diags := gohcl.DecodeBody(p.UnresolvedBodies[key], evalContext, &o)
+				if len(diags) > 0 {
+					return nil, error_helpers.HclDiagsToError(p.Name, diags)
+				}
+				p.OptionList[optIndex] = o
+			}
+			resolvedOpts = p.OptionList
 		}
 	}
 	results[schema.AttributeTypeOptions] = resolvedOpts
@@ -3091,7 +3120,7 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 	diags := hcl.Diagnostics{}
 
 	hasAttrOptions := len(p.OptionList) > 0 || p.UnresolvedAttributes["options"] != nil
-
+	optionIndex := 0
 	for _, b := range blocks {
 		switch b.Type {
 		case schema.BlockTypeOption:
@@ -3106,7 +3135,7 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 			}
 			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &opt)
 			if len(moreDiags) > 0 {
-				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeOption, b.Body)
+				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, fmt.Sprintf("%s:%d", schema.BlockTypeOption, optionIndex), b.Body)
 				if len(moreDiags) > 0 {
 					diags = append(diags, moreDiags...)
 					continue
@@ -3116,7 +3145,7 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 				opt.Value = &b.Labels[0]
 			}
 			p.OptionList = append(p.OptionList, opt)
-
+			optionIndex++
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
