@@ -2,7 +2,6 @@ module github.com/turbot/pipe-fittings
 
 go 1.21.0
 
-replace github.com/turbot/go-kit => ../go-kit
 require (
 	github.com/Machiel/slugify v1.0.1
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -34,7 +33,7 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.4
-	github.com/turbot/go-kit v0.9.0-rc.3
+	github.com/turbot/go-kit v0.10.0-rc.0
 	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.8.0
 	github.com/xlab/treeprint v1.2.0

@@ -85,7 +85,7 @@ func (d *ShowData) Merge(other *ShowData) {
 	}
 
 	// combine columns, putting other first, omitting dupes
-	d.Columns = helpers.AppendUnique(other.Columns, d.Columns)
+	d.Columns = helpers.AppendSliceUnique(other.Columns, d.Columns)
 
 	// merge Fields from other, retaining our value in the case of conflict
 	otherClone := maps.Clone(other.Fields)
