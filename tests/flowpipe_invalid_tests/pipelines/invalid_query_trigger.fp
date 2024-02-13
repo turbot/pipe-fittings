@@ -1,6 +1,8 @@
 trigger "query" "query_trigger_interval" {
   schedule = "days"
 
+  connection_string = "test"
+  
   sql = <<EOQ
         select
             access_key_id,

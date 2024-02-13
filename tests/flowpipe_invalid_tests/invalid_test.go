@@ -172,6 +172,21 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_trigger_duplicate_method.fp",
 		containsError: "Duplicate method block for type: post",
 	},
+	{
+		title:         "invalid query trigger - missing required field connection_string",
+		file:          "./pipelines/query_trigger_missing_connection_string.fp",
+		containsError: "The argument \"connection_string\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid query trigger - missing required field sql",
+		file:          "./pipelines/query_trigger_missing_sql.fp",
+		containsError: "The argument \"sql\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid schedule trigger - missing required field schedule",
+		file:          "./pipelines/schedule_trigger_missing_schedule.fp",
+		containsError: "The argument \"schedule\" is required, but no definition was found.",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
