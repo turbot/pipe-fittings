@@ -187,6 +187,11 @@ var tests = []testSetup{
 		file:          "./pipelines/schedule_trigger_missing_schedule.fp",
 		containsError: "The argument \"schedule\" is required, but no definition was found.",
 	},
+	{
+		title:         "duplicate output name",
+		file:          "./pipelines/duplicate_output_name.fp",
+		containsError: "duplicate output name 'output_test' - output names must be unique",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
