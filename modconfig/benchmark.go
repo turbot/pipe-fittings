@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/printers"
 	"sort"
 	"strings"
 
@@ -213,4 +214,13 @@ func (b *Benchmark) setBaseProperties() {
 		b.ChildNameStrings = b.Base.ChildNameStrings
 		b.ChildNames = b.Base.ChildNames
 	}
+}
+
+// GetShowData implements printers.Showable
+func (b *Benchmark) GetShowData() *printers.ShowData {
+	res := printers.NewShowData(
+		printers.FieldValue{Name: "Children", Value: b.ChildNameStrings},
+	)
+	res.Merge(b.ModTreeItemImpl.GetShowData())
+	return res
 }

@@ -1,21 +1,14 @@
 package printers
 
-import (
-	"github.com/turbot/pipe-fittings/sanitize"
-)
-
 type FieldRenderOptions struct {
 	// a function implementing custom rendering logic to display the value
-	RenderValueFunc func(opts sanitize.RenderOptions) string
-	// a function implementing custom rendering logic to display the key AND value
-	RenderKeyValueFunc func(opts sanitize.RenderOptions) string
-	Indent             int
+	renderValueFunc RenderFunc
+	listOpts        listFieldRenderOptions
 }
 
-func newFieldRenderOptions(f FieldValue) FieldRenderOptions {
-	return FieldRenderOptions{
-		RenderValueFunc:    f.RenderValueFunc,
-		RenderKeyValueFunc: f.RenderKeyValueFunc,
-		Indent:             f.Indent,
-	}
+type listFieldRenderOptions struct {
+	// a function implementing custom rendering logic to display the key AND value
+	listKeyRenderFunc RenderFunc
+	// is this the key field - if not it will be indented when rendering in a list
+	isKey bool
 }

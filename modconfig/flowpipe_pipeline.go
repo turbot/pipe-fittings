@@ -467,9 +467,9 @@ type PipelineOutput struct {
 // GetShowData implements the Showable interface
 func (o PipelineOutput) GetShowData() *printers.ShowData {
 	return printers.NewShowData(
-		printers.FieldValue{Name: "Name", Value: o.Name, RenderKeyValueFunc: o.renderName},
-		printers.FieldValue{Name: "Description", Value: o.Description, Indent: 2},
-		printers.FieldValue{Name: "Type", Value: "any", Indent: 2})
+		printers.NewFieldValue("Name", o.Name, printers.WithListKeyRender(o.renderName)),
+		printers.NewFieldValue("Description", o.Description),
+		printers.NewFieldValue("Type", "any"))
 }
 
 func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {

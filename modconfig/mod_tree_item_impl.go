@@ -115,6 +115,7 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 
 // GetShowData implements printers.Showable
 func (b *ModTreeItemImpl) GetShowData() *printers.ShowData {
+	// override name to take parents into account
 	var name = b.ShortName
 	if b.parents != nil {
 		name = b.Name()
@@ -129,7 +130,7 @@ func (b *ModTreeItemImpl) GetShowData() *printers.ShowData {
 	return res
 }
 
-// GetListData implements printers.Showable
+// GetListData implements printers.Listable
 func (b *ModTreeItemImpl) GetListData() *printers.ShowData {
 	var name = b.ShortName
 	if b.parents != nil {

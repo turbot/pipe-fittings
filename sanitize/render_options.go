@@ -11,6 +11,8 @@ type RenderOptions struct {
 	Verbose        bool
 	JsonFormatter  *prettyjson.Formatter
 	Indent         int
+	// todo not the correct place for this??
+	IsList bool
 }
 
 func (o RenderOptions) Clone() RenderOptions {
@@ -21,5 +23,6 @@ func (o RenderOptions) Clone() RenderOptions {
 		Verbose:        o.Verbose,
 		JsonFormatter:  o.JsonFormatter,
 		Indent:         o.Indent,
+		IsList:         o.IsList,
 	}
 }

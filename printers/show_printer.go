@@ -50,6 +50,10 @@ func (p ShowPrinter[T]) PrintResource(_ context.Context, r PrintableResource[T],
 
 func (p ShowPrinter[T]) render(resource Showable, opts sanitize.RenderOptions) (string, error) {
 	row := resource.GetShowData()
+	return p.renderShowData(row, opts)
+}
+
+func (p ShowPrinter[T]) renderShowData(row *ShowData, opts sanitize.RenderOptions) (string, error) {
 	au := aurora.NewAurora(opts.ColorEnabled)
 
 	var b strings.Builder
@@ -72,22 +76,27 @@ func (p ShowPrinter[T]) render(resource Showable, opts sanitize.RenderOptions) (
 		fieldVal := row.Fields[columnName]
 
 		displayName := row.displayNameMap[columnName]
-		// if render opts or this field specify an indent, apply it
-		globalIndent := opts.Indent
-		fieldIndent := fieldVal.Indent
-		var indentString = strings.Repeat(" ", globalIndent+fieldIndent)
+		// if render renderOpts or this field specify an indent, apply it
+		indent := opts.Indent
+		if opts.IsList && !fieldVal.renderOpts.listOpts.isKey {
+			indent += 2
+		}
 
+		var indentString = strings.Repeat(" ", indent)
 		var fieldString string
 
 		// if there is a key-value render func, use it to render the full key and value
-		if fieldVal.RenderKeyValueFunc != nil {
-			fieldString = fieldVal.RenderKeyValueFunc(opts)
-			// is this returned anything, add a newline
-			if len(fieldString) > 0 {
-				fieldString += "\n"
+		if opts.IsList && fieldVal.renderOpts.listOpts.listKeyRenderFunc != nil {
+			fieldString = fieldVal.renderOpts.listOpts.listKeyRenderFunc(opts)
+
+			// if the string is empty, skip
+			if len(fieldString) == 0 {
+				continue
 			}
+			fieldString += "\n"
+
 		} else {
-			fieldString = p.renderKeyValue(maxTitleLength, au, displayName, fieldVal, opts)
+			fieldString = p.renderKeyValue(fieldVal, displayName, maxTitleLength, au, opts)
 		}
 
 		// if there is anything in the field string, add it to the builder, with indent
@@ -100,85 +109,261 @@ func (p ShowPrinter[T]) render(resource Showable, opts sanitize.RenderOptions) (
 	return b.String(), nil
 }
 
-func (p ShowPrinter[T]) renderKeyValue(maxTitleLength int, au aurora.Aurora, columnName string, fieldVal FieldValue, opts sanitize.RenderOptions) string {
+func (p ShowPrinter[T]) renderKeyValue(fieldVal FieldValue, columnName string, maxTitleLength int, au aurora.Aurora, opts sanitize.RenderOptions) string {
 	// key
 	padFormat := fmt.Sprintf("%%-%ds", maxTitleLength)
 	keyStr := fmt.Sprintf(padFormat, au.Blue(fmt.Sprintf("%s:", columnName)))
 
 	// value
-	var valstr string
+	var valStr string
 
 	// if there is a value render func, use it to render the value
-	if fieldVal.RenderValueFunc != nil {
-		valstr = fieldVal.RenderValueFunc(opts) + "\n"
+	if fieldVal.renderOpts.renderValueFunc != nil {
+		valStr = fieldVal.renderOpts.renderValueFunc(opts)
+		// skip empty values
+		if valStr == "" {
+			return ""
+		}
+		// add newline
+		valStr += "\n"
 	} else {
 		// ok manually render the value
 		var err error
-		valstr, err = p.renderValue(fieldVal.Value, opts)
+		valStr, err = p.renderValue(fieldVal.Value, opts)
 		if err != nil {
 			return ""
 		}
+		if valStr == "" {
+			return ""
+		}
 	}
+
+	// TODO KAI CAN WE ALWAYS ADD NEWLINE _ CHECK WITH FLOWPIPE
 	// now combine
-	return fmt.Sprintf("%s%s", keyStr, valstr)
+	return fmt.Sprintf("%s%s", keyStr, valStr)
 }
 
+// render the given value
+// called by renderKeyValue and renderSlice
 func (p ShowPrinter[T]) renderValue(value any, opts sanitize.RenderOptions) (string, error) {
-	// todo what do we do with nil values? exclude from source data?
 	if helpers.IsNil(value) {
-		return "\n", nil
+		return "", nil
 	}
 	val := reflect.ValueOf(value)
 
 	// if the element is showable, call show on it
 	if s := AsShowable(value); s != nil {
 		childOpts := opts.Clone()
-		childOpts.Indent += 2
+		// if this is NOT a list item, indent the struct by 2
+		// (list items are already indented)
+		if !opts.IsList {
+			childOpts.Indent += 2
+		}
 		return p.render(s, childOpts)
 	}
 
 	var valStr string
-
+	var err error
 	switch val.Kind() {
 	case reflect.Slice:
-		sliceString, err := p.showSlice(val, opts)
+		valStr, err = p.renderSlice(val, opts)
 		if err != nil {
 			return "", err
 		}
-		// put a newline BEFORE the slice string
-		valStr = "\n" + sliceString
-
-		// TODO  handle map, struct
-	// case reflect.Map:
-	// case reflect.Struct:
-
-	default:
-		switch vt := value.(type) {
-		case time.Time:
-			valStr = fmt.Sprintf("%v\n", vt.Format(time.RFC3339))
-		default:
-			vt = dereferencePointer(vt)
-			valStr = fmt.Sprintf("%v\n", vt)
+	case reflect.Map:
+		valStr, err = p.renderMap(val, opts)
+		if err != nil {
+			return "", err
 		}
+	case reflect.Struct:
+		valStr, err = p.renderStruct(val, opts)
+		if err != nil {
+			return "", err
+		}
+	default:
+		valStr = p.renderPrimitive(value, opts)
 	}
 
 	return valStr, nil
 }
 
-func (p ShowPrinter[T]) showSlice(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
+func (p ShowPrinter[T]) renderPrimitive(value any, opts sanitize.RenderOptions) string {
+	// is this is a list item, apply the indent
+	var valStr string
+
+	switch vt := value.(type) {
+	case time.Time:
+		valStr = fmt.Sprintf("%v", vt.Format(time.RFC3339))
+	default:
+		vt = dereferencePointer(vt)
+		valStr = fmt.Sprintf("%v", vt)
+	}
+	// if the value is non empty, add indent (if required) and  newline
+	if valStr != "" {
+		var indent string
+		if opts.IsList {
+			indent = strings.Repeat(" ", opts.Indent)
+		}
+
+		valStr = indent + valStr + "\n"
+	}
+
+	return valStr
+}
+
+func (p ShowPrinter[T]) renderSlice(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
 	var b strings.Builder
+
+	// clone the opts and increment the indent
+	childOpts := opts.Clone()
+	childOpts.IsList = true
+	// indent the slice by 2
+	childOpts.Indent += 2
 
 	for i := 0; i < val.Len(); i++ {
 		// Retrieve each element in the slice
 		//elem := dereferencePointer(val.Index(i).Interface())
 		elem := val.Index(i).Interface()
 
-		valStr, err := p.renderValue(elem, opts)
+		valStr, err := p.renderValue(elem, childOpts)
 		if err != nil {
 			return "", err
 		}
+		//// add bullet
+		//valStr = p.addBullet(valStr)
 		b.WriteString(valStr)
 
 	}
-	return b.String(), nil
+
+	// if the string is empty, just return it
+	if b.Len() == 0 {
+		return "", nil
+	}
+	// if this is NOT a list, put a newline BEFORE the string
+	var valStr string
+	if !opts.IsList {
+		valStr = "\n" + b.String()
+	} else {
+		valStr = b.String()
+	}
+
+	return valStr, nil
+}
+
+func (p ShowPrinter[T]) renderStruct(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
+	var b strings.Builder
+
+	// clone the opts and increment the indent
+	childOpts := opts.Clone()
+	childOpts.IsList = false
+
+	asMap := helpers.StructToMap(val.Interface())
+	keys := helpers.SortedMapKeys(asMap)
+
+	for _, k := range keys {
+
+		// if this is a list, indent all elements after the first
+		if !opts.IsList || b.Len() > 0 {
+			// for all properties except the first (when rendering a list), indent the string
+			childOpts.Indent = opts.Indent + 2
+		}
+
+		v := asMap[k]
+		// convert to ShowData and render
+		showData := NewShowData(NewFieldValue(k, v))
+		str, err := p.renderShowData(showData, childOpts)
+		if err != nil {
+			return "", err
+
+		}
+		b.WriteString(str)
+	}
+
+	// if the string is empty, just return it
+	if b.Len() == 0 {
+		return "", nil
+	}
+	// if this is NOT a list, put a newline BEFORE the string
+	var valStr string
+	if !opts.IsList {
+		valStr = "\n" + b.String()
+	} else {
+		valStr = b.String()
+	}
+
+	return valStr, nil
+}
+
+func (p ShowPrinter[T]) renderMap(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
+	var b strings.Builder
+
+	// clone the opts and increment the indent
+	childOpts := opts.Clone()
+	childOpts.IsList = false
+	if !opts.IsList {
+		// indent the struct by 2
+		childOpts.Indent += 2
+	}
+
+	// calc the padding
+	// the padding is such that the value is aligned with the longest title
+	var maxTitleLength int
+
+	// convert to map[string]any
+	var asMap = map[string]any{}
+	for _, key := range val.MapKeys() {
+		// Ensure the key is a string
+		keyStr := fmt.Sprintf("%v", key)
+
+		if len(keyStr) > maxTitleLength {
+			maxTitleLength = len(keyStr)
+		}
+
+		asMap[keyStr] = val.MapIndex(key).Interface()
+	}
+
+	// add 2 for the colon and space
+	maxTitleLength += 2
+
+	// now sort keys and iterate
+	keys := helpers.SortedMapKeys(asMap)
+	for _, k := range keys {
+		v := asMap[k]
+		// convert to ShowData and render
+		showData := NewShowData(NewFieldValue(k, v))
+		str, err := p.renderShowData(showData, childOpts)
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(str)
+	}
+
+	// if the string is empty, just return it
+	if b.Len() == 0 {
+		return "", nil
+	}
+	// if this is NOT a list, put a newline BEFORE the string
+	var valStr string
+	if !opts.IsList {
+		valStr = "\n" + b.String()
+	} else {
+		valStr = b.String()
+	}
+
+	return valStr, nil
+}
+
+func (p ShowPrinter[T]) addBullet(str string) string {
+	lines := strings.Split(str, "\n")
+	for i, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		if i == 0 {
+			lines[i] = " -" + line
+		} else {
+			lines[i] = "  " + line
+		}
+	}
+	return strings.Join(lines, "\n")
 }

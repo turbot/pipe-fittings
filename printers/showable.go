@@ -1,6 +1,10 @@
 package printers
 
-import "strings"
+import (
+	"github.com/turbot/go-kit/helpers"
+	"golang.org/x/exp/maps"
+	"strings"
+)
 
 // Showable is an interface implemented by objects which support the `show` command for pretty/plain output format
 type Showable interface {
@@ -41,11 +45,19 @@ func AsListable(value any) Listable {
 }
 
 type ShowData struct {
+	ListKeyField *ListKeyField
 	// slice of column names (converted to lower case)
 	Columns []string
 	// map of column name to field display name (as provided in NewShowData)
 	displayNameMap map[string]string
 	Fields         map[string]FieldValue
+}
+
+// ListKeyField is a struct that holds the name and value of a field to be used as the key (grouping) field when
+// displaying a slice of resource
+type ListKeyField struct {
+	Name            string
+	RenderValueFunc RenderFunc
 }
 
 func NewShowData(fields ...FieldValue) *ShowData {
@@ -64,14 +76,25 @@ func NewShowData(fields ...FieldValue) *ShowData {
 	return data
 }
 
+// Merge merges the other ShowData
+// columns from other are placed first, however our fields take precedence
+// this is to ensure when merging base showdata the base columns come first, but derived typeds can override values
 func (d *ShowData) Merge(other *ShowData) {
 	if other == nil {
 		return
 	}
-	d.Columns = append(d.Columns, other.Columns...)
-	for k, v := range other.Fields {
-		d.Fields[k] = v
-	}
+
+	// combine columns, putting other first, omitting dupes
+	d.Columns = helpers.AppendUnique(other.Columns, d.Columns)
+
+	// merge Fields from other, retaining our value in the case of conflict
+	otherClone := maps.Clone(other.Fields)
+	maps.Copy(otherClone, d.Fields)
+	d.Fields = otherClone
+
+	// merge display name map - we do not expect conflict here
+	maps.Copy(d.displayNameMap, other.displayNameMap)
+	d.Fields = otherClone
 }
 
 func (d *ShowData) GetRow() *TableRow {
