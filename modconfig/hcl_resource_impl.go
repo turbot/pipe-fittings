@@ -211,7 +211,7 @@ func (b *HclResourceImpl) GetShowData() *printers.ShowData {
 // GetListData implements printers.Showable
 func (b *HclResourceImpl) GetListData() *printers.ShowData {
 	return printers.NewShowData(
-		printers.FieldValue{Name: "Name", Value: b.Name()},
+		printers.FieldValue{Name: "NAME", Value: b.Name()},
 	)
 }
 

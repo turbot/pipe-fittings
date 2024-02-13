@@ -99,6 +99,7 @@ func (d *ShowData) Merge(other *ShowData) {
 
 func (d *ShowData) GetRow() *TableRow {
 	row := NewTableRow()
+	row.Columns = d.Columns
 	for _, c := range d.Columns {
 		row.Cells = append(row.Cells, d.Fields[c].Value)
 	}

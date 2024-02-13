@@ -3,27 +3,30 @@ package printers
 import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/sanitize"
+	"github.com/turbot/pipe-fittings/utils"
 	"testing"
 )
 
 type showable2 struct {
-	Name        string
-	StringField string
-	NumberField int
+	Name             string
+	StringField      string
+	NumberPtrField   *int
+	StructSliceField []nonShowable
 }
 
 func (s showable2) GetShowData() *ShowData {
 	return NewShowData(
 		NewFieldValue("Name", s.Name, WithListKey()),
 		NewFieldValue("StringField", s.StringField),
-		NewFieldValue("NumberField", s.NumberField),
+		NewFieldValue("NumberPtrField", s.NumberPtrField),
+		NewFieldValue("StructSliceField", s.StructSliceField),
 	)
 }
 
 type nonShowable struct {
 	Name       string
 	Value      string
-	Other      int
+	Other      *int
 	AndAnother string
 	MapField   map[string]string
 }
@@ -95,7 +98,7 @@ func TestShowPrinter(t *testing.T) {
 			name: "struct slice",
 			data: showable1{
 				Name:             "struct slice",
-				StructSliceField: []nonShowable{{Name: "one", Value: "value 1", Other: 1, AndAnother: "and another 1"}, {Name: "two", Value: "value 2", Other: 2, AndAnother: "and another 2"}},
+				StructSliceField: []nonShowable{{Name: "one", Value: "value 1", Other: utils.ToIntegerPointer(1), AndAnother: "and another 1"}, {Name: "two", Value: "value 2", Other: utils.ToIntegerPointer(2), AndAnother: "and another 2"}},
 			},
 			want: "Name: number slice\nPrimitiveSliceField:\n  1\n  2\n  3\n",
 		},
@@ -103,7 +106,7 @@ func TestShowPrinter(t *testing.T) {
 			name: "showable slice",
 			data: showable1{
 				Name:               "showable slice",
-				ShowableSliceField: []showable2{{Name: "one", StringField: "value 1", NumberField: 1}, {Name: "two", StringField: "value 2", NumberField: 2}},
+				ShowableSliceField: []showable2{{Name: "one", StringField: "value 1", NumberPtrField: utils.ToIntegerPointer(1)}, {Name: "two", StringField: "value 2", NumberPtrField: utils.ToIntegerPointer(2)}},
 			},
 			want: "Name: number slice\nPrimitiveSliceField:\n  1\n  2\n  3\n",
 		},
@@ -115,8 +118,29 @@ func TestShowPrinter(t *testing.T) {
 			},
 			want: "Name: number slice\nPrimitiveSliceField:\n  1\n  2\n  3\n",
 		},
+		{
+			name: "showable field",
+			data: showable1{
+				Name:          "showable field",
+				ShowableField: showable2{Name: "one", StringField: "value 1", NumberPtrField: utils.ToIntegerPointer(1)},
+			},
+			want: "Name: number slice\nPrimitiveSliceField:\n  1\n  2\n  3\n",
+		},
+		{
+			name: "struct field",
+			data: showable1{
+				Name:        "struct field",
+				StructField: nonShowable{Name: "one", Value: "value 1", Other: utils.ToIntegerPointer(1), AndAnother: "and another 1"},
+			},
+			want: "Name: number slice\nPrimitiveSliceField:\n  1\n  2\n  3\n",
+		},
 	}
+
+	testFilter := ""
 	for _, tt := range tests {
+		if len(testFilter) > 0 && tt.name != testFilter {
+			continue
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			p, err := NewShowPrinter[showable1]()
 			if err != nil {

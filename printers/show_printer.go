@@ -58,19 +58,12 @@ func (p ShowPrinter[T]) renderShowData(row *ShowData, opts sanitize.RenderOption
 
 	var b strings.Builder
 
-	/* we print primitive types as follows
-	<TitleFormat(Title)>:<padding><value>
-	*/
-	// calc the padding
-	// the padding is such that the value is aligned with the longest title
-	var maxTitleLength int
-	for _, c := range row.Columns {
-		if len(c) > maxTitleLength {
-			maxTitleLength = len(c)
-		}
-	}
-	// add 2 for the colon and space
-	maxTitleLength += 2
+	/* we print fields types as follows
+
+		<TitleFormat(Title)>:<padding><value>
+
+	the padding is such that the value is aligned with the longest title	*/
+	maxTitleLength := p.getMaxTitleLength(row)
 
 	for _, columnName := range row.Columns {
 		fieldVal := row.Fields[columnName]
@@ -106,7 +99,31 @@ func (p ShowPrinter[T]) renderShowData(row *ShowData, opts sanitize.RenderOption
 		}
 	}
 
-	return b.String(), nil
+	// if the string is empty, just return it
+	if b.Len() == 0 {
+		return "", nil
+	}
+	// if this is NOT a list and not top level data, put a newline BEFORE the string
+	var valStr string
+	if !opts.IsList && opts.Indent > 0 {
+		valStr = "\n" + b.String()
+	} else {
+		valStr = b.String()
+	}
+
+	return valStr, nil
+}
+
+func (p ShowPrinter[T]) getMaxTitleLength(row *ShowData) int {
+	var maxTitleLength int
+	for _, c := range row.Columns {
+		if len(c) > maxTitleLength {
+			maxTitleLength = len(c)
+		}
+	}
+	// add 2 for the colon and space
+	maxTitleLength += 2
+	return maxTitleLength
 }
 
 func (p ShowPrinter[T]) renderKeyValue(fieldVal FieldValue, columnName string, maxTitleLength int, au aurora.Aurora, opts sanitize.RenderOptions) string {
@@ -255,43 +272,30 @@ func (p ShowPrinter[T]) renderStruct(val reflect.Value, opts sanitize.RenderOpti
 
 	// clone the opts and increment the indent
 	childOpts := opts.Clone()
+	// NOTE:  clear the IsList flag - this will make  renderShowData
+	// put newlines before and after each struct in a list of structs
 	childOpts.IsList = false
+	childOpts.Indent += 2
 
 	asMap := helpers.StructToMap(val.Interface())
 	keys := helpers.SortedMapKeys(asMap)
 
+	var fieldValues []FieldValue
 	for _, k := range keys {
-
-		// if this is a list, indent all elements after the first
-		if !opts.IsList || b.Len() > 0 {
-			// for all properties except the first (when rendering a list), indent the string
-			childOpts.Indent = opts.Indent + 2
-		}
-
 		v := asMap[k]
-		// convert to ShowData and render
-		showData := NewShowData(NewFieldValue(k, v))
-		str, err := p.renderShowData(showData, childOpts)
-		if err != nil {
-			return "", err
-
-		}
-		b.WriteString(str)
+		fieldValues = append(fieldValues, NewFieldValue(k, v))
 	}
 
-	// if the string is empty, just return it
-	if b.Len() == 0 {
-		return "", nil
-	}
-	// if this is NOT a list, put a newline BEFORE the string
-	var valStr string
-	if !opts.IsList {
-		valStr = "\n" + b.String()
-	} else {
-		valStr = b.String()
-	}
+	// convert to ShowData and render
+	showData := NewShowData(fieldValues...)
+	str, err := p.renderShowData(showData, childOpts)
+	if err != nil {
+		return "", err
 
-	return valStr, nil
+	}
+	b.WriteString(str)
+
+	return b.String(), nil
 }
 
 func (p ShowPrinter[T]) renderMap(val reflect.Value, opts sanitize.RenderOptions) (string, error) {
@@ -299,58 +303,40 @@ func (p ShowPrinter[T]) renderMap(val reflect.Value, opts sanitize.RenderOptions
 
 	// clone the opts and increment the indent
 	childOpts := opts.Clone()
+	// NOTE:  clear the IsList flag - this will make  renderShowData
+	// put newlines before and after each struct in a list of maps
 	childOpts.IsList = false
+
 	if !opts.IsList {
 		// indent the struct by 2
 		childOpts.Indent += 2
 	}
-
-	// calc the padding
-	// the padding is such that the value is aligned with the longest title
-	var maxTitleLength int
 
 	// convert to map[string]any
 	var asMap = map[string]any{}
 	for _, key := range val.MapKeys() {
 		// Ensure the key is a string
 		keyStr := fmt.Sprintf("%v", key)
-
-		if len(keyStr) > maxTitleLength {
-			maxTitleLength = len(keyStr)
-		}
-
 		asMap[keyStr] = val.MapIndex(key).Interface()
 	}
 
-	// add 2 for the colon and space
-	maxTitleLength += 2
+	// now sort keys and create field values
+	var fieldValues []FieldValue
 
-	// now sort keys and iterate
 	keys := helpers.SortedMapKeys(asMap)
 	for _, k := range keys {
 		v := asMap[k]
-		// convert to ShowData and render
-		showData := NewShowData(NewFieldValue(k, v))
-		str, err := p.renderShowData(showData, childOpts)
-		if err != nil {
-			return "", err
-		}
-		b.WriteString(str)
+		fieldValues = append(fieldValues, NewFieldValue(k, v))
 	}
+	// convert to ShowData and render
+	showData := NewShowData(fieldValues...)
+	str, err := p.renderShowData(showData, childOpts)
+	if err != nil {
+		return "", err
+	}
+	b.WriteString(str)
 
-	// if the string is empty, just return it
-	if b.Len() == 0 {
-		return "", nil
-	}
-	// if this is NOT a list, put a newline BEFORE the string
-	var valStr string
-	if !opts.IsList {
-		valStr = "\n" + b.String()
-	} else {
-		valStr = b.String()
-	}
-
-	return valStr, nil
+	return b.String(), nil
 }
 
 func (p ShowPrinter[T]) addBullet(str string) string {
