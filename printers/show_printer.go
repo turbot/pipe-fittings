@@ -15,8 +15,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
-type ShowPrinter[T any] struct {
-}
+type ShowPrinter[T any] struct{}
 
 func NewShowPrinter[T any]() (*ShowPrinter[T], error) {
 	return &ShowPrinter[T]{}, nil

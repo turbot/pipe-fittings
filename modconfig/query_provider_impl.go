@@ -2,11 +2,11 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/printers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -201,10 +201,10 @@ func (q *QueryProviderImpl) populateQueryName() {
 func (q *QueryProviderImpl) GetShowData() *printers.RowData {
 
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "SQL", Value: q.SQL},
-		printers.FieldValue{Name: "Query", Value: q.Query},
-		printers.FieldValue{Name: "Args", Value: q.Args},
-		printers.FieldValue{Name: "Params", Value: q.Params},
+		printers.NewFieldValue("SQL", q.SQL),
+		printers.NewFieldValue("Query", q.Query),
+		printers.NewFieldValue("Args", q.Args),
+		printers.NewFieldValue("Params", q.Params),
 	)
 	res.Merge(q.RuntimeDependencyProviderImpl.GetShowData())
 	return res

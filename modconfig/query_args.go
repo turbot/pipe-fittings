@@ -3,11 +3,11 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/printers"
 	"log/slog"
 	"strings"
 
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -389,9 +389,9 @@ func (q *QueryArgs) resolvePositionalParameters(queryProvider QueryProvider) (ar
 // GetShowData implements printers.Showable
 func (q *QueryArgs) GetShowData() *printers.RowData {
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "ArgMap", Value: q.ArgMap},
-		printers.FieldValue{Name: "ArgList", Value: q.ArgList},
-		printers.FieldValue{Name: "References", Value: q.References},
+		printers.NewFieldValue("ArgMap", q.ArgMap),
+		printers.NewFieldValue("ArgList", q.ArgList),
+		printers.NewFieldValue("References", q.References),
 	)
 	return res
 }

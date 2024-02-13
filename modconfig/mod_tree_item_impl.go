@@ -122,9 +122,9 @@ func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 
 	}
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "Name", Value: name},
-		printers.FieldValue{Name: "Mod", Value: b.Mod.ShortName},
-		printers.FieldValue{Name: "Database", Value: b.Database},
+		printers.NewFieldValue("Name", name),
+		printers.NewFieldValue("Mod", b.Mod.ShortName),
+		printers.NewFieldValue("Database", b.Database),
 	)
 	res.Merge(b.HclResourceImpl.GetShowData())
 	return res
@@ -137,8 +137,8 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 		name = b.Name()
 	}
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "NAME", Value: name},
-		printers.FieldValue{Name: "MOD", Value: b.Mod.ShortName},
+		printers.NewFieldValue("NAME", name),
+		printers.NewFieldValue("MOD", b.Mod.ShortName),
 	)
 	res.Merge(b.HclResourceImpl.GetListData())
 	return res

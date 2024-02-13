@@ -2,11 +2,11 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/printers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/printers"
 )
 
 type ResourceReference struct {
@@ -90,11 +90,11 @@ func (r *ResourceReference) Name() string {
 // GetShowData implements printers.Showable
 func (r *ResourceReference) GetShowData() *printers.RowData {
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "To", Value: r.To},
-		printers.FieldValue{Name: "From", Value: r.From},
-		printers.FieldValue{Name: "BlockType", Value: r.BlockType},
-		printers.FieldValue{Name: "BlockName", Value: r.BlockName},
-		printers.FieldValue{Name: "Attribute", Value: r.Attribute},
+		printers.NewFieldValue("To", r.To),
+		printers.NewFieldValue("From", r.From),
+		printers.NewFieldValue("BlockType", r.BlockType),
+		printers.NewFieldValue("BlockName", r.BlockName),
+		printers.NewFieldValue("Attribute", r.Attribute),
 	)
 	return res
 }

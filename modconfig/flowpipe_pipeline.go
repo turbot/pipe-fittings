@@ -3,16 +3,15 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/logrusorgru/aurora"
-	"github.com/turbot/pipe-fittings/printers"
-	"github.com/turbot/pipe-fittings/sanitize"
 	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/logrusorgru/aurora"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/sanitize"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -465,12 +464,12 @@ type PipelineOutput struct {
 }
 
 // GetShowData implements the Showable interface
-func (o PipelineOutput) GetShowData() *printers.RowData {
-	return printers.NewRowData(
-		printers.NewFieldValue("Name", o.Name, printers.WithListKeyRender(o.renderName)),
-		printers.NewFieldValue("Description", o.Description),
-		printers.NewFieldValue("Type", "any"))
-}
+//func (o PipelineOutput) GetShowData() *printers.RowData {
+//	return printers.NewRowData(
+//		printers.NewFieldValue("Name", o.Name, printers.WithListKeyRender(o.renderName)),
+//		printers.NewFieldValue("Description", o.Description),
+//		printers.NewFieldValue("Type", "any"))
+//}
 
 func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
 	au := aurora.NewAurora(opts.ColorEnabled)

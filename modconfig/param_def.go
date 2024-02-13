@@ -3,11 +3,11 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/printers"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/printers"
 )
 
 type ParamDef struct {
@@ -76,9 +76,9 @@ func (p *ParamDef) GetDefault() (any, error) {
 // GetShowData implements printers.Showable
 func (p *ParamDef) GetShowData() *printers.RowData {
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "Name", Value: p.UnqualifiedName},
-		printers.FieldValue{Name: "Description", Value: p.Description},
-		printers.FieldValue{Name: "Default", Value: p.Default},
+		printers.NewFieldValue("Name", p.UnqualifiedName),
+		printers.NewFieldValue("Description", p.Description),
+		printers.NewFieldValue("Default", p.Default),
 	)
 	return res
 }

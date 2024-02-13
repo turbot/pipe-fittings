@@ -2,12 +2,12 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/printers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -231,7 +231,6 @@ func (c *Control) setBaseProperties() {
 
 // GetShowData implements printers.Showable
 func (c *Control) GetShowData() *printers.RowData {
-
 	res := printers.NewRowData(
 		printers.FieldValue{Name: "Width", Value: c.Width},
 		printers.FieldValue{Name: "Type", Value: c.Type},
