@@ -355,6 +355,22 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			}
 
 			if output != nil {
+
+				// check for duplicate output names
+				if len(pipelineHcl.OutputConfig) > 0 {
+					for _, o := range pipelineHcl.OutputConfig {
+						if o.Name == output.Name {
+							diags = append(diags, &hcl.Diagnostic{
+								Severity: hcl.DiagError,
+								Summary:  fmt.Sprintf("duplicate output name '%s' - output names must be unique", output.Name),
+								Subject:  &block.DefRange,
+							})
+							res.handleDecodeDiags(diags)
+							return pipelineHcl, res
+						}
+					}
+				}
+
 				pipelineHcl.OutputConfig = append(pipelineHcl.OutputConfig, *output)
 			}
 
