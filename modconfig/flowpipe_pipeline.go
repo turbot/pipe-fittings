@@ -7,11 +7,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/logrusorgru/aurora"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/sanitize"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -471,10 +469,10 @@ type PipelineOutput struct {
 //		printers.NewFieldValue("Type", "any"))
 //}
 
-func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
-	au := aurora.NewAurora(opts.ColorEnabled)
-	return fmt.Sprintf("%s:", au.Cyan(o.Name))
-}
+//func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
+//	au := aurora.NewAurora(opts.ColorEnabled)
+//	return fmt.Sprintf("%s:", au.Cyan(o.Name))
+//}
 
 func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 	// If both pointers are nil, they are considered equal
