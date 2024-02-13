@@ -154,7 +154,7 @@ func newColumnFilter(cn filter2.ComparisonNode) (columnFilter, error) {
 }
 
 // evaluateFilter evaluates whether the f.column filter passes for the given resource
-func (f columnFilter) evaluate(data *printers.ShowData) bool {
+func (f columnFilter) evaluate(data *printers.RowData) bool {
 	switch f.operator {
 	case "=":
 		return data.Fields[f.column].ValueString() == f.values[0]

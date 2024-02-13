@@ -230,9 +230,9 @@ func (c *Control) setBaseProperties() {
 }
 
 // GetShowData implements printers.Showable
-func (c *Control) GetShowData() *printers.ShowData {
+func (c *Control) GetShowData() *printers.RowData {
 
-	res := printers.NewShowData(
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "Width", Value: c.Width},
 		printers.FieldValue{Name: "Type", Value: c.Type},
 		printers.FieldValue{Name: "Display", Value: c.Display},

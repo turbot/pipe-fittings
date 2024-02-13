@@ -88,8 +88,8 @@ func (r *ResourceReference) Name() string {
 }
 
 // GetShowData implements printers.Showable
-func (r *ResourceReference) GetShowData() *printers.ShowData {
-	res := printers.NewShowData(
+func (r *ResourceReference) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "To", Value: r.To},
 		printers.FieldValue{Name: "From", Value: r.From},
 		printers.FieldValue{Name: "BlockType", Value: r.BlockType},

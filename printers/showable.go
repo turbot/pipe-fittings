@@ -8,7 +8,7 @@ import (
 
 // Showable is an interface implemented by objects which support the `show` command for pretty/plain output format
 type Showable interface {
-	GetShowData() *ShowData
+	GetShowData() *RowData
 }
 
 func IsShowable(value any) bool {
@@ -29,39 +29,21 @@ func AsShowable(value any) Showable {
 
 // Listable is an interface implemented by objects which support the `list` command for pretty/plain output format
 type Listable interface {
-	GetListData() *ShowData
+	GetListData() *RowData
 }
 
-func AsListable(value any) Listable {
-	if l, ok := value.(Listable); ok {
-		return l
-	}
-	// check the pointer
-	pVal := &value
-	if l, ok := any(pVal).(Listable); ok {
-		return l
-	}
-	return nil
-}
-
-type ShowData struct {
-	ListKeyField *ListKeyField
+// RowData is a struct that holds the data for a single row of a table
+type RowData struct {
 	// slice of column names (converted to lower case)
 	Columns []string
-	// map of column name to field display name (as provided in NewShowData)
+	// map of column name to field display name (as provided in NewRowData)
 	displayNameMap map[string]string
-	Fields         map[string]FieldValue
+	// map of fields keyed by lower case column name
+	Fields map[string]FieldValue
 }
 
-// ListKeyField is a struct that holds the name and value of a field to be used as the key (grouping) field when
-// displaying a slice of resource
-type ListKeyField struct {
-	Name            string
-	RenderValueFunc RenderFunc
-}
-
-func NewShowData(fields ...FieldValue) *ShowData {
-	data := &ShowData{
+func NewRowData(fields ...FieldValue) *RowData {
+	data := &RowData{
 		Fields:         make(map[string]FieldValue),
 		displayNameMap: make(map[string]string),
 		Columns:        make([]string, 0, len(fields)),
@@ -76,10 +58,10 @@ func NewShowData(fields ...FieldValue) *ShowData {
 	return data
 }
 
-// Merge merges the other ShowData
+// Merge merges the other RowData
 // columns from other are placed first, however our fields take precedence
 // this is to ensure when merging base showdata the base columns come first, but derived typeds can override values
-func (d *ShowData) Merge(other *ShowData) {
+func (d *RowData) Merge(other *RowData) {
 	if other == nil {
 		return
 	}
@@ -97,7 +79,7 @@ func (d *ShowData) Merge(other *ShowData) {
 	d.Fields = otherClone
 }
 
-func (d *ShowData) GetRow() *TableRow {
+func (d *RowData) GetRow() *TableRow {
 	row := NewTableRow()
 	row.Columns = d.Columns
 	for _, c := range d.Columns {

@@ -198,9 +198,9 @@ func (q *QueryProviderImpl) populateQueryName() {
 }
 
 // GetShowData implements printers.Showable
-func (q *QueryProviderImpl) GetShowData() *printers.ShowData {
+func (q *QueryProviderImpl) GetShowData() *printers.RowData {
 
-	res := printers.NewShowData(
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "SQL", Value: q.SQL},
 		printers.FieldValue{Name: "Query", Value: q.Query},
 		printers.FieldValue{Name: "Args", Value: q.Args},

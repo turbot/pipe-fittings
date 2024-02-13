@@ -217,8 +217,8 @@ func (b *Benchmark) setBaseProperties() {
 }
 
 // GetShowData implements printers.Showable
-func (b *Benchmark) GetShowData() *printers.ShowData {
-	res := printers.NewShowData(
+func (b *Benchmark) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "Children", Value: b.ChildNameStrings},
 	)
 	res.Merge(b.ModTreeItemImpl.GetShowData())

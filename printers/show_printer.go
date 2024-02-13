@@ -53,7 +53,7 @@ func (p ShowPrinter[T]) render(resource Showable, opts sanitize.RenderOptions) (
 	return p.renderShowData(row, opts)
 }
 
-func (p ShowPrinter[T]) renderShowData(row *ShowData, opts sanitize.RenderOptions) (string, error) {
+func (p ShowPrinter[T]) renderShowData(row *RowData, opts sanitize.RenderOptions) (string, error) {
 	au := aurora.NewAurora(opts.ColorEnabled)
 
 	var b strings.Builder
@@ -114,7 +114,7 @@ func (p ShowPrinter[T]) renderShowData(row *ShowData, opts sanitize.RenderOption
 	return valStr, nil
 }
 
-func (p ShowPrinter[T]) getMaxTitleLength(row *ShowData) int {
+func (p ShowPrinter[T]) getMaxTitleLength(row *RowData) int {
 	var maxTitleLength int
 	for _, c := range row.Columns {
 		if len(c) > maxTitleLength {
@@ -286,8 +286,8 @@ func (p ShowPrinter[T]) renderStruct(val reflect.Value, opts sanitize.RenderOpti
 		fieldValues = append(fieldValues, NewFieldValue(k, v))
 	}
 
-	// convert to ShowData and render
-	showData := NewShowData(fieldValues...)
+	// convert to RowData and render
+	showData := NewRowData(fieldValues...)
 	str, err := p.renderShowData(showData, childOpts)
 	if err != nil {
 		return "", err
@@ -328,8 +328,8 @@ func (p ShowPrinter[T]) renderMap(val reflect.Value, opts sanitize.RenderOptions
 		v := asMap[k]
 		fieldValues = append(fieldValues, NewFieldValue(k, v))
 	}
-	// convert to ShowData and render
-	showData := NewShowData(fieldValues...)
+	// convert to RowData and render
+	showData := NewRowData(fieldValues...)
 	str, err := p.renderShowData(showData, childOpts)
 	if err != nil {
 		return "", err
@@ -339,17 +339,18 @@ func (p ShowPrinter[T]) renderMap(val reflect.Value, opts sanitize.RenderOptions
 	return b.String(), nil
 }
 
-func (p ShowPrinter[T]) addBullet(str string) string {
-	lines := strings.Split(str, "\n")
-	for i, line := range lines {
-		if len(line) == 0 {
-			continue
-		}
-		if i == 0 {
-			lines[i] = " -" + line
-		} else {
-			lines[i] = "  " + line
-		}
-	}
-	return strings.Join(lines, "\n")
-}
+//
+//func (p ShowPrinter[T]) addBullet(str string) string {
+//	lines := strings.Split(str, "\n")
+//	for i, line := range lines {
+//		if len(line) == 0 {
+//			continue
+//		}
+//		if i == 0 {
+//			lines[i] = " -" + line
+//		} else {
+//			lines[i] = "  " + line
+//		}
+//	}
+//	return strings.Join(lines, "\n")
+//}

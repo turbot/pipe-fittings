@@ -387,8 +387,8 @@ func (q *QueryArgs) resolvePositionalParameters(queryProvider QueryProvider) (ar
 }
 
 // GetShowData implements printers.Showable
-func (q *QueryArgs) GetShowData() *printers.ShowData {
-	res := printers.NewShowData(
+func (q *QueryArgs) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "ArgMap", Value: q.ArgMap},
 		printers.FieldValue{Name: "ArgList", Value: q.ArgList},
 		printers.FieldValue{Name: "References", Value: q.References},

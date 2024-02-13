@@ -74,8 +74,8 @@ func (p *ParamDef) GetDefault() (any, error) {
 }
 
 // GetShowData implements printers.Showable
-func (p *ParamDef) GetShowData() *printers.ShowData {
-	res := printers.NewShowData(
+func (p *ParamDef) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "Name", Value: p.UnqualifiedName},
 		printers.FieldValue{Name: "Description", Value: p.Description},
 		printers.FieldValue{Name: "Default", Value: p.Default},

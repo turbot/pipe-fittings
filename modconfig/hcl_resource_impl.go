@@ -198,8 +198,8 @@ func (b *HclResourceImpl) GetBase() HclResource {
 }
 
 // GetShowData implements printers.Showable
-func (b *HclResourceImpl) GetShowData() *printers.ShowData {
-	return printers.NewShowData(
+func (b *HclResourceImpl) GetShowData() *printers.RowData {
+	return printers.NewRowData(
 		printers.FieldValue{Name: "Name", Value: b.Name()},
 		printers.FieldValue{Name: "Title", Value: b.GetTitle()},
 		printers.FieldValue{Name: "Description", Value: b.GetDescription()},
@@ -209,8 +209,8 @@ func (b *HclResourceImpl) GetShowData() *printers.ShowData {
 }
 
 // GetListData implements printers.Showable
-func (b *HclResourceImpl) GetListData() *printers.ShowData {
-	return printers.NewShowData(
+func (b *HclResourceImpl) GetListData() *printers.RowData {
+	return printers.NewRowData(
 		printers.FieldValue{Name: "NAME", Value: b.Name()},
 	)
 }

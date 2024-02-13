@@ -114,14 +114,14 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 }
 
 // GetShowData implements printers.Showable
-func (b *ModTreeItemImpl) GetShowData() *printers.ShowData {
+func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 	// override name to take parents into account
 	var name = b.ShortName
 	if b.parents != nil {
 		name = b.Name()
 
 	}
-	res := printers.NewShowData(
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "Name", Value: name},
 		printers.FieldValue{Name: "Mod", Value: b.Mod.ShortName},
 		printers.FieldValue{Name: "Database", Value: b.Database},
@@ -131,12 +131,12 @@ func (b *ModTreeItemImpl) GetShowData() *printers.ShowData {
 }
 
 // GetListData implements printers.Listable
-func (b *ModTreeItemImpl) GetListData() *printers.ShowData {
+func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	var name = b.ShortName
 	if b.parents != nil {
 		name = b.Name()
 	}
-	res := printers.NewShowData(
+	res := printers.NewRowData(
 		printers.FieldValue{Name: "NAME", Value: name},
 		printers.FieldValue{Name: "MOD", Value: b.Mod.ShortName},
 	)
