@@ -4,6 +4,15 @@ Shared Pipes Component
 
 ## v0.3.0 [tbd]
 
+_What's new?_
+
+* Credential Import, Notifier and Integration resources.
+
+_Bug fixes_
+
+* Triggers are missing required field validation ([#225](https://github.com/turbot/pipe-fittings/issues/255)).
+* Missing pipeline output validation ([#239](https://github.com/turbot/pipe-fittings/issues/239)).
+
 ## v0.2.2 [2024-02-02]
 
 _Bug fixes_
