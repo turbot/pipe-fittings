@@ -292,11 +292,12 @@ func (m *ModParseContext) SetDecodeContent(content *hcl.BodyContent, fileData ma
 // 1) store block as unresolved
 // 2) add dependencies to our tree of dependencies
 func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) hcl.Diagnostics {
-	// TACTICAL if this is NOT a top level block, add a suffix to the block name
+	// TACTICAL if this is NOT a top level block, add a unique suffix to the block name
 	// this is needed to avoid circular dependency errors if a nested block references
 	// a top level block with the same name
 	if !m.IsTopLevelBlock(block) {
-		name = "nested." + name
+		// NOTE: include the block pointer to avoid clashes with other nested blocks with the same name
+		name = fmt.Sprintf("nested.%p.%s", block, name)
 	}
 	return m.ParseContext.AddDependencies(block, name, dependencies)
 }
@@ -430,7 +431,8 @@ func (m *ModParseContext) storeResourceInReferenceValueMap(resource modconfig.Hc
 	}
 
 	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, resource.Name())
+	n := resource.Name()
+	delete(m.UnresolvedBlocks, n)
 
 	return nil
 }
