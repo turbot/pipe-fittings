@@ -344,6 +344,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 		return
 	}
 
+	// AbuseIPDB
+	assert.Equal("steampipe_abuseipdb", flowpipeConfig.CredentialImports["steampipe_abuseipdb"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_abuseipdb"].Prefix)
+	assert.Equal("abuseipdb.sp1_abuseipdb_1", flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_1"].GetHclResourceImpl().FullName)
+	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_1"].(*credential.AbuseIPDBCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].(*credential.AbuseIPDBCredential).APIKey)
+
 	// AWS
 	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe"].Prefix)
@@ -352,6 +360,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abc", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).AccessKey)
 	assert.Equal("123", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).SecretKey)
 
+	// SendGrid
+	assert.Equal("steampipe_sendgrid", flowpipeConfig.CredentialImports["steampipe_sendgrid"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_sendgrid"].Prefix)
+	assert.Equal("sendgrid.sp1_sendgrid_1", flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_1"].GetHclResourceImpl().FullName)
+	assert.Equal("sendgrid.sp1_sendgrid_2", flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_1"].(*credential.SendGridCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_2"].(*credential.SendGridCredential).APIKey)
+
 	// Slack
 	assert.Equal("steampipe_slack", flowpipeConfig.CredentialImports["steampipe_slack"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_slack"].Prefix)
@@ -359,6 +375,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.Credentials["slack.sp1_slack_l2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["slack.sp1_slack_l1"].(*credential.SlackCredential).Token)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["slack.sp1_slack_l2"].(*credential.SlackCredential).Token)
+
+	// VirusTotal
+	assert.Equal("steampipe_virustotal", flowpipeConfig.CredentialImports["steampipe_virustotal"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_virustotal"].Prefix)
+	assert.Equal("virustotal.sp1_virustotal_1", flowpipeConfig.Credentials["virustotal.sp1_virustotal_1"].GetHclResourceImpl().FullName)
+	assert.Equal("virustotal.sp1_virustotal_2", flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_1"].(*credential.VirusTotalCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].(*credential.VirusTotalCredential).APIKey)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {

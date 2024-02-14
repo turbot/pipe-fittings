@@ -57,3 +57,24 @@ func (c *SendGridCredential) GetTtl() int {
 func (c *SendGridCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type SendGridConnectionConfig struct {
+	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key"`
+}
+
+func (c *SendGridConnectionConfig) GetCredential(name string) Credential {
+
+	sendGridCred := &SendGridCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return sendGridCred
+}

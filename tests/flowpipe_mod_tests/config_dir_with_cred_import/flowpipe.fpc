@@ -9,3 +9,22 @@ credential_import "steampipe_slack" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 } 
+
+credential_import "steampipe_abuseipdb" {
+  source      = "./abuseipdb.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+
+credential_import "steampipe_sendgrid" {
+  source      = "./sendgrid.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+
+credential_import "steampipe_virustotal" {
+  source      = "./virustotal.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+

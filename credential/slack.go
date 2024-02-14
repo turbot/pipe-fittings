@@ -77,5 +77,4 @@ func (c *SlackConnectionConfig) GetCredential(name string) Credential {
 	}
 
 	return slackCred
-
 }

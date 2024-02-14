@@ -61,11 +61,11 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 }
 
 var credentialConfigTypeRegistry = map[string]reflect.Type{
-	"aws":   reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
-	"slack": reflect.TypeOf((*SlackConnectionConfig)(nil)).Elem(),
-	// "abuseipdb":     reflect.TypeOf((*AbuseIPDBCredential)(nil)).Elem(),
-	// "sendgrid":      reflect.TypeOf((*SendGridCredential)(nil)).Elem(),
-	// "virustotal":    reflect.TypeOf((*VirusTotalCredential)(nil)).Elem(),
+	"abuseipdb":  reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
+	"aws":        reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
+	"sendgrid":   reflect.TypeOf((*SendGridConnectionConfig)(nil)).Elem(),
+	"slack":      reflect.TypeOf((*SlackConnectionConfig)(nil)).Elem(),
+	"virustotal": reflect.TypeOf((*VirusTotalConnectionConfig)(nil)).Elem(),
 	// "zendesk":       reflect.TypeOf((*ZendeskCredential)(nil)).Elem(),
 	// "trello":        reflect.TypeOf((*TrelloCredential)(nil)).Elem(),
 	// "okta":          reflect.TypeOf((*OktaCredential)(nil)).Elem(),
