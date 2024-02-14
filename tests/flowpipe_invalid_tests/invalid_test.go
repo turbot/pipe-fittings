@@ -18,6 +18,11 @@ type testSetup struct {
 
 var tests = []testSetup{
 	{
+		title:         "invalid param definition",
+		file:          "./pipelines/invalid_param_definition.fp",
+		containsError: `A type specification is either a primitive type keyword (bool, number, string) or a complex type constructor call`,
+	},
+	{
 		title:         "bad output reference",
 		file:          "./pipelines/bad_output_reference.fp",
 		containsError: `invalid depends_on 'transform.does_not_exist' - does not exist for pipeline local.pipeline`,

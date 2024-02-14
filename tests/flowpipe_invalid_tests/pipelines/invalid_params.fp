@@ -1,36 +1,36 @@
 pipeline "update_pubsub_topics" {
   param "application_credentials_64" {
-    type        = "string"
+    type        = string
     default     = "abc"
     description = "The GCP application credentials."
   }
 
   param "project_id" {
-    type        = "string"
+    type        = string
     default     = "123"
     description = "The GCP project ID."
   }
 
   param "remove_labels" {
-    type        = "list(string)"
+    type        = list(string)
     description = "The GCP labels."
     default     = ["owner"]
   }
 
   param "update_labels" {
-    type        = "map(string)"
+    type        = map(string)
     description = "The GCP labels."
     default     = { "env" = "prod" }
   }
 
   param "topic_name" {
-    type        = "string"
+    type        = string
     default     = "my-topic-1"
     description = "The names of the topic to update."
   }
 
   param "message_retention_duration" {
-    type        = "string"
+    type        = string
     description = "The duration to retain messages."
   }
 
