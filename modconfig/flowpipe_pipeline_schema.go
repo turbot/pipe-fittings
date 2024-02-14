@@ -300,9 +300,6 @@ var PipelineOutputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeForEach,
 		},
 		{
-			Name: schema.AttributeTypeDependsOn,
-		},
-		{
 			Name:     schema.AttributeTypeValue,
 			Required: true,
 		},
