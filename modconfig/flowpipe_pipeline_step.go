@@ -3169,14 +3169,6 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 		})
 	}
 
-	// validate has options
-	if len(p.OptionList) == 0 {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Input " + p.Name + " has no options defined",
-		})
-	}
-
 	return diags
 }
 
