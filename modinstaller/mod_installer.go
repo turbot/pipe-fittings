@@ -246,8 +246,6 @@ func (i *ModInstaller) commitShadow(ctx context.Context) error {
 	}
 	entries, err := os.ReadDir(i.shadowDirPath)
 	if err != nil {
-		// TODO KAI readd sperr <ERRORS>
-		// return sperr.WrapWithRootMessage(err, "could not read shadow directory")
 		return fmt.Errorf("could not read shadow directory: %w", err)
 	}
 	for _, entry := range entries {

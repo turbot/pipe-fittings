@@ -22,7 +22,7 @@ type Require struct {
 	Mods                             []*ModVersionConstraint `hcl:"mod,block"`
 	// map keyed by name [and alias]
 	modMap map[string]*ModVersionConstraint
-	// range of the require block bocy
+	// range of the require block body
 	DeclRange hcl.Range
 	// range of the require block type
 	TypeRange hcl.Range

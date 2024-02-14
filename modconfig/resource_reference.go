@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/printers"
 )
 
 type ResourceReference struct {
@@ -84,4 +85,16 @@ func (r *ResourceReference) Equals(other *ResourceReference) bool {
 // the name must start with the 'resource type' as we parse it and use just the 'name' segment
 func (r *ResourceReference) Name() string {
 	return fmt.Sprintf("ref.%s", r.name)
+}
+
+// GetShowData implements printers.Showable
+func (r *ResourceReference) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("To", r.To),
+		printers.NewFieldValue("From", r.From),
+		printers.NewFieldValue("BlockType", r.BlockType),
+		printers.NewFieldValue("BlockName", r.BlockName),
+		printers.NewFieldValue("Attribute", r.Attribute),
+	)
+	return res
 }

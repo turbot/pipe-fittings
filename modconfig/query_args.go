@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -383,4 +384,14 @@ func (q *QueryArgs) resolvePositionalParameters(queryProvider QueryProvider) (ar
 		}
 	}
 	return argValues, missingParams, nil
+}
+
+// GetShowData implements printers.Showable
+func (q *QueryArgs) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("ArgMap", q.ArgMap),
+		printers.NewFieldValue("ArgList", q.ArgList),
+		printers.NewFieldValue("References", q.References),
+	)
+	return res
 }

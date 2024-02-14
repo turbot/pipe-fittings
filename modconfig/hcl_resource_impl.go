@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -194,6 +195,24 @@ func (b *HclResourceImpl) CtyValue() (cty.Value, error) {
 // GetBase implements HclResource
 func (b *HclResourceImpl) GetBase() HclResource {
 	return b.base
+}
+
+// GetShowData implements printers.Showable
+func (b *HclResourceImpl) GetShowData() *printers.RowData {
+	return printers.NewRowData(
+		printers.FieldValue{Name: "Name", Value: b.Name()},
+		printers.FieldValue{Name: "Title", Value: b.GetTitle()},
+		printers.FieldValue{Name: "Description", Value: b.GetDescription()},
+		printers.FieldValue{Name: "Documentation", Value: b.GetDocumentation()},
+		printers.FieldValue{Name: "Tags", Value: b.GetTags()},
+	)
+}
+
+// GetListData implements printers.Showable
+func (b *HclResourceImpl) GetListData() *printers.RowData {
+	return printers.NewRowData(
+		printers.FieldValue{Name: "NAME", Value: b.Name()},
+	)
 }
 
 func (b *HclResourceImpl) setBaseProperties() {

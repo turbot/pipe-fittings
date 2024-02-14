@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -17,7 +18,8 @@ type MappableResource interface {
 
 // HclResource must be implemented by resources defined in HCL
 type HclResource interface {
-	// TODO  [node_reuse] rename to GetName/GetFullName
+	printers.Showable
+	printers.Listable
 	Name() string
 	GetTitle() string
 	GetUnqualifiedName() string

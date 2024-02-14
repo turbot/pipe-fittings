@@ -37,20 +37,3 @@ func (w *Workspace) GetResourceMaps() *modconfig.ResourceMaps {
 func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	return w.GetResourceMaps().GetResource(parsedName)
 }
-
-// GetWorkspaceResourcesOfType returns all resources of type T from a workspace
-func GetWorkspaceResourcesOfType[T modconfig.HclResource](w *Workspace) map[string]T {
-	var res = map[string]T{}
-
-	resourceFunc := func(item modconfig.HclResource) (bool, error) {
-		if item, ok := item.(T); ok {
-			res[item.Name()] = item
-		}
-		return true, nil
-	}
-
-	// resource func does not return error
-	_ = w.GetResourceMaps().WalkResources(resourceFunc)
-
-	return res
-}
