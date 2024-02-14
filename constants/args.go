@@ -9,8 +9,6 @@ const (
 	ArgClientCacheEnabled      = "client-cache-enabled"
 	ArgCloudHost               = "cloud-host"
 	ArgCloudToken              = "cloud-token"
-	ArgDashboardListen         = "dashboard-listen"
-	ArgDashboardPort           = "dashboard-port"
 	ArgDashboardStartTimeout   = "dashboard-start-timeout"
 	ArgDatabaseListenAddresses = "database-listen"
 	ArgDatabasePort            = "database-port"
