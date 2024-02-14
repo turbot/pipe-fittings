@@ -291,13 +291,7 @@ var PipelineBlockSchema = &hcl.BodySchema{
 var PipelineOutputBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
-			Name: schema.AttributeTypeTitle,
-		},
-		{
 			Name: schema.AttributeTypeDescription,
-		},
-		{
-			Name: schema.AttributeTypeForEach,
 		},
 		{
 			Name:     schema.AttributeTypeValue,
