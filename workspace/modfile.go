@@ -2,12 +2,15 @@ package workspace
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
-	"os"
-	"path/filepath"
 )
 
 // FindModFilePath search up the directory tree to find the modfile
@@ -49,7 +52,12 @@ func HomeDirectoryModfileCheck(ctx context.Context, workspacePath string) error 
 	// check if your workspace path is home dir and if modfile exists
 	if workspacePath == home && modFileExists {
 		// for other cmds - if home dir has modfile, just warn
-		error_helpers.ShowWarning("You have a mod.sp file in your home directory. This is not recommended.\nAs a result, steampipe will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put mod.sp files in their own directories.\nHit Ctrl+C to stop.\n")
+
+		warningText := fmt.Sprintf("You have a %s file in your home directory. This is not recommended.\nAs a result, %s will try to load all the files in home and its sub-directories, which can cause performance issues.\nBest practice is to put %s files in their own directories.\nHit Ctrl+C to stop.\n",
+			app_specific.ModFileName,
+			app_specific.AppName,
+			app_specific.ModFileName)
+		error_helpers.ShowWarning(warningText)
 	}
 
 	return nil
