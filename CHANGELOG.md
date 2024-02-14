@@ -9,6 +9,7 @@ Shared Pipes Component
 _Bug fixes_
 
 * Missing error handling during the conversion of Go struct to CTY value.
+* Invalid `type` in pipeline param definition should throw a parsing error ([#252](https://github.com/turbot/pipe-fittings/issues/252)).
 
 ## v0.2.1 [2024-02-02]
 

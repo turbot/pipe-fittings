@@ -31,7 +31,7 @@ pipeline "approval_with_notifies" {
 pipeline "approval_with_notifies_dynamic" {
 
   param "notifier" {
-    type = "string"
+    type = string
     default = "wrong"
   }
 

@@ -136,9 +136,11 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 			o.Type = cty.List(cty.DynamicPseudoType)
 		case "map":
 			o.Type = cty.Map(cty.DynamicPseudoType)
+		case "set":
+			o.Type = cty.Set(cty.DynamicPseudoType)
 		default:
 			ty, moreDiags := typeexpr.TypeConstraint(expr)
-			if diags.HasErrors() {
+			if moreDiags.HasErrors() {
 				diags = append(diags, moreDiags...)
 				return o, diags
 			}
