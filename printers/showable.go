@@ -49,11 +49,7 @@ func NewRowData(fields ...FieldValue) *RowData {
 		Columns:        make([]string, 0, len(fields)),
 	}
 	for _, f := range fields {
-		// convert name into lower case for column name - we store the original name in the displayNameMap
-		columnName := strings.ToLower(f.Name)
-		data.Columns = append(data.Columns, columnName)
-		data.displayNameMap[columnName] = f.Name
-		data.Fields[columnName] = f
+		data.AddField(f)
 	}
 	return data
 }
@@ -77,6 +73,15 @@ func (d *RowData) Merge(other *RowData) {
 	// merge display name map - we do not expect conflict here
 	maps.Copy(d.displayNameMap, other.displayNameMap)
 	d.Fields = otherClone
+}
+
+func (d *RowData) AddField(f FieldValue) {
+	// convert name into lower case for column name - we store the original name in the displayNameMap
+
+	columnName := strings.ToLower(f.Name)
+	d.Columns = append(d.Columns, columnName)
+	d.displayNameMap[columnName] = f.Name
+	d.Fields[columnName] = f
 }
 
 func (d *RowData) GetRow() *TableRow {

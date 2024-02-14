@@ -138,8 +138,10 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	}
 	res := printers.NewRowData(
 		printers.NewFieldValue("NAME", name),
-		printers.NewFieldValue("MOD", b.Mod.ShortName),
 	)
+	if b.Mod != nil {
+		res.AddField(printers.NewFieldValue("MOD", b.Mod.ShortName))
+	}
 	res.Merge(b.HclResourceImpl.GetListData())
 	return res
 }
