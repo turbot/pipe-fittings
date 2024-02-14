@@ -3,3 +3,9 @@ credential_import "steampipe" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 } 
+
+credential_import "steampipe_slack" {
+  source      = "./slack.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 

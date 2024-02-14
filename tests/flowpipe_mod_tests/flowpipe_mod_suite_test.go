@@ -344,13 +344,21 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 		return
 	}
 
+	// AWS
 	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe"].Prefix)
-
 	assert.Equal("aws.sp1_aws", flowpipeConfig.Credentials["aws.sp1_aws"].GetHclResourceImpl().FullName)
 	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.Credentials["aws.sp1_aws_keys1"].GetHclResourceImpl().FullName)
 	assert.Equal("abc", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).AccessKey)
 	assert.Equal("123", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).SecretKey)
+
+	// Slack
+	assert.Equal("steampipe_slack", flowpipeConfig.CredentialImports["steampipe_slack"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_slack"].Prefix)
+	assert.Equal("slack.sp1_slack_l1", flowpipeConfig.Credentials["slack.sp1_slack_l1"].GetHclResourceImpl().FullName)
+	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.Credentials["slack.sp1_slack_l2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["slack.sp1_slack_l1"].(*credential.SlackCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["slack.sp1_slack_l2"].(*credential.SlackCredential).Token)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
