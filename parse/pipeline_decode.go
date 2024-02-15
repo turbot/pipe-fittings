@@ -385,6 +385,20 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			}
 
 			if pipelineParam != nil {
+
+				// check for duplicate pipeline parameters names
+				if len(pipelineHcl.Params) > 0 {
+					if _, ok := pipelineHcl.Params[pipelineParam.Name]; ok {
+						diags = append(diags, &hcl.Diagnostic{
+							Severity: hcl.DiagError,
+							Summary:  fmt.Sprintf("duplicate pipeline parameter name '%s' - parameter names must be unique", pipelineParam.Name),
+							Subject:  &block.DefRange,
+						})
+						res.handleDecodeDiags(diags)
+						return pipelineHcl, res
+					}
+				}
+
 				pipelineHcl.Params[pipelineParam.Name] = pipelineParam
 			}
 
