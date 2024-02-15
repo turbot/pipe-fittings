@@ -376,6 +376,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["discord.sp1_discord_1"].(*credential.DiscordCredential).Token)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["discord.sp1_discord_2"].(*credential.DiscordCredential).Token)
 
+	// IP2LocationIO
+	assert.Equal("steampipe_ip2locationio", flowpipeConfig.CredentialImports["steampipe_ip2locationio"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_ip2locationio"].Prefix)
+	assert.Equal("ip2locationio.sp1_ip2locationio_1", flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_1"].GetHclResourceImpl().FullName)
+	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_1"].(*credential.IP2LocationIOCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].(*credential.IP2LocationIOCredential).APIKey)
+
 	// PagerDuty
 	assert.Equal("steampipe_pagerduty", flowpipeConfig.CredentialImports["steampipe_pagerduty"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_pagerduty"].Prefix)

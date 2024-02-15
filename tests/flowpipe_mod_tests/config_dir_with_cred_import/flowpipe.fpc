@@ -58,3 +58,8 @@ credential_import "steampipe_pagerduty" {
   prefix      = "sp1_" # prefix is optional
 } 
 
+credential_import "steampipe_ip2locationio" {
+  source      = "./ip2locationio.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 

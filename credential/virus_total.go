@@ -60,7 +60,7 @@ func (c *VirusTotalCredential) Validate() hcl.Diagnostics {
 }
 
 type VirusTotalConnectionConfig struct {
-	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key"`
+	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
 func (c *VirusTotalConnectionConfig) GetCredential(name string) Credential {

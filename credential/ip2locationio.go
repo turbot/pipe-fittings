@@ -57,3 +57,24 @@ func (c *IP2LocationIOCredential) GetTtl() int {
 func (c *IP2LocationIOCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type IP2LocationIOConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+}
+
+func (c *IP2LocationIOConnectionConfig) GetCredential(name string) Credential {
+
+	ip2LocationIOCred := &IP2LocationIOCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return ip2LocationIOCred
+}

@@ -57,3 +57,27 @@ func (c *IPstackCredential) GetTtl() int {
 func (c *IPstackCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+// TODO: Check the connection config required attributes
+// Steampipe uses Token, but the Flowpipe credential uses AccessKey
+
+// type IPStackConnectionConfig struct {
+// 	AccessKey *string `cty:"access_key" hcl:"access_key"`
+// }
+
+// func (c *IPStackConnectionConfig) GetCredential(name string) Credential {
+
+// 	ipstackCred := &IPstackCredential{
+// 		CredentialImpl: CredentialImpl{
+// 			HclResourceImpl: modconfig.HclResourceImpl{
+// 				FullName:        name,
+// 				ShortName:       name,
+// 				UnqualifiedName: name,
+// 			},
+// 		},
+
+// 		AccessKey: c.AccessKey,
+// 	}
+
+// 	return ipstackCred
+// }

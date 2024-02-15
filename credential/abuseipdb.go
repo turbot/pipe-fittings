@@ -59,7 +59,7 @@ func (c *AbuseIPDBCredential) Validate() hcl.Diagnostics {
 }
 
 type AbuseIPDBConnectionConfig struct {
-	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key"`
+	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
 func (c *AbuseIPDBConnectionConfig) GetCredential(name string) Credential {

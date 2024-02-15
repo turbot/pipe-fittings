@@ -59,7 +59,7 @@ func (c *SendGridCredential) Validate() hcl.Diagnostics {
 }
 
 type SendGridConnectionConfig struct {
-	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key"`
+	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
 func (c *SendGridConnectionConfig) GetCredential(name string) Credential {
