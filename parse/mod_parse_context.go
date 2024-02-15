@@ -297,7 +297,7 @@ func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, depende
 	// a top level block with the same name
 	if !m.IsTopLevelBlock(block) {
 		// NOTE: include the block pointer to avoid clashes with other nested blocks with the same name
-		name = fmt.Sprintf("nested.%p.%s", block, name)
+		name = fmt.Sprintf("nested_%s.%s", fmt.Sprintf("%p", block)[8:], name)
 	}
 	return m.ParseContext.AddDependencies(block, name, dependencies)
 }
