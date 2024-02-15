@@ -15,6 +15,9 @@ import (
 // these may either be passed by name, in a map, or as a list of positional args
 // NOTE: if both are present the named parameters are used
 type QueryArgs struct {
+	// NOTE: ArgMap and ArgList should not be set directly, but should be set using the
+	// SetNamedArgVal and SetPositionalArgVal methods
+	// This is so that stringNamedArgs and stringPositionalArgs can be set correctly
 	ArgMap map[string]string `cty:"args" json:"args,omitempty"`
 	// args list may be sparsely populated (in case of runtime dependencies)
 	// so use *string
@@ -55,7 +58,7 @@ func (q *QueryArgs) ArgsStringList() []string {
 	return argsStringList
 }
 
-// ConvertArgsList convert argList into list of interface{} by unmarshalling
+// ConvertArgsList convert ArgList into list of interface{} by unmarshalling
 func (q *QueryArgs) ConvertArgsList() ([]any, error) {
 	var argList = make([]any, len(q.ArgList))
 
@@ -188,7 +191,7 @@ func (q *QueryArgs) Merge(other *QueryArgs, source QueryProvider) (*QueryArgs, e
 	return result, nil
 }
 
-func (q *QueryArgs) SetNamedArgVal(value any, name string) (err error) {
+func (q *QueryArgs) SetNamedArgVal(name string, value any) (err error) {
 	strVal, ok := value.(string)
 	if ok {
 		q.stringNamedArgs[name] = struct{}{}
@@ -202,6 +205,13 @@ func (q *QueryArgs) SetNamedArgVal(value any, name string) (err error) {
 	return nil
 }
 
+func (q *QueryArgs) AddPositionalArgVal(value any) error {
+	q.ArgList = append(q.ArgList, nil)
+	return q.SetPositionalArgVal(value, len(q.ArgList)-1)
+}
+
+// SetPositionalArgVal sets the value of a positional arg
+// NOTE: we add by index so we can populate stringPositionalArgs if needed
 func (q *QueryArgs) SetPositionalArgVal(value any, idx int) (err error) {
 	if idx >= len(q.ArgList) {
 		return fmt.Errorf("positional arg index %d out of range", idx)
@@ -231,7 +241,7 @@ func (q *QueryArgs) ToString(value any) (string, error) {
 
 func (q *QueryArgs) SetArgMap(argMap map[string]any) error {
 	for k, v := range argMap {
-		if err := q.SetNamedArgVal(v, k); err != nil {
+		if err := q.SetNamedArgVal(k, v); err != nil {
 			return err
 		}
 	}
