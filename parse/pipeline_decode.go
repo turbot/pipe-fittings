@@ -163,7 +163,22 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 			return o, diags
 		}
 
-		o.Default = ctyVal
+		// Does the default value matches the specified type?
+		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
+
+			isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
+			if !isCompatible {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("default value type mismatch - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
+					Subject:  &attr.Range,
+				})
+			} else {
+				o.Default = ctyVal
+			}
+		} else {
+			o.Default = ctyVal
+		}
 	} else if o.Optional {
 		o.Default = cty.NullVal(o.Type)
 	}

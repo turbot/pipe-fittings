@@ -207,6 +207,16 @@ var tests = []testSetup{
 		file:          "./pipelines/duplicate_pipeline_param.fp",
 		containsError: "duplicate pipeline parameter name 'my_param' - parameter names must be unique",
 	},
+	{
+		title:         "default param value does not match type",
+		file:          "./pipelines/param_default_mismatch.fp",
+		containsError: "default value type mismatch - expected list of string, got string",
+	},
+	{
+		title:         "default param value does not match type (2)",
+		file:          "./pipelines/param_default_mismatch_2.fp",
+		containsError: "default value type mismatch - expected set of bool, got number",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
