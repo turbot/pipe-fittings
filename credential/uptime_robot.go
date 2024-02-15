@@ -58,3 +58,24 @@ func (c *UptimeRobotCredential) GetTtl() int {
 func (c *UptimeRobotCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type UptimeRobotConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+}
+
+func (c *UptimeRobotConnectionConfig) GetCredential(name string) Credential {
+
+	uptimeRobotCred := &UptimeRobotCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return uptimeRobotCred
+}

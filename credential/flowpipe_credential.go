@@ -61,16 +61,16 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 }
 
 var credentialConfigTypeRegistry = map[string]reflect.Type{
-	"abuseipdb":  reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
-	"aws":        reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
-	"sendgrid":   reflect.TypeOf((*SendGridConnectionConfig)(nil)).Elem(),
-	"slack":      reflect.TypeOf((*SlackConnectionConfig)(nil)).Elem(),
-	"virustotal": reflect.TypeOf((*VirusTotalConnectionConfig)(nil)).Elem(),
+	"abuseipdb":   reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
+	"aws":         reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
+	"sendgrid":    reflect.TypeOf((*SendGridConnectionConfig)(nil)).Elem(),
+	"slack":       reflect.TypeOf((*SlackConnectionConfig)(nil)).Elem(),
+	"uptimerobot": reflect.TypeOf((*UptimeRobotConnectionConfig)(nil)).Elem(),
+	"urlscan":     reflect.TypeOf((*UrlscanConnectionConfig)(nil)).Elem(),
+	"virustotal":  reflect.TypeOf((*VirusTotalConnectionConfig)(nil)).Elem(),
 	// "zendesk":       reflect.TypeOf((*ZendeskCredential)(nil)).Elem(),
 	// "trello":        reflect.TypeOf((*TrelloCredential)(nil)).Elem(),
 	// "okta":          reflect.TypeOf((*OktaCredential)(nil)).Elem(),
-	// "uptimerobot":   reflect.TypeOf((*UptimeRobotCredential)(nil)).Elem(),
-	// "urlscan":       reflect.TypeOf((*UrlscanCredential)(nil)).Elem(),
 	// "clickup":       reflect.TypeOf((*ClickUpCredential)(nil)).Elem(),
 	// "pagerduty":     reflect.TypeOf((*PagerDutyCredential)(nil)).Elem(),
 	// "discord":       reflect.TypeOf((*DiscordCredential)(nil)).Elem(),

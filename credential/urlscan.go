@@ -57,3 +57,24 @@ func (c *UrlscanCredential) GetTtl() int {
 func (c *UrlscanCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type UrlscanConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+}
+
+func (c *UrlscanConnectionConfig) GetCredential(name string) Credential {
+
+	urlscanCred := &UrlscanCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return urlscanCred
+}

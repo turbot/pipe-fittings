@@ -376,6 +376,22 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["slack.sp1_slack_l1"].(*credential.SlackCredential).Token)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["slack.sp1_slack_l2"].(*credential.SlackCredential).Token)
 
+	// UptimeRobot
+	assert.Equal("steampipe_uptimerobot", flowpipeConfig.CredentialImports["steampipe_uptimerobot"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_uptimerobot"].Prefix)
+	assert.Equal("uptimerobot.sp1_uptimerobot_1", flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_1"].GetHclResourceImpl().FullName)
+	assert.Equal("uptimerobot.sp1_uptimerobot_2", flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_1"].(*credential.UptimeRobotCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_2"].(*credential.UptimeRobotCredential).APIKey)
+
+	// Urlscan
+	assert.Equal("steampipe_urlscan", flowpipeConfig.CredentialImports["steampipe_urlscan"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_urlscan"].Prefix)
+	assert.Equal("urlscan.sp1_urlscan_1", flowpipeConfig.Credentials["urlscan.sp1_urlscan_1"].GetHclResourceImpl().FullName)
+	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.Credentials["urlscan.sp1_urlscan_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["urlscan.sp1_urlscan_1"].(*credential.UrlscanCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["urlscan.sp1_urlscan_2"].(*credential.UrlscanCredential).APIKey)
+
 	// VirusTotal
 	assert.Equal("steampipe_virustotal", flowpipeConfig.CredentialImports["steampipe_virustotal"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_virustotal"].Prefix)

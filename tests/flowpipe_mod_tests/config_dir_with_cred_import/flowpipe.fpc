@@ -28,3 +28,14 @@ credential_import "steampipe_virustotal" {
   prefix      = "sp1_" # prefix is optional
 } 
 
+credential_import "steampipe_urlscan" {
+  source      = "./urlscan.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+
+credential_import "steampipe_uptimerobot" {
+  source      = "./uptimerobot.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
