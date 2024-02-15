@@ -58,3 +58,24 @@ func (c *VirusTotalCredential) GetTtl() int {
 func (c *VirusTotalCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type VirusTotalConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+}
+
+func (c *VirusTotalConnectionConfig) GetCredential(name string) Credential {
+
+	virusTotalCred := &VirusTotalCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return virusTotalCred
+}

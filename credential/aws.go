@@ -157,5 +157,4 @@ func (c *AwsConnectionConfig) GetCredential(name string) Credential {
 	}
 
 	return awsCred
-
 }

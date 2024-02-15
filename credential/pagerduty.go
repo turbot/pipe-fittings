@@ -57,3 +57,24 @@ func (c *PagerDutyCredential) GetTtl() int {
 func (c *PagerDutyCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type PagerDutyConnectionConfig struct {
+	Token *string `cty:"token" hcl:"token"`
+}
+
+func (c *PagerDutyConnectionConfig) GetCredential(name string) Credential {
+
+	pagerDutyCred := &PagerDutyCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Token: c.Token,
+	}
+
+	return pagerDutyCred
+}

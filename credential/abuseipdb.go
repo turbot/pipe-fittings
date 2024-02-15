@@ -57,3 +57,24 @@ func (c *AbuseIPDBCredential) GetTtl() int {
 func (c *AbuseIPDBCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type AbuseIPDBConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+}
+
+func (c *AbuseIPDBConnectionConfig) GetCredential(name string) Credential {
+
+	abuseIPDBCred := &AbuseIPDBCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return abuseIPDBCred
+}

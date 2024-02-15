@@ -57,3 +57,24 @@ func (c *SlackCredential) GetTtl() int {
 func (c *SlackCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type SlackConnectionConfig struct {
+	Token *string `cty:"token" hcl:"token"`
+}
+
+func (c *SlackConnectionConfig) GetCredential(name string) Credential {
+
+	slackCred := &SlackCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Token: c.Token,
+	}
+
+	return slackCred
+}
