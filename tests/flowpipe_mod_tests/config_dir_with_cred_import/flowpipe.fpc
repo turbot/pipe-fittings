@@ -39,3 +39,22 @@ credential_import "steampipe_uptimerobot" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 } 
+
+credential_import "steampipe_clickup" {
+  source      = "./clickup.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+
+credential_import "steampipe_discord" {
+  source      = "./discord.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+
+credential_import "steampipe_pagerduty" {
+  source      = "./pagerduty.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+} 
+

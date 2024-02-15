@@ -57,3 +57,24 @@ func (c *DiscordCredential) GetTtl() int {
 func (c *DiscordCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type DiscordConnectionConfig struct {
+	Token *string `cty:"token" hcl:"token"`
+}
+
+func (c *DiscordConnectionConfig) GetCredential(name string) Credential {
+
+	discordCred := &DiscordCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Token: c.Token,
+	}
+
+	return discordCred
+}

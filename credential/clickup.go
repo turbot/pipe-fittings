@@ -58,3 +58,24 @@ func (c *ClickUpCredential) GetTtl() int {
 func (c *ClickUpCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type ClickUpConnectionConfig struct {
+	Token *string `cty:"token" hcl:"token"`
+}
+
+func (c *ClickUpConnectionConfig) GetCredential(name string) Credential {
+
+	clickUpCred := &ClickUpCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Token: c.Token,
+	}
+
+	return clickUpCred
+}
