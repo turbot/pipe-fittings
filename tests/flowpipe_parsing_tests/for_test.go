@@ -155,7 +155,7 @@ func TestParamsProcessing(t *testing.T) {
 
 	diag := gohcl.DecodeExpression(step.GetForEach(), evalContext, &output)
 	if diag.HasErrors() {
-		assert.Fail("error decoding expression")
+		assert.Fail("error decoding expression " + diag.Error())
 		return
 	}
 
