@@ -202,6 +202,11 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_pipeline_output_attribute.fp",
 		containsError: "Unsupported argument: An argument named \"depends_on\" is not expected here.",
 	},
+	{
+		title:         "duplicate pipeline param name",
+		file:          "./pipelines/duplicate_pipeline_param.fp",
+		containsError: "duplicate pipeline parameter name 'my_param' - parameter names must be unique",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
