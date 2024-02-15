@@ -32,7 +32,7 @@ func TestMissingParamValidation(t *testing.T) {
 
 	errs := validateMyParam.ValidatePipelineParam(stringInvalid)
 	assert.Equal(2, len(errs))
-	assert.Equal("Bad Request: invalid type for parameter 'address_line_2'", errs[0].Error())
+	assert.Equal("Bad Request: invalid data type for parameter 'address_line_2' wanted string but received int", errs[0].Error())
 	assert.Equal("Bad Request: missing parameter: address_line_2", errs[1].Error())
 
 	invalidParam := map[string]interface{}{

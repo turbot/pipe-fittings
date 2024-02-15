@@ -205,6 +205,9 @@ func GoTypeMatchesCtyType(val interface{}, ctyType cty.Type) bool {
 }
 
 func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, error) {
+
+	wanted := typ.FriendlyName()
+
 	// Check if the provided type is one of the supported types
 	if typ == cty.String {
 		return input, nil
@@ -263,7 +266,10 @@ func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, er
 		val, valDiags := expr.Value(nil)
 		diags = append(diags, valDiags...)
 		if len(valDiags) > 0 {
-			return nil, perr.BadRequestWithMessage("unable to parse value has HCL expression: " + input)
+			slog.Error("unable to parse value", "input", input, "diags", valDiags)
+
+			errMsg := fmt.Sprintf("unable to parse value: %s to parameter type %s", input, wanted)
+			return nil, perr.BadRequestWithMessage(errMsg)
 		}
 
 		if typ.IsListType() || typ.IsTupleType() || typ.IsSetType() {
