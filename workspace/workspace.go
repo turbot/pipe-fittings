@@ -266,6 +266,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	// now set workspace properties
 	// populate the mod references map references
 	m.ResourceMaps.PopulateReferences()
+
 	// set the mod
 	w.Mod = m
 	// set the child mods

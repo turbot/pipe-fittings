@@ -268,16 +268,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 	assert.NotNil(jsonBytes)
 
 	// unmarshall from JSON test
-	var notifier2 modconfig.Notifier
+	var notifier2 modconfig.NotifierImpl
 	err = json.Unmarshal(jsonBytes, &notifier2)
 	if err != nil {
 		assert.Fail(err.Error())
 		return
 	}
 
-	assert.Equal(2, len(notifier2.Notifies))
-	assert.Equal("#devs", *notifier2.Notifies[0].Channel)
-	assert.Equal("xoxp-111111", *notifier2.Notifies[0].Integration.(*modconfig.SlackIntegration).Token)
+	assert.Equal(2, len(notifier2.GetNotifies()))
+	assert.Equal("#devs", *notifier2.GetNotifies()[0].Channel)
+	assert.Equal("xoxp-111111", *notifier2.GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
@@ -312,7 +312,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 		return
 	}
 
-	notifies := step.Notifier.Notifies
+	notifies := step.Notifier.GetNotifies()
 	assert.Len(notifies, 1)
 	notify := notifies[0]
 	assert.NotNil(notify)
@@ -456,22 +456,22 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal(3, len(flowpipeConfig.Notifiers))
 
 	// ensure that default notifier exist
-	assert.Equal("default", flowpipeConfig.Notifiers["default"].HclResourceImpl.FullName)
-	assert.Equal(1, len(flowpipeConfig.Notifiers["default"].Notifies))
+	assert.Equal("default", flowpipeConfig.Notifiers["default"].GetHclResourceImpl().FullName)
+	assert.Equal(1, len(flowpipeConfig.Notifiers["default"].GetNotifies()))
 
 	// TODO: test this when we have webform up and running
-	//assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["default"].Notifies[0].Integration.AsValueMap()["name"].AsString())
+	//assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["default"].GetNotifies()[0].Integration.AsValueMap()["name"].AsString())
 
-	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].HclResourceImpl.FullName)
+	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].GetHclResourceImpl().FullName)
 	// Check the notify -> integration link
-	assert.Equal(1, len(flowpipeConfig.Notifiers["admins"].Notifies))
+	assert.Equal(1, len(flowpipeConfig.Notifiers["admins"].GetNotifies()))
 
-	assert.Equal("Q#$$#@#$$#W", *flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.(*modconfig.SlackIntegration).SigningSecret)
-	assert.Equal("xoxp-111111", *flowpipeConfig.Notifiers["admins"].Notifies[0].Integration.(*modconfig.SlackIntegration).Token)
+	assert.Equal("Q#$$#@#$$#W", *flowpipeConfig.Notifiers["admins"].GetNotifies()[0].Integration.(*modconfig.SlackIntegration).SigningSecret)
+	assert.Equal("xoxp-111111", *flowpipeConfig.Notifiers["admins"].GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
 
 	devsNotifier := flowpipeConfig.Notifiers["devs"]
-	assert.Equal("devs", devsNotifier.HclResourceImpl.FullName)
-	assert.Equal(2, len(devsNotifier.Notifies))
+	assert.Equal("devs", devsNotifier.GetHclResourceImpl().FullName)
+	assert.Equal(2, len(devsNotifier.GetNotifies()))
 
 	dvCtyVal, err2 := devsNotifier.CtyValue()
 	if err2 != nil {
@@ -526,7 +526,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	notifiesSlice := notifierMap["notifies"].AsValueSlice()
 	assert.Equal(1, len(notifiesSlice))
 
-	notifies := step.Notifier.Notifies
+	notifies := step.Notifier.GetNotifies()
 	assert.Len(notifies, 1)
 	notify := notifies[0]
 	assert.NotNil(notify)
@@ -542,7 +542,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	}
 
 	assert.Equal("Do you want to approve (2)?", *step.Prompt)
-	notifies = step.Notifier.Notifies
+	notifies = step.Notifier.GetNotifies()
 
 	assert.Len(notifies, 1)
 	notify = notifies[0]

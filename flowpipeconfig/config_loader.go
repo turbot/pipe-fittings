@@ -291,7 +291,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 				continue
 			}
 
-			f.Notifiers[notifier.GetUnqualifiedName()] = *notifier
+			f.Notifiers[notifier.GetUnqualifiedName()] = notifier
 		}
 	}
 

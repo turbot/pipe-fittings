@@ -14,11 +14,26 @@ import (
 type Integration interface {
 	HclResource
 	ResourceWithMetadata
+
+	GetIntegrationImpl() *IntegrationImpl
 	GetIntegrationType() string
 	CtyValue() (cty.Value, error)
 	MapInterface() (map[string]interface{}, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	Validate() hcl.Diagnostics
+}
+
+type IntegrationImpl struct {
+	// required to allow partial decoding
+	Remain hcl.Body `hcl:",remain" json:"-"`
+
+	FileName        string
+	StartLineNumber int
+	EndLineNumber   int
+}
+
+func (i *IntegrationImpl) GetIntegrationImpl() *IntegrationImpl {
+	return i
 }
 
 func DefaultIntegrations() (map[string]Integration, error) {
@@ -41,6 +56,7 @@ func DefaultIntegrations() (map[string]Integration, error) {
 type SlackIntegration struct {
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
+	IntegrationImpl          `json:"-"`
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
@@ -178,6 +194,7 @@ func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 type EmailIntegration struct {
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
+	IntegrationImpl          `json:"-"`
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 
@@ -569,6 +586,7 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 type WebformIntegration struct {
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
+	IntegrationImpl          `json:"-"`
 
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 }

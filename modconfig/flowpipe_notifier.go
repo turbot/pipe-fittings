@@ -11,17 +11,29 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type Notifier struct {
+type Notifier interface {
+	HclResource
+	ResourceWithMetadata
+
+	CtyValue() (cty.Value, error)
+	GetNotifies() []Notify
+}
+
+type NotifierImpl struct {
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
 
 	Notifies []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
 }
 
+func (c *NotifierImpl) GetNotifies() []Notify {
+	return c.Notifies
+}
+
 func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifier, error) {
 	notifiers := make(map[string]Notifier)
 
-	notifier := Notifier{
+	notifier := NotifierImpl{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        "default",
 			ShortName:       "default",
@@ -34,12 +46,12 @@ func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifie
 	}
 	notifier.Notifies = []Notify{notify}
 
-	notifiers["default"] = notifier
+	notifiers["default"] = &notifier
 
 	return notifiers, nil
 }
 
-func (c *Notifier) CtyValue() (cty.Value, error) {
+func (c *NotifierImpl) CtyValue() (cty.Value, error) {
 	notifies := []any{}
 
 	for _, notify := range c.Notifies {

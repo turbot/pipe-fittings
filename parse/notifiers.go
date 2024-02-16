@@ -18,7 +18,7 @@ var NotifierBlockSchema = &hcl.BodySchema{
 	},
 }
 
-func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Notifier, hcl.Diagnostics) {
+func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.NotifierImpl, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	if len(block.Labels) != 1 {
 		diags = hcl.Diagnostics{
@@ -33,7 +33,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 
 	notifierName := block.Labels[0]
 
-	notifier := modconfig.Notifier{
+	notifier := modconfig.NotifierImpl{
 		HclResourceImpl: modconfig.HclResourceImpl{
 			FullName:        notifierName,
 			ShortName:       notifierName,

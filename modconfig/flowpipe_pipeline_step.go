@@ -341,8 +341,8 @@ func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttr
 	return b, nil
 }
 
-func ctyValueToPipelineStepInputNotifyValueMap(value cty.Value) (Notifier, error) {
-	notifier := Notifier{}
+func ctyValueToPipelineStepInputNotifyValueMap(value cty.Value) (NotifierImpl, error) {
+	notifier := NotifierImpl{}
 
 	valueMap := value.AsValueMap()
 	notifiesCty := valueMap[schema.AttributeTypeNotifies]
@@ -2925,7 +2925,7 @@ type PipelineStepInput struct {
 	OptionList []PipelineStepInputOption
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
-	Notifier Notifier `json:"notify" cty:"-"`
+	Notifier NotifierImpl `json:"notify" cty:"-"`
 }
 
 func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
@@ -3007,7 +3007,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	results[schema.AttributeTypeOptions] = resolvedOpts
 
 	// notifier
-	var notifier Notifier
+	var notifier NotifierImpl
 	if p.UnresolvedAttributes[schema.AttributeTypeNotifier] == nil {
 		notifier = p.Notifier
 	} else {

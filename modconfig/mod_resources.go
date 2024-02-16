@@ -43,10 +43,8 @@ type ResourceMaps struct {
 	Snapshots map[string]string
 
 	// flowpipe
-	Pipelines    map[string]*Pipeline
-	Triggers     map[string]*Trigger
-	Integrations map[string]Integration
-	Notifiers    map[string]Notifier
+	Pipelines map[string]*Pipeline
+	Triggers  map[string]*Trigger
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -89,9 +87,8 @@ func emptyModResources() *ResourceMaps {
 		Variables:             make(map[string]*Variable),
 
 		// Flowpipe
-		Pipelines:    make(map[string]*Pipeline),
-		Triggers:     make(map[string]*Trigger),
-		Integrations: make(map[string]Integration),
+		Pipelines: make(map[string]*Pipeline),
+		Triggers:  make(map[string]*Trigger),
 	}
 }
 
@@ -203,6 +200,8 @@ func (m *ResourceMaps) Equals(other *ResourceMaps) bool {
 			return false
 		}
 	}
+
+	// TODO: do we need integration & notifier here?
 
 	for name, trigger := range m.Triggers {
 		if otherTrigger, ok := other.Triggers[name]; !ok {
@@ -482,10 +481,6 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.Pipelines[longName]
 	case schema.BlockTypeTrigger:
 		resource, found = m.Triggers[longName]
-	case schema.BlockTypeIntegration:
-		resource, found = m.Integrations[longName]
-	// case schema.BlockTypeNotifier:
-	// 	resource, found = m.Notifiers[longName]
 	case schema.BlockTypeMod:
 		for _, mod := range m.Mods {
 			if mod.ShortName == parsedName.Name {
@@ -940,15 +935,6 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 			break
 		}
 		m.Triggers[name] = r
-
-	case Integration:
-		name := r.Name()
-		if existing, ok := m.Integrations[name]; ok {
-			diags = append(diags, checkForDuplicate(existing, item)...)
-			break
-		}
-		m.Integrations[name] = r
-
 	}
 
 	return diags
