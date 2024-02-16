@@ -3,25 +3,22 @@ package parse
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/perr"
-	"log/slog"
-	"os"
-	"path"
-	"path/filepath"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/zclconf/go-cty/cty"
+	"log/slog"
+	"path"
 )
 
 func LoadModfile(modPath string) (*modconfig.Mod, error) {
-	if !ModfileExists(modPath) {
+	modFilePath, exists := ModFileExists(modPath)
+	if !exists {
 		return nil, nil
 	}
 
@@ -31,7 +28,7 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 		Variables: make(map[string]cty.Value),
 	}
 
-	mod, res := ParseModDefinition(modPath, evalCtx)
+	mod, res := ParseModDefinition(modFilePath, evalCtx)
 	if res.Diags.HasErrors() {
 		return nil, plugin.DiagsToError("Failed to load mod", res.Diags)
 	}
@@ -39,28 +36,13 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 	return mod, nil
 }
 
-func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
+// ParseModDefinition parses the modfile only
+// it is expected the calling code will have verified the existence of the modfile by calling ModfileExists
+// this is called before parsing the workspace to, for example, identify dependency mods
+//
+// This function only parse the "mod" block, and does not parse any resources in the mod file
+func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
 	res := newDecodeResult()
-
-	// if there is no mod at this location, return error
-	modFilePath := filepath.Join(modPath, modFileName)
-
-	modFileFound := true
-	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
-		modFileFound = false
-		modFilePath = filepath.Join(modPath, app_specific.ModFileName)
-		if _, err := os.Stat(modFilePath); err == nil {
-			modFileFound = true
-		}
-	}
-
-	if !modFileFound {
-		res.Diags = append(res.Diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("no mod file found in %s", modPath),
-		})
-		return nil, res
-	}
 
 	fileData, diags := LoadFileData(modFilePath)
 	res.addDiags(diags)
@@ -84,7 +66,7 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 	if block == nil {
 		res.Diags = append(res.Diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("no mod definition found in %s", modPath),
+			Summary:  fmt.Sprintf("failed to parse mod definition file: no mod definition found: %s", modFilePath),
 		})
 		return nil, res
 	}
@@ -105,15 +87,6 @@ func ParseModDefinitionWithFileName(modPath string, modFileName string, evalCtx 
 	res.addDiags(diags)
 
 	return mod, res
-}
-
-// ParseModDefinition parses the modfile only
-// it is expected the calling code will have verified the existence of the modfile by calling ModfileExists
-// this is called before parsing the workspace to, for example, identify dependency mods
-//
-// This function only parse the "mod" block, and does not parse any resources in the mod file
-func ParseModDefinition(modPath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
-	return ParseModDefinitionWithFileName(modPath, app_specific.ModFileName, evalCtx)
 }
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object

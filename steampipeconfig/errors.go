@@ -88,7 +88,7 @@ func (m MissingVariableError) getTransitiveVariableMissingString() string {
 				parentPath,
 				pluralizer.Pluralize("a value", varCount, false),
 				varsString,
-				app_specific.ModFileName,
+				app_specific.DefaultModFileName(),
 			))
 
 	}

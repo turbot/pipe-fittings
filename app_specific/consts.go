@@ -2,6 +2,7 @@ package app_specific
 
 import (
 	"github.com/Masterminds/semver/v3"
+	"path/filepath"
 )
 
 // Application specific constants which MUST be set by the application
@@ -17,7 +18,31 @@ var DefaultVarsFileName string
 
 // TODO KAI  we need to provide a default (for now) as the flowpipe test code does not (always)
 // call SetAppSpecificConstants so this may be empty we need a proper solution to this
-var ModFileName string = "mod.sp"
+var ModFileName_ string = "mod.sp"
+
+func ModFileNames() []string {
+	var res []string
+	for _, ext := range ModDataExtensions {
+		res = append(res, "mod"+ext)
+
+	}
+	return res
+}
+
+func ModFilePaths(modFolder string) []string {
+	var res []string
+	for _, filename := range ModFileNames() {
+		res = append(res, filepath.Join(modFolder, filename))
+	}
+	return res
+}
+
+func DefaultModFileName() string {
+	return ModFileNames()[0]
+}
+func DefaultModFilePath(modFolder string) string {
+	return filepath.Join(modFolder, DefaultModFileName())
+}
 
 var WorkspaceIgnoreFile string
 var WorkspaceDataDir string
@@ -29,8 +54,8 @@ var DefaultConfigPath string
 
 var ConfigExtension string
 var ModDataExtensions []string
-var VariablesExtension string
-var AutoVariablesExtension string
+var VariablesExtensions []string
+var AutoVariablesExtensions []string
 
 // args
 

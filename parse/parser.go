@@ -83,14 +83,14 @@ func buildOrderedFileNameList(fileData map[string][]byte) []string {
 	return filePaths
 }
 
-// ModfileExists returns whether a mod file exists at the specified path
-func ModfileExists(modPath string) bool {
-	// TODO KAI Ccheck const <FLOWPIPE>
-	modFilePath := filepath.Join(modPath, app_specific.ModFileName)
-	if _, err := os.Stat(modFilePath); os.IsNotExist(err) {
-		return false
+// ModFileExists returns whether a mod file exists at the specified path and if so returns the filepath
+func ModFileExists(modPath string) (string, bool) {
+	for _, modFilePath := range app_specific.ModFilePaths(modPath) {
+		if _, err := os.Stat(modFilePath); err == nil {
+			return modFilePath, true
+		}
 	}
-	return true
+	return "", false
 }
 
 // parse a yaml file into a hcl.File object
