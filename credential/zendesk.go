@@ -71,3 +71,28 @@ func (c *ZendeskCredential) GetTtl() int {
 func (c *ZendeskCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type ZendeskConnectionConfig struct {
+	Email     *string `cty:"email" hcl:"email"`
+	Subdomain *string `cty:"subdomain" hcl:"subdomain"`
+	Token     *string `cty:"token" hcl:"token"`
+}
+
+func (c *ZendeskConnectionConfig) GetCredential(name string) Credential {
+
+	zendeskCred := &ZendeskCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Email:     c.Email,
+		Subdomain: c.Subdomain,
+		Token:     c.Token,
+	}
+
+	return zendeskCred
+}

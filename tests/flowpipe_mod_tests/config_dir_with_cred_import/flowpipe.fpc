@@ -123,3 +123,15 @@ credential_import "steampipe_freshdesk" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_zendesk" {
+  source      = "./zendesk.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_opsgenie" {
+  source      = "./opsgenie.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}

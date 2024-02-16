@@ -434,6 +434,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["openai.sp1_openai_1"].(*credential.OpenAICredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["openai.sp1_openai_2"].(*credential.OpenAICredential).APIKey)
 
+	// Opsgenie
+	assert.Equal("steampipe_opsgenie", flowpipeConfig.CredentialImports["steampipe_opsgenie"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_opsgenie"].Prefix)
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].GetHclResourceImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].GetHclResourceImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].(*credential.OpsgenieCredential).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].(*credential.OpsgenieCredential).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].(*credential.OpsgenieCredential).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].(*credential.OpsgenieCredential).IncidentAPIKey)
+
 	// PagerDuty
 	assert.Equal("steampipe_pagerduty", flowpipeConfig.CredentialImports["steampipe_pagerduty"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_pagerduty"].Prefix)
@@ -521,6 +531,18 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("virustotal.sp1_virustotal_2", flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_1"].(*credential.VirusTotalCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].(*credential.VirusTotalCredential).APIKey)
+
+	// Zendesk
+	assert.Equal("steampipe_zendesk", flowpipeConfig.CredentialImports["steampipe_zendesk"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_zendesk"].Prefix)
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].GetHclResourceImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].GetHclResourceImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Email)
+	assert.Equal("dmi", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Email)
+	assert.Equal("dmj", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Token)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
