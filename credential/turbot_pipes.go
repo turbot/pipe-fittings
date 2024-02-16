@@ -57,3 +57,25 @@ func (c *PipesCredential) GetTtl() int {
 func (c *PipesCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type PipesConnectionConfig struct {
+	Host  *string `cty:"host" hcl:"host,optional"`
+	Token *string `cty:"token" hcl:"token"`
+}
+
+func (c *PipesConnectionConfig) GetCredential(name string) Credential {
+
+	pipesCred := &PipesCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Token: c.Token,
+	}
+
+	return pipesCred
+}

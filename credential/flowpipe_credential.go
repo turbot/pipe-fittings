@@ -3,6 +3,7 @@ package credential
 import (
 	"context"
 	"reflect"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -65,36 +66,42 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"aws":           reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
 	"clickup":       reflect.TypeOf((*ClickUpConnectionConfig)(nil)).Elem(),
 	"discord":       reflect.TypeOf((*DiscordConnectionConfig)(nil)).Elem(),
+	"freshdesk":     reflect.TypeOf((*FreshdeskConnectionConfig)(nil)).Elem(),
+	"github":        reflect.TypeOf((*GithubConnectionConfig)(nil)).Elem(),
+	"gitlab":        reflect.TypeOf((*GitlabConnectionConfig)(nil)).Elem(),
 	"ip2locationio": reflect.TypeOf((*IP2LocationIOConnectionConfig)(nil)).Elem(),
+	"jumpcloud":     reflect.TypeOf((*JumpCloudConnectionConfig)(nil)).Elem(),
+	"openai":        reflect.TypeOf((*OpenAIConnectionConfig)(nil)).Elem(),
 	"pagerduty":     reflect.TypeOf((*PagerDutyConnectionConfig)(nil)).Elem(),
+	"pipes":         reflect.TypeOf((*PipesConnectionConfig)(nil)).Elem(),
 	"sendgrid":      reflect.TypeOf((*SendGridConnectionConfig)(nil)).Elem(),
+	"servicenow":    reflect.TypeOf((*ServiceNowConnectionConfig)(nil)).Elem(),
 	"slack":         reflect.TypeOf((*SlackConnectionConfig)(nil)).Elem(),
+	"teams":         reflect.TypeOf((*MicrosoftTeamsConnectionConfig)(nil)).Elem(),
+	"trello":        reflect.TypeOf((*TrelloConnectionConfig)(nil)).Elem(),
 	"uptimerobot":   reflect.TypeOf((*UptimeRobotConnectionConfig)(nil)).Elem(),
 	"urlscan":       reflect.TypeOf((*UrlscanConnectionConfig)(nil)).Elem(),
+	"vault":         reflect.TypeOf((*VaultConnectionConfig)(nil)).Elem(),
 	"virustotal":    reflect.TypeOf((*VirusTotalConnectionConfig)(nil)).Elem(),
 	// "ipstack":       reflect.TypeOf((*IPStackConnectionConfig)(nil)).Elem(),
 	// "zendesk":       reflect.TypeOf((*ZendeskCredential)(nil)).Elem(),
-	// "trello":        reflect.TypeOf((*TrelloCredential)(nil)).Elem(),
 	// "okta":          reflect.TypeOf((*OktaCredential)(nil)).Elem(),
-	// "teams":         reflect.TypeOf((*MicrosoftTeamsCredential)(nil)).Elem(),
-	// "pipes":         reflect.TypeOf((*PipesCredential)(nil)).Elem(),
-	// "github":        reflect.TypeOf((*GithubCredential)(nil)).Elem(),
-	// "gitlab":        reflect.TypeOf((*GitLabCredential)(nil)).Elem(),
-	// "vault":         reflect.TypeOf((*VaultCredential)(nil)).Elem(),
 	// "jira":          reflect.TypeOf((*JiraCredential)(nil)).Elem(),
 	// "opsgenie":      reflect.TypeOf((*OpsgenieCredential)(nil)).Elem(),
-	// "openai":        reflect.TypeOf((*OpenAICredential)(nil)).Elem(),
 	// "azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
 	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
 	// "bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),
 	// "datadog":       reflect.TypeOf((*DatadogCredential)(nil)).Elem(),
-	// "freshdesk":     reflect.TypeOf((*FreshdeskCredential)(nil)).Elem(),
 	// "guardrails":    reflect.TypeOf((*GuardrailsCredential)(nil)).Elem(),
-	// "servicenow":    reflect.TypeOf((*ServiceNowCredential)(nil)).Elem(),
-	// "jumpcloud":     reflect.TypeOf((*JumpCloudCredential)(nil)).Elem(),
 }
 
 func InstantiateCredentialConfig(key string) (CredentialConfig, error) {
+	// If the key has a slash, extract the last part of the key
+	if strings.Contains(key, "/") {
+		strParts := strings.Split(key, "/")
+		key = strParts[len(strParts)-1]
+	}
+
 	t, exists := credentialConfigTypeRegistry[key]
 	if !exists {
 		return nil, perr.BadRequestWithMessage("Invalid credential type " + key)

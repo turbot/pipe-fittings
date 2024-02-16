@@ -2,64 +2,124 @@ credential_import "steampipe" {
   source      = "./aws.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_slack" {
   source      = "./slack.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_abuseipdb" {
   source      = "./abuseipdb.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_sendgrid" {
   source      = "./sendgrid.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_virustotal" {
   source      = "./virustotal.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_urlscan" {
   source      = "./urlscan.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_uptimerobot" {
   source      = "./uptimerobot.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_clickup" {
   source      = "./clickup.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_discord" {
   source      = "./discord.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_pagerduty" {
   source      = "./pagerduty.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
 
 credential_import "steampipe_ip2locationio" {
   source      = "./ip2locationio.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
-} 
+}
+
+credential_import "steampipe_github" {
+  source      = "./github.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_gitlab" {
+  source      = "./gitlab.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_openai" {
+  source      = "./openai.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_pipes" {
+  source      = "./pipes.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_jumpcloud" {
+  source      = "./jumpcloud.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_teams" {
+  source      = "./teams.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_trello" {
+  source      = "./trello.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_vault" {
+  source      = "./vault.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_servicenow" {
+  source      = "./servicenow.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_freshdesk" {
+  source      = "./freshdesk.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}

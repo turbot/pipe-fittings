@@ -70,3 +70,26 @@ func (c *FreshdeskCredential) GetTtl() int {
 func (c *FreshdeskCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type FreshdeskConnectionConfig struct {
+	APIKey    *string `cty:"api_key" hcl:"api_key"`
+	Subdomain *string `cty:"subdomain" hcl:"subdomain"`
+}
+
+func (c *FreshdeskConnectionConfig) GetCredential(name string) Credential {
+
+	freshdeskCred := &FreshdeskCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey:    c.APIKey,
+		Subdomain: c.Subdomain,
+	}
+
+	return freshdeskCred
+}
