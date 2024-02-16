@@ -58,5 +58,7 @@ func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integrati
 		diags = append(diags, moreDiags...)
 	}
 
+	integration.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+
 	return integration, diags
 }

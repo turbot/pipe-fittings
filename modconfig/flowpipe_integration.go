@@ -15,11 +15,12 @@ type Integration interface {
 	HclResource
 	ResourceWithMetadata
 
+	CtyValue() (cty.Value, error)
 	GetIntegrationImpl() *IntegrationImpl
 	GetIntegrationType() string
-	CtyValue() (cty.Value, error)
 	MapInterface() (map[string]interface{}, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
+	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 	Validate() hcl.Diagnostics
 }
 
@@ -30,6 +31,12 @@ type IntegrationImpl struct {
 	FileName        string
 	StartLineNumber int
 	EndLineNumber   int
+}
+
+func (i *IntegrationImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	i.FileName = fileName
+	i.StartLineNumber = startLineNumber
+	i.EndLineNumber = endLineNumber
 }
 
 func (i *IntegrationImpl) GetIntegrationImpl() *IntegrationImpl {

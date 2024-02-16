@@ -73,5 +73,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 		}
 	}
 
+	notifier.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+
 	return &notifier, diags
 }

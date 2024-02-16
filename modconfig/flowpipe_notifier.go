@@ -16,7 +16,9 @@ type Notifier interface {
 	ResourceWithMetadata
 
 	CtyValue() (cty.Value, error)
+	GetNotifierImpl() *NotifierImpl
 	GetNotifies() []Notify
+	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 }
 
 type NotifierImpl struct {
@@ -24,10 +26,27 @@ type NotifierImpl struct {
 	ResourceWithMetadataImpl `json:"-"`
 
 	Notifies []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
+
+	// required to allow partial decoding
+	Remain hcl.Body `hcl:",remain" json:"-"`
+
+	FileName        string
+	StartLineNumber int
+	EndLineNumber   int
+}
+
+func (n *NotifierImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	n.FileName = fileName
+	n.StartLineNumber = startLineNumber
+	n.EndLineNumber = endLineNumber
 }
 
 func (c *NotifierImpl) GetNotifies() []Notify {
 	return c.Notifies
+}
+
+func (c *NotifierImpl) GetNotifierImpl() *NotifierImpl {
+	return c
 }
 
 func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifier, error) {
