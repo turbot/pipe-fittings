@@ -426,6 +426,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["teams.sp1_teams_1"].(*credential.MicrosoftTeamsCredential).AccessToken)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["teams.sp1_teams_2"].(*credential.MicrosoftTeamsCredential).AccessToken)
 
+	// Okta
+	assert.Equal("steampipe_okta", flowpipeConfig.CredentialImports["steampipe_okta"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_okta"].Prefix)
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.Credentials["okta.sp1_okta_1"].GetHclResourceImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.Credentials["okta.sp1_okta_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.Credentials["okta.sp1_okta_1"].(*credential.OktaCredential).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["okta.sp1_okta_1"].(*credential.OktaCredential).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.Credentials["okta.sp1_okta_2"].(*credential.OktaCredential).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["okta.sp1_okta_2"].(*credential.OktaCredential).Token)
+
 	// OpenAI
 	assert.Equal("steampipe_openai", flowpipeConfig.CredentialImports["steampipe_openai"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_openai"].Prefix)

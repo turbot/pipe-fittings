@@ -135,3 +135,10 @@ credential_import "steampipe_opsgenie" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_okta" {
+  source      = "./okta.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
