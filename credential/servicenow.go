@@ -81,3 +81,31 @@ func (c *ServiceNowCredential) GetTtl() int {
 func (c *ServiceNowCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type ServiceNowConnectionConfig struct {
+	ClientID     *string `cty:"client_id" hcl:"client_id,optional"`
+	ClientSecret *string `cty:"client_secret" hcl:"client_secret,optional"`
+	InstanceURL  *string `cty:"instance_url" hcl:"instance_url"`
+	Objects      *string `cty:"objects" hcl:"objects,optional"`
+	Password     *string `cty:"password" hcl:"password"`
+	Username     *string `cty:"username" hcl:"username"`
+}
+
+func (c *ServiceNowConnectionConfig) GetCredential(name string) Credential {
+
+	serviceNowCred := &ServiceNowCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		InstanceURL: c.InstanceURL,
+		Username:    c.Username,
+		Password:    c.Password,
+	}
+
+	return serviceNowCred
+}

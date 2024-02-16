@@ -66,6 +66,7 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"aws":           reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
 	"clickup":       reflect.TypeOf((*ClickUpConnectionConfig)(nil)).Elem(),
 	"discord":       reflect.TypeOf((*DiscordConnectionConfig)(nil)).Elem(),
+	"freshdesk":     reflect.TypeOf((*FreshdeskConnectionConfig)(nil)).Elem(),
 	"github":        reflect.TypeOf((*GithubConnectionConfig)(nil)).Elem(),
 	"gitlab":        reflect.TypeOf((*GitlabConnectionConfig)(nil)).Elem(),
 	"ip2locationio": reflect.TypeOf((*IP2LocationIOConnectionConfig)(nil)).Elem(),
@@ -74,6 +75,7 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"pagerduty":     reflect.TypeOf((*PagerDutyConnectionConfig)(nil)).Elem(),
 	"pipes":         reflect.TypeOf((*PipesConnectionConfig)(nil)).Elem(),
 	"sendgrid":      reflect.TypeOf((*SendGridConnectionConfig)(nil)).Elem(),
+	"servicenow":    reflect.TypeOf((*ServiceNowConnectionConfig)(nil)).Elem(),
 	"slack":         reflect.TypeOf((*SlackConnectionConfig)(nil)).Elem(),
 	"teams":         reflect.TypeOf((*MicrosoftTeamsConnectionConfig)(nil)).Elem(),
 	"trello":        reflect.TypeOf((*TrelloConnectionConfig)(nil)).Elem(),
@@ -90,9 +92,7 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
 	// "bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),
 	// "datadog":       reflect.TypeOf((*DatadogCredential)(nil)).Elem(),
-	// "freshdesk":     reflect.TypeOf((*FreshdeskCredential)(nil)).Elem(),
 	// "guardrails":    reflect.TypeOf((*GuardrailsCredential)(nil)).Elem(),
-	// "servicenow":    reflect.TypeOf((*ServiceNowCredential)(nil)).Elem(),
 }
 
 func InstantiateCredentialConfig(key string) (CredentialConfig, error) {

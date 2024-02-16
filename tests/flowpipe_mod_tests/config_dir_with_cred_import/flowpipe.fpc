@@ -112,3 +112,14 @@ credential_import "steampipe_vault" {
   prefix      = "sp1_" # prefix is optional
 }
 
+credential_import "steampipe_servicenow" {
+  source      = "./servicenow.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_freshdesk" {
+  source      = "./freshdesk.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
