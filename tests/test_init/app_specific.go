@@ -14,7 +14,7 @@ func SetAppSpecificConstants() {
 	app_specific.AppName = "flowpipe"
 	// TODO unify version logic with steampipe
 	//app_specific.AppVersion
-	app_specific.AutoVariablesExtensions = ".auto.fpvars"
+	app_specific.AutoVariablesExtensions = []string{".auto.fpvars"}
 	//app_specific.ClientConnectionAppNamePrefix
 	//app_specific.ClientSystemConnectionAppNamePrefix
 	app_specific.DefaultInstallDir = installDir
@@ -25,8 +25,7 @@ func SetAppSpecificConstants() {
 	//app_specific.InstallDir
 	app_specific.ConfigExtension = ".fpc"
 	app_specific.ModDataExtensions = []string{".fp"}
-	app_specific.ModFileName = "mod.fp"
-	app_specific.VariablesExtensions = ".fpvars"
+	app_specific.VariablesExtensions = []string{".fpvars"}
 	//app_specific.ServiceConnectionAppNamePrefix
 	app_specific.WorkspaceIgnoreFile = ".flowpipeignore"
 	app_specific.WorkspaceDataDir = ".flowpipe"
