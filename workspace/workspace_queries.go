@@ -10,39 +10,12 @@ import (
 
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/utils"
 )
 
-// GetQueriesFromArgs retrieves queries from args
-//
-// For each arg check if it is a named query or a file, before falling back to treating it as sql
-func (w *Workspace) GetQueriesFromArgs(args []string) (map[string]*modconfig.ResolvedQuery, error) {
-	utils.LogTime("execute.GetQueriesFromArgs start")
-	defer utils.LogTime("execute.GetQueriesFromArgs end")
-
-	var queries = make(map[string]*modconfig.ResolvedQuery)
-	for _, arg := range args {
-		resolvedQuery, queryProvider, err := w.ResolveQueryAndArgsFromSQLString(arg)
-		if err != nil {
-			return nil, err
-		}
-		if len(resolvedQuery.ExecuteSQL) > 0 {
-			// default name to the query text
-			queryName := resolvedQuery.ExecuteSQL
-			if queryProvider != nil {
-				queryName = queryProvider.Name()
-			}
-			queries[queryName] = resolvedQuery
-		}
-	}
-	return queries, nil
-}
-
 // ResolveQueryAndArgsFromSQLString attempts to resolve 'arg' to a query and query args
-func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconfig.ResolvedQuery, modconfig.QueryProvider, error) {
+func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (modconfig.QueryProvider, *modconfig.QueryArgs, error) {
 	var err error
 
 	// 1) check if this is a resource
@@ -55,47 +28,41 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (*modconf
 	if resource != nil {
 		slog.Debug("query string is a query provider resource", "resourceName", resource.Name())
 
-		// resolve the query for the query provider and return it
-		resolvedQuery, err := w.ResolveQueryFromQueryProvider(resource, args)
-		if err != nil {
-			return nil, nil, err
-		}
-		slog.Debug("resolved query", "query", sqlString)
-		return resolvedQuery, resource, nil
+		return resource, args, nil
 	}
 
-	// 2) is this a file
-	// get absolute filename
-	filePath, err := filepath.Abs(sqlString)
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s", err.Error())
-	}
-	fileQuery, fileExists, err := w.getQueryFromFile(filePath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("%s", err.Error())
-	}
-	if fileExists {
-		if fileQuery.ExecuteSQL == "" {
-			error_helpers.ShowWarning(fmt.Sprintf("file '%s' does not contain any data", filePath))
-			// (just return the empty query - it will be filtered above)
-		}
-		return fileQuery, nil, nil
-	}
-	// the argument cannot be resolved as an existing file
-	// if it has a sql suffix (i.e we believe the user meant to specify a file) return a file not found error
-	if strings.HasSuffix(strings.ToLower(sqlString), ".sql") {
-		return nil, nil, fmt.Errorf("file '%s' does not exist", filePath)
-	}
-
-	// so we have not managed to resolve this - if it looks like a named query or control
-	// (i.e we believe the user meant to specify a query) return a not found error
-	// NOTE: this needs to come after the file suffix check because this handles the resource name query.sql edge case
-	if name, isResource := queryLooksLikeExecutableResource(sqlString); isResource {
-		return nil, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
-	}
-
-	// 3) just use the query string as is and assume it is valid SQL
-	return &modconfig.ResolvedQuery{RawSQL: sqlString, ExecuteSQL: sqlString}, nil, nil
+	//// 2) is this a file
+	//// get absolute filename
+	//filePath, err := filepath.Abs(sqlString)
+	//if err != nil {
+	//	return nil, nil, fmt.Errorf("%s", err.Error())
+	//}
+	//fileQuery, fileExists, err := w.getQueryFromFile(filePath)
+	//if err != nil {
+	//	return nil, nil, fmt.Errorf("%s", err.Error())
+	//}
+	//if fileExists {
+	//	if fileQuery.ExecuteSQL == "" {
+	//		error_helpers.ShowWarning(fmt.Sprintf("file '%s' does not contain any data", filePath))
+	//		// (just return the empty query - it will be filtered above)
+	//	}
+	//	return fileQuery, nil, nil
+	//}
+	//// the argument cannot be resolved as an existing file
+	//// if it has a sql suffix (i.e we believe the user meant to specify a file) return a file not found error
+	//if strings.HasSuffix(strings.ToLower(sqlString), ".sql") {
+	//	return nil, nil, fmt.Errorf("file '%s' does not exist", filePath)
+	//}
+	//
+	//// so we have not managed to resolve this - if it looks like a named query or control
+	//// (i.e we believe the user meant to specify a query) return a not found error
+	//// NOTE: this needs to come after the file suffix check because this handles the resource name query.sql edge case
+	//if name, isResource := queryLooksLikeExecutableResource(sqlString); isResource {
+	//	return nil, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
+	//}
+	//
+	//// 3) just use the query string as is and assume it is valid SQL
+	//return &modconfig.ResolvedQuery{RawSQL: sqlString, ExecuteSQL: sqlString}, nil, nil
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
