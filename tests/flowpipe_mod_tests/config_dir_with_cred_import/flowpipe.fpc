@@ -93,3 +93,22 @@ credential_import "steampipe_jumpcloud" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_teams" {
+  source      = "./teams.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_trello" {
+  source      = "./trello.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_vault" {
+  source      = "./vault.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+

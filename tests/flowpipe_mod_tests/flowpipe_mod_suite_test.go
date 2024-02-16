@@ -408,6 +408,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_1"].(*credential.JumpCloudCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_2"].(*credential.JumpCloudCredential).APIKey)
 
+	// Microsoft Teams
+	assert.Equal("steampipe_teams", flowpipeConfig.CredentialImports["steampipe_teams"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_teams"].Prefix)
+	assert.Equal("teams.sp1_teams_1", flowpipeConfig.Credentials["teams.sp1_teams_1"].GetHclResourceImpl().FullName)
+	assert.Equal("teams.sp1_teams_2", flowpipeConfig.Credentials["teams.sp1_teams_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["teams.sp1_teams_1"].(*credential.MicrosoftTeamsCredential).AccessToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["teams.sp1_teams_2"].(*credential.MicrosoftTeamsCredential).AccessToken)
+
 	// OpenAI
 	assert.Equal("steampipe_openai", flowpipeConfig.CredentialImports["steampipe_openai"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_openai"].Prefix)
@@ -448,6 +456,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["slack.sp1_slack_l1"].(*credential.SlackCredential).Token)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["slack.sp1_slack_l2"].(*credential.SlackCredential).Token)
 
+	// Trello
+	assert.Equal("steampipe_trello", flowpipeConfig.CredentialImports["steampipe_trello"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_trello"].Prefix)
+	assert.Equal("trello.sp1_trello_1", flowpipeConfig.Credentials["trello.sp1_trello_1"].GetHclResourceImpl().FullName)
+	assert.Equal("trello.sp1_trello_2", flowpipeConfig.Credentials["trello.sp1_trello_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["trello.sp1_trello_1"].(*credential.TrelloCredential).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["trello.sp1_trello_1"].(*credential.TrelloCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["trello.sp1_trello_2"].(*credential.TrelloCredential).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["trello.sp1_trello_2"].(*credential.TrelloCredential).Token)
+
 	// UptimeRobot
 	assert.Equal("steampipe_uptimerobot", flowpipeConfig.CredentialImports["steampipe_uptimerobot"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_uptimerobot"].Prefix)
@@ -463,6 +481,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.Credentials["urlscan.sp1_urlscan_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["urlscan.sp1_urlscan_1"].(*credential.UrlscanCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["urlscan.sp1_urlscan_2"].(*credential.UrlscanCredential).APIKey)
+
+	// Vault
+	assert.Equal("steampipe_vault", flowpipeConfig.CredentialImports["steampipe_vault"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_vault"].Prefix)
+	assert.Equal("vault.sp1_vault_1", flowpipeConfig.Credentials["vault.sp1_vault_1"].GetHclResourceImpl().FullName)
+	assert.Equal("vault.sp1_vault_2", flowpipeConfig.Credentials["vault.sp1_vault_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.Credentials["vault.sp1_vault_1"].(*credential.VaultCredential).Address)
+	assert.Equal("sometoken", *flowpipeConfig.Credentials["vault.sp1_vault_1"].(*credential.VaultCredential).Token)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.Credentials["vault.sp1_vault_2"].(*credential.VaultCredential).Address)
+	assert.Nil(flowpipeConfig.Credentials["vault.sp1_vault_2"].(*credential.VaultCredential).Token)
 
 	// VirusTotal
 	assert.Equal("steampipe_virustotal", flowpipeConfig.CredentialImports["steampipe_virustotal"].FullName)

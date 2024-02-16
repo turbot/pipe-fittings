@@ -64,3 +64,26 @@ func (c *TrelloCredential) GetTtl() int {
 func (c *TrelloCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type TrelloConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+	Token  *string `cty:"token" hcl:"token"`
+}
+
+func (c *TrelloConnectionConfig) GetCredential(name string) Credential {
+
+	trelloCred := &TrelloCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+		Token:  c.Token,
+	}
+
+	return trelloCred
+}

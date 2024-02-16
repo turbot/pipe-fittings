@@ -57,3 +57,24 @@ func (c *MicrosoftTeamsCredential) GetTtl() int {
 func (c *MicrosoftTeamsCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type MicrosoftTeamsConnectionConfig struct {
+	AccessToken *string `cty:"access_token" hcl:"access_token"`
+}
+
+func (c *MicrosoftTeamsConnectionConfig) GetCredential(name string) Credential {
+
+	microsoftTeamsCred := &MicrosoftTeamsCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		AccessToken: c.AccessToken,
+	}
+
+	return microsoftTeamsCred
+}

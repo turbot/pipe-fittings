@@ -65,3 +65,29 @@ func (c *VaultCredential) GetTtl() int {
 func (c *VaultCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type VaultConnectionConfig struct {
+	Address     *string `cty:"address" hcl:"address"`
+	AuthType    *string `cty:"auth_type" hcl:"auth_type,optional"`
+	AwsProvider *string `cty:"aws_provider" hcl:"aws_provider,optional"`
+	AwsRole     *string `cty:"aws_role" hcl:"aws_role,optional"`
+	Token       *string `cty:"token" hcl:"token,optional"`
+}
+
+func (c *VaultConnectionConfig) GetCredential(name string) Credential {
+
+	vaultCred := &VaultCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Address: c.Address,
+		Token:   c.Token,
+	}
+
+	return vaultCred
+}
