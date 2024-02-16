@@ -3,14 +3,9 @@ package load_mod
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"os"
-	"path/filepath"
-
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/perr"
 )
 
 // ToError formats the supplied value as an error (or just returns it if already an error)
@@ -47,58 +42,59 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 }
 
 func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modconfig.Mod, error) {
-	var modDir string
+	// TODO KAI CHECK THIS
+	modDir := configPath
 	var fileName string
-	var modFileNameToLoad string
+	//var modFileNameToLoad string
 
 	// Get information about the path
-	info, err := os.Stat(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
+	//info, err := os.Stat(configPath)
+	//if err != nil {
+	//	if os.IsNotExist(err) {
+	//		return nil, nil
+	//	}
+	//	return nil, err
+	//}
 
-	// Check if it's a regular file
-	if info.Mode().IsRegular() {
-		fileName = filepath.Base(configPath)
-		modDir = filepath.Dir(configPath)
-
-		// TODO: this is a hack (ish) to let the existing automated test to pass
-		if filepath.Ext(fileName) == ".fp" {
-			modFileNameToLoad = "ignore.fp"
-		} else {
-			modFileNameToLoad = fileName
-		}
-	} else if info.IsDir() { // Check if it's a directory
-
-		defaultModSp := filepath.Join(configPath, app_specific.ModFileName)
-
-		_, err := os.Stat(defaultModSp)
-		if err == nil {
-			// default mod.hcl exist
-			fileName = app_specific.ModFileName
-			modDir = configPath
-		} else {
-			fileName = "*.fp"
-			modDir = configPath
-		}
-		modFileNameToLoad = fileName
-	} else {
-		return nil, perr.BadRequestWithMessage("invalid path")
-	}
+	//// Check if it's a regular file
+	//if info.Mode().IsRegular() {
+	//	fileName = filepath.Base(configPath)
+	//	modDir = filepath.Dir(configPath)
+	//
+	//	// TODO: this is a hack (ish) to let the existing automated test to pass
+	//	if filepath.Ext(fileName) == ".fp" {
+	//		modFileNameToLoad = "ignore.fp"
+	//	} else {
+	//		modFileNameToLoad = fileName
+	//	}
+	//} else if info.IsDir() { // Check if it's a directory
+	//
+	//	defaultModSp := app_specific.DefaultModFilePath(configPath)
+	//
+	//	_, err := os.Stat(defaultModSp)
+	//	if err == nil {
+	//		// default mod.hcl exist
+	//		fileName = app_specific.DefaultModFileName()
+	//		modDir = configPath
+	//	} else {
+	//		fileName = "*.fp"
+	//		modDir = configPath
+	//	}
+	//	modFileNameToLoad = fileName
+	//} else {
+	//	return nil, perr.BadRequestWithMessage("invalid path")
+	//}
 
 	parseCtx := parse.NewModParseContext(
 		nil,
 		modDir,
-		parse.CreateTransientLocalMod,
+		parse.CreateDefaultMod,
 		&filehelpers.ListOptions{
 			Flags:   filehelpers.Files | filehelpers.Recursive,
 			Include: []string{"**/" + fileName},
 		})
 
-	mod, errorsAndWarnings := LoadModWithFileName(ctx, modDir, modFileNameToLoad, parseCtx)
+	mod, errorsAndWarnings := LoadModWithFileName(ctx, modDir, parseCtx)
 
 	if errorsAndWarnings.Error != nil {
 		return nil, errorsAndWarnings.Error

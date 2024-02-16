@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 	"os"
@@ -54,13 +53,13 @@ func (i *ModInstaller) updateModFile() error {
 	// strip blank lines
 	modData := []byte(helpers.TrimBlankLines(string(contents.Bytes())))
 
-	return os.WriteFile(filepaths.ModFilePath(i.workspaceMod.ModPath), modData, 0644) //nolint:gosec // TODO - review file permissions
+	return os.WriteFile(i.workspaceMod.FilePath(), modData, 0644)
 }
 
 // loads the contents of the mod.sp file and wraps it with a thin wrapper
 // to assist in byte sequence manipulation
 func (i *ModInstaller) loadModFileBytes() (*ByteSequence, error) {
-	modFileBytes, err := os.ReadFile(filepaths.ModFilePath(i.workspaceMod.ModPath))
+	modFileBytes, err := os.ReadFile(i.workspaceMod.FilePath())
 	if err != nil {
 		return nil, err
 	}
