@@ -125,7 +125,12 @@ func (f *FlowpipeConfig) importCredentials() error {
 					continue
 				}
 
+				// If the plugin name contains slash('/'), takes the last part of the name
 				connectionType := connection.PluginAlias
+				if strings.Contains(connectionType, "/") {
+					strParts := strings.Split(connectionType, "/")
+					connectionType = strParts[len(strParts)-1]
+				}
 				connectionName := block.Labels[0]
 
 				if credentialImport.Connections != nil && len(credentialImport.Connections) > 0 {
