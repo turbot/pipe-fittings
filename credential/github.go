@@ -57,3 +57,24 @@ func (c *GithubCredential) GetTtl() int {
 func (c *GithubCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type GithubConnectionConfig struct {
+	Token *string `cty:"token" hcl:"token"`
+}
+
+func (c *GithubConnectionConfig) GetCredential(name string) Credential {
+
+	githubCred := &GithubCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Token: c.Token,
+	}
+
+	return githubCred
+}

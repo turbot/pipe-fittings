@@ -57,3 +57,25 @@ func (c *JumpCloudCredential) GetTtl() int {
 func (c *JumpCloudCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type JumpCloudConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+	OrgID  *string `cty:"org_id" hcl:"org_id,optional"`
+}
+
+func (c *JumpCloudConnectionConfig) GetCredential(name string) Credential {
+
+	jumpCloudCred := &JumpCloudCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return jumpCloudCred
+}

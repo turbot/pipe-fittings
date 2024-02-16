@@ -57,3 +57,24 @@ func (c *OpenAICredential) GetTtl() int {
 func (c *OpenAICredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type OpenAIConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+}
+
+func (c *OpenAIConnectionConfig) GetCredential(name string) Credential {
+
+	openAICred := &OpenAICredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+	}
+
+	return openAICred
+}
