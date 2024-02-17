@@ -69,3 +69,28 @@ func (c *BitbucketCredential) GetTtl() int {
 func (c *BitbucketCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type BitbucketConnectionConfig struct {
+	BaseURL  *string `cty:"base_url" hcl:"base_url"`
+	Password *string `cty:"password" hcl:"password"`
+	Username *string `cty:"username" hcl:"username"`
+}
+
+func (c *BitbucketConnectionConfig) GetCredential(name string) Credential {
+
+	bitbucketCred := &BitbucketCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		BaseURL:  c.BaseURL,
+		Password: c.Password,
+		Username: c.Username,
+	}
+
+	return bitbucketCred
+}

@@ -142,3 +142,20 @@ credential_import "steampipe_okta" {
   prefix      = "sp1_" # prefix is optional
 }
 
+credential_import "steampipe_datadog" {
+  source      = "./datadog.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_guardrails" {
+  source      = "./guardrails.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_bitbucket" {
+  source      = "./bitbucket.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}

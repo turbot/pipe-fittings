@@ -64,11 +64,14 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"abuseipdb":     reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
 	"aws":           reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
+	"bitbucket":     reflect.TypeOf((*BitbucketConnectionConfig)(nil)).Elem(),
 	"clickup":       reflect.TypeOf((*ClickUpConnectionConfig)(nil)).Elem(),
+	"datadog":       reflect.TypeOf((*DatadogConnectionConfig)(nil)).Elem(),
 	"discord":       reflect.TypeOf((*DiscordConnectionConfig)(nil)).Elem(),
 	"freshdesk":     reflect.TypeOf((*FreshdeskConnectionConfig)(nil)).Elem(),
 	"github":        reflect.TypeOf((*GithubConnectionConfig)(nil)).Elem(),
 	"gitlab":        reflect.TypeOf((*GitlabConnectionConfig)(nil)).Elem(),
+	"guardrails":    reflect.TypeOf((*GuardrailsConnectionConfig)(nil)).Elem(),
 	"ip2locationio": reflect.TypeOf((*IP2LocationIOConnectionConfig)(nil)).Elem(),
 	"jumpcloud":     reflect.TypeOf((*JumpCloudConnectionConfig)(nil)).Elem(),
 	"okta":          reflect.TypeOf((*OktaConnectionConfig)(nil)).Elem(),
@@ -90,9 +93,6 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	// "jira":          reflect.TypeOf((*JiraCredential)(nil)).Elem(),
 	// "azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
 	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
-	// "bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),
-	// "datadog":       reflect.TypeOf((*DatadogCredential)(nil)).Elem(),
-	// "guardrails":    reflect.TypeOf((*GuardrailsCredential)(nil)).Elem(),
 }
 
 func InstantiateCredentialConfig(key string) (CredentialConfig, error) {
