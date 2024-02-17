@@ -29,6 +29,25 @@ func TestAwsCredential(t *testing.T) {
 	assert.Nil(newAwsCreds.SessionToken)
 }
 
+func TestAlicloudCredential(t *testing.T) {
+
+	assert := assert.New(t)
+
+	alicloudCred := AlicloudCredential{}
+
+	os.Setenv("ALIBABACLOUD_ACCESS_KEY_ID", "foo")
+	os.Setenv("ALIBABACLOUD_ACCESS_KEY_SECRET", "bar")
+
+	newCreds, err := alicloudCred.Resolve(context.TODO())
+	assert.Nil(err)
+	assert.NotNil(newCreds)
+
+	newAwsCreds := newCreds.(*AlicloudCredential)
+
+	assert.Equal("foo", *newAwsCreds.AccessKey)
+	assert.Equal("bar", *newAwsCreds.SecretKey)
+}
+
 func TestSlackDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 

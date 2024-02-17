@@ -352,6 +352,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_1"].(*credential.AbuseIPDBCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].(*credential.AbuseIPDBCredential).APIKey)
 
+	// Alicloud
+	assert.Equal("steampipe_alicloud", flowpipeConfig.CredentialImports["steampipe_alicloud"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_alicloud"].Prefix)
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].GetHclResourceImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].GetHclResourceImpl().FullName)
+	assert.Equal("LTAI4GBVFakeKey09Kxezv66", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].(*credential.AlicloudCredential).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].(*credential.AlicloudCredential).SecretKey)
+	assert.Equal("LTAI4GBVFakeKey09Kxezv66", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].(*credential.AlicloudCredential).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].(*credential.AlicloudCredential).SecretKey)
+
 	// AWS
 	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe"].Prefix)

@@ -13,6 +13,7 @@ import (
 
 var credentialTypeRegistry = map[string]reflect.Type{
 	"abuseipdb":     reflect.TypeOf((*AbuseIPDBCredential)(nil)).Elem(),
+	"alicloud":      reflect.TypeOf((*AlicloudCredential)(nil)).Elem(),
 	"aws":           reflect.TypeOf((*AwsCredential)(nil)).Elem(),
 	"azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
 	"bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),
@@ -63,6 +64,7 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 
 var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"abuseipdb":     reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
+	"alicloud":      reflect.TypeOf((*AlicloudConnectionConfig)(nil)).Elem(),
 	"aws":           reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
 	"azure":         reflect.TypeOf((*AzureConnectionConfig)(nil)).Elem(),
 	"bitbucket":     reflect.TypeOf((*BitbucketConnectionConfig)(nil)).Elem(),
