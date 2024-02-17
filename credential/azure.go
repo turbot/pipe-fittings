@@ -77,3 +77,36 @@ func (c *AzureCredential) GetTtl() int {
 func (c *AzureCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type AzureConnectionConfig struct {
+	CertificatePassword *string  `cty:"certificate_password" hcl:"certificate_password,optional"`
+	CertificatePath     *string  `cty:"certificate_path" hcl:"certificate_path,optional"`
+	ClientID            *string  `cty:"client_id" hcl:"client_id,optional"`
+	ClientSecret        *string  `cty:"client_secret" hcl:"client_secret,optional"`
+	Environment         *string  `cty:"environment" hcl:"environment,optional"`
+	IgnoreErrorCodes    []string `cty:"ignore_error_codes" hcl:"ignore_error_codes,optional"`
+	Password            *string  `cty:"password" hcl:"password,optional"`
+	SubscriptionID      *string  `cty:"subscription_id" hcl:"subscription_id,optional"`
+	TenantID            *string  `cty:"tenant_id" hcl:"tenant_id,optional"`
+	Username            *string  `cty:"username" hcl:"username,optional"`
+}
+
+func (c *AzureConnectionConfig) GetCredential(name string) Credential {
+
+	azureCred := &AzureCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		ClientID:     c.ClientID,
+		ClientSecret: c.ClientSecret,
+		Environment:  c.Environment,
+		TenantID:     c.TenantID,
+	}
+
+	return azureCred
+}

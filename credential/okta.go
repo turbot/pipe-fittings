@@ -65,3 +65,28 @@ func (c *OktaCredential) GetTtl() int {
 func (c *OktaCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type OktaConnectionConfig struct {
+	ClientID   *string `cty:"client_id" hcl:"client_id,optional"`
+	Domain     *string `cty:"domain" hcl:"domain,optional"`
+	PrivateKey *string `cty:"private_key" hcl:"private_key,optional"`
+	Token      *string `cty:"token" hcl:"token,optional"`
+}
+
+func (c *OktaConnectionConfig) GetCredential(name string) Credential {
+
+	oktaCred := &OktaCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Domain: c.Domain,
+		Token:  c.Token,
+	}
+
+	return oktaCred
+}

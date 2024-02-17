@@ -360,6 +360,32 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abc", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).AccessKey)
 	assert.Equal("123", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).SecretKey)
 
+	// Azure
+	assert.Equal("steampipe_azure", flowpipeConfig.CredentialImports["steampipe_azure"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_azure"].Prefix)
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.Credentials["azure.sp1_azure_1"].GetHclResourceImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.Credentials["azure.sp1_azure_2"].GetHclResourceImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).ClientSecret)
+	assert.Nil(flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).TenantID)
+
+	// Bitbucket
+	assert.Equal("steampipe_bitbucket", flowpipeConfig.CredentialImports["steampipe_bitbucket"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_bitbucket"].Prefix)
+	assert.Equal("bitbucket.sp1_bitbucket_1", flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].GetHclResourceImpl().FullName)
+	assert.Equal("bitbucket.sp1_bitbucket_2", flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].(*credential.BitbucketCredential).BaseURL)
+	assert.Equal("blHdmvlkFakeToken1", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].(*credential.BitbucketCredential).Password)
+	assert.Equal("MyUsername1", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].(*credential.BitbucketCredential).Username)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].(*credential.BitbucketCredential).BaseURL)
+	assert.Equal("blHdmvlkFakeToken2", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].(*credential.BitbucketCredential).Password)
+	assert.Equal("MyUsername2", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].(*credential.BitbucketCredential).Username)
+
 	// ClickUp
 	assert.Equal("steampipe_clickup", flowpipeConfig.CredentialImports["steampipe_clickup"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_clickup"].Prefix)
@@ -367,6 +393,18 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("clickup.sp1_clickup_2", flowpipeConfig.Credentials["clickup.sp1_clickup_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["clickup.sp1_clickup_1"].(*credential.ClickUpCredential).Token)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["clickup.sp1_clickup_2"].(*credential.ClickUpCredential).Token)
+
+	// Datadog
+	assert.Equal("steampipe_datadog", flowpipeConfig.CredentialImports["steampipe_datadog"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_datadog"].Prefix)
+	assert.Equal("datadog.sp1_datadog_1", flowpipeConfig.Credentials["datadog.sp1_datadog_1"].GetHclResourceImpl().FullName)
+	assert.Equal("datadog.sp1_datadog_2", flowpipeConfig.Credentials["datadog.sp1_datadog_2"].GetHclResourceImpl().FullName)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef56a7", *flowpipeConfig.Credentials["datadog.sp1_datadog_1"].(*credential.DatadogCredential).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.Credentials["datadog.sp1_datadog_1"].(*credential.DatadogCredential).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c111a1", *flowpipeConfig.Credentials["datadog.sp1_datadog_1"].(*credential.DatadogCredential).AppKey)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef57b8", *flowpipeConfig.Credentials["datadog.sp1_datadog_2"].(*credential.DatadogCredential).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.Credentials["datadog.sp1_datadog_2"].(*credential.DatadogCredential).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c222b2", *flowpipeConfig.Credentials["datadog.sp1_datadog_2"].(*credential.DatadogCredential).AppKey)
 
 	// Discord
 	assert.Equal("steampipe_discord", flowpipeConfig.CredentialImports["steampipe_discord"].FullName)
@@ -402,6 +440,18 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.Credentials["gitlab.sp1_gitlab_1"].(*credential.GitLabCredential).Token)
 	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.Credentials["gitlab.sp1_gitlab_2"].(*credential.GitLabCredential).Token)
 
+	// Guardrails
+	assert.Equal("steampipe_guardrails", flowpipeConfig.CredentialImports["steampipe_guardrails"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_guardrails"].Prefix)
+	assert.Equal("guardrails.sp1_guardrails_1", flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].GetHclResourceImpl().FullName)
+	assert.Equal("guardrails.sp1_guardrails_2", flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].GetHclResourceImpl().FullName)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].(*credential.GuardrailsCredential).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].(*credential.GuardrailsCredential).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].(*credential.GuardrailsCredential).Workspace)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].(*credential.GuardrailsCredential).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].(*credential.GuardrailsCredential).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].(*credential.GuardrailsCredential).Workspace)
+
 	// IP2LocationIO
 	assert.Equal("steampipe_ip2locationio", flowpipeConfig.CredentialImports["steampipe_ip2locationio"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_ip2locationio"].Prefix)
@@ -426,6 +476,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["teams.sp1_teams_1"].(*credential.MicrosoftTeamsCredential).AccessToken)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["teams.sp1_teams_2"].(*credential.MicrosoftTeamsCredential).AccessToken)
 
+	// Okta
+	assert.Equal("steampipe_okta", flowpipeConfig.CredentialImports["steampipe_okta"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_okta"].Prefix)
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.Credentials["okta.sp1_okta_1"].GetHclResourceImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.Credentials["okta.sp1_okta_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.Credentials["okta.sp1_okta_1"].(*credential.OktaCredential).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["okta.sp1_okta_1"].(*credential.OktaCredential).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.Credentials["okta.sp1_okta_2"].(*credential.OktaCredential).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["okta.sp1_okta_2"].(*credential.OktaCredential).Token)
+
 	// OpenAI
 	assert.Equal("steampipe_openai", flowpipeConfig.CredentialImports["steampipe_openai"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_openai"].Prefix)
@@ -433,6 +493,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("openai.sp1_openai_2", flowpipeConfig.Credentials["openai.sp1_openai_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["openai.sp1_openai_1"].(*credential.OpenAICredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["openai.sp1_openai_2"].(*credential.OpenAICredential).APIKey)
+
+	// Opsgenie
+	assert.Equal("steampipe_opsgenie", flowpipeConfig.CredentialImports["steampipe_opsgenie"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_opsgenie"].Prefix)
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].GetHclResourceImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].GetHclResourceImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].(*credential.OpsgenieCredential).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].(*credential.OpsgenieCredential).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].(*credential.OpsgenieCredential).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].(*credential.OpsgenieCredential).IncidentAPIKey)
 
 	// PagerDuty
 	assert.Equal("steampipe_pagerduty", flowpipeConfig.CredentialImports["steampipe_pagerduty"].FullName)
@@ -521,6 +591,18 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("virustotal.sp1_virustotal_2", flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_1"].(*credential.VirusTotalCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].(*credential.VirusTotalCredential).APIKey)
+
+	// Zendesk
+	assert.Equal("steampipe_zendesk", flowpipeConfig.CredentialImports["steampipe_zendesk"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_zendesk"].Prefix)
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].GetHclResourceImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].GetHclResourceImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Email)
+	assert.Equal("dmi", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Email)
+	assert.Equal("dmj", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Token)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {

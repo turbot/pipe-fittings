@@ -63,3 +63,26 @@ func (c *OpsgenieCredential) GetTtl() int {
 func (c *OpsgenieCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type OpsgenieConnectionConfig struct {
+	AlertAPIKey    *string `cty:"alert_api_key" hcl:"alert_api_key"`
+	IncidentAPIKey *string `cty:"incident_api_key" hcl:"incident_api_key"`
+}
+
+func (c *OpsgenieConnectionConfig) GetCredential(name string) Credential {
+
+	opsgenieCred := &OpsgenieCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		AlertAPIKey:    c.AlertAPIKey,
+		IncidentAPIKey: c.IncidentAPIKey,
+	}
+
+	return opsgenieCred
+}

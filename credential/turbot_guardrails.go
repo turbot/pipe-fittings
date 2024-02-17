@@ -82,3 +82,29 @@ func (c *GuardrailsCredential) GetTtl() int {
 func (c *GuardrailsCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type GuardrailsConnectionConfig struct {
+	AccessKey *string `cty:"access_key" hcl:"access_key,optional"`
+	Profile   *string `cty:"profile" hcl:"profile,optional"`
+	SecretKey *string `cty:"secret_key" hcl:"secret_key,optional"`
+	Workspace *string `cty:"workspace" hcl:"workspace,optional"`
+}
+
+func (c *GuardrailsConnectionConfig) GetCredential(name string) Credential {
+
+	guardrailsCred := &GuardrailsCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		AccessKey: c.AccessKey,
+		SecretKey: c.SecretKey,
+		Workspace: c.Workspace,
+	}
+
+	return guardrailsCred
+}

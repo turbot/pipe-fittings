@@ -72,3 +72,28 @@ func (c *DatadogCredential) GetTtl() int {
 func (c *DatadogCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type DatadogConnectionConfig struct {
+	APIKey *string `cty:"api_key" hcl:"api_key"`
+	APIUrl *string `cty:"api_url" hcl:"api_url"`
+	AppKey *string `cty:"app_key" hcl:"app_key"`
+}
+
+func (c *DatadogConnectionConfig) GetCredential(name string) Credential {
+
+	datadogCred := &DatadogCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		APIKey: c.APIKey,
+		APIUrl: c.APIUrl,
+		AppKey: c.AppKey,
+	}
+
+	return datadogCred
+}
