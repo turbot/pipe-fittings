@@ -159,3 +159,9 @@ credential_import "steampipe_bitbucket" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_azure" {
+  source      = "./azure.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}

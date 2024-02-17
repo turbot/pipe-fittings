@@ -64,6 +64,7 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"abuseipdb":     reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
 	"aws":           reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
+	"azure":         reflect.TypeOf((*AzureConnectionConfig)(nil)).Elem(),
 	"bitbucket":     reflect.TypeOf((*BitbucketConnectionConfig)(nil)).Elem(),
 	"clickup":       reflect.TypeOf((*ClickUpConnectionConfig)(nil)).Elem(),
 	"datadog":       reflect.TypeOf((*DatadogConnectionConfig)(nil)).Elem(),
@@ -91,7 +92,6 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"zendesk":       reflect.TypeOf((*ZendeskConnectionConfig)(nil)).Elem(),
 	// "ipstack":       reflect.TypeOf((*IPStackConnectionConfig)(nil)).Elem(),
 	// "jira":          reflect.TypeOf((*JiraCredential)(nil)).Elem(),
-	// "azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
 	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
 }
 

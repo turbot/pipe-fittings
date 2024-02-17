@@ -360,6 +360,20 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abc", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).AccessKey)
 	assert.Equal("123", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).SecretKey)
 
+	// Azure
+	assert.Equal("steampipe_azure", flowpipeConfig.CredentialImports["steampipe_azure"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_azure"].Prefix)
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.Credentials["azure.sp1_azure_1"].GetHclResourceImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.Credentials["azure.sp1_azure_2"].GetHclResourceImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).ClientSecret)
+	assert.Nil(flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).TenantID)
+
 	// Bitbucket
 	assert.Equal("steampipe_bitbucket", flowpipeConfig.CredentialImports["steampipe_bitbucket"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_bitbucket"].Prefix)
