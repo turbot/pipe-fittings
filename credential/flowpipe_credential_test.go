@@ -42,10 +42,10 @@ func TestAlicloudCredential(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(newCreds)
 
-	newAwsCreds := newCreds.(*AlicloudCredential)
+	newAlicloudCreds := newCreds.(*AlicloudCredential)
 
-	assert.Equal("foo", *newAwsCreds.AccessKey)
-	assert.Equal("bar", *newAwsCreds.SecretKey)
+	assert.Equal("foo", *newAlicloudCreds.AccessKey)
+	assert.Equal("bar", *newAlicloudCreds.SecretKey)
 }
 
 func TestSlackDefaultCredential(t *testing.T) {
