@@ -2,127 +2,42 @@ package workspace
 
 import (
 	"fmt"
-	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
-	"log/slog"
-	"os"
-	"path/filepath"
-	"strings"
-
-	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"log/slog"
 )
 
-// GetResourcesFromArgs retrieves queries from args
-//
-// For each arg check if it is a named query or a file, before falling back to treating it as sql
-func GetResourcesFromArgs[T modconfig.ModTreeItem](args []string, w *Workspace) ([]modconfig.ModTreeItem, map[string]*modconfig.QueryArgs, error) {
-	utils.LogTime("execute.GetResourcesFromArgs start")
-	defer utils.LogTime("execute.GetResourcesFromArgs end")
-
-	var targets []modconfig.ModTreeItem
-	var queryArgsMap = map[string]*modconfig.QueryArgs{}
-	for _, arg := range args {
-		target, args, err := ResolveResourceAndArgsFromSQLString[T](arg, w)
-		if err != nil {
-			return nil, nil, err
-		}
-		if target == nil {
-			continue
-		}
-		targets = append(targets, target)
-		if args != nil {
-			queryArgsMap[target.GetUnqualifiedName()] = args
-		}
+func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider, bool) {
+	parsedName, err := modconfig.ParseResourceName(queryName)
+	if err != nil {
+		return nil, false
 	}
-	return targets, queryArgsMap, nil
+	// try to find the resource
+	if resource, ok := w.GetResource(parsedName); ok {
+		// found a resource - is it a query provider
+		if qp := resource.(modconfig.QueryProvider); ok {
+			return qp, true
+		}
+		slog.Debug("GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
+	}
+
+	return nil, false
 }
 
-// ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a query and query args
-func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w *Workspace) (modconfig.ModTreeItem, *modconfig.QueryArgs, error) {
-	var err error
+// GetResourceMaps implements ResourceMapsProvider
+func (w *Workspace) GetResourceMaps() *modconfig.ResourceMaps {
+	w.loadLock.Lock()
+	defer w.loadLock.Unlock()
 
-	// 1) check if this is a resource
-	// if this looks like a named query provider invocation, parse the sql string for arguments
-	resource, args, err := extractResourceFromQueryString[T](sqlString, w)
-	if err != nil {
-		return nil, nil, err
+	// if this a source snapshot workspace, create a ResourceMaps containing ONLY source snapshot paths
+	if len(w.SourceSnapshots) != 0 {
+		return modconfig.NewSourceSnapshotModResources(w.SourceSnapshots)
 	}
-
-	if resource != nil {
-		// success
-		return resource, args, nil
-	}
-
-	// 2) if the target type is query, just use the query string as is and assume it is valid SQL
-	if utils.GetGenericTypeName[T]() == schema.BlockTypeQuery {
-		q, err := w.createQueryResourceForCommandLineQuery(sqlString)
-		if err != nil {
-			return nil, nil, err
-		}
-		return q, nil, nil
-	}
-
-	// failed to resolve
-	return nil, nil, nil
+	return w.Mod.ResourceMaps
 }
 
-// does the input look like a resource which can be executed as a query
-// Note: if anything fails just return nil values
-func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w *Workspace) (modconfig.ModTreeItem, *modconfig.QueryArgs, error) {
-	// can we extract a resource name from the string
-	parsedResourceName, err := extractResourceNameFromQuery[T](input)
-	if err != nil {
-		return nil, nil, err
-	}
-	if parsedResourceName == nil {
-		return nil, nil, nil
-	}
-	// ok we managed to extract a resource name - does this resource exist?
-	resource, ok := w.GetResource(parsedResourceName)
-	if !ok {
-		return nil, nil, nil
-	}
-
-	//- is the resource a query provider, and if so does it have a query?
-	target, ok := resource.(T)
-	if !ok {
-		typeName := utils.GetGenericTypeName[T]()
-		return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), typeName)
-	}
-
-	_, args, err := parse.ParseQueryInvocation(input)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// success
-	return target, args, nil
-}
-
-// convert the given command line query into a query resource and add to workspace
-// this is to allow us to use existing dashboard execution code
-func (w *Workspace) createQueryResourceForCommandLineQuery(queryString string) (*modconfig.Query, error) {
-	// build name
-	shortName := "command_line_query"
-
-	// this is NOT a named query - create the query using RawSql
-	q := modconfig.NewQuery(&hcl.Block{Type: schema.BlockTypeQuery}, w.Mod, shortName).(*modconfig.Query)
-	q.SQL = utils.ToStringPointer(queryString)
-
-	// add empty metadata
-	q.SetMetadata(&modconfig.ResourceMetadata{})
-
-	// add to the workspace mod so the dashboard execution code can find it
-	if err := w.Mod.AddResource(q); err != nil {
-		return nil, err
-	}
-	// return the new resource
-	return q, nil
+func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
+	return w.GetResourceMaps().GetResource(parsedName)
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
@@ -169,81 +84,5 @@ func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider modconfig.QueryP
 
 	// so the  sql is NOT a named query
 	return queryProvider.GetResolvedQuery(runtimeArgs)
-
-}
-
-// try to treat the input string as a file name and if it exists, return its contents
-func (w *Workspace) getQueryFromFile(input string) (*modconfig.ResolvedQuery, bool, error) {
-	// get absolute filename
-	path, err := filepath.Abs(input)
-	if err != nil {
-		//nolint:golint,nilerr // if this gives any error, return not exist
-		return nil, false, nil
-	}
-
-	// does it exist?
-	if _, err := os.Stat(path); err != nil {
-		//nolint:golint,nilerr // if this gives any error, return not exist (we may get a not found or a path too long for example)
-		return nil, false, nil
-	}
-
-	// read file
-	fileBytes, err := os.ReadFile(path)
-	if err != nil {
-		return nil, true, err
-	}
-
-	res := &modconfig.ResolvedQuery{
-		RawSQL:     string(fileBytes),
-		ExecuteSQL: string(fileBytes),
-	}
-	return res, true, nil
-}
-
-// attempt top extra a resource name of the given type from the input string
-// look at string up the the first open bracket
-func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modconfig.ParsedResourceName, error) {
-	resourceType := utils.GetGenericTypeName[T]()
-	if resourceType == "variable" {
-		// name of variable resources is "var."
-		resourceType = "var"
-	}
-
-	// remove parameters from the input string before calling ParseResourceName
-	// as parameters may break parsing
-	openBracketIdx := strings.Index(input, "(")
-	if openBracketIdx != -1 {
-		input = input[:openBracketIdx]
-	}
-
-	// if there is not type specified, add it
-	if !strings.Contains(input, ".") {
-		input = resourceType + "." + input
-	}
-
-	parsedName, err := modconfig.ParseResourceName(input)
-
-	// if the typo eis query, do not bubble error up, just return nil parsed name
-	// it is expected that this function may fail if a raw query is passed to it
-	if err != nil && resourceType == "query" {
-		return nil, nil
-	}
-
-	return parsedName, err
-}
-
-func queryLooksLikeExecutableResource(input string) (string, bool) {
-	// remove parameters from the input string before calling ParseResourceName
-	// as parameters may break parsing
-	openBracketIdx := strings.Index(input, "(")
-	if openBracketIdx != -1 {
-		input = input[:openBracketIdx]
-	}
-	parsedName, err := modconfig.ParseResourceName(input)
-	if err == nil && helpers.StringSliceContains(schema.QueryProviderBlocks, parsedName.ItemType) {
-		return parsedName.ToResourceName(), true
-	}
-	// do not bubble error up, just return false
-	return "", false
 
 }
