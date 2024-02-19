@@ -43,8 +43,29 @@ func (c *AlicloudCredential) Validate() hcl.Diagnostics {
 
 func (c *AlicloudCredential) Resolve(ctx context.Context) (Credential, error) {
 
-	alicloudAccessKeyEnvVar := os.Getenv("ALIBABACLOUD_ACCESS_KEY_ID")
-	alicloudSecretKeyEnvVar := os.Getenv("ALIBABACLOUD_ACCESS_KEY_SECRET")
+	// The order of precedence for the environment variable
+	// 1. ALIBABACLOUD_ACCESS_KEY_ID
+	// 2. ALICLOUD_ACCESS_KEY_ID
+	// 3. ALICLOUD_ACCESS_KEY
+	alicloudAccessKeyEnvVar := os.Getenv("ALICLOUD_ACCESS_KEY")
+	if os.Getenv("ALICLOUD_ACCESS_KEY_ID") != "" {
+		alicloudAccessKeyEnvVar = os.Getenv("ALICLOUD_ACCESS_KEY_ID")
+	}
+	if os.Getenv("ALIBABACLOUD_ACCESS_KEY_ID") != "" {
+		alicloudAccessKeyEnvVar = os.Getenv("ALIBABACLOUD_ACCESS_KEY_ID")
+	}
+
+	// The order of precedence for the environment variable
+	// 1. ALIBABACLOUD_ACCESS_KEY_SECRET
+	// 2. ALICLOUD_ACCESS_KEY_SECRET
+	// 3. ALICLOUD_SECRET_KEY
+	alicloudSecretKeyEnvVar := os.Getenv("ALICLOUD_SECRET_KEY")
+	if os.Getenv("ALICLOUD_ACCESS_KEY_SECRET") != "" {
+		alicloudSecretKeyEnvVar = os.Getenv("ALICLOUD_ACCESS_KEY_SECRET")
+	}
+	if os.Getenv("ALIBABACLOUD_ACCESS_KEY_SECRET") != "" {
+		alicloudSecretKeyEnvVar = os.Getenv("ALIBABACLOUD_ACCESS_KEY_SECRET")
+	}
 
 	// Don't modify existing credential, resolve to a new one
 	newCreds := &AlicloudCredential{
