@@ -3,20 +3,19 @@ package load_mod
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/hcl/v2"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/perr"
-
+	"github.com/hashicorp/hcl/v2"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
@@ -327,7 +326,8 @@ func getPseudoResourceMetadata(mod *modconfig.Mod, resourceName string, path str
 	return m, nil
 }
 
-// TODO this function is included for backwards compatibility - it is used for Flowpipe tests
+// Deprecated
+// TODO this function is included for backwards compatibility - it is used for Flowpipe LoadPipelines
 func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
 	defer func() {
 		if r := recover(); r != nil {

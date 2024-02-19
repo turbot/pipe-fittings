@@ -3,11 +3,12 @@ package modinstaller
 import (
 	"bytes"
 	"fmt"
+	"os"
+
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
-	"os"
 )
 
 // updates the 'require' block in 'mod.sp'
@@ -53,7 +54,7 @@ func (i *ModInstaller) updateModFile() error {
 	// strip blank lines
 	modData := []byte(helpers.TrimBlankLines(string(contents.Bytes())))
 
-	return os.WriteFile(i.workspaceMod.FilePath(), modData, 0644)
+	return os.WriteFile(i.workspaceMod.FilePath(), modData, 0644) //nolint:gosec // TODO: check file permission
 }
 
 // loads the contents of the mod.sp file and wraps it with a thin wrapper

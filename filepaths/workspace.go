@@ -2,10 +2,10 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"path"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants/runtime"
 )
 

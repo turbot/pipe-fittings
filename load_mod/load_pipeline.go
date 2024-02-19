@@ -3,13 +3,14 @@ package load_mod
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
-	"os"
-	"path/filepath"
 )
 
 // ToError formats the supplied value as an error (or just returns it if already an error)
@@ -45,9 +46,9 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 	return pipelines, triggers, err
 }
 
-// TODO update this to NOT use deprectaed LoadModWithFileName
+// TODO update this to NOT use deprecated LoadModWithFileName
 func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modconfig.Mod, error) {
-	modDir := configPath
+	var modDir string
 	var fileName string
 	var modFileNameToLoad string
 
