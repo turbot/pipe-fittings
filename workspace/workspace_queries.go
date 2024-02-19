@@ -2,7 +2,10 @@ package workspace
 
 import (
 	"fmt"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -11,16 +14,37 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/parse"
 )
 
-// ResolveQueryAndArgsFromSQLString attempts to resolve 'arg' to a query and query args
-func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (modconfig.QueryProvider, *modconfig.QueryArgs, error) {
+// GetResourcesFromArgs retrieves queries from args
+//
+// For each arg check if it is a named query or a file, before falling back to treating it as sql
+func (w *Workspace) GetResourcesFromArgs(args []string) ([]modconfig.ModTreeItem, map[string]*modconfig.QueryArgs, error) {
+	utils.LogTime("execute.GetResourcesFromArgs start")
+	defer utils.LogTime("execute.GetResourcesFromArgs end")
+
+	var res []modconfig.ModTreeItem
+	var argsMap = map[string]*modconfig.QueryArgs{}
+	for _, arg := range args {
+		queryProvider, args, err := w.ResolveResourceAndArgsFromSQLString(arg)
+		if err != nil {
+			return nil, nil, err
+		}
+		res = append(res, queryProvider)
+		if args != nil {
+			argsMap[queryProvider.GetUnqualifiedName()] = args
+		}
+	}
+	return res, argsMap, nil
+}
+
+// ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a query and query args
+func (w *Workspace) ResolveResourceAndArgsFromSQLString(sqlString string) (modconfig.ModTreeItem, *modconfig.QueryArgs, error) {
 	var err error
 
 	// 1) check if this is a resource
 	// if this looks like a named query provider invocation, parse the sql string for arguments
-	resource, args, err := w.extractQueryProviderFromQueryString(sqlString)
+	resource, args, err := w.extractResourceFromQueryString(sqlString)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -31,10 +55,63 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (modconfi
 		return resource, args, nil
 	}
 
-	//// 3) just use the query string as is and assume it is valid SQL
-	//return &modconfig.ResolvedQuery{RawSQL: sqlString, ExecuteSQL: sqlString}, nil, nil
-	return nil, nil, fmt.Errorf("could not resolve query from SQL string: %s", sqlString)
+	// 2) just use the query string as is and assume it is valid SQL
+	q, err := w.createQueryResourceForCommandLineQuery(sqlString)
+	if err != nil {
+		return nil, nil, err
+	}
+	return q, nil, nil
 
+}
+
+// does the input look like a resource which can be executed as a query
+// Note: if anything fails just return nil values
+func (w *Workspace) extractResourceFromQueryString(input string) (modconfig.ModTreeItem, *modconfig.QueryArgs, error) {
+	// can we extract a resource name from the string
+	parsedResourceName := extractResourceNameFromQuery(input)
+	if parsedResourceName == nil {
+		return nil, nil, nil
+	}
+	// ok we managed to extract a resource name - does this resource exist?
+	resource, ok := w.GetResource(parsedResourceName)
+	if !ok {
+		return nil, nil, nil
+	}
+
+	//- is the resource a query provider, and if so does it have a query?
+	queryProvider, ok := resource.(modconfig.QueryProvider)
+	if !ok {
+		return nil, nil, fmt.Errorf("%s cannot be executed as a query", input)
+	}
+
+	_, args, err := parse.ParseQueryInvocation(input)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// success
+	return queryProvider, args, nil
+}
+
+// convert the given command line query into a query resource and add to workspace
+// this is to allow us to use existing dashboard execution code
+func (w *Workspace) createQueryResourceForCommandLineQuery(queryString string) (*modconfig.Query, error) {
+	// build name
+	shortName := "command_line_query"
+
+	// this is NOT a named query - create the query using RawSql
+	q := modconfig.NewQuery(&hcl.Block{Type: schema.BlockTypeQuery}, w.Mod, shortName).(*modconfig.Query)
+	q.SQL = utils.ToStringPointer(queryString)
+
+	// add empty metadata
+	q.SetMetadata(&modconfig.ResourceMetadata{})
+
+	// add to the workspace mod so the dashboard execution code can find it
+	if err := w.Mod.AddResource(q); err != nil {
+		return nil, err
+	}
+	// return the new resource
+	return q, nil
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
@@ -110,34 +187,6 @@ func (w *Workspace) getQueryFromFile(input string) (*modconfig.ResolvedQuery, bo
 		ExecuteSQL: string(fileBytes),
 	}
 	return res, true, nil
-}
-
-// does the input look like a resource which can be executed as a query
-// Note: if anything fails just return nil values
-func (w *Workspace) extractQueryProviderFromQueryString(input string) (modconfig.QueryProvider, *modconfig.QueryArgs, error) {
-	// can we extract a resource name from the string
-	parsedResourceName := extractResourceNameFromQuery(input)
-	if parsedResourceName == nil {
-		return nil, nil, nil
-	}
-	// ok we managed to extract a resource name - does this resource exist?
-	resource, ok := w.GetResource(parsedResourceName)
-	if !ok {
-		return nil, nil, nil
-	}
-
-	//- is the resource a query provider, and if so does it have a query?
-	queryProvider, ok := resource.(modconfig.QueryProvider)
-	if !ok {
-		return nil, nil, fmt.Errorf("%s cannot be executed as a query", input)
-	}
-
-	_, args, err := parse.ParseQueryInvocation(input)
-	if err != nil {
-		return nil, nil, err
-	}
-	// success
-	return queryProvider, args, nil
 }
 
 func extractResourceNameFromQuery(input string) *modconfig.ParsedResourceName {
