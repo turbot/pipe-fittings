@@ -135,12 +135,7 @@ func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modco
 		input = input[:openBracketIdx]
 	}
 
-	// if there is not type specified, add it
-	if !strings.Contains(input, ".") {
-		input = resourceType + "." + input
-	}
-
-	parsedName, err := modconfig.ParseResourceName(input)
+	parsedName, err := parseResourceName(input, resourceType)
 
 	// if the typo eis query, do not bubble error up, just return nil parsed name
 	// it is expected that this function may fail if a raw query is passed to it
@@ -149,4 +144,29 @@ func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modco
 	}
 
 	return parsedName, err
+}
+
+func parseResourceName(targetName string, commandTargetType string) (*modconfig.ParsedResourceName, error) {
+	parsed := &modconfig.ParsedResourceName{}
+	parts := strings.Split(targetName, ".")
+
+	switch len(parts) {
+	case 0:
+		return nil, sperr.New("empty name passed to resolveResourceName")
+	case 1:
+		// if no type was specified, deduce the type from the check command used
+		parsed.Name = parts[0]
+		parsed.ItemType = commandTargetType
+	case 2:
+		parsed.ItemType = parts[0]
+		parsed.Name = parts[1]
+	case 3:
+		parsed.Mod = parts[0]
+		parsed.ItemType = parts[1]
+		parsed.Name = parts[2]
+	default:
+		return nil, sperr.New("invalid name passed to ParseResourceName")
+	}
+
+	return parsed, nil
 }
