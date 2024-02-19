@@ -32,6 +32,7 @@ type FlowpipeWorkspaceProfile struct {
 	MaxConcurrencyFunction  *int    `hcl:"max_concurrency_function" cty:"max_concurrency_function"`
 	MaxConcurrencyQuery     *int    `hcl:"max_concurrency_query" cty:"max_concurrency_query"`
 	ProcessRetention        *int    `hcl:"process_retention" cty:"process_retention"`
+	BaseUrl                 *string `hcl:"base_url" cty:"base_url"`
 
 	DeclRange hcl.Range
 }
@@ -119,6 +120,9 @@ func (p *FlowpipeWorkspaceProfile) setBaseProperties() {
 	if p.ProcessRetention == nil {
 		p.ProcessRetention = p.Base.ProcessRetention
 	}
+	if p.BaseUrl == nil {
+		p.BaseUrl = p.Base.BaseUrl
+	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
@@ -142,6 +146,7 @@ func (p *FlowpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]inte
 	res.SetIntItem(p.MaxConcurrencyHttp, constants.ArgMaxConcurrencyHttp)
 	res.SetIntItem(p.MaxConcurrencyQuery, constants.ArgMaxConcurrencyQuery)
 	res.SetIntItem(p.ProcessRetention, constants.ArgProcessRetention)
+	res.SetStringItem(p.BaseUrl, constants.ArgBaseUrl)
 
 	return res
 }
