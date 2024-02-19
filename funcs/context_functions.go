@@ -122,6 +122,7 @@ func ContextFunctions(baseDir string) map[string]function.Function {
 		"trimspace":        stdlib.TrimSpaceFunc,
 		"trimsuffix":       stdlib.TrimSuffixFunc,
 		"try":              tryfunc.TryFunc,
+		"type":             TypeFunc,
 		"upper":            stdlib.UpperFunc,
 		"urlencode":        funcs.URLEncodeFunc,
 		"uuid":             funcs.UUIDFunc,
@@ -136,4 +137,31 @@ func ContextFunctions(baseDir string) map[string]function.Function {
 	}
 
 	return ctxFuncs
+}
+
+// Custom type function returns the type of the given value
+var TypeFunc = function.New(&function.Spec{
+	Description: `Returns the type of the given value.`,
+	Params: []function.Parameter{
+		{
+			Name:             "value",
+			Type:             cty.DynamicPseudoType,
+			AllowUnknown:     true,
+			AllowDynamicType: true,
+			AllowNull:        true,
+		},
+	},
+	Type: func(args []cty.Value) (cty.Type, error) {
+		return cty.String, nil
+	},
+	Impl: func(args []cty.Value, retType cty.Type) (cty.Value, error) {
+		valueType := args[0].Type()
+		typeName := valueType.FriendlyName()
+
+		return cty.StringVal(typeName), nil
+	},
+})
+
+func Type(input []cty.Value) (cty.Value, error) {
+	return TypeFunc.Call(input)
 }
