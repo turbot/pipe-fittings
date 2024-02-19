@@ -206,6 +206,7 @@ func (q *QueryProviderImpl) GetShowData() *printers.RowData {
 		printers.NewFieldValue("Args", q.Args),
 		printers.NewFieldValue("Params", q.Params),
 	)
+	// merge fields from base, putting base fields first
 	res.Merge(q.RuntimeDependencyProviderImpl.GetShowData())
 	return res
 }
