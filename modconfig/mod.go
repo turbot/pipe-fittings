@@ -2,6 +2,9 @@ package modconfig
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -11,8 +14,6 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
-	"os"
-	"path/filepath"
 )
 
 // mod name used if a default mod is created for a workspace which does not define one explicitly
@@ -285,7 +286,7 @@ func (m *Mod) Save() error {
 	}
 
 	// load existing mod data and remove the mod definitions from it
-	return os.WriteFile(app_specific.DefaultModFilePath(m.ModPath), f.Bytes(), 0644)
+	return os.WriteFile(app_specific.DefaultModFilePath(m.ModPath), f.Bytes(), 0644) //nolint:gosec // TODO: check file permission
 }
 
 func (m *Mod) HasDependentMods() bool {

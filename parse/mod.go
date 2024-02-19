@@ -3,6 +3,9 @@ package parse
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"path"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/funcs"
@@ -12,8 +15,6 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/zclconf/go-cty/cty"
-	"log/slog"
-	"path"
 )
 
 func LoadModfile(modPath string) (*modconfig.Mod, error) {
