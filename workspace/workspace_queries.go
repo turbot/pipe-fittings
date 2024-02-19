@@ -31,38 +31,10 @@ func (w *Workspace) ResolveQueryAndArgsFromSQLString(sqlString string) (modconfi
 		return resource, args, nil
 	}
 
-	//// 2) is this a file
-	//// get absolute filename
-	//filePath, err := filepath.Abs(sqlString)
-	//if err != nil {
-	//	return nil, nil, fmt.Errorf("%s", err.Error())
-	//}
-	//fileQuery, fileExists, err := w.getQueryFromFile(filePath)
-	//if err != nil {
-	//	return nil, nil, fmt.Errorf("%s", err.Error())
-	//}
-	//if fileExists {
-	//	if fileQuery.ExecuteSQL == "" {
-	//		error_helpers.ShowWarning(fmt.Sprintf("file '%s' does not contain any data", filePath))
-	//		// (just return the empty query - it will be filtered above)
-	//	}
-	//	return fileQuery, nil, nil
-	//}
-	//// the argument cannot be resolved as an existing file
-	//// if it has a sql suffix (i.e we believe the user meant to specify a file) return a file not found error
-	//if strings.HasSuffix(strings.ToLower(sqlString), ".sql") {
-	//	return nil, nil, fmt.Errorf("file '%s' does not exist", filePath)
-	//}
-	//
-	//// so we have not managed to resolve this - if it looks like a named query or control
-	//// (i.e we believe the user meant to specify a query) return a not found error
-	//// NOTE: this needs to come after the file suffix check because this handles the resource name query.sql edge case
-	//if name, isResource := queryLooksLikeExecutableResource(sqlString); isResource {
-	//	return nil, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
-	//}
-	//
 	//// 3) just use the query string as is and assume it is valid SQL
 	//return &modconfig.ResolvedQuery{RawSQL: sqlString, ExecuteSQL: sqlString}, nil, nil
+	return nil, nil, fmt.Errorf("could not resolve query from SQL string: %s", sqlString)
+
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
