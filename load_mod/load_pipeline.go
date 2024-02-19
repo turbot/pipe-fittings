@@ -3,11 +3,11 @@ package load_mod
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"path/filepath"
 
 	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
@@ -46,12 +46,13 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfi
 	return pipelines, triggers, err
 }
 
+// TODO update this to NOT use deprecated LoadModWithFileName
 func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modconfig.Mod, error) {
 	var modDir string
 	var fileName string
 	var modFileNameToLoad string
 
-	// Get information about the path
+	//Get information about the path
 	info, err := os.Stat(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -73,12 +74,12 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 		}
 	} else if info.IsDir() { // Check if it's a directory
 
-		defaultModSp := filepath.Join(configPath, app_specific.ModFileName)
+		defaultModSp := filepath.Join(configPath, app_specific.ModFileNameDeprecated)
 
 		_, err := os.Stat(defaultModSp)
 		if err == nil {
 			// default mod.hcl exist
-			fileName = app_specific.ModFileName
+			fileName = app_specific.ModFileNameDeprecated
 			modDir = configPath
 		} else {
 			fileName = "*.fp"
@@ -92,7 +93,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 	parseCtx := parse.NewModParseContext(
 		nil,
 		modDir,
-		parse.CreateTransientLocalMod,
+		parse.CreateDefaultMod,
 		&filehelpers.ListOptions{
 			Flags:   filehelpers.Files | filehelpers.Recursive,
 			Include: []string{"**/" + fileName},

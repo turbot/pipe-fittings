@@ -219,7 +219,7 @@ func (w *Workspace) setModfileExists() {
 		viper.Set(constants.ArgModLocation, filepath.Dir(modFile))
 		w.Path = filepath.Dir(modFile)
 	} else {
-		slog.Debug("no modfile exists in workspace folder - NOT creating pseudoresources and only loading resource files from top level folder")
+		slog.Debug("no modfile exists in workspace folder - NOT creating pseudo-resources and only loading resource files from top level folder")
 		w.ListFlag = filehelpers.Files
 		w.loadPseudoResources = false
 	}
@@ -233,6 +233,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 
 	// resolve values of all input variables
 	// we WILL validate missing variables when loading
+	// NOTE: this does an initial mod load, loading only variable blocks
 	validateMissing := true
 	inputVariables, errorsAndWarnings := w.getInputVariables(ctx, validateMissing)
 	if errorsAndWarnings.Error != nil {

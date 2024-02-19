@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	filehelpers "github.com/turbot/go-kit/files"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
@@ -288,12 +286,7 @@ func (m *Mod) Save() error {
 	}
 
 	// load existing mod data and remove the mod definitions from it
-	nonModData, err := m.loadNonModDataInModFile()
-	if err != nil {
-		return err
-	}
-	modData := append(f.Bytes(), nonModData...)
-	return os.WriteFile(filepaths.ModFilePath(m.ModPath), modData, 0644) //nolint:gosec // TODO: check this gosec lint issue
+	return os.WriteFile(app_specific.DefaultModFilePath(m.ModPath), f.Bytes(), 0644) //nolint:gosec // TODO: check file permission
 }
 
 func (m *Mod) HasDependentMods() bool {
@@ -305,32 +298,6 @@ func (m *Mod) GetModDependency(modName string) *ModVersionConstraint {
 		return nil
 	}
 	return m.Require.GetModDependency(modName)
-}
-
-func (m *Mod) loadNonModDataInModFile() ([]byte, error) {
-	modFilePath := filepaths.ModFilePath(m.ModPath)
-	if !filehelpers.FileExists(modFilePath) {
-		return nil, nil
-	}
-
-	fileData, err := os.ReadFile(modFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	fileLines := strings.Split(string(fileData), "\n")
-	decl := m.DeclRange
-	// just use line positions
-	start := decl.Start.Line - 1
-	end := decl.End.Line - 1
-
-	var resLines []string
-	for i, line := range fileLines {
-		if (i < start || i > end) && line != "" {
-			resLines = append(resLines, line)
-		}
-	}
-	return []byte(strings.Join(resLines, "\n")), nil
 }
 
 func (m *Mod) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
@@ -348,6 +315,10 @@ func (m *Mod) ValidateRequirements() []error {
 		validationErrors = append(validationErrors, err)
 	}
 	return validationErrors
+}
+
+func (m *Mod) FilePath() string {
+	return m.modFilePath
 }
 
 func (m *Mod) validateSteampipeVersion() error {

@@ -78,7 +78,10 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 // getInstalledMods returns a map installed mods, and the versions installed for each
 func (l *WorkspaceLock) getInstalledMods() error {
 
-	var includes = []string{fmt.Sprintf("**/%s", app_specific.ModFileName)}
+	var includes []string
+	for _, modFileName := range app_specific.ModFileNames() {
+		includes = append(includes, fmt.Sprintf("**/%s", modFileName))
+	}
 
 	// recursively search for all the mod.sp files under the .steampipe/mods folder, then build the mod name from the file path
 	modFiles, err := filehelpers.ListFiles(l.ModInstallationPath, &filehelpers.ListOptions{

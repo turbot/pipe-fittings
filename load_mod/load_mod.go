@@ -9,26 +9,28 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/perr"
-
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
-func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+// LoadMod parses all hcl files in modPath and returns a single mod
+// NOTE: it is an error if there is more than 1 mod defined, however zero mods is acceptable
+// - a default mod will be created assuming there are any resource files
+func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
 	defer func() {
 		if r := recover(); r != nil {
 			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
 		}
 	}()
 
-	mod, loadModResult := loadModDefinition(ctx, modPath, modFile, parseCtx)
+	mod, loadModResult := loadModDefinition(modPath, parseCtx)
 	if loadModResult.Error != nil {
 		return nil, loadModResult
 	}
@@ -58,53 +60,16 @@ func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx 
 	return mod, errorsAndWarnings
 }
 
-// LoadMod parses all hcl files in modPath and returns a single mod
-// if CreatePseudoResources flag is set, construct hcl resources for files with specific extensions
-// NOTE: it is an error if there is more than 1 mod defined, however zero mods is acceptable
-// - a default mod will be created assuming there are any resource files
-func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
-	defer func() {
-		if r := recover(); r != nil {
-			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
-		}
-	}()
-
-	return LoadModWithFileName(ctx, modPath, app_specific.ModFileName, parseCtx)
-}
-
-func ModFileExists(modPath, modFile string) bool {
-	modFilePath := filepath.Join(modPath, modFile)
-
-	// only create transient local mod if the mod file does not exist
-	_, err := os.Stat(modFilePath)
-	if err == nil {
-		return true
-	}
-
-	filePath := filepath.Join(modPath, app_specific.ModFileName)
-	if _, err = os.Stat(filePath); err == nil {
-		return true
-	}
-
-	return false
-}
-
-func loadModDefinition(ctx context.Context, modPath string, modFile string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
 	var mod *modconfig.Mod
 	errorsAndWarnings := error_helpers.ErrorAndWarnings{}
 
-	if parseCtx.ShouldCreateCreateTransientLocalMod() && !ModFileExists(modPath, modFile) {
-		mod = modconfig.NewMod("local", modPath, hcl.Range{})
-		return mod, errorsAndWarnings
-	}
-
 	// verify the mod folder exists
-	modFileFound := ModFileExists(modPath, modFile)
-
-	if modFileFound {
+	modFilePath, exists := parse.ModFileExists(modPath)
+	if exists {
 		// load the mod definition to get the dependencies
 		var res *parse.DecodeResult
-		mod, res = parse.ParseModDefinitionWithFileName(modPath, modFile, parseCtx.EvalCtx)
+		mod, res = parse.ParseModDefinition(modFilePath, parseCtx.EvalCtx)
 		if res.Diags.HasErrors() {
 			return nil, error_helpers.DiagsToErrorsAndWarnings("mod load failed", res.Diags)
 		}
@@ -272,7 +237,7 @@ func LoadModResourceNames(ctx context.Context, mod *modconfig.Mod, parseCtx *par
 // this will be the mod data extension, plus any registered extensions registered in fileToResourceMap
 func GetModFileExtensions() []string {
 	res := append(modconfig.RegisteredFileExtensions(), app_specific.ModDataExtensions...)
-	return append(res, app_specific.VariablesExtension)
+	return append(res, app_specific.VariablesExtensions...)
 }
 
 // build list of all filepaths we need to parse/load the mod
@@ -359,4 +324,74 @@ func getPseudoResourceMetadata(mod *modconfig.Mod, resourceName string, path str
 	m.SetMod(mod)
 
 	return m, nil
+}
+
+// Deprecated
+// TODO this function is included for backwards compatibility - it is used for Flowpipe LoadPipelines
+func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+	defer func() {
+		if r := recover(); r != nil {
+			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
+		}
+	}()
+
+	mod, loadModResult := loadModDefinitionWithFileName(modPath, modFile, parseCtx)
+	if loadModResult.Error != nil {
+		return nil, loadModResult
+	}
+
+	// if this is a dependency mod, initialise the dependency config
+	if parseCtx.DependencyConfig != nil {
+		parseCtx.DependencyConfig.SetModProperties(mod)
+	}
+
+	// set the current mod on the run context
+	if err := parseCtx.SetCurrentMod(mod); err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+
+	// load the mod dependencies
+	if err := loadModDependencies(ctx, mod, parseCtx); err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+
+	// populate the resource maps of the current mod using the dependency mods
+	mod.ResourceMaps = parseCtx.GetResourceMaps()
+	// now load the mod resource hcl (
+	mod, errorsAndWarnings = loadModResources(ctx, mod, parseCtx)
+
+	// add in any warnings from mod load
+	errorsAndWarnings.AddWarning(loadModResult.Warnings...)
+	return mod, errorsAndWarnings
+}
+func loadModDefinitionWithFileName(modPath, modFileName string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+	modFilePath := filepath.Join(modPath, modFileName)
+
+	// only create transient local mod if the mod file does not exist
+	filehelpers.FileExists(modFilePath)
+	modFileFound := filehelpers.FileExists(modFilePath)
+	if parseCtx.ShouldCreateDefaultMod() && !modFileFound {
+		mod = modconfig.NewMod("local", modPath, hcl.Range{})
+		return mod, errorsAndWarnings
+	}
+
+	if modFileFound {
+		// load the mod definition to get the dependencies
+		var res *parse.DecodeResult
+		mod, res = parse.ParseModDefinition(modFilePath, parseCtx.EvalCtx)
+		if res.Diags.HasErrors() {
+			return nil, error_helpers.DiagsToErrorsAndWarnings("mod load failed", res.Diags)
+		}
+	} else {
+		// so there is no mod file - should we create a default?
+		if !parseCtx.ShouldCreateDefaultMod() {
+			errorsAndWarnings.Error = perr.BadRequestWithMessage(fmt.Sprintf("mod folder does not contain a mod resource definition '%s'", modPath))
+			// ShouldCreateDefaultMod flag NOT set - fail
+			return nil, errorsAndWarnings
+		}
+		// just create a default mod
+		mod = modconfig.CreateDefaultMod(modPath)
+
+	}
+	return mod, errorsAndWarnings
 }

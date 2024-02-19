@@ -315,5 +315,10 @@ func (v unparsedVariableValueString) ParseVariableValue(mode var_config.Variable
 
 // isAutoVarFile determines if the file ends with .auto.spvars or .auto.spvars.json
 func isAutoVarFile(path string) bool {
-	return strings.HasSuffix(path, app_specific.AutoVariablesExtension)
+	for _, ext := range app_specific.AutoVariablesExtensions {
+		if strings.HasSuffix(path, ext) {
+			return true
+		}
+	}
+	return false
 }
