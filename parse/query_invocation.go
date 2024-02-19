@@ -20,7 +20,7 @@ import (
 // 2) named args
 // query.my_query(my_arg1 => "test", my_arg2 => "test2")
 func ParseQueryInvocation(arg string) (string, *modconfig.QueryArgs, error) {
-	args := &modconfig.QueryArgs{}
+	var args *modconfig.QueryArgs
 
 	arg = strings.TrimSpace(arg)
 	query := arg
