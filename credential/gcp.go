@@ -129,3 +129,27 @@ func (c *GcpCredential) GetTtl() int {
 	}
 	return *c.Ttl
 }
+
+type GcpConnectionConfig struct {
+	Credentials               *string  `cty:"credentials" hcl:"credentials,optional"`
+	IgnoreErrorCodes          []string `cty:"ignore_error_codes" hcl:"ignore_error_codes,optional"`
+	ImpersonateServiceAccount *string  `cty:"impersonate_service_account" hcl:"impersonate_service_account,optional"`
+	Project                   *string  `cty:"project" hcl:"project,optional"`
+}
+
+func (c *GcpConnectionConfig) GetCredential(name string) Credential {
+
+	gcpCred := &GcpCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		Credentials: c.Credentials,
+	}
+
+	return gcpCred
+}
