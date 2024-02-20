@@ -167,7 +167,7 @@ credential_import "steampipe_azure" {
 }
 
 credential_import "steampipe_jira" {
-  source      = "./jira.spc"
+  source      = "./steampipe_config/jira.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
