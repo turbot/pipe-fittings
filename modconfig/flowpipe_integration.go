@@ -53,11 +53,13 @@ func (i *IntegrationImpl) GetIntegrationImpl() *IntegrationImpl {
 func DefaultIntegrations() (map[string]Integration, error) {
 	integrations := make(map[string]Integration)
 
+	defaultDescription := "Default webform integration"
 	webhookIntegration := &WebformIntegration{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        schema.IntegrationTypeWebform + ".default",
 			ShortName:       "default",
 			UnqualifiedName: schema.IntegrationTypeWebform + ".default",
+			Description:     &defaultDescription,
 		},
 		Type: schema.IntegrationTypeWebform,
 	}
