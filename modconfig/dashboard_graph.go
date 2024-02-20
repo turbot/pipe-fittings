@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -235,4 +236,19 @@ func (g *DashboardGraph) setBaseProperties() {
 	} else {
 		g.Nodes.Merge(g.Base.Nodes)
 	}
+}
+
+// GetShowData implements printers.Showable
+func (g *DashboardGraph) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", g.Width),
+		printers.NewFieldValue("Type", g.Type),
+		printers.NewFieldValue("Display", g.Display),
+		printers.NewFieldValue("Nodes", g.Nodes),
+		printers.NewFieldValue("Edges", g.Edges),
+		printers.NewFieldValue("Direction", g.Direction),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(g.QueryProviderImpl.GetShowData())
+	return res
 }
