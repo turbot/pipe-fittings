@@ -69,3 +69,30 @@ func (c *JiraCredential) GetTtl() int {
 func (c *JiraCredential) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
+
+type JiraConnectionConfig struct {
+	BaseURL             *string `cty:"base_url" hcl:"base_url,optional"`
+	PersonalAccessToken *string `cty:"personal_access_token" hcl:"personal_access_token,optional"`
+	Token               *string `cty:"token" hcl:"token,optional"`
+	Username            *string `cty:"username" hcl:"username,optional"`
+}
+
+func (c *JiraConnectionConfig) GetCredential(name string) Credential {
+
+	jiraCred := &JiraCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				FullName:        name,
+				ShortName:       name,
+				UnqualifiedName: name,
+			},
+		},
+
+		// In Flowpipe we went with api_token (same as token in Steampipe) since
+		// there is another type of token (personal access token)
+		// In future we could update the Steampipe plugin arg too, but not necessary right now.
+		APIToken: c.Token,
+	}
+
+	return jiraCred
+}
