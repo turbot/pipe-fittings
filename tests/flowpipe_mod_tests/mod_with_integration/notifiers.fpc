@@ -6,6 +6,8 @@ notifier "admins" {
 }
 
 notifier "devs" {
+  description = "bar"
+  documentation = "abc doc"
   notify {
     integration = integration.slack.my_slack_app 
     channel = "#devs"

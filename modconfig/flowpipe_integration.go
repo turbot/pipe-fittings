@@ -21,6 +21,7 @@ type Integration interface {
 	MapInterface() (map[string]interface{}, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
+	SetUrl(string)
 	Validate() hcl.Diagnostics
 }
 
@@ -28,9 +29,15 @@ type IntegrationImpl struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
+	// Slack and Webform has URL, Email integration does not it will be null
+	Url             *string `json:"url,omitempty" cty:"url" hcl:"url,optional"`
 	FileName        string
 	StartLineNumber int
 	EndLineNumber   int
+}
+
+func (i *IntegrationImpl) SetUrl(url string) {
+	i.Url = &url
 }
 
 func (i *IntegrationImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -46,11 +53,13 @@ func (i *IntegrationImpl) GetIntegrationImpl() *IntegrationImpl {
 func DefaultIntegrations() (map[string]Integration, error) {
 	integrations := make(map[string]Integration)
 
+	defaultDescription := "Default webform integration"
 	webhookIntegration := &WebformIntegration{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        schema.IntegrationTypeWebform + ".default",
 			ShortName:       "default",
 			UnqualifiedName: schema.IntegrationTypeWebform + ".default",
+			Description:     &defaultDescription,
 		},
 		Type: schema.IntegrationTypeWebform,
 	}
@@ -553,6 +562,66 @@ func WebformIntegrationFromCtyValue(val cty.Value) (*WebformIntegration, error) 
 	i.Type = val.GetAttr("type").AsString()
 
 	return i, nil
+}
+
+func HclImplFromAttributes(hclResourceImpl *HclResourceImpl, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeDescription:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Description = &valString
+			}
+		case schema.AttributeTypeTitle:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Title = &valString
+			}
+		case schema.AttributeTypeDocumentation:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Documentation = &valString
+			}
+		case schema.AttributeTypeTags:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsValueMap()
+				resultMap := make(map[string]string)
+				for key, value := range valString {
+					resultMap[key] = value.AsString()
+				}
+				hclResourceImpl.Tags = resultMap
+			}
+		}
+	}
+
+	return diags
 }
 
 func NewIntegrationFromBlock(block *hcl.Block) Integration {

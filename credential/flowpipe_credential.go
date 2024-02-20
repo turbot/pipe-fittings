@@ -70,6 +70,7 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"datadog":       reflect.TypeOf((*DatadogConnectionConfig)(nil)).Elem(),
 	"discord":       reflect.TypeOf((*DiscordConnectionConfig)(nil)).Elem(),
 	"freshdesk":     reflect.TypeOf((*FreshdeskConnectionConfig)(nil)).Elem(),
+	"gcp":           reflect.TypeOf((*GcpConnectionConfig)(nil)).Elem(),
 	"github":        reflect.TypeOf((*GithubConnectionConfig)(nil)).Elem(),
 	"gitlab":        reflect.TypeOf((*GitlabConnectionConfig)(nil)).Elem(),
 	"guardrails":    reflect.TypeOf((*GuardrailsConnectionConfig)(nil)).Elem(),
@@ -92,7 +93,6 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"zendesk":       reflect.TypeOf((*ZendeskConnectionConfig)(nil)).Elem(),
 	// "ipstack":       reflect.TypeOf((*IPStackConnectionConfig)(nil)).Elem(),
 	// "jira":          reflect.TypeOf((*JiraCredential)(nil)).Elem(),
-	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
 }
 
 func InstantiateCredentialConfig(key string) (CredentialConfig, error) {

@@ -7,8 +7,31 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
+
+var integrationBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeDocumentation,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTags,
+			Required: false,
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{},
+}
 
 func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integration, hcl.Diagnostics) {
 	if len(block.Labels) != 2 {
@@ -35,7 +58,7 @@ func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integrati
 		}
 		return nil, diags
 	}
-	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
+	hclImplBody, r, diags := block.Body.PartialContent(integrationBlockSchema)
 	if len(diags) > 0 {
 		return nil, diags
 	}
@@ -49,6 +72,11 @@ func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integrati
 	}
 
 	diags = decodeHclBody(body, evalCtx, nil, integration)
+	if len(diags) > 0 {
+		return nil, diags
+	}
+
+	diags = modconfig.HclImplFromAttributes(integration.GetHclResourceImpl(), hclImplBody.Attributes, evalCtx)
 	if len(diags) > 0 {
 		return nil, diags
 	}
