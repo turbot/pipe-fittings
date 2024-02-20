@@ -3,6 +3,10 @@ package backend
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"log"
+
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
@@ -36,25 +40,31 @@ func (b *SteampipeBackend) init(ctx context.Context) error {
 }
 
 func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
-	query := `SELECT plugin FROM steampipe_internal.steampipe_plugin;`
+	query := `SELECT plugin, version FROM steampipe_internal.steampipe_plugin;`
 
 	// Execute the query
 	rows, err := db.Query(query)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "42703" {
+			// version column odes not exist - must be a pre-22 version of steampipe
+			// just swallow error
+			log.Println("[INFO] 'version' column does not exist in steampipe_internal.steampipe_plugin")
+			return nil
+		}
+
 		return sperr.WrapWithMessage(err, "failed to read installed plugin from steampipe backend")
 	}
 	defer rows.Close()
 
 	// Iterate over the results
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var name, version string
+		if err := rows.Scan(&name, &version); err != nil {
 			return sperr.WrapWithMessage(err, "failed to read installed plugin from steampipe backend")
 		}
-		// add the connection
-		// TODO kai hack for now set version to latest
-		// update steampipe to include version information in steampipe_plugin
-		b.pluginInstances[name] = "latest"
+		// add the plugin
+		b.pluginInstances[name] = version
 	}
 
 	// Check for errors from iterating over rows
