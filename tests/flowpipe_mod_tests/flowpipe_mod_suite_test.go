@@ -428,6 +428,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].(*credential.FreshdeskCredential).APIKey)
 	assert.Equal("test", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].(*credential.FreshdeskCredential).Subdomain)
 
+	// GCP
+	assert.Equal("steampipe_gcp", flowpipeConfig.CredentialImports["steampipe_gcp"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_gcp"].Prefix)
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.Credentials["gcp.sp1_gcp_1"].GetHclResourceImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.Credentials["gcp.sp1_gcp_2"].GetHclResourceImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.Credentials["gcp.sp1_gcp_1"].(*credential.GcpCredential).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.Credentials["gcp.sp1_gcp_2"].(*credential.GcpCredential).Credentials)
+
 	// Github
 	assert.Equal("steampipe_github", flowpipeConfig.CredentialImports["steampipe_github"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_github"].Prefix)

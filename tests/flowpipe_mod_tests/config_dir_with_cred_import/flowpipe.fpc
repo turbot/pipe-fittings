@@ -165,3 +165,9 @@ credential_import "steampipe_azure" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_gcp" {
+  source      = "./steampipe_config/gcp.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
