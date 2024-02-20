@@ -562,6 +562,66 @@ func WebformIntegrationFromCtyValue(val cty.Value) (*WebformIntegration, error) 
 	return i, nil
 }
 
+func HclImplFromAttributes(hclResourceImpl *HclResourceImpl, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeDescription:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Description = &valString
+			}
+		case schema.AttributeTypeTitle:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Title = &valString
+			}
+		case schema.AttributeTypeDocumentation:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Documentation = &valString
+			}
+		case schema.AttributeTypeTags:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsValueMap()
+				resultMap := make(map[string]string)
+				for key, value := range valString {
+					resultMap[key] = value.AsString()
+				}
+				hclResourceImpl.Tags = resultMap
+			}
+		}
+	}
+
+	return diags
+}
+
 func NewIntegrationFromBlock(block *hcl.Block) Integration {
 	integrationType := block.Labels[0]
 	integrationName := block.Labels[1]

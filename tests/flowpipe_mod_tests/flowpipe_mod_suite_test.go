@@ -257,6 +257,9 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 
 	notifier := flowpipeConfig.Notifiers["devs"]
 
+	assert.Equal("bar", *notifier.GetHclResourceImpl().Description)
+	assert.Equal("abc doc", *notifier.GetHclResourceImpl().Documentation)
+
 	// marshall to JSON test
 	jsonBytes, err := json.Marshal(notifier)
 	if err != nil {
@@ -278,6 +281,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 	assert.Equal(2, len(notifier2.GetNotifies()))
 	assert.Equal("#devs", *notifier2.GetNotifies()[0].Channel)
 	assert.Equal("xoxp-111111", *notifier2.GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
+
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
@@ -621,6 +625,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 
 	assert.Equal(2, len(flowpipeConfig.Integrations))
 	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
+	assert.Equal("my slack app in config_dir with description", *flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().Description)
 
 	// ensure that the default integration exist
 	assert.Equal("webform.default", flowpipeConfig.Integrations["webform.default"].GetHclResourceImpl().FullName)
