@@ -30,6 +30,7 @@ integration "email" "email_with_all" {
 }
 
 notifier "admins" {
+  description = "notifier for admins"
   notify {
     integration = integration.email.email_with_all 
     to = ["foo@bar.com", "baz@bar.com"]

@@ -1,5 +1,7 @@
 
 integration "slack" "my_slack_app" {
+  description     = "my slack app in config_dir with description"
+
   token           = "xoxp-111111"
   channel         = "#infosec"
 
