@@ -114,9 +114,9 @@ func createQueryResourceForCommandLineQuery(queryString string, mod *modconfig.M
 // look at string up the the first open bracket
 func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modconfig.ParsedResourceName, error) {
 	resourceType := utils.GetGenericTypeName[T]()
-	if resourceType == "variable" {
-		// name of variable resources is "var."
-		resourceType = "var"
+	if resourceType == schema.BlockTypeVariable {
+		// variables are named var.xxxx, not variable.xxxx
+		resourceType = schema.AttributeVar
 	}
 
 	// remove parameters from the input string before calling ParseResourceName
@@ -130,7 +130,7 @@ func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modco
 
 	// if the typo eis query, do not bubble error up, just return nil parsed name
 	// it is expected that this function may fail if a raw query is passed to it
-	if err != nil && resourceType == "query" {
+	if err != nil && resourceType == schema.BlockTypeQuery {
 		return nil, nil
 	}
 
