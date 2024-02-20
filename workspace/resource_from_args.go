@@ -37,7 +37,7 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 	}
 
 	// so we failed to resolve the resource from the input string
-	// check whether it _looks_ like a resource name (i.e. mod.type.name OT type.name)
+	// check whether it _looks_ like a resource name (i.e. mod.type.name OR type.name)
 	if name, looksLikeResource := sqlLooksLikeExecutableResource(sqlString); looksLikeResource {
 		return empty, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
 	}
