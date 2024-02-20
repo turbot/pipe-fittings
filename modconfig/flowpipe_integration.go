@@ -21,6 +21,7 @@ type Integration interface {
 	MapInterface() (map[string]interface{}, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
+	SetUrl(string)
 	Validate() hcl.Diagnostics
 }
 
@@ -28,9 +29,15 @@ type IntegrationImpl struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
+	// Slack and Webform has URL, Email integration does not it will be null
+	Url             *string `json:"url,omitempty" cty:"url" hcl:"url,optional"`
 	FileName        string
 	StartLineNumber int
 	EndLineNumber   int
+}
+
+func (i *IntegrationImpl) SetUrl(url string) {
+	i.Url = &url
 }
 
 func (i *IntegrationImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
