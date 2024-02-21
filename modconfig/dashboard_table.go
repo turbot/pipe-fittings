@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -37,7 +38,7 @@ func NewDashboardTable(block *hcl.Block, mod *Mod, shortName string) HclResource
 
 // NewQueryDashboardTable creates a Table to wrap a query.
 // This is used in order to execute queries as dashboards
-func NewQueryDashboardTable(qp QueryProvider, args *QueryArgs) (*DashboardTable, error) {
+func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 	parsedName, err := ParseResourceName(SnapshotQueryTableName)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func NewQueryDashboardTable(qp QueryProvider, args *QueryArgs) (*DashboardTable,
 			Query:  qp.GetQuery(),
 			SQL:    qp.GetSQL(),
 			Params: qp.GetParams(),
-			Args:   args,
+			Args:   qp.GetArgs(),
 		},
 	}
 	return c, nil
@@ -166,4 +167,17 @@ func (t *DashboardTable) setBaseProperties() {
 	} else {
 		t.ColumnList.Merge(t.Base.ColumnList)
 	}
+}
+
+// GetShowData implements printers.Showable
+func (t *DashboardTable) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", t.Width),
+		printers.NewFieldValue("Type", t.Type),
+		printers.NewFieldValue("Display", t.Display),
+		printers.NewFieldValue("Columns", t.ColumnList),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(t.QueryProviderImpl.GetShowData())
+	return res
 }

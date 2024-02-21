@@ -1,1 +1,6 @@
 **/*.fp linguist-language=HCL
+**/*.fpc linguist-language=HCL
+**/*.pp linguist-language=HCL
+**/*.ppc linguist-language=HCL
+**/*.sp linguist-language=HCL
+**/*.spc linguist-language=HCL

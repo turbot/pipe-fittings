@@ -86,9 +86,17 @@ func (d *RowData) AddField(f FieldValue) {
 
 func (d *RowData) GetRow() *TableRow {
 	row := NewTableRow()
-	row.Columns = d.Columns
+	row.Columns = d.GetDisplayColumns()
 	for _, c := range d.Columns {
 		row.Cells = append(row.Cells, d.Fields[c].Value)
 	}
 	return row
+}
+
+func (d *RowData) GetDisplayColumns() []string {
+	columns := make([]string, 0, len(d.Columns))
+	for _, c := range d.Columns {
+		columns = append(columns, d.displayNameMap[c])
+	}
+	return columns
 }

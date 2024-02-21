@@ -29,7 +29,6 @@ type ParseModFlag uint32
 const (
 	CreateDefaultMod ParseModFlag = 1 << iota
 	CreatePseudoResources
-	CreateTransientLocalMod
 )
 
 /*
@@ -305,10 +304,6 @@ func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, depende
 // ShouldCreateDefaultMod returns whether the flag is set to create a default mod if no mod definition exists
 func (m *ModParseContext) ShouldCreateDefaultMod() bool {
 	return m.Flags&CreateDefaultMod == CreateDefaultMod
-}
-
-func (m *ModParseContext) ShouldCreateCreateTransientLocalMod() bool {
-	return m.Flags&CreateTransientLocalMod == CreateTransientLocalMod
 }
 
 // CreatePseudoResources returns whether the flag is set to create pseudo resources

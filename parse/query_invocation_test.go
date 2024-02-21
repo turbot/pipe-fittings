@@ -20,15 +20,15 @@ type parseQueryInvocationResult struct {
 	args      *modconfig.QueryArgs
 }
 
-var emptyParams = modconfig.NewQueryArgs()
+var emptyArgs = modconfig.NewQueryArgs()
 var testCasesParseQueryInvocation = map[string]parseQueryInvocationTest{
 	"no brackets": {
 		input:    `query.q1`,
-		expected: parseQueryInvocationResult{"query.q1", emptyParams},
+		expected: parseQueryInvocationResult{"query.q1", emptyArgs},
 	},
 	"no params": {
 		input:    `query.q1()`,
-		expected: parseQueryInvocationResult{"query.q1", emptyParams},
+		expected: parseQueryInvocationResult{"query.q1", emptyArgs},
 	},
 	"invalid params 1": {
 		input: `query.q1(foo)`,
@@ -114,7 +114,9 @@ var testCasesParseQueryInvocation = map[string]parseQueryInvocationTest{
 func TestParseQueryInvocation(t *testing.T) {
 	for name, test := range testCasesParseQueryInvocation {
 		queryName, args, _ := ParseQueryInvocation(test.input)
-
+		if args == nil {
+			args = emptyArgs
+		}
 		if queryName != test.expected.queryName || !test.expected.args.Equals(args) {
 			//nolint:forbidigo // acceptable
 			fmt.Printf("")

@@ -9,8 +9,17 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
-var NotifierBlockSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{},
+var notifierBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name:     schema.AttributeTypeDescription,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeTitle,
+			Required: false,
+		},
+	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type: schema.BlockTypeNotify,
@@ -42,7 +51,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 		},
 	}
 
-	content, diags := block.Body.Content(NotifierBlockSchema)
+	content, diags := block.Body.Content(notifierBlockSchema)
 	if len(diags) > 0 {
 		return nil, diags
 	}
@@ -71,6 +80,11 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 				Subject:  &b.DefRange,
 			})
 		}
+	}
+
+	moreDiags := modconfig.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx)
+	if moreDiags != nil {
+		diags = append(diags, moreDiags...)
 	}
 
 	notifier.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)

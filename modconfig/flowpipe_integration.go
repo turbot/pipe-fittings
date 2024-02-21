@@ -21,6 +21,7 @@ type Integration interface {
 	MapInterface() (map[string]interface{}, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
+	SetUrl(string)
 	Validate() hcl.Diagnostics
 }
 
@@ -28,9 +29,15 @@ type IntegrationImpl struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
+	// Slack and Webform has URL, Email integration does not it will be null
+	Url             *string `json:"url,omitempty" cty:"url" hcl:"url,optional"`
 	FileName        string
 	StartLineNumber int
 	EndLineNumber   int
+}
+
+func (i *IntegrationImpl) SetUrl(url string) {
+	i.Url = &url
 }
 
 func (i *IntegrationImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -46,11 +53,13 @@ func (i *IntegrationImpl) GetIntegrationImpl() *IntegrationImpl {
 func DefaultIntegrations() (map[string]Integration, error) {
 	integrations := make(map[string]Integration)
 
+	defaultDescription := "Default webform integration"
 	webhookIntegration := &WebformIntegration{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        schema.IntegrationTypeWebform + ".default",
 			ShortName:       "default",
 			UnqualifiedName: schema.IntegrationTypeWebform + ".default",
+			Description:     &defaultDescription,
 		},
 		Type: schema.IntegrationTypeWebform,
 	}
@@ -75,7 +84,29 @@ type SlackIntegration struct {
 }
 
 func (i *SlackIntegration) CtyValue() (cty.Value, error) {
-	return GetCtyValue(i)
+	iCty, err := GetCtyValue(i)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := iCty.AsValueMap()
+	valueMap["full_name"] = cty.StringVal(i.FullName)
+	valueMap["short_name"] = cty.StringVal(i.ShortName)
+	valueMap["unqualified_name"] = cty.StringVal(i.UnqualifiedName)
+
+	if i.Title != nil {
+		valueMap["title"] = cty.StringVal(*i.Title)
+	}
+
+	if i.Description != nil {
+		valueMap["description"] = cty.StringVal(*i.Description)
+	}
+
+	// if i.Documentation != nil {
+	// 	valueMap["documentation"] = cty.StringVal(*i.Documentation)
+	// }
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (i *SlackIntegration) MapInterface() (map[string]interface{}, error) {
@@ -93,6 +124,18 @@ func (i *SlackIntegration) MapInterface() (map[string]interface{}, error) {
 	if i.Channel != nil {
 		res["channel"] = *i.Channel
 	}
+
+	res["full_name"] = i.FullName
+	res["short_name"] = i.ShortName
+	res["unqualified_name"] = i.UnqualifiedName
+
+	if i.Title != nil {
+		res["title"] = *i.Title
+	}
+	if i.Description != nil {
+		res["description"] = *i.Description
+	}
+
 	return res, nil
 }
 
@@ -252,6 +295,18 @@ func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
 	if i.ResponseUrl != nil {
 		res["response_url"] = *i.ResponseUrl
 	}
+
+	res["full_name"] = i.FullName
+	res["short_name"] = i.ShortName
+	res["unqualified_name"] = i.UnqualifiedName
+
+	if i.Title != nil {
+		res["title"] = *i.Title
+	}
+	if i.Description != nil {
+		res["description"] = *i.Description
+	}
+
 	return res, nil
 }
 
@@ -260,7 +315,29 @@ func (i *EmailIntegration) GetIntegrationType() string {
 }
 
 func (i *EmailIntegration) CtyValue() (cty.Value, error) {
-	return GetCtyValue(i)
+	iCty, err := GetCtyValue(i)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := iCty.AsValueMap()
+	valueMap["full_name"] = cty.StringVal(i.FullName)
+	valueMap["short_name"] = cty.StringVal(i.ShortName)
+	valueMap["unqualified_name"] = cty.StringVal(i.UnqualifiedName)
+
+	if i.Title != nil {
+		valueMap["title"] = cty.StringVal(*i.Title)
+	}
+
+	if i.Description != nil {
+		valueMap["description"] = cty.StringVal(*i.Description)
+	}
+
+	// if i.Documentation != nil {
+	// 	valueMap["documentation"] = cty.StringVal(*i.Documentation)
+	// }
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (i *EmailIntegration) Validate() hcl.Diagnostics {
@@ -439,8 +516,40 @@ func integrationFromCtyValue(val cty.Value) (Integration, error) {
 	return nil, perr.BadRequestWithMessage(fmt.Sprintf("Unsupported integration type: %s", integrationType))
 }
 
+func hclResourceImplFromVal(val cty.Value) HclResourceImpl {
+	hclResourceImpl := HclResourceImpl{}
+
+	valueMap := val.AsValueMap()
+
+	if !valueMap["full_name"].IsNull() && valueMap["full_name"] != cty.NilVal {
+		hclResourceImpl.FullName = valueMap["full_name"].AsString()
+	}
+
+	if !valueMap["unqualified_name"].IsNull() && valueMap["unqualified_name"] != cty.NilVal {
+		hclResourceImpl.UnqualifiedName = valueMap["unqualified_name"].AsString()
+	}
+
+	if !valueMap["short_name"].IsNull() && valueMap["short_name"] != cty.NilVal {
+		hclResourceImpl.ShortName = valueMap["short_name"].AsString()
+	}
+
+	if !valueMap["title"].IsNull() && valueMap["title"] != cty.NilVal {
+		title := valueMap["title"].AsString()
+		hclResourceImpl.Title = &title
+	}
+
+	if !valueMap["description"].IsNull() && valueMap["description"] != cty.NilVal {
+		description := valueMap["description"].AsString()
+		hclResourceImpl.Description = &description
+	}
+
+	return hclResourceImpl
+}
 func SlackIntegrationFromCtyValue(val cty.Value) (*SlackIntegration, error) {
-	i := &SlackIntegration{}
+	hclResourceImpl := hclResourceImplFromVal(val)
+	i := &SlackIntegration{
+		HclResourceImpl: hclResourceImpl,
+	}
 
 	i.Type = val.GetAttr("type").AsString()
 
@@ -475,7 +584,11 @@ func SlackIntegrationFromCtyValue(val cty.Value) (*SlackIntegration, error) {
 }
 
 func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
-	i := &EmailIntegration{}
+	hclResourceImpl := hclResourceImplFromVal(val)
+
+	i := &EmailIntegration{
+		HclResourceImpl: hclResourceImpl,
+	}
 
 	i.Type = val.GetAttr("type").AsString()
 
@@ -548,11 +661,75 @@ func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
 }
 
 func WebformIntegrationFromCtyValue(val cty.Value) (*WebformIntegration, error) {
-	i := &WebformIntegration{}
+	hclResourceImpl := hclResourceImplFromVal(val)
+
+	i := &WebformIntegration{
+		HclResourceImpl: hclResourceImpl,
+	}
 
 	i.Type = val.GetAttr("type").AsString()
 
 	return i, nil
+}
+
+func HclImplFromAttributes(hclResourceImpl *HclResourceImpl, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeDescription:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Description = &valString
+			}
+		case schema.AttributeTypeTitle:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Title = &valString
+			}
+		case schema.AttributeTypeDocumentation:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsString()
+				hclResourceImpl.Documentation = &valString
+			}
+		case schema.AttributeTypeTags:
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+					continue
+				}
+
+				valString := val.AsValueMap()
+				resultMap := make(map[string]string)
+				for key, value := range valString {
+					resultMap[key] = value.AsString()
+				}
+				hclResourceImpl.Tags = resultMap
+			}
+		}
+	}
+
+	return diags
 }
 
 func NewIntegrationFromBlock(block *hcl.Block) Integration {
@@ -603,12 +780,47 @@ func (i *WebformIntegration) GetIntegrationType() string {
 }
 
 func (i *WebformIntegration) CtyValue() (cty.Value, error) {
-	return GetCtyValue(i)
+	iCty, err := GetCtyValue(i)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := iCty.AsValueMap()
+	valueMap["full_name"] = cty.StringVal(i.FullName)
+	valueMap["short_name"] = cty.StringVal(i.ShortName)
+	valueMap["unqualified_name"] = cty.StringVal(i.UnqualifiedName)
+
+	if i.Title != nil {
+		valueMap["title"] = cty.StringVal(*i.Title)
+	}
+
+	if i.Description != nil {
+		valueMap["description"] = cty.StringVal(*i.Description)
+	}
+
+	// if i.Documentation != nil {
+	// 	valueMap["documentation"] = cty.StringVal(*i.Documentation)
+	// }
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (i *WebformIntegration) MapInterface() (map[string]interface{}, error) {
 	res := make(map[string]interface{})
+
 	res["type"] = i.Type
+
+	res["full_name"] = i.FullName
+	res["short_name"] = i.ShortName
+	res["unqualified_name"] = i.UnqualifiedName
+
+	if i.Title != nil {
+		res["title"] = *i.Title
+	}
+	if i.Description != nil {
+		res["description"] = *i.Description
+	}
+
 	return res, nil
 }
 
