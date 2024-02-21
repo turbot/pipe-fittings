@@ -82,6 +82,7 @@ func (c *JiraCredential) Validate() hcl.Diagnostics {
 }
 
 type JiraConnectionConfig struct {
+	APIToken            *string `cty:"api_token" hcl:"api_token,optional"`
 	BaseURL             *string `cty:"base_url" hcl:"base_url,optional"`
 	PersonalAccessToken *string `cty:"personal_access_token" hcl:"personal_access_token,optional"`
 	Token               *string `cty:"token" hcl:"token,optional"`
@@ -89,6 +90,17 @@ type JiraConnectionConfig struct {
 }
 
 func (c *JiraConnectionConfig) GetCredential(name string) Credential {
+
+	// Steampipe Jira plugin uses the attribute token to configure the credential, whereas
+	// the Flowpipe uses the attribute `api_token` which is intended to distinguish between 2 different token, i.e. token and personal_access_token
+	// Hence, we need a special handling to support both token and api_token, and the order of precedence will be api_token and token.
+	var jiraAPIToken string
+	if c.Token != nil {
+		jiraAPIToken = *c.Token
+	}
+	if c.APIToken != nil {
+		jiraAPIToken = *c.APIToken
+	}
 
 	jiraCred := &JiraCredential{
 		CredentialImpl: CredentialImpl{
@@ -102,7 +114,7 @@ func (c *JiraConnectionConfig) GetCredential(name string) Credential {
 		// In Flowpipe we went with api_token (same as token in Steampipe) since
 		// there is another type of token (personal access token)
 		// In future we could update the Steampipe plugin arg too, but not necessary right now.
-		APIToken: c.Token,
+		APIToken: &jiraAPIToken,
 	}
 
 	return jiraCred

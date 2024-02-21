@@ -9,3 +9,9 @@ connection "jira_2" {
 
   token = "abcdefgi"
 }
+
+connection "jira_3" {
+  plugin = "jira"
+
+  api_token = "abcdefgj"
+}

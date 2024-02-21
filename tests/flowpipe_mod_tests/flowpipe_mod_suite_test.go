@@ -507,8 +507,10 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_jira"].Prefix)
 	assert.Equal("jira.sp1_jira_1", flowpipeConfig.Credentials["jira.sp1_jira_1"].GetHclResourceImpl().FullName)
 	assert.Equal("jira.sp1_jira_2", flowpipeConfig.Credentials["jira.sp1_jira_2"].GetHclResourceImpl().FullName)
+	assert.Equal("jira.sp1_jira_3", flowpipeConfig.Credentials["jira.sp1_jira_3"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["jira.sp1_jira_1"].(*credential.JiraCredential).APIToken)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["jira.sp1_jira_2"].(*credential.JiraCredential).APIToken)
+	assert.Equal("abcdefgj", *flowpipeConfig.Credentials["jira.sp1_jira_3"].(*credential.JiraCredential).APIToken)
 
 	// JumpCloud
 	assert.Equal("steampipe_jumpcloud", flowpipeConfig.CredentialImports["steampipe_jumpcloud"].FullName)
