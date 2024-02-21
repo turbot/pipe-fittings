@@ -38,6 +38,8 @@ const (
 	ArgOff                     = "off"
 	ArgOn                      = "on"
 	ArgOutput                  = "output"
+	ArgPipesHost               = "pipes-host"
+	ArgPipesToken              = "pipes-token"
 	ArgPort                    = "port"
 	ArgProgress                = "progress"
 	ArgPrune                   = "prune"
@@ -62,7 +64,7 @@ const (
 	ArgDatabase                = "database"
 	ArgWorkspaceProfile        = "workspace"
 	ArgConfigPath              = "config-path"
-	ArgBaseUrl = "base-url"
+	ArgBaseUrl                 = "base-url"
 
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
