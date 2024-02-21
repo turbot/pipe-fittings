@@ -510,6 +510,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_1"].(*credential.JumpCloudCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_2"].(*credential.JumpCloudCredential).APIKey)
 
+	// Mastodon
+	assert.Equal("steampipe_mastodon", flowpipeConfig.CredentialImports["steampipe_mastodon"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_mastodon"].Prefix)
+	assert.Equal("mastodon.sp1_mastodon_1", flowpipeConfig.Credentials["mastodon.sp1_mastodon_1"].GetHclResourceImpl().FullName)
+	assert.Equal("mastodon.sp1_mastodon_2", flowpipeConfig.Credentials["mastodon.sp1_mastodon_2"].GetHclResourceImpl().FullName)
+	assert.Equal("FK1_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.Credentials["mastodon.sp1_mastodon_1"].(*credential.MastodonCredential).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.Credentials["mastodon.sp1_mastodon_1"].(*credential.MastodonCredential).Server)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.Credentials["mastodon.sp1_mastodon_2"].(*credential.MastodonCredential).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.Credentials["mastodon.sp1_mastodon_2"].(*credential.MastodonCredential).Server)
+
 	// Microsoft Teams
 	assert.Equal("steampipe_teams", flowpipeConfig.CredentialImports["steampipe_teams"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_teams"].Prefix)

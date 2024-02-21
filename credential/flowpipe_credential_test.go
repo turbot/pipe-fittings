@@ -919,6 +919,31 @@ func TestJumpCloudDefaultCredential(t *testing.T) {
 	assert.Equal("sk-jwgthNa...", *newJumpCloudCreds.APIKey)
 }
 
+func TestMastodonDefaultCredential(t *testing.T) {
+	assert := assert.New(t)
+
+	// Mastodon has no standard environment variable mentioned anywhere in the docs
+	accessToken := "FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU"
+	server := "https://myserver.social"
+
+	mastodonCred := MastodonCredential{
+		CredentialImpl: CredentialImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessToken: &accessToken,
+		Server:      &server,
+	}
+
+	newCreds, err := mastodonCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newMastodonCreds := newCreds.(*MastodonCredential)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *newMastodonCreds.AccessToken)
+	assert.Equal("https://myserver.social", *newMastodonCreds.Server)
+}
+
 func XTestAwsCredentialRole(t *testing.T) {
 
 	assert := assert.New(t)
