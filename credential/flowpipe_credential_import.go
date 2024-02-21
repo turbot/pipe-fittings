@@ -66,6 +66,7 @@ func NewCredentialImport(block *hcl.Block) *CredentialImport {
 func ResolveConfigStruct(connectionType string) any {
 	typeRegistry := map[string]reflect.Type{
 		"abuseipdb":     reflect.TypeOf((*AbuseIPDBCredential)(nil)).Elem(),
+		"alicloud":      reflect.TypeOf((*AlicloudCredential)(nil)).Elem(),
 		"aws":           reflect.TypeOf((*AwsCredential)(nil)).Elem(),
 		"azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
 		"bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),

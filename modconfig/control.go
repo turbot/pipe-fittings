@@ -232,11 +232,12 @@ func (c *Control) setBaseProperties() {
 // GetShowData implements printers.Showable
 func (c *Control) GetShowData() *printers.RowData {
 	res := printers.NewRowData(
-		printers.FieldValue{Name: "Severity", Value: c.Severity},
-		printers.FieldValue{Name: "Width", Value: c.Width},
-		printers.FieldValue{Name: "Type", Value: c.Type},
-		printers.FieldValue{Name: "Display", Value: c.Display},
+		printers.NewFieldValue("Severity", c.Severity),
+		printers.NewFieldValue("Width", c.Width),
+		printers.NewFieldValue("Type", c.Type),
+		printers.NewFieldValue("Display", c.Display),
 	)
+	// merge fields from base, putting base fields first
 	res.Merge(c.QueryProviderImpl.GetShowData())
 	return res
 }

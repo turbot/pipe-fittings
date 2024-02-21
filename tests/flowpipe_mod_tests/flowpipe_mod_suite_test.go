@@ -258,7 +258,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 	notifier := flowpipeConfig.Notifiers["devs"]
 
 	assert.Equal("bar", *notifier.GetHclResourceImpl().Description)
-	assert.Equal("abc doc", *notifier.GetHclResourceImpl().Documentation)
+	assert.Equal("dev notifier", *notifier.GetHclResourceImpl().Title)
 
 	// marshall to JSON test
 	jsonBytes, err := json.Marshal(notifier)
@@ -281,7 +281,26 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 	assert.Equal(2, len(notifier2.GetNotifies()))
 	assert.Equal("#devs", *notifier2.GetNotifies()[0].Channel)
 	assert.Equal("xoxp-111111", *notifier2.GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
+}
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeModWithOneIntegration() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_one_notifier"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	notifier := flowpipeConfig.Notifiers["notify_one"]
+
+	assert.Equal("foo", *notifier.GetHclResourceImpl().Description)
+	assert.Equal("foo bar", *notifier.GetHclResourceImpl().Title)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
@@ -328,6 +347,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	integrations := notify.Integration
 	assert.NotNil(integrations)
 	assert.Equal("user@test.tld", *integrations.(*modconfig.EmailIntegration).DefaultRecipient)
+	assert.Equal("email.email_with_all", integrations.GetHclResourceImpl().FullName)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
@@ -355,6 +375,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_1"].(*credential.AbuseIPDBCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].(*credential.AbuseIPDBCredential).APIKey)
+
+	// Alicloud
+	assert.Equal("steampipe_alicloud", flowpipeConfig.CredentialImports["steampipe_alicloud"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_alicloud"].Prefix)
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].GetHclResourceImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].GetHclResourceImpl().FullName)
+	assert.Equal("LTAI4GBVFakeKey09Kxezv66", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].(*credential.AlicloudCredential).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].(*credential.AlicloudCredential).SecretKey)
+	assert.Equal("LTAI4GBVFakeKey09Kxezv66", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].(*credential.AlicloudCredential).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].(*credential.AlicloudCredential).SecretKey)
 
 	// AWS
 	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
@@ -427,6 +457,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("test", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_1"].(*credential.FreshdeskCredential).Subdomain)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].(*credential.FreshdeskCredential).APIKey)
 	assert.Equal("test", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].(*credential.FreshdeskCredential).Subdomain)
+
+	// GCP
+	assert.Equal("steampipe_gcp", flowpipeConfig.CredentialImports["steampipe_gcp"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_gcp"].Prefix)
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.Credentials["gcp.sp1_gcp_1"].GetHclResourceImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.Credentials["gcp.sp1_gcp_2"].GetHclResourceImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.Credentials["gcp.sp1_gcp_1"].(*credential.GcpCredential).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.Credentials["gcp.sp1_gcp_2"].(*credential.GcpCredential).Credentials)
 
 	// Github
 	assert.Equal("steampipe_github", flowpipeConfig.CredentialImports["steampipe_github"].FullName)
@@ -638,7 +676,17 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	// ensure that the default integration exist
 	assert.Equal("webform.default", flowpipeConfig.Integrations["webform.default"].GetHclResourceImpl().FullName)
 
-	assert.Equal(3, len(flowpipeConfig.Notifiers))
+	assert.Equal(4, len(flowpipeConfig.Notifiers))
+
+	notifierWithDefaultIntegration := flowpipeConfig.Notifiers["with_default_integration"]
+	if notifierWithDefaultIntegration == nil {
+		assert.Fail("notifier with_default_integration not found")
+		return
+	}
+
+	assert.Equal("with_default_integration", notifierWithDefaultIntegration.GetHclResourceImpl().FullName)
+	assert.Equal(1, len(notifierWithDefaultIntegration.GetNotifies()))
+	assert.Equal("webform.default", notifierWithDefaultIntegration.GetNotifies()[0].Integration.(*modconfig.WebformIntegration).FullName)
 
 	// ensure that default notifier exist
 	assert.Equal("default", flowpipeConfig.Notifiers["default"].GetHclResourceImpl().FullName)

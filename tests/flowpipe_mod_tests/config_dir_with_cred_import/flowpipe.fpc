@@ -166,6 +166,18 @@ credential_import "steampipe_azure" {
   prefix      = "sp1_" # prefix is optional
 }
 
+credential_import "steampipe_gcp" {
+  source      = "./steampipe_config/gcp.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
+credential_import "steampipe_alicloud" {
+  source      = "./steampipe_config/alicloud.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
+
 credential_import "steampipe_jira" {
   source      = "./steampipe_config/jira.spc"
   connections = ["*"]

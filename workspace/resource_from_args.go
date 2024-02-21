@@ -1,7 +1,9 @@
 package workspace
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -11,62 +13,51 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-// GetResourcesFromArgs retrieves queries from args
-//
-// For each arg check if it is a named query or a file, before falling back to treating it as sql
-func GetResourcesFromArgs[T modconfig.ModTreeItem](args []string, w *Workspace) ([]modconfig.ModTreeItem, map[string]*modconfig.QueryArgs, error) {
-	utils.LogTime("execute.GetResourcesFromArgs start")
-	defer utils.LogTime("execute.GetResourcesFromArgs end")
-
-	var targets []modconfig.ModTreeItem
-	var queryArgsMap = map[string]*modconfig.QueryArgs{}
-	for _, arg := range args {
-		target, args, err := resolveResourceAndArgsFromSQLString[T](arg, w)
-		if err != nil {
-			return nil, nil, err
-		}
-		if target == nil {
-			continue
-		}
-		targets = append(targets, target)
-		if args != nil {
-			queryArgsMap[target.GetUnqualifiedName()] = args
-		}
-	}
-	return targets, queryArgsMap, nil
-}
-
-// resolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a query and query args
-func resolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w *Workspace) (modconfig.ModTreeItem, *modconfig.QueryArgs, error) {
+// ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a resource of type T and (optionally) query args
+func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w *Workspace) (T, *modconfig.QueryArgs, error) {
 	var err error
+	var empty T
 
 	// 1) check if this is a resource
 	// if this looks like a named query provider invocation, parse the sql string for arguments
 	resource, args, err := extractResourceFromQueryString[T](sqlString, w)
 	if err != nil {
-		return nil, nil, err
+		return empty, nil, err
 	}
 
 	if resource != nil {
+		target, ok := resource.(T)
+		if !ok {
+			typeName := utils.GetGenericTypeName[T]()
+			return empty, nil, sperr.New("target '%s' is not of the expected type '%s'", target.GetUnqualifiedName(), typeName)
+
+		}
 		// success
-		return resource, args, nil
+		return target, args, nil
 	}
 
-	// 2) if the target type is query, just use the query string as is and assume it is valid SQL
-	if utils.GetGenericTypeName[T]() == schema.BlockTypeQuery {
-		// TODO KAI  check whethe the sqlString looks like a resource name and if so, DO NOT create a new query (which will fail)
+	// so we failed to resolve the resource from the input string
+	// check whether it _looks_ like a resource name (i.e. mod.type.name OR type.name)
+	if name, looksLikeResource := sqlLooksLikeExecutableResource(sqlString); looksLikeResource {
+		return empty, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
+	}
+	switch any(empty).(type) {
+	case *modconfig.Query:
+		// if the desired type is a query,  and the sqlString DOES NOT look like a resource name,
+		// treat it as a raw query and create a Query to wrap it
 		q := createQueryResourceForCommandLineQuery(sqlString, w.Mod)
 
 		// add to the workspace mod so the dashboard execution code can find it
 		if err := w.Mod.AddResource(q); err != nil {
-			return nil, nil, err
+			return empty, nil, err
 		}
 
-		return q, nil, nil
+		return any(q).(T), nil, nil
+	default:
+		// failed to resolve
+		return empty, nil, nil
 	}
 
-	// failed to resolve
-	return nil, nil, nil
 }
 
 // does the input look like a resource which can be executed as a query
@@ -123,9 +114,9 @@ func createQueryResourceForCommandLineQuery(queryString string, mod *modconfig.M
 // look at string up the the first open bracket
 func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modconfig.ParsedResourceName, error) {
 	resourceType := utils.GetGenericTypeName[T]()
-	if resourceType == "variable" {
-		// name of variable resources is "var."
-		resourceType = "var"
+	if resourceType == schema.BlockTypeVariable {
+		// variables are named var.xxxx, not variable.xxxx
+		resourceType = schema.AttributeVar
 	}
 
 	// remove parameters from the input string before calling ParseResourceName
@@ -139,7 +130,7 @@ func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modco
 
 	// if the typo eis query, do not bubble error up, just return nil parsed name
 	// it is expected that this function may fail if a raw query is passed to it
-	if err != nil && resourceType == "query" {
+	if err != nil && resourceType == schema.BlockTypeQuery {
 		return nil, nil
 	}
 
@@ -169,4 +160,20 @@ func parseResourceName(targetName string, commandTargetType string) (*modconfig.
 	}
 
 	return parsed, nil
+}
+
+func sqlLooksLikeExecutableResource(input string) (string, bool) {
+	// remove parameters from the input string before calling ParseResourceName
+	// as parameters may break parsing
+	openBracketIdx := strings.Index(input, "(")
+	if openBracketIdx != -1 {
+		input = input[:openBracketIdx]
+	}
+	parsedName, err := modconfig.ParseResourceName(input)
+	if err == nil && helpers.StringSliceContains(schema.QueryProviderBlocks, parsedName.ItemType) {
+		return parsedName.ToResourceName(), true
+	}
+	// do not bubble error up, just return false
+	return "", false
+
 }

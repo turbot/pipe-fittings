@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -122,4 +123,17 @@ func (i *DashboardImage) setBaseProperties() {
 	if i.Display == nil {
 		i.Display = i.Base.Display
 	}
+}
+
+// GetShowData implements printers.Showable
+func (i *DashboardImage) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", i.Width),
+		printers.NewFieldValue("Display", i.Display),
+		printers.NewFieldValue("Src", i.Src),
+		printers.NewFieldValue("Alt", i.Alt),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(i.QueryProviderImpl.GetShowData())
+	return res
 }

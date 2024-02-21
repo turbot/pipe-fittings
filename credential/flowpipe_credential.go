@@ -13,6 +13,7 @@ import (
 
 var credentialTypeRegistry = map[string]reflect.Type{
 	"abuseipdb":     reflect.TypeOf((*AbuseIPDBCredential)(nil)).Elem(),
+	"alicloud":      reflect.TypeOf((*AlicloudCredential)(nil)).Elem(),
 	"aws":           reflect.TypeOf((*AwsCredential)(nil)).Elem(),
 	"azure":         reflect.TypeOf((*AzureCredential)(nil)).Elem(),
 	"bitbucket":     reflect.TypeOf((*BitbucketCredential)(nil)).Elem(),
@@ -63,6 +64,7 @@ func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl
 
 var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"abuseipdb":     reflect.TypeOf((*AbuseIPDBConnectionConfig)(nil)).Elem(),
+	"alicloud":      reflect.TypeOf((*AlicloudConnectionConfig)(nil)).Elem(),
 	"aws":           reflect.TypeOf((*AwsConnectionConfig)(nil)).Elem(),
 	"azure":         reflect.TypeOf((*AzureConnectionConfig)(nil)).Elem(),
 	"bitbucket":     reflect.TypeOf((*BitbucketConnectionConfig)(nil)).Elem(),
@@ -70,6 +72,7 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"datadog":       reflect.TypeOf((*DatadogConnectionConfig)(nil)).Elem(),
 	"discord":       reflect.TypeOf((*DiscordConnectionConfig)(nil)).Elem(),
 	"freshdesk":     reflect.TypeOf((*FreshdeskConnectionConfig)(nil)).Elem(),
+	"gcp":           reflect.TypeOf((*GcpConnectionConfig)(nil)).Elem(),
 	"github":        reflect.TypeOf((*GithubConnectionConfig)(nil)).Elem(),
 	"gitlab":        reflect.TypeOf((*GitlabConnectionConfig)(nil)).Elem(),
 	"guardrails":    reflect.TypeOf((*GuardrailsConnectionConfig)(nil)).Elem(),
@@ -92,7 +95,6 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"virustotal":    reflect.TypeOf((*VirusTotalConnectionConfig)(nil)).Elem(),
 	"zendesk":       reflect.TypeOf((*ZendeskConnectionConfig)(nil)).Elem(),
 	// "ipstack":       reflect.TypeOf((*IPStackConnectionConfig)(nil)).Elem(),
-	// "gcp":           reflect.TypeOf((*GcpCredential)(nil)).Elem(),
 }
 
 func InstantiateCredentialConfig(key string) (CredentialConfig, error) {

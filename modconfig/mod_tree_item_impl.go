@@ -115,17 +115,18 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 
 // GetShowData implements printers.Showable
 func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
-	// override name to take parents into account
 	var name = b.ShortName
 	if b.parents != nil {
 		name = b.Name()
 
 	}
 	res := printers.NewRowData(
+		// override name to take parents into account - merge will handle this and ignore the base name
 		printers.NewFieldValue("Name", name),
 		printers.NewFieldValue("Mod", b.Mod.ShortName),
 		printers.NewFieldValue("Database", b.Database),
 	)
+	// merge fields from base, putting base fields first
 	res.Merge(b.HclResourceImpl.GetShowData())
 	return res
 }

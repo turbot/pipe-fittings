@@ -200,18 +200,18 @@ func (b *HclResourceImpl) GetBase() HclResource {
 // GetShowData implements printers.Showable
 func (b *HclResourceImpl) GetShowData() *printers.RowData {
 	return printers.NewRowData(
-		printers.FieldValue{Name: "Name", Value: b.Name()},
-		printers.FieldValue{Name: "Title", Value: b.GetTitle()},
-		printers.FieldValue{Name: "Description", Value: b.GetDescription()},
-		printers.FieldValue{Name: "Documentation", Value: b.GetDocumentation()},
-		printers.FieldValue{Name: "Tags", Value: b.GetTags()},
+		printers.NewFieldValue("Name", b.Name()),
+		printers.NewFieldValue("Title", b.GetTitle()),
+		printers.NewFieldValue("Description", b.GetDescription()),
+		printers.NewFieldValue("Documentation", b.GetDocumentation()),
+		printers.NewFieldValue("Tags", b.GetTags()),
 	)
 }
 
 // GetListData implements printers.Showable
 func (b *HclResourceImpl) GetListData() *printers.RowData {
 	return printers.NewRowData(
-		printers.FieldValue{Name: "NAME", Value: b.Name()},
+		printers.NewFieldValue("NAME", b.Name()),
 	)
 }
 

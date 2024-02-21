@@ -52,11 +52,14 @@ func (c *NotifierImpl) GetNotifierImpl() *NotifierImpl {
 func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifier, error) {
 	notifiers := make(map[string]Notifier)
 
+	description := "Default notifier"
+
 	notifier := NotifierImpl{
 		HclResourceImpl: HclResourceImpl{
 			FullName:        "default",
 			ShortName:       "default",
 			UnqualifiedName: "default",
+			Description:     &description,
 		},
 	}
 
