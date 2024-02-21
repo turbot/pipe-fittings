@@ -173,7 +173,7 @@ credential_import "steampipe_gcp" {
 }
 
 credential_import "steampipe_alicloud" {
-  source      = "./alicloud.spc"
+  source      = "./steampipe_config/alicloud.spc"
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }

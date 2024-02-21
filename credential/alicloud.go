@@ -94,11 +94,22 @@ func (c *AlicloudCredential) GetTtl() int {
 
 func (c *AlicloudCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
+
+	// Alicloud uses 3 different environment variables
+	// Hence instead of configuring one, set the value to all the variables
 	if c.AccessKey != nil {
-		env["ALIBABACLOUD_ACCESS_KEY_ID"] = cty.StringVal(*c.AccessKey)
+		accessKey := cty.StringVal(*c.AccessKey)
+
+		env["ALIBABACLOUD_ACCESS_KEY_ID"] = accessKey
+		env["ALICLOUD_ACCESS_KEY_ID"] = accessKey
+		env["ALICLOUD_ACCESS_KEY"] = accessKey
 	}
 	if c.SecretKey != nil {
-		env["ALIBABACLOUD_ACCESS_KEY_SECRET"] = cty.StringVal(*c.SecretKey)
+		secretKey := cty.StringVal(*c.SecretKey)
+
+		env["ALIBABACLOUD_ACCESS_KEY_SECRET"] = secretKey
+		env["ALICLOUD_ACCESS_KEY_SECRET"] = secretKey
+		env["ALICLOUD_SECRET_KEY"] = secretKey
 	}
 	return env
 }
