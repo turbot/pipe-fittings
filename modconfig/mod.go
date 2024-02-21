@@ -309,11 +309,13 @@ func (m *Mod) SetFilePath(modFilePath string) {
 }
 
 // ValidateRequirements validates that the current steampipe CLI and the installed plugins is compatible with the mod
-func (m *Mod) ValidateRequirements() []error {
+func (m *Mod) ValidateRequirements(pluginVersionMap PluginVersionMap) []error {
 	var validationErrors []error
 	if err := m.validateSteampipeVersion(); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
+
+	validationErrors = append(validationErrors, m.validatePluginVersions(pluginVersionMap)...)
 	return validationErrors
 }
 
@@ -328,9 +330,7 @@ func (m *Mod) validateSteampipeVersion() error {
 	return m.Require.validateAppVersion(m.Name())
 }
 
-//nolint:unused // TODO: unused function
-func (m *Mod) validatePluginVersions(availablePlugins map[string]*PluginVersionString) []error {
-	// TODO KAI NO LONGER REQUIRED? <MOD VALIDATION>
+func (m *Mod) validatePluginVersions(availablePlugins PluginVersionMap) []error {
 	if m.Require == nil {
 		return nil
 	}

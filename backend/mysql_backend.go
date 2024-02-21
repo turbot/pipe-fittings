@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"database/sql"
+	"github.com/turbot/pipe-fittings/constants"
 	"strconv"
 	"strings"
 	"time"
@@ -11,7 +12,9 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-const mysqlConnectionStringPrefix = "mysql://"
+const (
+	mysqlConnectionStringPrefix = "mysql://"
+)
 
 type MySQLBackend struct {
 	connectionString string
@@ -24,14 +27,14 @@ func NewMySQLBackend(connString string) *MySQLBackend {
 
 	return &MySQLBackend{
 		connectionString: connString,
-		rowreader:        NewMySqlRowReader(),
+		rowreader:        newMySqlRowReader(),
 	}
 }
 
 // Connect implements Backend.
-func (s *MySQLBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
+func (b *MySQLBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
 	config := NewConnectConfig(options)
-	db, err := sql.Open("mysql", s.connectionString)
+	db, err := sql.Open("mysql", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to mysql backend")
 	}
@@ -41,16 +44,24 @@ func (s *MySQLBackend) Connect(_ context.Context, options ...ConnectOption) (*sq
 	return db, nil
 }
 
+func (b *MySQLBackend) ConnectionString() string {
+	return b.connectionString
+}
+
+func (b *MySQLBackend) Name() string {
+	return constants.MySQLBackendName
+}
+
 // RowReader implements Backend.
-func (s *MySQLBackend) RowReader() RowReader {
-	return s.rowreader
+func (b *MySQLBackend) RowReader() RowReader {
+	return b.rowreader
 }
 
 type mysqlRowReader struct {
 	BasicRowReader
 }
 
-func NewMySqlRowReader() RowReader {
+func newMySqlRowReader() RowReader {
 	return &mysqlRowReader{
 		BasicRowReader: BasicRowReader{
 			CellReader: mysqlReadCell,

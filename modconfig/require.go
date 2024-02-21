@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/schema"
@@ -144,14 +145,11 @@ func (r *Require) validateAppVersion(modName string) error {
 }
 
 // validatePluginVersions validates that for every plugin requirement there's at least one plugin installed
-//
-//nolint:unused // TODO: unused function
-func (r *Require) validatePluginVersions(modName string, plugins map[string]*PluginVersionString) []error {
-	// TODO KAI NO LONGER REQUIRED? <MOD VALIDATION>
+func (r *Require) validatePluginVersions(modName string, plugins PluginVersionMap) []error {
 	if len(r.Plugins) == 0 {
 		return nil
 	}
-	validationErrors := []error{}
+	var validationErrors []error
 	for _, requiredPlugin := range r.Plugins {
 		if err := r.searchInstalledPluginForRequirement(modName, requiredPlugin, plugins); err != nil {
 			validationErrors = append(validationErrors, err)
@@ -162,10 +160,8 @@ func (r *Require) validatePluginVersions(modName string, plugins map[string]*Plu
 
 // searchInstalledPluginForRequirement returns plugin validation errors if no plugin is found which satisfies
 // the mod requirement. If plugin is found nil error is returned.
-//
-//nolint:unused // TODO: unused function
-func (r *Require) searchInstalledPluginForRequirement(modName string, requirement *PluginVersion, plugins map[string]*PluginVersionString) error {
-	for installedName, installed := range plugins {
+func (r *Require) searchInstalledPluginForRequirement(modName string, requirement *PluginVersion, plugins PluginVersionMap) error {
+	for installedName, installed := range plugins.AvailablePlugins {
 		org, name, _ := ociinstaller.NewSteampipeImageRef(installedName).GetOrgNameAndStream()
 		if org != requirement.Org || name != requirement.Name {
 			// no point checking - different plugin
@@ -182,7 +178,11 @@ func (r *Require) searchInstalledPluginForRequirement(modName string, requiremen
 		}
 	}
 	// validation failed - return error
-	return sperr.New("could not find plugin which satisfies requirement '%s@%s' - required by '%s'", requirement.RawName, requirement.MinVersionString, modName)
+	if plugins.Backend == constants.SteampipeBackendName {
+		return sperr.New("%s backend '%s' does not provide a plugin which satisfies requirement '%s@%s' - required by '%s'", plugins.Backend, plugins.Database, requirement.RawName, requirement.MinVersionString, modName)
+	}
+	return sperr.New("%s backend '%s' does not support Steampipe plugins so cannot satisfy requirement '%s@%s' - required by '%s'", plugins.Backend, plugins.Database, requirement.RawName, requirement.MinVersionString, modName)
+
 }
 
 // AddModDependencies adds all the mod in newModVersions to our list of mods, using the following logic

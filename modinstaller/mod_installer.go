@@ -48,6 +48,8 @@ type ModInstaller struct {
 	dryRun bool
 	// do we force install even if there are require errors
 	force bool
+	// optional map of installed plugin versions
+	pluginVersions modconfig.PluginVersionMap
 }
 
 func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
@@ -55,11 +57,12 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		return nil, fmt.Errorf("no workspace mod passed to mod installer")
 	}
 	i := &ModInstaller{
-		workspacePath: opts.WorkspaceMod.ModPath,
-		workspaceMod:  opts.WorkspaceMod,
-		command:       opts.Command,
-		dryRun:        opts.DryRun,
-		force:         opts.Force,
+		workspacePath:  opts.WorkspaceMod.ModPath,
+		workspaceMod:   opts.WorkspaceMod,
+		command:        opts.Command,
+		dryRun:         opts.DryRun,
+		force:          opts.Force,
+		pluginVersions: opts.PluginVersions,
 	}
 
 	if opts.WorkspaceMod.Require != nil {
@@ -181,14 +184,16 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 	}()
 
-	if validationErrors := workspaceMod.ValidateRequirements(); len(validationErrors) > 0 {
+	if validationErrors := workspaceMod.ValidateRequirements(i.pluginVersions); len(validationErrors) > 0 {
 		if !i.force {
 			// if this is not a force install, return errors in validation
 			return error_helpers.CombineErrors(validationErrors...)
 		}
 		// ignore if this is a force install
-		// TODO: raise warnings for errors getting suppressed [https://github.com/turbot/steampipe/issues/3364]
-		slog.Debug("suppressing mod validation error", "validation errors", validationErrors)
+		error_helpers.ShowWarning(fmt.Sprintf("--force is set, ignoring %d mod validation %s:\n\t%s",
+			len(validationErrors),
+			utils.Pluralize("error", len(validationErrors)),
+			error_helpers.CombineErrors(validationErrors...).Error()))
 	}
 
 	// if mod args have been provided, add them to the workspace mod requires

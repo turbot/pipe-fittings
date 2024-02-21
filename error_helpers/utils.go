@@ -47,7 +47,7 @@ func ShowError(ctx context.Context, err error) {
 	}
 	err = HandleCancelError(err)
 	// statushooks.Done(ctx)
-	fmt.Fprintf(color.Output, "%s: %v\n", constants.ColoredErr, TransformErrorToSteampipe(err))
+	fmt.Fprintf(color.Error, "%s: %v\n", constants.ColoredErr, TransformErrorToSteampipe(err))
 }
 
 // ShowErrorWithMessage displays the given error nicely with the given message
@@ -57,7 +57,7 @@ func ShowErrorWithMessage(ctx context.Context, err error, message string) {
 	}
 	err = HandleCancelError(err)
 	// statushooks.Done(ctx)
-	fmt.Fprintf(color.Output, "%s: %s - %v\n", constants.ColoredErr, message, TransformErrorToSteampipe(err))
+	fmt.Fprintf(color.Error, "%s: %s - %v\n", constants.ColoredErr, message, TransformErrorToSteampipe(err))
 }
 
 // TransformErrorToSteampipe removes the pq: and rpc error prefixes along
@@ -115,7 +115,7 @@ func ShowWarning(warning string) {
 	if len(warning) == 0 {
 		return
 	}
-	fmt.Fprintf(color.Output, "%s: %v\n", constants.ColoredWarn, warning)
+	fmt.Fprintf(color.Error, "%s: %v\n", constants.ColoredWarn, warning)
 }
 
 func CombineErrorsWithPrefix(prefix string, errors ...error) error {
@@ -135,7 +135,8 @@ func CombineErrorsWithPrefix(prefix string, errors ...error) error {
 		}
 	}
 
-	combinedErrorString := map[string]struct{}{prefix: {}}
+	combinedErrorString := map[string]struct{}{}
+
 	for _, e := range errors {
 		if e == nil {
 			continue
@@ -143,7 +144,10 @@ func CombineErrorsWithPrefix(prefix string, errors ...error) error {
 		combinedErrorString[e.Error()] = struct{}{}
 	}
 
-	return fmt.Errorf(strings.Join(maps.Keys(combinedErrorString), "\n\t"))
+	if prefix != "" {
+		prefix = prefix + " - "
+	}
+	return fmt.Errorf("%s%s", prefix, strings.Join(maps.Keys(combinedErrorString), "\n\t"))
 }
 
 func allErrorsNil(errors ...error) bool {

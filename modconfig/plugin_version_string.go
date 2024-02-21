@@ -5,6 +5,18 @@ import (
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
+type PluginVersionMap struct {
+	Backend          string
+	Database         string
+	AvailablePlugins map[string]*PluginVersionString
+}
+
+func NewPluginVersionMap() PluginVersionMap {
+	return PluginVersionMap{
+		AvailablePlugins: make(map[string]*PluginVersionString),
+	}
+}
+
 type PluginVersionString struct {
 	version string
 	semver  *semver.Version
