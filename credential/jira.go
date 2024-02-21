@@ -19,8 +19,12 @@ type JiraCredential struct {
 
 func (c *JiraCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
+
+	// The Jira API token can be configured either of these environment variables
+	// JIRA_API_TOKEN or JIRA_TOKEN
 	if c.APIToken != nil {
 		env["JIRA_API_TOKEN"] = cty.StringVal(*c.APIToken)
+		env["JIRA_TOKEN"] = cty.StringVal(*c.APIToken)
 	}
 	if c.BaseURL != nil {
 		env["JIRA_URL"] = cty.StringVal(*c.BaseURL)
@@ -45,7 +49,14 @@ func (c *JiraCredential) CtyValue() (cty.Value, error) {
 
 func (c *JiraCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.APIToken == nil && c.BaseURL == nil && c.Username == nil {
-		jiraAPITokenEnvVar := os.Getenv("JIRA_API_TOKEN")
+		// The order of precedence for the Jira API token environment variable
+		// 1. JIRA_API_TOKEN
+		// 2. JIRA_TOKEN
+		jiraAPITokenEnvVar := os.Getenv("JIRA_TOKEN")
+		if os.Getenv("JIRA_API_TOKEN") != "" {
+			jiraAPITokenEnvVar = os.Getenv("JIRA_API_TOKEN")
+		}
+
 		jiraURLEnvVar := os.Getenv("JIRA_URL")
 		jiraUserEnvVar := os.Getenv("JIRA_USER")
 
