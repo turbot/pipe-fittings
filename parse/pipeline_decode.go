@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
@@ -135,9 +136,11 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 			o.Type = cty.List(cty.DynamicPseudoType)
 		case "map":
 			o.Type = cty.Map(cty.DynamicPseudoType)
+		case "set":
+			o.Type = cty.Set(cty.DynamicPseudoType)
 		default:
 			ty, moreDiags := typeexpr.TypeConstraint(expr)
-			if diags.HasErrors() {
+			if moreDiags.HasErrors() {
 				diags = append(diags, moreDiags...)
 				return o, diags
 			}
@@ -160,7 +163,22 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 			return o, diags
 		}
 
-		o.Default = ctyVal
+		// Does the default value matches the specified type?
+		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
+
+			isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
+			if !isCompatible {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("default value type mismatch - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
+					Subject:  &attr.Range,
+				})
+			} else {
+				o.Default = ctyVal
+			}
+		} else {
+			o.Default = ctyVal
+		}
 	} else if o.Optional {
 		o.Default = cty.NullVal(o.Type)
 	}
@@ -222,50 +240,6 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 	return o, diags
 }
 
-func decodeIntegration(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (modconfig.Integration, *DecodeResult) {
-
-	res := newDecodeResult()
-
-	if len(block.Labels) != 2 {
-		res.handleDecodeDiags(hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid integration block - expected 2 labels, found %d", len(block.Labels)),
-				Subject:  &block.DefRange,
-			},
-		})
-		return nil, res
-	}
-
-	integrationType := block.Labels[0]
-
-	integration := modconfig.NewIntegration(mod, block)
-	if integration == nil {
-		res.handleDecodeDiags(hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid integration type '%s'", integrationType),
-				Subject:  &block.DefRange,
-			},
-		})
-		return nil, res
-	}
-	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
-	if len(diags) > 0 {
-		return nil, res
-	}
-	body := r.(*hclsyntax.Body)
-	res.handleDecodeDiags(diags)
-
-	diags = decodeHclBody(body, parseCtx.EvalCtx, parseCtx, integration)
-	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
-		return integration, res
-	}
-
-	return integration, res
-}
-
 func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Trigger, *DecodeResult) {
 
 	res := newDecodeResult()
@@ -322,6 +296,21 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return triggerHcl, res
 	}
 
+	diags = triggerHcl.Config.SetBlocks(mod, triggerHcl, triggerOptions.Blocks, parseCtx.EvalCtx)
+	if len(diags) > 0 {
+		res.handleDecodeDiags(diags)
+		return triggerHcl, res
+	}
+
+	body, ok := block.Body.(*hclsyntax.Body)
+	if ok {
+		triggerHcl.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
+	} else {
+		// This shouldn't happen, but if it does, try our best effort to set the file reference. It will get the start line correctly
+		// but not the end line
+		triggerHcl.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+	}
+
 	moreDiags := parseCtx.AddTrigger(triggerHcl)
 	res.addDiags(moreDiags)
 
@@ -334,7 +323,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	res := newDecodeResult()
 
 	// get shell pipelineHcl
-	pipelineHcl := modconfig.NewPipelineHcl(mod, block)
+	pipelineHcl := modconfig.NewPipeline(mod, block)
 
 	pipelineOptions, diags := block.Body.Content(modconfig.PipelineBlockSchema)
 	if diags.HasErrors() {
@@ -364,6 +353,14 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 				return pipelineHcl, res
 			}
 
+			body, ok := block.Body.(*hclsyntax.Body)
+			if ok {
+				step.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
+			} else {
+				// This shouldn't happen, but if it does, try our best effort to set the file reference. It will get the start line correctly
+				// but not the end line
+				step.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+			}
 			pipelineHcl.Steps = append(pipelineHcl.Steps, step)
 
 		case schema.BlockTypePipelineOutput:
@@ -375,6 +372,22 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			}
 
 			if output != nil {
+
+				// check for duplicate output names
+				if len(pipelineHcl.OutputConfig) > 0 {
+					for _, o := range pipelineHcl.OutputConfig {
+						if o.Name == output.Name {
+							diags = append(diags, &hcl.Diagnostic{
+								Severity: hcl.DiagError,
+								Summary:  fmt.Sprintf("duplicate output name '%s' - output names must be unique", output.Name),
+								Subject:  &block.DefRange,
+							})
+							res.handleDecodeDiags(diags)
+							return pipelineHcl, res
+						}
+					}
+				}
+
 				pipelineHcl.OutputConfig = append(pipelineHcl.OutputConfig, *output)
 			}
 
@@ -387,6 +400,20 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			}
 
 			if pipelineParam != nil {
+
+				// check for duplicate pipeline parameters names
+				if len(pipelineHcl.Params) > 0 {
+					if _, ok := pipelineHcl.Params[pipelineParam.Name]; ok {
+						diags = append(diags, &hcl.Diagnostic{
+							Severity: hcl.DiagError,
+							Summary:  fmt.Sprintf("duplicate pipeline parameter name '%s' - parameter names must be unique", pipelineParam.Name),
+							Subject:  &block.DefRange,
+						})
+						res.handleDecodeDiags(diags)
+						return pipelineHcl, res
+					}
+				}
+
 				pipelineHcl.Params[pipelineParam.Name] = pipelineParam
 			}
 
@@ -410,10 +437,19 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		return pipelineHcl, res
 	}
 
+	body, ok := block.Body.(*hclsyntax.Body)
+	if ok {
+		pipelineHcl.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
+	} else {
+		// This shouldn't happen, but if it does, try our best effort to set the file reference. It will get the start line correctly
+		// but not the end line
+		pipelineHcl.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
+	}
+
 	return pipelineHcl, res
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]modconfig.Credential) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string
@@ -547,8 +583,6 @@ func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 	switch triggerType {
 	case schema.TriggerTypeSchedule:
 		return modconfig.TriggerScheduleBlockSchema
-	case schema.TriggerTypeInterval:
-		return modconfig.TriggerIntervalBlockSchema
 	case schema.TriggerTypeQuery:
 		return modconfig.TriggerQueryBlockSchema
 	case schema.TriggerTypeHttp:
@@ -558,8 +592,8 @@ func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 	}
 }
 
-func GetIntegrationBlockSchema(triggerType string) *hcl.BodySchema {
-	switch triggerType {
+func GetIntegrationBlockSchema(integrationType string) *hcl.BodySchema {
+	switch integrationType {
 	case schema.IntegrationTypeSlack:
 		return modconfig.IntegrationSlackBlockSchema
 	case schema.IntegrationTypeEmail:

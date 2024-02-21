@@ -20,7 +20,7 @@ trigger "schedule" "my_hourly_trigger" {
   # should this work if simple_with_trigger is the top level mod?
   # http://localhost:7103/api/v0/pipeline/simple_with_trigger/cmd
 
-  # if there's no mod.sp
+  # if there's no mod.fp
   # http://localhost:7103/api/v0/pipeline/foo/cmd
 
   # <mod_name>.pipeline.<pipeline_name>

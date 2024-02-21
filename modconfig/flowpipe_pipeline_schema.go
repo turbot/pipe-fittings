@@ -5,28 +5,6 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
-var FlowpipeConfigBlockSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{},
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       schema.BlockTypePipeline,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeTrigger,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeIntegration,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeCredential,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
-	},
-}
-
 var IntegrationSlackBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
@@ -67,23 +45,28 @@ var IntegrationEmailBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeSmtpHost,
+			Name:     schema.AttributeTypeSmtpHost,
+			Required: true,
 		},
 		{
-			Name: schema.AttributeTypeSmtpPort,
+			Name:     schema.AttributeTypeSmtpPort,
+			Required: false,
 		},
 		{
 			Name:     schema.AttributeTypeSmtpsPort,
 			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeSmtpUsername,
+			Name:     schema.AttributeTypeSmtpUsername,
+			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeSmtpPassword,
+			Name:     schema.AttributeTypeSmtpPassword,
+			Required: false,
 		},
 		{
-			Name: schema.AttributeTypeFrom,
+			Name:     schema.AttributeTypeFrom,
+			Required: true,
 		},
 		{
 			Name:     schema.AttributeTypeDefaultRecipient,
@@ -91,6 +74,10 @@ var IntegrationEmailBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name:     schema.AttributeTypeDefaultSubject,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeResponseUrl,
 			Required: false,
 		},
 	},
@@ -138,6 +125,9 @@ var TriggerScheduleBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeArgs,
 		},
+		{
+			Name: schema.AttributeTypeEnabled,
+		},
 	},
 }
 
@@ -170,6 +160,9 @@ var TriggerIntervalBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeArgs,
 		},
+		{
+			Name: schema.AttributeTypeEnabled,
+		},
 	},
 }
 
@@ -192,27 +185,28 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypeSchedule,
+			// Schedule is not a required attribute for Query Trigger, default to every 15 minutes
+			Name: schema.AttributeTypeSchedule,
+		},
+		{
+			Name:     schema.AttributeTypeSql,
 			Required: true,
-		},
-		{
-			Name:     schema.AttributeTypePipeline,
-			Required: true,
-		},
-		{
-			Name: schema.AttributeTypeArgs,
-		},
-		{
-			Name: schema.AttributeTypeSql,
-		},
-		{
-			Name: schema.AttributeTypeEvents,
 		},
 		{
 			Name: schema.AttributeTypePrimaryKey,
 		},
 		{
-			Name: schema.AttributeTypeConnectionString,
+			Name:     schema.AttributeTypeConnectionString,
+			Required: true,
+		},
+		{
+			Name: schema.AttributeTypeEnabled,
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       schema.BlockTypeCapture,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
@@ -236,11 +230,22 @@ var TriggerHttpBlockSchema = &hcl.BodySchema{
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypePipeline,
-			Required: true,
+			Name: schema.AttributeTypePipeline,
+		},
+		{
+			Name: schema.AttributeTypeExecutionMode,
 		},
 		{
 			Name: schema.AttributeTypeArgs,
+		},
+		{
+			Name: schema.AttributeTypeEnabled,
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       schema.BlockTypeMethod,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
@@ -263,6 +268,9 @@ var PipelineBlockSchema = &hcl.BodySchema{
 			Name:     schema.AttributeTypeTags,
 			Required: false,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -283,16 +291,7 @@ var PipelineBlockSchema = &hcl.BodySchema{
 var PipelineOutputBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
-			Name: schema.AttributeTypeTitle,
-		},
-		{
 			Name: schema.AttributeTypeDescription,
-		},
-		{
-			Name: schema.AttributeTypeForEach,
-		},
-		{
-			Name: schema.AttributeTypeDependsOn,
 		},
 		{
 			Name:     schema.AttributeTypeValue,
@@ -359,6 +358,9 @@ var PipelineStepHttpBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeRequestHeaders,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -416,6 +418,9 @@ var PipelineStepSleepBlockSchema = &hcl.BodySchema{
 		{
 			Name:     schema.AttributeTypeDuration,
 			Required: true,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -497,6 +502,9 @@ var PipelineStepEmailBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeSubject,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -547,6 +555,9 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeArgs,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -587,6 +598,9 @@ var PipelineStepTransformBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeValue,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -631,6 +645,9 @@ var PipelineStepPipelineBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeArgs,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -688,6 +705,9 @@ var PipelineStepFunctionBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name: schema.AttributeTypeEvent,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -771,6 +791,9 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeWorkdir,
 		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
+		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
@@ -816,7 +839,14 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypePrompt,
 		},
 		{
-			Name: schema.AttributeTypeNotifies,
+			Name: schema.AttributeTypeNotifier,
+		},
+		{
+			Name:     schema.AttributeTypeType,
+			Required: true,
+		},
+		{
+			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -838,6 +868,10 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeThrow,
+		},
+		{
+			Type:       schema.BlockTypeOption,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }

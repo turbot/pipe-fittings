@@ -6,16 +6,17 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/printers"
 )
 
 type ResourceReference struct {
 	ResourceWithMetadataImpl
 
-	To        string `cty:"reference_to" column:"reference_to,text"`
-	From      string `cty:"reference_from" column:"reference_from,text"`
-	BlockType string `cty:"from_block_type" column:"from_block_type,text"`
-	BlockName string `cty:"from_block_name" column:"from_block_name,text"`
-	Attribute string `cty:"from_attribute" column:"from_attribute,text"`
+	To        string `cty:"reference_to" column:"reference_to,string" json:"reference_to,omitempty"`
+	From      string `cty:"reference_from" column:"reference_from,string" json:"reference_from,omitempty"`
+	BlockType string `cty:"from_block_type" column:"from_block_type,string" json:"from_block_type,omitempty"`
+	BlockName string `cty:"from_block_name" column:"from_block_name,string" json:"from_block_name,omitempty"`
+	Attribute string `cty:"from_attribute" column:"from_attribute,string" json:"from_attribute,omitempty"`
 	name      string
 }
 
@@ -42,9 +43,9 @@ func (r *ResourceReference) CloneWithNewFrom(from string) *ResourceReference {
 	}
 	ref.name = ref.buildName()
 	// clone metadata so we can mutate it
-	ref.ResourceWithMetadataImpl.metadata = ref.ResourceWithMetadataImpl.metadata.Clone()
+	ref.ResourceWithMetadataImpl.ResourceMetadata = ref.ResourceWithMetadataImpl.ResourceMetadata.Clone()
 	// set metadata name
-	ref.ResourceWithMetadataImpl.metadata.ResourceName = ref.name
+	ref.ResourceWithMetadataImpl.ResourceMetadata.ResourceName = ref.name
 	return ref
 }
 
@@ -84,4 +85,16 @@ func (r *ResourceReference) Equals(other *ResourceReference) bool {
 // the name must start with the 'resource type' as we parse it and use just the 'name' segment
 func (r *ResourceReference) Name() string {
 	return fmt.Sprintf("ref.%s", r.name)
+}
+
+// GetShowData implements printers.Showable
+func (r *ResourceReference) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("To", r.To),
+		printers.NewFieldValue("From", r.From),
+		printers.NewFieldValue("BlockType", r.BlockType),
+		printers.NewFieldValue("BlockName", r.BlockName),
+		printers.NewFieldValue("Attribute", r.Attribute),
+	)
+	return res
 }

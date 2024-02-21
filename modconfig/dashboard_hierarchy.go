@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -18,15 +19,15 @@ type DashboardHierarchy struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"-"`
-	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"-"`
-	NodeNames []string          `json:"nodes"`
-	EdgeNames []string          `json:"edges"`
+	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"nodes,omitempty"`
+	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"edges,omitempty"`
+	NodeNames []string
+	EdgeNames []string
 
-	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
-	Width      *int                          `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type       *string                       `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display    *string                       `cty:"display" hcl:"display" json:"-"`
+	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty"`
+	Width      *int                          `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type       *string                       `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display    *string                       `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardHierarchy `hcl:"base" json:"-"`
 
@@ -233,4 +234,18 @@ func (h *DashboardHierarchy) setBaseProperties() {
 	} else {
 		h.Nodes.Merge(h.Base.Nodes)
 	}
+}
+
+// GetShowData implements printers.Showable
+func (h *DashboardHierarchy) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", h.Width),
+		printers.NewFieldValue("Type", h.Type),
+		printers.NewFieldValue("Display", h.Display),
+		printers.NewFieldValue("Nodes", h.Nodes),
+		printers.NewFieldValue("Edges", h.Edges),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(h.QueryProviderImpl.GetShowData())
+	return res
 }

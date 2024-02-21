@@ -46,10 +46,15 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeCredential        = "credential"
+	BlockTypeCredentialImport  = "credential_import" //nolint:gosec // this is not a password
 	BlockTypeNotify            = "notify"
+	BlockTypeNotifier          = "notifier"
 	BlockTypeLoop              = "loop"
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
+	BlockTypeOption            = "option"
+	BlockTypeCapture           = "capture"
+	BlockTypeMethod            = "method"
 
 	AttributeTypeValue = "value"
 
@@ -116,7 +121,6 @@ const (
 	AttributeTypeToken         = "token"
 	AttributeTypeSigningSecret = "signing_secret"
 	AttributeTypeWebhookUrl    = "webhook_url"
-	AttributeTypeNotifies      = "notifies"
 
 	AttributeTypeIntegration = "integration"
 	AttributeTypeCredential  = "credential"
@@ -153,6 +157,10 @@ const (
 	AttributeTypeSmtpTls          = "smtp_tls"
 	AttributeTypeSmtpUsername     = "smtp_username"
 	AttributeTypeSmtpsPort        = "smtps_port"
+	AttributeTypeLabel            = "label"
+	AttributeTypeSelected         = "selected"
+	AttributeTypeNotifier         = "notifier"
+	AttributeTypeNotifies         = "notifies"
 
 	AttributeTypeMessage = "message"
 
@@ -170,6 +178,7 @@ const (
 	AttributeTypeCmd               = "cmd"
 	AttributeTypeEntryPoint        = "entrypoint"
 	AttributeTypeTimeout           = "timeout"
+	AttributeTypeMaxConcurrency    = "max_concurrency"
 	AttributeTypeCpuShares         = "cpu_shares"
 	AttributeTypeMemory            = "memory"
 	AttributeTypeMemoryReservation = "memory_reservation"
@@ -180,7 +189,10 @@ const (
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
 	AttributeTypePrimaryKey = "primary_key"
-	AttributeTypeEvents     = "events"
+	AttributeTypeEnabled    = "enabled"
+
+	// HTTP Trigger attributes
+	AttributeTypeExecutionMode = "execution_mode"
 
 	// Input step attributes
 	AttributeTypePrompt    = "prompt"
@@ -188,14 +200,14 @@ const (
 
 	// All Possible Trigger Types
 	TriggerTypeSchedule = "schedule"
-	TriggerTypeInterval = "interval"
 	TriggerTypeQuery    = "query"
 	TriggerTypeHttp     = "http"
 
 	// Integration Types
-	IntegrationTypeSlack = "slack"
-	IntegrationTypeEmail = "email"
-	IntegrationTypeTeams = "teams"
+	IntegrationTypeSlack   = "slack"
+	IntegrationTypeEmail   = "email"
+	IntegrationTypeTeams   = "teams"
+	IntegrationTypeWebform = "webform"
 
 	LabelName = "name"
 	LabelType = "type"
@@ -288,8 +300,6 @@ var ValidResourceItemTypes = []string{
 	BlockTypePipeline,
 	BlockTypeTrigger,
 	BlockTypeWith,
-	BlockTypeIntegration,
-	BlockTypeCredential,
 	// local is not an actual block name but is a resource type
 	"local",
 	// references

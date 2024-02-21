@@ -9,7 +9,7 @@ var EnvUpdateCheck,
 	EnvDatabaseStartTimeout,
 	EnvDashboardStartTimeout,
 	EnvSnapshotLocation,
-	EnvWorkspaceDatabase,
+	EnvDatabase,
 	EnvWorkspaceProfile,
 	EnvCloudHost,
 	EnvCloudToken,
@@ -25,8 +25,6 @@ var EnvUpdateCheck,
 	EnvTelemetry,
 	EnvIntrospection,
 	EnvWorkspaceProfileLocation,
-	// EnvConfigDump is an undocumented variable is subject to change in the future
-	EnvConfigDump,
 	EnvMemoryMaxMb,
 	EnvMemoryMaxMbPlugin,
 	EnvConfigPath,
@@ -44,7 +42,7 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvDatabaseStartTimeout = buildEnv("DATABASE_START_TIMEOUT")
 	EnvDashboardStartTimeout = buildEnv("DASHBOARD_START_TIMEOUT")
 	EnvSnapshotLocation = buildEnv("SNAPSHOT_LOCATION")
-	EnvWorkspaceDatabase = buildEnv("WORKSPACE_DATABASE")
+	EnvDatabase = buildEnv("DATABASE")
 	EnvWorkspaceProfile = buildEnv("WORKSPACE")
 	EnvCloudHost = buildEnv("CLOUD_HOST")
 	EnvCloudToken = buildEnv("CLOUD_TOKEN")
@@ -60,7 +58,6 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvTelemetry = buildEnv("TELEMETRY")
 	EnvIntrospection = buildEnv("INTROSPECTION")
 	EnvWorkspaceProfileLocation = buildEnv("WORKSPACE_PROFILES_LOCATION")
-	EnvConfigDump = buildEnv("CONFIG_DUMP")
 	EnvMemoryMaxMb = buildEnv("MEMORY_MAX_MB")
 	EnvMemoryMaxMbPlugin = buildEnv("PLUGIN_MEMORY_MAX_MB")
 	EnvConfigPath = buildEnv("CONFIG_PATH")

@@ -18,7 +18,7 @@ trigger "schedule" "report_triggers_with_schedule_var_with_default_value" {
   }
 }
 
-trigger "interval" "report_triggers_with_interval_var_with_default_value" {
+trigger "schedule" "report_triggers_with_interval_var_with_default_value" {
   schedule = var.interval_default
   pipeline = pipeline.github_issue
   args = {

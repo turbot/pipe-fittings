@@ -23,7 +23,7 @@ type WorkspaceProfile interface {
 	GetOptionsForBlock(*hcl.Block) (options.Options, hcl.Diagnostics)
 
 	GetInstallDir() *string
-	// TODO slightly hacky way of doing nil checks with generic types
+	// IsNil implements slightly hacky way of doing nil checks with generic types
 	IsNil() bool
 }
 

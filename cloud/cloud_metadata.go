@@ -66,7 +66,7 @@ func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string
 			Type:   identity.Type,
 			Handle: identityHandle,
 		},
-		WorkspaceDatabase: &steampipeconfig.WorkspaceMetadata{
+		Workspace: &steampipeconfig.WorkspaceMetadata{
 			Id:     cloudWorkspace.Id,
 			Handle: cloudWorkspace.Handle,
 		},

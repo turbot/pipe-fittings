@@ -34,7 +34,7 @@ func TestParamValidation(t *testing.T) {
 
 	errs := validateMyParam.ValidatePipelineParam(stringInvalid)
 	assert.Equal(1, len(errs))
-	assert.Equal("Bad Request: invalid type for parameter 'my_token'", errs[0].Error())
+	assert.Equal("Bad Request: invalid data type for parameter 'my_token' wanted string but received int", errs[0].Error())
 
 	invalidParam := map[string]interface{}{
 		"invalid": "foo",
@@ -61,7 +61,7 @@ func TestParamValidation(t *testing.T) {
 	}
 	errs = validateMyParam.ValidatePipelineParam(invalidNum)
 	assert.Equal(1, len(errs))
-	assert.Equal("Bad Request: invalid type for parameter 'my_number_two'", errs[0].Error())
+	assert.Equal("Bad Request: invalid data type for parameter 'my_number_two' wanted number but received string", errs[0].Error())
 
 	moreThanOneInvalids := map[string]interface{}{
 		"my_token":      "123",
@@ -73,9 +73,9 @@ func TestParamValidation(t *testing.T) {
 	assert.Equal(3, len(errs))
 
 	expectedErrors := []string{
-		"Bad Request: invalid type for parameter 'my_number'",
-		"Bad Request: invalid type for parameter 'my_bool'",
-		"Bad Request: invalid type for parameter 'my_number_two'",
+		"Bad Request: invalid data type for parameter 'my_number' wanted number but received string",
+		"Bad Request: invalid data type for parameter 'my_bool' wanted bool but received string",
+		"Bad Request: invalid data type for parameter 'my_number_two' wanted number but received string",
 	}
 
 	actualErrors := []string{}
@@ -127,9 +127,9 @@ func TestParamValidation(t *testing.T) {
 	assert.Equal(3, len(errs))
 
 	expectedErrors = []string{
-		"Bad Request: invalid type for parameter 'list_string'",
-		"Bad Request: invalid type for parameter 'list_number'",
-		"Bad Request: invalid type for parameter 'list_number_two'",
+		"Bad Request: invalid data type for parameter 'list_string' wanted list of string but received string",
+		"Bad Request: invalid data type for parameter 'list_number' wanted list of number but received int",
+		"Bad Request: invalid data type for parameter 'list_number_two' wanted list of number but received float64",
 	}
 
 	actualErrors = []string{}
@@ -145,7 +145,7 @@ func TestParamValidation(t *testing.T) {
 	}
 	errs = validateMyParam.ValidatePipelineParam(listStringInvalid)
 	assert.Equal(1, len(errs))
-	assert.Equal("Bad Request: invalid type for parameter 'list_string'", errs[0].Error())
+	assert.Equal("Bad Request: invalid data type for parameter 'list_string' wanted list of string but received []interface {}", errs[0].Error())
 
 	listAny := map[string]interface{}{
 		"list_any":       []interface{}{"foo", 1, 1.23, true},
@@ -201,7 +201,7 @@ func TestParamValidation(t *testing.T) {
 	}
 	errs = validateMyParam.ValidatePipelineParam(stringMapGenericInvalid)
 	assert.Equal(1, len(errs))
-	assert.Equal("Bad Request: invalid type for parameter 'map_of_string'", errs[0].Error())
+	assert.Equal("Bad Request: invalid data type for parameter 'map_of_string' wanted map of string but received map[string]interface {}", errs[0].Error())
 
 	numberMap := map[string]interface{}{
 		"map_of_number": map[string]float64{

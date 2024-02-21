@@ -8,6 +8,7 @@ import (
 // cache resource schemas
 var resourceSchemaCache = make(map[string]*hcl.BodySchema)
 
+// TODO: Flowpipe and Steampipe is sharing this config block schema .. but I don't think it should?
 var ConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
@@ -30,6 +31,18 @@ var ConfigBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypeCredential,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeCredentialImport,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeIntegration,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeNotifier,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }

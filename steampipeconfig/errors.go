@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gertd/go-pluralize"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/tfdiags"
@@ -79,7 +80,7 @@ func (m MissingVariableError) getTransitiveVariableMissingString() string {
 		varsString := strings.Join(varNames, ",")
 
 		sb.WriteString(
-			fmt.Sprintf("\tdependency mod %s cannot be loaded because %s %s %s no value.  Mod %s must pass %s for %s in the `require` block of its mod.sp\n",
+			fmt.Sprintf("\tdependency mod %s cannot be loaded because %s %s %s no value.  Mod %s must pass %s for %s in the `require` block of its %s\n",
 				modPath,
 				pluralizer.Pluralize("variable", varCount, false),
 				varsString,
@@ -87,6 +88,7 @@ func (m MissingVariableError) getTransitiveVariableMissingString() string {
 				parentPath,
 				pluralizer.Pluralize("a value", varCount, false),
 				varsString,
+				app_specific.DefaultModFileName(),
 			))
 
 	}

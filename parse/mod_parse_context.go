@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -9,6 +10,7 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -27,7 +29,6 @@ type ParseModFlag uint32
 const (
 	CreateDefaultMod ParseModFlag = 1 << iota
 	CreatePseudoResources
-	CreateTransientLocalMod
 )
 
 /*
@@ -65,7 +66,10 @@ type ModParseContext struct {
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials map[string]modconfig.Credential
+	Credentials       map[string]credential.Credential
+	CredentialImports map[string]credential.CredentialImport
+	Integrations      map[string]modconfig.Integration
+	Notifiers         map[string]modconfig.Notifier
 
 	ParentParseCtx *ModParseContext
 
@@ -140,6 +144,9 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 		}
 	}
 	child.Credentials = parent.Credentials
+	child.Integrations = parent.Integrations
+	child.CredentialImports = parent.CredentialImports
+	child.Notifiers = parent.Notifiers
 
 	return child
 }
@@ -239,7 +246,8 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	// do not add variables (as they have already been added)
 	// if the resource is for a dependency mod, do not add locals
 	shouldAdd := func(item modconfig.HclResource) bool {
-		if item.BlockType() == schema.BlockTypeVariable ||
+		if item.BlockType() == schema.BlockTypeMod ||
+			item.BlockType() == schema.BlockTypeVariable ||
 			item.BlockType() == schema.BlockTypeLocals && item.(modconfig.ModItem).GetMod().ShortName != m.CurrentMod.ShortName {
 			return false
 		}
@@ -283,11 +291,12 @@ func (m *ModParseContext) SetDecodeContent(content *hcl.BodyContent, fileData ma
 // 1) store block as unresolved
 // 2) add dependencies to our tree of dependencies
 func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) hcl.Diagnostics {
-	// TACTICAL if this is NOT a top level block, add a suffix to the block name
+	// TACTICAL if this is NOT a top level block, add a unique suffix to the block name
 	// this is needed to avoid circular dependency errors if a nested block references
 	// a top level block with the same name
 	if !m.IsTopLevelBlock(block) {
-		name = "nested." + name
+		// NOTE: include the block pointer to avoid clashes with other nested blocks with the same name
+		name = fmt.Sprintf("nested_%s.%s", fmt.Sprintf("%p", block)[8:], name)
 	}
 	return m.ParseContext.AddDependencies(block, name, dependencies)
 }
@@ -295,10 +304,6 @@ func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, depende
 // ShouldCreateDefaultMod returns whether the flag is set to create a default mod if no mod definition exists
 func (m *ModParseContext) ShouldCreateDefaultMod() bool {
 	return m.Flags&CreateDefaultMod == CreateDefaultMod
-}
-
-func (m *ModParseContext) ShouldCreateCreateTransientLocalMod() bool {
-	return m.Flags&CreateTransientLocalMod == CreateTransientLocalMod
 }
 
 // CreatePseudoResources returns whether the flag is set to create pseudo resources
@@ -391,6 +396,18 @@ func (m *ModParseContext) buildEvalContext() {
 		referenceValues[mod] = cty.ObjectVal(refTypeMap)
 	}
 
+	varValueNotifierMap := make(map[string]cty.Value)
+
+	for k, i := range m.Notifiers {
+		var err error
+		varValueNotifierMap[k], err = i.CtyValue()
+		if err != nil {
+			slog.Warn("failed to convert notifier to cty value", "notifier", i.Name(), "error", err)
+		}
+	}
+
+	referenceValues["notifier"] = cty.ObjectVal(varValueNotifierMap)
+
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(referenceValues)
 }
@@ -409,7 +426,8 @@ func (m *ModParseContext) storeResourceInReferenceValueMap(resource modconfig.Hc
 	}
 
 	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, resource.Name())
+	n := resource.Name()
+	delete(m.UnresolvedBlocks, n)
 
 	return nil
 }
@@ -719,7 +737,7 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 }
 
 func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
-	for _, b := range m.CurrentMod.ResourceWithMetadataBaseRemain.(*hclsyntax.Body).Blocks {
+	for _, b := range m.CurrentMod.ResourceWithMetadataImplRemain.(*hclsyntax.Body).Blocks {
 		if b.Type == schema.BlockTypeRequire {
 			return b
 		}

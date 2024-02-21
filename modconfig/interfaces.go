@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -17,10 +18,12 @@ type MappableResource interface {
 
 // HclResource must be implemented by resources defined in HCL
 type HclResource interface {
-	// TODO  [node_reuse] rename to GetName/GetFullName
+	printers.Showable
+	printers.Listable
 	Name() string
 	GetTitle() string
 	GetUnqualifiedName() string
+	GetShortName() string
 	OnDecoded(*hcl.Block, ResourceMapsProvider) hcl.Diagnostics
 	GetDeclRange() *hcl.Range
 	BlockType() string
@@ -38,7 +41,7 @@ type HclResource interface {
 type ModTreeItem interface {
 	HclResource
 	ModItem
-	ConnectionStringItem
+	DatabaseItem
 
 	AddParent(ModTreeItem) error
 	GetParents() []ModTreeItem
@@ -49,8 +52,10 @@ type ModTreeItem interface {
 	GetModTreeItemImpl() *ModTreeItemImpl
 }
 
-type ConnectionStringItem interface {
-	GetConnectionString() *string
+type DatabaseItem interface {
+	GetDatabase() *string
+	GetSearchPath() []string
+	GetSearchPathPrefix() []string
 }
 
 type ModItem interface {

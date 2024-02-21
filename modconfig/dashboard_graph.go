@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -18,18 +19,18 @@ type DashboardGraph struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"-"`
-	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"-"`
-	NodeNames []string          `json:"nodes"`
-	EdgeNames []string          `json:"edges"`
+	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"nodes,omitempty"`
+	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"edges,omitempty"`
+	NodeNames []string          `snapshot:"nodes"`
+	EdgeNames []string          `snapshot:"edges"`
 
-	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
-	Direction  *string                       `cty:"direction" hcl:"direction" column:"direction,text" json:"direction"`
+	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty" snapshot:"categories"`
+	Direction  *string                       `cty:"direction" hcl:"direction" column:"direction,string" json:"direction,omitempty" snapshot:"direction"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width   *int    `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type    *string `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display *string `cty:"display" hcl:"display" json:"-"`
+	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardGraph `hcl:"base" json:"-"`
 }
@@ -235,4 +236,19 @@ func (g *DashboardGraph) setBaseProperties() {
 	} else {
 		g.Nodes.Merge(g.Base.Nodes)
 	}
+}
+
+// GetShowData implements printers.Showable
+func (g *DashboardGraph) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", g.Width),
+		printers.NewFieldValue("Type", g.Type),
+		printers.NewFieldValue("Display", g.Display),
+		printers.NewFieldValue("Nodes", g.Nodes),
+		printers.NewFieldValue("Edges", g.Edges),
+		printers.NewFieldValue("Direction", g.Direction),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(g.QueryProviderImpl.GetShowData())
+	return res
 }

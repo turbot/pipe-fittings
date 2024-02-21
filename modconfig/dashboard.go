@@ -2,8 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/schema"
 	"strings"
+
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
@@ -26,13 +27,13 @@ type Dashboard struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width   *int              `cty:"width" hcl:"width"  column:"width,text"`
-	Display *string           `cty:"display" hcl:"display" column:"display,text"`
-	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
-	UrlPath string            `cty:"url_path"  column:"url_path,jsonb"`
-	Base    *Dashboard        `hcl:"base"`
+	Width   *int              `cty:"width" hcl:"width"  column:"width,string" json:"width,omitempty"`
+	Display *string           `cty:"display" hcl:"display" column:"display,string" json:"display,omitempty"`
+	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb" json:"inputs,omitempty"`
+	UrlPath string            `cty:"url_path"  column:"url_path,jsonb" json:"url_path,omitempty"`
+	Base    *Dashboard        `hcl:"base" json:"-"`
 	// store children in a way which can be serialised via cty
-	ChildNames []string `cty:"children" column:"children,jsonb"`
+	ChildNames []string `cty:"children" column:"children,jsonb" json:"children,omitempty"`
 	// map of all inputs in our resource tree
 	selfInputsMap          map[string]*DashboardInput
 	runtimeDependencyGraph *topsort.Graph
@@ -63,9 +64,6 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	}
 
 	var dashboard = &Dashboard{
-		ResourceWithMetadataImpl: ResourceWithMetadataImpl{
-			metadata: &ResourceMetadata{},
-		},
 		ModTreeItemImpl: ModTreeItemImpl{
 			HclResourceImpl: HclResourceImpl{
 				ShortName:       parsedName.Name,

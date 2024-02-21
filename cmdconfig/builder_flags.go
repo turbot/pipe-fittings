@@ -1,10 +1,11 @@
 package cmdconfig
 
 import (
-	"github.com/turbot/pipe-fittings/app_specific"
+	"os"
+
+	"github.com/spf13/pflag"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"os"
 )
 
 // basic flags
@@ -16,21 +17,6 @@ func (c *CmdBuilder) AddStringFlag(name string, defaultValue string, desc string
 	for _, o := range opts {
 		o(c.cmd, name, name)
 	}
-
-	return c
-}
-
-// AddFilepathFlag is a helper function to add a string flag containing a file path to a command
-// Note:this also stores the config key in filePathViperKeys,
-// ensuring the value of the key has `~` converted to the home dir
-func (c *CmdBuilder) AddFilepathFlag(name string, defaultValue string, desc string, opts ...FlagOption) *CmdBuilder {
-	c.cmd.Flags().String(name, defaultValue, desc)
-	c.bindings[name] = c.cmd.Flags().Lookup(name)
-	for _, o := range opts {
-		o(c.cmd, name, name)
-	}
-
-	filePathViperKeys[name] = struct{}{}
 
 	return c
 }
@@ -94,15 +80,19 @@ func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
 		AddStringFlag(constants.ArgCloudToken, "", "Turbot Pipes authentication token")
 }
 
-// AddWorkspaceDatabaseFlag is helper function to add the workspace-databse flag to a command
-func (c *CmdBuilder) AddWorkspaceDatabaseFlag() *CmdBuilder {
-	return c.
-		AddStringFlag(constants.ArgWorkspaceDatabase, app_specific.DefaultWorkspaceDatabase, "Turbot Pipes workspace database")
-}
-
 // AddModLocationFlag is helper function to add the mod-location flag to a command
 func (c *CmdBuilder) AddModLocationFlag() *CmdBuilder {
 	cwd, err := os.Getwd()
 	error_helpers.FailOnError(err)
-	return c.AddFilepathFlag(constants.ArgModLocation, cwd, "Path to the workspace working directory")
+	return c.AddStringFlag(constants.ArgModLocation, cwd, "Sets the workspace working directory. If not specified, the workspace directory will be set to the current working directory.")
+}
+
+func (c *CmdBuilder) AddVarFlag(value pflag.Value, name string, usage string, opts ...FlagOption) *CmdBuilder {
+	c.cmd.Flags().Var(value, name, usage)
+
+	c.bindings[name] = c.cmd.Flags().Lookup(name)
+	for _, o := range opts {
+		o(c.cmd, name, name)
+	}
+	return c
 }

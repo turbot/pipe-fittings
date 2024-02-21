@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -10,10 +11,12 @@ type ModTreeItemImpl struct {
 	// required to allow partial decoding
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
-	Mod              *Mod    `cty:"mod" json:"-"`
-	ConnectionString *string `cty:"connection_string" hcl:"connection_string" json:"-"`
+	Mod              *Mod     `cty:"mod" json:"-"`
+	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
+	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
+	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
 
-	Paths []NodePath `column:"path,jsonb" json:"-"`
+	Paths []NodePath `column:"path,jsonb" json:"path,omitempty"`
 
 	// TODO DO WE EVER HAVE MULTIPLE PARENTS
 	parents  []ModTreeItem
@@ -64,13 +67,35 @@ func (b *ModTreeItemImpl) GetMod() *Mod {
 	return b.Mod
 }
 
-// GetConnectionString implements ConnectionStringItem, ModTreeItem
-func (b *ModTreeItemImpl) GetConnectionString() *string {
-	if b.ConnectionString != nil {
-		return b.ConnectionString
+// GetDatabase implements DatabaseItem
+func (b *ModTreeItemImpl) GetDatabase() *string {
+	if b.Database != nil {
+		return b.Database
 	}
 	if len(b.parents) > 0 {
-		return b.parents[0].GetConnectionString()
+		return b.parents[0].GetDatabase()
+	}
+	return nil
+}
+
+// GetSearchPath implements DatabaseItem
+func (b *ModTreeItemImpl) GetSearchPath() []string {
+	if len(b.SearchPath) != 0 {
+		return b.SearchPath
+	}
+	if len(b.parents) > 0 {
+		return b.parents[0].GetSearchPath()
+	}
+	return nil
+}
+
+// GetSearchPathPrefix implements DatabaseItem
+func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
+	if len(b.SearchPathPrefix) != 0 {
+		return b.SearchPathPrefix
+	}
+	if len(b.parents) > 0 {
+		return b.parents[0].GetSearchPathPrefix()
 	}
 	return nil
 }
@@ -86,4 +111,38 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 		return cty.Zero, nil
 	}
 	return GetCtyValue(b)
+}
+
+// GetShowData implements printers.Showable
+func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
+	var name = b.ShortName
+	if b.parents != nil {
+		name = b.Name()
+
+	}
+	res := printers.NewRowData(
+		// override name to take parents into account - merge will handle this and ignore the base name
+		printers.NewFieldValue("Name", name),
+		printers.NewFieldValue("Mod", b.Mod.ShortName),
+		printers.NewFieldValue("Database", b.Database),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(b.HclResourceImpl.GetShowData())
+	return res
+}
+
+// GetListData implements printers.Listable
+func (b *ModTreeItemImpl) GetListData() *printers.RowData {
+	var name = b.ShortName
+	if b.parents != nil {
+		name = b.Name()
+	}
+	res := printers.NewRowData(
+		printers.NewFieldValue("NAME", name),
+	)
+	if b.Mod != nil {
+		res.AddField(printers.NewFieldValue("MOD", b.Mod.ShortName))
+	}
+	res.Merge(b.HclResourceImpl.GetListData())
+	return res
 }

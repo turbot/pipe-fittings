@@ -2,11 +2,10 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"path"
-	"path/filepath"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants/runtime"
 )
 
@@ -36,9 +35,4 @@ func WorkspaceLockPath(workspacePath string) string {
 
 func DefaultVarsFilePath(workspacePath string) string {
 	return path.Join(workspacePath, app_specific.DefaultVarsFileName)
-}
-
-func ModFilePath(modFolder string) string {
-	modFilePath := filepath.Join(modFolder, app_specific.ModFileName)
-	return modFilePath
 }

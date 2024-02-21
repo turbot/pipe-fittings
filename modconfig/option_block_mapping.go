@@ -10,11 +10,11 @@ import (
 type OptionsBlockFactory = func(*hcl.Block) (options.Options, hcl.Diagnostics)
 
 // SteampipeOptionsBlockMapping is an OptionsBlockFactory used to map global steampipe options
-// TODO look at deprecations
+// TODO KAI look at deprecations
 func SteampipeOptionsBlockMapping(block *hcl.Block) (options.Options, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 
-	switch block.Type {
+	switch block.Labels[0] {
 
 	case options.ConnectionBlock:
 		return new(options.Connection), nil
@@ -28,8 +28,6 @@ func SteampipeOptionsBlockMapping(block *hcl.Block) (options.Options, hcl.Diagno
 		return new(options.Query), nil
 	case options.CheckBlock:
 		return new(options.Check), nil
-	case options.DashboardBlock:
-		return new(options.GlobalDashboard), nil
 	case options.PluginBlock:
 		return new(options.Plugin), nil
 	default:

@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stevenle/topsort"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -18,11 +19,11 @@ type DashboardContainer struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width   *int              `cty:"width" hcl:"width"  column:"width,text"`
-	Display *string           `cty:"display" hcl:"display"`
-	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb"`
+	Width   *int              `cty:"width" hcl:"width"  column:"width,string" json:"width,omitempty"`
+	Display *string           `cty:"display" hcl:"display" json:"display,omitempty"`
+	Inputs  []*DashboardInput `cty:"inputs" column:"inputs,jsonb" json:"inputs,omitempty"`
 	// store children in a way which can be serialised via cty
-	ChildNames []string `cty:"children" column:"children,jsonb"`
+	ChildNames []string `cty:"children" column:"children,jsonb" json:"children,omitempty"`
 
 	//nolint:unused // TODO: unused attribute
 	runtimeDependencyGraph *topsort.Graph
@@ -125,4 +126,17 @@ func (c *DashboardContainer) WalkResources(resourceFunc func(resource HclResourc
 // CtyValue implements CtyValueProvider
 func (c *DashboardContainer) CtyValue() (cty.Value, error) {
 	return GetCtyValue(c)
+}
+
+// GetShowData implements printers.Showable
+func (c *DashboardContainer) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", c.Width),
+		printers.NewFieldValue("Display", c.Display),
+		printers.NewFieldValue("Inputs", c.Inputs),
+		printers.NewFieldValue("Children", c.ChildNames),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(c.ModTreeItemImpl.GetShowData())
+	return res
 }

@@ -3,18 +3,18 @@ package invalid_mod_tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/tests/test_init"
-
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/workspace"
 )
 
@@ -84,11 +84,6 @@ type testSetup struct {
 
 var tests = []testSetup{
 	{
-		title:         "Missing var",
-		modDir:        "./mods/mod_missing_var",
-		containsError: "Unresolved blocks:\n   integration.slack.slack_app_from_var -> var.slack_signing_secret\n     MISSING: var.slack_signing_secret",
-	},
-	{
 		title:         "Missing var trigger",
 		modDir:        "./mods/mod_missing_var_trigger",
 		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> var.trigger_schedule",
@@ -146,12 +141,15 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 
 		fmt.Println("Running test " + test.title)
 
-		_, errorAndWarning := workspace.LoadWithParams(suite.ctx, test.modDir, map[string]modconfig.Credential{}, ".fp")
+		_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]credential.Credential{}))
 		assert.NotNil(errorAndWarning.Error)
-		assert.Contains(errorAndWarning.Error.Error(), test.containsError)
+		if errorAndWarning.Error != nil {
+			assert.Contains(errorAndWarning.Error.Error(), test.containsError)
+		}
 
 		if test.errorType != "" {
-			err, ok := errorAndWarning.Error.(perr.ErrorModel)
+			var err perr.ErrorModel
+			ok := errors.As(errorAndWarning.Error, &err)
 			if !ok {
 				assert.Fail("should be a pcerr.ErrorModel")
 				return

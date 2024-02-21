@@ -18,6 +18,11 @@ type testSetup struct {
 
 var tests = []testSetup{
 	{
+		title:         "invalid param definition",
+		file:          "./pipelines/invalid_param_definition.fp",
+		containsError: `A type specification is either a primitive type keyword (bool, number, string) or a complex type constructor call`,
+	},
+	{
 		title:         "bad output reference",
 		file:          "./pipelines/bad_output_reference.fp",
 		containsError: `invalid depends_on 'transform.does_not_exist' - does not exist for pipeline local.pipeline`,
@@ -41,6 +46,11 @@ var tests = []testSetup{
 		title:         "invalid http trigger",
 		file:          "./pipelines/invalid_http_trigger.fp",
 		containsError: `Unsupported argument: An argument named "if" is not expected here.`,
+	},
+	{
+		title:         "invalid schedule trigger - unsupported attribute 'execution_mode'",
+		file:          "./pipelines/invalid_schedule_trigger.fp",
+		containsError: `Unsupported argument: An argument named "execution_mode" is not expected here.`,
 	},
 	{
 		title:         "invalid step attribute (transform)",
@@ -68,59 +78,19 @@ var tests = []testSetup{
 		containsError: "Unable to parse to attribute to string slice: Bad Request: expected string type, but got number\n",
 	},
 	{
+		title:         "invalid container step attribute value - memory_swappiness",
+		file:          "./pipelines/container_step_invalid_memory_swappiness.fp",
+		containsError: "The value of 'memory_swappiness' attribute must be between 0 and 100",
+	},
+	{
 		title:         "invalid trigger",
 		file:          "./pipelines/invalid_trigger.fp",
 		containsError: "Failed to decode mod:\nMissing required argument: The argument \"pipeline\" is required, but no definition was found.",
 	},
 	{
-		title:         "invalid approval - notify and notifies specified",
-		file:          "./pipelines/approval_notify_and_notifies.fp",
-		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
-	},
-	{
-		title:         "invalid approval - slack notify missing channel",
-		file:          "./pipelines/approval_invalid_notify_slack.fp",
-		containsError: "channel must be specified for slack integration",
-	},
-	{
-		title:         "invalid approval - email notify missing to",
-		file:          "./pipelines/approval_invalid_notify_email.fp",
-		containsError: "to must be specified for email integration",
-	},
-	{
-		title:         "invalid approval - slack integration invalid attribute",
-		file:          "./pipelines/approval_invalid_integration_slack_attribute.fp",
-		containsError: "Unsupported attribute: 'from' not expected here.",
-	},
-	{
-		title:         "invalid approval - email integration invalid attribute",
-		file:          "./pipelines/approval_invalid_integration_email_attribute.fp",
-		containsError: "Unsupported attribute: 'token' not expected here.",
-	},
-	{
-		title:         "invalid approval - notify with missing integration attribute",
-		file:          "./pipelines/approval_invalid_notify_missing_integration.fp",
-		containsError: "Missing required argument: The argument \"integration\" is required, but no definition was found.",
-	},
-	{
-		title:         "invalid approval - notify with invalid integration that does not exist",
-		file:          "./pipelines/approval_invalid_notify_invalid_integration.fp",
-		containsError: "MISSING: integration.slack.missing_slack_integration",
-	},
-	{
-		title:         "invalid approval - step with multiple notify block with invalid slack attribute",
-		file:          "./pipelines/approval_invalid_multiple_notify_slack.fp",
-		containsError: "channel must be specified for slack integration",
-	},
-	{
-		title:         "invalid approval - step with multiple notify block with invalid email attribute",
-		file:          "./pipelines/approval_invalid_multiple_notify_email.fp",
-		containsError: "to must be specified for email integration",
-	},
-	{
-		title:         "invalid approval - multiple notify and notifies specified",
-		file:          "./pipelines/approval_multiple_notify_and_notifies.fp",
-		containsError: "Notify and Notifies attributes are mutually exclusive: input.input",
+		title:         "invalid trigger - cron",
+		file:          "./pipelines/invalid_trigger_bad_cron.fp",
+		containsError: "bad cron format. Specify valid intervals hourly, daily, weekly, monthly or valid cron expression:",
 	},
 	{
 		title:         "invalid loop - bad definition for echo step loop",
@@ -181,6 +151,71 @@ var tests = []testSetup{
 		title:         "invalid http step base attribute - timeout",
 		file:          "./pipelines/invalid_http_timeout.fp",
 		containsError: "Value of the attribute 'timeout' must be a string or a whole number",
+	},
+	{
+		title:         "invalid schedule in query trigger",
+		file:          "./pipelines/invalid_query_trigger.fp",
+		containsError: "expected exactly 5 fields, found 1: [days]", // if not valid interval we assume it's a cron statement
+	},
+	{
+		title:         "invalid execution mode in http trigger",
+		file:          "./pipelines/invalid_http_trigger_execution_mode.fp",
+		containsError: "The execution mode must be one of: synchronous,asynchronous",
+	},
+	{
+		title:         "invalid input - option block(s) and options both set",
+		file:          "./pipelines/invalid_input_option_and_options.fp",
+		containsError: "Option blocks and options attribute are mutually exclusive",
+	},
+	{
+		title:         "invalid method types in http trigger",
+		file:          "./pipelines/invalid_http_trigger_method.fp",
+		containsError: "Method block type must be one of: post,get",
+	},
+	{
+		title:         "duplicate method blocks in http trigger",
+		file:          "./pipelines/invalid_http_trigger_duplicate_method.fp",
+		containsError: "Duplicate method block for type: post",
+	},
+	{
+		title:         "invalid query trigger - missing required field connection_string",
+		file:          "./pipelines/query_trigger_missing_connection_string.fp",
+		containsError: "The argument \"connection_string\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid query trigger - missing required field sql",
+		file:          "./pipelines/query_trigger_missing_sql.fp",
+		containsError: "The argument \"sql\" is required, but no definition was found.",
+	},
+	{
+		title:         "invalid schedule trigger - missing required field schedule",
+		file:          "./pipelines/schedule_trigger_missing_schedule.fp",
+		containsError: "The argument \"schedule\" is required, but no definition was found.",
+	},
+	{
+		title:         "duplicate output name",
+		file:          "./pipelines/duplicate_output_name.fp",
+		containsError: "duplicate output name 'output_test' - output names must be unique",
+	},
+	{
+		title:         "invalid pipeline output attribute - depends_on",
+		file:          "./pipelines/invalid_pipeline_output_attribute.fp",
+		containsError: "Unsupported argument: An argument named \"depends_on\" is not expected here.",
+	},
+	{
+		title:         "duplicate pipeline param name",
+		file:          "./pipelines/duplicate_pipeline_param.fp",
+		containsError: "duplicate pipeline parameter name 'my_param' - parameter names must be unique",
+	},
+	{
+		title:         "default param value does not match type",
+		file:          "./pipelines/param_default_mismatch.fp",
+		containsError: "default value type mismatch - expected list of string, got string",
+	},
+	{
+		title:         "default param value does not match type (2)",
+		file:          "./pipelines/param_default_mismatch_2.fp",
+		containsError: "default value type mismatch - expected set of bool, got number",
 	},
 }
 

@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -15,18 +16,15 @@ type DashboardCard struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Label *string `cty:"label" hcl:"label" column:"label,text" json:"label,omitempty"`
-	Value *string `cty:"value" hcl:"value" column:"value,text" json:"value,omitempty"`
-	Icon  *string `cty:"icon" hcl:"icon" column:"icon,text" json:"icon,omitempty"`
-	HREF  *string `cty:"href" hcl:"href" json:"href,omitempty"`
+	Label *string `cty:"label" hcl:"label" column:"label,string" snapshot:"label" json:"label,omitempty"`
+	Value *string `cty:"value" hcl:"value" column:"value,string" snapshot:"value" json:"value,omitempty"`
+	Icon  *string `cty:"icon" hcl:"icon" column:"icon,string" snapshot:"icon" json:"icon,omitempty"`
+	HREF  *string `cty:"href" hcl:"href" snapshot:"href" json:"href,omitempty"`
 
-	Width   *int           `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type    *string        `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display *string        `cty:"display" hcl:"display" json:"-"`
+	Width   *int           `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string        `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string        `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base    *DashboardCard `hcl:"base" json:"-"`
-
-	//nolint:unused // TODO: unused attribute
-	metadata *ResourceMetadata
 }
 
 func NewDashboardCard(block *hcl.Block, mod *Mod, shortName string) HclResource {
@@ -152,4 +150,20 @@ func (c *DashboardCard) setBaseProperties() {
 	if c.Width == nil {
 		c.Width = c.Base.Width
 	}
+}
+
+// GetShowData implements printers.Showable
+func (c *DashboardCard) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Label", c.Label),
+		printers.NewFieldValue("Value", c.Value),
+		printers.NewFieldValue("Icon", c.Icon),
+		printers.NewFieldValue("HREF", c.HREF),
+		printers.NewFieldValue("Width", c.Width),
+		printers.NewFieldValue("Type", c.Type),
+		printers.NewFieldValue("Display", c.Display),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(c.QueryProviderImpl.GetShowData())
+	return res
 }

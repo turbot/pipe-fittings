@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -15,10 +16,10 @@ type DashboardText struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Value   *string `cty:"value" hcl:"value" column:"value,text" json:"value,omitempty"`
-	Width   *int    `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type    *string `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display *string `cty:"display" hcl:"display" json:"-"`
+	Value   *string `cty:"value" hcl:"value" column:"value,string" snapshot:"value"  json:"value,omitempty"`
+	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardText `hcl:"base" json:"-"`
 	Mod  *Mod           `cty:"mod" json:"-"`
@@ -109,4 +110,17 @@ func (t *DashboardText) setBaseProperties() {
 	if t.Width == nil {
 		t.Width = t.Base.Width
 	}
+}
+
+// GetShowData implements printers.Showable
+func (t *DashboardText) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", t.Width),
+		printers.NewFieldValue("Type", t.Type),
+		printers.NewFieldValue("Display", t.Display),
+		printers.NewFieldValue("Value", t.Value),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(t.ModTreeItemImpl.GetShowData())
+	return res
 }

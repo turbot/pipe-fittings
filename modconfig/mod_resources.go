@@ -3,8 +3,6 @@ package modconfig
 import (
 	"fmt"
 
-	"github.com/turbot/pipe-fittings/error_helpers"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
@@ -18,7 +16,6 @@ type ResourceMaps struct {
 	// the parent mod
 	Mod *Mod
 
-	// all mods (including deps)
 	Benchmarks            map[string]*Benchmark
 	Controls              map[string]*Control
 	Dashboards            map[string]*Dashboard
@@ -37,17 +34,17 @@ type ResourceMaps struct {
 	DashboardNodes        map[string]*DashboardNode
 	GlobalDashboardInputs map[string]*DashboardInput
 	Locals                map[string]*Local
-	Mods                  map[string]*Mod
-	Queries               map[string]*Query
-	References            map[string]*ResourceReference
+	Variables             map[string]*Variable
+	// all mods (including deps)
+	Mods       map[string]*Mod
+	Queries    map[string]*Query
+	References map[string]*ResourceReference
 	// map of snapshot paths, keyed by snapshot name
 	Snapshots map[string]string
-	Variables map[string]*Variable
 
 	// flowpipe
-	Pipelines    map[string]*Pipeline
-	Triggers     map[string]*Trigger
-	Integrations map[string]Integration
+	Pipelines map[string]*Pipeline
+	Triggers  map[string]*Trigger
 }
 
 func NewModResources(mod *Mod) *ResourceMaps {
@@ -90,9 +87,8 @@ func emptyModResources() *ResourceMaps {
 		Variables:             make(map[string]*Variable),
 
 		// Flowpipe
-		Pipelines:    make(map[string]*Pipeline),
-		Triggers:     make(map[string]*Trigger),
-		Integrations: make(map[string]Integration),
+		Pipelines: make(map[string]*Pipeline),
+		Triggers:  make(map[string]*Trigger),
 	}
 }
 
@@ -108,7 +104,8 @@ func (m *ResourceMaps) QueryProviders() []QueryProvider {
 		return true, nil
 	}
 
-	m.WalkResources(f) //nolint:errcheck // TODO: fix this error check
+	// resource func does not return an error
+	_ = m.WalkResources(f)
 
 	return res
 }
@@ -118,16 +115,17 @@ func (m *ResourceMaps) TopLevelResources() *ResourceMaps {
 	res := NewModResources(m.Mod)
 
 	f := func(item HclResource) (bool, error) {
-		if modItem, ok := item.(ModItem); ok && modItem.GetMod().FullName == m.Mod.FullName {
-			diags := res.AddResource(item)
-			if diags.HasErrors() {
-				return false, error_helpers.HclDiagsToError("TopLevelResources", diags)
+		if modItem, ok := item.(ModItem); ok {
+			if mod := modItem.GetMod(); mod != nil && mod.FullName == m.Mod.FullName {
+				// the only error we expect is a duplicate item error - ignore
+				_ = res.AddResource(item)
 			}
 		}
 		return true, nil
 	}
 
-	m.WalkResources(f) //nolint:errcheck // TODO: fix this error check
+	// resource func does not return an error
+	_ = m.WalkResources(f)
 
 	return res
 }
@@ -202,6 +200,8 @@ func (m *ResourceMaps) Equals(other *ResourceMaps) bool {
 			return false
 		}
 	}
+
+	// TODO: do we need integration & notifier here?
 
 	for name, trigger := range m.Triggers {
 		if otherTrigger, ok := other.Triggers[name]; !ok {
@@ -474,14 +474,22 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 		resource, found = m.GlobalDashboardInputs[longName]
 	case schema.BlockTypeQuery:
 		resource, found = m.Queries[longName]
-	case schema.BlockTypeVariable:
+	// note the special case for variables - "var" rather than "variable"
+	case schema.AttributeVar:
 		resource, found = m.Variables[longName]
 	case schema.BlockTypePipeline:
 		resource, found = m.Pipelines[longName]
 	case schema.BlockTypeTrigger:
 		resource, found = m.Triggers[longName]
-	case schema.BlockTypeIntegration:
-		resource, found = m.Integrations[longName]
+	case schema.BlockTypeMod:
+		for _, mod := range m.Mods {
+			if mod.ShortName == parsedName.Name {
+				resource = mod
+				found = true
+				break
+			}
+		}
+
 	}
 	return resource, found
 }
@@ -501,17 +509,16 @@ func (m *ResourceMaps) PopulateReferences() {
 				// if this resource is a RuntimeDependencyProvider, add references from any 'withs'
 				if nep, ok := resource.(NodeAndEdgeProvider); ok {
 					m.populateNodeEdgeProviderRefs(nep)
+				} else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
+					m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
 				}
-				// TODO: KAI commented out line here <FLOWPIPE>
-				// } else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
-				// 	m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
-				// }
 			}
 
 			// continue walking
 			return true, nil
 		}
-		m.WalkResources(resourceFunc) //nolint:errcheck // TODO: fix this error check
+		// resource func does not return an error
+		_ = m.WalkResources(resourceFunc)
 	}
 }
 
@@ -619,6 +626,12 @@ func (m *ResourceMaps) addControlOrQuery(provider QueryProvider) {
 // WalkResources calls resourceFunc for every resource in the mod
 // if any resourceFunc returns false or an error, return immediately
 func (m *ResourceMaps) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
+	// TODO KAI test this with all walk resources usages
+	for _, r := range m.Mods {
+		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
+			return err
+		}
+	}
 	for _, r := range m.Benchmarks {
 		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
 			return err
@@ -892,8 +905,7 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 		m.DashboardTexts[name] = r
 
 	case *Variable:
-		// NOTE: add variable by unqualified name
-		name := r.UnqualifiedName
+		name := r.Name()
 		if existing, ok := m.Variables[name]; ok {
 			diags = append(diags, checkForDuplicate(existing, item)...)
 			break
@@ -923,15 +935,6 @@ func (m *ResourceMaps) AddResource(item HclResource) hcl.Diagnostics {
 			break
 		}
 		m.Triggers[name] = r
-
-	case Integration:
-		name := r.Name()
-		if existing, ok := m.Integrations[name]; ok {
-			diags = append(diags, checkForDuplicate(existing, item)...)
-			break
-		}
-		m.Integrations[name] = r
-
 	}
 
 	return diags
@@ -1019,10 +1022,11 @@ func (m *ResourceMaps) Merge(others []*ResourceMaps) *ResourceMaps {
 			res.Triggers[k] = v
 		}
 		for k, v := range source.Variables {
+			// TODO check why this was necessary and test variables thoroughly
 			// NOTE: only include variables from root mod  - we add in the others separately
-			if v.Mod.FullName == m.Mod.FullName {
-				res.Variables[k] = v
-			}
+			//if v.Mod.FullName == m.Mod.FullName {
+			res.Variables[k] = v
+			//}
 		}
 	}
 

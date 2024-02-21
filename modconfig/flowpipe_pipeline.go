@@ -14,7 +14,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func NewPipelineHcl(mod *Mod, block *hcl.Block) *Pipeline {
+func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
 
 	pipelineFullName := block.Labels[0]
 
@@ -68,11 +68,18 @@ type Pipeline struct {
 	// Unparsed JSON raw message, needed so we can unmarshall the step JSON into the correct struct
 	StepsRawJson json.RawMessage `json:"-"`
 
-	Steps []PipelineStep `json:"steps,omitempty"`
+	Steps           []PipelineStep            `json:"steps,omitempty"`
+	OutputConfig    []PipelineOutput          `json:"outputs,omitempty"`
+	Params          map[string]*PipelineParam `json:"params"`
+	FileName        string                    `json:"file_name"`
+	StartLineNumber int                       `json:"start_line_number"`
+	EndLineNumber   int                       `json:"end_line_number"`
+}
 
-	OutputConfig []PipelineOutput `json:"outputs,omitempty"`
-
-	Params map[string]*PipelineParam `json:"params"`
+func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	p.FileName = fileName
+	p.StartLineNumber = startLineNumber
+	p.EndLineNumber = endLineNumber
 }
 
 func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
@@ -94,7 +101,11 @@ func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error 
 		}
 
 		if !hclhelpers.GoTypeMatchesCtyType(v, param.Type) {
-			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid type for parameter '%s'", k)))
+			wanted := param.Type.FriendlyName()
+			typeOfInterface := reflect.TypeOf(v)
+			received := typeOfInterface.String()
+
+			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, wanted, received)))
 		} else {
 			delete(pipelineParamsWithNoDefaultValue, k)
 		}
@@ -403,6 +414,15 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.
 				}
 				p.Tags = resultMap
 			}
+
+		case schema.AttributeTypeMaxConcurrency:
+			maxConcurrency, moreDiags := hclhelpers.AttributeToInt(attr, nil, false)
+			if moreDiags != nil && moreDiags.HasErrors() {
+				diags = append(diags, moreDiags...)
+			} else {
+				mcInt := int(*maxConcurrency)
+				p.MaxConcurrency = &mcInt
+			}
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -445,39 +465,52 @@ type PipelineOutput struct {
 	UnresolvedValue hcl.Expression `json:"-"`
 }
 
-func (p *PipelineOutput) Equals(other *PipelineOutput) bool {
+// GetShowData implements the Showable interface
+//func (o PipelineOutput) GetShowData() *printers.RowData {
+//	return printers.NewRowData(
+//		printers.NewFieldValue("Name", o.Name, printers.WithListKeyRender(o.renderName)),
+//		printers.NewFieldValue("Description", o.Description),
+//		printers.NewFieldValue("Type", "any"))
+//}
+
+//func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
+//	au := aurora.NewAurora(opts.ColorEnabled)
+//	return fmt.Sprintf("%s:", au.Cyan(o.Name))
+//}
+
+func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && other == nil {
+	if o == nil && other == nil {
 		return true
 	}
 
 	// If one of the pointers is nil while the other is not, they are not equal
-	if (p == nil && other != nil) || (p != nil && other == nil) {
+	if (o == nil && other != nil) || (o != nil && other == nil) {
 		return false
 	}
 
 	// Compare Name field
-	if p.Name != other.Name {
+	if o.Name != other.Name {
 		return false
 	}
 
 	// Compare DependsOn field using deep equality
-	if !reflect.DeepEqual(p.DependsOn, other.DependsOn) {
+	if !reflect.DeepEqual(o.DependsOn, other.DependsOn) {
 		return false
 	}
 
 	// Compare Resolved field
-	if p.Resolved != other.Resolved {
+	if o.Resolved != other.Resolved {
 		return false
 	}
 
 	// Compare Value field using deep equality
-	if !reflect.DeepEqual(p.Value, other.Value) {
+	if !reflect.DeepEqual(o.Value, other.Value) {
 		return false
 	}
 
 	// Compare UnresolvedValue field using deep equality
-	if !hclhelpers.ExpressionsEqual(p.UnresolvedValue, other.UnresolvedValue) {
+	if !hclhelpers.ExpressionsEqual(o.UnresolvedValue, other.UnresolvedValue) {
 		return false
 	}
 

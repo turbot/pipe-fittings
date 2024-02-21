@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"golang.org/x/exp/slog"
 )
 
 type ErrorAndWarnings struct {
@@ -12,18 +13,26 @@ type ErrorAndWarnings struct {
 	Warnings []string
 }
 
-func DiagsToErrorsAndWarnings(errPrefix string, diags hcl.Diagnostics) *ErrorAndWarnings {
+func DiagsToErrorsAndWarnings(errPrefix string, diags hcl.Diagnostics) ErrorAndWarnings {
 	return NewErrorsAndWarning(
 		plugin.DiagsToError(errPrefix, diags),
 		plugin.DiagsToWarnings(diags)...,
 	)
 }
-func EmptyErrorsAndWarning() *ErrorAndWarnings {
+func EmptyErrorsAndWarning() ErrorAndWarnings {
 	return NewErrorsAndWarning(nil)
 }
 
-func NewErrorsAndWarning(err error, warnings ...string) *ErrorAndWarnings {
-	return &ErrorAndWarnings{
+func NewErrorsAndWarning(err error, warnings ...string) ErrorAndWarnings {
+	if err != nil {
+		slog.Error("ErrorAndWarnings", "err", err, "warnings", warnings)
+	}
+
+	if len(warnings) > 0 {
+		slog.Warn("ErrorAndWarnings", "err", err, "warnings", warnings)
+	}
+
+	return ErrorAndWarnings{
 		Error: err, Warnings: warnings,
 	}
 }
@@ -53,11 +62,7 @@ func (r *ErrorAndWarnings) GetError() error {
 	return r.Error
 }
 
-func (r *ErrorAndWarnings) Merge(other *ErrorAndWarnings) *ErrorAndWarnings {
-	if other == nil {
-		return r
-	}
-
+func (r *ErrorAndWarnings) Merge(other ErrorAndWarnings) ErrorAndWarnings {
 	// TODO: Restructure ErrorsAndWarning
 	// [issue](https://github.com/turbot/steampipe/issues/3653)
 	if r.Error == nil {
@@ -66,7 +71,7 @@ func (r *ErrorAndWarnings) Merge(other *ErrorAndWarnings) *ErrorAndWarnings {
 	if len(other.Warnings) > 0 {
 		r.AddWarning(other.Warnings...)
 	}
-	return r
+	return *r
 }
 
 func (r *ErrorAndWarnings) Empty() bool {

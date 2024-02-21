@@ -2,6 +2,7 @@ package pipeline_test
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path"
 	"slices"
@@ -9,7 +10,8 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/credential"
+	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/zclconf/go-cty/cty"
 
@@ -80,7 +82,7 @@ func (suite *FlowpipeModTestSuite) TearDownSuite() {
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./good_mod", map[string]modconfig.Credential{}, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./good_mod", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -154,7 +156,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_references", map[string]modconfig.Credential{}, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_references", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -176,19 +178,21 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"aws.default": &modconfig.AwsCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "aws.default",
-				ShortName:       "default",
-				UnqualifiedName: "aws.default",
+	credentials := map[string]credential.Credential{
+		"aws.default": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
 			},
-			Type: "aws",
 		},
 	}
 
 	os.Setenv("ACCESS_KEY", "foobarbaz")
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", credentials, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithCredentials(credentials))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -218,10 +222,10 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 
 	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
 
-	flowpipeConfig, err := steampipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds_using_context_function", flowpipeConfig.Credentials, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 
@@ -237,22 +241,575 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	notifier := flowpipeConfig.Notifiers["devs"]
+
+	assert.Equal("bar", *notifier.GetHclResourceImpl().Description)
+	assert.Equal("dev notifier", *notifier.GetHclResourceImpl().Title)
+
+	// marshall to JSON test
+	jsonBytes, err := json.Marshal(notifier)
+	if err != nil {
+		assert.Fail(err.Error())
+		return
+	}
+
+	assert.Nil(err)
+	assert.NotNil(jsonBytes)
+
+	// unmarshall from JSON test
+	var notifier2 modconfig.NotifierImpl
+	err = json.Unmarshal(jsonBytes, &notifier2)
+	if err != nil {
+		assert.Fail(err.Error())
+		return
+	}
+
+	assert.Equal(2, len(notifier2.GetNotifies()))
+	assert.Equal("#devs", *notifier2.GetNotifies()[0].Channel)
+	assert.Equal("xoxp-111111", *notifier2.GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeModWithOneIntegration() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_one_notifier"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	notifier := flowpipeConfig.Notifiers["notify_one"]
+
+	assert.Equal("foo", *notifier.GetHclResourceImpl().Description)
+	assert.Equal("foo bar", *notifier.GetHclResourceImpl().Title)
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+	assert.Equal(5, len(w.Integrations))
+
+	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_notifies not found")
+		return
+	}
+
+	step, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	notifies := step.Notifier.GetNotifies()
+	assert.Len(notifies, 1)
+	notify := notifies[0]
+	assert.NotNil(notify)
+	toList := notify.To
+	assert.Equal(2, len(toList))
+	assert.Equal("foo@bar.com", toList[0])
+	assert.Equal("baz@bar.com", toList[1])
+
+	integrations := notify.Integration
+	assert.NotNil(integrations)
+	assert.Equal("user@test.tld", *integrations.(*modconfig.EmailIntegration).DefaultRecipient)
+	assert.Equal("email.email_with_all", integrations.GetHclResourceImpl().FullName)
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
+	assert := assert.New(suite.T())
+
+	// Load the config from 2 different directories to test that we can load from multiple directories where the integration is defined after
+	// we load the notifiers.
+	//
+	// ensure that "config_dir" is loaded first, that's where the notifier is.
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_with_cred_import", "./empty_mod"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	// AbuseIPDB
+	assert.Equal("steampipe_abuseipdb", flowpipeConfig.CredentialImports["steampipe_abuseipdb"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_abuseipdb"].Prefix)
+	assert.Equal("abuseipdb.sp1_abuseipdb_1", flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_1"].GetHclResourceImpl().FullName)
+	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_1"].(*credential.AbuseIPDBCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["abuseipdb.sp1_abuseipdb_2"].(*credential.AbuseIPDBCredential).APIKey)
+
+	// Alicloud
+	assert.Equal("steampipe_alicloud", flowpipeConfig.CredentialImports["steampipe_alicloud"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_alicloud"].Prefix)
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].GetHclResourceImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].GetHclResourceImpl().FullName)
+	assert.Equal("LTAI4GBVFakeKey09Kxezv66", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].(*credential.AlicloudCredential).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_1"].(*credential.AlicloudCredential).SecretKey)
+	assert.Equal("LTAI4GBVFakeKey09Kxezv66", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].(*credential.AlicloudCredential).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.Credentials["alicloud.sp1_alicloud_2"].(*credential.AlicloudCredential).SecretKey)
+
+	// AWS
+	assert.Equal("steampipe", flowpipeConfig.CredentialImports["steampipe"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe"].Prefix)
+	assert.Equal("aws.sp1_aws", flowpipeConfig.Credentials["aws.sp1_aws"].GetHclResourceImpl().FullName)
+	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.Credentials["aws.sp1_aws_keys1"].GetHclResourceImpl().FullName)
+	assert.Equal("abc", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).AccessKey)
+	assert.Equal("123", *flowpipeConfig.Credentials["aws.sp1_aws_keys1"].(*credential.AwsCredential).SecretKey)
+
+	// Azure
+	assert.Equal("steampipe_azure", flowpipeConfig.CredentialImports["steampipe_azure"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_azure"].Prefix)
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.Credentials["azure.sp1_azure_1"].GetHclResourceImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.Credentials["azure.sp1_azure_2"].GetHclResourceImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).ClientSecret)
+	assert.Nil(flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_1"].(*credential.AzureCredential).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.Credentials["azure.sp1_azure_2"].(*credential.AzureCredential).TenantID)
+
+	// Bitbucket
+	assert.Equal("steampipe_bitbucket", flowpipeConfig.CredentialImports["steampipe_bitbucket"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_bitbucket"].Prefix)
+	assert.Equal("bitbucket.sp1_bitbucket_1", flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].GetHclResourceImpl().FullName)
+	assert.Equal("bitbucket.sp1_bitbucket_2", flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].(*credential.BitbucketCredential).BaseURL)
+	assert.Equal("blHdmvlkFakeToken1", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].(*credential.BitbucketCredential).Password)
+	assert.Equal("MyUsername1", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_1"].(*credential.BitbucketCredential).Username)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].(*credential.BitbucketCredential).BaseURL)
+	assert.Equal("blHdmvlkFakeToken2", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].(*credential.BitbucketCredential).Password)
+	assert.Equal("MyUsername2", *flowpipeConfig.Credentials["bitbucket.sp1_bitbucket_2"].(*credential.BitbucketCredential).Username)
+
+	// ClickUp
+	assert.Equal("steampipe_clickup", flowpipeConfig.CredentialImports["steampipe_clickup"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_clickup"].Prefix)
+	assert.Equal("clickup.sp1_clickup_1", flowpipeConfig.Credentials["clickup.sp1_clickup_1"].GetHclResourceImpl().FullName)
+	assert.Equal("clickup.sp1_clickup_2", flowpipeConfig.Credentials["clickup.sp1_clickup_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["clickup.sp1_clickup_1"].(*credential.ClickUpCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["clickup.sp1_clickup_2"].(*credential.ClickUpCredential).Token)
+
+	// Datadog
+	assert.Equal("steampipe_datadog", flowpipeConfig.CredentialImports["steampipe_datadog"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_datadog"].Prefix)
+	assert.Equal("datadog.sp1_datadog_1", flowpipeConfig.Credentials["datadog.sp1_datadog_1"].GetHclResourceImpl().FullName)
+	assert.Equal("datadog.sp1_datadog_2", flowpipeConfig.Credentials["datadog.sp1_datadog_2"].GetHclResourceImpl().FullName)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef56a7", *flowpipeConfig.Credentials["datadog.sp1_datadog_1"].(*credential.DatadogCredential).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.Credentials["datadog.sp1_datadog_1"].(*credential.DatadogCredential).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c111a1", *flowpipeConfig.Credentials["datadog.sp1_datadog_1"].(*credential.DatadogCredential).AppKey)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef57b8", *flowpipeConfig.Credentials["datadog.sp1_datadog_2"].(*credential.DatadogCredential).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.Credentials["datadog.sp1_datadog_2"].(*credential.DatadogCredential).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c222b2", *flowpipeConfig.Credentials["datadog.sp1_datadog_2"].(*credential.DatadogCredential).AppKey)
+
+	// Discord
+	assert.Equal("steampipe_discord", flowpipeConfig.CredentialImports["steampipe_discord"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_discord"].Prefix)
+	assert.Equal("discord.sp1_discord_1", flowpipeConfig.Credentials["discord.sp1_discord_1"].GetHclResourceImpl().FullName)
+	assert.Equal("discord.sp1_discord_2", flowpipeConfig.Credentials["discord.sp1_discord_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["discord.sp1_discord_1"].(*credential.DiscordCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["discord.sp1_discord_2"].(*credential.DiscordCredential).Token)
+
+	// Freshdesk
+	assert.Equal("steampipe_freshdesk", flowpipeConfig.CredentialImports["steampipe_freshdesk"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_freshdesk"].Prefix)
+	assert.Equal("freshdesk.sp1_freshdesk_1", flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_1"].GetHclResourceImpl().FullName)
+	assert.Equal("freshdesk.sp1_freshdesk_2", flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_1"].(*credential.FreshdeskCredential).APIKey)
+	assert.Equal("test", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_1"].(*credential.FreshdeskCredential).Subdomain)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].(*credential.FreshdeskCredential).APIKey)
+	assert.Equal("test", *flowpipeConfig.Credentials["freshdesk.sp1_freshdesk_2"].(*credential.FreshdeskCredential).Subdomain)
+
+	// GCP
+	assert.Equal("steampipe_gcp", flowpipeConfig.CredentialImports["steampipe_gcp"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_gcp"].Prefix)
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.Credentials["gcp.sp1_gcp_1"].GetHclResourceImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.Credentials["gcp.sp1_gcp_2"].GetHclResourceImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.Credentials["gcp.sp1_gcp_1"].(*credential.GcpCredential).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.Credentials["gcp.sp1_gcp_2"].(*credential.GcpCredential).Credentials)
+
+	// Github
+	assert.Equal("steampipe_github", flowpipeConfig.CredentialImports["steampipe_github"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_github"].Prefix)
+	assert.Equal("github.sp1_github_1", flowpipeConfig.Credentials["github.sp1_github_1"].GetHclResourceImpl().FullName)
+	assert.Equal("github.sp1_github_2", flowpipeConfig.Credentials["github.sp1_github_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["github.sp1_github_1"].(*credential.GithubCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["github.sp1_github_2"].(*credential.GithubCredential).Token)
+
+	// Gitlab
+	assert.Equal("steampipe_gitlab", flowpipeConfig.CredentialImports["steampipe_gitlab"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_gitlab"].Prefix)
+	assert.Equal("gitlab.sp1_gitlab_1", flowpipeConfig.Credentials["gitlab.sp1_gitlab_1"].GetHclResourceImpl().FullName)
+	assert.Equal("gitlab.sp1_gitlab_2", flowpipeConfig.Credentials["gitlab.sp1_gitlab_2"].GetHclResourceImpl().FullName)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.Credentials["gitlab.sp1_gitlab_1"].(*credential.GitLabCredential).Token)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.Credentials["gitlab.sp1_gitlab_2"].(*credential.GitLabCredential).Token)
+
+	// Guardrails
+	assert.Equal("steampipe_guardrails", flowpipeConfig.CredentialImports["steampipe_guardrails"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_guardrails"].Prefix)
+	assert.Equal("guardrails.sp1_guardrails_1", flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].GetHclResourceImpl().FullName)
+	assert.Equal("guardrails.sp1_guardrails_2", flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].GetHclResourceImpl().FullName)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].(*credential.GuardrailsCredential).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].(*credential.GuardrailsCredential).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_1"].(*credential.GuardrailsCredential).Workspace)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].(*credential.GuardrailsCredential).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].(*credential.GuardrailsCredential).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.Credentials["guardrails.sp1_guardrails_2"].(*credential.GuardrailsCredential).Workspace)
+
+	// IP2LocationIO
+	assert.Equal("steampipe_ip2locationio", flowpipeConfig.CredentialImports["steampipe_ip2locationio"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_ip2locationio"].Prefix)
+	assert.Equal("ip2locationio.sp1_ip2locationio_1", flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_1"].GetHclResourceImpl().FullName)
+	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_1"].(*credential.IP2LocationIOCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].(*credential.IP2LocationIOCredential).APIKey)
+
+	// JumpCloud
+	assert.Equal("steampipe_jumpcloud", flowpipeConfig.CredentialImports["steampipe_jumpcloud"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_jumpcloud"].Prefix)
+	assert.Equal("jumpcloud.sp1_jumpcloud_1", flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_1"].GetHclResourceImpl().FullName)
+	assert.Equal("jumpcloud.sp1_jumpcloud_2", flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_1"].(*credential.JumpCloudCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["jumpcloud.sp1_jumpcloud_2"].(*credential.JumpCloudCredential).APIKey)
+
+	// Microsoft Teams
+	assert.Equal("steampipe_teams", flowpipeConfig.CredentialImports["steampipe_teams"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_teams"].Prefix)
+	assert.Equal("teams.sp1_teams_1", flowpipeConfig.Credentials["teams.sp1_teams_1"].GetHclResourceImpl().FullName)
+	assert.Equal("teams.sp1_teams_2", flowpipeConfig.Credentials["teams.sp1_teams_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["teams.sp1_teams_1"].(*credential.MicrosoftTeamsCredential).AccessToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["teams.sp1_teams_2"].(*credential.MicrosoftTeamsCredential).AccessToken)
+
+	// Okta
+	assert.Equal("steampipe_okta", flowpipeConfig.CredentialImports["steampipe_okta"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_okta"].Prefix)
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.Credentials["okta.sp1_okta_1"].GetHclResourceImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.Credentials["okta.sp1_okta_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.Credentials["okta.sp1_okta_1"].(*credential.OktaCredential).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["okta.sp1_okta_1"].(*credential.OktaCredential).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.Credentials["okta.sp1_okta_2"].(*credential.OktaCredential).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["okta.sp1_okta_2"].(*credential.OktaCredential).Token)
+
+	// OpenAI
+	assert.Equal("steampipe_openai", flowpipeConfig.CredentialImports["steampipe_openai"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_openai"].Prefix)
+	assert.Equal("openai.sp1_openai_1", flowpipeConfig.Credentials["openai.sp1_openai_1"].GetHclResourceImpl().FullName)
+	assert.Equal("openai.sp1_openai_2", flowpipeConfig.Credentials["openai.sp1_openai_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["openai.sp1_openai_1"].(*credential.OpenAICredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["openai.sp1_openai_2"].(*credential.OpenAICredential).APIKey)
+
+	// Opsgenie
+	assert.Equal("steampipe_opsgenie", flowpipeConfig.CredentialImports["steampipe_opsgenie"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_opsgenie"].Prefix)
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].GetHclResourceImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].GetHclResourceImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].(*credential.OpsgenieCredential).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_1"].(*credential.OpsgenieCredential).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].(*credential.OpsgenieCredential).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.Credentials["opsgenie.sp1_opsgenie_2"].(*credential.OpsgenieCredential).IncidentAPIKey)
+
+	// PagerDuty
+	assert.Equal("steampipe_pagerduty", flowpipeConfig.CredentialImports["steampipe_pagerduty"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_pagerduty"].Prefix)
+	assert.Equal("pagerduty.sp1_pagerduty_1", flowpipeConfig.Credentials["pagerduty.sp1_pagerduty_1"].GetHclResourceImpl().FullName)
+	assert.Equal("pagerduty.sp1_pagerduty_2", flowpipeConfig.Credentials["pagerduty.sp1_pagerduty_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["pagerduty.sp1_pagerduty_1"].(*credential.PagerDutyCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["pagerduty.sp1_pagerduty_2"].(*credential.PagerDutyCredential).Token)
+
+	// Pipes
+	assert.Equal("steampipe_pipes", flowpipeConfig.CredentialImports["steampipe_pipes"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_pipes"].Prefix)
+	assert.Equal("pipes.sp1_pipes_1", flowpipeConfig.Credentials["pipes.sp1_pipes_1"].GetHclResourceImpl().FullName)
+	assert.Equal("pipes.sp1_pipes_2", flowpipeConfig.Credentials["pipes.sp1_pipes_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["pipes.sp1_pipes_1"].(*credential.PipesCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["pipes.sp1_pipes_2"].(*credential.PipesCredential).Token)
+
+	// SendGrid
+	assert.Equal("steampipe_sendgrid", flowpipeConfig.CredentialImports["steampipe_sendgrid"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_sendgrid"].Prefix)
+	assert.Equal("sendgrid.sp1_sendgrid_1", flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_1"].GetHclResourceImpl().FullName)
+	assert.Equal("sendgrid.sp1_sendgrid_2", flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_1"].(*credential.SendGridCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["sendgrid.sp1_sendgrid_2"].(*credential.SendGridCredential).APIKey)
+
+	// ServiceNow
+	assert.Equal("steampipe_servicenow", flowpipeConfig.CredentialImports["steampipe_servicenow"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_servicenow"].Prefix)
+	assert.Equal("servicenow.sp1_servicenow_1", flowpipeConfig.Credentials["servicenow.sp1_servicenow_1"].GetHclResourceImpl().FullName)
+	assert.Equal("servicenow.sp1_servicenow_2", flowpipeConfig.Credentials["servicenow.sp1_servicenow_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://test.service-now.com", *flowpipeConfig.Credentials["servicenow.sp1_servicenow_1"].(*credential.ServiceNowCredential).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.Credentials["servicenow.sp1_servicenow_1"].(*credential.ServiceNowCredential).Username)
+	assert.Equal("somepassword", *flowpipeConfig.Credentials["servicenow.sp1_servicenow_1"].(*credential.ServiceNowCredential).Password)
+	assert.Equal("https://test1.service-now.com", *flowpipeConfig.Credentials["servicenow.sp1_servicenow_2"].(*credential.ServiceNowCredential).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.Credentials["servicenow.sp1_servicenow_2"].(*credential.ServiceNowCredential).Username)
+	assert.Equal("somepassword1", *flowpipeConfig.Credentials["servicenow.sp1_servicenow_2"].(*credential.ServiceNowCredential).Password)
+
+	// Slack
+	assert.Equal("steampipe_slack", flowpipeConfig.CredentialImports["steampipe_slack"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_slack"].Prefix)
+	assert.Equal("slack.sp1_slack_l1", flowpipeConfig.Credentials["slack.sp1_slack_l1"].GetHclResourceImpl().FullName)
+	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.Credentials["slack.sp1_slack_l2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["slack.sp1_slack_l1"].(*credential.SlackCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["slack.sp1_slack_l2"].(*credential.SlackCredential).Token)
+
+	// Trello
+	assert.Equal("steampipe_trello", flowpipeConfig.CredentialImports["steampipe_trello"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_trello"].Prefix)
+	assert.Equal("trello.sp1_trello_1", flowpipeConfig.Credentials["trello.sp1_trello_1"].GetHclResourceImpl().FullName)
+	assert.Equal("trello.sp1_trello_2", flowpipeConfig.Credentials["trello.sp1_trello_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["trello.sp1_trello_1"].(*credential.TrelloCredential).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["trello.sp1_trello_1"].(*credential.TrelloCredential).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["trello.sp1_trello_2"].(*credential.TrelloCredential).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.Credentials["trello.sp1_trello_2"].(*credential.TrelloCredential).Token)
+
+	// UptimeRobot
+	assert.Equal("steampipe_uptimerobot", flowpipeConfig.CredentialImports["steampipe_uptimerobot"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_uptimerobot"].Prefix)
+	assert.Equal("uptimerobot.sp1_uptimerobot_1", flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_1"].GetHclResourceImpl().FullName)
+	assert.Equal("uptimerobot.sp1_uptimerobot_2", flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_1"].(*credential.UptimeRobotCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["uptimerobot.sp1_uptimerobot_2"].(*credential.UptimeRobotCredential).APIKey)
+
+	// Urlscan
+	assert.Equal("steampipe_urlscan", flowpipeConfig.CredentialImports["steampipe_urlscan"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_urlscan"].Prefix)
+	assert.Equal("urlscan.sp1_urlscan_1", flowpipeConfig.Credentials["urlscan.sp1_urlscan_1"].GetHclResourceImpl().FullName)
+	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.Credentials["urlscan.sp1_urlscan_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["urlscan.sp1_urlscan_1"].(*credential.UrlscanCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["urlscan.sp1_urlscan_2"].(*credential.UrlscanCredential).APIKey)
+
+	// Vault
+	assert.Equal("steampipe_vault", flowpipeConfig.CredentialImports["steampipe_vault"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_vault"].Prefix)
+	assert.Equal("vault.sp1_vault_1", flowpipeConfig.Credentials["vault.sp1_vault_1"].GetHclResourceImpl().FullName)
+	assert.Equal("vault.sp1_vault_2", flowpipeConfig.Credentials["vault.sp1_vault_2"].GetHclResourceImpl().FullName)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.Credentials["vault.sp1_vault_1"].(*credential.VaultCredential).Address)
+	assert.Equal("sometoken", *flowpipeConfig.Credentials["vault.sp1_vault_1"].(*credential.VaultCredential).Token)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.Credentials["vault.sp1_vault_2"].(*credential.VaultCredential).Address)
+	assert.Nil(flowpipeConfig.Credentials["vault.sp1_vault_2"].(*credential.VaultCredential).Token)
+
+	// VirusTotal
+	assert.Equal("steampipe_virustotal", flowpipeConfig.CredentialImports["steampipe_virustotal"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_virustotal"].Prefix)
+	assert.Equal("virustotal.sp1_virustotal_1", flowpipeConfig.Credentials["virustotal.sp1_virustotal_1"].GetHclResourceImpl().FullName)
+	assert.Equal("virustotal.sp1_virustotal_2", flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_1"].(*credential.VirusTotalCredential).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["virustotal.sp1_virustotal_2"].(*credential.VirusTotalCredential).APIKey)
+
+	// Zendesk
+	assert.Equal("steampipe_zendesk", flowpipeConfig.CredentialImports["steampipe_zendesk"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_zendesk"].Prefix)
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].GetHclResourceImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].GetHclResourceImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Email)
+	assert.Equal("dmi", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_1"].(*credential.ZendeskCredential).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Email)
+	assert.Equal("dmj", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Token)
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir", "./mod_with_integration"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	assert.Equal(2, len(flowpipeConfig.Integrations))
+	assert.Equal("slack.my_slack_app", flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().FullName)
+	assert.Equal("my slack app in config_dir with description", *flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().Description)
+
+	// ensure that the default integration exist
+	assert.Equal("webform.default", flowpipeConfig.Integrations["webform.default"].GetHclResourceImpl().FullName)
+
+	assert.Equal(4, len(flowpipeConfig.Notifiers))
+
+	notifierWithDefaultIntegration := flowpipeConfig.Notifiers["with_default_integration"]
+	if notifierWithDefaultIntegration == nil {
+		assert.Fail("notifier with_default_integration not found")
+		return
+	}
+
+	assert.Equal("with_default_integration", notifierWithDefaultIntegration.GetHclResourceImpl().FullName)
+	assert.Equal(1, len(notifierWithDefaultIntegration.GetNotifies()))
+	assert.Equal("webform.default", notifierWithDefaultIntegration.GetNotifies()[0].Integration.(*modconfig.WebformIntegration).FullName)
+
+	// ensure that default notifier exist
+	assert.Equal("default", flowpipeConfig.Notifiers["default"].GetHclResourceImpl().FullName)
+	assert.Equal(1, len(flowpipeConfig.Notifiers["default"].GetNotifies()))
+
+	// TODO: test this when we have webform up and running
+	//assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["default"].GetNotifies()[0].Integration.AsValueMap()["name"].AsString())
+
+	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].GetHclResourceImpl().FullName)
+	// Check the notify -> integration link
+	assert.Equal(1, len(flowpipeConfig.Notifiers["admins"].GetNotifies()))
+
+	assert.Equal("Q#$$#@#$$#W", *flowpipeConfig.Notifiers["admins"].GetNotifies()[0].Integration.(*modconfig.SlackIntegration).SigningSecret)
+	assert.Equal("xoxp-111111", *flowpipeConfig.Notifiers["admins"].GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
+
+	devsNotifier := flowpipeConfig.Notifiers["devs"]
+	assert.Equal("devs", devsNotifier.GetHclResourceImpl().FullName)
+	assert.Equal(2, len(devsNotifier.GetNotifies()))
+
+	dvCtyVal, err2 := devsNotifier.CtyValue()
+	if err2 != nil {
+		assert.Fail(err2.Error())
+		return
+	}
+
+	if dvCtyVal == cty.NilVal {
+		assert.Fail("cty value is nil")
+		return
+	}
+
+	devsNotifierMap := dvCtyVal.AsValueMap()
+	devsNotifiesSlice := devsNotifierMap["notifies"].AsValueSlice()
+	assert.Equal(2, len(devsNotifiesSlice))
+	assert.Equal("#devs", devsNotifiesSlice[0].AsValueMap()["channel"].AsString())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+	assert.Equal(2, len(w.Integrations))
+	assert.NotNil(w.Integrations["slack.my_slack_app"])
+	if i, ok := w.Integrations["slack.my_slack_app"].(*modconfig.SlackIntegration); !ok {
+		assert.Fail("integration failed to parse to SlackIntegration")
+	} else {
+		assert.Equal("slack.my_slack_app", i.FullName)
+		assert.Equal("#infosec", *i.Channel)
+	}
+
+	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_notifies not found")
+		return
+	}
+
+	step, ok := pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+	assert.Equal("Do you want to approve?", *step.Prompt)
+
+	// This notifier CtyValue function
+	ctyVal, err2 := step.Notifier.CtyValue()
+	if err2 != nil {
+		assert.Fail(err2.Error())
+		return
+	}
+
+	notifierMap := ctyVal.AsValueMap()
+	notifiesSlice := notifierMap["notifies"].AsValueSlice()
+	assert.Equal(1, len(notifiesSlice))
+
+	notifies := step.Notifier.GetNotifies()
+	assert.Len(notifies, 1)
+	notify := notifies[0]
+	assert.NotNil(notify)
+
+	integration := notify.Integration
+	assert.NotNil(integration)
+	assert.Equal("Q#$$#@#$$#W", *integration.(*modconfig.SlackIntegration).SigningSecret)
+
+	step, ok = pipeline.Steps[1].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	assert.Equal("Do you want to approve (2)?", *step.Prompt)
+	notifies = step.Notifier.GetNotifies()
+
+	assert.Len(notifies, 1)
+	notify = notifies[0]
+	assert.NotNil(notify)
+
+	integration = notify.Integration
+	assert.NotNil(integration)
+	assert.Equal("Q#$$#@#$$#W", *integration.(*modconfig.SlackIntegration).SigningSecret)
+
+	pipeline = pipelines["mod_with_integration.pipeline.approval_with_notifies_dynamic"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_notifies_dynamic not found")
+		return
+	}
+
+	step, ok = pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	assert.NotNil(step.UnresolvedAttributes["notifier"])
+}
+
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"aws.default": &modconfig.AwsCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "aws.default",
-				ShortName:       "default",
-				UnqualifiedName: "aws.default",
+	credentials := map[string]credential.Credential{
+		"aws.default": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
 			},
-			Type: "aws",
 		},
 	}
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds", credentials, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithCredentials(credentials))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -278,18 +835,20 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"aws.aws_static": &modconfig.AwsCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "aws.static",
-				ShortName:       "static",
-				UnqualifiedName: "aws.static",
+	credentials := map[string]credential.Credential{
+		"aws.aws_static": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.static",
+					ShortName:       "static",
+					UnqualifiedName: "aws.static",
+				},
+				Type: "aws",
 			},
-			Type: "aws",
 		},
 	}
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_dynamic_creds", credentials, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_creds", workspace.WithCredentials(credentials))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -312,19 +871,21 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 	assert := assert.New(suite.T())
 
-	credentials := map[string]modconfig.Credential{
-		"slack.slack_static": &modconfig.SlackCredential{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        "slack.slack_static",
-				ShortName:       "slack_static",
-				UnqualifiedName: "slack.slack_static",
+	credentials := map[string]credential.Credential{
+		"slack.slack_static": &credential.SlackCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "slack.slack_static",
+					ShortName:       "slack_static",
+					UnqualifiedName: "slack.slack_static",
+				},
+				Type: "slack",
 			},
-			Type:  "slack",
 			Token: types.String("sfhshfhslfh"),
 		},
 	}
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_creds_resolved", credentials, ".fp", ".fpc")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_resolved", workspace.WithCredentials(credentials))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -363,7 +924,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_with_step_output", map[string]modconfig.Credential{}, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_step_output", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -388,7 +949,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_one", map[string]modconfig.Credential{}, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_one", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -451,7 +1012,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_dep_simple", map[string]modconfig.Credential{}, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_simple", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -513,7 +1074,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	os.Setenv("FP_VAR_var_six", "set from env var")
 
-	w, errorAndWarning := workspace.LoadWithParams(suite.ctx, "./mod_variable", map[string]modconfig.Credential{}, ".fp")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_variable", workspace.WithCredentials(map[string]credential.Credential{}))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -598,13 +1159,13 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	// This value is set in the pvar file
 	assert.Equal("5 * * * *", configSchedule.Schedule)
 
-	reportTriggersWithIntervalVarWithDefaultValue := triggers["test_mod.trigger.interval.report_triggers_with_interval_var_with_default_value"]
+	reportTriggersWithIntervalVarWithDefaultValue := triggers["test_mod.trigger.schedule.report_triggers_with_interval_var_with_default_value"]
 	if reportTriggersWithIntervalVarWithDefaultValue == nil {
 		assert.Fail("report_triggers_with_interval_var_with_default_value not found")
 		return
 	}
 
-	intervalSchedule := reportTriggersWithIntervalVarWithDefaultValue.Config.(*modconfig.TriggerInterval)
+	intervalSchedule := reportTriggersWithIntervalVarWithDefaultValue.Config.(*modconfig.TriggerSchedule)
 	assert.Equal("weekly", intervalSchedule.Schedule)
 
 }

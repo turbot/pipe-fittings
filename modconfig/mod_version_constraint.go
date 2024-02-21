@@ -21,6 +21,12 @@ type ModVersionConstraint struct {
 	VersionString string `cty:"version" hcl:"version"`
 	// variable values to be set on the dependency mod
 	Args map[string]cty.Value `cty:"args"  hcl:"args,optional"`
+
+	// optionally override the database and search path
+	Database         *string  `cty:"database" hcl:"database"`
+	SearchPath       []string `cty:"search_path" hcl:"search_path,optional"`
+	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
+
 	// only one of Constraint, Branch and FilePath will be set
 	Constraint *versionhelpers.Constraints
 	// the local file location to use

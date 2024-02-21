@@ -16,12 +16,3 @@ pipeline "simple_with_trigger_a" {
     }
 }
 
-trigger "schedule" "trigger_bad_cron" {
-    schedule = "bad cron format"
-    pipeline = pipeline.simple_with_trigger_a
-}
-
-trigger "interval" "trigger_bad_interval" {
-    schedule = "bad interval format"
-    pipeline = pipeline.simple_with_trigger_a
-}

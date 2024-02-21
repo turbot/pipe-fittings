@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	filehelpers "github.com/turbot/go-kit/files"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
@@ -30,36 +28,36 @@ type Mod struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	// attributes
-	Categories []string `cty:"categories" hcl:"categories,optional" column:"categories,jsonb"`
-	Color      *string  `cty:"color" hcl:"color" column:"color,text"`
-	Icon       *string  `cty:"icon" hcl:"icon" column:"icon,text"`
+	Categories []string `cty:"categories" hcl:"categories,optional" json:"categories,omitempty"`
+	Color      *string  `cty:"color" hcl:"color" json:"color,omitempty"`
+	Icon       *string  `cty:"icon" hcl:"icon" json:"icon,omitempty"`
 
 	// blocks
-	Require       *Require   `hcl:"require,block"`
-	LegacyRequire *Require   `hcl:"requires,block"`
-	OpenGraph     *OpenGraph `hcl:"opengraph,block" column:"open_graph,jsonb"`
+	Require       *Require   `hcl:"require,block"  json:"-"`
+	LegacyRequire *Require   `hcl:"requires,block"  json:"-"`
+	OpenGraph     *OpenGraph `hcl:"opengraph,block" json:"open_graph,omitempty"`
 
 	// Depency attributes - set if this mod is loaded as a dependency
 
 	// the mod version
-	Version *semver.Version
+	Version *semver.Version `json:"-"`
 	// DependencyPath is the fully qualified mod name including version,
 	// which will by the map key in the workspace lock file
-	// NOTE: this is the relative path to th emod location from the depdemncy install dir (.steampipe/mods)
+	// NOTE: this is the relative path to the mod location from the depdemncy install dir (.steampipe/mods)
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty@v1.0.0
 	// (NOTE: pointer so it is nil in introspection tables if unpopulated)
-	DependencyPath *string `column:"dependency_path,text"`
+	DependencyPath *string `json:"dependency_path,omitempty"`
 	// DependencyName return the name of the mod as a dependency, i.e. the mod dependency path, _without_ the version
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty
-	DependencyName string
+	DependencyName string `json:"-"`
 
 	// ModPath is the installation location of the mod
-	ModPath string
+	ModPath string `json:"-"`
 
 	// convenient aggregation of all resources
-	ResourceMaps *ResourceMaps
+	ResourceMaps *ResourceMaps `json:"-"`
 
-	// the filepath of the mod.sp file (will be empty for default mod)
+	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
 }
 
@@ -288,12 +286,7 @@ func (m *Mod) Save() error {
 	}
 
 	// load existing mod data and remove the mod definitions from it
-	nonModData, err := m.loadNonModDataInModFile()
-	if err != nil {
-		return err
-	}
-	modData := append(f.Bytes(), nonModData...)
-	return os.WriteFile(filepaths.ModFilePath(m.ModPath), modData, 0644) //nolint:gosec // TODO: check this gosec lint issue
+	return os.WriteFile(app_specific.DefaultModFilePath(m.ModPath), f.Bytes(), 0644) //nolint:gosec // TODO: check file permission
 }
 
 func (m *Mod) HasDependentMods() bool {
@@ -305,32 +298,6 @@ func (m *Mod) GetModDependency(modName string) *ModVersionConstraint {
 		return nil
 	}
 	return m.Require.GetModDependency(modName)
-}
-
-func (m *Mod) loadNonModDataInModFile() ([]byte, error) {
-	modFilePath := filepaths.ModFilePath(m.ModPath)
-	if !filehelpers.FileExists(modFilePath) {
-		return nil, nil
-	}
-
-	fileData, err := os.ReadFile(modFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	fileLines := strings.Split(string(fileData), "\n")
-	decl := m.DeclRange
-	// just use line positions
-	start := decl.Start.Line - 1
-	end := decl.End.Line - 1
-
-	var resLines []string
-	for i, line := range fileLines {
-		if (i < start || i > end) && line != "" {
-			resLines = append(resLines, line)
-		}
-	}
-	return []byte(strings.Join(resLines, "\n")), nil
 }
 
 func (m *Mod) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
@@ -348,6 +315,10 @@ func (m *Mod) ValidateRequirements() []error {
 		validationErrors = append(validationErrors, err)
 	}
 	return validationErrors
+}
+
+func (m *Mod) FilePath() string {
+	return m.modFilePath
 }
 
 func (m *Mod) validateSteampipeVersion() error {

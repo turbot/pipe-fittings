@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 func TestPipelineWithTrigger(t *testing.T) {
@@ -37,6 +38,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("my_hourly_trigger trigger not found")
 		return
 	}
+	assert.Equal(false, *scheduleTrigger.Enabled)
 
 	st, ok := scheduleTrigger.Config.(*modconfig.TriggerSchedule)
 	if !ok {
@@ -46,11 +48,27 @@ func TestPipelineWithTrigger(t *testing.T) {
 
 	assert.Equal("5 * * * *", st.Schedule)
 
+	scheduleTrigger = triggers["local.trigger.schedule.my_hourly_trigger_interval"]
+	if scheduleTrigger == nil {
+		assert.Fail("my_hourly_trigger_interval trigger not found")
+		return
+	}
+	assert.Equal(true, *scheduleTrigger.Enabled)
+
+	st, ok = scheduleTrigger.Config.(*modconfig.TriggerSchedule)
+	if !ok {
+		assert.Fail("my_hourly_trigger trigger is not a schedule trigger")
+		return
+	}
+
+	assert.Equal("daily", st.Schedule)
+
 	triggerWithArgs := triggers["local.trigger.schedule.trigger_with_args"]
 	if triggerWithArgs == nil {
 		assert.Fail("trigger_with_args trigger not found")
 		return
 	}
+	assert.Nil(triggerWithArgs.Enabled)
 
 	twa, ok := triggerWithArgs.Config.(*modconfig.TriggerSchedule)
 	if !ok {
@@ -59,9 +77,6 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 
 	assert.NotNil(twa, "trigger_with_args trigger is nil")
-
-	// assert.Equal("one", triggerWithArgs.Args["param_one"])
-	// assert.Equal(2, triggerWithArgs.Args["param_two_int"])
 
 	queryTrigger := triggers["local.trigger.query.query_trigger"]
 	if queryTrigger == nil {
@@ -76,10 +91,6 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 
 	assert.Equal("access_key_id", qt.PrimaryKey)
-	assert.Len(qt.Events, 1)
-	assert.Equal("insert", qt.Events[0])
-	// assert.Equal("one", queryTrigger.Args["param_one"])
-	// assert.Equal(2, queryTrigger.Args["param_two_int"])
 	assert.Contains(qt.Sql, "where create_date < now() - interval")
 
 	httpTriggerWithArgs := triggers["local.trigger.http.trigger_with_args"]
@@ -87,13 +98,64 @@ func TestPipelineWithTrigger(t *testing.T) {
 		assert.Fail("trigger_with_args trigger not found")
 		return
 	}
+	assert.Equal(true, *httpTriggerWithArgs.Enabled)
 
-	_, ok = httpTriggerWithArgs.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithArgs.Config.(*modconfig.TriggerHttp)
 	if !ok {
-		assert.Fail("trigger_with_args trigger is not a schedule trigger")
+		assert.Fail("trigger_with_args trigger is not a HTTP trigger")
 		return
 	}
 
+	triggerMethods := httpTrigConfig.Methods
+	assert.Equal(1, len(triggerMethods))
+
+	methodInfo := triggerMethods["post"]
+	assert.NotNil(methodInfo, "method 'post' not found")
+
+	pipelineInfo := methodInfo.Pipeline.AsValueMap()
+	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
+
+	argsInfo, err := methodInfo.GetArgs(nil)
+	assert.Nil(err)
+	assert.NotNil(argsInfo)
+	assert.Equal("one", argsInfo["param_one"])
+	assert.Equal(2, argsInfo["param_two_int"])
+
+	queryTrigger = triggers["local.trigger.query.query_trigger_interval"]
+	if queryTrigger == nil {
+		assert.Fail("query_trigger_interval trigger not found")
+		return
+	}
+	assert.Equal(true, *queryTrigger.Enabled)
+
+	qt, ok = queryTrigger.Config.(*modconfig.TriggerQuery)
+	if !ok {
+		assert.Fail("query_trigger trigger is not a query trigger")
+		return
+	}
+
+	assert.Equal("access_key_id", qt.PrimaryKey)
+	assert.Contains(qt.Sql, "where create_date < now() - interval")
+	assert.Equal("daily", qt.Schedule)
+
+	triggerWithExecutionMode := triggers["local.trigger.http.trigger_with_execution_mode"]
+	if triggerWithExecutionMode == nil {
+		assert.Fail("trigger_with_execution_mode trigger not found")
+		return
+	}
+
+	trig, ok := triggerWithExecutionMode.Config.(*modconfig.TriggerHttp)
+	if !ok {
+		assert.Fail("trigger_with_execution_mode trigger is not a http trigger")
+		return
+	}
+
+	triggerMethods = trig.Methods
+	assert.Equal(1, len(triggerMethods))
+
+	methodInfo = triggerMethods["post"]
+	assert.NotNil(methodInfo, "method 'post' not found")
+	assert.Equal("synchronous", methodInfo.ExecutionMode)
 }
 
 func TestPipelineWithTriggerSelf(t *testing.T) {

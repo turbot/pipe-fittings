@@ -58,9 +58,13 @@ func (p *ParsedResourceName) ToResourceName() string {
 }
 
 func (p *ParsedResourceName) ToFullName() string {
+	if p.Mod == "" {
+		return p.ToResourceName()
+	}
 	return BuildFullResourceName(p.Mod, p.ItemType, p.Name)
 }
 func (p *ParsedResourceName) ToFullNameWithMod(mod string) string {
+	// use existing mod if set
 	if p.Mod != "" {
 		return p.ToFullName()
 	}

@@ -1,8 +1,6 @@
 package modconfig
 
 import (
-	"strings"
-
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
@@ -11,7 +9,7 @@ import (
 type ModVariableMap struct {
 	// which mod have these variables been loaded for?
 	Mod *Mod
-	// top level variables
+	// top level variables, keyed by short name
 	RootVariables map[string]*Variable
 	// map of dependency variable maps, keyed by dependency NAME
 	DependencyVariables map[string]*ModVariableMap
@@ -23,7 +21,7 @@ type ModVariableMap struct {
 }
 
 // NewModVariableMap builds a ModVariableMap using the variables from a mod and its dependencies
-func NewModVariableMap(mod *Mod) *ModVariableMap {
+func NewModVariableMap(mod *Mod) (*ModVariableMap, error) {
 	m := &ModVariableMap{
 		Mod:                 mod,
 		RootVariables:       make(map[string]*Variable),
@@ -31,22 +29,33 @@ func NewModVariableMap(mod *Mod) *ModVariableMap {
 	}
 
 	// add variables into map, modifying the key to be the variable short name
-	for k, v := range mod.ResourceMaps.Variables {
-		m.RootVariables[buildVariableMapKey(k)] = v
+	for name, variable := range mod.ResourceMaps.Variables {
+		if variable.Mod.ShortName != mod.ShortName {
+			continue
+		}
+		k, err := buildVariableMapKey(name)
+		if err != nil {
+			return nil, err
+		}
+		m.RootVariables[k] = variable
 	}
 
 	// now traverse all dependency mods
 	for _, depMod := range mod.ResourceMaps.Mods {
 		// todo for some reason the mod appears in its own resource maps?
 		if depMod.Name() != mod.Name() {
-			m.DependencyVariables[depMod.DependencyName] = NewModVariableMap(depMod)
+			depMap, err := NewModVariableMap(depMod)
+			if err != nil {
+				return nil, err
+			}
+			m.DependencyVariables[depMod.DependencyName] = depMap
 		}
 	}
 
-	// build map of all publicy settable variables
+	// build map of all publicly settable variables
 	m.PopulatePublicVariables()
 
-	return m
+	return m, nil
 }
 
 func (m *ModVariableMap) ToArray() []*Variable {
@@ -68,11 +77,14 @@ func (m *ModVariableMap) ToArray() []*Variable {
 	return res
 }
 
-// build map key fopr root variables - they are keyed by short name
+// build map key for root variables - they are keyed by short name
 // to allow the user to set their value using the short name
-func buildVariableMapKey(k string) string {
-	name := strings.TrimPrefix(k, "var.")
-	return name
+func buildVariableMapKey(k string) (string, error) {
+	parsed, err := ParseResourceName(k)
+	if err != nil {
+		return "", err
+	}
+	return parsed.Name, nil
 }
 
 // PopulatePublicVariables builds a map of top level and dependency variables

@@ -2,9 +2,11 @@ package modconfig
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -13,14 +15,15 @@ type HclResourceImpl struct {
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
 
-	FullName        string            `cty:"name" column:"qualified_name,text" json:"-"`
-	Title           *string           `cty:"title" hcl:"title" column:"title,text" json:"-"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"name"`
+	FullName        string            `cty:"name" column:"qualified_name,text" json:"qualified_name,omitempty"`
+	Title           *string           `cty:"title" hcl:"title" column:"title,string"  json:"title,omitempty"`
+	ShortName       string            `cty:"short_name" hcl:"name,label" json:"-"`
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
-	Description     *string           `cty:"description" hcl:"description" column:"description,text" json:"-"`
-	Documentation   *string           `cty:"documentation" hcl:"documentation" column:"documentation,text" json:"-"`
-	DeclRange       hcl.Range         `json:"-"`
-	Tags            map[string]string `cty:"tags" hcl:"tags,optional" column:"tags,jsonb" json:"-"`
+	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"description,omitempty"`
+	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
+	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
+	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
+	MaxConcurrency  *int              `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource
 	blockType           string
@@ -34,6 +37,17 @@ func NewHclResourceImpl(block *hcl.Block, mod *Mod, shortName string) HclResourc
 		ShortName:       shortName,
 		FullName:        fullName,
 		UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
+		DeclRange:       hclhelpers.BlockRange(block),
+		blockType:       block.Type,
+	}
+}
+
+func NewHclResourceImplNoMod(block *hcl.Block, resourceType, shortName string) HclResourceImpl {
+	fullName := fmt.Sprintf("%s.%s", resourceType, shortName)
+	return HclResourceImpl{
+		ShortName:       shortName,
+		FullName:        fullName,
+		UnqualifiedName: fmt.Sprintf("%s.%s", resourceType, shortName),
 		DeclRange:       hclhelpers.BlockRange(block),
 		blockType:       block.Type,
 	}
@@ -117,6 +131,11 @@ func (b *HclResourceImpl) GetUnqualifiedName() string {
 	return b.UnqualifiedName
 }
 
+// GetShortName implements HclResource
+func (b *HclResourceImpl) GetShortName() string {
+	return b.ShortName
+}
+
 // OnDecoded implements HclResource
 func (b *HclResourceImpl) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
 	return nil
@@ -150,7 +169,7 @@ func (b *HclResourceImpl) GetTags() map[string]string {
 	return map[string]string{}
 }
 
-// GetHclResourceBase implements HclResource
+// GetHclResourceImpl implements HclResource
 func (b *HclResourceImpl) GetHclResourceImpl() *HclResourceImpl {
 	return b
 }
@@ -176,6 +195,24 @@ func (b *HclResourceImpl) CtyValue() (cty.Value, error) {
 // GetBase implements HclResource
 func (b *HclResourceImpl) GetBase() HclResource {
 	return b.base
+}
+
+// GetShowData implements printers.Showable
+func (b *HclResourceImpl) GetShowData() *printers.RowData {
+	return printers.NewRowData(
+		printers.NewFieldValue("Name", b.Name()),
+		printers.NewFieldValue("Title", b.GetTitle()),
+		printers.NewFieldValue("Description", b.GetDescription()),
+		printers.NewFieldValue("Documentation", b.GetDocumentation()),
+		printers.NewFieldValue("Tags", b.GetTags()),
+	)
+}
+
+// GetListData implements printers.Showable
+func (b *HclResourceImpl) GetListData() *printers.RowData {
+	return printers.NewRowData(
+		printers.NewFieldValue("NAME", b.Name()),
+	)
 }
 
 func (b *HclResourceImpl) setBaseProperties() {

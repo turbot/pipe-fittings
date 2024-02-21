@@ -15,14 +15,17 @@ integration "slack" "my_slack_app_two" {
 }
 
 integration "email" "email_integration" {
-  smtp_host = "foo bar baz"
+  smtp_host       = "foo bar baz"
   default_subject = "bar foo baz"
-  smtp_username = "baz bar foo"
+  smtp_username   = "baz bar foo"
+  from            = "test@test.com"
 }
 
 pipeline "approval" {
   step "input" "input" {
-    
+    type = "button"
+    option "test" {}
+
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"
@@ -32,7 +35,9 @@ pipeline "approval" {
 
 pipeline "approval_email" {
   step "input" "input_email" {
-    
+    type = "button"
+    option "test" {}
+
     notify {
       integration = integration.email.email_integration
       to = "victor@turbot.com"
@@ -47,7 +52,9 @@ pipeline "approval_dynamic_integration" {
   }
 
   step "input" "input" {
-    
+    type = "button"
+    option "test" {}
+
     notify {
       integration = integration.slack.my_slack_app
       channel = "foo"

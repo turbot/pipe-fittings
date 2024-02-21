@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/printers"
 	"sort"
 	"strings"
 
@@ -23,30 +24,13 @@ type Benchmark struct {
 	// child names as NamedItem structs - used to allow setting children via the 'children' property
 	ChildNames NamedItemList `cty:"child_names" json:"-"`
 	// used for introspection tables
-	ChildNameStrings []string `cty:"child_name_strings" column:"children,jsonb" json:"-"`
+	ChildNameStrings []string `cty:"child_name_strings" column:"children,jsonb" json:"children,omitempty"`
 
 	// dashboard specific properties
 	Base    *Benchmark `hcl:"base" json:"-"`
-	Width   *int       `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type    *string    `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display *string    `cty:"display" hcl:"display" json:"-"`
-}
-
-func NewRootBenchmarkWithChildren(mod *Mod, children []ModTreeItem) HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, "benchmark", "root")
-	benchmark := &Benchmark{
-		ModTreeItemImpl: ModTreeItemImpl{
-			HclResourceImpl: HclResourceImpl{
-				ShortName:       "root",
-				FullName:        fullName,
-				UnqualifiedName: fmt.Sprintf("%s.%s", "benchmark", "root"),
-				blockType:       "benchmark",
-			},
-			Mod: mod,
-		},
-	}
-	benchmark.children = append(benchmark.children, children...)
-	return benchmark
+	Width   *int       `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type    *string    `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display *string    `cty:"display" hcl:"display" json:"display,omitempty"`
 }
 
 func NewBenchmark(block *hcl.Block, mod *Mod, shortName string) HclResource {
@@ -230,4 +214,13 @@ func (b *Benchmark) setBaseProperties() {
 		b.ChildNameStrings = b.Base.ChildNameStrings
 		b.ChildNames = b.Base.ChildNames
 	}
+}
+
+// GetShowData implements printers.Showable
+func (b *Benchmark) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.FieldValue{Name: "Children", Value: b.ChildNameStrings},
+	)
+	res.Merge(b.ModTreeItemImpl.GetShowData())
+	return res
 }

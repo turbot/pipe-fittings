@@ -18,21 +18,33 @@ type Trigger struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
+	FileName        string `json:"file_name"`
+	StartLineNumber int    `json:"start_line_number"`
+	EndLineNumber   int    `json:"end_line_number"`
+
 	// 27/09/23 - Args is introduces combination of both parse time and runtime arguments. "var" should be resolved
 	// at parse time, the vars all should be supplied when we start the system. However, args can also contain
 	// runtime variable, i.e. self.request_body, self.rows
 	//
 	ArgsRaw hcl.Expression `json:"-"`
 
-	Pipeline cty.Value `json:"-"`
-	RawBody  hcl.Body  `json:"-" hcl:",remain"`
-
-	Config TriggerConfig `json:"-"`
+	// TODO: 2024/01/09 - change of direction with Trigger schema, pipeline no longer "common" because Query Trigger no longer has a single pipeline for
+	// all its events, similarly for HTTP trigger the pipeline is being moved down to the "method" block.
+	Pipeline cty.Value     `json:"-"`
+	RawBody  hcl.Body      `json:"-" hcl:",remain"`
+	Config   TriggerConfig `json:"-"`
+	Enabled  *bool         `json:"-"`
 }
 
-func (p *Trigger) Equals(other *Trigger) bool {
-	return p.FullName == other.FullName &&
-		p.GetMetadata().ModFullName == other.GetMetadata().ModFullName
+func (t *Trigger) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
+	t.FileName = fileName
+	t.StartLineNumber = startLineNumber
+	t.EndLineNumber = endLineNumber
+}
+
+func (t *Trigger) Equals(other *Trigger) bool {
+	return t.FullName == other.FullName &&
+		t.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
 
 func (t *Trigger) GetPipeline() cty.Value {
@@ -68,6 +80,7 @@ var ValidBaseTriggerAttributes = []string{
 	schema.AttributeTypeTitle,
 	schema.AttributeTypeDocumentation,
 	schema.AttributeTypeTags,
+	schema.AttributeTypeEnabled,
 }
 
 func (t *Trigger) IsBaseAttribute(name string) bool {
@@ -118,46 +131,40 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 		}
 	}
 
-	// Pipeline is a required attribute, we don't need to validate it here because
-	// it should be defined in the Trigger Schema
+	// TODO: this is now only relevant for Schedule Trigger, move it to the Schedule Trigger
 	attr := hclAttributes[schema.AttributeTypePipeline]
+	if attr != nil {
+		expr := attr.Expr
 
-	expr := attr.Expr
+		val, err := expr.Value(evalContext)
+		if err != nil {
+			// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
+			// so if the Pipeline is not parsed (yet) then the error message is:
+			// Summary: "Unknown variable"
+			// Detail: "There is no variable named \"pipeline\"."
+			//
+			// Do not unpack the error and create a new "Diagnostic", leave the original error message in
+			// and let the "Mod processing" determine if there's an unresolved block
 
-	val, err := expr.Value(evalContext)
-	if err != nil {
-		// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
-		// so if the Pipeline is not parsed (yet) then the error message is:
-		// Summary: "Unknown variable"
-		// Detail: "There is no variable named \"pipeline\"."
-		//
-		// Do not unpack the error and create a new "Diagnostic", leave the original error message in
-		// and let the "Mod processing" determine if there's an unresolved block
+			// Don't error out, it's fine to unable to find the reference, we will try again later
+			diags = append(diags, err...)
+		} else {
+			t.Pipeline = val
+		}
+	}
 
-		// Don't error out, it's fine to unable to find the reference, we will try again later
-		diags = append(diags, err...)
-	} else {
-		t.Pipeline = val
+	if attr, exists := hclAttributes[schema.AttributeTypeEnabled]; exists {
+		triggerEnabled, moreDiags := hclhelpers.AttributeToBool(attr, evalContext, true)
+		if moreDiags != nil && moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+		} else {
+			t.Enabled = triggerEnabled
+		}
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeArgs]; exists {
 		if attr.Expr != nil {
 			t.ArgsRaw = attr.Expr
-			// expr := attr.Expr
-			// vals, moreDiags := expr.Value(evalContext)
-			// if moreDiags != nil {
-			// 	diags = append(diags, moreDiags...)
-			// } else {
-			// 	goVals, err := hclhelpers.CtyToGoMapInterface(vals)
-			// 	if err != nil {
-			// 		diags = append(diags, &hcl.Diagnostic{
-			// 			Severity: hcl.DiagError,
-			// 			Summary:  "Unable to parse " + schema.AttributeTypeArgs + " Trigger attribute to Go values",
-			// 			Subject:  &attr.Range,
-			// 		})
-			// 	}
-			// 	t.Args = goVals
-			// }
 		}
 	}
 
@@ -166,6 +173,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 
 type TriggerConfig interface {
 	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 }
 
 type TriggerSchedule struct {
@@ -199,12 +207,16 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 
 			t.Schedule = val.AsString()
 
-			// validate cron format
+			if helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
+				continue
+			}
+
+			// if it's not an interval, assume it's a cron and attempt to validate the cron expression
 			_, err := cron.ParseStandard(t.Schedule)
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Invalid cron expression: " + t.Schedule,
+					Summary:  "Invalid cron expression: " + t.Schedule + ". Specify valid intervals hourly, daily, weekly, monthly or valid cron expression",
 					Detail:   err.Error(),
 					Subject:  &attr.Range,
 				})
@@ -222,66 +234,25 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	return diags
 }
 
-type TriggerInterval struct {
-	Schedule string `json:"schedule"`
-}
-
-var validIntervals = []string{"hourly", "daily", "weekly", "monthly"}
-
-func (t *TriggerInterval) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
-	if diags.HasErrors() {
-		return diags
-	}
-
-	for name, attr := range hclAttributes {
-		switch name {
-		case schema.AttributeTypeSchedule:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
-			}
-
-			if val.Type() != cty.String {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "The given interval is not a string",
-					Detail:   "The given interval is not a string",
-					Subject:  &attr.Range,
-				})
-				continue
-			}
-			t.Schedule = val.AsString()
-
-			if !helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Invalid interval",
-					Detail:   "The interval must be one of: " + strings.Join(validIntervals, ","),
-					Subject:  &attr.Range,
-				})
-			}
-
-		default:
-			if !trigger.IsBaseAttribute(name) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Trigger Interval: " + attr.Name,
-					Subject:  &attr.Range,
-				})
-			}
-		}
-	}
+func (t *TriggerSchedule) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
 	return diags
 }
 
+var validIntervals = []string{"hourly", "daily", "weekly", "5m", "10m", "15m", "30m", "60m", "1h", "2h", "4h", "6h", "12h", "24h"}
+
 type TriggerQuery struct {
-	Sql              string   `json:"sql"`
-	Schedule         string   `json:"schedule"`
-	ConnectionString string   `json:"connection_string"`
-	PrimaryKey       string   `json:"primary_key"`
-	Events           []string `json:"events"`
+	Sql              string                          `json:"sql"`
+	Schedule         string                          `json:"schedule"`
+	ConnectionString string                          `json:"connection_string"`
+	PrimaryKey       string                          `json:"primary_key"`
+	Captures         map[string]*TriggerQueryCapture `json:"captures"`
+}
+
+type TriggerQueryCapture struct {
+	Type     string
+	Pipeline cty.Value
+	ArgsRaw  hcl.Expression
 }
 
 func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -301,7 +272,11 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 
 			t.Schedule = val.AsString()
 
-			// validate cron format
+			if slices.Contains(validIntervals, t.Schedule) {
+				continue
+			}
+
+			// assume it's a cron expression
 			_, err := cron.ParseStandard(t.Schedule)
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
@@ -336,48 +311,147 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 
 			t.PrimaryKey = val.AsString()
 
-		case schema.AttributeTypeEvents:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
-			}
-
-			var err error
-			t.Events, err = hclhelpers.CtyTupleToArrayOfStrings(val)
-			if err != nil {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unable to parse " + schema.AttributeTypeEvents + " Trigger attribute to Go values",
-					Detail:   err.Error(),
-					Subject:  &attr.Range,
-				})
-			}
 		default:
 			if !trigger.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Trigger Interval: " + attr.Name,
+					Summary:  "Unsupported attribute for Trigger Query: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}
 		}
 	}
 
-	if t.PrimaryKey == "" {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "[development] Primary key is required for Trigger Query",
-			Subject:  &hclAttributes[schema.AttributeTypePrimaryKey].Range,
-		})
+	return diags
+}
+
+var validCaptureBlockTypes = []string{"insert", "update", "delete"}
+
+func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	t.Captures = make(map[string]*TriggerQueryCapture)
+
+	for _, captureBlock := range hclBlocks {
+
+		if len(captureBlock.Labels) != 1 {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid capture block",
+				Detail:   "Capture block must have a single label",
+				Subject:  &captureBlock.DefRange,
+			})
+			continue
+		}
+
+		captureBlockType := captureBlock.Labels[0]
+		if !slices.Contains(validCaptureBlockTypes, captureBlockType) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid capture block type",
+				Detail:   "Capture block type must be one of: " + strings.Join(validCaptureBlockTypes, ","),
+				Subject:  &captureBlock.DefRange,
+			})
+			continue
+		}
+
+		hclAttributes, moreDiags := captureBlock.Body.JustAttributes()
+		if moreDiags != nil && moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+			continue
+		}
+
+		attr := hclAttributes[schema.AttributeTypePipeline]
+		if attr == nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Pipeline attribute is required for capture block",
+				Subject:  &captureBlock.DefRange,
+			})
+			continue
+		}
+
+		if t.Captures[captureBlockType] != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Duplicate capture block",
+				Detail:   "Duplicate capture block for type: " + captureBlockType,
+				Subject:  &captureBlock.DefRange,
+			})
+			continue
+		}
+
+		triggerCapture := &TriggerQueryCapture{
+			Type: captureBlockType,
+		}
+
+		expr := attr.Expr
+
+		val, err := expr.Value(evalContext)
+		if err != nil {
+			// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
+			// so if the Pipeline is not parsed (yet) then the error message is:
+			// Summary: "Unknown variable"
+			// Detail: "There is no variable named \"pipeline\"."
+			//
+			// Do not unpack the error and create a new "Diagnostic", leave the original error message in
+			// and let the "Mod processing" determine if there's an unresolved block
+
+			// Don't error out, it's fine to unable to find the reference, we will try again later
+			diags = append(diags, err...)
+		} else {
+			triggerCapture.Pipeline = val
+		}
+
+		if attr, exists := hclAttributes[schema.AttributeTypeArgs]; exists {
+			if attr.Expr != nil {
+				triggerCapture.ArgsRaw = attr.Expr
+			}
+		}
+
+		t.Captures[captureBlockType] = triggerCapture
 	}
 
 	return diags
 }
 
-type TriggerHttp struct {
-	Url string `json:"url"`
+func (c *TriggerQueryCapture) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Diagnostics) {
+
+	if c.ArgsRaw == nil {
+		return Input{}, hcl.Diagnostics{}
+	}
+
+	value, diags := c.ArgsRaw.Value(evalContext)
+
+	if diags.HasErrors() {
+		return Input{}, diags
+	}
+
+	retVal, err := hclhelpers.CtyToGoMapInterface(value)
+	if err != nil {
+		return Input{}, hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Unable to parse " + schema.AttributeTypeArgs + " Trigger attribute to Go values",
+		}}
+	}
+	return retVal, diags
 }
+
+type TriggerHttp struct {
+	Url           string                        `json:"url"`
+	ExecutionMode string                        `json:"execution_mode"`
+	Methods       map[string]*TriggerHTTPMethod `json:"methods"`
+}
+
+type TriggerHTTPMethod struct {
+	Type          string
+	ExecutionMode string
+	Pipeline      cty.Value
+	ArgsRaw       hcl.Expression
+}
+
+var validExecutionMode = []string{"synchronous", "asynchronous"}
+var validMethodBlockTypes = []string{"post", "get"}
 
 func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
@@ -387,6 +461,34 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 
 	for name, attr := range hclAttributes {
 		switch name {
+		case schema.AttributeTypeExecutionMode:
+			val, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			if val.Type() != cty.String {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The given execution mode is not a string",
+					Detail:   "The given execution mode is not a string",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
+			t.ExecutionMode = val.AsString()
+
+			if !slices.Contains(validExecutionMode, t.ExecutionMode) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid execution mode",
+					Detail:   "The execution mode must be one of: " + strings.Join(validExecutionMode, ","),
+					Subject:  &attr.Range,
+				})
+			}
+
 		default:
 			if !trigger.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
@@ -399,6 +501,180 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 	}
 
 	return diags
+}
+
+func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	t.Methods = make(map[string]*TriggerHTTPMethod)
+
+	// If no method blocks appear, only 'post' is supported, and the top-level `pipeline`, `args` and `execution_mode` will be applied
+	if len(hclBlocks) == 0 {
+		triggerMethod := &TriggerHTTPMethod{
+			Type: HttpMethodPost,
+		}
+
+		// Get the top-level pipeline
+		pipeline := trigger.GetPipeline()
+		if pipeline == cty.NilVal {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Bad Request",
+				Detail:   "Missing required attribute 'pipeline'",
+			})
+			return diags
+		}
+		triggerMethod.Pipeline = pipeline
+
+		// Get the top-level args
+		pipelineArgs := trigger.ArgsRaw
+		if pipelineArgs != nil {
+			triggerMethod.ArgsRaw = pipelineArgs
+		}
+
+		// Get the top-level execution_mode
+		if t.ExecutionMode != "" {
+			triggerMethod.ExecutionMode = t.ExecutionMode
+		}
+
+		t.Methods[HttpMethodPost] = triggerMethod
+
+		return diags
+	}
+
+	// If the method blocks provided, we will consider the configuration provided in the method block
+	for _, methodBlock := range hclBlocks {
+
+		if len(methodBlock.Labels) != 1 {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid method block",
+				Detail:   "Method block must have a single label",
+				Subject:  &methodBlock.DefRange,
+			})
+			continue
+		}
+
+		methodBlockType := methodBlock.Labels[0]
+		if !slices.Contains(validMethodBlockTypes, methodBlockType) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid method block type",
+				Detail:   "Method block type must be one of: " + strings.Join(validMethodBlockTypes, ","),
+				Subject:  &methodBlock.DefRange,
+			})
+			continue
+		}
+
+		hclAttributes, moreDiags := methodBlock.Body.JustAttributes()
+		if moreDiags != nil && moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+			continue
+		}
+
+		attr := hclAttributes[schema.AttributeTypePipeline]
+		if attr == nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Pipeline attribute is required for method block",
+				Subject:  &methodBlock.DefRange,
+			})
+			continue
+		}
+
+		if t.Methods[methodBlockType] != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Duplicate method block",
+				Detail:   "Duplicate method block for type: " + methodBlockType,
+				Subject:  &methodBlock.DefRange,
+			})
+			continue
+		}
+
+		triggerMethod := &TriggerHTTPMethod{
+			Type: methodBlockType,
+		}
+
+		expr := attr.Expr
+
+		val, err := expr.Value(evalContext)
+		if err != nil {
+			// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
+			// so if the Pipeline is not parsed (yet) then the error message is:
+			// Summary: "Unknown variable"
+			// Detail: "There is no variable named \"pipeline\"."
+			//
+			// Do not unpack the error and create a new "Diagnostic", leave the original error message in
+			// and let the "Mod processing" determine if there's an unresolved block
+
+			// Don't error out, it's fine to unable to find the reference, we will try again later
+			diags = append(diags, err...)
+		} else {
+			triggerMethod.Pipeline = val
+		}
+
+		if attr, exists := hclAttributes[schema.AttributeTypeArgs]; exists {
+			if attr.Expr != nil {
+				triggerMethod.ArgsRaw = attr.Expr
+			}
+		}
+
+		if attr, exists := hclAttributes[schema.AttributeTypeExecutionMode]; exists {
+			if attr.Expr != nil {
+				val, err := attr.Expr.Value(evalContext)
+				if err != nil {
+					diags = append(diags, err...)
+				}
+
+				executionMode, ctyErr := hclhelpers.CtyToString(val)
+				if ctyErr != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeExecutionMode + " attribute to string",
+						Subject:  &attr.Range,
+					})
+				}
+
+				if !slices.Contains(validExecutionMode, executionMode) {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Invalid execution mode",
+						Detail:   "The execution mode must be one of: " + strings.Join(validExecutionMode, ","),
+						Subject:  &attr.Range,
+					})
+				}
+
+				triggerMethod.ExecutionMode = executionMode
+			}
+		}
+
+		t.Methods[methodBlockType] = triggerMethod
+	}
+
+	return diags
+}
+
+func (c *TriggerHTTPMethod) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Diagnostics) {
+
+	if c.ArgsRaw == nil {
+		return Input{}, hcl.Diagnostics{}
+	}
+
+	value, diags := c.ArgsRaw.Value(evalContext)
+
+	if diags.HasErrors() {
+		return Input{}, diags
+	}
+
+	retVal, err := hclhelpers.CtyToGoMapInterface(value)
+	if err != nil {
+		return Input{}, hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Unable to parse " + schema.AttributeTypeArgs + " Trigger attribute to Go values",
+		}}
+	}
+	return retVal, diags
 }
 
 func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Trigger {
@@ -427,8 +703,6 @@ func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Tr
 	switch triggerType {
 	case schema.TriggerTypeSchedule:
 		trigger.Config = &TriggerSchedule{}
-	case schema.TriggerTypeInterval:
-		trigger.Config = &TriggerInterval{}
 	case schema.TriggerTypeQuery:
 		trigger.Config = &TriggerQuery{}
 	case schema.TriggerTypeHttp:
@@ -445,8 +719,6 @@ func GetTriggerTypeFromTriggerConfig(config TriggerConfig) string {
 	switch config.(type) {
 	case *TriggerSchedule:
 		return schema.TriggerTypeSchedule
-	case *TriggerInterval:
-		return schema.TriggerTypeInterval
 	case *TriggerQuery:
 		return schema.TriggerTypeQuery
 	case *TriggerHttp:

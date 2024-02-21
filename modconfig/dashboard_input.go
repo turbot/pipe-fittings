@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -15,18 +16,18 @@ type DashboardInput struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	DashboardName string                  `column:"dashboard,text" json:"-"`
-	Label         *string                 `cty:"label" hcl:"label" column:"label,text" json:"label,omitempty"`
-	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,text" json:"placeholder,omitempty"`
-	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty"`
+	DashboardName string                  `column:"dashboard,string" json:"dashboard,omitempty"`
+	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty"`
+	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty"`
+	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty" snapshot:"options"`
 	// tactical - exists purely so we can put "unqualified_name" in the snbapshot panel for the input
 	// TODO remove when input names are refactored https://github.com/turbot/steampipe/issues/2863
-	InputName string `cty:"input_name" json:"unqualified_name"`
+	InputName string `cty:"input_name" json:"unqualified_name" snapshot:"unqualified_name"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width     *int            `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type      *string         `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display   *string         `cty:"display" hcl:"display" json:"-"`
+	Width     *int            `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type      *string         `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Display   *string         `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base      *DashboardInput `hcl:"base" json:"-"`
 	dashboard *Dashboard
 }
@@ -188,4 +189,19 @@ func (i *DashboardInput) setBaseProperties() {
 	if i.Options == nil {
 		i.Options = i.Base.Options
 	}
+}
+
+// GetShowData implements printers.Showable
+func (i *DashboardInput) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", i.Width),
+		printers.NewFieldValue("Type", i.Type),
+		printers.NewFieldValue("Display", i.Display),
+		printers.NewFieldValue("Label", i.Label),
+		printers.NewFieldValue("Placeholder", i.Placeholder),
+		printers.NewFieldValue("DashboardName", i.DashboardName),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(i.QueryProviderImpl.GetShowData())
+	return res
 }

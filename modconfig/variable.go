@@ -25,7 +25,7 @@ type Variable struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	Default cty.Value `column:"default_value,jsonb" json:"-"`
-	Type    cty.Type  `column:"var_type,text" json:"-"`
+	Type    cty.Type  `column:"var_type,string" json:"-"`
 
 	TypeString string `json:"type"`
 	DefaultGo  any    `json:"value_default"`
@@ -34,8 +34,8 @@ type Variable struct {
 
 	// set after value resolution `column:"value,jsonb"`
 	Value                      cty.Value                      `column:"value,jsonb" json:"-"`
-	ValueSourceType            string                         `column:"value_source,text" json:"-"`
-	ValueSourceFileName        string                         `column:"value_source_file_name,text" json:"-"`
+	ValueSourceType            string                         `column:"value_source,string" json:"-"`
+	ValueSourceFileName        string                         `column:"value_source_file_name,string" json:"-"`
 	ValueSourceStartLineNumber int                            `column:"value_source_start_line_number,integer" json:"-"`
 	ValueSourceEndLineNumber   int                            `column:"value_source_end_line_number,integer" json:"-"`
 	ParsingMode                var_config.VariableParsingMode `json:"-"`

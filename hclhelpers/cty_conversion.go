@@ -7,8 +7,11 @@ import (
 	"strings"
 	"time"
 
+	gjson "encoding/json"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/sagikazarmark/slog-shim"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -202,6 +205,9 @@ func GoTypeMatchesCtyType(val interface{}, ctyType cty.Type) bool {
 }
 
 func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, error) {
+
+	wanted := typ.FriendlyName()
+
 	// Check if the provided type is one of the supported types
 	if typ == cty.String {
 		return input, nil
@@ -260,7 +266,10 @@ func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, er
 		val, valDiags := expr.Value(nil)
 		diags = append(diags, valDiags...)
 		if len(valDiags) > 0 {
-			return nil, perr.BadRequestWithMessage("unable to parse value has HCL expression: " + input)
+			slog.Error("unable to parse value", "input", input, "diags", valDiags)
+
+			errMsg := fmt.Sprintf("unable to parse value: %s to parameter type %s", input, wanted)
+			return nil, perr.BadRequestWithMessage(errMsg)
 		}
 
 		if typ.IsListType() || typ.IsTupleType() || typ.IsSetType() {
@@ -892,15 +901,33 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 	case reflect.Map:
 		return ConvertMapInterfaceToCtyValue(v)
 
-	// Add more cases here for other types as needed.
 	default:
+		// Try for time
 		if t, ok := v.(time.Time); ok {
 			rfc3339Time := t.Format(time.RFC3339)
 			return cty.StringVal(rfc3339Time), nil
 		}
 
-		// If the type is not recognized, return a cty.NilVal as a placeholder
-		return cty.NilVal, nil
+		// Is it a complex struct that can be marshalled to a JSON?
+		ba, err := gjson.Marshal(v)
+		if err == nil {
+			var anyVal any
+			err := gjson.Unmarshal(ba, &anyVal)
+			if err != nil {
+				slog.Debug("failed to unmarshal to any", "err", err)
+
+				// Otherwise .. print the string value
+				stringVal := fmt.Sprintf("%v", v)
+				val, err := gocty.ToCtyValue(stringVal, cty.String)
+				return val, err
+			}
+			return ConvertInterfaceToCtyValue(anyVal)
+		}
+
+		// Otherwise .. print the string value
+		stringVal := fmt.Sprintf("%v", v)
+		val, err := gocty.ToCtyValue(stringVal, cty.String)
+		return val, err
 	}
 }
 

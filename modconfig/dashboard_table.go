@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -19,10 +20,10 @@ type DashboardTable struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	// TODO remove - check introspection tables
-	Width      *int                             `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type       *string                          `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" column:"columns,jsonb" json:"-"`
-	Columns    map[string]*DashboardTableColumn `cty:"columns" json:"columns,omitempty"`
+	Width      *int                             `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Type       *string                          `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" column:"columns,jsonb" json:"columns,omitempty"`
+	Columns    map[string]*DashboardTableColumn `cty:"columns" snapshot:"columns"`
 	Display    *string                          `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base       *DashboardTable                  `hcl:"base" json:"-"`
 }
@@ -45,9 +46,6 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 	fullName := parsedName.ToFullName()
 
 	c := &DashboardTable{
-		ResourceWithMetadataImpl: ResourceWithMetadataImpl{
-			metadata: &ResourceMetadata{},
-		},
 		QueryProviderImpl: QueryProviderImpl{
 			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
 				ModTreeItemImpl: ModTreeItemImpl{
@@ -61,8 +59,10 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 					Mod: qp.GetMod(),
 				},
 			},
-			Query: qp.GetQuery(),
-			SQL:   qp.GetSQL(),
+			Query:  qp.GetQuery(),
+			SQL:    qp.GetSQL(),
+			Params: qp.GetParams(),
+			Args:   qp.GetArgs(),
 		},
 	}
 	return c, nil
@@ -167,4 +167,17 @@ func (t *DashboardTable) setBaseProperties() {
 	} else {
 		t.ColumnList.Merge(t.Base.ColumnList)
 	}
+}
+
+// GetShowData implements printers.Showable
+func (t *DashboardTable) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", t.Width),
+		printers.NewFieldValue("Type", t.Type),
+		printers.NewFieldValue("Display", t.Display),
+		printers.NewFieldValue("Columns", t.ColumnList),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(t.QueryProviderImpl.GetShowData())
+	return res
 }

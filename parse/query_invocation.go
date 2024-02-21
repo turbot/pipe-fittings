@@ -15,13 +15,12 @@ import (
 // supported formats are:
 //
 // 1) positional args
-// query.my_prepared_statement('val1','val1')
+// query.my_query("val1","val2")
 //
 // 2) named args
-// query.my_prepared_statement(my_arg1 => 'test', my_arg2 => 'test2')
+// query.my_query(my_arg1 => "test", my_arg2 => "test2")
 func ParseQueryInvocation(arg string) (string, *modconfig.QueryArgs, error) {
-	// TODO strip non printing chars
-	args := &modconfig.QueryArgs{}
+	var args *modconfig.QueryArgs
 
 	arg = strings.TrimSpace(arg)
 	query := arg
@@ -40,10 +39,10 @@ func ParseQueryInvocation(arg string) (string, *modconfig.QueryArgs, error) {
 // supported formats are:
 //
 // 1) positional args
-// 'val1','val1'
+// "val1","val1"
 //
 // 2) named args
-// my_arg1 => 'val1', my_arg2 => 'val2'
+// my_arg1 => "val1", my_arg2 => "val2"
 func parseArgs(argsString string) (*modconfig.QueryArgs, error) {
 	res := modconfig.NewQueryArgs()
 	if len(argsString) == 0 {

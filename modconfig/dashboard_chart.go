@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -15,15 +16,15 @@ type DashboardChart struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width      *int                             `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Type       *string                          `cty:"type" hcl:"type" column:"type,text" json:"-"`
-	Display    *string                          `cty:"display" hcl:"display" json:"-"`
-	Legend     *DashboardChartLegend            `cty:"legend" hcl:"legend,block" column:"legend,jsonb" json:"legend,omitempty"`
-	SeriesList DashboardChartSeriesList         `cty:"series_list" hcl:"series,block" column:"series,jsonb" json:"-"`
-	Axes       *DashboardChartAxes              `cty:"axes" hcl:"axes,block" column:"axes,jsonb" json:"axes,omitempty"`
-	Grouping   *string                          `cty:"grouping" hcl:"grouping" json:"grouping,omitempty"`
-	Transform  *string                          `cty:"transform" hcl:"transform" json:"transform,omitempty"`
-	Series     map[string]*DashboardChartSeries `cty:"series" json:"series,omitempty"`
+	Width      *int                             `cty:"width" hcl:"width" column:"width,string" json:"width,omitempty"`
+	Type       *string                          `cty:"type" hcl:"type" column:"type,string" json:"type,omitempty"`
+	Display    *string                          `cty:"display" hcl:"display" json:"display,omitempty"`
+	Legend     *DashboardChartLegend            `cty:"legend" hcl:"legend,block" column:"legend,jsonb" snapshot:"legend" json:"legend,omitempty"`
+	SeriesList DashboardChartSeriesList         `cty:"series_list" hcl:"series,block" column:"series,jsonb" json:"series,omitempty"`
+	Axes       *DashboardChartAxes              `cty:"axes" hcl:"axes,block" column:"axes,jsonb" snapshot:"axes" json:"axes,omitempty"`
+	Grouping   *string                          `cty:"grouping" hcl:"grouping" snapshot:"grouping" json:"grouping,omitempty"`
+	Transform  *string                          `cty:"transform" hcl:"transform" snapshot:"transform" json:"transform,omitempty"`
+	Series     map[string]*DashboardChartSeries `cty:"series" snapshot:"series"`
 	Base       *DashboardChart                  `hcl:"base" json:"-"`
 }
 
@@ -175,4 +176,21 @@ func (c *DashboardChart) setBaseProperties() {
 	if c.Width == nil {
 		c.Width = c.Base.Width
 	}
+}
+
+// GetShowData implements printers.Showable
+func (c *DashboardChart) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", c.Width),
+		printers.NewFieldValue("Type", c.Type),
+		printers.NewFieldValue("Display", c.Display),
+		printers.NewFieldValue("Grouping", c.Grouping),
+		printers.NewFieldValue("Transform", c.Transform),
+		printers.NewFieldValue("Legend", c.Legend),
+		printers.NewFieldValue("Series", c.Series),
+		printers.NewFieldValue("Axes", c.Axes),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(c.QueryProviderImpl.GetShowData())
+	return res
 }

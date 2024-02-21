@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -15,12 +16,12 @@ type DashboardImage struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Src *string `cty:"src" hcl:"src" column:"src,text" json:"src,omitempty"`
-	Alt *string `cty:"alt" hcl:"alt" column:"alt,text" json:"alt,omitempty"`
+	Src *string `cty:"src" hcl:"src" column:"src,string"  json:"src,omitempty"`
+	Alt *string `cty:"alt" hcl:"alt" column:"alt,string"  json:"alt,omitempty"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width   *int    `cty:"width" hcl:"width" column:"width,text" json:"-"`
-	Display *string `cty:"display" hcl:"display" json:"-"`
+	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
+	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardImage `hcl:"base" json:"-"`
 }
@@ -122,4 +123,17 @@ func (i *DashboardImage) setBaseProperties() {
 	if i.Display == nil {
 		i.Display = i.Base.Display
 	}
+}
+
+// GetShowData implements printers.Showable
+func (i *DashboardImage) GetShowData() *printers.RowData {
+	res := printers.NewRowData(
+		printers.NewFieldValue("Width", i.Width),
+		printers.NewFieldValue("Display", i.Display),
+		printers.NewFieldValue("Src", i.Src),
+		printers.NewFieldValue("Alt", i.Alt),
+	)
+	// merge fields from base, putting base fields first
+	res.Merge(i.QueryProviderImpl.GetShowData())
+	return res
 }

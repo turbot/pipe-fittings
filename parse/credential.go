@@ -5,12 +5,12 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
 
-func DecodeCredential(configPath string, block *hcl.Block) (modconfig.Credential, hcl.Diagnostics) {
+func DecodeCredential(configPath string, block *hcl.Block) (credential.Credential, hcl.Diagnostics) {
 
 	if len(block.Labels) != 2 {
 		diags := hcl.Diagnostics{
@@ -25,8 +25,19 @@ func DecodeCredential(configPath string, block *hcl.Block) (modconfig.Credential
 
 	credentialType := block.Labels[0]
 
-	credential := modconfig.NewCredential(block)
-	if credential == nil {
+	cred, err := credential.NewCredential(block)
+	if err != nil {
+		diags := hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("error creating credential: %s", err),
+				Subject:  &block.DefRange,
+			},
+		}
+		return nil, diags
+	}
+
+	if cred == nil {
 		diags := hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -49,15 +60,15 @@ func DecodeCredential(configPath string, block *hcl.Block) (modconfig.Credential
 		Variables: make(map[string]cty.Value),
 	}
 
-	diags = decodeHclBody(body, evalCtx, nil, credential)
+	diags = decodeHclBody(body, evalCtx, nil, cred)
 	if len(diags) > 0 {
 		return nil, diags
 	}
 
-	moreDiags := credential.Validate()
+	moreDiags := cred.Validate()
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}
 
-	return credential, diags
+	return cred, diags
 }

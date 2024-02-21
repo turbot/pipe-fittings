@@ -64,7 +64,7 @@ pipeline "pipeline_with_transform_step_number_list" {
   description = "Pipeline with a valid transform step contains list of numbers"
 
   param "counts" {
-    type    = list(string)
+    type    = list(number)
     default = [1, 2, 3]
   }
 
