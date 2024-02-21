@@ -19,6 +19,8 @@ type RowReader interface {
 type Backend interface {
 	Connect(context.Context, ...ConnectOption) (*sql.DB, error)
 	RowReader() RowReader
+	ConnectionString() string
+	Name() string
 }
 type SearchPathProvider interface {
 	OriginalSearchPath() []string

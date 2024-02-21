@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/constants"
 	"net/netip"
 	"strings"
 	"time"
@@ -76,6 +77,14 @@ func (b *PostgresBackend) Connect(ctx context.Context, opts ...ConnectOption) (*
 		return nil, err
 	}
 	return db, nil
+}
+
+func (b *PostgresBackend) ConnectionString() string {
+	return b.originalConnectionString
+}
+
+func (b *PostgresBackend) Name() string {
+	return constants.PostgresBackendName
 }
 
 // RowReader implements Backend.
