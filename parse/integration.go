@@ -14,19 +14,11 @@ import (
 var integrationBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
-			Name:     schema.AttributeTypeDescription,
-			Required: false,
-		},
-		{
 			Name:     schema.AttributeTypeTitle,
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypeDocumentation,
-			Required: false,
-		},
-		{
-			Name:     schema.AttributeTypeTags,
+			Name:     schema.AttributeTypeDescription,
 			Required: false,
 		},
 	},

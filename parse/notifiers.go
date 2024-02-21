@@ -19,14 +19,6 @@ var notifierBlockSchema = &hcl.BodySchema{
 			Name:     schema.AttributeTypeTitle,
 			Required: false,
 		},
-		{
-			Name:     schema.AttributeTypeDocumentation,
-			Required: false,
-		},
-		{
-			Name:     schema.AttributeTypeTags,
-			Required: false,
-		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{

@@ -258,7 +258,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 	notifier := flowpipeConfig.Notifiers["devs"]
 
 	assert.Equal("bar", *notifier.GetHclResourceImpl().Description)
-	assert.Equal("abc doc", *notifier.GetHclResourceImpl().Documentation)
+	assert.Equal("dev notifier", *notifier.GetHclResourceImpl().Title)
 
 	// marshall to JSON test
 	jsonBytes, err := json.Marshal(notifier)
@@ -281,7 +281,26 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise()
 	assert.Equal(2, len(notifier2.GetNotifies()))
 	assert.Equal("#devs", *notifier2.GetNotifies()[0].Channel)
 	assert.Equal("xoxp-111111", *notifier2.GetNotifies()[0].Integration.(*modconfig.SlackIntegration).Token)
+}
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeModWithOneIntegration() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_one_notifier"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	notifier := flowpipeConfig.Notifiers["notify_one"]
+
+	assert.Equal("foo", *notifier.GetHclResourceImpl().Description)
+	assert.Equal("foo bar", *notifier.GetHclResourceImpl().Title)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
@@ -328,6 +347,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	integrations := notify.Integration
 	assert.NotNil(integrations)
 	assert.Equal("user@test.tld", *integrations.(*modconfig.EmailIntegration).DefaultRecipient)
+	assert.Equal("email.email_with_all", integrations.GetHclResourceImpl().FullName)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
@@ -638,7 +658,17 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	// ensure that the default integration exist
 	assert.Equal("webform.default", flowpipeConfig.Integrations["webform.default"].GetHclResourceImpl().FullName)
 
-	assert.Equal(3, len(flowpipeConfig.Notifiers))
+	assert.Equal(4, len(flowpipeConfig.Notifiers))
+
+	notifierWithDefaultIntegration := flowpipeConfig.Notifiers["with_default_integration"]
+	if notifierWithDefaultIntegration == nil {
+		assert.Fail("notifier with_default_integration not found")
+		return
+	}
+
+	assert.Equal("with_default_integration", notifierWithDefaultIntegration.GetHclResourceImpl().FullName)
+	assert.Equal(1, len(notifierWithDefaultIntegration.GetNotifies()))
+	assert.Equal("webform.default", notifierWithDefaultIntegration.GetNotifies()[0].Integration.(*modconfig.WebformIntegration).FullName)
 
 	// ensure that default notifier exist
 	assert.Equal("default", flowpipeConfig.Notifiers["default"].GetHclResourceImpl().FullName)

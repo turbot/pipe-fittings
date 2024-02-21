@@ -7,7 +7,8 @@ notifier "admins" {
 
 notifier "devs" {
   description = "bar"
-  documentation = "abc doc"
+  title = "dev notifier"
+
   notify {
     integration = integration.slack.my_slack_app 
     channel = "#devs"
@@ -16,4 +17,13 @@ notifier "devs" {
     integration = integration.webform.default
     to = ["billie", "joe", "mike"]
   }    
+}
+
+notifier "with_default_integration" {
+
+  description = "this notifier uses the default integration"
+
+  notify {
+    integration = integration.webform.default
+  }
 }
