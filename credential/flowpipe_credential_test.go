@@ -923,7 +923,7 @@ func TestMastodonDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
 	// Mastodon has no standard environment variable mentioned anywhere in the docs
-	accessToken := "FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU"
+	accessToken := "FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU" //nolint:gosec // this is not a valid credential
 	server := "https://myserver.social"
 
 	mastodonCred := MastodonCredential{
