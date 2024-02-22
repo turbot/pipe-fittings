@@ -3007,17 +3007,20 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	results[schema.AttributeTypeOptions] = resolvedOpts
 
 	// notifier
-	var notifier NotifierImpl
-	if p.UnresolvedAttributes[schema.AttributeTypeNotifier] == nil {
-		notifier = p.Notifier
+	if attr, ok := p.UnresolvedAttributes[schema.AttributeTypeNotifier]; !ok {
+		results[schema.AttributeTypeNotifier] = p.Notifier
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeNotifier], evalContext, &notifier)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		notifierCtyVal, moreDiags := attr.Value(evalContext)
+		if moreDiags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, moreDiags)
 		}
-	}
 
-	results[schema.AttributeTypeNotifier] = notifier
+		notifier, err := ctyValueToPipelineStepInputNotifyValueMap(notifierCtyVal)
+		if err != nil {
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse notifier attribute: " + err.Error())
+		}
+		results[schema.AttributeTypeNotifier] = notifier
+	}
 
 	return results, nil
 }

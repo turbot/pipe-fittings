@@ -406,7 +406,7 @@ func (m *ModParseContext) buildEvalContext() {
 		}
 	}
 
-	referenceValues["notifier"] = cty.ObjectVal(varValueNotifierMap)
+	referenceValues[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
 
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(referenceValues)
