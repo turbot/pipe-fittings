@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -12,19 +14,24 @@ import (
 
 type SteampipeBackend struct {
 	PostgresBackend
-	pluginInstances map[string]string
+	// map of plugin versions, keyed by image ref
+	PluginVersions map[string]*modconfig.PluginVersionString
 }
 
 func NewSteampipeBackend(ctx context.Context, postgresBackend PostgresBackend) (*SteampipeBackend, error) {
 	backend := &SteampipeBackend{
 		PostgresBackend: postgresBackend,
-		pluginInstances: make(map[string]string),
+		PluginVersions:  make(map[string]*modconfig.PluginVersionString),
 	}
 
 	if err := backend.init(ctx); err != nil {
 		return nil, err
 	}
 	return backend, nil
+}
+
+func (b *SteampipeBackend) Name() string {
+	return constants.SteampipeBackendName
 }
 
 func (b *SteampipeBackend) init(ctx context.Context) error {
@@ -64,7 +71,12 @@ func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 			return sperr.WrapWithMessage(err, "failed to read installed plugin from steampipe backend")
 		}
 		// add the plugin
-		b.pluginInstances[name] = version
+		pluginVersion, err := modconfig.NewPluginVersionString(version)
+		if err != nil {
+			// ignore this plugin
+			log.Printf("[WARN] failed to parse version for plugin '%s': %v", name, err)
+		}
+		b.PluginVersions[name] = pluginVersion
 	}
 
 	// Check for errors from iterating over rows

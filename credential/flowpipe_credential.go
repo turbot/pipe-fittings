@@ -78,6 +78,7 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"gitlab":        reflect.TypeOf((*GitlabConnectionConfig)(nil)).Elem(),
 	"guardrails":    reflect.TypeOf((*GuardrailsConnectionConfig)(nil)).Elem(),
 	"ip2locationio": reflect.TypeOf((*IP2LocationIOConnectionConfig)(nil)).Elem(),
+	"jira":          reflect.TypeOf((*JiraConnectionConfig)(nil)).Elem(),
 	"jumpcloud":     reflect.TypeOf((*JumpCloudConnectionConfig)(nil)).Elem(),
 	"mastodon":      reflect.TypeOf((*MastodonConnectionConfig)(nil)).Elem(),
 	"okta":          reflect.TypeOf((*OktaConnectionConfig)(nil)).Elem(),
@@ -96,7 +97,6 @@ var credentialConfigTypeRegistry = map[string]reflect.Type{
 	"virustotal":    reflect.TypeOf((*VirusTotalConnectionConfig)(nil)).Elem(),
 	"zendesk":       reflect.TypeOf((*ZendeskConnectionConfig)(nil)).Elem(),
 	// "ipstack":       reflect.TypeOf((*IPStackConnectionConfig)(nil)).Elem(),
-	// "jira":          reflect.TypeOf((*JiraCredential)(nil)).Elem(),
 }
 
 func InstantiateCredentialConfig(key string) (CredentialConfig, error) {

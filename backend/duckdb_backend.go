@@ -3,12 +3,15 @@ package backend
 import (
 	"context"
 	"database/sql"
+	"github.com/turbot/pipe-fittings/constants"
 	"strings"
 
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-const duckDBConnectionStringPrefix = "duckdb:"
+const (
+	duckDBConnectionStringPrefix = "duckdb:"
+)
 
 type DuckDBBackend struct {
 	connectionString string
@@ -20,14 +23,14 @@ func NewDuckDBBackend(connString string) *DuckDBBackend {
 	connString = strings.TrimPrefix(connString, duckDBConnectionStringPrefix)
 	return &DuckDBBackend{
 		connectionString: connString,
-		rowreader:        NewDuckDBRowReader(),
+		rowreader:        newDuckDBRowReader(),
 	}
 }
 
 // Connect implements Backend.
-func (s *DuckDBBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
+func (b *DuckDBBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
 	config := NewConnectConfig(options)
-	db, err := sql.Open("duckdb", s.connectionString)
+	db, err := sql.Open("duckdb", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")
 	}
@@ -37,16 +40,24 @@ func (s *DuckDBBackend) Connect(_ context.Context, options ...ConnectOption) (*s
 	return db, nil
 }
 
+func (b *DuckDBBackend) ConnectionString() string {
+	return b.connectionString
+}
+
+func (b *DuckDBBackend) Name() string {
+	return constants.DuckDBBackendName
+}
+
 // RowReader implements Backend.
-func (s *DuckDBBackend) RowReader() RowReader {
-	return s.rowreader
+func (b *DuckDBBackend) RowReader() RowReader {
+	return b.rowreader
 }
 
 type duckdbRowReader struct {
 	BasicRowReader
 }
 
-func NewDuckDBRowReader() *duckdbRowReader {
+func newDuckDBRowReader() *duckdbRowReader {
 	return &duckdbRowReader{
 		// use the generic row reader - there's no real difference between sqlite and duckdb
 		BasicRowReader: *NewBasicRowReader(),

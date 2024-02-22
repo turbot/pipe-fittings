@@ -3,16 +3,19 @@ package backend
 import (
 	"context"
 	"database/sql"
+	"github.com/turbot/pipe-fittings/constants"
 	"strings"
 
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
-const sqliteConnectionStringPrefix = "sqlite:"
+const (
+	sqliteConnectionStringPrefix = "sqlite:"
+)
 
 type SqliteBackend struct {
 	connectionString string
-	rowreader        RowReader
+	rowReader        RowReader
 }
 
 func NewSqliteBackend(connString string) *SqliteBackend {
@@ -20,14 +23,14 @@ func NewSqliteBackend(connString string) *SqliteBackend {
 	connString = strings.TrimPrefix(connString, sqliteConnectionStringPrefix)
 	return &SqliteBackend{
 		connectionString: connString,
-		rowreader:        NewSqliteRowReader(),
+		rowReader:        newSqliteRowReader(),
 	}
 }
 
 // Connect implements Backend.
-func (s *SqliteBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
+func (b *SqliteBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
 	config := NewConnectConfig(options)
-	db, err := sql.Open("sqlite3", s.connectionString)
+	db, err := sql.Open("sqlite3", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to sqlite backend")
 	}
@@ -37,16 +40,24 @@ func (s *SqliteBackend) Connect(_ context.Context, options ...ConnectOption) (*s
 	return db, nil
 }
 
+func (b *SqliteBackend) ConnectionString() string {
+	return b.connectionString
+}
+
+func (b *SqliteBackend) Name() string {
+	return constants.SQLiteBackendName
+}
+
 // RowReader implements Backend.
-func (s *SqliteBackend) RowReader() RowReader {
-	return s.rowreader
+func (b *SqliteBackend) RowReader() RowReader {
+	return b.rowReader
 }
 
 type sqliteRowReader struct {
 	BasicRowReader
 }
 
-func NewSqliteRowReader() *sqliteRowReader {
+func newSqliteRowReader() *sqliteRowReader {
 	return &sqliteRowReader{
 		// use the generic row reader - there's no real difference between sqlite and generic
 		BasicRowReader: *NewBasicRowReader(),

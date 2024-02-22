@@ -241,6 +241,22 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_integration_notifier_param"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_integration_notifier_param", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["mod_integration_notifier_param.pipeline.integration_pipe_default_with_param"]
+	unresolvedAttributes := pipeline.Steps[0].GetUnresolvedAttributes()
+	assert.Equal(1, len(unresolvedAttributes))
+	assert.NotNil(unresolvedAttributes["notifier"])
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise() {
 	assert := assert.New(suite.T())
 
@@ -501,6 +517,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].GetHclResourceImpl().FullName)
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_1"].(*credential.IP2LocationIOCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].(*credential.IP2LocationIOCredential).APIKey)
+
+	// Jira
+	assert.Equal("steampipe_jira", flowpipeConfig.CredentialImports["steampipe_jira"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_jira"].Prefix)
+	assert.Equal("jira.sp1_jira_1", flowpipeConfig.Credentials["jira.sp1_jira_1"].GetHclResourceImpl().FullName)
+	assert.Equal("jira.sp1_jira_2", flowpipeConfig.Credentials["jira.sp1_jira_2"].GetHclResourceImpl().FullName)
+	assert.Equal("jira.sp1_jira_3", flowpipeConfig.Credentials["jira.sp1_jira_3"].GetHclResourceImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["jira.sp1_jira_1"].(*credential.JiraCredential).APIToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["jira.sp1_jira_2"].(*credential.JiraCredential).APIToken)
+	assert.Equal("abcdefgj", *flowpipeConfig.Credentials["jira.sp1_jira_3"].(*credential.JiraCredential).APIToken)
 
 	// JumpCloud
 	assert.Equal("steampipe_jumpcloud", flowpipeConfig.CredentialImports["steampipe_jumpcloud"].FullName)
