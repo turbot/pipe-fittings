@@ -518,6 +518,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("abcdefgh", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_1"].(*credential.IP2LocationIOCredential).APIKey)
 	assert.Equal("abcdefgi", *flowpipeConfig.Credentials["ip2locationio.sp1_ip2locationio_2"].(*credential.IP2LocationIOCredential).APIKey)
 
+	// IPstack
+	assert.Equal("steampipe_ipstack", flowpipeConfig.CredentialImports["steampipe_ipstack"].FullName)
+	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_ipstack"].Prefix)
+	assert.Equal("ipstack.sp1_ipstack_1", flowpipeConfig.Credentials["ipstack.sp1_ipstack_1"].GetHclResourceImpl().FullName)
+	assert.Equal("ipstack.sp1_ipstack_2", flowpipeConfig.Credentials["ipstack.sp1_ipstack_2"].GetHclResourceImpl().FullName)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.Credentials["ipstack.sp1_ipstack_1"].(*credential.IPstackCredential).AccessKey)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.Credentials["ipstack.sp1_ipstack_2"].(*credential.IPstackCredential).AccessKey)
+
 	// Jira
 	assert.Equal("steampipe_jira", flowpipeConfig.CredentialImports["steampipe_jira"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_jira"].Prefix)

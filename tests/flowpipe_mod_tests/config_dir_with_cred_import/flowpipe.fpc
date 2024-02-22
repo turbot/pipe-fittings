@@ -189,3 +189,9 @@ credential_import "steampipe_mastodon" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_ipstack" {
+  source      = "./steampipe_config/ipstack.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}

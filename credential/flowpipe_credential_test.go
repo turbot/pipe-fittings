@@ -430,6 +430,7 @@ func TestIPstackDefaultCredential(t *testing.T) {
 	}
 
 	os.Unsetenv("IPSTACK_ACCESS_KEY")
+	os.Unsetenv("IPSTACK_TOKEN")
 	newCreds, err := ipstackCred.Resolve(context.TODO())
 	assert.Nil(err)
 
@@ -437,6 +438,7 @@ func TestIPstackDefaultCredential(t *testing.T) {
 	assert.Equal("", *newIPstackCreds.AccessKey)
 
 	os.Setenv("IPSTACK_ACCESS_KEY", "1234801bfsffsdf123455e6cfaf2")
+	os.Setenv("IPSTACK_TOKEN", "1234801bfsffsdf123455e6cfaf2")
 
 	newCreds, err = ipstackCred.Resolve(context.TODO())
 	assert.Nil(err)
