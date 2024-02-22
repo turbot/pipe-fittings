@@ -241,6 +241,22 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_integration_notifier_param"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_integration_notifier_param", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["mod_integration_notifier_param.pipeline.integration_pipe_default_with_param"]
+	unresolvedAttributes := pipeline.Steps[0].GetUnresolvedAttributes()
+	assert.Equal(1, len(unresolvedAttributes))
+	assert.NotNil(unresolvedAttributes["notifier"])
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise() {
 	assert := assert.New(suite.T())
 
