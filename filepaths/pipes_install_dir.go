@@ -10,6 +10,7 @@ import (
 
 // PipesInstallDir is the location of config files commen between pipelings
 // this must be set by the application at startup
+var DefaultPipesInstallDir = ""
 var PipesInstallDir = ""
 
 func ensurePipesInstallSubDir(dirName string) string {
