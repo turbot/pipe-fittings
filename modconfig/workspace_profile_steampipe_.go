@@ -2,8 +2,8 @@ package modconfig
 
 //type SteampipeWorkspaceProfile struct {
 //	ProfileName string  `hcl:"name,label" cty:"name"`
-//	CloudHost   *string `hcl:"cloud_host,optional" cty:"cloud_host"`
-//	CloudToken  *string `hcl:"cloud_token,optional" cty:"cloud_token"`
+//	PipesHost   *string `hcl:"cloud_host,optional" cty:"cloud_host"`
+//	PipesToken  *string `hcl:"cloud_token,optional" cty:"cloud_token"`
 //	InstallDir  *string `hcl:"install_dir,optional" cty:"install_dir"`
 //	//ModLocation       *string                    `hcl:"mod_location,optional" cty:"mod_location"`
 //	QueryTimeout      *int                       `hcl:"query_timeout,optional" cty:"query_timeout"`
@@ -86,11 +86,11 @@ package modconfig
 //		return
 //	}
 //
-//	if p.CloudHost == nil {
-//		p.CloudHost = p.Base.CloudHost
+//	if p.PipesHost == nil {
+//		p.PipesHost = p.Base.PipesHost
 //	}
-//	if p.CloudToken == nil {
-//		p.CloudToken = p.Base.CloudToken
+//	if p.PipesToken == nil {
+//		p.PipesToken = p.Base.PipesToken
 //	}
 //	if p.InstallDir == nil {
 //		p.InstallDir = p.Base.InstallDir
@@ -168,8 +168,8 @@ package modconfig
 //	res := ConfigMap{}
 //	// add non-empty properties to config map
 //
-//	res.SetStringItem(p.CloudHost, constants.ArgCloudHost)
-//	res.SetStringItem(p.CloudToken, constants.ArgCloudToken)
+//	res.SetStringItem(p.PipesHost, constants.ArgPipesHost)
+//	res.SetStringItem(p.PipesToken, constants.ArgPipesToken)
 //	res.SetStringItem(p.InstallDir, constants.ArgInstallDir)
 //	//res.SetStringItem(p.ModLocation, constants.ArgModLocation)
 //	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)

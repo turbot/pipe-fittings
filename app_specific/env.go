@@ -11,8 +11,6 @@ var EnvUpdateCheck,
 	EnvSnapshotLocation,
 	EnvDatabase,
 	EnvWorkspaceProfile,
-	EnvCloudHost,
-	EnvCloudToken,
 	EnvDisplayWidth,
 	EnvCacheEnabled,
 	EnvCacheTTL,
@@ -44,8 +42,6 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvSnapshotLocation = buildEnv("SNAPSHOT_LOCATION")
 	EnvDatabase = buildEnv("DATABASE")
 	EnvWorkspaceProfile = buildEnv("WORKSPACE")
-	EnvCloudHost = buildEnv("CLOUD_HOST")
-	EnvCloudToken = buildEnv("CLOUD_TOKEN")
 	EnvDisplayWidth = buildEnv("DISPLAY_WIDTH")
 	EnvCacheEnabled = buildEnv("CACHE")
 	EnvCacheTTL = buildEnv("CACHE_TTL")

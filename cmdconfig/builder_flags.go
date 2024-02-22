@@ -76,8 +76,8 @@ func (c *CmdBuilder) AddStringMapStringFlag(name string, defaultValue map[string
 // AddCloudFlags is helper function to add the cloud flags to a command
 func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
 	return c.
-		AddStringFlag(constants.ArgCloudHost, constants.DefaultCloudHost, "Turbot Pipes host").
-		AddStringFlag(constants.ArgCloudToken, "", "Turbot Pipes authentication token")
+		AddStringFlag(constants.ArgPipesHost, constants.DefaultPipesHost, "Turbot Pipes host").
+		AddStringFlag(constants.ArgPipesToken, "", "Turbot Pipes authentication token")
 }
 
 // AddModLocationFlag is helper function to add the mod-location flag to a command

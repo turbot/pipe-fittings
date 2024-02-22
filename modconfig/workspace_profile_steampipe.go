@@ -26,8 +26,8 @@ type SteampipeWorkspaceProfile struct {
 	MemoryMaxMb *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
 
 	// pipes integration options
-	CloudHost        *string `hcl:"cloud_host,optional" cty:"cloud_host"`
-	CloudToken       *string `hcl:"cloud_token,optional" cty:"cloud_token"`
+	PipesHost        *string `hcl:"pipes_host,optional" cty:"pipes_host"`
+	PipesToken       *string `hcl:"pipes_token,optional" cty:"pipes_token"`
 	SnapshotLocation *string `hcl:"snapshot_location,optional" cty:"snapshot_location"`
 
 	ModLocation *string `hcl:"mod_location,optional" cty:"mod_location"`
@@ -109,11 +109,11 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.MemoryMaxMb == nil {
 		p.MemoryMaxMb = p.Base.MemoryMaxMb
 	}
-	if p.CloudHost == nil {
-		p.CloudHost = p.Base.CloudHost
+	if p.PipesHost == nil {
+		p.PipesHost = p.Base.PipesHost
 	}
-	if p.CloudToken == nil {
-		p.CloudToken = p.Base.CloudToken
+	if p.PipesToken == nil {
+		p.PipesToken = p.Base.PipesToken
 	}
 	if p.SnapshotLocation == nil {
 		p.SnapshotLocation = p.Base.SnapshotLocation
@@ -177,8 +177,8 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetStringItem(p.LogLevel, constants.ArgLogLevel)
 	res.SetIntItem(p.MemoryMaxMb, constants.ArgMemoryMaxMb)
 
-	res.SetStringItem(p.CloudHost, constants.ArgCloudHost)
-	res.SetStringItem(p.CloudToken, constants.ArgCloudToken)
+	res.SetStringItem(p.PipesHost, constants.ArgPipesHost)
+	res.SetStringItem(p.PipesToken, constants.ArgPipesToken)
 	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)
 
 	res.SetStringItem(p.ModLocation, constants.ArgModLocation)
