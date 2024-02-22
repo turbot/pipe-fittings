@@ -6,14 +6,15 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type VaultCredential struct {
 	CredentialImpl
 
-	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 	Address *string `json:"address,omitempty" cty:"address" hcl:"address,optional"`
+	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
 func (c *VaultCredential) getEnv() map[string]cty.Value {
@@ -37,6 +38,27 @@ func (c *VaultCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *VaultCredential) Equals(other *VaultCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Address, other.Address) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Token, other.Token) {
+		return false
+	}
+
+	return true
 }
 
 func (c *VaultCredential) Resolve(ctx context.Context) (Credential, error) {

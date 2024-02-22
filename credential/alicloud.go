@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -124,6 +125,27 @@ func (c *AlicloudCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *AlicloudCredential) Equals(other *AlicloudCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.AccessKey, other.AccessKey) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.SecretKey, other.SecretKey) {
+		return false
+	}
+
+	return true
 }
 
 type AlicloudConnectionConfig struct {

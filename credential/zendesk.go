@@ -6,14 +6,15 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type ZendeskCredential struct {
 	CredentialImpl
 
-	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
 	Email     *string `json:"email,omitempty" cty:"email" hcl:"email,optional"`
+	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
 	Token     *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
@@ -41,6 +42,31 @@ func (c *ZendeskCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *ZendeskCredential) Equals(other *ZendeskCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Email, other.Email) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Subdomain, other.Subdomain) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Token, other.Token) {
+		return false
+	}
+
+	return true
 }
 
 func (c *ZendeskCredential) Resolve(ctx context.Context) (Credential, error) {

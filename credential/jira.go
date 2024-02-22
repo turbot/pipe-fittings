@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -45,6 +46,31 @@ func (c *JiraCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *JiraCredential) Equals(other *JiraCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.APIToken, other.APIToken) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.BaseURL, other.BaseURL) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Username, other.Username) {
+		return false
+	}
+
+	return true
 }
 
 func (c *JiraCredential) Resolve(ctx context.Context) (Credential, error) {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -37,6 +38,27 @@ func (c *FreshdeskCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *FreshdeskCredential) Equals(other *FreshdeskCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.APIKey, other.APIKey) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Subdomain, other.Subdomain) {
+		return false
+	}
+
+	return true
 }
 
 func (c *FreshdeskCredential) Resolve(ctx context.Context) (Credential, error) {
