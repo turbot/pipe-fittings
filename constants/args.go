@@ -7,8 +7,6 @@ const (
 	ArgCacheMaxTtl             = "cache-max-ttl"
 	ArgCacheTtl                = "cache-ttl"
 	ArgClientCacheEnabled      = "client-cache-enabled"
-	ArgCloudHost               = "cloud-host"
-	ArgCloudToken              = "cloud-token"
 	ArgDashboardStartTimeout   = "dashboard-start-timeout"
 	ArgDatabaseListenAddresses = "database-listen"
 	ArgDatabasePort            = "database-port"
@@ -38,6 +36,9 @@ const (
 	ArgOff                     = "off"
 	ArgOn                      = "on"
 	ArgOutput                  = "output"
+	ArgPipesInstallDir         = "pipes-install-dir"
+	ArgPipesHost               = "pipes-host"
+	ArgPipesToken              = "pipes-token"
 	ArgPort                    = "port"
 	ArgProgress                = "progress"
 	ArgPrune                   = "prune"
@@ -62,7 +63,7 @@ const (
 	ArgDatabase                = "database"
 	ArgWorkspaceProfile        = "workspace"
 	ArgConfigPath              = "config-path"
-	ArgBaseUrl = "base-url"
+	ArgBaseUrl                 = "base-url"
 
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
