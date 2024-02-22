@@ -37,6 +37,14 @@ func (c *SlackCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *SlackCredential) Equals(other *SlackCredential) bool {
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
 	if c.Type != other.Type {
 		return false
 	}
