@@ -597,6 +597,7 @@ func TestJiraDefaultCredential(t *testing.T) {
 	}
 
 	os.Unsetenv("JIRA_API_TOKEN")
+	os.Unsetenv("JIRA_TOKEN")
 	os.Unsetenv("JIRA_URL")
 	os.Unsetenv("JIRA_USER")
 
@@ -609,6 +610,7 @@ func TestJiraDefaultCredential(t *testing.T) {
 	assert.Equal("", *newJiraCreds.Username)
 
 	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("JIRA_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
 	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
 	os.Setenv("JIRA_USER", "test@turbot.com")
 

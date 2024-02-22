@@ -177,3 +177,9 @@ credential_import "steampipe_alicloud" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_jira" {
+  source      = "./steampipe_config/jira.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
