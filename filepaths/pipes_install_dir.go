@@ -26,7 +26,7 @@ func ensurePipesInstallSubDir(dirName string) string {
 
 func installPipesSubDir(dirName string) string {
 	if PipesInstallDir == "" {
-		panic(fmt.Errorf("cannot call any pipes directory functions before PipesInstallDir is set", app_specific.AppName))
+		panic(fmt.Errorf("cannot call any pipes directory functions before PipesInstallDir is set"))
 	}
 	return filepath.Join(app_specific.InstallDir, dirName)
 }
