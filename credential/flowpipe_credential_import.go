@@ -34,7 +34,7 @@ func (c CredentialImport) Equals(other CredentialImport) bool {
 		return false
 	}
 
-	if gokit.StringSliceEqualIgnoreOrder(c.Connections, other.Connections) {
+	if !gokit.StringSliceEqualIgnoreOrder(c.Connections, other.Connections) {
 		return false
 	}
 

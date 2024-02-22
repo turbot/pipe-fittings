@@ -70,3 +70,83 @@ func AreFilesEqual(file1, file2 string) (bool, error) {
 	}
 	return bytes.Equal(content1, content2), nil
 }
+
+func EmptyDir(dirPath string) error {
+	d, err := os.Open(dirPath)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dirPath, name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CopyFile(src, dst string) error {
+	sourceFileStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if !sourceFileStat.Mode().IsRegular() {
+		return &os.PathError{Op: "copy", Path: src, Err: err}
+	}
+
+	source, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	return err
+}
+
+func CopyDir(src string, dst string) error {
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(dst, srcInfo.Mode()); err != nil {
+		return err
+	}
+
+	directory, _ := os.Open(src)
+	objects, err := directory.Readdir(-1)
+
+	for _, obj := range objects {
+		srcFilePath := filepath.Join(src, obj.Name())
+		dstFilePath := filepath.Join(dst, obj.Name())
+
+		if obj.IsDir() {
+			err = CopyDir(srcFilePath, dstFilePath)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = CopyFile(srcFilePath, dstFilePath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
