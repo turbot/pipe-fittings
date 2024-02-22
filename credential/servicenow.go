@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -41,6 +42,31 @@ func (c *ServiceNowCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *ServiceNowCredential) Equals(other *ServiceNowCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.InstanceURL, other.InstanceURL) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Username, other.Username) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Password, other.Password) {
+		return false
+	}
+
+	return true
 }
 
 func (c *ServiceNowCredential) Resolve(ctx context.Context) (Credential, error) {

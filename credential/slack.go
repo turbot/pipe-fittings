@@ -37,6 +37,7 @@ func (c *SlackCredential) CtyValue() (cty.Value, error) {
 }
 
 func (c *SlackCredential) Equals(other *SlackCredential) bool {
+	// If both pointers are nil, they are considered equal
 	if c == nil && other == nil {
 		return true
 	}

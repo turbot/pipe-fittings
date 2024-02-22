@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -37,6 +38,27 @@ func (c *TrelloCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *TrelloCredential) Equals(other *TrelloCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.APIKey, other.APIKey) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Token, other.Token) {
+		return false
+	}
+
+	return true
 }
 
 func (c *TrelloCredential) Resolve(ctx context.Context) (Credential, error) {
