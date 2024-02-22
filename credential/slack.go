@@ -35,6 +35,18 @@ func (c *SlackCredential) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
+func (c *SlackCredential) Equals(other *SlackCredential) bool {
+	if c.Type != other.Type {
+		return false
+	}
+
+	if c.Token != other.Token {
+		return false
+	}
+
+	return true
+}
+
 func (c *SlackCredential) Resolve(ctx context.Context) (Credential, error) {
 	if c.Token == nil {
 		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")
