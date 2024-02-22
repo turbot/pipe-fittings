@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -122,6 +123,35 @@ func (c *AwsCredential) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *AwsCredential) Equals(other *AwsCredential) bool {
+	// If both pointers are nil, they are considered equal
+	if c == nil && other == nil {
+		return true
+	}
+
+	if (c == nil && other != nil) || (c != nil && other == nil) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.AccessKey, other.AccessKey) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.SecretKey, other.SecretKey) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Profile, other.Profile) {
+		return false
+	}
+
+	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
+		return false
+	}
+
+	return true
 }
 
 // TODO: should we merge AwsConnectionConfig with AwsCredential? They have distinct usage but the data model is very similar
