@@ -235,14 +235,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
 
 	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
 
-	utils.EmptyDir("./config_equality_test_dir")
-	utils.CopyDir("./config_equality_test_a", "./config_equality_test_dir")
+	utils.EmptyDir("./config_equality_test_dir")                            //nolint:errcheck // test only
+	utils.CopyDir("./config_equality_test_a", "./config_equality_test_dir") //nolint:errcheck // test only
 
 	flowpipeConfigA, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_a"})
 	assert.Nil(err.Error)
 
-	utils.EmptyDir("./config_equality_test_dir")
-	utils.CopyDir("./config_equality_test_b", "./config_equality_test_dir")
+	utils.EmptyDir("./config_equality_test_dir")                            //nolint:errcheck // test only
+	utils.CopyDir("./config_equality_test_b", "./config_equality_test_dir") //nolint:errcheck // test only
 
 	flowpipeConfigB, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_b"})
 	assert.Nil(err.Error)

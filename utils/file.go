@@ -130,6 +130,9 @@ func CopyDir(src string, dst string) error {
 
 	directory, _ := os.Open(src)
 	objects, err := directory.Readdir(-1)
+	if err != nil {
+		return err
+	}
 
 	for _, obj := range objects {
 		srcFilePath := filepath.Join(src, obj.Name())

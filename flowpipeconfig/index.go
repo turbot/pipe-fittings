@@ -35,6 +35,7 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 	}
 
 	// for k, v := range f.Credentials {
+	// check if k exists in other
 	// 	if !other.Credentials[k].Equals(v) {
 	// 		return false
 	// 	}
@@ -45,6 +46,7 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 	}
 
 	// for k, v := range f.Integrations {
+	// check if k exists in other
 	// 	if !other.Integrations[k].Equals(v) {
 	// 		return false
 	// 	}
@@ -55,6 +57,7 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 	}
 
 	// for k, v := range f.Notifiers {
+	// check if k exists in other
 	// 	if !other.Notifiers[k].Equals(v) {
 	// 		return false
 	// 	}
@@ -65,6 +68,11 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 	}
 
 	for k, v := range f.CredentialImports {
+
+		if _, ok := other.CredentialImports[k]; !ok {
+			return false
+		}
+
 		if !other.CredentialImports[k].Equals(v) {
 			return false
 		}
