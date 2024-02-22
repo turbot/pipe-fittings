@@ -108,6 +108,7 @@ var codePluginExcludedRegex = []string{
 	"heroku_api_key",
 	"azure_storage_account_key",    // code plugin defines 2 regexes for this, one we want to use but the other is a bit loose, we will use just the one we want and define it in this package
 	"github_personal_access_token", // code plugin defines 2 regexes, one for github PAT and another one for SHA. We will use just the PAT one and define it in this package
+	"okta_token",                   // too liberal, redacting hashes in urls, etc.
 }
 
 func NewSanitizer(opts SanitizerOptions) *Sanitizer {
