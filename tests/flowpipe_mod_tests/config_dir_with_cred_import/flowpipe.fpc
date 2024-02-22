@@ -183,3 +183,9 @@ credential_import "steampipe_jira" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "steampipe_mastodon" {
+  source      = "./steampipe_config/mastodon.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}
