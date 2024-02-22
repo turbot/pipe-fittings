@@ -9,3 +9,13 @@ func ToStringPointer(s string) *string {
 func ToIntegerPointer(i int) *int {
 	return &i
 }
+
+func StringPtrEqual(a, b *string) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return *a == *b
+}

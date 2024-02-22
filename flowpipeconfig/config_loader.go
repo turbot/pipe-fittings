@@ -42,7 +42,7 @@ func LoadFlowpipeConfig(configPaths []string) (*FlowpipeConfig, error_helpers.Er
 	include := filehelpers.InclusionsFromExtensions(connectionConfigExtensions)
 	loadOptions := &loadConfigOptions{include: include}
 
-	var res = NewFlowpipeConfig()
+	var res = NewFlowpipeConfig(configPaths)
 
 	lastErrorLength := 0
 

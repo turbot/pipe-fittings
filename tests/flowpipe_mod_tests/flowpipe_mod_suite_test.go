@@ -13,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 
 	"github.com/spf13/viper"
@@ -215,6 +216,38 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 
 	assert.Equal("foobarbaz", stepInputs["value"], "token should be set to foobarbaz")
 	os.Unsetenv("ACCESS_KEY")
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
+	assert := assert.New(suite.T())
+
+	// Reading from different file will always result in different config
+	flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_a"})
+	assert.Nil(err.Error)
+
+	flowpipeConfigA2, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_a"})
+	assert.Nil(err.Error)
+
+	assert.True(flowpipeConfigA.Equals(flowpipeConfigA2))
+
+	flowpipeConfigB, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_b"})
+	assert.Nil(err.Error)
+
+	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
+
+	utils.EmptyDir("./config_equality_test_dir")                            //nolint:errcheck // test only
+	utils.CopyDir("./config_equality_test_a", "./config_equality_test_dir") //nolint:errcheck // test only
+
+	flowpipeConfigA, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_a"})
+	assert.Nil(err.Error)
+
+	utils.EmptyDir("./config_equality_test_dir")                            //nolint:errcheck // test only
+	utils.CopyDir("./config_equality_test_b", "./config_equality_test_dir") //nolint:errcheck // test only
+
+	flowpipeConfigB, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_b"})
+	assert.Nil(err.Error)
+
+	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
