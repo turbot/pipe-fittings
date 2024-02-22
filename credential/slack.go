@@ -45,10 +45,6 @@ func (c *SlackCredential) Equals(other *SlackCredential) bool {
 		return false
 	}
 
-	if c.Type != other.Type {
-		return false
-	}
-
 	if !utils.StringPtrEqual(c.Token, other.Token) {
 		return false
 	}
