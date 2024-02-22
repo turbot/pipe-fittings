@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -40,7 +41,7 @@ func (c *SlackCredential) Equals(other *SlackCredential) bool {
 		return false
 	}
 
-	if c.Token != other.Token {
+	if !utils.StringPtrEqual(c.Token, other.Token) {
 		return false
 	}
 
