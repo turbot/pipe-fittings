@@ -5,6 +5,9 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
+
+	gokit "github.com/turbot/go-kit/helpers"
 )
 
 // The definition of a single Flowpipe CredentialImport
@@ -21,17 +24,31 @@ type CredentialImport struct {
 	Prefix      *string  `json:"prefix" cty:"prefix" hcl:"prefix,optional"`
 }
 
+func (c CredentialImport) Equals(other CredentialImport) bool {
+
+	if c.FileName != other.FileName || c.StartLineNumber != other.StartLineNumber || c.EndLineNumber != other.EndLineNumber {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Source, other.Source) {
+		return false
+	}
+
+	if gokit.StringSliceEqualIgnoreOrder(c.Connections, other.Connections) {
+		return false
+	}
+
+	if !utils.StringPtrEqual(c.Prefix, other.Prefix) {
+		return false
+	}
+
+	return true
+}
+
 func (c *CredentialImport) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
 	c.FileName = fileName
 	c.StartLineNumber = startLineNumber
 	c.EndLineNumber = endLineNumber
-}
-
-func (c *CredentialImport) Equals(other *CredentialImport) bool {
-	// TODO: fix this equality test. This isn't done properly although since this is a config item it can't be modified
-	// at runtime, so perhaps it's not a big deal?
-	return c.GetHclResourceImpl().Equals(other.GetHclResourceImpl()) &&
-		c.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
 
 func (c *CredentialImport) GetSource() *string {

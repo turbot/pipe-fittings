@@ -2,9 +2,10 @@ package workspace
 
 import (
 	"context"
+	"log/slog"
+
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"log/slog"
 )
 
 var EventCount int64 = 0
