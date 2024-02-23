@@ -100,12 +100,11 @@ const (
 	AttributeTypeFinishedAt = "finished_at"
 
 	// Used by query step
-	AttributeTypeSql              = "sql"
-	AttributeTypeArgs             = "args"
-	AttributeTypeQuery            = "query"
-	AttributeTypeRows             = "rows"
-	AttributeTypeConnectionString = "connection_string"
-	AttributeTypeDatabase         = "database"
+	AttributeTypeSql      = "sql"
+	AttributeTypeArgs     = "args"
+	AttributeTypeQuery    = "query"
+	AttributeTypeRows     = "rows"
+	AttributeTypeDatabase = "database"
 
 	// Used by email step
 	AttributeTypeBcc         = "bcc"
