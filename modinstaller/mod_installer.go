@@ -49,7 +49,7 @@ type ModInstaller struct {
 	// do we force install even if there are require errors
 	force bool
 	// optional map of installed plugin versions
-	pluginVersions modconfig.PluginVersionMap
+	pluginVersions *modconfig.PluginVersionMap
 }
 
 func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
