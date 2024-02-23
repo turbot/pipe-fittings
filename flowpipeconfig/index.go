@@ -34,12 +34,15 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 		return false
 	}
 
-	// for k, v := range f.Credentials {
-	// check if k exists in other
-	// 	if !other.Credentials[k].Equals(v) {
-	// 		return false
-	// 	}
-	// }
+	for k := range f.Credentials {
+		if _, ok := other.Credentials[k]; !ok {
+			return false
+		}
+
+		// if !other.Credentials[k].Equals(v) {
+		// 	return false
+		// }
+	}
 
 	if len(f.Integrations) != len(other.Integrations) {
 		return false
@@ -100,6 +103,7 @@ func (f *FlowpipeConfig) SetupWatcher(ctx context.Context, errorHandler func(con
 		return err
 	}
 	f.watcher = watcher
+
 	// start the watcher
 	watcher.Start()
 
