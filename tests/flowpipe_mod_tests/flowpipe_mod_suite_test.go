@@ -299,6 +299,13 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 	step := pipeline.Steps[0]
 	assert.Equal(1, len(step.GetCredentialDependsOn()))
 	assert.Equal("aws.example", step.GetCredentialDependsOn()[0])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.cred_in_output"]
+	assert.NotNil(pipeline)
+
+	assert.Equal(1, len(pipeline.OutputConfig))
+	assert.Equal("aws.example", pipeline.OutputConfig[0].CredentialDependsOn[0])
+
 }
 
 func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {

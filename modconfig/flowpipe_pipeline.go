@@ -457,12 +457,13 @@ type PipelineParam struct {
 }
 
 type PipelineOutput struct {
-	Name            string         `json:"name"`
-	Description     string         `json:"description,omitempty"`
-	DependsOn       []string       `json:"depends_on,omitempty"`
-	Resolved        bool           `json:"resolved,omitempty"`
-	Value           interface{}    `json:"value,omitempty"`
-	UnresolvedValue hcl.Expression `json:"-"`
+	Name                string         `json:"name"`
+	Description         string         `json:"description,omitempty"`
+	DependsOn           []string       `json:"depends_on,omitempty"`
+	CredentialDependsOn []string       `json:"credential_depends_on,omitempty"`
+	Resolved            bool           `json:"resolved,omitempty"`
+	Value               interface{}    `json:"value,omitempty"`
+	UnresolvedValue     hcl.Expression `json:"-"`
 }
 
 // GetShowData implements the Showable interface
@@ -529,6 +530,22 @@ func (o *PipelineOutput) AppendDependsOn(dependsOn ...string) {
 	for _, dep := range dependsOn {
 		if !existingDeps[dep] {
 			o.DependsOn = append(o.DependsOn, dep)
+			existingDeps[dep] = true
+		}
+	}
+}
+
+func (o *PipelineOutput) AppendCredentialDependsOn(credentialDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
+	existingDeps := make(map[string]bool)
+	for _, dep := range o.CredentialDependsOn {
+		existingDeps[dep] = true
+	}
+
+	for _, dep := range credentialDependsOn {
+		if !existingDeps[dep] {
+			o.CredentialDependsOn = append(o.CredentialDependsOn, dep)
 			existingDeps[dep] = true
 		}
 	}

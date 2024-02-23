@@ -969,6 +969,8 @@ func (p *PipelineStepBase) AppendDependsOn(dependsOn ...string) {
 }
 
 func (p *PipelineStepBase) AppendCredentialDependsOn(credentialDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
 	existingDeps := make(map[string]bool)
 	for _, dep := range p.CredentialDependsOn {
 		existingDeps[dep] = true
