@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/utils"
@@ -40,13 +41,18 @@ func (c *GcpCredential) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (c *GcpCredential) Equals(other *GcpCredential) bool {
+func (c *GcpCredential) Equals(otherCredential Credential) bool {
 	// If both pointers are nil, they are considered equal
-	if c == nil && other == nil {
+	if c == nil && helpers.IsNil(otherCredential) {
 		return true
 	}
 
-	if (c == nil && other != nil) || (c != nil && other == nil) {
+	if (c == nil && !helpers.IsNil(otherCredential)) || (c != nil && helpers.IsNil(otherCredential)) {
+		return false
+	}
+
+	other, ok := otherCredential.(*GcpCredential)
+	if !ok {
 		return false
 	}
 
