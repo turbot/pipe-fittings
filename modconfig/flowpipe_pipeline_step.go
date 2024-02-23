@@ -2395,9 +2395,9 @@ func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, eval
 
 type PipelineStepQuery struct {
 	PipelineStepBase
-	ConnnectionString *string       `json:"connection_string"`
-	Sql               *string       `json:"sql"`
-	Args              []interface{} `json:"args"`
+	Database *string       `json:"database"`
+	Sql      *string       `json:"sql"`
+	Args     []interface{} `json:"args"`
 }
 
 func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
@@ -2424,7 +2424,7 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 		}
 	}
 
-	return reflect.DeepEqual(p.ConnnectionString, other.ConnnectionString) &&
+	return reflect.DeepEqual(p.Database, other.Database) &&
 		reflect.DeepEqual(p.Sql, other.Sql)
 }
 
@@ -2448,14 +2448,14 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
-	var connectionString *string
-	if p.UnresolvedAttributes[schema.AttributeTypeConnectionString] == nil {
-		if p.ConnnectionString == nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": connection string must be supplied")
+	var database *string
+	if p.UnresolvedAttributes[schema.AttributeTypeDatabase] == nil {
+		if p.Database == nil {
+			return nil, perr.BadRequestWithMessage(p.Name + ": database must be supplied")
 		}
-		connectionString = p.ConnnectionString
+		database = p.Database
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeConnectionString], evalContext, &connectionString)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDatabase], evalContext, &database)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
@@ -2465,8 +2465,8 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		results[schema.AttributeTypeSql] = *sql
 	}
 
-	if connectionString != nil {
-		results[schema.AttributeTypeConnectionString] = *connectionString
+	if database != nil {
+		results[schema.AttributeTypeDatabase] = *database
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
@@ -2512,7 +2512,7 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				}
 				p.Sql = &sql
 			}
-		case schema.AttributeTypeConnectionString:
+		case schema.AttributeTypeDatabase:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -2520,8 +2520,8 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			if val != cty.NilVal {
-				connectionString := val.AsString()
-				p.ConnnectionString = &connectionString
+				database := val.AsString()
+				p.Database = &database
 			}
 		case schema.AttributeTypeArgs:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)

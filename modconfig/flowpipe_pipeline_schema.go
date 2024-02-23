@@ -196,7 +196,7 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypePrimaryKey,
 		},
 		{
-			Name:     schema.AttributeTypeConnectionString,
+			Name:     schema.AttributeTypeDatabase,
 			Required: true,
 		},
 		{
@@ -550,7 +550,7 @@ var PipelineStepQueryBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeSql,
 		},
 		{
-			Name: schema.AttributeTypeConnectionString,
+			Name: schema.AttributeTypeDatabase,
 		},
 		{
 			Name: schema.AttributeTypeArgs,

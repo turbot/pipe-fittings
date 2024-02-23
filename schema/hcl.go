@@ -105,6 +105,7 @@ const (
 	AttributeTypeQuery            = "query"
 	AttributeTypeRows             = "rows"
 	AttributeTypeConnectionString = "connection_string"
+	AttributeTypeDatabase         = "database"
 
 	// Used by email step
 	AttributeTypeBcc         = "bcc"

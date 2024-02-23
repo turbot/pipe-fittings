@@ -1,3 +1,3 @@
 trigger "query" "simple" {
-  connection_string = "test"
+  database = "test"
 }
