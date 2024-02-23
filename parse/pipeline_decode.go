@@ -81,6 +81,19 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 						if parts[0] == schema.BlockTypePipelineStep {
 							dependsOn := parts[1] + "." + parts[2]
 							step.AppendDependsOn(dependsOn)
+						} else if parts[0] == schema.BlockTypeCredential {
+
+							if len(parts) == 2 {
+								// dynamic references:
+								// step "transform" "aws" {
+								// 	value   = credential.aws[param.cred].env
+								// }
+								dependsOn := parts[1] + ".<dynamic>"
+								step.AppendCredentialDependsOn(dependsOn)
+							} else {
+								dependsOn := parts[1] + "." + parts[2]
+								step.AppendCredentialDependsOn(dependsOn)
+							}
 						}
 					}
 				}

@@ -274,6 +274,33 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	os.Unsetenv("TEST_SLACK_TOKEN")
 }
 
+func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_output"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_output", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	credentials := w.Credentials
+	awsExampleCreds := credentials["aws.example"]
+	slackCredsCty, e := awsExampleCreds.CtyValue()
+	assert.Nil(e)
+
+	credsMap := slackCredsCty.AsValueMap()
+	accessKeyVal := credsMap["access_key"].AsString()
+	assert.Equal("ASIAQGDFAKEKGUI5MCEU", accessKeyVal)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.cred_in_step_output"]
+	assert.NotNil(pipeline)
+
+	step := pipeline.Steps[0]
+	assert.Equal(1, len(step.GetCredentialDependsOn()))
+	assert.Equal("aws.example", step.GetCredentialDependsOn()[0])
+}
+
 func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
 	assert := assert.New(suite.T())
 
