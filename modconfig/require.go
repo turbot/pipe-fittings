@@ -7,7 +7,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/schema"
@@ -178,11 +177,7 @@ func (r *Require) searchInstalledPluginForRequirement(modName string, requiremen
 		}
 	}
 	// validation failed - return error
-	if plugins.Backend == constants.SteampipeBackendName {
-		return sperr.New("%s backend '%s' does not provide a plugin which satisfies requirement '%s@%s' - required by '%s'", plugins.Backend, plugins.Database, requirement.RawName, requirement.MinVersionString, modName)
-	}
-	return sperr.New("%s backend '%s' does not support Steampipe plugins so cannot satisfy requirement '%s@%s' - required by '%s'", plugins.Backend, plugins.Database, requirement.RawName, requirement.MinVersionString, modName)
-
+	return sperr.New("%s backend '%s' does not provide a plugin which satisfies requirement '%s@%s' - required by '%s'", plugins.Backend, plugins.Database, requirement.RawName, requirement.MinVersionString, modName)
 }
 
 // AddModDependencies adds all the mod in newModVersions to our list of mods, using the following logic
