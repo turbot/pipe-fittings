@@ -11,9 +11,11 @@ type PluginVersionMap struct {
 	AvailablePlugins map[string]*PluginVersionString
 }
 
-func NewPluginVersionMap() PluginVersionMap {
-	return PluginVersionMap{
-		AvailablePlugins: make(map[string]*PluginVersionString),
+func NewPluginVersionMap(backend, database string, availablePlugins map[string]*PluginVersionString) *PluginVersionMap {
+	return &PluginVersionMap{
+		Backend:          backend,
+		Database:         database,
+		AvailablePlugins: availablePlugins,
 	}
 }
 
