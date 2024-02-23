@@ -178,9 +178,9 @@ var tests = []testSetup{
 		containsError: "Duplicate method block for type: post",
 	},
 	{
-		title:         "invalid query trigger - missing required field connection_string",
-		file:          "./pipelines/query_trigger_missing_connection_string.fp",
-		containsError: "The argument \"connection_string\" is required, but no definition was found.",
+		title:         "invalid query trigger - missing required field database",
+		file:          "./pipelines/query_trigger_missing_database.fp",
+		containsError: "The argument \"database\" is required, but no definition was found.",
 	},
 	{
 		title:         "invalid query trigger - missing required field sql",

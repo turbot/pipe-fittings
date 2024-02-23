@@ -46,7 +46,7 @@ trigger "http" "trigger_with_args" {
 trigger "query" "query_trigger" {
   schedule = "5 * * * *"
 
-  connection_string = "postgres://steampipe:@host.docker.internal:9193/steampipe"
+  database = "postgres://steampipe:@host.docker.internal:9193/steampipe"
 
   sql = <<EOQ
         select
@@ -62,11 +62,11 @@ trigger "query" "query_trigger" {
 }
 
 trigger "query" "query_trigger_interval" {
-  enabled           = true
-  schedule          = "daily"
-  connection_string = "postgres://steampipe:@host.docker.internal:9193/steampipe"
-  
-  sql      = <<EOQ
+  enabled  = true
+  schedule = "daily"
+  database = "postgres://steampipe:@host.docker.internal:9193/steampipe"
+
+  sql = <<EOQ
         select
             access_key_id,
             user_name,

@@ -34,7 +34,7 @@ func TestQueryStep(t *testing.T) {
 		return
 	}
 	assert.Equal("select * from foo", inputs[schema.AttributeTypeSql])
-	assert.Equal("this is a connection string", inputs[schema.AttributeTypeConnectionString])
+	assert.Equal("this is a connection string", inputs[schema.AttributeTypeDatabase])
 	assert.Equal(60000, inputs[schema.AttributeTypeTimeout])
 }
 
@@ -65,7 +65,7 @@ func TestQueryStepWithArgs(t *testing.T) {
 	assert.Equal("select * from foo where bar = $1 and baz = $2", inputs[schema.AttributeTypeSql])
 	assert.Equal(60000, inputs[schema.AttributeTypeTimeout])
 
-	assert.Equal("this is a connection string", inputs[schema.AttributeTypeConnectionString])
+	assert.Equal("this is a connection string", inputs[schema.AttributeTypeDatabase])
 
 	args, ok := inputs[schema.AttributeTypeArgs].([]interface{})
 	if !ok {

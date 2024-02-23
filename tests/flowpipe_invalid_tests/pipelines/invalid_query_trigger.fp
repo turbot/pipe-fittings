@@ -1,8 +1,8 @@
 trigger "query" "query_trigger_interval" {
   schedule = "days"
 
-  connection_string = "test"
-  
+  database = "test"
+
   sql = <<EOQ
         select
             access_key_id,
@@ -18,9 +18,9 @@ trigger "query" "query_trigger_interval" {
 }
 
 pipeline "simple_with_trigger" {
-    description = "simple pipeline that will be referred to by a trigger"
+  description = "simple pipeline that will be referred to by a trigger"
 
-    step "transform" "simple_echo" {
-        value = "foo bar"
-    }
+  step "transform" "simple_echo" {
+    value = "foo bar"
+  }
 }
