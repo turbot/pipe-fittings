@@ -18,11 +18,9 @@ type AbuseIPDBCredential struct {
 }
 
 func (c *AbuseIPDBCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.APIKey != nil {
-		env["ABUSEIPDB_API_KEY"] = cty.StringVal(*c.APIKey)
-	}
-	return env
+	// There is no environment variable listed in the AbuseIPDB official API docs
+	// https://www.abuseipdb.com/api.html
+	return nil
 }
 
 func (c *AbuseIPDBCredential) CtyValue() (cty.Value, error) {

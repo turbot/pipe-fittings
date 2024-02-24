@@ -18,11 +18,9 @@ type ClickUpCredential struct {
 }
 
 func (c *ClickUpCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.Token != nil {
-		env["CLICKUP_TOKEN"] = cty.StringVal(*c.Token)
-	}
-	return env
+	// There is no environment variable listed in the ClickUp official API docs
+	// https://clickup.com/api/developer-portal/authentication/
+	return nil
 }
 
 func (c *ClickUpCredential) CtyValue() (cty.Value, error) {
