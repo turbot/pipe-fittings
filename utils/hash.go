@@ -1,8 +1,7 @@
 package utils
 
 import (
-	//nolint: gosec // not used for any security critical purpose
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"strconv"
 
@@ -11,9 +10,7 @@ import (
 
 func Base36Hash(input string, length int) (string, error) {
 	// Get a hash of it.
-	// TODO - should this be sha1 or something else instead?
-
-	h := md5.New() //nolint:gosec // not used for any security critical purpose
+	h := sha256.New()
 	_, err := h.Write([]byte(input))
 	if err != nil {
 		return "", sperr.New("Unable to create hash.")
