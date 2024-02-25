@@ -14,6 +14,8 @@ _Bug fixes_
 * Missing pipeline output validation ([#239](https://github.com/turbot/pipe-fittings/issues/239)).
 * Validate default param value against param type ([#262]((https://github.com/turbot/pipe-fittings/issues/262))
 * Removed titles when merging multiple error messages ([#263]((https://github.com/turbot/pipe-fittings/issues/263))
+* Fixed equality test for transform step.
+* Fixed equality test for HCL expression.
 
 ## v0.2.2 [2024-02-02]
 
