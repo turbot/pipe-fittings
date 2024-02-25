@@ -331,9 +331,31 @@ func (ph *Pipeline) UnmarshalJSON(data []byte) error {
 
 func (p *Pipeline) Equals(other *Pipeline) bool {
 
+	if p == nil && other == nil {
+		return true
+	}
+
+	if p == nil && p != nil || p != nil && p == nil {
+		return false
+	}
+
 	baseEqual := p.HclResourceImpl.Equals(&other.HclResourceImpl)
 	if !baseEqual {
 		return false
+	}
+
+	if len(p.Params) != len(other.Params) {
+		return false
+	}
+
+	for k, v := range p.Params {
+		if _, ok := other.Params[k]; !ok {
+			return false
+		}
+
+		if !v.Equals(other.Params[k]) {
+			return false
+		}
 	}
 
 	if len(p.Steps) != len(other.Steps) {
@@ -454,6 +476,28 @@ type PipelineParam struct {
 	Optional    bool      `json:"optional,omitempty"`
 	Default     cty.Value `json:"-"`
 	Type        cty.Type  `json:"-"`
+}
+
+func (p *PipelineParam) Equals(other *PipelineParam) bool {
+	if p == nil && other == nil {
+		return true
+	}
+
+	if p == nil && p != nil || p != nil && p == nil {
+		return false
+	}
+
+	if p.Default.Equals(other.Default) == cty.False {
+		return false
+	}
+
+	if p.Type != other.Type {
+		return false
+	}
+
+	return p.Name == other.Name &&
+		p.Description == other.Description &&
+		p.Optional == other.Optional
 }
 
 type PipelineOutput struct {
