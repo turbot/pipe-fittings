@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -34,13 +35,18 @@ func (c *MastodonCredential) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (c *MastodonCredential) Equals(other *MastodonCredential) bool {
+func (c *MastodonCredential) Equals(otherCredential Credential) bool {
 	// If both pointers are nil, they are considered equal
-	if c == nil && other == nil {
+	if c == nil && helpers.IsNil(otherCredential) {
 		return true
 	}
 
-	if (c == nil && other != nil) || (c != nil && other == nil) {
+	if (c == nil && !helpers.IsNil(otherCredential)) || (c != nil && helpers.IsNil(otherCredential)) {
+		return false
+	}
+
+	other, ok := otherCredential.(*MastodonCredential)
+	if !ok {
 		return false
 	}
 
