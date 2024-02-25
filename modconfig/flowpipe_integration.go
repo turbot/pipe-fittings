@@ -3,6 +3,7 @@ package modconfig
 import (
 	"fmt"
 
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
@@ -23,6 +24,8 @@ type Integration interface {
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 	SetUrl(string)
 	Validate() hcl.Diagnostics
+
+	Equals(Integration) bool
 }
 
 type IntegrationImpl struct {
@@ -81,6 +84,38 @@ type SlackIntegration struct {
 	SigningSecret *string `json:"signing_secret,omitempty" cty:"signing_secret" hcl:"signing_secret,optional"`
 	WebhookUrl    *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
 	Channel       *string `json:"channel,omitempty" cty:"channel" hcl:"channel,optional"`
+}
+
+func (i *SlackIntegration) Equals(other Integration) bool {
+
+	if i == nil && !helpers.IsNil(other) {
+		return false
+	}
+
+	if !helpers.IsNil(i) && other == nil {
+		return false
+	}
+
+	otherSlack, ok := other.(*SlackIntegration)
+	if !ok {
+		return false
+	}
+
+	return i.FileName == otherSlack.FileName &&
+		i.StartLineNumber == otherSlack.StartLineNumber &&
+		i.EndLineNumber == otherSlack.EndLineNumber &&
+
+		((i.Token == nil && otherSlack.Token == nil) ||
+			(i.Token != nil && otherSlack.Token != nil && *i.Token == *otherSlack.Token)) &&
+
+		((i.SigningSecret == nil && otherSlack.SigningSecret == nil) ||
+			(i.SigningSecret != nil && otherSlack.SigningSecret != nil && *i.SigningSecret == *otherSlack.SigningSecret)) &&
+
+		((i.WebhookUrl == nil && otherSlack.WebhookUrl == nil) ||
+			(i.WebhookUrl != nil && otherSlack.WebhookUrl != nil && *i.WebhookUrl == *otherSlack.WebhookUrl)) &&
+
+		((i.Channel == nil && otherSlack.Channel == nil) ||
+			(i.Channel != nil && otherSlack.Channel != nil && *i.Channel == *otherSlack.Channel))
 }
 
 func (i *SlackIntegration) CtyValue() (cty.Value, error) {
@@ -146,44 +181,6 @@ func (i *SlackIntegration) GetIntegrationType() string {
 func (i *SlackIntegration) Validate() hcl.Diagnostics {
 	// TODO: slack integration validation
 	return hcl.Diagnostics{}
-}
-
-func (i *SlackIntegration) Equals(other *SlackIntegration) bool {
-	if i == nil && other == nil {
-		return true
-	}
-	if i == nil || other == nil {
-		return false
-	}
-
-	// Check fields from embedded structs
-	if !i.HclResourceImpl.Equals(&other.HclResourceImpl) {
-		return false
-	}
-
-	// Compare the fields specific to SlackIntegration
-	if i.Type != other.Type {
-		return false
-	}
-
-	if (i.Token == nil && other.Token != nil) || (i.Token != nil && other.Token == nil) || (i.Token != nil && other.Token != nil && *i.Token != *other.Token) {
-		return false
-	}
-
-	if (i.SigningSecret == nil && other.SigningSecret != nil) || (i.SigningSecret != nil && other.SigningSecret == nil) || (i.SigningSecret != nil && other.SigningSecret != nil && *i.SigningSecret != *other.SigningSecret) {
-		return false
-	}
-
-	if (i.WebhookUrl == nil && other.WebhookUrl != nil) || (i.WebhookUrl != nil && other.WebhookUrl == nil) || (i.WebhookUrl != nil && other.WebhookUrl != nil && *i.WebhookUrl != *other.WebhookUrl) {
-		return false
-	}
-
-	if (i.Channel == nil && other.Channel != nil) || (i.Channel != nil && other.Channel == nil) || (i.Channel != nil && other.Channel != nil && *i.Channel != *other.Channel) {
-		return false
-	}
-
-	// If all fields are equal, the structs are equal
-	return true
 }
 
 func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -310,6 +307,56 @@ func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
 	return res, nil
 }
 
+func (i *EmailIntegration) Equals(other Integration) bool {
+
+	if i == nil && !helpers.IsNil(other) {
+		return false
+	}
+
+	if !helpers.IsNil(i) && other == nil {
+		return false
+	}
+
+	otherEmail, ok := other.(*EmailIntegration)
+	if !ok {
+		return false
+	}
+
+	return i.FileName == otherEmail.FileName &&
+		i.StartLineNumber == otherEmail.StartLineNumber &&
+		i.EndLineNumber == otherEmail.EndLineNumber &&
+
+		((i.SmtpHost == nil && otherEmail.SmtpHost == nil) ||
+			(i.SmtpHost != nil && otherEmail.SmtpHost != nil && *i.SmtpHost == *otherEmail.SmtpHost)) &&
+
+		((i.SmtpTls == nil && otherEmail.SmtpTls == nil) ||
+			(i.SmtpTls != nil && otherEmail.SmtpTls != nil && *i.SmtpTls == *otherEmail.SmtpTls)) &&
+
+		((i.SmtpPort == nil && otherEmail.SmtpPort == nil) ||
+			(i.SmtpPort != nil && otherEmail.SmtpPort != nil && *i.SmtpPort == *otherEmail.SmtpPort)) &&
+
+		((i.SmtpsPort == nil && otherEmail.SmtpsPort == nil) ||
+			(i.SmtpsPort != nil && otherEmail.SmtpsPort != nil && *i.SmtpsPort == *otherEmail.SmtpsPort)) &&
+
+		((i.SmtpUsername == nil && otherEmail.SmtpUsername == nil) ||
+			(i.SmtpUsername != nil && otherEmail.SmtpUsername != nil && *i.SmtpUsername == *otherEmail.SmtpUsername)) &&
+
+		((i.SmtpPassword == nil && otherEmail.SmtpPassword == nil) ||
+			(i.SmtpPassword != nil && otherEmail.SmtpPassword != nil && *i.SmtpPassword == *otherEmail.SmtpPassword)) &&
+
+		((i.From == nil && otherEmail.From == nil) ||
+			(i.From != nil && otherEmail.From != nil && *i.From == *otherEmail.From)) &&
+
+		((i.DefaultRecipient == nil && otherEmail.DefaultRecipient == nil) ||
+			(i.DefaultRecipient != nil && otherEmail.DefaultRecipient != nil && *i.DefaultRecipient == *otherEmail.DefaultRecipient)) &&
+
+		((i.DefaultSubject == nil && otherEmail.DefaultSubject == nil) ||
+			(i.DefaultSubject != nil && otherEmail.DefaultSubject != nil && *i.DefaultSubject == *otherEmail.DefaultSubject)) &&
+
+		((i.ResponseUrl == nil && otherEmail.ResponseUrl == nil) ||
+			(i.ResponseUrl != nil && otherEmail.ResponseUrl != nil && *i.ResponseUrl == *otherEmail.ResponseUrl))
+}
+
 func (i *EmailIntegration) GetIntegrationType() string {
 	return i.Type
 }
@@ -343,64 +390,6 @@ func (i *EmailIntegration) CtyValue() (cty.Value, error) {
 func (i *EmailIntegration) Validate() hcl.Diagnostics {
 	// TODO: email integration validation
 	return hcl.Diagnostics{}
-}
-
-func (i *EmailIntegration) Equals(other *EmailIntegration) bool {
-	if i == nil && other == nil {
-		return true
-	}
-	if i == nil || other == nil {
-		return false
-	}
-
-	// Check fields from embedded structs
-	if !i.HclResourceImpl.Equals(&other.HclResourceImpl) {
-		return false
-	}
-
-	// Compare the fields specific to EmailIntegration
-	if i.Type != other.Type {
-		return false
-	}
-
-	if (i.SmtpHost == nil && other.SmtpHost != nil) || (i.SmtpHost != nil && other.SmtpHost == nil) || (i.SmtpHost != nil && other.SmtpHost != nil && *i.SmtpHost != *other.SmtpHost) {
-		return false
-	}
-
-	if (i.SmtpTls == nil && other.SmtpTls != nil) || (i.SmtpTls != nil && other.SmtpTls == nil) || (i.SmtpTls != nil && other.SmtpTls != nil && *i.SmtpTls != *other.SmtpTls) {
-		return false
-	}
-
-	if (i.SmtpPort == nil && other.SmtpPort != nil) || (i.SmtpPort != nil && other.SmtpPort == nil) || (i.SmtpPort != nil && other.SmtpPort != nil && *i.SmtpPort != *other.SmtpPort) {
-		return false
-	}
-
-	if (i.SmtpsPort == nil && other.SmtpsPort != nil) || (i.SmtpsPort != nil && other.SmtpsPort == nil) || (i.SmtpsPort != nil && other.SmtpsPort != nil && *i.SmtpsPort != *other.SmtpsPort) {
-		return false
-	}
-
-	if (i.SmtpUsername == nil && other.SmtpUsername != nil) || (i.SmtpUsername != nil && other.SmtpUsername == nil) || (i.SmtpUsername != nil && other.SmtpUsername != nil && *i.SmtpUsername != *other.SmtpUsername) {
-		return false
-	}
-
-	if (i.SmtpPassword == nil && other.SmtpPassword != nil) || (i.SmtpPassword != nil && other.SmtpPassword == nil) || (i.SmtpPassword != nil && other.SmtpPassword != nil && *i.SmtpPassword != *other.SmtpPassword) {
-		return false
-	}
-
-	if (i.From == nil && other.From != nil) || (i.From != nil && other.From == nil) || (i.From != nil && other.From != nil && *i.From != *other.From) {
-		return false
-	}
-
-	if (i.DefaultRecipient == nil && other.DefaultRecipient != nil) || (i.DefaultRecipient != nil && other.DefaultRecipient == nil) || (i.DefaultRecipient != nil && other.DefaultRecipient != nil && *i.DefaultRecipient != *other.DefaultRecipient) {
-		return false
-	}
-
-	if (i.DefaultSubject == nil && other.DefaultSubject != nil) || (i.DefaultSubject != nil && other.DefaultSubject == nil) || (i.DefaultSubject != nil && other.DefaultSubject != nil && *i.DefaultSubject != *other.DefaultSubject) {
-		return false
-	}
-
-	// If all fields are equal, the structs are equal
-	return true
 }
 
 func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -779,6 +768,26 @@ func (i *WebformIntegration) GetIntegrationType() string {
 	return i.Type
 }
 
+func (i *WebformIntegration) Equals(other Integration) bool {
+
+	if i == nil && !helpers.IsNil(other) {
+		return false
+	}
+
+	if !helpers.IsNil(i) && other == nil {
+		return false
+	}
+
+	otherWebform, ok := other.(*WebformIntegration)
+	if !ok {
+		return false
+	}
+
+	return i.FileName == otherWebform.FileName &&
+		i.StartLineNumber == otherWebform.StartLineNumber &&
+		i.EndLineNumber == otherWebform.EndLineNumber
+}
+
 func (i *WebformIntegration) CtyValue() (cty.Value, error) {
 	iCty, err := GetCtyValue(i)
 	if err != nil {
@@ -826,28 +835,6 @@ func (i *WebformIntegration) MapInterface() (map[string]interface{}, error) {
 
 func (i *WebformIntegration) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (i *WebformIntegration) Equals(other *WebformIntegration) bool {
-	if i == nil && other == nil {
-		return true
-	}
-	if i == nil || other == nil {
-		return false
-	}
-
-	// Check fields from embedded structs
-	if !i.HclResourceImpl.Equals(&other.HclResourceImpl) {
-		return false
-	}
-
-	// Compare the fields specific to WebformIntegration
-	if i.Type != other.Type {
-		return false
-	}
-
-	// If all fields are equal, the structs are equal
-	return true
 }
 
 func (i *WebformIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

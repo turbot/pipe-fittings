@@ -3,6 +3,7 @@ package flowpipeconfig
 import (
 	"context"
 	"log/slog"
+	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
@@ -21,12 +22,23 @@ type FlowpipeConfig struct {
 
 	watcher                 *filewatcher.FileWatcher
 	fileWatcherErrorHandler func(context.Context, error)
-	// watcherError               error
-	onFileWatcherEventMessages func()
 
 	// Hooks
 	OnFileWatcherError func(context.Context, error)
-	OnFileWatcherEvent func(context.Context)
+	OnFileWatcherEvent func(context.Context, *FlowpipeConfig)
+
+	loadLock *sync.Mutex
+}
+
+func (f *FlowpipeConfig) updateResources(other *FlowpipeConfig) {
+	f.loadLock.Lock()
+	defer f.loadLock.Unlock()
+
+	f.CredentialImports = other.CredentialImports
+	f.Credentials = other.Credentials
+	f.Integrations = other.Integrations
+	f.Notifiers = other.Notifiers
+
 }
 
 func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
@@ -34,26 +46,29 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 		return false
 	}
 
-	for k := range f.Credentials {
+	for k, v := range f.Credentials {
 		if _, ok := other.Credentials[k]; !ok {
 			return false
 		}
 
-		// if !other.Credentials[k].Equals(v) {
-		// 	return false
-		// }
+		if !other.Credentials[k].Equals(v) {
+			return false
+		}
 	}
 
 	if len(f.Integrations) != len(other.Integrations) {
 		return false
 	}
 
-	// for k, v := range f.Integrations {
-	// check if k exists in other
-	// 	if !other.Integrations[k].Equals(v) {
-	// 		return false
-	// 	}
-	// }
+	for k, v := range f.Integrations {
+		if _, ok := other.Integrations[k]; !ok {
+			return false
+		}
+
+		if !other.Integrations[k].Equals(v) {
+			return false
+		}
+	}
 
 	if len(f.Notifiers) != len(other.Notifiers) {
 		return false
@@ -130,15 +145,14 @@ func (f *FlowpipeConfig) handleFileWatcherEvent(ctx context.Context) {
 	}
 
 	if !newFpConfig.Equals(f) {
-		if f.onFileWatcherEventMessages != nil {
-			f.onFileWatcherEventMessages()
+		f.updateResources(newFpConfig)
+
+		// call hook
+		if f.OnFileWatcherEvent != nil {
+			f.OnFileWatcherEvent(ctx, newFpConfig)
 		}
 	}
 
-	// call hook
-	if f.OnFileWatcherEvent != nil {
-		f.OnFileWatcherEvent(ctx)
-	}
 }
 
 func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
@@ -166,6 +180,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		Integrations:      defaultIntegrations,
 		Notifiers:         defaultNotifiers,
 		ConfigPaths:       configPaths,
+		loadLock:          &sync.Mutex{},
 	}
 
 	return &fpConfig

@@ -2303,9 +2303,12 @@ type PipelineStepTransform struct {
 }
 
 func (p *PipelineStepTransform) Equals(iOther PipelineStep) bool {
-	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || !helpers.IsNil(iOther) && p == nil {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepTransform)
@@ -2317,7 +2320,15 @@ func (p *PipelineStepTransform) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
-	return true
+	if helpers.IsNil(p.Value) && !helpers.IsNil(other.Value) {
+		return false
+	}
+
+	if !helpers.IsNil(p.Value) && helpers.IsNil(other.Value) {
+		return false
+	}
+
+	return reflect.DeepEqual(p.Value, other.Value)
 }
 
 func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {

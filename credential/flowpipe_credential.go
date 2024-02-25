@@ -174,7 +174,7 @@ type Credential interface {
 	Validate() hcl.Diagnostics
 	getEnv() map[string]cty.Value
 
-	// Equals(Credential) bool
+	Equals(Credential) bool
 }
 
 type CredentialImpl struct {

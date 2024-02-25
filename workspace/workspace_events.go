@@ -38,6 +38,10 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	}
 }
 
+func (w *Workspace) ReloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, error_helpers.ErrorAndWarnings) {
+	return w.reloadResourceMaps(ctx)
+}
+
 func (w *Workspace) reloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, error_helpers.ErrorAndWarnings) {
 	w.loadLock.Lock()
 	defer w.loadLock.Unlock()
