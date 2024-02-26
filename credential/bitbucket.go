@@ -60,15 +60,15 @@ func (c *BitbucketCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.BaseURL, other.BaseURL) {
+	if !utils.PtrEqual(c.BaseURL, other.BaseURL) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Username, other.Username) {
+	if !utils.PtrEqual(c.Username, other.Username) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Password, other.Password) {
+	if !utils.PtrEqual(c.Password, other.Password) {
 		return false
 	}
 

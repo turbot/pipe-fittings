@@ -52,7 +52,7 @@ func (c *IP2LocationIOCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.APIKey, other.APIKey) {
+	if !utils.PtrEqual(c.APIKey, other.APIKey) {
 		return false
 	}
 

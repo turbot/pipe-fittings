@@ -64,15 +64,15 @@ func (c *JiraCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.APIToken, other.APIToken) {
+	if !utils.PtrEqual(c.APIToken, other.APIToken) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.BaseURL, other.BaseURL) {
+	if !utils.PtrEqual(c.BaseURL, other.BaseURL) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Username, other.Username) {
+	if !utils.PtrEqual(c.Username, other.Username) {
 		return false
 	}
 

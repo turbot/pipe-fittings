@@ -56,11 +56,11 @@ func (c *FreshdeskCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.APIKey, other.APIKey) {
+	if !utils.PtrEqual(c.APIKey, other.APIKey) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Subdomain, other.Subdomain) {
+	if !utils.PtrEqual(c.Subdomain, other.Subdomain) {
 		return false
 	}
 

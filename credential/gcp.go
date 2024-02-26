@@ -56,7 +56,7 @@ func (c *GcpCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Credentials, other.Credentials) {
+	if !utils.PtrEqual(c.Credentials, other.Credentials) {
 		return false
 	}
 

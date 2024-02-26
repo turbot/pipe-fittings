@@ -60,15 +60,15 @@ func (c *ServiceNowCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.InstanceURL, other.InstanceURL) {
+	if !utils.PtrEqual(c.InstanceURL, other.InstanceURL) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Username, other.Username) {
+	if !utils.PtrEqual(c.Username, other.Username) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Password, other.Password) {
+	if !utils.PtrEqual(c.Password, other.Password) {
 		return false
 	}
 

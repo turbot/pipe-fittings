@@ -56,11 +56,11 @@ func (c *OktaCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Domain, other.Domain) {
+	if !utils.PtrEqual(c.Domain, other.Domain) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Token, other.Token) {
+	if !utils.PtrEqual(c.Token, other.Token) {
 		return false
 	}
 

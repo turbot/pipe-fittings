@@ -56,7 +56,7 @@ func (c *IPstackCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.AccessKey, other.AccessKey) {
+	if !utils.PtrEqual(c.AccessKey, other.AccessKey) {
 		return false
 	}
 

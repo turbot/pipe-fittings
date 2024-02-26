@@ -50,11 +50,11 @@ func (c *MastodonCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.AccessToken, other.AccessToken) {
+	if !utils.PtrEqual(c.AccessToken, other.AccessToken) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Server, other.Server) {
+	if !utils.PtrEqual(c.Server, other.Server) {
 		return false
 	}
 

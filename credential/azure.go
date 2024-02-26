@@ -64,19 +64,19 @@ func (c *AzureCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.ClientID, other.ClientID) {
+	if !utils.PtrEqual(c.ClientID, other.ClientID) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.ClientSecret, other.ClientSecret) {
+	if !utils.PtrEqual(c.ClientSecret, other.ClientSecret) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Environment, other.Environment) {
+	if !utils.PtrEqual(c.Environment, other.Environment) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.TenantID, other.TenantID) {
+	if !utils.PtrEqual(c.TenantID, other.TenantID) {
 		return false
 	}
 

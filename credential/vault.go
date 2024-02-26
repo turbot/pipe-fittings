@@ -56,11 +56,11 @@ func (c *VaultCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Address, other.Address) {
+	if !utils.PtrEqual(c.Address, other.Address) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Token, other.Token) {
+	if !utils.PtrEqual(c.Token, other.Token) {
 		return false
 	}
 

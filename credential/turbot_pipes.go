@@ -52,7 +52,7 @@ func (c *PipesCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Token, other.Token) {
+	if !utils.PtrEqual(c.Token, other.Token) {
 		return false
 	}
 

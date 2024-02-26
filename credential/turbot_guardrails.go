@@ -60,15 +60,15 @@ func (c *GuardrailsCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.AccessKey, other.AccessKey) {
+	if !utils.PtrEqual(c.AccessKey, other.AccessKey) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.SecretKey, other.SecretKey) {
+	if !utils.PtrEqual(c.SecretKey, other.SecretKey) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Workspace, other.Workspace) {
+	if !utils.PtrEqual(c.Workspace, other.Workspace) {
 		return false
 	}
 

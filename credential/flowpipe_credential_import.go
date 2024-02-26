@@ -30,7 +30,7 @@ func (c CredentialImport) Equals(other CredentialImport) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Source, other.Source) {
+	if !utils.PtrEqual(c.Source, other.Source) {
 		return false
 	}
 
@@ -38,7 +38,7 @@ func (c CredentialImport) Equals(other CredentialImport) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Prefix, other.Prefix) {
+	if !utils.PtrEqual(c.Prefix, other.Prefix) {
 		return false
 	}
 

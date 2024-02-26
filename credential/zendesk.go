@@ -60,15 +60,15 @@ func (c *ZendeskCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Email, other.Email) {
+	if !utils.PtrEqual(c.Email, other.Email) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Subdomain, other.Subdomain) {
+	if !utils.PtrEqual(c.Subdomain, other.Subdomain) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.Token, other.Token) {
+	if !utils.PtrEqual(c.Token, other.Token) {
 		return false
 	}
 

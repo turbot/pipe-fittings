@@ -52,7 +52,7 @@ func (c *SendGridCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.APIKey, other.APIKey) {
+	if !utils.PtrEqual(c.APIKey, other.APIKey) {
 		return false
 	}
 

@@ -56,11 +56,11 @@ func (c *OpsgenieCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.AlertAPIKey, other.AlertAPIKey) {
+	if !utils.PtrEqual(c.AlertAPIKey, other.AlertAPIKey) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.IncidentAPIKey, other.IncidentAPIKey) {
+	if !utils.PtrEqual(c.IncidentAPIKey, other.IncidentAPIKey) {
 		return false
 	}
 

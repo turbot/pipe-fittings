@@ -57,15 +57,15 @@ func (c *DatadogCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.APIKey, other.APIKey) {
+	if !utils.PtrEqual(c.APIKey, other.APIKey) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.AppKey, other.AppKey) {
+	if !utils.PtrEqual(c.AppKey, other.AppKey) {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.APIUrl, other.APIUrl) {
+	if !utils.PtrEqual(c.APIUrl, other.APIUrl) {
 		return false
 	}
 

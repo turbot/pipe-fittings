@@ -52,7 +52,7 @@ func (c *MicrosoftTeamsCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.StringPtrEqual(c.AccessToken, other.AccessToken) {
+	if !utils.PtrEqual(c.AccessToken, other.AccessToken) {
 		return false
 	}
 
