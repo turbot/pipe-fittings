@@ -76,6 +76,26 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 				p.Body = t
 			}
 
+		case schema.AttributeTypeNotifier:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				var err error
+				p.Notifier, err = ctyValueToPipelineStepNotifierValueMap(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute to InputNotifier",
+						Detail:   err.Error(),
+						Subject:  &attr.Range,
+					})
+				}
+			}
+
 		case schema.AttributeTypeMarkdown:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {

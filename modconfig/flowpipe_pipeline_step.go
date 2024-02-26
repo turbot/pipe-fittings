@@ -341,7 +341,7 @@ func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttr
 	return b, nil
 }
 
-func ctyValueToPipelineStepInputNotifyValueMap(value cty.Value) (NotifierImpl, error) {
+func ctyValueToPipelineStepNotifierValueMap(value cty.Value) (NotifierImpl, error) {
 	notifier := NotifierImpl{}
 
 	valueMap := value.AsValueMap()

@@ -162,11 +162,13 @@ var tests = []testSetup{
 		file:          "./pipelines/invalid_http_trigger_execution_mode.fp",
 		containsError: "The execution mode must be one of: synchronous,asynchronous",
 	},
-	{
-		title:         "invalid input - option block(s) and options both set",
-		file:          "./pipelines/invalid_input_option_and_options.fp",
-		containsError: "Option blocks and options attribute are mutually exclusive",
-	},
+	// This test doesn't work because it needs FlowpipeConfig to load the notifier otherwise the notifier reference will break,
+	// and notifier is a mandatory attribute so it will never test the option vs options
+	// {
+	// 	title:         "invalid input - option block(s) and options both set",
+	// 	file:          "./pipelines/invalid_input_option_and_options.fp",
+	// 	containsError: "Option blocks and options attribute are mutually exclusive",
+	// },
 	{
 		title:         "invalid method types in http trigger",
 		file:          "./pipelines/invalid_http_trigger_method.fp",

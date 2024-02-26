@@ -1284,7 +1284,14 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	assert := assert.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_message_step", workspace.WithCredentials(map[string]credential.Credential{}))
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_message_step"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_message_step", workspace.WithCredentials(flowpipeConfig.Credentials),
+		workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -1294,6 +1301,28 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 		assert.Fail("mod is nil")
 		return
 	}
+
+	pipeline := mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_one"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	messageStepInterface := pipeline.Steps[0]
+	if messageStepInterface == nil {
+		assert.Fail("message step not found")
+		return
+
+	}
+
+	messageStep, ok := messageStepInterface.(*modconfig.PipelineStepMessage)
+	if !ok {
+		assert.Fail("message step is not of type PipelineStepMessage")
+		return
+	}
+
+	assert.Nil(messageStep.Markdown)
+	assert.Equal("Hello World", messageStep.Body)
 }
 
 // In order for 'go test' to run this suite, we need to create

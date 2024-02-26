@@ -839,7 +839,8 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypePrompt,
 		},
 		{
-			Name: schema.AttributeTypeNotifier,
+			Name:     schema.AttributeTypeNotifier,
+			Required: true,
 		},
 		{
 			Name:     schema.AttributeTypeType,
@@ -888,13 +889,15 @@ var PipelineStepMessageBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeIf,
 		},
 		{
-			Name: schema.AttributeTypeNotifier,
+			Name:     schema.AttributeTypeNotifier,
+			Required: true,
 		},
 		{
 			Name: schema.AttributeTypeMarkdown,
 		},
 		{
-			Name: schema.AttributeTypeBody,
+			Name:     schema.AttributeTypeBody,
+			Required: true,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
