@@ -70,11 +70,11 @@ const (
 	BlockTypePipelineStepEmail     = "email"
 	BlockTypePipelineStepTransform = "transform"
 	BlockTypePipelineStepQuery     = "query"
-	BlockTypePipelineStepExec      = "exec"
 	BlockTypePipelineStepPipeline  = "pipeline"
 	BlockTypePipelineStepFunction  = "function"
 	BlockTypePipelineStepContainer = "container"
 	BlockTypePipelineStepInput     = "input"
+	BlockTypePipelineStepMessage   = "message"
 
 	// error block
 	AttributeTypeIgnore = "ignore"

@@ -19,6 +19,8 @@ type Notifier interface {
 	GetNotifierImpl() *NotifierImpl
 	GetNotifies() []Notify
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
+
+	Equals(Notifier) bool
 }
 
 type NotifierImpl struct {
@@ -33,6 +35,10 @@ type NotifierImpl struct {
 	FileName        string
 	StartLineNumber int
 	EndLineNumber   int
+}
+
+func (n *NotifierImpl) Equals(other Notifier) bool {
+	return true
 }
 
 func (n *NotifierImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
