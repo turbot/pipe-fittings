@@ -69,11 +69,19 @@ var IntegrationEmailBlockSchema = &hcl.BodySchema{
 			Required: true,
 		},
 		{
-			Name:     schema.AttributeTypeDefaultRecipient,
+			Name:     schema.AttributeTypeTo,
 			Required: false,
 		},
 		{
-			Name:     schema.AttributeTypeDefaultSubject,
+			Name:     schema.AttributeTypeCc,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeBcc,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeSubject,
 			Required: false,
 		},
 		{

@@ -7,6 +7,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/zclconf/go-cty/cty"
@@ -253,10 +254,11 @@ type EmailIntegration struct {
 	SmtpUsername *string `json:"smtp_username,omitempty" cty:"smtp_username" hcl:"smtp_username,optional"`
 	SmtpPassword *string `json:"smtp_password,omitempty" cty:"smtp_password" hcl:"smtp_password,optional"`
 
-	From             *string `json:"from,omitempty" cty:"from" hcl:"from"`
-	DefaultRecipient *string `json:"default_recipient,omitempty" cty:"default_recipient" hcl:"default_recipient,optional"`
-	DefaultSubject   *string `json:"default_subject,omitempty" cty:"default_subject" hcl:"default_subject,optional"`
-	ResponseUrl      *string `json:"response_url,omitempty" cty:"response_url" hcl:"response_url,optional"`
+	From    *string  `json:"from,omitempty" cty:"from" hcl:"from"`
+	To      []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
+	Cc      []string `json:"cc,omitempty" cty:"cc" hcl:"cc,optional"`
+	Bcc     []string `json:"bcc,omitempty" cty:"bcc" hcl:"bcc,optional"`
+	Subject *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
 }
 
 func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
@@ -280,17 +282,22 @@ func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
 	if i.SmtpPassword != nil {
 		res["smtp_password"] = *i.SmtpPassword
 	}
+
 	if i.From != nil {
 		res["from"] = *i.From
 	}
-	if i.DefaultRecipient != nil {
-		res["default_recipient"] = *i.DefaultRecipient
+	if len(i.To) > 0 {
+		res["to"] = i.To
 	}
-	if i.DefaultSubject != nil {
-		res["default_subject"] = *i.DefaultSubject
+	if len(i.Cc) > 0 {
+		res["cc"] = i.Cc
 	}
-	if i.ResponseUrl != nil {
-		res["response_url"] = *i.ResponseUrl
+	if len(i.Bcc) > 0 {
+		res["bcc"] = i.Bcc
+	}
+
+	if i.Subject != nil {
+		res["subject"] = *i.Subject
 	}
 
 	res["full_name"] = i.FullName
@@ -326,35 +333,17 @@ func (i *EmailIntegration) Equals(other Integration) bool {
 		i.StartLineNumber == otherEmail.StartLineNumber &&
 		i.EndLineNumber == otherEmail.EndLineNumber &&
 
-		((i.SmtpHost == nil && otherEmail.SmtpHost == nil) ||
-			(i.SmtpHost != nil && otherEmail.SmtpHost != nil && *i.SmtpHost == *otherEmail.SmtpHost)) &&
-
-		((i.SmtpTls == nil && otherEmail.SmtpTls == nil) ||
-			(i.SmtpTls != nil && otherEmail.SmtpTls != nil && *i.SmtpTls == *otherEmail.SmtpTls)) &&
-
-		((i.SmtpPort == nil && otherEmail.SmtpPort == nil) ||
-			(i.SmtpPort != nil && otherEmail.SmtpPort != nil && *i.SmtpPort == *otherEmail.SmtpPort)) &&
-
-		((i.SmtpsPort == nil && otherEmail.SmtpsPort == nil) ||
-			(i.SmtpsPort != nil && otherEmail.SmtpsPort != nil && *i.SmtpsPort == *otherEmail.SmtpsPort)) &&
-
-		((i.SmtpUsername == nil && otherEmail.SmtpUsername == nil) ||
-			(i.SmtpUsername != nil && otherEmail.SmtpUsername != nil && *i.SmtpUsername == *otherEmail.SmtpUsername)) &&
-
-		((i.SmtpPassword == nil && otherEmail.SmtpPassword == nil) ||
-			(i.SmtpPassword != nil && otherEmail.SmtpPassword != nil && *i.SmtpPassword == *otherEmail.SmtpPassword)) &&
-
-		((i.From == nil && otherEmail.From == nil) ||
-			(i.From != nil && otherEmail.From != nil && *i.From == *otherEmail.From)) &&
-
-		((i.DefaultRecipient == nil && otherEmail.DefaultRecipient == nil) ||
-			(i.DefaultRecipient != nil && otherEmail.DefaultRecipient != nil && *i.DefaultRecipient == *otherEmail.DefaultRecipient)) &&
-
-		((i.DefaultSubject == nil && otherEmail.DefaultSubject == nil) ||
-			(i.DefaultSubject != nil && otherEmail.DefaultSubject != nil && *i.DefaultSubject == *otherEmail.DefaultSubject)) &&
-
-		((i.ResponseUrl == nil && otherEmail.ResponseUrl == nil) ||
-			(i.ResponseUrl != nil && otherEmail.ResponseUrl != nil && *i.ResponseUrl == *otherEmail.ResponseUrl))
+		utils.PtrEqual(i.SmtpHost, otherEmail.SmtpHost) &&
+		utils.PtrEqual(i.SmtpTls, otherEmail.SmtpTls) &&
+		utils.PtrEqual(i.SmtpPort, otherEmail.SmtpPort) &&
+		utils.PtrEqual(i.SmtpsPort, otherEmail.SmtpsPort) &&
+		utils.PtrEqual(i.SmtpUsername, otherEmail.SmtpUsername) &&
+		utils.PtrEqual(i.SmtpPassword, otherEmail.SmtpPassword) &&
+		utils.PtrEqual(i.From, otherEmail.From) &&
+		utils.PtrEqual(i.Subject, otherEmail.Subject) &&
+		helpers.StringSliceEqualIgnoreOrder(i.To, otherEmail.To) &&
+		helpers.StringSliceEqualIgnoreOrder(i.Cc, otherEmail.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(i.Bcc, otherEmail.Bcc)
 }
 
 func (i *EmailIntegration) GetIntegrationType() string {
@@ -379,10 +368,6 @@ func (i *EmailIntegration) CtyValue() (cty.Value, error) {
 	if i.Description != nil {
 		valueMap["description"] = cty.StringVal(*i.Description)
 	}
-
-	// if i.Documentation != nil {
-	// 	valueMap["documentation"] = cty.StringVal(*i.Documentation)
-	// }
 
 	return cty.ObjectVal(valueMap), nil
 }
@@ -448,27 +433,71 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				continue
 			}
 			i.From = from
-		case schema.AttributeTypeDefaultRecipient:
-			rec, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+
+		case schema.AttributeTypeTo:
+			ctyVal, moreDiags := attr.Expr.Value(evalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
-			i.DefaultRecipient = rec
-		case schema.AttributeTypeDefaultSubject:
+
+			var err error
+			i.To, err = hclhelpers.CtyToGoStringSlice(ctyVal, ctyVal.Type())
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + attr.Name + " attribute as string slice",
+					Detail:   err.Error(),
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
+		case schema.AttributeTypeCc:
+			ctyVal, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			var err error
+			i.Cc, err = hclhelpers.CtyToGoStringSlice(ctyVal, ctyVal.Type())
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + attr.Name + " attribute as string slice",
+					Detail:   err.Error(),
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
+		case schema.AttributeTypeBcc:
+			ctyVal, moreDiags := attr.Expr.Value(evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			var err error
+			i.Bcc, err = hclhelpers.CtyToGoStringSlice(ctyVal, ctyVal.Type())
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + attr.Name + " attribute as string slice",
+					Detail:   err.Error(),
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
+		case schema.AttributeTypeSubject:
 			subject, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
-			i.DefaultSubject = subject
-		case schema.AttributeTypeResponseUrl:
-			url, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
-			}
-			i.ResponseUrl = url
+			i.Subject = subject
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -590,9 +619,10 @@ func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
 	smtpUsername := valMap["smtp_username"]
 	smtpPassword := valMap["smtp_password"]
 	from := valMap["from"]
-	defaultRecipient := valMap["default_recipient"]
-	defaultSubject := valMap["default_subject"]
-	responseUrl := valMap["response_url"]
+	to := valMap["to"]
+	cc := valMap["cc"]
+	bcc := valMap["bcc"]
+	subject := valMap["subject"]
 
 	if !smtpHost.IsNull() {
 		smtpHostStr := smtpHost.AsString()
@@ -631,19 +661,31 @@ func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
 		i.From = &fromStr
 	}
 
-	if !defaultRecipient.IsNull() {
-		defaultRecipientStr := defaultRecipient.AsString()
-		i.DefaultRecipient = &defaultRecipientStr
+	var err error
+	if !to.IsNull() {
+		i.To, err = hclhelpers.CtyToGoStringSlice(to, to.Type())
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if !defaultSubject.IsNull() {
-		defaultSubjectStr := defaultSubject.AsString()
-		i.DefaultSubject = &defaultSubjectStr
+	if !cc.IsNull() {
+		i.Cc, err = hclhelpers.CtyToGoStringSlice(cc, cc.Type())
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	if !responseUrl.IsNull() {
-		responseUrlStr := responseUrl.AsString()
-		i.ResponseUrl = &responseUrlStr
+	if !bcc.IsNull() {
+		i.Bcc, err = hclhelpers.CtyToGoStringSlice(bcc, bcc.Type())
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !subject.IsNull() {
+		defaultSubjectStr := subject.AsString()
+		i.Subject = &defaultSubjectStr
 	}
 
 	return i, nil

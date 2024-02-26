@@ -389,6 +389,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeModWithOneIntegration() {
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	assert := assert.New(suite.T())
 
+	// the order of directories matter because we determine which one has precedent. the "admins" notifier used will be the one defined in config_dir_more_integrations
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
 	if err.Error != nil {
 		assert.FailNow(err.Error.Error())
@@ -429,7 +430,8 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 
 	integrations := notify.Integration
 	assert.NotNil(integrations)
-	assert.Equal("user@test.tld", *integrations.(*modconfig.EmailIntegration).DefaultRecipient)
+	assert.Equal("user@test.tld", integrations.(*modconfig.EmailIntegration).To[0])
+	assert.Equal("turbie@flowpipe.io", *integrations.(*modconfig.EmailIntegration).From)
 	assert.Equal("email.email_with_all", integrations.GetHclResourceImpl().FullName)
 }
 
