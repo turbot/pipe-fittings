@@ -31,9 +31,9 @@ func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx 
 
 }
 
-func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+func GetVariableValues(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	// now resolve all input variables
-	inputValues, errorsAndWarnings := getInputVariables(ctx, parseCtx, variableMap, validate)
+	inputValues, errorsAndWarnings := getInputVariables(parseCtx, variableMap, validate)
 	if errorsAndWarnings.Error == nil {
 		// now update the variables map with the input values
 		inputvars.SetVariableValues(inputValues, variableMap)
@@ -42,7 +42,7 @@ func GetVariableValues(ctx context.Context, parseCtx *parse.ModParseContext, var
 	return variableMap, errorsAndWarnings
 }
 
-func getInputVariables(ctx context.Context, parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, error_helpers.ErrorAndWarnings) {
+func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, error_helpers.ErrorAndWarnings) {
 	variableFileArgs := viper.GetStringSlice(constants.ArgVarFile)
 	variableArgs := viper.GetStringSlice(constants.ArgVariable)
 
