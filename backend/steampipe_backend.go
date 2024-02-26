@@ -21,7 +21,6 @@ type SteampipeBackend struct {
 func NewSteampipeBackend(ctx context.Context, postgresBackend PostgresBackend) (*SteampipeBackend, error) {
 	backend := &SteampipeBackend{
 		PostgresBackend: postgresBackend,
-		PluginVersions:  make(map[string]*modconfig.PluginVersionString),
 	}
 
 	if err := backend.init(ctx); err != nil {
@@ -54,7 +53,8 @@ func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "42703" {
-			// version column odes not exist - must be a pre-22 version of steampipe
+			// version column does not exist - must be a pre-22 version of steampipe
+
 			// just swallow error
 			log.Println("[INFO] 'version' column does not exist in steampipe_internal.steampipe_plugin")
 			return nil
@@ -64,6 +64,8 @@ func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 	}
 	defer rows.Close()
 
+	// create the plugin version map
+	b.PluginVersions = make(map[string]*modconfig.PluginVersionString)
 	// Iterate over the results
 	for rows.Next() {
 		var name, version string

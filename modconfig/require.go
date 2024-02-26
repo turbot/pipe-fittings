@@ -7,6 +7,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/schema"
@@ -136,7 +137,6 @@ func (r *Require) handleDeprecations() hcl.Diagnostics {
 func (r *Require) validateAppVersion(modName string) error {
 	if steampipeVersionConstraint := r.SteampipeVersionConstraint(); steampipeVersionConstraint != nil {
 		if !steampipeVersionConstraint.Check(app_specific.AppVersion) {
-			// TODO KAI app specific constants <MISC>
 			return fmt.Errorf("App version %s does not satisfy %s which requires version %s", app_specific.AppVersion.String(), modName, r.Steampipe.MinVersionString)
 		}
 	}
@@ -148,6 +148,11 @@ func (r *Require) validatePluginVersions(modName string, plugins PluginVersionMa
 	if len(r.Plugins) == 0 {
 		return nil
 	}
+	// if this is a steampipe backend and there is no plugin map, it must be a pre-0.22 version which does not return plugin versions
+	if plugins.Backend == constants.SteampipeBackendName && plugins.AvailablePlugins == nil {
+		return []error{fmt.Errorf("plugin requirements for '%s' cannot be validated. Steampipe backend '%s' does not provide plugin version information. Upgrade Steampipe to enable plugin version validation.", modName, plugins.Database)}
+	}
+
 	var validationErrors []error
 	for _, requiredPlugin := range r.Plugins {
 		if err := r.searchInstalledPluginForRequirement(modName, requiredPlugin, plugins); err != nil {
