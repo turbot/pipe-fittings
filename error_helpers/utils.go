@@ -8,12 +8,12 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/fatih/color"
 	"github.com/shiena/ansicolor"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/statushooks"
+	"golang.org/x/exp/maps"
 )
 
 func init() {
@@ -46,7 +46,7 @@ func ShowError(ctx context.Context, err error) {
 		return
 	}
 	err = HandleCancelError(err)
-	// statushooks.Done(ctx)
+	statushooks.Done(ctx)
 	fmt.Fprintf(color.Error, "%s: %v\n", constants.ColoredErr, TransformErrorToSteampipe(err))
 }
 
@@ -56,7 +56,7 @@ func ShowErrorWithMessage(ctx context.Context, err error, message string) {
 		return
 	}
 	err = HandleCancelError(err)
-	// statushooks.Done(ctx)
+	statushooks.Done(ctx)
 	fmt.Fprintf(color.Error, "%s: %s - %v\n", constants.ColoredErr, message, TransformErrorToSteampipe(err))
 }
 
