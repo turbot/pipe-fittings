@@ -21,9 +21,10 @@ import (
 type LoadWorkspaceOption func(*LoadWorkspaceConfig)
 
 type LoadWorkspaceConfig struct {
-	credentials  map[string]credential.Credential
-	integrations map[string]modconfig.Integration
-	notifiers    map[string]modconfig.Notifier
+	credentials         map[string]credential.Credential
+	integrations        map[string]modconfig.Integration
+	notifiers           map[string]modconfig.Notifier
+	blockTypeInclusions []string
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
@@ -49,6 +50,12 @@ func WithIntegrations(integrations map[string]modconfig.Integration) LoadWorkspa
 func WithNotifiers(notifiers map[string]modconfig.Notifier) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.notifiers = notifiers
+	}
+}
+
+func WithBlockType(blockTypeInclusions []string) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.blockTypeInclusions = blockTypeInclusions
 	}
 }
 

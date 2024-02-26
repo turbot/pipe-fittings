@@ -66,8 +66,9 @@ type Workspace struct {
 	loadPseudoResources        bool
 
 	// hooks
-	OnFileWatcherError func(context.Context, error)
-	OnFileWatcherEvent func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
+	OnFileWatcherError  func(context.Context, error)
+	OnFileWatcherEvent  func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
+	BlockTypeInclusions []string
 }
 
 // Load_ creates a Workspace and loads the workspace mod
@@ -78,44 +79,22 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 		o(cfg)
 	}
 
-	utils.LogTime("workspace.Load_ start")
-	defer utils.LogTime("workspace.Load_ end")
+	utils.LogTime("w.Load_ start")
+	defer utils.LogTime("w.Load_ end")
 
-	workspace, err := createShellWorkspace(workspacePath)
+	w, err := createShellWorkspace(workspacePath)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
-	workspace.Credentials = cfg.credentials
-	workspace.Integrations = cfg.integrations
-	workspace.Notifiers = cfg.notifiers
+	w.Credentials = cfg.credentials
+	w.Integrations = cfg.integrations
+	w.Notifiers = cfg.notifiers
+	w.BlockTypeInclusions = cfg.blockTypeInclusions
 
-	// load the workspace mod
-	errAndWarnings := workspace.loadWorkspaceMod(ctx)
-	return workspace, errAndWarnings
-}
-
-// LoadVariables creates a Workspace and uses it to load all variables, ignoring any value resolution errors
-// this is use for the variable list command
-func LoadVariables(ctx context.Context, workspacePath string) ([]*modconfig.Variable, error_helpers.ErrorAndWarnings) {
-	utils.LogTime("workspace.LoadVariables start")
-	defer utils.LogTime("workspace.LoadVariables end")
-
-	// create shell workspace
-	workspace, err := createShellWorkspace(workspacePath)
-	if err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
-	}
-
-	// resolve variables values, WITHOUT validating missing vars
-	validateMissing := false
-	variableMap, errorAndWarnings := workspace.getInputVariables(ctx, validateMissing)
-	if errorAndWarnings.Error != nil {
-		return nil, errorAndWarnings
-	}
-
-	// convert into a sorted array
-	return variableMap.ToArray(), errorAndWarnings
+	// load the w mod
+	errAndWarnings := w.loadWorkspaceMod(ctx)
+	return w, errAndWarnings
 }
 
 func createShellWorkspace(workspacePath string) (*Workspace, error) {
@@ -135,27 +114,6 @@ func createShellWorkspace(workspacePath string) (*Workspace, error) {
 	}
 
 	return workspace, nil
-}
-
-// LoadResourceNames builds lists of all workspace resource names
-func LoadResourceNames(ctx context.Context, workspacePath string) (*modconfig.WorkspaceResources, error) {
-	utils.LogTime("workspace.LoadResourceNames start")
-	defer utils.LogTime("workspace.LoadResourceNames end")
-
-	// create shell workspace
-	workspace := &Workspace{
-		Path: workspacePath,
-	}
-
-	// determine whether to load files recursively or just from the top level folder
-	workspace.setModfileExists()
-
-	// load the .steampipe ignore file
-	if err := workspace.loadExclusions(); err != nil {
-		return nil, err
-	}
-
-	return workspace.loadWorkspaceResourceName(ctx)
 }
 
 func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
@@ -256,7 +214,9 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	parseCtx.AddInputVariableValues(inputVariables)
 	// do not reload variables as we already have them
 	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
-
+	if len(w.BlockTypeInclusions) > 0 {
+		parseCtx.BlockTypes = w.BlockTypeInclusions
+	}
 	// load the workspace mod
 	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
 	errorsAndWarnings.Merge(otherErrorAndWarning)
@@ -298,7 +258,7 @@ func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *pa
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// get the values
-	return load_mod.GetVariableValues(ctx, variablesParseCtx, variableMap, validateMissing)
+	return load_mod.GetVariableValues(variablesParseCtx, variableMap, validateMissing)
 }
 
 // build options used to load workspace
@@ -384,21 +344,6 @@ func (w *Workspace) loadExclusions() error {
 	}
 
 	return nil
-}
-
-func (w *Workspace) loadWorkspaceResourceName(ctx context.Context) (*modconfig.WorkspaceResources, error) {
-	// build options used to load workspace
-	parseCtx, err := w.getParseContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	workspaceResourceNames, err := load_mod.LoadModResourceNames(ctx, w.Mod, parseCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	return workspaceResourceNames, nil
 }
 
 func (w *Workspace) verifyResourceRuntimeDependencies() error {
