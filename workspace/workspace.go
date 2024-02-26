@@ -346,21 +346,6 @@ func (w *Workspace) loadExclusions() error {
 	return nil
 }
 
-func (w *Workspace) loadWorkspaceResourceName(ctx context.Context) (*modconfig.WorkspaceResources, error) {
-	// build options used to load workspace
-	parseCtx, err := w.getParseContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	workspaceResourceNames, err := load_mod.LoadModResourceNames(ctx, w.Mod, parseCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	return workspaceResourceNames, nil
-}
-
 func (w *Workspace) verifyResourceRuntimeDependencies() error {
 	for _, d := range w.Mod.ResourceMaps.Dashboards {
 		if err := d.ValidateRuntimeDependencies(w); err != nil {
