@@ -12,6 +12,10 @@ func ToIntegerPointer(i int) *int {
 	return &i
 }
 
+func ToPointer[T any](value T) *T {
+	return &value
+}
+
 func PtrEqual[T constraints.Ordered](a, b *T) bool {
 	if a == nil && b == nil {
 		return true

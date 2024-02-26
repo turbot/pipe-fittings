@@ -3,8 +3,10 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type PipelineStepMessage struct {
@@ -55,11 +57,45 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 	for name, attr := range hclAttributes {
 		switch name {
 
+		case schema.AttributeTypeBody:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				t, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeBody + " attribute to string",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Body = t
+			}
+
+		case schema.AttributeTypeMarkdown:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				if val == cty.True {
+					p.Markdown = utils.ToPointer(true)
+				} else {
+					p.Markdown = utils.ToPointer(false)
+				}
+			} // else leave as nil
+
 		default:
 			if !p.IsBaseAttribute(name) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Transform Step: " + attr.Name,
+					Summary:  "Unsupported attribute for Message Step: " + attr.Name,
 					Subject:  &attr.Range,
 				})
 			}

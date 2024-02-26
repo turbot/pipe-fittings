@@ -1281,6 +1281,21 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 }
 
+func (suite *FlowpipeModTestSuite) TestModMessageStep() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_message_step", workspace.WithCredentials(map[string]credential.Credential{}))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {

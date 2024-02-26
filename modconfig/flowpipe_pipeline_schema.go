@@ -858,12 +858,6 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			LabelNames: []string{schema.LabelName},
 		},
 		{
-			Type: schema.BlockTypeNotify,
-		},
-		{
-			Type: schema.BlockTypeLoop,
-		},
-		{
 			Type: schema.BlockTypeRetry,
 		},
 		{
@@ -872,6 +866,50 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypeOption,
 			LabelNames: []string{schema.LabelName},
+		},
+	},
+}
+
+var PipelineStepMessageBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{
+		{
+			Name: schema.AttributeTypeTitle,
+		},
+		{
+			Name: schema.AttributeTypeDescription,
+		},
+		{
+			Name: schema.AttributeTypeForEach,
+		},
+		{
+			Name: schema.AttributeTypeDependsOn,
+		},
+		{
+			Name: schema.AttributeTypeIf,
+		},
+		{
+			Name: schema.AttributeTypeNotifier,
+		},
+		{
+			Name: schema.AttributeTypeMarkdown,
+		},
+		{
+			Name: schema.AttributeTypeBody,
+		},
+	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type: schema.BlockTypeError,
+		},
+		{
+			Type:       schema.BlockTypePipelineOutput,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type: schema.BlockTypeRetry,
+		},
+		{
+			Type: schema.BlockTypeThrow,
 		},
 	},
 }

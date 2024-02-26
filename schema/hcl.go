@@ -145,7 +145,7 @@ const (
 	// Used byy Pipeline step
 	AttributeTypePipeline = "pipeline"
 
-	// Used by input step
+	// Used by input and message step
 	AttributeTypeDefaultRecipient = "default_recipient"
 	AttributeTypeDefaultSubject   = "default_subject"
 	AttributeTypeOptions          = "options"
@@ -161,6 +161,7 @@ const (
 	AttributeTypeSelected         = "selected"
 	AttributeTypeNotifier         = "notifier"
 	AttributeTypeNotifies         = "notifies"
+	AttributeTypeMarkdown         = "markdown"
 
 	AttributeTypeMessage = "message"
 
