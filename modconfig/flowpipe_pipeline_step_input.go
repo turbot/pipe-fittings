@@ -274,3 +274,154 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 
 	return diags
 }
+
+func ctyValueToPipelineStepNotifierValueMap(value cty.Value) (NotifierImpl, error) {
+	notifier := NotifierImpl{}
+
+	valueMap := value.AsValueMap()
+	notifiesCty := valueMap[schema.AttributeTypeNotifies]
+
+	if notifiesCty == cty.NilVal {
+		return notifier, nil
+	}
+
+	notifiesCtySlice := notifiesCty.AsValueSlice()
+
+	for _, notifyCty := range notifiesCtySlice {
+		n, err := ctyValueToNotify(notifyCty)
+		if err != nil {
+			return notifier, err
+		}
+		notifier.Notifies = append(notifier.Notifies, n)
+	}
+
+	return notifier, nil
+}
+
+func ctyValueToNotify(val cty.Value) (Notify, error) {
+
+	n := Notify{}
+
+	if val.IsNull() {
+		return n, nil
+	}
+
+	valMap := val.AsValueMap()
+
+	cc := valMap["cc"]
+	if cc != cty.NilVal {
+		ccSlice := cc.AsValueSlice()
+		for _, c := range ccSlice {
+			n.Cc = append(n.Cc, c.AsString())
+		}
+	}
+
+	bcc := valMap["bcc"]
+	if bcc != cty.NilVal {
+		bccSlice := bcc.AsValueSlice()
+		for _, b := range bccSlice {
+			n.Bcc = append(n.Bcc, b.AsString())
+		}
+	}
+
+	channel := valMap["channel"]
+	if channel != cty.NilVal {
+		channel := channel.AsString()
+		n.Channel = &channel
+	}
+
+	description := valMap["description"]
+	if description != cty.NilVal {
+		description := description.AsString()
+		n.Description = &description
+	}
+
+	subject := valMap["subject"]
+	if subject != cty.NilVal {
+		subject := subject.AsString()
+		n.Subject = &subject
+	}
+
+	title := valMap["title"]
+	if title != cty.NilVal {
+		title := title.AsString()
+		n.Title = &title
+	}
+
+	to := valMap["to"]
+	if to != cty.NilVal {
+		toSlice := to.AsValueSlice()
+		for _, t := range toSlice {
+			n.To = append(n.To, t.AsString())
+		}
+	}
+
+	integration := valMap["integration"]
+
+	if integration != cty.NilVal {
+		integration, err := integrationFromCtyValue(integration)
+		if err != nil {
+			return n, err
+		}
+		n.Integration = integration
+	}
+
+	return n, nil
+}
+
+type PipelineStepInputOption struct {
+	Label    *string `json:"label" hcl:"label,optional"`
+	Value    *string `json:"value" hcl:"value,optional"`
+	Selected *bool   `json:"selected,omitempty" hcl:"selected,optional"`
+}
+
+func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInputOption, error) {
+	var output []PipelineStepInputOption
+
+	opts := value.AsValueSlice()
+
+	for _, opt := range opts {
+		valueMap := opt.AsValueMap()
+
+		isValid := false
+		option := PipelineStepInputOption{}
+		for k, v := range valueMap {
+			switch k {
+			case schema.AttributeTypeValue:
+				if !v.IsNull() {
+					isValid = true
+					val := v.AsString()
+					option.Value = &val
+				}
+			case schema.AttributeTypeLabel:
+				if !v.IsNull() {
+					label := v.AsString()
+					option.Label = &label
+				}
+			case schema.AttributeTypeSelected:
+				if !v.IsNull() && v.Type() == cty.Bool {
+					isSelected := v.True()
+					option.Selected = &isSelected
+				}
+			default:
+				return nil, perr.BadRequestWithMessage(k + " is not a valid attribute for input options")
+			}
+		}
+
+		if isValid {
+			output = append(output, option)
+		} else {
+			return nil, perr.BadRequestWithMessage("input options must declare a value")
+		}
+	}
+
+	return output, nil
+}
+
+func (p *PipelineStepInputOption) Validate() hcl.Diagnostics {
+	var diags hcl.Diagnostics
+
+	// TODO: Figure out validation(s)
+
+	return diags
+}
