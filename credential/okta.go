@@ -21,7 +21,7 @@ type OktaCredential struct {
 func (c *OktaCredential) getEnv() map[string]cty.Value {
 	env := map[string]cty.Value{}
 	if c.Token != nil {
-		env["OKTA_TOKEN"] = cty.StringVal(*c.Token)
+		env["OKTA_CLIENT_TOKEN"] = cty.StringVal(*c.Token)
 	}
 	if c.Domain != nil {
 		env["OKTA_ORGURL"] = cty.StringVal(*c.Domain)
@@ -70,7 +70,7 @@ func (c *OktaCredential) Equals(otherCredential Credential) bool {
 func (c *OktaCredential) Resolve(ctx context.Context) (Credential, error) {
 
 	if c.Token == nil && c.Domain == nil {
-		apiTokenEnvVar := os.Getenv("OKTA_TOKEN")
+		apiTokenEnvVar := os.Getenv("OKTA_CLIENT_TOKEN")
 		domainEnvVar := os.Getenv("OKTA_ORGURL")
 
 		// Don't modify existing credential, resolve to a new one

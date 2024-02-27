@@ -2,8 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
+
+	"github.com/turbot/pipe-fittings/hclhelpers"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
@@ -13,8 +14,6 @@ import (
 type PluginVersion struct {
 	// the plugin name, as specified in the mod requires block. , e.g. turbot/mod1, aws
 	RawName string `cty:"name" hcl:"name,label"`
-	// Deprecated: use MinVersionString
-	VersionString string `cty:"version" hcl:"version,optional"`
 	// the minumum version which satisfies the requirement
 	MinVersionString string `cty:"min_version" hcl:"min_version,optional"`
 	Constraint       *semver.Constraints
@@ -43,25 +42,6 @@ func (p *PluginVersion) String() string {
 func (p *PluginVersion) Initialise(block *hcl.Block) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	p.DeclRange = hclhelpers.BlockRange(block)
-	// handle deprecation warnings/errors
-	if p.VersionString != "" {
-		if p.MinVersionString != "" {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Both 'min_version' and deprecated 'version' property are set",
-				Subject:  &p.DeclRange,
-			})
-			return diags
-		}
-		// raise deprecation warning
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  fmt.Sprintf("Property 'version' is deprecated - use 'min_version' instead, in plugin '%s' require block", p.RawName),
-			Subject:  &p.DeclRange,
-		})
-		// copy into new property
-		p.MinVersionString = p.VersionString
-	}
 
 	// convert min version into constraint (including prereleases)
 	minVersion, err := semver.NewVersion(strings.TrimPrefix(p.MinVersionString, "v"))
