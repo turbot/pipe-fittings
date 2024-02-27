@@ -101,15 +101,16 @@ type OktaConnectionConfig struct {
 	Token      *string `cty:"token" hcl:"token,optional"`
 }
 
-func (c *OktaConnectionConfig) GetCredential(name string) Credential {
+func (c *OktaConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	oktaCred := &OktaCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "okta",
 		},
 
 		Domain: c.Domain,

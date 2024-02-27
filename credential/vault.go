@@ -102,15 +102,16 @@ type VaultConnectionConfig struct {
 	Token       *string `cty:"token" hcl:"token,optional"`
 }
 
-func (c *VaultConnectionConfig) GetCredential(name string) Credential {
+func (c *VaultConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	vaultCred := &VaultCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "vault",
 		},
 
 		Address: c.Address,

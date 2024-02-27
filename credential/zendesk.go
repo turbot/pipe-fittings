@@ -110,15 +110,16 @@ type ZendeskConnectionConfig struct {
 	Token     *string `cty:"token" hcl:"token"`
 }
 
-func (c *ZendeskConnectionConfig) GetCredential(name string) Credential {
+func (c *ZendeskConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	zendeskCred := &ZendeskCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "zendesk",
 		},
 
 		Email:     c.Email,

@@ -161,15 +161,16 @@ type AlicloudConnectionConfig struct {
 	SecretKey        *string  `cty:"secret_key" hcl:"secret_key,optional"`
 }
 
-func (c *AlicloudConnectionConfig) GetCredential(name string) Credential {
+func (c *AlicloudConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	alicloudCred := &AlicloudCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "alicloud",
 		},
 
 		AccessKey: c.AccessKey,

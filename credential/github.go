@@ -86,15 +86,16 @@ type GithubConnectionConfig struct {
 	Token *string `cty:"token" hcl:"token"`
 }
 
-func (c *GithubConnectionConfig) GetCredential(name string) Credential {
+func (c *GithubConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	githubCred := &GithubCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "github",
 		},
 
 		Token: c.Token,

@@ -122,15 +122,16 @@ type GuardrailsConnectionConfig struct {
 	Workspace *string `cty:"workspace" hcl:"workspace,optional"`
 }
 
-func (c *GuardrailsConnectionConfig) GetCredential(name string) Credential {
+func (c *GuardrailsConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	guardrailsCred := &GuardrailsCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "guardrails",
 		},
 
 		AccessKey: c.AccessKey,

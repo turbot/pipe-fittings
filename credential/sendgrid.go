@@ -86,15 +86,16 @@ type SendGridConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *SendGridConnectionConfig) GetCredential(name string) Credential {
+func (c *SendGridConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	sendGridCred := &SendGridCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "sendgrid",
 		},
 
 		APIKey: c.APIKey,

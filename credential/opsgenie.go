@@ -97,15 +97,16 @@ type OpsgenieConnectionConfig struct {
 	IncidentAPIKey *string `cty:"incident_api_key" hcl:"incident_api_key"`
 }
 
-func (c *OpsgenieConnectionConfig) GetCredential(name string) Credential {
+func (c *OpsgenieConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	opsgenieCred := &OpsgenieCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "opsgenie",
 		},
 
 		AlertAPIKey:    c.AlertAPIKey,

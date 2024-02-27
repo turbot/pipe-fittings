@@ -100,7 +100,7 @@ type IPStackConnectionConfig struct {
 	Token     *string `cty:"token" hcl:"token,optional"`
 }
 
-func (c *IPStackConnectionConfig) GetCredential(name string) Credential {
+func (c *IPStackConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	// Steampipe uses the attribute 'token' to configure the credential; whereas
 	// Flowpipe uses the attribute 'access_key' which is documented in the
@@ -119,9 +119,10 @@ func (c *IPStackConnectionConfig) GetCredential(name string) Credential {
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "ipstack",
 		},
 
 		AccessKey: &ipstackAccessKey,

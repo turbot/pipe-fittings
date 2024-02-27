@@ -111,15 +111,16 @@ type DatadogConnectionConfig struct {
 	AppKey *string `cty:"app_key" hcl:"app_key"`
 }
 
-func (c *DatadogConnectionConfig) GetCredential(name string) Credential {
+func (c *DatadogConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	datadogCred := &DatadogCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "datadog",
 		},
 
 		APIKey: c.APIKey,

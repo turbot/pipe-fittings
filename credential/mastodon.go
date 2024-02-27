@@ -80,15 +80,16 @@ type MastodonConnectionConfig struct {
 	Server      *string `cty:"server" hcl:"server"`
 }
 
-func (c *MastodonConnectionConfig) GetCredential(name string) Credential {
+func (c *MastodonConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	mastodonCred := &MastodonCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "mastodon",
 		},
 
 		AccessToken: c.AccessToken,

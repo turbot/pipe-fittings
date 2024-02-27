@@ -86,15 +86,16 @@ type UrlscanConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *UrlscanConnectionConfig) GetCredential(name string) Credential {
+func (c *UrlscanConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	urlscanCred := &UrlscanCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "urlscan",
 		},
 
 		APIKey: c.APIKey,

@@ -86,15 +86,16 @@ type IP2LocationIOConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *IP2LocationIOConnectionConfig) GetCredential(name string) Credential {
+func (c *IP2LocationIOConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	ip2LocationIOCred := &IP2LocationIOCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "ip2locationio",
 		},
 
 		APIKey: c.APIKey,

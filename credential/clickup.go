@@ -87,15 +87,16 @@ type ClickUpConnectionConfig struct {
 	Token *string `cty:"token" hcl:"token"`
 }
 
-func (c *ClickUpConnectionConfig) GetCredential(name string) Credential {
+func (c *ClickUpConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	clickUpCred := &ClickUpCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "clickup",
 		},
 
 		Token: c.Token,

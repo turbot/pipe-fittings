@@ -87,15 +87,16 @@ type PipesConnectionConfig struct {
 	Token *string `cty:"token" hcl:"token"`
 }
 
-func (c *PipesConnectionConfig) GetCredential(name string) Credential {
+func (c *PipesConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	pipesCred := &PipesCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "pipes",
 		},
 
 		Token: c.Token,
