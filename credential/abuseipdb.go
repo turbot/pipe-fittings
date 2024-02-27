@@ -86,15 +86,16 @@ type AbuseIPDBConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *AbuseIPDBConnectionConfig) GetCredential(name string) Credential {
+func (c *AbuseIPDBConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	abuseIPDBCred := &AbuseIPDBCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "abuseipdb",
 		},
 
 		APIKey: c.APIKey,

@@ -175,15 +175,16 @@ type AwsConnectionConfig struct {
 	S3ForcePathStyle      *bool    `cty:"s3_force_path_style" hcl:"s3_force_path_style,optional"`
 }
 
-func (c *AwsConnectionConfig) GetCredential(name string) Credential {
+func (c *AwsConnectionConfig) GetCredential(name, shortName string) Credential {
 
 	awsCred := &AwsCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "aws",
 		},
 
 		Profile:      c.Profile,

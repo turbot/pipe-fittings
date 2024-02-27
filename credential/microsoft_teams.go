@@ -86,15 +86,16 @@ type MicrosoftTeamsConnectionConfig struct {
 	AccessToken *string `cty:"access_token" hcl:"access_token"`
 }
 
-func (c *MicrosoftTeamsConnectionConfig) GetCredential(name string) Credential {
+func (c *MicrosoftTeamsConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	microsoftTeamsCred := &MicrosoftTeamsCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "teams",
 		},
 
 		AccessToken: c.AccessToken,

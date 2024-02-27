@@ -127,15 +127,16 @@ type AzureConnectionConfig struct {
 	Username            *string  `cty:"username" hcl:"username,optional"`
 }
 
-func (c *AzureConnectionConfig) GetCredential(name string) Credential {
+func (c *AzureConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	azureCred := &AzureCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "azure",
 		},
 
 		ClientID:     c.ClientID,

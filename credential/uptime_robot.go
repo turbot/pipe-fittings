@@ -87,15 +87,16 @@ type UptimeRobotConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *UptimeRobotConnectionConfig) GetCredential(name string) Credential {
+func (c *UptimeRobotConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	uptimeRobotCred := &UptimeRobotCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "uptimerobot",
 		},
 
 		APIKey: c.APIKey,

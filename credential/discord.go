@@ -86,15 +86,16 @@ type DiscordConnectionConfig struct {
 	Token *string `cty:"token" hcl:"token"`
 }
 
-func (c *DiscordConnectionConfig) GetCredential(name string) Credential {
+func (c *DiscordConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	discordCred := &DiscordCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "discord",
 		},
 
 		Token: c.Token,

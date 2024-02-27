@@ -86,15 +86,16 @@ type OpenAIConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *OpenAIConnectionConfig) GetCredential(name string) Credential {
+func (c *OpenAIConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	openAICred := &OpenAICredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "openai",
 		},
 
 		APIKey: c.APIKey,

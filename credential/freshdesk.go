@@ -104,15 +104,16 @@ type FreshdeskConnectionConfig struct {
 	Subdomain *string `cty:"subdomain" hcl:"subdomain"`
 }
 
-func (c *FreshdeskConnectionConfig) GetCredential(name string) Credential {
+func (c *FreshdeskConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	freshdeskCred := &FreshdeskCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "freshdesk",
 		},
 
 		APIKey:    c.APIKey,

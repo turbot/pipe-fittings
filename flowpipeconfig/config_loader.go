@@ -142,15 +142,16 @@ func (f *FlowpipeConfig) importCredentials() error {
 				if credentialImport.Prefix != nil && *credentialImport.Prefix != "" {
 					connectionName = fmt.Sprintf("%s%s", *credentialImport.Prefix, connectionName)
 				}
-				credentialName := fmt.Sprintf("%s.%s", connectionType, connectionName)
+				credentialShortName := connectionName
+				credentialFullName := fmt.Sprintf("%s.%s", connectionType, connectionName)
 
 				// Return error if the flowpipe already has a creds with same type and name
-				if f.Credentials[credentialName] != nil {
-					return perr.BadRequestWithMessage(fmt.Sprintf("Credential with name '%s' already exists", credentialName))
+				if f.Credentials[credentialFullName] != nil {
+					return perr.BadRequestWithMessage(fmt.Sprintf("Credential with name '%s' already exists", credentialFullName))
 				}
 
-				if credentials[credentialName] != nil {
-					return perr.BadRequestWithMessage(fmt.Sprintf("Credential with name '%s' already exists", credentialName))
+				if credentials[credentialFullName] != nil {
+					return perr.BadRequestWithMessage(fmt.Sprintf("Credential with name '%s' already exists", credentialFullName))
 				}
 
 				// Parse the config string
@@ -180,12 +181,12 @@ func (f *FlowpipeConfig) importCredentials() error {
 					return error_helpers.HclDiagsToError("Flowpipe Config", diags)
 				}
 
-				cred := configStruct.GetCredential(credentialName)
+				cred := configStruct.GetCredential(credentialFullName, credentialShortName)
 				if cred == nil {
 					return perr.InternalWithMessage("Failed to get credential")
 				}
 
-				credentials[credentialName] = cred
+				credentials[credentialFullName] = cred
 			}
 		}
 	}

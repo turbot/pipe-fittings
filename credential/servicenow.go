@@ -123,15 +123,16 @@ type ServiceNowConnectionConfig struct {
 	Username     *string `cty:"username" hcl:"username"`
 }
 
-func (c *ServiceNowConnectionConfig) GetCredential(name string) Credential {
+func (c *ServiceNowConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	serviceNowCred := &ServiceNowCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "servicenow",
 		},
 
 		InstanceURL: c.InstanceURL,

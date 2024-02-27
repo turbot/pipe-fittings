@@ -87,15 +87,16 @@ type VirusTotalConnectionConfig struct {
 	APIKey *string `cty:"api_key" hcl:"api_key"`
 }
 
-func (c *VirusTotalConnectionConfig) GetCredential(name string) Credential {
+func (c *VirusTotalConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	virusTotalCred := &VirusTotalCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "virustotal",
 		},
 
 		APIKey: c.APIKey,

@@ -86,15 +86,16 @@ type PagerDutyConnectionConfig struct {
 	Token *string `cty:"token" hcl:"token"`
 }
 
-func (c *PagerDutyConnectionConfig) GetCredential(name string) Credential {
+func (c *PagerDutyConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	pagerDutyCred := &PagerDutyCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "pagerduty",
 		},
 
 		Token: c.Token,

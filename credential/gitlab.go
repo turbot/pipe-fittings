@@ -87,15 +87,16 @@ type GitlabConnectionConfig struct {
 	Token   *string `cty:"token" hcl:"token"`
 }
 
-func (c *GitlabConnectionConfig) GetCredential(name string) Credential {
+func (c *GitlabConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	gitlabCred := &GitLabCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "gitlab",
 		},
 
 		Token: c.Token,

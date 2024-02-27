@@ -108,15 +108,16 @@ type BitbucketConnectionConfig struct {
 	Username *string `cty:"username" hcl:"username"`
 }
 
-func (c *BitbucketConnectionConfig) GetCredential(name string) Credential {
+func (c *BitbucketConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	bitbucketCred := &BitbucketCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "bitbucket",
 		},
 
 		BaseURL:  c.BaseURL,

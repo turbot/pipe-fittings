@@ -165,15 +165,16 @@ type GcpConnectionConfig struct {
 	Project                   *string  `cty:"project" hcl:"project,optional"`
 }
 
-func (c *GcpConnectionConfig) GetCredential(name string) Credential {
+func (c *GcpConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	gcpCred := &GcpCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "gcp",
 		},
 
 		Credentials: c.Credentials,

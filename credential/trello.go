@@ -98,15 +98,16 @@ type TrelloConnectionConfig struct {
 	Token  *string `cty:"token" hcl:"token"`
 }
 
-func (c *TrelloConnectionConfig) GetCredential(name string) Credential {
+func (c *TrelloConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	trelloCred := &TrelloCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "trello",
 		},
 
 		APIKey: c.APIKey,

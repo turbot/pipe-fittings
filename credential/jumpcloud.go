@@ -87,15 +87,16 @@ type JumpCloudConnectionConfig struct {
 	OrgID  *string `cty:"org_id" hcl:"org_id,optional"`
 }
 
-func (c *JumpCloudConnectionConfig) GetCredential(name string) Credential {
+func (c *JumpCloudConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	jumpCloudCred := &JumpCloudCredential{
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "jumpcloud",
 		},
 
 		APIKey: c.APIKey,

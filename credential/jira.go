@@ -121,7 +121,7 @@ type JiraConnectionConfig struct {
 	Username            *string `cty:"username" hcl:"username,optional"`
 }
 
-func (c *JiraConnectionConfig) GetCredential(name string) Credential {
+func (c *JiraConnectionConfig) GetCredential(name string, shortName string) Credential {
 
 	// Steampipe Jira plugin uses the attribute token to configure the credential, whereas
 	// the Flowpipe uses the attribute `api_token` which is intended to distinguish between 2 different token, i.e. token and personal_access_token
@@ -138,9 +138,10 @@ func (c *JiraConnectionConfig) GetCredential(name string) Credential {
 		CredentialImpl: CredentialImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				FullName:        name,
-				ShortName:       name,
+				ShortName:       shortName,
 				UnqualifiedName: name,
 			},
+			Type: "jira",
 		},
 
 		// In Flowpipe we went with api_token (same as token in Steampipe) since

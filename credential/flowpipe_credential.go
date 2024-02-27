@@ -155,7 +155,7 @@ func NewCredential(block *hcl.Block) (Credential, error) {
 }
 
 type CredentialConfig interface {
-	GetCredential(string) Credential
+	GetCredential(string, string) Credential
 }
 
 type Credential interface {
