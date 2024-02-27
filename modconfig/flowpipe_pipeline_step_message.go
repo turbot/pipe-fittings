@@ -2,8 +2,11 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -12,8 +15,9 @@ import (
 type PipelineStepMessage struct {
 	PipelineStepBase
 
-	Body     string `json:"body" hcl:"body" cty:"body"`
-	Markdown *bool  `json:"markdown" hcl:"markdown,optional" cty:"markdown"`
+	Body     string  `json:"body" hcl:"body" cty:"body"`
+	Subject  *string `json:"subject" hcl:"subject,optional" cty:"subject"`
+	Markdown *bool   `json:"markdown" hcl:"markdown,optional" cty:"markdown"`
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
 	Notifier NotifierImpl `json:"notify" cty:"-"`
@@ -38,16 +42,74 @@ func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
 	}
 
 	return p.Body == other.Body &&
+		utils.PtrEqual(p.Subject, other.Subject) &&
 		utils.BoolPtrEqual(p.Markdown, other.Markdown) &&
 		p.Notifier.Equals(&other.Notifier)
 }
 
 func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var value any
+	results := map[string]interface{}{}
 
-	return map[string]interface{}{
-		schema.AttributeTypeValue: value,
-	}, nil
+	// body is a mandatory attribute
+	var body string
+	if p.UnresolvedAttributes[schema.AttributeTypeBody] == nil {
+		body = p.Body
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeBody], evalContext, &body)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+	results[schema.AttributeTypeBody] = body
+
+	// markdown
+	var markdown *bool
+	if p.UnresolvedAttributes[schema.AttributeTypeMarkdown] == nil {
+		markdown = p.Markdown
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMarkdown], evalContext, &markdown)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	if markdown != nil {
+		results[schema.AttributeTypeMarkdown] = *markdown
+	}
+
+	// subject
+	var subject *string
+	if p.UnresolvedAttributes[schema.AttributeTypeSubject] == nil {
+		subject = p.Subject
+	} else {
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSubject], evalContext, &subject)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		}
+	}
+
+	if subject != nil {
+		results[schema.AttributeTypeSubject] = *subject
+	}
+
+	// notifier
+	if attr, ok := p.UnresolvedAttributes[schema.AttributeTypeNotifier]; !ok {
+		results[schema.AttributeTypeNotifier] = p.Notifier
+	} else {
+		notifierCtyVal, moreDiags := attr.Value(evalContext)
+		if moreDiags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, moreDiags)
+		}
+
+		notifier, err := ctyValueToPipelineStepNotifierValueMap(notifierCtyVal)
+		if err != nil {
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse notifier attribute: " + err.Error())
+		}
+		results[schema.AttributeTypeNotifier] = notifier
+	}
+
+	return results, nil
+
 }
 
 func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -74,6 +136,25 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 					continue
 				}
 				p.Body = t
+			}
+
+		case schema.AttributeTypeSubject:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+			if val != cty.NilVal {
+				t, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeSubject + " attribute to string",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				p.Subject = &t
 			}
 
 		case schema.AttributeTypeNotifier:
