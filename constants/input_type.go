@@ -2,8 +2,6 @@ package constants
 
 const (
 	InputTypeButton      = "button"
-	InputTypeCombo       = "combo"
-	InputTypeMultiCombo  = "multicombo"
 	InputTypeMultiSelect = "multiselect"
 	InputTypeSelect      = "select"
 	InputTypeText        = "text"
@@ -11,7 +9,23 @@ const (
 
 func IsValidInputType(s string) bool {
 	switch s {
-	case InputTypeButton, InputTypeCombo, InputTypeMultiCombo, InputTypeMultiSelect, InputTypeSelect, InputTypeText:
+	case InputTypeButton, InputTypeMultiSelect, InputTypeSelect, InputTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+const (
+	InputStyleInfo    = "info"
+	InputStyleOk      = "ok"
+	InputStyleAlert   = "alert"
+	InputStyleDefault = "default"
+)
+
+func IsValidInputStyleType(s string) bool {
+	switch s {
+	case InputStyleInfo, InputStyleOk, InputStyleAlert, InputStyleDefault:
 		return true
 	default:
 		return false
