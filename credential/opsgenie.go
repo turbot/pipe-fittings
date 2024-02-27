@@ -19,14 +19,7 @@ type OpsgenieCredential struct {
 }
 
 func (c *OpsgenieCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.AlertAPIKey != nil {
-		env["OPSGENIE_ALERT_API_KEY"] = cty.StringVal(*c.AlertAPIKey)
-	}
-	if c.IncidentAPIKey != nil {
-		env["OPSGENIE_INCIDENT_API_KEY"] = cty.StringVal(*c.IncidentAPIKey)
-	}
-	return env
+	return nil
 }
 
 func (c *OpsgenieCredential) CtyValue() (cty.Value, error) {

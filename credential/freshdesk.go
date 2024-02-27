@@ -19,14 +19,7 @@ type FreshdeskCredential struct {
 }
 
 func (c *FreshdeskCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.APIKey != nil {
-		env["FRESHDESK_API_KEY"] = cty.StringVal(*c.APIKey)
-	}
-	if c.Subdomain != nil {
-		env["FRESHDESK_SUBDOMAIN"] = cty.StringVal(*c.Subdomain)
-	}
-	return env
+	return nil
 }
 
 func (c *FreshdeskCredential) CtyValue() (cty.Value, error) {

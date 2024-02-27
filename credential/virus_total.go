@@ -18,11 +18,7 @@ type VirusTotalCredential struct {
 }
 
 func (c *VirusTotalCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.APIKey != nil {
-		env["VTCLI_APIKEY"] = cty.StringVal(*c.APIKey)
-	}
-	return env
+	return nil
 }
 
 func (c *VirusTotalCredential) CtyValue() (cty.Value, error) {

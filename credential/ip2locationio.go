@@ -18,11 +18,9 @@ type IP2LocationIOCredential struct {
 }
 
 func (c *IP2LocationIOCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.APIKey != nil {
-		env["IP2LOCATIONIO_API_KEY"] = cty.StringVal(*c.APIKey)
-	}
-	return env
+	// There is no environment variable listed in the IP2LocationIO official API docs
+	// https://www.ip2location.io/ip2location-documentation
+	return nil
 }
 
 func (c *IP2LocationIOCredential) CtyValue() (cty.Value, error) {

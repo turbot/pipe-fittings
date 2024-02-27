@@ -20,17 +20,7 @@ type ZendeskCredential struct {
 }
 
 func (c *ZendeskCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.Subdomain != nil {
-		env["ZENDESK_SUBDOMAIN"] = cty.StringVal(*c.Subdomain)
-	}
-	if c.Email != nil {
-		env["ZENDESK_EMAIL"] = cty.StringVal(*c.Email)
-	}
-	if c.Token != nil {
-		env["ZENDESK_API_TOKEN"] = cty.StringVal(*c.Token)
-	}
-	return env
+	return nil
 }
 
 func (c *ZendeskCredential) CtyValue() (cty.Value, error) {

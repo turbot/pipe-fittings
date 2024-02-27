@@ -20,17 +20,7 @@ type ServiceNowCredential struct {
 }
 
 func (c *ServiceNowCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.InstanceURL != nil {
-		env["SERVICENOW_INSTANCE_URL"] = cty.StringVal(*c.InstanceURL)
-	}
-	if c.Username != nil {
-		env["SERVICENOW_USERNAME"] = cty.StringVal(*c.Username)
-	}
-	if c.Password != nil {
-		env["SERVICENOW_PASSWORD"] = cty.StringVal(*c.Password)
-	}
-	return env
+	return nil
 }
 
 func (c *ServiceNowCredential) CtyValue() (cty.Value, error) {
