@@ -13,7 +13,7 @@ type DashboardEdge struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Category *DashboardCategory `cty:"category" hcl:"category" column:"category,jsonb" json:"category,omitempty"`
+	Category *DashboardCategory `cty:"category" hcl:"category" snapshot:"category" json:"category,omitempty"`
 	Base     *DashboardEdge     `hcl:"base" json:"-"`
 }
 
