@@ -272,6 +272,16 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 		})
 	}
 
+	// check for and validate style on options
+	for _, o := range p.OptionList {
+		if !helpers.IsNil(o.Style) && !constants.IsValidInputStyleType(*o.Style) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute " + schema.AttributeTypeType + " specified with invalid value " + *o.Style,
+			})
+		}
+	}
+
 	return diags
 }
 
@@ -373,6 +383,7 @@ type PipelineStepInputOption struct {
 	Label    *string `json:"label" hcl:"label,optional"`
 	Value    *string `json:"value" hcl:"value,optional"`
 	Selected *bool   `json:"selected,omitempty" hcl:"selected,optional"`
+	Style    *string `json:"style,omitempty" hcl:"style,optional"`
 }
 
 func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInputOption, error) {
@@ -402,6 +413,11 @@ func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInput
 				if !v.IsNull() && v.Type() == cty.Bool {
 					isSelected := v.True()
 					option.Selected = &isSelected
+				}
+			case schema.AttributeTypeStyle:
+				if !v.IsNull() {
+					s := v.AsString()
+					option.Style = &s
 				}
 			default:
 				return nil, perr.BadRequestWithMessage(k + " is not a valid attribute for input options")

@@ -160,6 +160,7 @@ const (
 	AttributeTypeNotifier     = "notifier"
 	AttributeTypeNotifies     = "notifies"
 	AttributeTypeMarkdown     = "markdown"
+	AttributeTypeStyle        = "style"
 
 	AttributeTypeMessage = "message"
 
