@@ -19,14 +19,7 @@ type TrelloCredential struct {
 }
 
 func (c *TrelloCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.APIKey != nil {
-		env["TRELLO_API_KEY"] = cty.StringVal(*c.APIKey)
-	}
-	if c.Token != nil {
-		env["TRELLO_TOKEN"] = cty.StringVal(*c.Token)
-	}
-	return env
+	return nil
 }
 
 func (c *TrelloCredential) CtyValue() (cty.Value, error) {

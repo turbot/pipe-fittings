@@ -18,15 +18,7 @@ type IPstackCredential struct {
 }
 
 func (c *IPstackCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-
-	// The IPstack access key can be configured either of these environment variables
-	// IPSTACK_ACCESS_KEY and IPSTACK_TOKEN
-	if c.AccessKey != nil {
-		env["IPSTACK_ACCESS_KEY"] = cty.StringVal(*c.AccessKey)
-		env["IPSTACK_TOKEN"] = cty.StringVal(*c.AccessKey)
-	}
-	return env
+	return nil
 }
 
 func (c *IPstackCredential) CtyValue() (cty.Value, error) {

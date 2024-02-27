@@ -18,9 +18,8 @@ type MastodonCredential struct {
 }
 
 func (c *MastodonCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
 	// Mastodon has no standard environment variable mentioned anywhere in the docs
-	return env
+	return nil
 }
 
 func (c *MastodonCredential) CtyValue() (cty.Value, error) {
