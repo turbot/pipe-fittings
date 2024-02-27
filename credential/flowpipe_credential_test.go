@@ -203,7 +203,7 @@ func TestOktaDefaultCredential(t *testing.T) {
 		},
 	}
 
-	os.Unsetenv("OKTA_TOKEN")
+	os.Unsetenv("OKTA_CLIENT_TOKEN")
 	os.Unsetenv("OKTA_ORGURL")
 
 	newCreds, err := oktaCred.Resolve(context.TODO())
@@ -213,7 +213,7 @@ func TestOktaDefaultCredential(t *testing.T) {
 	assert.Equal("", *newOktaCreds.Token)
 	assert.Equal("", *newOktaCreds.Domain)
 
-	os.Setenv("OKTA_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+	os.Setenv("OKTA_CLIENT_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
 	os.Setenv("OKTA_ORGURL", "https://dev-50078045.okta.com")
 
 	newCreds, err = oktaCred.Resolve(context.TODO())
