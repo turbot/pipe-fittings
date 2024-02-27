@@ -277,7 +277,7 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 		if !helpers.IsNil(o.Style) && !constants.IsValidInputStyleType(*o.Style) {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "Attribute " + schema.AttributeTypeType + " specified with invalid value " + *o.Style,
+				Summary:  "Attribute " + schema.AttributeTypeStyle + " specified with invalid value " + *o.Style,
 			})
 		}
 	}
