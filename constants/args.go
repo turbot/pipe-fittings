@@ -15,6 +15,7 @@ const (
 	ArgDetach                  = "detach"
 	ArgDisplayWidth            = "display-width"
 	ArgDryRun                  = "dry-run"
+	ArgEnvironment             = "environment"
 	ArgExport                  = "export"
 	ArgForce                   = "force"
 	ArgHeader                  = "header"
