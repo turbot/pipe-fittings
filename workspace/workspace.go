@@ -89,10 +89,6 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
 
-	if !w.ModfileExists() {
-		// just return the shell workspace
-		return w, ew
-	}
 	// load the w mod
 	errAndWarnings := w.loadWorkspaceMod(ctx)
 	return w, errAndWarnings
@@ -263,6 +259,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 
 	parseCtx := parse.NewModParseContext(workspaceLock,
 		w.Path,
+		parse.WithParseFlags(parse.CreateDefaultMod),
 		parse.WithListOptions(&filehelpers.ListOptions{
 			Flags:   filehelpers.FilesRecursive,
 			Exclude: w.exclusions,

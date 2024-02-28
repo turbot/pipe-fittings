@@ -2,7 +2,6 @@ package parse
 
 import filehelpers "github.com/turbot/go-kit/files"
 
-// use options pattern
 type ModParseContextOption func(*ModParseContext)
 
 func WithParseFlags(flags ParseModFlag) ModParseContextOption {

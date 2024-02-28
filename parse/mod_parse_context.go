@@ -27,7 +27,6 @@ const rootDependencyNode = "rootDependencyNode"
 type ParseModFlag uint32
 
 const (
-	// TODO this is only used for LoadPipeline
 	CreateDefaultMod ParseModFlag = 1 << iota
 )
 
