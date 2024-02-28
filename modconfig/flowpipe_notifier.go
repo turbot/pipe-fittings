@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -38,7 +40,28 @@ type NotifierImpl struct {
 }
 
 func (n *NotifierImpl) Equals(other Notifier) bool {
-	return true
+
+	if n == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if n == nil && !helpers.IsNil(other) || !helpers.IsNil(other) && n == nil {
+		return false
+	}
+
+	if len(n.Notifies) != len(other.GetNotifierImpl().Notifies) {
+		return false
+	}
+
+	for i, notify := range n.Notifies {
+		if !notify.Equals(&other.GetNotifierImpl().Notifies[i]) {
+			return false
+		}
+	}
+
+	return n.FileName == other.GetNotifierImpl().FileName &&
+		n.StartLineNumber == other.GetNotifierImpl().StartLineNumber &&
+		n.EndLineNumber == other.GetNotifierImpl().EndLineNumber
 }
 
 func (n *NotifierImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -111,6 +134,26 @@ type Notify struct {
 	Subject     *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
 	Title       *string  `json:"title,omitempty" cty:"title" hcl:"title,optional"`
 	To          []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
+}
+
+func (n *Notify) Equals(other *Notify) bool {
+
+	if n == nil && other == nil {
+		return true
+	}
+
+	if n == nil && other != nil || n != nil && other == nil {
+		return false
+	}
+
+	return helpers.StringSliceEqualIgnoreOrder(n.Cc, other.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(n.Bcc, other.Bcc) &&
+		helpers.StringSliceEqualIgnoreOrder(n.To, other.To) &&
+		utils.PtrEqual(n.Channel, other.Channel) &&
+		utils.PtrEqual(n.Description, other.Description) &&
+		utils.PtrEqual(n.Subject, other.Subject) &&
+		utils.PtrEqual(n.Title, other.Title) &&
+		n.Integration.Equals(other.Integration)
 }
 
 // UnmarshalJSON custom unmarshaller for Notify

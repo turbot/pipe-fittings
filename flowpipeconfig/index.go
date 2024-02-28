@@ -74,12 +74,15 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 		return false
 	}
 
-	// for k, v := range f.Notifiers {
-	// check if k exists in other
-	// 	if !other.Notifiers[k].Equals(v) {
-	// 		return false
-	// 	}
-	// }
+	for k, v := range f.Notifiers {
+		if _, ok := other.Notifiers[k]; !ok {
+			return false
+		}
+
+		if !other.Notifiers[k].Equals(v) {
+			return false
+		}
+	}
 
 	if len(f.CredentialImports) != len(other.CredentialImports) {
 		return false
