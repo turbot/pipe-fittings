@@ -168,7 +168,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		return nil
 	}
 
-	defaultNotifiers, err := modconfig.DefaultNotifiers(defaultIntegrations["webform.default"])
+	defaultNotifiers, err := modconfig.DefaultNotifiers(defaultIntegrations["http.default"])
 	if err != nil {
 		slog.Error("Unable to create default notifiers", "error", err)
 		return nil

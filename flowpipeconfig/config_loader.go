@@ -315,7 +315,7 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 
 	slack := make(map[string]cty.Value)
 	email := make(map[string]cty.Value)
-	webform := make(map[string]cty.Value)
+	http := make(map[string]cty.Value)
 
 	for k, v := range integrations {
 		parts := strings.Split(k, ".")
@@ -336,13 +336,13 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 			vars = slack
 		case schema.IntegrationTypeEmail:
 			vars = email
-		case schema.IntegrationTypeWebform:
-			vars = webform
+		case schema.IntegrationTypeHttp:
+			vars = http
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "invalid integration type",
-				Detail:   "integration type must be one of slack, email or webform",
+				Detail:   "integration type must be one of slack, email or http",
 				Subject:  v.GetDeclRange(),
 			})
 			continue
@@ -370,8 +370,8 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 	if len(email) > 0 {
 		integrationVariables[schema.IntegrationTypeEmail] = cty.ObjectVal(email)
 	}
-	if len(webform) > 0 {
-		integrationVariables[schema.IntegrationTypeWebform] = cty.ObjectVal(webform)
+	if len(http) > 0 {
+		integrationVariables[schema.IntegrationTypeHttp] = cty.ObjectVal(http)
 	}
 
 	variables["integration"] = cty.ObjectVal(integrationVariables)
