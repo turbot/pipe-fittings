@@ -11,6 +11,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+// Deprecated: Pipeline step email is deprecated. Please use the new pipeline message step with notifier.
 type PipelineStepEmail struct {
 	PipelineStepBase
 	To           []string `json:"to"`

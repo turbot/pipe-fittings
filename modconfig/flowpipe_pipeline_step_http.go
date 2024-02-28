@@ -78,19 +78,19 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	}
 
 	// url
-	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeUrl, "Url")
+	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeUrl, p.Url)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	// method
-	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeMethod, "Method")
+	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeMethod, p.Method)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	// ca_cert_pem
-	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeCaCertPem, "CaCertPem")
+	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeCaCertPem, p.CaCertPem)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
@@ -109,7 +109,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	}
 
 	// requets_body
-	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeRequestBody, "RequestBody")
+	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeRequestBody, p.RequestBody)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}

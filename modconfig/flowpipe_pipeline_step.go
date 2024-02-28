@@ -14,6 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/addrs"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
@@ -1143,28 +1144,12 @@ func stringSliceInputFromAttribute(p PipelineStep, results map[string]interface{
 	return results, hcl.Diagnostics{}
 }
 
-func stringPtrInputFromAttribute(p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName, fieldName string) (map[string]interface{}, hcl.Diagnostics) {
-	var tempValue *string
+func simpleTypeInputFromAttribute[T any](p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue T) (map[string]interface{}, hcl.Diagnostics) {
+	var tempValue T
 
 	if p.GetUnresolvedAttributes()[attributeName] == nil {
-		val := reflect.ValueOf(p)
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem() // If a pointer to a struct is passed, get the struct
-		}
-
-		field := val.FieldByName(fieldName)
-
-		if !field.IsValid() {
-			return nil, hcl.Diagnostics{
-				&hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "No such field: " + fieldName + " in obj for " + p.GetFullyQualifiedName(),
-				},
-			}
-		}
-
-		if !helpers.IsNil(field.Interface()) {
-			tempValue = field.Interface().(*string)
+		if !helpers.IsNil(fieldValue) {
+			tempValue = fieldValue
 		}
 	} else {
 		diags := gohcl.DecodeExpression(p.GetUnresolvedAttributes()[attributeName], evalContext, &tempValue)
@@ -1173,8 +1158,19 @@ func stringPtrInputFromAttribute(p PipelineStep, results map[string]interface{},
 		}
 	}
 
-	if tempValue != nil {
-		results[attributeName] = *tempValue
+	if !helpers.IsNil(tempValue) {
+		if utils.IsPointer(tempValue) {
+			// Reflect on tempValue to get its underlying value if it's a pointer
+			valueOfTempValue := reflect.ValueOf(tempValue)
+			if valueOfTempValue.Kind() == reflect.Ptr && !valueOfTempValue.IsNil() {
+				// Dereference the pointer and set the result in the map
+				results[attributeName] = valueOfTempValue.Elem().Interface()
+			} else {
+				results[attributeName] = tempValue
+			}
+		} else {
+			results[attributeName] = tempValue
+		}
 	}
 
 	return results, hcl.Diagnostics{}

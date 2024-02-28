@@ -9,6 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -49,43 +50,26 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 
 func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
+	var diags hcl.Diagnostics
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
 		return nil, err
 	}
 
-	var sql *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSql] == nil {
-		if p.Sql == nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": sql must be supplied")
-		}
-		sql = p.Sql
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSql], evalContext, &sql)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// sql
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSql, p.Sql)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var database *string
-	if p.UnresolvedAttributes[schema.AttributeTypeDatabase] == nil {
-		if p.Database == nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": database must be supplied")
-		}
-		database = p.Database
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDatabase], evalContext, &database)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// database
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeDatabase, p.Database)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	if sql != nil {
-		results[schema.AttributeTypeSql] = *sql
-	}
-
-	if database != nil {
-		results[schema.AttributeTypeDatabase] = *database
+	if _, ok := results[schema.AttributeTypeDatabase]; !ok {
+		return nil, perr.BadRequestWithMessage(p.Name + ": database must be supplied")
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
@@ -113,35 +97,14 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 
 	for name, attr := range hclAttributes {
 		switch name {
-		case schema.AttributeTypeSql:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+		case schema.AttributeTypeSql, schema.AttributeTypeDatabase:
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
 
-			if val != cty.NilVal {
-				sql, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeSql + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Sql = &sql
-			}
-		case schema.AttributeTypeDatabase:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				database := val.AsString()
-				p.Database = &database
-			}
 		case schema.AttributeTypeArgs:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
