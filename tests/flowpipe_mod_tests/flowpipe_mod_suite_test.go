@@ -1343,7 +1343,7 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 		return
 	}
 
-	assert.Equal("Hello World", messageStep.Body)
+	assert.Equal("Hello World", messageStep.Text)
 }
 
 // In order for 'go test' to run this suite, we need to create

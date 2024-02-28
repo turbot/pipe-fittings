@@ -924,7 +924,7 @@ var PipelineStepMessageBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeSubject,
 		},
 		{
-			Name:     schema.AttributeTypeBody,
+			Name:     schema.AttributeTypeText,
 			Required: true,
 		},
 	},

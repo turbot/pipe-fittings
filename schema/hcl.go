@@ -197,6 +197,7 @@ const (
 	// Input step attributes
 	AttributeTypePrompt    = "prompt"
 	AttributeTypeSlackType = "slack_type"
+	AttributeTypeText      = "text"
 
 	// All Possible Trigger Types
 	TriggerTypeSchedule = "schedule"

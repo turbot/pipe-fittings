@@ -6,7 +6,7 @@ pipeline "message_step_one" {
 
     step "message" "hello" {
         notifier = notifier.default
-        body = "Hello World"
+        text = "Hello World"
     }
     
     output "val" {
