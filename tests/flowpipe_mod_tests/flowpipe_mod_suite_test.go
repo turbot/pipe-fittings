@@ -1343,7 +1343,6 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 		return
 	}
 
-	assert.Nil(messageStep.Markdown)
 	assert.Equal("Hello World", messageStep.Body)
 }
 

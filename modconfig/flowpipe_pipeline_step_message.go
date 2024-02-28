@@ -15,9 +15,8 @@ import (
 type PipelineStepMessage struct {
 	PipelineStepBase
 
-	Body     string  `json:"body" hcl:"body" cty:"body"`
-	Subject  *string `json:"subject" hcl:"subject,optional" cty:"subject"`
-	Markdown *bool   `json:"markdown" hcl:"markdown,optional" cty:"markdown"`
+	Body    string  `json:"body" hcl:"body" cty:"body"`
+	Subject *string `json:"subject" hcl:"subject,optional" cty:"subject"`
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
 	Notifier NotifierImpl `json:"notify" cty:"-"`
@@ -43,7 +42,6 @@ func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
 
 	return p.Body == other.Body &&
 		utils.PtrEqual(p.Subject, other.Subject) &&
-		utils.BoolPtrEqual(p.Markdown, other.Markdown) &&
 		p.Notifier.Equals(&other.Notifier)
 }
 
@@ -61,21 +59,6 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 		}
 	}
 	results[schema.AttributeTypeBody] = body
-
-	// markdown
-	var markdown *bool
-	if p.UnresolvedAttributes[schema.AttributeTypeMarkdown] == nil {
-		markdown = p.Markdown
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMarkdown], evalContext, &markdown)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	if markdown != nil {
-		results[schema.AttributeTypeMarkdown] = *markdown
-	}
 
 	// subject
 	var subject *string
@@ -176,21 +159,6 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 					})
 				}
 			}
-
-		case schema.AttributeTypeMarkdown:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				if val == cty.True {
-					p.Markdown = utils.ToPointer(true)
-				} else {
-					p.Markdown = utils.ToPointer(false)
-				}
-			} // else leave as nil
 
 		default:
 			if !p.IsBaseAttribute(name) {
