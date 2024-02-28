@@ -903,6 +903,22 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	}
 
 	assert.NotNil(step.UnresolvedAttributes["notifier"])
+
+	pipeline = pipelines["mod_with_integration.pipeline.approval_with_override_in_step"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_override_in_step not found")
+		return
+	}
+
+	step, ok = pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	assert.Equal("this subject is in step", *step.Subject)
+	assert.Equal("this channel is in step override", *step.Channel)
+
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {

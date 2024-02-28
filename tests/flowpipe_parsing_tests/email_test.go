@@ -99,7 +99,7 @@ func TestEmailStep(t *testing.T) {
 			cty.StringVal("friendly.curie@example.com"),
 			cty.StringVal("angry.kepler@example.com"),
 		}),
-		"cc": cty.ListVal([]cty.Value{
+		schema.AttributeTypeCc: cty.ListVal([]cty.Value{
 			cty.StringVal("serene.turing@example.com"),
 		}),
 		"bcc": cty.ListVal([]cty.Value{

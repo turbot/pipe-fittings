@@ -24,7 +24,24 @@ pipeline "approval_with_notifies" {
     option "Approve" {}
     option "Deny" {}
   }
+}
 
+pipeline "approval_with_override_in_step" {
+
+  step "input" "my_step" {
+    notifier = notifier["admins"]
+
+    type     = "button"
+    prompt   = "Do you want to approve?"
+
+    subject = "this subject is in step"
+
+    channel = "this channel is in step override"
+
+
+    option "Approve" {}
+    option "Deny" {}
+  }
 }
 
 

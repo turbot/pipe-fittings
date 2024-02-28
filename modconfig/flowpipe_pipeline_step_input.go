@@ -10,7 +10,6 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -26,20 +25,44 @@ type PipelineStepInput struct {
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
 	Notifier NotifierImpl `json:"notify" cty:"-"`
+
+	// overrides
+	Cc      []string `json:"cc,omitempty" cty:"cc" hcl:"cc,optional"`
+	Bcc     []string `json:"bcc,omitempty" cty:"bcc" hcl:"bcc,optional"`
+	Channel *string  `json:"channel,omitempty" cty:"channel" hcl:"channel,optional"`
+	Subject *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
+	To      []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
-func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
+func (p *PipelineStepInput) Equals(other PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(other) {
 		return true
 	}
 
-	_, ok := iOther.(*PipelineStepInput)
+	if p == nil && !helpers.IsNil(other) || p != nil && helpers.IsNil(other) {
+		return false
+	}
+
+	pOther, ok := other.(*PipelineStepInput)
 	if !ok {
 		return false
 	}
 
-	return p.Name == iOther.GetName()
+	// TODO: PipelineStepInputOption equality
+
+	return p.Name == other.GetName() &&
+		p.InputType == pOther.InputType &&
+		utils.PtrEqual(p.Prompt, pOther.Prompt) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Cc, pOther.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Bcc, pOther.Bcc) &&
+		utils.PtrEqual(p.Channel, pOther.Channel) &&
+		utils.PtrEqual(p.Description, pOther.Description) &&
+		utils.PtrEqual(p.Subject, pOther.Subject) &&
+		utils.PtrEqual(p.Title, pOther.Title) &&
+		helpers.StringSliceEqualIgnoreOrder(p.To, pOther.To) &&
+		p.Notifier.Equals(&pOther.Notifier)
+
 }
 
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
@@ -131,40 +154,22 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeType:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			stepDiags := setStringAttribute(attr, evalContext, p, "InputType", false)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
-			if val != cty.NilVal {
-				t, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeType + " attribute to string",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.InputType = t
-			}
-		case schema.AttributeTypePrompt:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+
+		case schema.AttributeTypePrompt, schema.AttributeTypeChannel, schema.AttributeTypeDescription,
+			schema.AttributeTypeSubject, schema.AttributeTypeTitle:
+
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
-			if val != cty.NilVal {
-				prompt, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypePrompt + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Prompt = &prompt
-			}
+
 		case schema.AttributeTypeOptions:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -318,7 +323,7 @@ func ctyValueToNotify(val cty.Value) (Notify, error) {
 
 	valMap := val.AsValueMap()
 
-	cc := valMap["cc"]
+	cc := valMap[schema.AttributeTypeCc]
 	if cc != cty.NilVal {
 		ccSlice := cc.AsValueSlice()
 		for _, c := range ccSlice {

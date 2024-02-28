@@ -1670,6 +1670,75 @@ func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
+// setField sets the field of a struct pointed to by v to the given value.
+// v must be a pointer to a struct, fieldName must be the name of a field in the struct,
+// and value must be assignable to the field.
+func setField(v interface{}, fieldName string, value interface{}) error {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+		return perr.BadRequestWithMessage("v must be a pointer to a struct")
+	}
+
+	rv = rv.Elem() // Dereference the pointer to get the struct
+
+	field := rv.FieldByName(fieldName)
+	if !field.IsValid() {
+		return perr.BadRequestWithMessage(fmt.Sprintf("no such field: %s in obj", fieldName))
+	}
+
+	if !field.CanSet() {
+		return perr.BadRequestWithMessage(fmt.Sprintf("cannot set field %s", fieldName))
+	}
+
+	fieldValue := reflect.ValueOf(value)
+	if field.Type() != fieldValue.Type() {
+		return perr.BadRequestWithMessage("provided value type does not match field type")
+	}
+
+	field.Set(fieldValue)
+	return nil
+}
+
+func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	t, err := hclhelpers.CtyToString(val)
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to string",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	if isPtr {
+		err = setField(p, fieldName, &t)
+	} else {
+		err = setField(p, fieldName, t)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 

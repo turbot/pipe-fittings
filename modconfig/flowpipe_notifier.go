@@ -169,7 +169,7 @@ func (n *Notify) MapInterface() (map[string]interface{}, error) {
 	notifyMap := make(map[string]interface{})
 
 	if n.Cc != nil {
-		notifyMap["cc"] = n.Cc
+		notifyMap[schema.AttributeTypeCc] = n.Cc
 	}
 
 	if n.Bcc != nil {
@@ -210,7 +210,7 @@ func (n *Notify) CtyValue() (cty.Value, error) {
 	var err error
 
 	if n.Cc != nil {
-		notifyMap["cc"] = n.Cc
+		notifyMap[schema.AttributeTypeCc] = n.Cc
 	}
 
 	if n.Bcc != nil {
