@@ -10,6 +10,8 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
+// DetermineBlockName determines if the block is anonymous, and if so, returns a unique name for the block,
+// based on its type and parent
 func (m *ModParseContext) DetermineBlockName(block *hcl.Block) string {
 	var shortName string
 
