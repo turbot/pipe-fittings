@@ -212,7 +212,7 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				continue
 			}
 
-			if types.SafeString(p.Method) == "" {
+			if types.SafeString(p.Method) != "" {
 				if !helpers.StringSliceContains(ValidHttpMethods, strings.ToLower(types.SafeString(p.Method))) {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
