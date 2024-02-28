@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 	"strings"
 
@@ -108,7 +109,10 @@ func InstantiateCredentialConfig(key string) (CredentialConfig, error) {
 
 	t, exists := credentialConfigTypeRegistry[key]
 	if !exists {
-		return nil, perr.BadRequestWithMessage("Invalid credential type " + key)
+		// Currently the Flowpipe only supports very small set of credential types as compare to the Steampipe.
+		// To avoid the parse error, skip the credential types that are not supported by the Flowpipe.
+		slog.Error("Invalid credential type", "credential_type", key)
+		return nil, nil
 	}
 	credConfigInterface := reflect.New(t).Interface()
 	credConfig, ok := credConfigInterface.(CredentialConfig)
