@@ -14,8 +14,9 @@ import (
 )
 
 type ResourceFilter struct {
-	Where string
-	Tags  map[string]string
+	Where          string
+	Tags           map[string]string
+	WherePredicate func(item modconfig.HclResource) bool
 }
 
 // ResourceFilterFromTags creates a ResourceFilter from a list of tag values of the form 'key=value'
@@ -40,6 +41,13 @@ func (f *ResourceFilter) Empty() bool {
 }
 
 func (f *ResourceFilter) getPredicate() (func(resource modconfig.HclResource) bool, error) {
+	// if a where predicate has been provided just use that
+	if f.WherePredicate != nil {
+		if f.Tags != nil || f.Where != "" {
+			return nil, sperr.New("cannot specify 'where' or 'tags' when 'wherePredicate' is provided")
+		}
+		return f.WherePredicate, nil
+	}
 	// If there is a 'where' clause, parse it
 	wherePredicate, err := f.parseFilter()
 	if err != nil {

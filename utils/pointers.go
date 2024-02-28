@@ -1,6 +1,10 @@
 package utils
 
-import "golang.org/x/exp/constraints"
+import (
+	"reflect"
+
+	"golang.org/x/exp/constraints"
+)
 
 // ToStringPointer converts a string into its pointer
 func ToStringPointer(s string) *string {
@@ -14,6 +18,11 @@ func ToIntegerPointer(i int) *int {
 
 func ToPointer[T any](value T) *T {
 	return &value
+}
+
+func IsPointer[T any](v T) bool {
+	// Reflect on the type of the value to determine if it's a pointer
+	return reflect.TypeOf(v).Kind() == reflect.Ptr
 }
 
 func PtrEqual[T constraints.Ordered](a, b *T) bool {

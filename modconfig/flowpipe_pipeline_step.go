@@ -14,6 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/addrs"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
@@ -1143,28 +1144,12 @@ func stringSliceInputFromAttribute(p PipelineStep, results map[string]interface{
 	return results, hcl.Diagnostics{}
 }
 
-func stringPtrInputFromAttribute(p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName, fieldName string) (map[string]interface{}, hcl.Diagnostics) {
-	var tempValue *string
+func simpleTypeInputFromAttribute[T any](p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue T) (map[string]interface{}, hcl.Diagnostics) {
+	var tempValue T
 
 	if p.GetUnresolvedAttributes()[attributeName] == nil {
-		val := reflect.ValueOf(p)
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem() // If a pointer to a struct is passed, get the struct
-		}
-
-		field := val.FieldByName(fieldName)
-
-		if !field.IsValid() {
-			return nil, hcl.Diagnostics{
-				&hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "No such field: " + fieldName + " in obj for " + p.GetFullyQualifiedName(),
-				},
-			}
-		}
-
-		if !helpers.IsNil(field.Interface()) {
-			tempValue = field.Interface().(*string)
+		if !helpers.IsNil(fieldValue) {
+			tempValue = fieldValue
 		}
 	} else {
 		diags := gohcl.DecodeExpression(p.GetUnresolvedAttributes()[attributeName], evalContext, &tempValue)
@@ -1173,8 +1158,19 @@ func stringPtrInputFromAttribute(p PipelineStep, results map[string]interface{},
 		}
 	}
 
-	if tempValue != nil {
-		results[attributeName] = *tempValue
+	if !helpers.IsNil(tempValue) {
+		if utils.IsPointer(tempValue) {
+			// Reflect on tempValue to get its underlying value if it's a pointer
+			valueOfTempValue := reflect.ValueOf(tempValue)
+			if valueOfTempValue.Kind() == reflect.Ptr && !valueOfTempValue.IsNil() {
+				// Dereference the pointer and set the result in the map
+				results[attributeName] = valueOfTempValue.Elem().Interface()
+			} else {
+				results[attributeName] = tempValue
+			}
+		} else {
+			results[attributeName] = tempValue
+		}
 	}
 
 	return results, hcl.Diagnostics{}
@@ -1369,155 +1365,4 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 	}
 
 	return val, hcl.Diagnostics{}
-}
-
-type PipelineStepPipeline struct {
-	PipelineStepBase
-
-	Pipeline cty.Value `json:"-"`
-	Args     Input     `json:"args"`
-}
-
-func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
-	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
-		return true
-	}
-
-	other, ok := iOther.(*PipelineStepPipeline)
-	if !ok {
-		return false
-	}
-
-	if !p.PipelineStepBase.Equals(&other.PipelineStepBase) {
-		return false
-	}
-
-	// Check if the maps have the same number of elements
-	if len(p.Args) != len(other.Args) {
-		return false
-	}
-
-	// Iterate through the first map
-	for key, value1 := range p.Args {
-		// Check if the key exists in the second map
-		value2, ok := other.Args[key]
-		if !ok {
-			return false
-		}
-
-		// Use reflect.DeepEqual to compare the values
-		if !reflect.DeepEqual(value1, value2) {
-			return false
-		}
-	}
-
-	// TODO: more here, can't just compare the name
-	return p.Pipeline.AsValueMap()[schema.LabelName] == other.Pipeline.AsValueMap()[schema.LabelName]
-
-}
-
-func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-
-	var pipeline string
-	if p.UnresolvedAttributes[schema.AttributeTypePipeline] == nil {
-		if p.Pipeline == cty.NilVal {
-			return nil, perr.InternalWithMessage(p.Name + ": pipeline must be supplied")
-		}
-		valueMap := p.Pipeline.AsValueMap()
-		pipelineNameCty := valueMap[schema.LabelName]
-		pipeline = pipelineNameCty.AsString()
-
-	} else {
-		var pipelineCty cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePipeline], evalContext, &pipelineCty)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		valueMap := pipelineCty.AsValueMap()
-		pipelineNameCty := valueMap[schema.LabelName]
-		pipeline = pipelineNameCty.AsString()
-	}
-
-	results := map[string]interface{}{}
-
-	results[schema.AttributeTypePipeline] = pipeline
-
-	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		mapValue, err := hclhelpers.CtyToGoMapInterface(args)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to map[string]interface{}: " + err.Error())
-		}
-		results[schema.AttributeTypeArgs] = mapValue
-
-	} else if p.Args != nil {
-		results[schema.AttributeTypeArgs] = p.Args
-	}
-
-	return results, nil
-}
-
-func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := p.SetBaseAttributes(hclAttributes, evalContext)
-
-	for name, attr := range hclAttributes {
-		switch name {
-		case schema.AttributeTypePipeline:
-			expr := attr.Expr
-			if attr.Expr != nil {
-				val, err := expr.Value(evalContext)
-				if err != nil {
-					// For Step's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
-					// so if the Pipeline is not parsed (yet) then the error message is:
-					// Summary: "Unknown variable"
-					// Detail: "There is no variable named \"pipeline\"."
-					//
-					// Do not unpack the error and create a new "Diagnostic", leave the original error message in
-					// and let the "Mod processing" determine if there's an unresolved block
-					//
-					// There's no "depends_on" from the step to the pipeline, the Flowpipe ES engine does not require it
-					diags = append(diags, err...)
-
-					return diags
-				}
-				p.Pipeline = val
-			}
-		case schema.AttributeTypeArgs:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				goVals, err2 := hclhelpers.CtyToGoMapInterface(val)
-				if err2 != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeArgs + " attribute to Go values",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.Args = goVals
-			}
-
-		default:
-			if !p.IsBaseAttribute(name) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unsupported attribute for Pipeline Step: " + attr.Name,
-					Subject:  &attr.Range,
-				})
-			}
-		}
-	}
-
-	return diags
 }
