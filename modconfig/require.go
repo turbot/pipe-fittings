@@ -151,7 +151,7 @@ func (r *Require) validatePluginVersions(modName string, plugins PluginVersionMa
 	}
 	// if this is a steampipe backend and there is no plugin map, it must be a pre-0.22 version which does not return plugin versions
 	if plugins.Backend == constants.SteampipeBackendName && plugins.AvailablePlugins == nil {
-		slog.Warn("plugin requirements. Steampipe backend does not provide plugin version information. Upgrade Steampipe to enable plugin version validation.", modName)
+		slog.Warn("Mod plugin requirements cannot be validated. Steampipe backend does not provide plugin version information. Upgrade Steampipe to enable plugin version validation.", "mod", modName)
 		return nil
 	}
 
