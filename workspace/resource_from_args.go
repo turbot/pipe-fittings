@@ -38,7 +38,7 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 
 	// so we failed to resolve the resource from the input string
 	// check whether it _looks_ like a resource name (i.e. mod.type.name OR type.name)
-	if name, looksLikeResource := sqlLooksLikeExecutableResource(sqlString); looksLikeResource {
+	if name, looksLikeResource := SqlLooksLikeExecutableResource(sqlString); looksLikeResource {
 		return empty, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
 	}
 	switch any(empty).(type) {
@@ -162,7 +162,7 @@ func parseResourceName(targetName string, commandTargetType string) (*modconfig.
 	return parsed, nil
 }
 
-func sqlLooksLikeExecutableResource(input string) (string, bool) {
+func SqlLooksLikeExecutableResource(input string) (string, bool) {
 	// remove parameters from the input string before calling ParseResourceName
 	// as parameters may break parsing
 	openBracketIdx := strings.Index(input, "(")
