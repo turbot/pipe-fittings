@@ -55,7 +55,7 @@ func (c *NotifierImpl) GetNotifierImpl() *NotifierImpl {
 	return c
 }
 
-func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifier, error) {
+func DefaultNotifiers(defaultHttpIntegration Integration) (map[string]Notifier, error) {
 	notifiers := make(map[string]Notifier)
 
 	description := "Default notifier"
@@ -70,7 +70,7 @@ func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifie
 	}
 
 	notify := Notify{
-		Integration: defaultWebformIntegration,
+		Integration: defaultHttpIntegration,
 	}
 	notifier.Notifies = []Notify{notify}
 
@@ -152,12 +152,12 @@ func (n *Notify) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		n.Integration = &emailIntegration
-	case "webform":
-		var webformIntegration WebformIntegration
-		if err := json.Unmarshal(temp.Integration, &webformIntegration); err != nil {
+	case "http":
+		var httpIntegration HttpIntegration
+		if err := json.Unmarshal(temp.Integration, &httpIntegration); err != nil {
 			return err
 		}
-		n.Integration = &webformIntegration
+		n.Integration = &httpIntegration
 	default:
 		return perr.InternalWithMessage(fmt.Sprintf("unknown integration type: %s", typeIndicator.Type))
 	}

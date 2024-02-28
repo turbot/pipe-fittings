@@ -780,7 +780,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("my slack app in config_dir with description", *flowpipeConfig.Integrations["slack.my_slack_app"].GetHclResourceImpl().Description)
 
 	// ensure that the default integration exist
-	assert.Equal("webform.default", flowpipeConfig.Integrations["webform.default"].GetHclResourceImpl().FullName)
+	assert.Equal("http.default", flowpipeConfig.Integrations["http.default"].GetHclResourceImpl().FullName)
 
 	assert.Equal(4, len(flowpipeConfig.Notifiers))
 
@@ -792,13 +792,13 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 
 	assert.Equal("with_default_integration", notifierWithDefaultIntegration.GetHclResourceImpl().FullName)
 	assert.Equal(1, len(notifierWithDefaultIntegration.GetNotifies()))
-	assert.Equal("webform.default", notifierWithDefaultIntegration.GetNotifies()[0].Integration.(*modconfig.WebformIntegration).FullName)
+	assert.Equal("http.default", notifierWithDefaultIntegration.GetNotifies()[0].Integration.(*modconfig.HttpIntegration).FullName)
 
 	// ensure that default notifier exist
 	assert.Equal("default", flowpipeConfig.Notifiers["default"].GetHclResourceImpl().FullName)
 	assert.Equal(1, len(flowpipeConfig.Notifiers["default"].GetNotifies()))
 
-	// TODO: test this when we have webform up and running
+	// TODO: test this when we have http up and running
 	//assert.Equal("Q#$$#@#$$#W", flowpipeConfig.Notifiers["default"].GetNotifies()[0].Integration.AsValueMap()["name"].AsString())
 
 	assert.Equal("admins", flowpipeConfig.Notifiers["admins"].GetHclResourceImpl().FullName)
