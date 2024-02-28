@@ -66,7 +66,7 @@ func (l *LoopEmailStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (
 		input["sender_name"] = *l.SenderName
 	}
 	if l.Cc != nil {
-		input["cc"] = *l.Cc
+		input[schema.AttributeTypeCc] = *l.Cc
 	}
 	if l.Bcc != nil {
 		input["bcc"] = *l.Bcc

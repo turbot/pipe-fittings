@@ -290,7 +290,7 @@ func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
 		res["to"] = i.To
 	}
 	if len(i.Cc) > 0 {
-		res["cc"] = i.Cc
+		res[schema.AttributeTypeCc] = i.Cc
 	}
 	if len(i.Bcc) > 0 {
 		res["bcc"] = i.Bcc
@@ -620,7 +620,7 @@ func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
 	smtpPassword := valMap["smtp_password"]
 	from := valMap["from"]
 	to := valMap["to"]
-	cc := valMap["cc"]
+	cc := valMap[schema.AttributeTypeCc]
 	bcc := valMap["bcc"]
 	subject := valMap["subject"]
 

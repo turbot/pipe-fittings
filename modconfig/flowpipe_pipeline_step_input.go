@@ -10,7 +10,6 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -26,38 +25,86 @@ type PipelineStepInput struct {
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
 	Notifier NotifierImpl `json:"notify" cty:"-"`
+
+	// overrides
+	Cc      []string `json:"cc,omitempty" cty:"cc" hcl:"cc,optional"`
+	Bcc     []string `json:"bcc,omitempty" cty:"bcc" hcl:"bcc,optional"`
+	Channel *string  `json:"channel,omitempty" cty:"channel" hcl:"channel,optional"`
+	Subject *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
+	To      []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
-func (p *PipelineStepInput) Equals(iOther PipelineStep) bool {
+func (p *PipelineStepInput) Equals(other PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(other) {
 		return true
 	}
 
-	_, ok := iOther.(*PipelineStepInput)
+	if p == nil && !helpers.IsNil(other) || p != nil && helpers.IsNil(other) {
+		return false
+	}
+
+	pOther, ok := other.(*PipelineStepInput)
 	if !ok {
 		return false
 	}
 
-	return p.Name == iOther.GetName()
+	// TODO: PipelineStepInputOption equality
+
+	return p.Name == other.GetName() &&
+		p.InputType == pOther.InputType &&
+		utils.PtrEqual(p.Prompt, pOther.Prompt) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Cc, pOther.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Bcc, pOther.Bcc) &&
+		utils.PtrEqual(p.Channel, pOther.Channel) &&
+		utils.PtrEqual(p.Description, pOther.Description) &&
+		utils.PtrEqual(p.Subject, pOther.Subject) &&
+		utils.PtrEqual(p.Title, pOther.Title) &&
+		helpers.StringSliceEqualIgnoreOrder(p.To, pOther.To) &&
+		p.Notifier.Equals(&pOther.Notifier)
+
 }
 
 func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 	results := map[string]interface{}{}
 	results[schema.AttributeTypeType] = p.InputType
 
+	var diags hcl.Diagnostics
+
 	// prompt
-	var prompt *string
-	if p.UnresolvedAttributes[schema.AttributeTypePrompt] == nil {
-		prompt = p.Prompt
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePrompt], evalContext, &prompt)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypePrompt, "Prompt")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
-	if prompt != nil {
-		results[schema.AttributeTypePrompt] = *prompt
+
+	// channel
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypeChannel, "Channel")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// subject
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypeSubject, "Subject")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// to
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeTo, "To")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// cc
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Cc")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// bcc
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Bcc")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	// options
@@ -131,40 +178,29 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeType:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			stepDiags := setStringAttribute(attr, evalContext, p, "InputType", false)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
-			if val != cty.NilVal {
-				t, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeType + " attribute to string",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.InputType = t
-			}
-		case schema.AttributeTypePrompt:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+
+		case schema.AttributeTypePrompt, schema.AttributeTypeChannel, schema.AttributeTypeSubject:
+
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
-			if val != cty.NilVal {
-				prompt, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypePrompt + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Prompt = &prompt
+
+		case schema.AttributeTypeCc, schema.AttributeTypeBcc, schema.AttributeTypeTo:
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringSliceAttribute(attr, evalContext, p, structFieldName, false)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
 			}
+
 		case schema.AttributeTypeOptions:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -272,6 +308,16 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 		})
 	}
 
+	// check for and validate style on options
+	for _, o := range p.OptionList {
+		if !helpers.IsNil(o.Style) && !constants.IsValidInputStyleType(*o.Style) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute " + schema.AttributeTypeStyle + " specified with invalid value " + *o.Style,
+			})
+		}
+	}
+
 	return diags
 }
 
@@ -308,7 +354,7 @@ func ctyValueToNotify(val cty.Value) (Notify, error) {
 
 	valMap := val.AsValueMap()
 
-	cc := valMap["cc"]
+	cc := valMap[schema.AttributeTypeCc]
 	if cc != cty.NilVal {
 		ccSlice := cc.AsValueSlice()
 		for _, c := range ccSlice {
@@ -373,6 +419,7 @@ type PipelineStepInputOption struct {
 	Label    *string `json:"label" hcl:"label,optional"`
 	Value    *string `json:"value" hcl:"value,optional"`
 	Selected *bool   `json:"selected,omitempty" hcl:"selected,optional"`
+	Style    *string `json:"style,omitempty" hcl:"style,optional"`
 }
 
 func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInputOption, error) {
@@ -402,6 +449,11 @@ func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInput
 				if !v.IsNull() && v.Type() == cty.Bool {
 					isSelected := v.True()
 					option.Selected = &isSelected
+				}
+			case schema.AttributeTypeStyle:
+				if !v.IsNull() {
+					s := v.AsString()
+					option.Style = &s
 				}
 			default:
 				return nil, perr.BadRequestWithMessage(k + " is not a valid attribute for input options")

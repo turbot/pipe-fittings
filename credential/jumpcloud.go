@@ -18,11 +18,7 @@ type JumpCloudCredential struct {
 }
 
 func (c *JumpCloudCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.APIKey != nil {
-		env["JUMPCLOUD_API_KEY"] = cty.StringVal(*c.APIKey)
-	}
-	return env
+	return nil
 }
 
 func (c *JumpCloudCredential) CtyValue() (cty.Value, error) {

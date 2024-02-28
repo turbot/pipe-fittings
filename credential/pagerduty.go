@@ -18,11 +18,7 @@ type PagerDutyCredential struct {
 }
 
 func (c *PagerDutyCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.Token != nil {
-		env["PAGERDUTY_TOKEN"] = cty.StringVal(*c.Token)
-	}
-	return env
+	return nil
 }
 
 func (c *PagerDutyCredential) CtyValue() (cty.Value, error) {

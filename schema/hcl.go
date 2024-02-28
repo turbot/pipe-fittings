@@ -160,6 +160,7 @@ const (
 	AttributeTypeNotifier     = "notifier"
 	AttributeTypeNotifies     = "notifies"
 	AttributeTypeMarkdown     = "markdown"
+	AttributeTypeStyle        = "style"
 
 	AttributeTypeMessage = "message"
 
@@ -196,6 +197,7 @@ const (
 	// Input step attributes
 	AttributeTypePrompt    = "prompt"
 	AttributeTypeSlackType = "slack_type"
+	AttributeTypeText      = "text"
 
 	// All Possible Trigger Types
 	TriggerTypeSchedule = "schedule"

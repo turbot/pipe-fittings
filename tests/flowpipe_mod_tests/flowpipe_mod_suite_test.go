@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
@@ -903,6 +904,25 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	}
 
 	assert.NotNil(step.UnresolvedAttributes["notifier"])
+
+	pipeline = pipelines["mod_with_integration.pipeline.approval_with_override_in_step"]
+	if pipeline == nil {
+		assert.Fail("pipeline approval_with_override_in_step not found")
+		return
+	}
+
+	step, ok = pipeline.Steps[0].(*modconfig.PipelineStepInput)
+	if !ok {
+		assert.Fail("Step is not an input step")
+		return
+	}
+
+	assert.Equal("this subject is in step", *step.Subject)
+	assert.Equal("this channel is in step override", *step.Channel)
+
+	assert.True(helpers.StringSliceEqualIgnoreOrder(step.To, []string{"foo", "bar", "baz override"}))
+	assert.True(helpers.StringSliceEqualIgnoreOrder(step.Cc, []string{"foo", "bar", "baz cc"}))
+	assert.True(helpers.StringSliceEqualIgnoreOrder(step.Bcc, []string{"foo bb", "bar", "baz override"}))
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
@@ -1314,7 +1334,6 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	if messageStepInterface == nil {
 		assert.Fail("message step not found")
 		return
-
 	}
 
 	messageStep, ok := messageStepInterface.(*modconfig.PipelineStepMessage)
@@ -1323,8 +1342,31 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 		return
 	}
 
-	assert.Nil(messageStep.Markdown)
-	assert.Equal("Hello World", messageStep.Body)
+	assert.Equal("Hello World", messageStep.Text)
+
+	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_overrides"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	messageStepInterface = pipeline.Steps[0]
+	if messageStepInterface == nil {
+		assert.Fail("message step not found")
+		return
+	}
+
+	messageStep, ok = messageStepInterface.(*modconfig.PipelineStepMessage)
+	if !ok {
+		assert.Fail("message step is not of type PipelineStepMessage")
+		return
+	}
+
+	assert.Equal("Hello World 2", messageStep.Text)
+	assert.Equal("channel override", *messageStep.Channel)
+	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"foo", "baz"}, messageStep.Cc))
+	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"bar"}, messageStep.Bcc))
+
 }
 
 // In order for 'go test' to run this suite, we need to create

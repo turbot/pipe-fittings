@@ -5,7 +5,6 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -15,12 +14,17 @@ import (
 type PipelineStepMessage struct {
 	PipelineStepBase
 
-	Body     string  `json:"body" hcl:"body" cty:"body"`
-	Subject  *string `json:"subject" hcl:"subject,optional" cty:"subject"`
-	Markdown *bool   `json:"markdown" hcl:"markdown,optional" cty:"markdown"`
+	Text string `json:"text" hcl:"text" cty:"text"`
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
 	Notifier NotifierImpl `json:"notify" cty:"-"`
+
+	// overrides
+	Cc      []string `json:"cc,omitempty" cty:"cc" hcl:"cc,optional"`
+	Bcc     []string `json:"bcc,omitempty" cty:"bcc" hcl:"bcc,optional"`
+	Channel *string  `json:"channel,omitempty" cty:"channel" hcl:"channel,optional"`
+	Subject *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
+	To      []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
 func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
@@ -41,41 +45,29 @@ func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
-	return p.Body == other.Body &&
+	return p.Text == other.Text &&
 		utils.PtrEqual(p.Subject, other.Subject) &&
-		utils.BoolPtrEqual(p.Markdown, other.Markdown) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Cc, other.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Bcc, other.Bcc) &&
+		utils.PtrEqual(p.Channel, other.Channel) &&
+		helpers.StringSliceEqualIgnoreOrder(p.To, other.To) &&
 		p.Notifier.Equals(&other.Notifier)
 }
 
 func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 	results := map[string]interface{}{}
 
-	// body is a mandatory attribute
-	var body string
-	if p.UnresolvedAttributes[schema.AttributeTypeBody] == nil {
-		body = p.Body
+	// text is a mandatory attribute
+	var text string
+	if p.UnresolvedAttributes[schema.AttributeTypeText] == nil {
+		text = p.Text
 	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeBody], evalContext, &body)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeText], evalContext, &text)
 		if diags.HasErrors() {
 			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
 	}
-	results[schema.AttributeTypeBody] = body
-
-	// markdown
-	var markdown *bool
-	if p.UnresolvedAttributes[schema.AttributeTypeMarkdown] == nil {
-		markdown = p.Markdown
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMarkdown], evalContext, &markdown)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	if markdown != nil {
-		results[schema.AttributeTypeMarkdown] = *markdown
-	}
+	results[schema.AttributeTypeText] = text
 
 	// subject
 	var subject *string
@@ -119,42 +111,28 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 	for name, attr := range hclAttributes {
 		switch name {
 
-		case schema.AttributeTypeBody:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+		case schema.AttributeTypeText:
+			stepDiags := setStringAttribute(attr, evalContext, p, "Text", false)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
-			}
-			if val != cty.NilVal {
-				t, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeBody + " attribute to string",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.Body = t
 			}
 
-		case schema.AttributeTypeSubject:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+		case schema.AttributeTypeChannel, schema.AttributeTypeSubject:
+
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
-			if val != cty.NilVal {
-				t, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeSubject + " attribute to string",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				p.Subject = &t
+
+		case schema.AttributeTypeCc, schema.AttributeTypeBcc, schema.AttributeTypeTo:
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringSliceAttribute(attr, evalContext, p, structFieldName, false)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
 			}
 
 		case schema.AttributeTypeNotifier:
@@ -176,21 +154,6 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 					})
 				}
 			}
-
-		case schema.AttributeTypeMarkdown:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				if val == cty.True {
-					p.Markdown = utils.ToPointer(true)
-				} else {
-					p.Markdown = utils.ToPointer(false)
-				}
-			} // else leave as nil
 
 		default:
 			if !p.IsBaseAttribute(name) {

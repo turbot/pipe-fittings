@@ -855,6 +855,26 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Required: true,
 		},
 		{
+			Name:     schema.AttributeTypeTo,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeCc,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeBcc,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeSubject,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeChannel,
+			Required: false,
+		},
+		{
 			Name: schema.AttributeTypeMaxConcurrency,
 		},
 	},
@@ -901,14 +921,28 @@ var PipelineStepMessageBlockSchema = &hcl.BodySchema{
 			Required: true,
 		},
 		{
-			Name: schema.AttributeTypeMarkdown,
-		},
-		{
-			Name: schema.AttributeTypeSubject,
-		},
-		{
-			Name:     schema.AttributeTypeBody,
+			Name:     schema.AttributeTypeText,
 			Required: true,
+		},
+		{
+			Name:     schema.AttributeTypeTo,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeCc,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeBcc,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeSubject,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeChannel,
+			Required: false,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{

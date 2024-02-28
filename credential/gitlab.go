@@ -18,11 +18,9 @@ type GitLabCredential struct {
 }
 
 func (c *GitLabCredential) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.Token != nil {
-		env["GITLAB_TOKEN"] = cty.StringVal(*c.Token)
-	}
-	return env
+	// There is no environment variable listed in the GitLab official API docs
+	// https://github.com/xanzy/go-gitlab
+	return nil
 }
 
 func (c *GitLabCredential) CtyValue() (cty.Value, error) {
