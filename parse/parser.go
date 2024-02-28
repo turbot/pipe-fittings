@@ -3,7 +3,6 @@ package parse
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,7 +12,6 @@ import (
 	"github.com/hashicorp/hcl/v2/json"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
@@ -128,25 +126,6 @@ func parseYamlFile(filename string) (*hcl.File, hcl.Diagnostics) {
 		}
 	}
 	return json.Parse(jsonData, filename)
-}
-
-func addPseudoResourcesToMod(pseudoResources []modconfig.MappableResource, hclResources map[string]bool, mod *modconfig.Mod) error_helpers.ErrorAndWarnings {
-	res := error_helpers.EmptyErrorsAndWarning()
-	for _, r := range pseudoResources {
-		// is there a hcl resource with the same name as this pseudo resource - it takes precedence
-		name := r.GetUnqualifiedName()
-		if _, ok := hclResources[name]; ok {
-			res.AddWarning(fmt.Sprintf("%s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename))
-			slog.Warn("ignored file as hcl resources of same name is already defined", "filename", r.GetDeclRange().Filename)
-			continue
-		}
-		// add pseudo resource to mod
-		//nolint:errcheck // TODO: fix this
-		mod.AddResource(r.(modconfig.HclResource))
-		// add to map of existing resources
-		hclResources[name] = true
-	}
-	return res
 }
 
 // get names of all resources defined in hcl which may also be created as pseudo resources

@@ -3,8 +3,8 @@ package workspace
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,14 +56,11 @@ type Workspace struct {
 	loadLock    sync.Mutex
 	exclusions  []string
 	modFilePath string
-	// should we load/watch files recursively
-	ListFlag filehelpers.ListFlag
 
 	fileWatcherErrorHandler func(context.Context, error)
 	watcherError            error
 	// callback function called when there is a file watcher event
 	onFileWatcherEventMessages func()
-	loadPseudoResources        bool
 
 	// hooks
 	OnFileWatcherError  func(context.Context, error)
@@ -73,7 +70,7 @@ type Workspace struct {
 
 // Load_ creates a Workspace and loads the workspace mod
 
-func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, error_helpers.ErrorAndWarnings) {
+func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (w *Workspace, ew error_helpers.ErrorAndWarnings) {
 	cfg := newLoadWorkspaceConfig()
 	for _, o := range opts {
 		o(cfg)
@@ -92,6 +89,10 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
 
+	if !w.ModfileExists() {
+		// just return the shell workspace
+		return w, ew
+	}
 	// load the w mod
 	errAndWarnings := w.loadWorkspaceMod(ctx)
 	return w, errAndWarnings
@@ -121,7 +122,7 @@ func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.
 		Directories: []string{w.Path},
 		Include:     filehelpers.InclusionsFromExtensions(load_mod.GetModFileExtensions()),
 		Exclude:     w.exclusions,
-		ListFlag:    w.ListFlag,
+		ListFlag:    filehelpers.FilesRecursive,
 		EventMask:   fsnotify.Create | fsnotify.Remove | fsnotify.Rename | fsnotify.Write,
 		// we should look into passing the callback function into the underlying watcher
 		// we need to analyze the kind of errors that come out from the watcher and
@@ -164,22 +165,14 @@ func (w *Workspace) ModfileExists() bool {
 // this will determine whether we load files recursively, and create pseudo resources for sql files
 func (w *Workspace) setModfileExists() {
 	modFile, err := FindModFilePath(w.Path)
-	modFileExists := err != ErrorNoModDefinition
+	modFileExists := !errors.Is(err, ErrorNoModDefinition)
 
 	if modFileExists {
-		slog.Debug("modfile exists in workspace folder - creating pseudo-resources and loading files recursively ")
-		// only load/watch recursively if a mod sp file exists in the workspace folder
-		w.ListFlag = filehelpers.FilesRecursive
-		w.loadPseudoResources = true
 		w.modFilePath = modFile
 
 		// also set it in the viper config, so that it is available to whoever is using it
 		viper.Set(constants.ArgModLocation, filepath.Dir(modFile))
 		w.Path = filepath.Dir(modFile)
-	} else {
-		slog.Debug("no modfile exists in workspace folder - NOT creating pseudo-resources and only loading resource files from top level folder")
-		w.ListFlag = filehelpers.Files
-		w.loadPseudoResources = false
 	}
 }
 
@@ -262,24 +255,20 @@ func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *pa
 }
 
 // build options used to load workspace
-// set flags to create pseudo resources and a default mod if needed
 func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext, error) {
-	parseFlag := parse.CreateDefaultMod
-	if w.loadPseudoResources {
-		parseFlag |= parse.CreatePseudoResources
-	}
 	workspaceLock, err := w.loadWorkspaceLock(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	parseCtx := parse.NewModParseContext(workspaceLock, w.Path, parseFlag, &filehelpers.ListOptions{
-		// listFlag specifies whether to load files recursively
-		Flags:   w.ListFlag,
-		Exclude: w.exclusions,
-		// load files specified by inclusions
-		Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
-	})
+	parseCtx := parse.NewModParseContext(workspaceLock,
+		w.Path,
+		parse.WithListOptions(&filehelpers.ListOptions{
+			Flags:   filehelpers.FilesRecursive,
+			Exclude: w.exclusions,
+			// load files specified by inclusions
+			Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
+		}))
 
 	parseCtx.Credentials = w.Credentials
 	parseCtx.Integrations = w.Integrations
