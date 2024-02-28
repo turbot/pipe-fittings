@@ -7,10 +7,12 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -194,71 +196,40 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeUrl:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			fieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, fieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
-			}
-
-			if val != cty.NilVal {
-				urlString, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeUrl + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Url = &urlString
 			}
 
 		case schema.AttributeTypeMethod:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			fieldName := utils.CapitalizeFirst(name)
+
+			stepDiags := setStringAttribute(attr, evalContext, p, fieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
 
-			if val != cty.NilVal {
-				method, err := hclhelpers.CtyToString(val)
-				if err != nil {
+			if types.SafeString(p.Method) == "" {
+				if !helpers.StringSliceContains(ValidHttpMethods, strings.ToLower(types.SafeString(p.Method))) {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeMethod + " attribute to string",
+						Summary:  "Invalid HTTP method: " + types.SafeString(p.Method),
 						Subject:  &attr.Range,
 					})
-				}
-
-				if method != "" {
-					if !helpers.StringSliceContains(ValidHttpMethods, strings.ToLower(method)) {
-						diags = append(diags, &hcl.Diagnostic{
-							Severity: hcl.DiagError,
-							Summary:  "Invalid HTTP method: " + method,
-							Subject:  &attr.Range,
-						})
-						continue
-					}
-					p.Method = &method
+					continue
 				}
 			}
+
 		case schema.AttributeTypeCaCertPem:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			stepDiags := setStringAttribute(attr, evalContext, p, "CaCertPem", true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
 
-			if val != cty.NilVal {
-				caCertPem, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeCaCertPem + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.CaCertPem = &caCertPem
-			}
 		case schema.AttributeTypeInsecure:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -280,22 +251,10 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			}
 
 		case schema.AttributeTypeRequestBody:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			stepDiags := setStringAttribute(attr, evalContext, p, "RequestBody", true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
-			}
-
-			if val != cty.NilVal {
-				requestBody, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeRequestBody + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.RequestBody = &requestBody
 			}
 
 		case schema.AttributeTypeRequestHeaders:
