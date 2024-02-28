@@ -160,8 +160,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 
-		case schema.AttributeTypePrompt, schema.AttributeTypeChannel, schema.AttributeTypeDescription,
-			schema.AttributeTypeSubject, schema.AttributeTypeTitle:
+		case schema.AttributeTypePrompt, schema.AttributeTypeChannel, schema.AttributeTypeSubject:
 
 			structFieldName := utils.CapitalizeFirst(name)
 			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)

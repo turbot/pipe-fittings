@@ -1334,7 +1334,6 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	if messageStepInterface == nil {
 		assert.Fail("message step not found")
 		return
-
 	}
 
 	messageStep, ok := messageStepInterface.(*modconfig.PipelineStepMessage)
@@ -1344,6 +1343,30 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	}
 
 	assert.Equal("Hello World", messageStep.Text)
+
+	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_overrides"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	messageStepInterface = pipeline.Steps[0]
+	if messageStepInterface == nil {
+		assert.Fail("message step not found")
+		return
+	}
+
+	messageStep, ok = messageStepInterface.(*modconfig.PipelineStepMessage)
+	if !ok {
+		assert.Fail("message step is not of type PipelineStepMessage")
+		return
+	}
+
+	assert.Equal("Hello World 2", messageStep.Text)
+	assert.Equal("channel override", *messageStep.Channel)
+	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"foo", "baz"}, messageStep.Cc))
+	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"bar"}, messageStep.Bcc))
+
 }
 
 // In order for 'go test' to run this suite, we need to create

@@ -14,11 +14,17 @@ import (
 type PipelineStepMessage struct {
 	PipelineStepBase
 
-	Text    string  `json:"text" hcl:"text" cty:"text"`
-	Subject *string `json:"subject" hcl:"subject,optional" cty:"subject"`
+	Text string `json:"text" hcl:"text" cty:"text"`
 
 	// Notifier cty.Value `json:"-" cty:"notify"`
 	Notifier NotifierImpl `json:"notify" cty:"-"`
+
+	// overrides
+	Cc      []string `json:"cc,omitempty" cty:"cc" hcl:"cc,optional"`
+	Bcc     []string `json:"bcc,omitempty" cty:"bcc" hcl:"bcc,optional"`
+	Channel *string  `json:"channel,omitempty" cty:"channel" hcl:"channel,optional"`
+	Subject *string  `json:"subject,omitempty" cty:"subject" hcl:"subject,optional"`
+	To      []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
 func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
@@ -41,6 +47,10 @@ func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
 
 	return p.Text == other.Text &&
 		utils.PtrEqual(p.Subject, other.Subject) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Cc, other.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(p.Bcc, other.Bcc) &&
+		utils.PtrEqual(p.Channel, other.Channel) &&
+		helpers.StringSliceEqualIgnoreOrder(p.To, other.To) &&
 		p.Notifier.Equals(&other.Notifier)
 }
 
@@ -108,8 +118,18 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 				continue
 			}
 
-		case schema.AttributeTypeSubject:
-			stepDiags := setStringAttribute(attr, evalContext, p, "Subject", true)
+		case schema.AttributeTypeChannel, schema.AttributeTypeSubject:
+
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+		case schema.AttributeTypeCc, schema.AttributeTypeBcc, schema.AttributeTypeTo:
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringSliceAttribute(attr, evalContext, p, structFieldName, false)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
