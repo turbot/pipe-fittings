@@ -2,6 +2,6 @@ notifier "notify_one" {
   description = "foo"
   title = "foo bar"
   notify {
-    integration = integration.webform.default
+    integration = integration.http.default
   }
 }

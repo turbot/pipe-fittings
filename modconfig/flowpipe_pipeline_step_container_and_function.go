@@ -9,6 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -51,43 +52,27 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		return nil, err
 	}
 
-	var image *string
-	if p.UnresolvedAttributes[schema.AttributeTypeImage] == nil {
-		image = p.Image
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeImage], evalContext, &image)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	var diags hcl.Diagnostics
+
+	// image
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeImage, p.Image)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var source *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSource] == nil {
-		source = p.Source
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSource], evalContext, &source)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// source
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSource, p.Source)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var cmd []string
-	if p.UnresolvedAttributes[schema.AttributeTypeCmd] == nil {
-		cmd = p.Cmd
-	} else {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCmd], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		var err error
-		cmd, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse cmd attribute to []string: " + err.Error())
-		}
+	// cmd
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCmd, "Cmd")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
+	// env
 	var env map[string]string
 	if p.UnresolvedAttributes[schema.AttributeTypeEnv] == nil {
 		env = p.Env
@@ -104,151 +89,72 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse env attribute to map[string]string: " + err.Error())
 		}
 	}
+	results[schema.AttributeTypeEnv] = env
 
-	var entryPoint []string
-	if p.UnresolvedAttributes[schema.AttributeTypeEntryPoint] == nil {
-		entryPoint = p.EntryPoint
-	} else {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEntryPoint], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		var err error
-		entryPoint, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse entrypoint attribute to []string: " + err.Error())
-		}
+	// entry_point
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeEntryPoint, "EntryPoint")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var cpuShares *int64
-	if p.UnresolvedAttributes[schema.AttributeTypeCpuShares] == nil {
-		cpuShares = p.CpuShares
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCpuShares], evalContext, &cpuShares)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// cpu_shares
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeCpuShares, p.CpuShares)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var memory *int64
-	if p.UnresolvedAttributes[schema.AttributeTypeMemory] == nil {
-		memory = p.Memory
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemory], evalContext, &memory)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// memory
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemory, p.Memory)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var memoryReservation *int64
-	if p.UnresolvedAttributes[schema.AttributeTypeMemoryReservation] == nil {
-		memoryReservation = p.MemoryReservation
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemoryReservation], evalContext, &memoryReservation)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// memory_reservation
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemoryReservation, p.MemoryReservation)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var memorySwap *int64
-	if p.UnresolvedAttributes[schema.AttributeTypeMemorySwap] == nil {
-		memorySwap = p.MemorySwap
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemorySwap], evalContext, &memorySwap)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// memory_swap
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemorySwap, p.MemorySwap)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var memorySwappiness *int64
-	if p.UnresolvedAttributes[schema.AttributeTypeMemorySwappiness] == nil {
-		memorySwappiness = p.MemorySwappiness
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMemorySwappiness], evalContext, &memorySwappiness)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// memory_swappiness
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemorySwappiness, p.MemorySwappiness)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var containerUser *string
-	if p.UnresolvedAttributes[schema.AttributeTypeUser] == nil {
-		containerUser = p.User
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeUser], evalContext, &containerUser)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// user
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeUser, p.User)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var workDir *string
-	if p.UnresolvedAttributes[schema.AttributeTypeWorkdir] == nil {
-		workDir = p.Workdir
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeWorkdir], evalContext, &workDir)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// workdir
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeWorkdir, p.Workdir)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var readOnly *bool
-	if p.UnresolvedAttributes[schema.AttributeTypeReadOnly] == nil {
-		readOnly = p.ReadOnly
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeReadOnly], evalContext, &readOnly)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// read_only
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeReadOnly, p.ReadOnly)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	results[schema.LabelName] = p.Name
-	results[schema.AttributeTypeCmd] = cmd
-	results[schema.AttributeTypeEnv] = env
-	results[schema.AttributeTypeEntryPoint] = entryPoint
 
-	if image != nil {
-		results[schema.AttributeTypeImage] = *image
-	}
-
-	if source != nil {
-		results[schema.AttributeTypeSource] = *source
-	}
-
-	if cpuShares != nil {
-		results[schema.AttributeTypeCpuShares] = *cpuShares
-	}
-
-	if memory != nil {
-		results[schema.AttributeTypeMemory] = *memory
-	}
-
-	if memoryReservation != nil {
-		results[schema.AttributeTypeMemoryReservation] = *memoryReservation
-	}
-
-	if memorySwap != nil {
-		results[schema.AttributeTypeMemorySwap] = *memorySwap
-	}
-
-	if memorySwappiness != nil {
+	memorySwappinessI, ok := results[schema.AttributeTypeMemorySwappiness]
+	if ok {
+		memorySwappiness := memorySwappinessI.(int64)
 		// If the attribute is using any reference, it can only be resolved at the runtime
-		if !(*memorySwappiness >= 0 && *memorySwappiness <= 100) {
+		if !(memorySwappiness >= 0 && memorySwappiness <= 100) {
 			return nil, perr.BadRequestWithMessage("The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be between 0 and 100")
 		}
-		results[schema.AttributeTypeMemorySwappiness] = *memorySwappiness
-	}
-
-	if containerUser != nil {
-		results[schema.AttributeTypeUser] = *containerUser
-	}
-
-	if workDir != nil {
-		results[schema.AttributeTypeWorkdir] = *workDir
-	}
-
-	if readOnly != nil {
-		results[schema.AttributeTypeReadOnly] = *readOnly
+		results[schema.AttributeTypeMemorySwappiness] = memorySwappiness
 	}
 
 	return results, nil
@@ -259,42 +165,16 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 
 	for name, attr := range hclAttributes {
 		switch name {
-		case schema.AttributeTypeImage:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+		case schema.AttributeTypeImage, schema.AttributeTypeSource, schema.AttributeTypeUser,
+			schema.AttributeTypeWorkdir:
+
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
 
-			if val != cty.NilVal {
-				image, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeImage + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Image = &image
-			}
-		case schema.AttributeTypeSource:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				source, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeSource + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Source = &source
-			}
 		case schema.AttributeTypeCmd:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -456,42 +336,7 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 
 				p.MemorySwappiness = memorySwappiness
 			}
-		case schema.AttributeTypeUser:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
 
-			if val != cty.NilVal {
-				containerUser, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeUser + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.User = &containerUser
-			}
-		case schema.AttributeTypeWorkdir:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
-
-			if val != cty.NilVal {
-				workDir, err := hclhelpers.CtyToString(val)
-				if err != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeWorkdir + " attribute to string",
-						Subject:  &attr.Range,
-					})
-				}
-				p.Workdir = &workDir
-			}
 		case schema.AttributeTypeReadOnly:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {

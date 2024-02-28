@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -38,7 +40,28 @@ type NotifierImpl struct {
 }
 
 func (n *NotifierImpl) Equals(other Notifier) bool {
-	return true
+
+	if n == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if n == nil && !helpers.IsNil(other) || !helpers.IsNil(other) && n == nil {
+		return false
+	}
+
+	if len(n.Notifies) != len(other.GetNotifierImpl().Notifies) {
+		return false
+	}
+
+	for i, notify := range n.Notifies {
+		if !notify.Equals(&other.GetNotifierImpl().Notifies[i]) {
+			return false
+		}
+	}
+
+	return n.FileName == other.GetNotifierImpl().FileName &&
+		n.StartLineNumber == other.GetNotifierImpl().StartLineNumber &&
+		n.EndLineNumber == other.GetNotifierImpl().EndLineNumber
 }
 
 func (n *NotifierImpl) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -55,7 +78,7 @@ func (c *NotifierImpl) GetNotifierImpl() *NotifierImpl {
 	return c
 }
 
-func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifier, error) {
+func DefaultNotifiers(defaultHttpIntegration Integration) (map[string]Notifier, error) {
 	notifiers := make(map[string]Notifier)
 
 	description := "Default notifier"
@@ -70,7 +93,7 @@ func DefaultNotifiers(defaultWebformIntegration Integration) (map[string]Notifie
 	}
 
 	notify := Notify{
-		Integration: defaultWebformIntegration,
+		Integration: defaultHttpIntegration,
 	}
 	notifier.Notifies = []Notify{notify}
 
@@ -113,6 +136,26 @@ type Notify struct {
 	To          []string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
+func (n *Notify) Equals(other *Notify) bool {
+
+	if n == nil && other == nil {
+		return true
+	}
+
+	if n == nil && other != nil || n != nil && other == nil {
+		return false
+	}
+
+	return helpers.StringSliceEqualIgnoreOrder(n.Cc, other.Cc) &&
+		helpers.StringSliceEqualIgnoreOrder(n.Bcc, other.Bcc) &&
+		helpers.StringSliceEqualIgnoreOrder(n.To, other.To) &&
+		utils.PtrEqual(n.Channel, other.Channel) &&
+		utils.PtrEqual(n.Description, other.Description) &&
+		utils.PtrEqual(n.Subject, other.Subject) &&
+		utils.PtrEqual(n.Title, other.Title) &&
+		n.Integration.Equals(other.Integration)
+}
+
 // UnmarshalJSON custom unmarshaller for Notify
 func (n *Notify) UnmarshalJSON(data []byte) error {
 	// Define a struct that mirrors Notify but with Integration as json.RawMessage
@@ -152,12 +195,12 @@ func (n *Notify) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		n.Integration = &emailIntegration
-	case "webform":
-		var webformIntegration WebformIntegration
-		if err := json.Unmarshal(temp.Integration, &webformIntegration); err != nil {
+	case "http":
+		var httpIntegration HttpIntegration
+		if err := json.Unmarshal(temp.Integration, &httpIntegration); err != nil {
 			return err
 		}
-		n.Integration = &webformIntegration
+		n.Integration = &httpIntegration
 	default:
 		return perr.InternalWithMessage(fmt.Sprintf("unknown integration type: %s", typeIndicator.Type))
 	}

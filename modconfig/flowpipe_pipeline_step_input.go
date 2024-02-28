@@ -69,18 +69,42 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	results := map[string]interface{}{}
 	results[schema.AttributeTypeType] = p.InputType
 
+	var diags hcl.Diagnostics
+
 	// prompt
-	var prompt *string
-	if p.UnresolvedAttributes[schema.AttributeTypePrompt] == nil {
-		prompt = p.Prompt
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePrompt], evalContext, &prompt)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypePrompt, p.Prompt)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
-	if prompt != nil {
-		results[schema.AttributeTypePrompt] = *prompt
+
+	// channel
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeChannel, p.Channel)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// subject
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSubject, p.Subject)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// to
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeTo, "To")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// cc
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Cc")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// bcc
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Bcc")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	// options

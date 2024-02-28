@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -56,32 +55,42 @@ func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
 
 func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 	results := map[string]interface{}{}
+	var diags hcl.Diagnostics
 
 	// text is a mandatory attribute
-	var text string
-	if p.UnresolvedAttributes[schema.AttributeTypeText] == nil {
-		text = p.Text
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeText], evalContext, &text)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeText, p.Text)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
-	results[schema.AttributeTypeText] = text
+
+	// channel
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeChannel, p.Channel)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
 
 	// subject
-	var subject *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSubject] == nil {
-		subject = p.Subject
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSubject], evalContext, &subject)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSubject, p.Subject)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	if subject != nil {
-		results[schema.AttributeTypeSubject] = *subject
+	// to
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeTo, "To")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// cc
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Cc")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// bcc
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Bcc")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	// notifier

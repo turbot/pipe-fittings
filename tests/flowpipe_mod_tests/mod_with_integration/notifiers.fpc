@@ -14,7 +14,7 @@ notifier "devs" {
     channel = "#devs"
   }
   notify {
-    integration = integration.webform.default
+    integration = integration.http.default
     to = ["billie", "joe", "mike"]
   }    
 }
@@ -24,6 +24,6 @@ notifier "with_default_integration" {
   description = "this notifier uses the default integration"
 
   notify {
-    integration = integration.webform.default
+    integration = integration.http.default
   }
 }

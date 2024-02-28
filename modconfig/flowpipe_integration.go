@@ -33,7 +33,7 @@ type IntegrationImpl struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	// Slack and Webform has URL, Email integration does not it will be null
+	// Slack and Http has URL, Email integration does not it will be null
 	Url             *string `json:"url,omitempty" cty:"url" hcl:"url,optional"`
 	FileName        string
 	StartLineNumber int
@@ -57,18 +57,18 @@ func (i *IntegrationImpl) GetIntegrationImpl() *IntegrationImpl {
 func DefaultIntegrations() (map[string]Integration, error) {
 	integrations := make(map[string]Integration)
 
-	defaultDescription := "Default webform integration"
-	webhookIntegration := &WebformIntegration{
+	defaultDescription := "Default http integration"
+	httpIntegration := &HttpIntegration{
 		HclResourceImpl: HclResourceImpl{
-			FullName:        schema.IntegrationTypeWebform + ".default",
+			FullName:        schema.IntegrationTypeHttp + ".default",
 			ShortName:       "default",
-			UnqualifiedName: schema.IntegrationTypeWebform + ".default",
+			UnqualifiedName: schema.IntegrationTypeHttp + ".default",
 			Description:     &defaultDescription,
 		},
-		Type: schema.IntegrationTypeWebform,
+		Type: schema.IntegrationTypeHttp,
 	}
 
-	integrations[schema.IntegrationTypeWebform+".default"] = webhookIntegration
+	integrations[schema.IntegrationTypeHttp+".default"] = httpIntegration
 
 	return integrations, nil
 }
@@ -105,16 +105,12 @@ func (i *SlackIntegration) Equals(other Integration) bool {
 	return i.FileName == otherSlack.FileName &&
 		i.StartLineNumber == otherSlack.StartLineNumber &&
 		i.EndLineNumber == otherSlack.EndLineNumber &&
-
 		((i.Token == nil && otherSlack.Token == nil) ||
 			(i.Token != nil && otherSlack.Token != nil && *i.Token == *otherSlack.Token)) &&
-
 		((i.SigningSecret == nil && otherSlack.SigningSecret == nil) ||
 			(i.SigningSecret != nil && otherSlack.SigningSecret != nil && *i.SigningSecret == *otherSlack.SigningSecret)) &&
-
 		((i.WebhookUrl == nil && otherSlack.WebhookUrl == nil) ||
 			(i.WebhookUrl != nil && otherSlack.WebhookUrl != nil && *i.WebhookUrl == *otherSlack.WebhookUrl)) &&
-
 		((i.Channel == nil && otherSlack.Channel == nil) ||
 			(i.Channel != nil && otherSlack.Channel != nil && *i.Channel == *otherSlack.Channel))
 }
@@ -332,7 +328,6 @@ func (i *EmailIntegration) Equals(other Integration) bool {
 	return i.FileName == otherEmail.FileName &&
 		i.StartLineNumber == otherEmail.StartLineNumber &&
 		i.EndLineNumber == otherEmail.EndLineNumber &&
-
 		utils.PtrEqual(i.SmtpHost, otherEmail.SmtpHost) &&
 		utils.PtrEqual(i.SmtpTls, otherEmail.SmtpTls) &&
 		utils.PtrEqual(i.SmtpPort, otherEmail.SmtpPort) &&
@@ -528,8 +523,8 @@ func integrationFromCtyValue(val cty.Value) (Integration, error) {
 		return SlackIntegrationFromCtyValue(val)
 	case schema.IntegrationTypeEmail:
 		return EmailIntegrationFromCtyValue(val)
-	case schema.IntegrationTypeWebform:
-		return WebformIntegrationFromCtyValue(val)
+	case schema.IntegrationTypeHttp:
+		return HttpIntegrationFromCtyValue(val)
 	}
 	return nil, perr.BadRequestWithMessage(fmt.Sprintf("Unsupported integration type: %s", integrationType))
 }
@@ -691,10 +686,10 @@ func EmailIntegrationFromCtyValue(val cty.Value) (*EmailIntegration, error) {
 	return i, nil
 }
 
-func WebformIntegrationFromCtyValue(val cty.Value) (*WebformIntegration, error) {
+func HttpIntegrationFromCtyValue(val cty.Value) (*HttpIntegration, error) {
 	hclResourceImpl := hclResourceImplFromVal(val)
 
-	i := &WebformIntegration{
+	i := &HttpIntegration{
 		HclResourceImpl: hclResourceImpl,
 	}
 
@@ -788,8 +783,8 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
 		}
-	case schema.IntegrationTypeWebform:
-		return &WebformIntegration{
+	case schema.IntegrationTypeHttp:
+		return &HttpIntegration{
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
 		}
@@ -798,7 +793,7 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 	return nil
 }
 
-type WebformIntegration struct {
+type HttpIntegration struct {
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
 	IntegrationImpl          `json:"-"`
@@ -806,11 +801,11 @@ type WebformIntegration struct {
 	Type string `json:"type" cty:"type" hcl:"type,label"`
 }
 
-func (i *WebformIntegration) GetIntegrationType() string {
+func (i *HttpIntegration) GetIntegrationType() string {
 	return i.Type
 }
 
-func (i *WebformIntegration) Equals(other Integration) bool {
+func (i *HttpIntegration) Equals(other Integration) bool {
 
 	if i == nil && !helpers.IsNil(other) {
 		return false
@@ -820,17 +815,17 @@ func (i *WebformIntegration) Equals(other Integration) bool {
 		return false
 	}
 
-	otherWebform, ok := other.(*WebformIntegration)
+	otherHttp, ok := other.(*HttpIntegration)
 	if !ok {
 		return false
 	}
 
-	return i.FileName == otherWebform.FileName &&
-		i.StartLineNumber == otherWebform.StartLineNumber &&
-		i.EndLineNumber == otherWebform.EndLineNumber
+	return i.FileName == otherHttp.FileName &&
+		i.StartLineNumber == otherHttp.StartLineNumber &&
+		i.EndLineNumber == otherHttp.EndLineNumber
 }
 
-func (i *WebformIntegration) CtyValue() (cty.Value, error) {
+func (i *HttpIntegration) CtyValue() (cty.Value, error) {
 	iCty, err := GetCtyValue(i)
 	if err != nil {
 		return cty.NilVal, err
@@ -856,7 +851,7 @@ func (i *WebformIntegration) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (i *WebformIntegration) MapInterface() (map[string]interface{}, error) {
+func (i *HttpIntegration) MapInterface() (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 
 	res["type"] = i.Type
@@ -875,10 +870,10 @@ func (i *WebformIntegration) MapInterface() (map[string]interface{}, error) {
 	return res, nil
 }
 
-func (i *WebformIntegration) Validate() hcl.Diagnostics {
+func (i *HttpIntegration) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-func (i *WebformIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (i *HttpIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
