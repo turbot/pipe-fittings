@@ -2,15 +2,11 @@ package modconfig
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -32,60 +28,6 @@ func NewQuery(block *hcl.Block, mod *Mod, shortName string) HclResource {
 	return &Query{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
-}
-
-func QueryFromFile(modPath, filePath string, mod *Mod) (MappableResource, []byte, error) {
-	q := &Query{
-		QueryProviderImpl: QueryProviderImpl{
-			RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
-				ModTreeItemImpl: ModTreeItemImpl{
-					Mod: mod,
-				},
-			},
-		},
-	}
-	return q.InitialiseFromFile(modPath, filePath)
-}
-
-// InitialiseFromFile implements MappableResource
-func (q *Query) InitialiseFromFile(modPath, filePath string) (MappableResource, []byte, error) {
-	// only valid for sql files
-	if filepath.Ext(filePath) != constants.SqlExtension {
-		return nil, nil, fmt.Errorf("Query.InitialiseFromFile must be called with .sql files only - filepath: '%s'", filePath)
-	}
-
-	sqlBytes, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	sql := string(sqlBytes)
-	if sql == "" {
-		slog.Debug("SQL file contains no query", "filePath", filePath)
-		return nil, nil, nil
-	}
-	// get a sluggified version of the filename
-	name, err := PseudoResourceNameFromPath(modPath, filePath)
-	if err != nil {
-		return nil, nil, err
-	}
-	q.ShortName = name
-	q.UnqualifiedName = fmt.Sprintf("query.%s", name)
-	q.FullName = fmt.Sprintf("%s.query.%s", q.Mod.ShortName, name)
-	q.SQL = &sql
-	q.DeclRange = hcl.Range{
-		Filename: filePath,
-		Start: hcl.Pos{
-			Line:   0,
-			Column: 0,
-			Byte:   0,
-		},
-		End: hcl.Pos{
-			Line: len(sql),
-		},
-	}
-
-	return q, sqlBytes, nil
 }
 
 func (q *Query) Equals(other *Query) bool {
