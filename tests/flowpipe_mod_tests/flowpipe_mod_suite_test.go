@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
@@ -919,6 +920,9 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("this subject is in step", *step.Subject)
 	assert.Equal("this channel is in step override", *step.Channel)
 
+	assert.True(helpers.StringSliceEqualIgnoreOrder(step.To, []string{"foo", "bar", "baz override"}))
+	assert.True(helpers.StringSliceEqualIgnoreOrder(step.Cc, []string{"foo", "bar", "baz cc"}))
+	assert.True(helpers.StringSliceEqualIgnoreOrder(step.Bcc, []string{"foo bb", "bar", "baz override"}))
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {

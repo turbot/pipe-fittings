@@ -170,6 +170,14 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 				continue
 			}
 
+		case schema.AttributeTypeCc, schema.AttributeTypeBcc, schema.AttributeTypeTo:
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringSliceAttribute(attr, evalContext, p, structFieldName, false)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
 		case schema.AttributeTypeOptions:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {

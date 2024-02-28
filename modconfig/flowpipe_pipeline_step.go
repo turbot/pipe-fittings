@@ -1699,6 +1699,46 @@ func setField(v interface{}, fieldName string, value interface{}) error {
 	return nil
 }
 
+func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	t, err := hclhelpers.CtyToGoStringSlice(val, val.Type())
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to string",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	if isPtr {
+		err = setField(p, fieldName, &t)
+	} else {
+		err = setField(p, fieldName, t)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
 func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 	if stepDiags.HasErrors() {

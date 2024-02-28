@@ -38,6 +38,10 @@ pipeline "approval_with_override_in_step" {
 
     channel = "this channel is in step override"
 
+    to = ["foo", "bar", "baz override"]
+    cc = ["foo", "bar", "baz cc"]
+    bcc = ["foo bb", "bar", "baz override"]
+
 
     option "Approve" {}
     option "Deny" {}
