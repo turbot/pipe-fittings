@@ -51,43 +51,27 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		return nil, err
 	}
 
-	var image *string
-	if p.UnresolvedAttributes[schema.AttributeTypeImage] == nil {
-		image = p.Image
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeImage], evalContext, &image)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	var diags hcl.Diagnostics
+
+	// image
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypeImage, "Image")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var source *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSource] == nil {
-		source = p.Source
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSource], evalContext, &source)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// source
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypeSource, "Source")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var cmd []string
-	if p.UnresolvedAttributes[schema.AttributeTypeCmd] == nil {
-		cmd = p.Cmd
-	} else {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCmd], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		var err error
-		cmd, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse cmd attribute to []string: " + err.Error())
-		}
+	// cmd
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCmd, "Cmd")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
+	// env
 	var env map[string]string
 	if p.UnresolvedAttributes[schema.AttributeTypeEnv] == nil {
 		env = p.Env
@@ -105,21 +89,10 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	var entryPoint []string
-	if p.UnresolvedAttributes[schema.AttributeTypeEntryPoint] == nil {
-		entryPoint = p.EntryPoint
-	} else {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEntryPoint], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-
-		var err error
-		entryPoint, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse entrypoint attribute to []string: " + err.Error())
-		}
+	// entry_point
+	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeEntryPoint, "EntryPoint")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	var cpuShares *int64
@@ -203,17 +176,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}
 
 	results[schema.LabelName] = p.Name
-	results[schema.AttributeTypeCmd] = cmd
 	results[schema.AttributeTypeEnv] = env
-	results[schema.AttributeTypeEntryPoint] = entryPoint
-
-	if image != nil {
-		results[schema.AttributeTypeImage] = *image
-	}
-
-	if source != nil {
-		results[schema.AttributeTypeSource] = *source
-	}
 
 	if cpuShares != nil {
 		results[schema.AttributeTypeCpuShares] = *cpuShares
