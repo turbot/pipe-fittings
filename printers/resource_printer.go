@@ -3,8 +3,8 @@ package printers
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 	"io"
-	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -22,7 +22,7 @@ type ResourcePrinter[T any] interface {
 
 func GetPrinter[T any](cmd *cobra.Command) (ResourcePrinter[T], error) {
 	f := viper.GetString(constants.ArgOutput)
-	key := commandFullKey(cmd)
+	key := utils.CommandFullKey(cmd)
 	cmdType := strings.Split(key, ".")[len(strings.Split(key, "."))-1]
 	switch f {
 	case constants.OutputFormatPretty, constants.OutputFormatPlain:
@@ -45,16 +45,4 @@ func GetPrinter[T any](cmd *cobra.Command) (ResourcePrinter[T], error) {
 		return NewYamlPrinter[T]()
 	}
 	return nil, fmt.Errorf("unknown output format %q", f)
-}
-
-func commandFullKey(cmd *cobra.Command) string {
-	var parents []string
-	parents = append(parents, cmd.Name())
-	cmd.VisitParents(func(parent *cobra.Command) {
-		parents = append(parents, parent.Name())
-	})
-
-	slices.Reverse(parents)
-
-	return strings.Join(parents, ".")
 }

@@ -93,11 +93,11 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 	parseCtx := parse.NewModParseContext(
 		nil,
 		modDir,
-		parse.CreateDefaultMod,
-		&filehelpers.ListOptions{
+		parse.WithParseFlags(parse.CreateDefaultMod),
+		parse.WithListOptions(&filehelpers.ListOptions{
 			Flags:   filehelpers.Files | filehelpers.Recursive,
 			Include: []string{"**/" + fileName},
-		})
+		}))
 
 	mod, errorsAndWarnings := LoadModWithFileName(ctx, modDir, modFileNameToLoad, parseCtx)
 

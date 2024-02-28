@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"log/slog"
 	"sort"
 
 	"github.com/Masterminds/semver/v3"
@@ -150,7 +151,8 @@ func (r *Require) validatePluginVersions(modName string, plugins PluginVersionMa
 	}
 	// if this is a steampipe backend and there is no plugin map, it must be a pre-0.22 version which does not return plugin versions
 	if plugins.Backend == constants.SteampipeBackendName && plugins.AvailablePlugins == nil {
-		return []error{fmt.Errorf("plugin requirements for '%s' cannot be validated. Steampipe backend '%s' does not provide plugin version information. Upgrade Steampipe to enable plugin version validation.", modName, plugins.Database)}
+		slog.Warn("Mod plugin requirements cannot be validated. Steampipe backend does not provide plugin version information. Upgrade Steampipe to enable plugin version validation.", "mod", modName)
+		return nil
 	}
 
 	var validationErrors []error
