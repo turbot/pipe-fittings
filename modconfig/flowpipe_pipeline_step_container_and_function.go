@@ -145,24 +145,16 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 	}
 
-	var containerUser *string
-	if p.UnresolvedAttributes[schema.AttributeTypeUser] == nil {
-		containerUser = p.User
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeUser], evalContext, &containerUser)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// user
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypeUser, "User")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	var workDir *string
-	if p.UnresolvedAttributes[schema.AttributeTypeWorkdir] == nil {
-		workDir = p.Workdir
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeWorkdir], evalContext, &workDir)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
+	// workdir
+	results, diags = stringPtrInputFromAttribute(p, results, evalContext, schema.AttributeTypeWorkdir, "Workdir")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	var readOnly *bool
@@ -200,14 +192,6 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 			return nil, perr.BadRequestWithMessage("The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be between 0 and 100")
 		}
 		results[schema.AttributeTypeMemorySwappiness] = *memorySwappiness
-	}
-
-	if containerUser != nil {
-		results[schema.AttributeTypeUser] = *containerUser
-	}
-
-	if workDir != nil {
-		results[schema.AttributeTypeWorkdir] = *workDir
 	}
 
 	if readOnly != nil {

@@ -10,7 +10,6 @@ import (
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -59,81 +58,41 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
-	// Compare Url field
-	if reflect.DeepEqual(p.Url, other.Url) {
-		return false
-	}
+	// TODO:  check if this is working .. or we should really have an Equals method for BasicAuthConfig
+	// reflect.DeepEqual(p.BasicAuthConfig, other.BasicAuthConfig)
 
-	// Compare Method field
-	if reflect.DeepEqual(p.Method, other.Method) {
-		return false
-	}
-
-	// Compare Insecure field
-	if reflect.DeepEqual(p.Insecure, other.Insecure) {
-		return false
-	}
-
-	// Compare RequestBody field
-	if reflect.DeepEqual(p.RequestBody, other.RequestBody) {
-		return false
-	}
-
-	// Compare RequestHeaders field using deep equality
-	if !reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders) {
-		return false
-	}
-
-	// All fields are equal
-	return true
-
+	return utils.PtrEqual(p.Url, other.Url) &&
+		utils.PtrEqual(p.Method, other.Method) &&
+		utils.PtrEqual(p.CaCertPem, other.CaCertPem) &&
+		utils.BoolPtrEqual(p.Insecure, other.Insecure) &&
+		utils.PtrEqual(p.RequestBody, other.RequestBody) &&
+		reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders)
 }
 
 func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	var diags hcl.Diagnostics
 
 	inputs, err := p.GetBaseInputs(evalContext)
 	if err != nil {
 		return nil, err
 	}
 
-	var urlInput string
-	if p.UnresolvedAttributes[schema.AttributeTypeUrl] == nil {
-		if p.Url == nil {
-			return nil, perr.InternalWithMessage("Url must be supplied")
-		}
-		urlInput = *p.Url
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeUrl], evalContext, &urlInput)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-	inputs[schema.AttributeTypeUrl] = urlInput
-
-	if p.UnresolvedAttributes[schema.AttributeTypeMethod] == nil {
-		if p.Method != nil {
-			inputs[schema.AttributeTypeMethod] = *p.Method
-		}
-	} else {
-		var method string
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeMethod], evalContext, &method)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		inputs[schema.AttributeTypeMethod] = strings.ToLower(method)
+	// url
+	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeUrl, "Url")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
-	if p.UnresolvedAttributes[schema.AttributeTypeCaCertPem] == nil {
-		if p.CaCertPem != nil {
-			inputs[schema.AttributeTypeCaCertPem] = *p.CaCertPem
-		}
-	} else {
-		var caCertPem string
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCaCertPem], evalContext, &caCertPem)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		inputs[schema.AttributeTypeCaCertPem] = caCertPem
+	// method
+	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeMethod, "Method")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+
+	// ca_cert_pem
+	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeCaCertPem, "CaCertPem")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeInsecure] == nil {
@@ -149,17 +108,10 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		inputs[schema.AttributeTypeInsecure] = insecure
 	}
 
-	if p.UnresolvedAttributes[schema.AttributeTypeRequestBody] == nil {
-		if p.RequestBody != nil {
-			inputs[schema.AttributeTypeRequestBody] = *p.RequestBody
-		}
-	} else {
-		var requestBody string
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestBody], evalContext, &requestBody)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-		inputs[schema.AttributeTypeRequestBody] = requestBody
+	// requets_body
+	inputs, diags = stringPtrInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeRequestBody, "RequestBody")
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders] == nil {
