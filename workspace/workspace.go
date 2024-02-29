@@ -66,6 +66,7 @@ type Workspace struct {
 	OnFileWatcherError  func(context.Context, error)
 	OnFileWatcherEvent  func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
 	BlockTypeInclusions []string
+	validateVariables   bool
 }
 
 // Load_ creates a Workspace and loads the workspace mod
@@ -88,6 +89,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	w.Integrations = cfg.integrations
 	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
+	w.validateVariables = cfg.validateVariables
 
 	// load the w mod
 	errAndWarnings := w.loadWorkspaceMod(ctx)
@@ -97,8 +99,9 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 func createShellWorkspace(workspacePath string) (*Workspace, error) {
 	// create shell workspace
 	workspace := &Workspace{
-		Path:           workspacePath,
-		VariableValues: make(map[string]string),
+		Path:              workspacePath,
+		VariableValues:    make(map[string]string),
+		validateVariables: true,
 	}
 
 	// check whether the workspace contains a modfile
@@ -181,8 +184,8 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	// resolve values of all input variables
 	// we WILL validate missing variables when loading
 	// NOTE: this does an initial mod load, loading only variable blocks
-	validateMissing := true
-	inputVariables, errorsAndWarnings := w.getInputVariables(ctx, validateMissing)
+
+	inputVariables, errorsAndWarnings := w.getInputVariables(ctx, w.validateVariables)
 	if errorsAndWarnings.Error != nil {
 		return errorsAndWarnings
 	}

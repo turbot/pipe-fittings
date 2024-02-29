@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
+	"golang.org/x/exp/maps"
 )
 
 type ModTreeItemImpl struct {
@@ -18,8 +19,9 @@ type ModTreeItemImpl struct {
 
 	Paths []NodePath `column:"path,jsonb" json:"path,omitempty"`
 
-	// TODO DO WE EVER HAVE MULTIPLE PARENTS
-	parents  []ModTreeItem
+	// node may have multiple parents
+	// use a map to avoid dupes
+	parents  map[string]ModTreeItem
 	children []ModTreeItem
 }
 
@@ -27,18 +29,27 @@ func NewModTreeItemImpl(block *hcl.Block, mod *Mod, shortName string) ModTreeIte
 	return ModTreeItemImpl{
 		HclResourceImpl: NewHclResourceImpl(block, mod, shortName),
 		Mod:             mod,
+		parents:         make(map[string]ModTreeItem),
 	}
 }
 
 // AddParent implements ModTreeItem
 func (b *ModTreeItemImpl) AddParent(parent ModTreeItem) error {
-	b.parents = append(b.parents, parent)
+	// lazily create the map
+	if b.parents == nil {
+		b.parents = make(map[string]ModTreeItem)
+	}
+	b.parents[parent.Name()] = parent
 	return nil
 }
 
 // GetParents implements ModTreeItem
 func (b *ModTreeItemImpl) GetParents() []ModTreeItem {
-	return b.parents
+	// lazily create the map
+	if b.parents == nil {
+		b.parents = make(map[string]ModTreeItem)
+	}
+	return maps.Values(b.parents)
 }
 
 // GetChildren implements ModTreeItem
@@ -73,7 +84,7 @@ func (b *ModTreeItemImpl) GetDatabase() *string {
 		return b.Database
 	}
 	if len(b.parents) > 0 {
-		return b.parents[0].GetDatabase()
+		return b.GetParents()[0].GetDatabase()
 	}
 	return nil
 }
@@ -84,8 +95,9 @@ func (b *ModTreeItemImpl) GetSearchPath() []string {
 		return b.SearchPath
 	}
 	if len(b.parents) > 0 {
-		return b.parents[0].GetSearchPath()
+		return b.GetParents()[0].GetSearchPath()
 	}
+
 	return nil
 }
 
@@ -94,8 +106,8 @@ func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
 	if len(b.SearchPathPrefix) != 0 {
 		return b.SearchPathPrefix
 	}
-	if len(b.parents) > 0 {
-		return b.parents[0].GetSearchPathPrefix()
+	if len(b.GetParents()) > 0 {
+		return b.GetParents()[0].GetSearchPathPrefix()
 	}
 	return nil
 }
@@ -116,9 +128,8 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 // GetShowData implements printers.Showable
 func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 	var name = b.ShortName
-	if b.parents != nil {
+	if len(b.parents) != 0 {
 		name = b.Name()
-
 	}
 	res := printers.NewRowData(
 		// override name to take parents into account - merge will handle this and ignore the base name
