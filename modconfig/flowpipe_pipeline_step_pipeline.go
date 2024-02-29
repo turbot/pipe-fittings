@@ -110,25 +110,17 @@ func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalC
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypePipeline:
-			expr := attr.Expr
-			if attr.Expr != nil {
-				val, err := expr.Value(evalContext)
-				if err != nil {
-					// For Step's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
-					// so if the Pipeline is not parsed (yet) then the error message is:
-					// Summary: "Unknown variable"
-					// Detail: "There is no variable named \"pipeline\"."
-					//
-					// Do not unpack the error and create a new "Diagnostic", leave the original error message in
-					// and let the "Mod processing" determine if there's an unresolved block
-					//
-					// There's no "depends_on" from the step to the pipeline, the Flowpipe ES engine does not require it
-					diags = append(diags, err...)
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 
-					return diags
-				}
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
 				p.Pipeline = val
 			}
+
 		case schema.AttributeTypeArgs:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {

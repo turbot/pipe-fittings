@@ -1295,6 +1295,30 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 		if traversals.RootName() == "param" {
 			p.AddUnresolvedAttribute(attr.Name, expr)
 			// Don't return here because there may be other dependencies to be created below
+
+			// special handling if the attribute name is "pipeline"
+			//
+			// this is to handle the pipeline step:
+			/**
+
+			step "pipeline" "run_pipeline {
+				pipeline = pipeline[param.name]
+			}
+
+			we short circuit it straight away and return. It will be resolved at runtime. We can't do that for other attributes because we
+			may do something like:
+
+			value = "${param.foo} and ${step.transform.name.value}"
+
+			so the above has dependency on param.foo AND the step.transform.name. We *need* to add `step.transform.name` to the depends_on list
+			so it can't return here
+
+			pipeline attribute is special that it can only reference another pipeline
+			*/
+
+			if attr.Name == "pipeline" {
+				return cty.NilVal, hcl.Diagnostics{}
+			}
 		}
 	}
 
