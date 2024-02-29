@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	filehelpers "github.com/turbot/go-kit/files"
@@ -154,17 +152,6 @@ func loadModDependency(ctx context.Context, modDependency *versionmap.ResolvedVe
 }
 
 func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
-	// if flag is set, create pseudo resources by mapping files
-	var pseudoResources []modconfig.MappableResource
-	var err error
-	if parseCtx.CreatePseudoResources() {
-		// now execute any pseudo-resource creations based on file mappings
-		pseudoResources, err = createPseudoResources(ctx, mod, parseCtx)
-		if err != nil {
-			return nil, error_helpers.NewErrorsAndWarning(err)
-		}
-	}
-
 	// get the source files
 	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
 	if err != nil {
@@ -179,65 +166,15 @@ func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.M
 	}
 
 	// parse all hcl files (NOTE - this reads the CurrentMod out of ParseContext and adds to it)
-	mod, errAndWarnings := parse.ParseMod(ctx, fileData, pseudoResources, parseCtx)
+	mod, errAndWarnings := parse.ParseMod(ctx, fileData, parseCtx)
 
 	return mod, errAndWarnings
-}
-
-// TODO KAI WHO USES THIS?
-// LoadModResourceNames parses all hcl files in modPath and returns the names of all resources
-func LoadModResourceNames(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (resources *modconfig.WorkspaceResources, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = helpers.ToError(r)
-		}
-	}()
-
-	resources = modconfig.NewWorkspaceResources()
-	if parseCtx == nil {
-		parseCtx = &parse.ModParseContext{}
-	}
-	// verify the mod folder exists
-	if _, err := os.Stat(mod.ModPath); os.IsNotExist(err) {
-		return nil, fmt.Errorf("mod folder %s does not exist", mod.ModPath)
-	}
-
-	// now execute any pseudo-resource creations based on file mappings
-	pseudoResources, err := createPseudoResources(ctx, mod, parseCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	// add pseudo resources to result
-	for _, r := range pseudoResources {
-		if strings.HasPrefix(r.Name(), "query.") || strings.HasPrefix(r.Name(), "local.query.") {
-			resources.Query[r.Name()] = true
-		}
-	}
-
-	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
-	if err != nil {
-		slog.Warn("LoadModResourceNames: failed to get mod file paths", "error", err)
-		return nil, err
-	}
-
-	fileData, diags := parse.LoadFileData(sourcePaths...)
-	if diags.HasErrors() {
-		return nil, plugin.DiagsToError("Failed to load all mod files", diags)
-	}
-
-	parsedResourceNames, err := parse.ParseModResourceNames(fileData)
-	if err != nil {
-		return nil, err
-	}
-	return resources.Merge(parsedResourceNames), nil
 }
 
 // GetModFileExtensions returns list of all file extensions we care about
 // this will be the mod data extension, plus any registered extensions registered in fileToResourceMap
 func GetModFileExtensions() []string {
-	res := append(modconfig.RegisteredFileExtensions(), app_specific.ModDataExtensions...)
-	return append(res, app_specific.VariablesExtensions...)
+	return append(app_specific.ModDataExtensions, app_specific.VariablesExtensions...)
 }
 
 // build list of all filepaths we need to parse/load the mod
@@ -250,80 +187,6 @@ func getSourcePaths(ctx context.Context, modPath string, listOpts *filehelpers.L
 		return nil, err
 	}
 	return sourcePaths, nil
-}
-
-// create pseudo-resources for any files whose extensions are registered
-func createPseudoResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) ([]modconfig.MappableResource, error) {
-	// create list options to find pseudo resources
-	listOpts := &filehelpers.ListOptions{
-		Flags:   parseCtx.ListOptions.Flags,
-		Include: filehelpers.InclusionsFromExtensions(modconfig.RegisteredFileExtensions()),
-		Exclude: parseCtx.ListOptions.Exclude,
-	}
-	// list all registered files
-	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, listOpts)
-	if err != nil {
-		return nil, err
-	}
-
-	var errors []error
-	var res []modconfig.MappableResource
-
-	// for every source path:
-	// - if it is NOT a registered type, skip
-	// [- if an existing resource has already referred directly to this file, skip] *not yet*
-	for _, path := range sourcePaths {
-		factory, ok := modconfig.ResourceTypeMap[filepath.Ext(path)]
-		if !ok {
-			continue
-		}
-		resource, fileData, err := factory(mod.ModPath, path, parseCtx.CurrentMod)
-		if err != nil {
-			errors = append(errors, err)
-			continue
-		}
-		if resource != nil {
-			metadata, err := getPseudoResourceMetadata(mod, resource.Name(), path, fileData)
-			if err != nil {
-				return nil, err
-			}
-			resource.SetMetadata(metadata)
-			res = append(res, resource)
-		}
-	}
-
-	// show errors as trace logging
-	if len(errors) > 0 {
-		for _, err := range errors {
-			slog.Debug("failed to convert local file into resource", "error", err)
-		}
-	}
-
-	return res, nil
-}
-
-func getPseudoResourceMetadata(mod *modconfig.Mod, resourceName string, path string, fileData []byte) (*modconfig.ResourceMetadata, error) {
-	sourceDefinition := string(fileData)
-	split := strings.Split(sourceDefinition, "\n")
-	lineCount := len(split)
-
-	// convert the name into a short name
-	parsedName, err := modconfig.ParseResourceName(resourceName)
-	if err != nil {
-		return nil, err
-	}
-
-	m := &modconfig.ResourceMetadata{
-		ResourceName:     parsedName.Name,
-		FileName:         path,
-		StartLineNumber:  1,
-		EndLineNumber:    lineCount,
-		IsAutoGenerated:  true,
-		SourceDefinition: sourceDefinition,
-	}
-	m.SetMod(mod)
-
-	return m, nil
 }
 
 // Deprecated

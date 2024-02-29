@@ -88,6 +88,7 @@ const (
 	AttributeTypeUsername    = "username"
 	AttributeTypePassword    = "password"
 	AttributeTypeStepName    = "step_name"
+	AttributeTypeFlowpipe    = "flowpipe"
 
 	// pipeline attributes
 	AttributeTypeTags            = "tags"
@@ -185,6 +186,12 @@ const (
 	AttributeTypeMemorySwap        = "memory_swap"
 	AttributeTypeMemorySwappiness  = "memory_swappiness"
 	AttributeTypeReadOnly          = "read_only"
+	AttributeTypeExitCode          = "exit_code"
+	AttributeTypeContainerId       = "container_id"
+	AttributeTypeStdout            = "stdout"
+	AttributeTypeStderr            = "stderr"
+	AttributeTypeLines             = "lines"
+	AttributeTypeResult            = "result"
 
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"

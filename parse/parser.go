@@ -3,7 +3,6 @@ package parse
 import (
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,10 +12,6 @@ import (
 	"github.com/hashicorp/hcl/v2/json"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"sigs.k8s.io/yaml"
 )
 
@@ -128,76 +123,4 @@ func parseYamlFile(filename string) (*hcl.File, hcl.Diagnostics) {
 		}
 	}
 	return json.Parse(jsonData, filename)
-}
-
-func addPseudoResourcesToMod(pseudoResources []modconfig.MappableResource, hclResources map[string]bool, mod *modconfig.Mod) error_helpers.ErrorAndWarnings {
-	res := error_helpers.EmptyErrorsAndWarning()
-	for _, r := range pseudoResources {
-		// is there a hcl resource with the same name as this pseudo resource - it takes precedence
-		name := r.GetUnqualifiedName()
-		if _, ok := hclResources[name]; ok {
-			res.AddWarning(fmt.Sprintf("%s ignored as hcl resources of same name is already defined", r.GetDeclRange().Filename))
-			slog.Warn("ignored file as hcl resources of same name is already defined", "filename", r.GetDeclRange().Filename)
-			continue
-		}
-		// add pseudo resource to mod
-		//nolint:errcheck // TODO: fix this
-		mod.AddResource(r.(modconfig.HclResource))
-		// add to map of existing resources
-		hclResources[name] = true
-	}
-	return res
-}
-
-// get names of all resources defined in hcl which may also be created as pseudo resources
-// if we find a mod block, build a shell mod
-func loadMappableResourceNames(content *hcl.BodyContent) (map[string]bool, error) {
-	hclResources := make(map[string]bool)
-
-	for _, block := range content.Blocks {
-		// if this is a mod, build a shell mod struct (with just the name populated)
-		switch block.Type {
-		case schema.BlockTypeQuery:
-			// for any mappable resource, store the resource name
-			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
-			hclResources[name] = true
-		}
-	}
-	return hclResources, nil
-}
-
-// ParseModResourceNames parses all source hcl files for the mod path and associated resources,
-// and returns the resource names
-func ParseModResourceNames(fileData map[string][]byte) (*modconfig.WorkspaceResources, error) {
-	var resources = modconfig.NewWorkspaceResources()
-	body, diags := ParseHclFiles(fileData)
-	if diags.HasErrors() {
-		return nil, plugin.DiagsToError("Failed to load all mod source files", diags)
-	}
-
-	content, moreDiags := body.Content(WorkspaceBlockSchema)
-	if moreDiags.HasErrors() {
-		diags = append(diags, moreDiags...)
-		return nil, plugin.DiagsToError("Failed to load mod", diags)
-	}
-
-	for _, block := range content.Blocks {
-		// if this is a mod, build a shell mod struct (with just the name populated)
-		switch block.Type {
-
-		case schema.BlockTypeQuery:
-			// for any mappable resource, store the resource name
-			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
-			resources.Query[name] = true
-		case schema.BlockTypeControl:
-			// for any mappable resource, store the resource name
-			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
-			resources.Control[name] = true
-		case schema.BlockTypeBenchmark:
-			// for any mappable resource, store the resource name
-			name := modconfig.BuildModResourceName(block.Type, block.Labels[0])
-			resources.Benchmark[name] = true
-		}
-	}
-	return resources, nil
 }

@@ -28,7 +28,6 @@ type ParseModFlag uint32
 
 const (
 	CreateDefaultMod ParseModFlag = 1 << iota
-	CreatePseudoResources
 )
 
 /*
@@ -94,8 +93,7 @@ type ModParseContext struct {
 	DependencyConfig *ModDependencyConfig
 }
 
-func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, flags ParseModFlag, listOptions *filehelpers.ListOptions) *ModParseContext {
-
+func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, opts ...ModParseContextOption) *ModParseContext {
 	parseContext := NewParseContext(rootEvalPath)
 	c := &ModParseContext{
 		ParseContext: parseContext,
@@ -106,9 +104,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 		TriggerHcls:     make(map[string]*modconfig.Trigger),
 		IntegrationHcls: make(map[string]modconfig.Integration),
 
-		Flags:         flags,
 		WorkspaceLock: workspaceLock,
-		ListOptions:   listOptions,
 
 		topLevelDependencyMods: make(modconfig.ModMap),
 		blockChildMap:          make(map[string][]string),
@@ -117,6 +113,11 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 		referenceValues: map[string]ReferenceTypeValueMap{
 			"local": make(ReferenceTypeValueMap),
 		},
+	}
+
+	// apply options
+	for _, opt := range opts {
+		opt(c)
 	}
 	// add root node - this will depend on all other nodes
 	c.dependencyGraph = c.newDependencyGraph()
@@ -127,7 +128,10 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 
 func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.ResolvedVersionConstraint, rootEvalPath string) *ModParseContext {
 	// create a child run context
-	child := NewModParseContext(parent.WorkspaceLock, rootEvalPath, parent.Flags, parent.ListOptions)
+	child := NewModParseContext(parent.WorkspaceLock, rootEvalPath,
+		WithParseFlags(parent.Flags),
+		WithListOptions(parent.ListOptions))
+
 	// copy our block tpyes
 	child.BlockTypes = parent.BlockTypes
 	// set the child's parent
@@ -304,11 +308,6 @@ func (m *ModParseContext) AddDependencies(block *hcl.Block, name string, depende
 // ShouldCreateDefaultMod returns whether the flag is set to create a default mod if no mod definition exists
 func (m *ModParseContext) ShouldCreateDefaultMod() bool {
 	return m.Flags&CreateDefaultMod == CreateDefaultMod
-}
-
-// CreatePseudoResources returns whether the flag is set to create pseudo resources
-func (m *ModParseContext) CreatePseudoResources() bool {
-	return m.Flags&CreatePseudoResources == CreatePseudoResources
 }
 
 // AddResource stores this resource as a variable to be added to the eval context.
