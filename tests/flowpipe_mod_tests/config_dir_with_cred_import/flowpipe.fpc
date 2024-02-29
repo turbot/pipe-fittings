@@ -195,3 +195,9 @@ credential_import "steampipe_ipstack" {
   connections = ["*"]
   prefix      = "sp1_" # prefix is optional
 }
+
+credential_import "invalid_creds" {
+  source      = "./steampipe_config/invalid.spc"
+  connections = ["*"]
+  prefix      = "sp1_" # prefix is optional
+}

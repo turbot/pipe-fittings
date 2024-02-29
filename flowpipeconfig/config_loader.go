@@ -175,6 +175,12 @@ func (f *FlowpipeConfig) importCredentials() error {
 					return err
 				}
 
+				// configStruct will be nil if the credential type is not supported by the Flowpipe.
+				// In that case, skip the connection
+				if configStruct == nil {
+					continue
+				}
+
 				moreDiags = gohcl.DecodeBody(body, evalCtx, configStruct)
 				diags = append(diags, moreDiags...)
 				if diags.HasErrors() {
