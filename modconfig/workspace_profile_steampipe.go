@@ -2,16 +2,17 @@ package modconfig
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
-	"strings"
 )
 
-type SteampipeWorkspaceProfile struct {
+type PowerpipeWorkspaceProfile struct {
 	ProfileName string `hcl:"name,label" cty:"name"`
 
 	//  dashboard / api server options
@@ -51,13 +52,13 @@ type SteampipeWorkspaceProfile struct {
 	Separator *string `hcl:"separator"`
 	Timing    *bool   `hcl:"timing"`
 
-	Base      *SteampipeWorkspaceProfile `hcl:"base"`
+	Base      *PowerpipeWorkspaceProfile `hcl:"base"`
 	DeclRange hcl.Range
 }
 
 // SetOptions sets the options on the connection
 // verify the options object is a valid options type (only options.Connection currently supported)
-func (p *SteampipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
+func (p *PowerpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
 	return hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  "options blocks are supported",
@@ -65,24 +66,24 @@ func (p *SteampipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.
 	}}
 }
 
-func (p *SteampipeWorkspaceProfile) Name() string {
+func (p *PowerpipeWorkspaceProfile) Name() string {
 	return fmt.Sprintf("workspace.%s", p.ProfileName)
 }
 
-func (p *SteampipeWorkspaceProfile) ShortName() string {
+func (p *PowerpipeWorkspaceProfile) ShortName() string {
 	return p.ProfileName
 }
 
-func (p *SteampipeWorkspaceProfile) CtyValue() (cty.Value, error) {
+func (p *PowerpipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 	return GetCtyValue(p)
 }
 
-func (p *SteampipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
+func (p *PowerpipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
 	return nil
 }
 
-func (p *SteampipeWorkspaceProfile) setBaseProperties() {
+func (p *PowerpipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
 	}
@@ -165,7 +166,7 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
-func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
+func (p *PowerpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
 	res := ConfigMap{}
 	// add non-empty properties to config map
 	res.SetStringItem(p.Host, constants.ArgHost)
@@ -202,19 +203,19 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	return res
 }
 
-func (p *SteampipeWorkspaceProfile) GetDeclRange() *hcl.Range {
+func (p *PowerpipeWorkspaceProfile) GetDeclRange() *hcl.Range {
 	return &p.DeclRange
 }
 
-func (p *SteampipeWorkspaceProfile) GetInstallDir() *string {
+func (p *PowerpipeWorkspaceProfile) GetInstallDir() *string {
 	return nil
 }
 
-func (p *SteampipeWorkspaceProfile) IsNil() bool {
+func (p *PowerpipeWorkspaceProfile) IsNil() bool {
 	return p == nil
 }
 
-func (p *SteampipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {
+func (p *PowerpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {
 	return nil, hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  fmt.Sprintf("Unexpected options type '%s'", block.Type),
