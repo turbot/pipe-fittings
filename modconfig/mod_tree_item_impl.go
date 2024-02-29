@@ -128,7 +128,8 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 // GetShowData implements printers.Showable
 func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 	var name = b.ShortName
-	if len(b.parents) != 0 {
+	// if this is a dependency resource, use the full name
+	if b.IsDependencyResource() {
 		name = b.Name()
 	}
 	res := printers.NewRowData(
@@ -148,7 +149,7 @@ func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 // GetListData implements printers.Listable
 func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	var name = b.ShortName
-	if b.parents != nil {
+	if b.IsDependencyResource() {
 		name = b.Name()
 	}
 	res := printers.NewRowData(
@@ -159,4 +160,8 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	}
 	res.Merge(b.HclResourceImpl.GetListData())
 	return res
+}
+
+func (b *ModTreeItemImpl) IsDependencyResource() bool {
+	return b.GetMod().DependencyPath != nil
 }
