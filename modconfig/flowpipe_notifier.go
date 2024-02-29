@@ -34,9 +34,9 @@ type NotifierImpl struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	FileName        string
-	StartLineNumber int
-	EndLineNumber   int
+	FileName        string `json:"-" cty:"-" hcl:"-"`
+	StartLineNumber int    `json:"-" cty:"-" hcl:"-"`
+	EndLineNumber   int    `json:"-" cty:"-" hcl:"-"`
 }
 
 func (n *NotifierImpl) Equals(other Notifier) bool {
