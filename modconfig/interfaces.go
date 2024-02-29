@@ -40,6 +40,7 @@ type ModTreeItem interface {
 	GetPaths() []NodePath
 	SetPaths()
 	GetModTreeItemImpl() *ModTreeItemImpl
+	IsDependencyResource() bool
 }
 
 type DatabaseItem interface {

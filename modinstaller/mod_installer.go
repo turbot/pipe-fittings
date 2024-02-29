@@ -13,6 +13,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
@@ -20,6 +21,7 @@ import (
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 type ModInstaller struct {
@@ -90,32 +92,6 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 	i.mods = requiredMods
 
 	return i, nil
-}
-
-func (i *ModInstaller) removeOldShadowDirectories() error {
-	removeErrors := []error{}
-	// get the parent of the 'mods' directory - all shadow directories are siblings of this
-	parent := filepath.Base(i.modsPath)
-	entries, err := os.ReadDir(parent)
-	if err != nil {
-		return err
-	}
-	for _, dir := range entries {
-		if dir.IsDir() && filepaths.IsModInstallShadowPath(dir.Name()) {
-			err := os.RemoveAll(filepath.Join(parent, dir.Name()))
-			if err != nil {
-				removeErrors = append(removeErrors, err)
-			}
-		}
-	}
-	return error_helpers.CombineErrors(removeErrors...)
-}
-
-func (i *ModInstaller) setModsPath() error {
-	i.modsPath = filepaths.WorkspaceModPath(i.workspacePath)
-	_ = i.removeOldShadowDirectories()
-	i.shadowDirPath = filepaths.WorkspaceModShadowPath(i.workspacePath)
-	return nil
 }
 
 func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error {
@@ -234,6 +210,32 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 
 func (i *ModInstaller) GetModList() string {
 	return i.installData.Lock.GetModList(i.workspaceMod.GetInstallCacheKey())
+}
+
+func (i *ModInstaller) removeOldShadowDirectories() error {
+	removeErrors := []error{}
+	// get the parent of the 'mods' directory - all shadow directories are siblings of this
+	parent := filepath.Base(i.modsPath)
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		return err
+	}
+	for _, dir := range entries {
+		if dir.IsDir() && filepaths.IsModInstallShadowPath(dir.Name()) {
+			err := os.RemoveAll(filepath.Join(parent, dir.Name()))
+			if err != nil {
+				removeErrors = append(removeErrors, err)
+			}
+		}
+	}
+	return error_helpers.CombineErrors(removeErrors...)
+}
+
+func (i *ModInstaller) setModsPath() error {
+	i.modsPath = filepaths.WorkspaceModPath(i.workspacePath)
+	_ = i.removeOldShadowDirectories()
+	i.shadowDirPath = filepaths.WorkspaceModShadowPath(i.workspacePath)
+	return nil
 }
 
 // commitShadow recursively copies over the contents of the shadow directory
@@ -580,7 +582,11 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 				SingleBranch:  true,
 			})
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// verify the cloned repo contains a valid modfile
+	return i.verifyModFile(dependency, installPath)
 }
 
 // build the path of the temp location to copy this depednency to
@@ -604,4 +610,15 @@ func (i *ModInstaller) updating() bool {
 
 func (i *ModInstaller) uninstalling() bool {
 	return i.command == "uninstall"
+}
+
+func (i *ModInstaller) verifyModFile(dependency *ResolvedModRef, installPath string) error {
+	for _, modFilePath := range app_specific.ModFilePaths(installPath) {
+		_, err := os.Stat(modFilePath)
+		if err == nil {
+			// found the modfile
+			return nil
+		}
+	}
+	return sperr.New("mod '%s' does not contain a valid mod file", dependency.Name)
 }

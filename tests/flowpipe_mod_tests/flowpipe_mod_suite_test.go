@@ -1366,7 +1366,40 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	assert.Equal("channel override", *messageStep.Channel)
 	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"foo", "baz"}, messageStep.Cc))
 	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"bar"}, messageStep.Bcc))
+}
 
+func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_dynamic_pipeline_ref"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dynamic_pipeline_ref", workspace.WithCredentials(flowpipeConfig.Credentials),
+		workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["dynamic_pipe_ref.pipeline.top_dynamic"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	steps := pipeline.Steps
+	assert.Equal("middle_dynamic_static_to_a", steps[0].GetName())
+
+	// the second step has a dynamic pipeline reference
+	assert.NotNil(steps[1].GetUnresolvedAttributes()["pipeline"])
 }
 
 // In order for 'go test' to run this suite, we need to create
