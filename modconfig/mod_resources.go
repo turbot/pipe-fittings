@@ -529,7 +529,7 @@ func (m *ResourceMaps) populateNodeEdgeProviderRefs(nep NodeAndEdgeProvider) {
 		// lazy populate with-root
 		// (build map keyed by parent
 		// - in theory if we inherit some nodes from base, they may have different parents)
-		parent := n.parents[0]
+		parent := n.GetParents()[0]
 		if withRoots[parent.Name()] == nil && len(n.GetRuntimeDependencies()) > 0 {
 			withRoots[parent.Name()] = getWithRoot(n)
 		}
@@ -537,7 +537,7 @@ func (m *ResourceMaps) populateNodeEdgeProviderRefs(nep NodeAndEdgeProvider) {
 	}
 	for _, e := range nep.GetEdges() {
 		// lazy populate with root
-		parent := e.parents[0]
+		parent := e.GetParents()[0]
 		if withRoots[parent.Name()] == nil && len(e.GetRuntimeDependencies()) > 0 {
 			withRoots[parent.Name()] = getWithRoot(e)
 		}
