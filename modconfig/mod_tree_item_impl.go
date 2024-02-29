@@ -128,7 +128,7 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 // GetShowData implements printers.Showable
 func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 	var name = b.ShortName
-	if b.parents != nil {
+	if len(b.parents) != 0 {
 		name = b.Name()
 	}
 	res := printers.NewRowData(
