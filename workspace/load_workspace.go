@@ -25,6 +25,7 @@ type LoadWorkspaceConfig struct {
 	integrations        map[string]modconfig.Integration
 	notifiers           map[string]modconfig.Notifier
 	blockTypeInclusions []string
+	validateVariables   bool
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
@@ -56,6 +57,11 @@ func WithNotifiers(notifiers map[string]modconfig.Notifier) LoadWorkspaceOption 
 func WithBlockType(blockTypeInclusions []string) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.blockTypeInclusions = blockTypeInclusions
+	}
+}
+func WithVariableValidation(enabled bool) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.validateVariables = enabled
 	}
 }
 
