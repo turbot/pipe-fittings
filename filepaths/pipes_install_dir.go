@@ -2,7 +2,6 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"os"
 	"path/filepath"
@@ -14,7 +13,7 @@ var DefaultPipesInstallDir = ""
 var PipesInstallDir = ""
 
 func ensurePipesInstallSubDir(dirName string) string {
-	subDir := installPipesSubDir(dirName)
+	subDir := pipesInstallSubDir(dirName)
 
 	if _, err := os.Stat(subDir); os.IsNotExist(err) {
 		err = os.MkdirAll(subDir, 0755)
@@ -24,11 +23,16 @@ func ensurePipesInstallSubDir(dirName string) string {
 	return subDir
 }
 
-func installPipesSubDir(dirName string) string {
+func pipesInstallSubDir(dirName string) string {
 	if PipesInstallDir == "" {
 		panic(fmt.Errorf("cannot call any pipes directory functions before PipesInstallDir is set"))
 	}
-	return filepath.Join(app_specific.InstallDir, dirName)
+	return filepath.Join(PipesInstallDir, dirName)
+}
+
+// PipesInternalDir returns the path to the pipes internal directory (creates if missing)
+func PipesInternalDir() string {
+	return pipesInstallSubDir("internal")
 }
 
 // EnsurePipesInternalDir returns the path to the pipes internal directory (creates if missing)
