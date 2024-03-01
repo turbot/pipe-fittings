@@ -11,7 +11,7 @@ const (
 	OutputFormatText          = "text"
 	OutputFormatBrief         = "brief"
 	OutputFormatSnapshot      = "snapshot"
-	OutputFormatSnapshotShort = "sps"
+	OutputFormatSnapshotShort = "pps"
 	OutputFormatPretty        = "pretty"
 	OutputFormatPlain         = "plain"
 	OutputFormatYAML          = "yaml"
