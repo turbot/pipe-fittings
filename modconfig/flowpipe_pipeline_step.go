@@ -73,6 +73,8 @@ type Output struct {
 	FailureMode string      `json:"failure_mode,omitempty"`
 	Data        OutputData  `json:"data,omitempty"`
 	Errors      []StepError `json:"errors,omitempty"`
+	// Flowpipe metadata, contains started_at, finished_at
+	Flowpipe map[string]interface{} `json:"flowpipe,omitempty"`
 }
 
 type OutputData map[string]interface{}
@@ -99,6 +101,27 @@ func (o *Output) HasErrors() bool {
 	return o.Errors != nil && len(o.Errors) > 0
 }
 
+func (o *Output) flowpipeMetadataCtyMap() (map[string]cty.Value, error) {
+	if o == nil {
+		return nil, nil
+	}
+
+	variables := make(map[string]cty.Value)
+
+	var err error
+	variables[schema.AttributeTypeStartedAt], err = hclhelpers.ConvertInterfaceToCtyValue(o.Flowpipe[schema.AttributeTypeStartedAt])
+	if err != nil {
+		return nil, err
+	}
+
+	variables[schema.AttributeTypeFinishedAt], err = hclhelpers.ConvertInterfaceToCtyValue(o.Flowpipe[schema.AttributeTypeFinishedAt])
+	if err != nil {
+		return nil, err
+	}
+
+	return variables, nil
+}
+
 func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 	if o == nil {
 		return map[string]cty.Value{}, nil
@@ -106,6 +129,7 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 
 	variables := make(map[string]cty.Value)
 
+	// "native" primitive output (not a configured/declared output from the output block)
 	for key, value := range o.Data {
 		if value == nil {
 			continue
@@ -119,6 +143,7 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 		variables[key] = ctyVal
 	}
 
+	// errors
 	if o.Errors != nil {
 		errList := []cty.Value{}
 		for _, stepErr := range o.Errors {
@@ -163,6 +188,15 @@ func (o *Output) AsCtyMap() (map[string]cty.Value, error) {
 		}
 		variables["errors"] = cty.ListVal(errList)
 	}
+
+	// flowpipe metadata
+	fpMetadata, err := o.flowpipeMetadataCtyMap()
+	if err != nil {
+		return nil, err
+	}
+
+	variables[schema.AttributeTypeFlowpipe] = cty.ObjectVal(fpMetadata)
+
 	return variables, nil
 }
 
