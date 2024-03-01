@@ -14,7 +14,7 @@ import (
 )
 
 // ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a resource of type T and (optionally) query args
-func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w *Workspace) (T, *modconfig.QueryArgs, error) {
+func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w *Workspace) (modconfig.ModTreeItem, *modconfig.QueryArgs, error) {
 	var err error
 	var empty T
 
@@ -26,14 +26,8 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 	}
 
 	if resource != nil {
-		target, ok := resource.(T)
-		if !ok {
-			typeName := utils.GetGenericTypeName[T]()
-			return empty, nil, sperr.New("target '%s' is not of the expected type '%s'", target.GetUnqualifiedName(), typeName)
-
-		}
 		// success
-		return target, args, nil
+		return resource, args, nil
 	}
 
 	// so we failed to resolve the resource from the input string
@@ -52,7 +46,7 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 			return empty, nil, err
 		}
 
-		return any(q).(T), nil, nil
+		return q, nil, nil
 	default:
 		// failed to resolve
 		return empty, nil, nil
@@ -76,12 +70,22 @@ func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w *Wo
 	if !ok {
 		return nil, nil, nil
 	}
-
-	//- is the resource a query provider, and if so does it have a query?
-	target, ok := resource.(T)
+	// must be mod tree item
+	target, ok := resource.(modconfig.ModTreeItem)
 	if !ok {
+		return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), utils.GetGenericTypeName[T]())
+	}
+
+	// if the target is not the expected type, fail
+	// UNLESS we expect a dashboard and got a benchmark - this IS supported
+	if _, ok = resource.(T); !ok {
 		typeName := utils.GetGenericTypeName[T]()
-		return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), typeName)
+		// TODO find a less messy way of doing this
+		// special case code - if the target is a dashboard we can also run benchmarks
+		benchmarkAsDashboard := typeName == schema.BlockTypeDashboard && resource.BlockType() == schema.BlockTypeBenchmark
+		if !benchmarkAsDashboard {
+			return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), typeName)
+		}
 	}
 
 	_, args, err := parse.ParseQueryInvocation(input)
