@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
@@ -357,9 +358,14 @@ func (p *Pipeline) Equals(other *Pipeline) bool {
 	for k, v := range p.Params {
 		if _, ok := other.Params[k]; !ok {
 			return false
+		} else if !v.Equals(other.Params[k]) {
+			return false
 		}
+	}
 
-		if !v.Equals(other.Params[k]) {
+	// catch name change of the other param
+	for k := range other.Params {
+		if _, ok := p.Params[k]; !ok {
 			return false
 		}
 	}
@@ -378,13 +384,32 @@ func (p *Pipeline) Equals(other *Pipeline) bool {
 		return false
 	}
 
-	for i := 0; i < len(p.OutputConfig); i++ {
-		if !p.OutputConfig[i].Equals(&other.OutputConfig[i]) {
+	// build map for output so it's easier to lookup
+	myOutput := map[string]*PipelineOutput{}
+	for i, o := range p.OutputConfig {
+		myOutput[o.Name] = &p.OutputConfig[i]
+	}
+
+	otherOutput := map[string]*PipelineOutput{}
+	for i, o := range other.OutputConfig {
+		otherOutput[o.Name] = &other.OutputConfig[i]
+	}
+
+	for k, v := range myOutput {
+		if _, ok := otherOutput[k]; !ok {
+			return false
+		} else if !v.Equals(otherOutput[k]) {
 			return false
 		}
 	}
 
-	// TODO: other checks?
+	// check name changes on the other output
+	for k := range otherOutput {
+		if _, ok := myOutput[k]; !ok {
+			return false
+		}
+	}
+
 	return p.FullName == other.FullName &&
 		p.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
@@ -497,13 +522,10 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		return false
 	}
 
-	if p.Type != other.Type {
-		return false
-	}
-
 	return p.Name == other.Name &&
 		p.Description == other.Description &&
-		p.Optional == other.Optional
+		p.Optional == other.Optional &&
+		p.Type.Equals(other.Type)
 }
 
 type PipelineOutput struct {
@@ -545,8 +567,7 @@ func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 		return false
 	}
 
-	// Compare DependsOn field using deep equality
-	if !reflect.DeepEqual(o.DependsOn, other.DependsOn) {
+	if helpers.StringSliceEqualIgnoreOrder(o.DependsOn, other.DependsOn) {
 		return false
 	}
 
