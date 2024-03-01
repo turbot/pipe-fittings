@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
@@ -429,6 +430,15 @@ func (i *EmailIntegration) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Attribute " + schema.AttributeTypeSmtpHost + " must be defined: " + i.Name(),
 		})
+	}
+
+	if i.SmtpTls != nil {
+		if !constants.IsValidSmtpTls(*i.SmtpTls) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute " + schema.AttributeTypeSmtpTls + " specified with invalid value " + *i.SmtpTls + ": " + i.Name(),
+			})
+		}
 	}
 
 	return diags

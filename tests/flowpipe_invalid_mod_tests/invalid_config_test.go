@@ -127,6 +127,12 @@ var invalidConfigTests = []invalidConfigTestSetup{
 		configDirs:    []string{"./mods/bad_email_integration_missing_smtp_host"},
 		containsError: "Attribute smtp_host must be defined: email.my_email_app",
 	},
+	{
+		title:         "Invalid email integration - invalid smtp_tls value",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_email_integration_smtp_tls"},
+		containsError: "Attribute smtp_tls specified with invalid value dummy: email.my_email_app",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {
