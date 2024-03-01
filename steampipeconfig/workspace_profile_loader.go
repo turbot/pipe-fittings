@@ -2,6 +2,7 @@ package steampipeconfig
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
@@ -191,17 +193,19 @@ Essentially, --workspace acme/dev is equivalent to:
 	}
 */
 func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
-	// TODO KAI FIX ME <WORKSPACE>
-	// https://github.com/turbot/pipe-fittings/issues/154
-	//if IsCloudWorkspaceIdentifier(name) {
-	//	slog.Debug("getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
-	//	return &modconfig.SteampipeWorkspaceProfile{
-	//		SnapshotLocation:  utils.ToStringPointer(name),
-	//		WorkspaceDatabase: utils.ToStringPointer(name),
-	//	}
-	//}
-	var w T
-	return w
+	var empty T
+	if IsCloudWorkspaceIdentifier(name) {
+		switch any(empty).(type) {
+		case *modconfig.SteampipeWorkspaceProfile:
+			slog.Debug("getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
+			var res modconfig.WorkspaceProfile = &modconfig.SteampipeWorkspaceProfile{
+				SnapshotLocation: utils.ToStringPointer(name),
+				Database:         utils.ToStringPointer(name),
+			}
+			return res.(T)
+		}
+	}
+	return empty
 }
 
 func (l *WorkspaceProfileLoader[T]) setWorkspaces(workspacesPrecedenceList []map[string]T) {
