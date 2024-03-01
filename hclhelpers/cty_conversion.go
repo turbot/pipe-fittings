@@ -15,6 +15,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 	"github.com/zclconf/go-cty/cty/json"
@@ -904,8 +905,8 @@ func ConvertInterfaceToCtyValue(v interface{}) (cty.Value, error) {
 	default:
 		// Try for time
 		if t, ok := v.(time.Time); ok {
-			rfc3339Time := t.Format(time.RFC3339)
-			return cty.StringVal(rfc3339Time), nil
+			rfc3389Time := t.Format(utils.RFC3339WithMS)
+			return cty.StringVal(rfc3389Time), nil
 		}
 
 		// Is it a complex struct that can be marshalled to a JSON?

@@ -65,7 +65,8 @@ func GetLoginToken(ctx context.Context, id, code string) (string, error) {
 
 // SaveToken writes the token to  ~/.steampipe/internal/{cloud-host}.tptt
 func SaveToken(token string) error {
-	tokenPath := tokenFilePath(viper.GetString(constants.ArgPipesHost))
+	// create pipes folder if necessary
+	tokenPath := ensureTokenFilePath(viper.GetString(constants.ArgPipesHost))
 	return sperr.Wrap(os.WriteFile(tokenPath, []byte(token), 0600))
 }
 
@@ -98,6 +99,11 @@ func getActorName(actor steampipecloud.User) string {
 }
 
 func tokenFilePath(pipesHost string) string {
+	tokenPath := path.Join(filepaths.PipesInternalDir(), fmt.Sprintf("%s%s", pipesHost, constants.TokenExtension))
+	return tokenPath
+}
+
+func ensureTokenFilePath(pipesHost string) string {
 	tokenPath := path.Join(filepaths.EnsurePipesInternalDir(), fmt.Sprintf("%s%s", pipesHost, constants.TokenExtension))
 	return tokenPath
 }
