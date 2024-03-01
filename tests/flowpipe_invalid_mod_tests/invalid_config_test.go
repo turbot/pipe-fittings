@@ -91,6 +91,42 @@ var invalidConfigTests = []invalidConfigTestSetup{
 		configDirs:    []string{"./mods/invalid_cred"},
 		containsError: "Invalid credential type slacks",
 	},
+	{
+		title:         "Invalid slack integration",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_slack_integration_token_webhook_url"},
+		containsError: "Attributes token and webhook_url are mutually exclusive",
+	},
+	{
+		title:         "Invalid slack integration - missing both token and webhook_url",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_slack_integration_missing_token_webhook_url"},
+		containsError: "slack.my_slack_app requires one of the following attributes set: token, webhook_url",
+	},
+	{
+		title:         "Invalid slack integration - invalid signing_secret",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_slack_integration_signing_secret"},
+		containsError: "Attributes signing_secret is only applies when attribute token is provided: slack.my_slack_app",
+	},
+	{
+		title:         "Invalid email integration - missing required attributes: from, smtp_host",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_email_integration_missing_required_attribute"},
+		containsError: "Missing required attributes from, smtp_host: email.my_email_app",
+	},
+	{
+		title:         "Invalid email integration - missing required attribute: from",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_email_integration_missing_from"},
+		containsError: "Attribute from must be defined: email.my_email_app",
+	},
+	{
+		title:         "Invalid email integration - missing required attribute: smtp_host",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_email_integration_missing_smtp_host"},
+		containsError: "Attribute smtp_host must be defined: email.my_email_app",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {

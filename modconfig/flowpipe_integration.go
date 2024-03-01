@@ -176,13 +176,54 @@ func (i *SlackIntegration) GetIntegrationType() string {
 }
 
 func (i *SlackIntegration) Validate() hcl.Diagnostics {
-	// TODO: slack integration validation
-	return hcl.Diagnostics{}
+	diags := hcl.Diagnostics{}
+
+	var token, webhook, signingSecret string
+
+	// Get the token
+	if i.Token != nil {
+		token = *i.Token
+	}
+
+	// Get the webhook URL
+	if i.WebhookUrl != nil {
+		webhook = *i.WebhookUrl
+	}
+
+	// Return error if neither token nor webhook URL are not provided
+	if token == "" && webhook == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  i.Name() + " requires one of the following attributes set: " + schema.AttributeTypeToken + ", " + schema.AttributeTypeWebhookUrl,
+		})
+	}
+
+	// Return error if both token and webhook URL provided
+	if token != "" && webhook != "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attributes " + schema.AttributeTypeToken + " and " + schema.AttributeTypeWebhookUrl + " are mutually exclusive: " + i.Name(),
+		})
+	}
+
+	// Get the signing secret
+	if i.SigningSecret != nil {
+		signingSecret = *i.SigningSecret
+	}
+
+	// Return error if signing secret is defined when token is not provided
+	if token == "" && signingSecret != "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attributes " + schema.AttributeTypeSigningSecret + " is only applies when attribute token is provided: " + i.Name(),
+		})
+	}
+
+	return diags
 }
 
 func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-	var whSet, tknSet bool
 
 	for name, attr := range hclAttributes {
 		switch name {
@@ -193,7 +234,6 @@ func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				continue
 			}
 			i.Token = token
-			tknSet = true
 		case schema.AttributeTypeSigningSecret:
 			ss, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
 			if len(moreDiags) > 0 {
@@ -208,7 +248,6 @@ func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				continue
 			}
 			i.WebhookUrl = webhookUrl
-			whSet = true
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -216,20 +255,6 @@ func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 				Subject:  &attr.Range,
 			})
 		}
-	}
-
-	if tknSet && whSet {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Attributes token and webhook_url are mutually exclusive: " + i.Name(),
-		})
-	}
-
-	if !tknSet && !whSet {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  i.Name() + " requires one of the following attributes set: token, webhook_url",
-		})
 	}
 
 	return diags
@@ -368,8 +393,45 @@ func (i *EmailIntegration) CtyValue() (cty.Value, error) {
 }
 
 func (i *EmailIntegration) Validate() hcl.Diagnostics {
-	// TODO: email integration validation
-	return hcl.Diagnostics{}
+	diags := hcl.Diagnostics{}
+
+	var from, smtpHost string
+
+	// Get the sender info
+	if i.From != nil {
+		from = *i.From
+	}
+
+	// Return error if both from and smtp_host are missing
+	if from == "" && smtpHost == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Missing required attributes " + schema.AttributeTypeFrom + ", " + schema.AttributeTypeSmtpHost + ": " + i.Name(),
+		})
+	}
+
+	// Return error if from is not provided
+	if from == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attribute " + schema.AttributeTypeFrom + " must be defined: " + i.Name(),
+		})
+	}
+
+	// Get the SMTP host
+	if i.SmtpHost != nil {
+		smtpHost = *i.SmtpHost
+	}
+
+	// Return error if from is not provided
+	if smtpHost == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attribute " + schema.AttributeTypeSmtpHost + " must be defined: " + i.Name(),
+		})
+	}
+
+	return diags
 }
 
 func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
