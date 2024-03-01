@@ -326,10 +326,15 @@ func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
 		return false
 	}
 
-	// Compare Ignore
+	if ec == nil && other != nil || ec != nil && other == nil {
+		return false
+	}
+
 	if ec.Ignore != other.Ignore {
 		return false
 	}
+
+	// TODO: compare If
 
 	return true
 }
@@ -637,81 +642,63 @@ func (p *PipelineStepBase) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-func (p *PipelineStepBase) Equals(otherBase *PipelineStepBase) bool {
-	if p == nil || otherBase == nil {
+func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
+	if p == nil || other == nil {
 		return false
 	}
 
-	// Compare Title
-	if !reflect.DeepEqual(p.Title, otherBase.Title) {
-		return false
-	}
-
-	// Compare Description
-	if !reflect.DeepEqual(p.Description, otherBase.Description) {
-		return false
-	}
-
-	// Compare Name
-	if p.Name != otherBase.Name {
-		return false
-	}
-
-	// Compare Type
-	if p.Type != otherBase.Type {
-		return false
-	}
-
-	// Compare Timeout
-	if p.Timeout != otherBase.Timeout {
-		return false
-	}
-
-	// Compare DependsOn slices
-	if len(p.DependsOn) != len(otherBase.DependsOn) {
-		return false
-	}
-	for i, dep := range p.DependsOn {
-		if dep != otherBase.DependsOn[i] {
-			return false
-		}
-	}
-
-	// Compare Resolved
-	if p.Resolved != otherBase.Resolved {
+	if p == nil && other != nil || p != nil && other == nil {
 		return false
 	}
 
 	// Compare ErrorConfig (if not nil)
-	if (p.ErrorConfig == nil && otherBase.ErrorConfig != nil) || (p.ErrorConfig != nil && otherBase.ErrorConfig == nil) {
+	if (p.ErrorConfig == nil && other.ErrorConfig != nil) || (p.ErrorConfig != nil && other.ErrorConfig == nil) {
 		return false
 	}
-	if p.ErrorConfig != nil && otherBase.ErrorConfig != nil && !p.ErrorConfig.Equals(otherBase.ErrorConfig) {
+	if p.ErrorConfig != nil && other.ErrorConfig != nil && !p.ErrorConfig.Equals(other.ErrorConfig) {
 		return false
 	}
 
 	// Compare UnresolvedAttributes (map comparison)
-	if len(p.UnresolvedAttributes) != len(otherBase.UnresolvedAttributes) {
+	if len(p.UnresolvedAttributes) != len(other.UnresolvedAttributes) {
 		return false
 	}
+
 	for key, expr := range p.UnresolvedAttributes {
-		otherExpr, ok := otherBase.UnresolvedAttributes[key]
+		otherExpr, ok := other.UnresolvedAttributes[key]
 		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
 			return false
 		}
+	}
 
-		// haven't found a good way to test check equality for two hcl expressions
+	// and reverse
+	for key := range other.UnresolvedAttributes {
+		if _, ok := p.UnresolvedAttributes[key]; !ok {
+			return false
+		}
 	}
 
 	// Compare ForEach (if not nil)
-	if (p.ForEach == nil && otherBase.ForEach != nil) || (p.ForEach != nil && otherBase.ForEach == nil) {
+	if (p.ForEach == nil && other.ForEach != nil) || (p.ForEach != nil && other.ForEach == nil) {
 		return false
 	}
-	if p.ForEach != nil && otherBase.ForEach != nil && !hclhelpers.ExpressionsEqual(p.ForEach, otherBase.ForEach) {
+	if p.ForEach != nil && other.ForEach != nil && !hclhelpers.ExpressionsEqual(p.ForEach, other.ForEach) {
 		return false
 	}
 
-	return true
+	return utils.PtrEqual(p.Title, other.Title) &&
+		utils.PtrEqual(p.Description, other.Description) &&
+		p.Name == other.Name &&
+		p.Type == other.Type &&
+		p.PipelineName == other.PipelineName &&
+		p.FileName == other.FileName &&
+		p.StartLineNumber == other.StartLineNumber &&
+		p.EndLineNumber == other.EndLineNumber &&
+		p.MaxConcurrency == other.MaxConcurrency &&
+		p.Timeout == other.Timeout &&
+		helpers.StringSliceEqualIgnoreOrder(p.DependsOn, other.DependsOn) &&
+		helpers.StringSliceEqualIgnoreOrder(p.CredentialDependsOn, other.CredentialDependsOn) &&
+		p.Resolved == other.Resolved
 }
 
 func (p *PipelineStepBase) SetPipelineName(pipelineName string) {

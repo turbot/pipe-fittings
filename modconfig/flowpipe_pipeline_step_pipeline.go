@@ -42,20 +42,22 @@ func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
 	// Iterate through the first map
 	for key, value1 := range p.Args {
 		// Check if the key exists in the second map
-		value2, ok := other.Args[key]
-		if !ok {
+		if value2, ok := other.Args[key]; !ok {
 			return false
-		}
-
-		// Use reflect.DeepEqual to compare the values
-		if !reflect.DeepEqual(value1, value2) {
+		} else if !reflect.DeepEqual(value1, value2) {
 			return false
 		}
 	}
 
-	// TODO: more here, can't just compare the name
-	return p.Pipeline.AsValueMap()[schema.LabelName] == other.Pipeline.AsValueMap()[schema.LabelName]
+	// and reverse
+	for key := range other.Args {
+		// Check if the key exists in the second map
+		if _, ok := p.Args[key]; !ok {
+			return false
+		}
+	}
 
+	return p.Pipeline.AsValueMap()[schema.LabelName] == other.Pipeline.AsValueMap()[schema.LabelName]
 }
 
 func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
