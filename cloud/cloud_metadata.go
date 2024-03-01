@@ -38,7 +38,7 @@ func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string
 	if error_helpers.IsInvalidWorkspaceDatabaseArg(err) {
 		return nil, sperr.New("Invalid 'workspace-database' argument '%s'.\nPlease check the workspace name and try again.", workspaceDatabaseString)
 	} else if error_helpers.IsInvalidCloudToken(err) {
-		return nil, error_helpers.InvalidCloudTokenError
+		return nil, error_helpers.InvalidCloudTokenError()
 	}
 
 	workspaceHost := cloudWorkspace.GetHost()
@@ -46,7 +46,7 @@ func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string
 
 	actor, _, err := client.Actors.Get(ctx).Execute()
 	if err != nil {
-		return nil, error_helpers.InvalidCloudTokenError
+		return nil, error_helpers.InvalidCloudTokenError()
 	}
 
 	password, _, err := client.Users.GetDBPassword(ctx, actor.GetHandle()).Execute()
