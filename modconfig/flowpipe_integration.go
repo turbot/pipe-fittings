@@ -215,7 +215,7 @@ func (i *SlackIntegration) Validate() hcl.Diagnostics {
 	if token == "" && signingSecret != "" {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Attributes " + schema.AttributeTypeSigningSecret + " is only applies when attribute token is provided: " + i.Name(),
+			Summary:  "Attribute " + schema.AttributeTypeSigningSecret + " is only applies when attribute token is provided: " + i.Name(),
 		})
 	}
 

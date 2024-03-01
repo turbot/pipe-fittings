@@ -107,7 +107,7 @@ var invalidConfigTests = []invalidConfigTestSetup{
 		title:         "Invalid slack integration - invalid signing_secret",
 		modDir:        "",
 		configDirs:    []string{"./mods/bad_slack_integration_signing_secret"},
-		containsError: "Attributes signing_secret is only applies when attribute token is provided: slack.my_slack_app",
+		containsError: "Attribute signing_secret is only applies when attribute token is provided: slack.my_slack_app",
 	},
 	{
 		title:         "Invalid email integration - missing required attributes: from, smtp_host",
