@@ -9,8 +9,13 @@ import (
 	"github.com/turbot/pipe-fittings/perr"
 )
 
-var MissingCloudTokenError = fmt.Errorf("Not authenticated for Turbot Pipes.\nPlease run %s or setup a token.", constants.Bold(fmt.Sprintf("%s login", app_specific.AppName)))
-var InvalidCloudTokenError = fmt.Errorf("Invalid token.\nPlease run %s or setup a token.", constants.Bold(constants.Bold(fmt.Sprintf("%s login", app_specific.AppName))))
+func MissingCloudTokenError() error {
+	return fmt.Errorf("Not authenticated for Turbot Pipes.\nPlease run %s or setup a token.", constants.Bold(fmt.Sprintf("%s login", app_specific.AppName)))
+}
+func InvalidCloudTokenError() error {
+	return fmt.Errorf("Invalid token.\nPlease run %s or setup a token.", constants.Bold(constants.Bold(fmt.Sprintf("%s login", app_specific.AppName))))
+}
+
 var InvalidStateError = errors.New("invalid state")
 
 func MergeErrors(errs []error) []string {

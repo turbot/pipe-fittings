@@ -17,7 +17,7 @@ func GetUserWorkspaceHandle(ctx context.Context, token string) (string, error) {
 	client := newSteampipeCloudClient(token)
 	actor, _, err := client.Actors.Get(ctx).Execute()
 	if err != nil {
-		return "", error_helpers.InvalidCloudTokenError
+		return "", error_helpers.InvalidCloudTokenError()
 	}
 	userHandler := actor.Handle
 	workspacesResponse, _, err := client.UserWorkspaces.List(ctx, userHandler).Execute()
