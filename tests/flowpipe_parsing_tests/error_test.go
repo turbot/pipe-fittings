@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 func TestStepErrorConfig(t *testing.T) {
@@ -36,7 +37,12 @@ func TestStepErrorConfigWithIf(t *testing.T) {
 	}
 
 	pipeline := pipelines["local.pipeline.bad_http_ignored_with_if"]
-	assert.NotNil(pipeline.Steps[0].GetUnresolvedBodies()["error"])
+
+	step := pipeline.GetStep("http.my_step_1")
+	errConfig, diags := step.GetErrorConfig(nil, false)
+	assert.False(diags.HasErrors(), "diags has errors")
+
+	assert.NotNil(errConfig.UnresolvedAttributes[schema.AttributeTypeIf], "if attribute not found")
 }
 
 func TestStepErrorConfigRetries(t *testing.T) {
