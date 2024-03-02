@@ -10,7 +10,6 @@ pipeline "bad_http_ignored_with_if" {
   } 
 }
 
-
 pipeline "bad_http" {
   description = "my simple http pipeline"
   step "http" "my_step_1" {
@@ -26,7 +25,6 @@ pipeline "bad_http" {
     value    = each.message
   }
 }
-
 
 pipeline "bad_http_retries" {
   description = "Bad HTTP step with retries. Retry is not working at the moment, but it's parsed correctly"

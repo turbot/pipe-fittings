@@ -292,7 +292,6 @@ type PipelineStep interface {
 	GetForEach() hcl.Expression
 	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
-	SetErrorConfig(*ErrorConfig)
 	GetErrorConfig(*hcl.EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
 	GetRetryConfig(*hcl.EvalContext, bool) (*RetryConfig, hcl.Diagnostics)
 	GetThrowConfig() []ThrowConfig
@@ -311,31 +310,93 @@ type PipelineStepBaseInterface interface {
 }
 
 type ErrorConfig struct {
-	// This means that invalid attributes must be validated "manually"
-	If hcl.Body `json:"-" hcl:",remain"`
+	// circular link to its "parent"
+	PipelineStepBase *PipelineStepBase `json:"-"`
 
-	Ignore *bool `json:"ignore,omitempty" hcl:"ignore,optional" cty:"ignore"`
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+	If                   *bool                     `json:"-" hcl:",remain"`
+	Ignore               *bool                     `json:"ignore,omitempty" hcl:"ignore,optional" cty:"ignore"`
+}
+
+func (e *ErrorConfig) Equals(other *ErrorConfig) bool {
+	if e == nil || other == nil {
+		return false
+	}
+
+	if e == nil && other != nil || e != nil && other == nil {
+		return false
+	}
+
+	for key, expr := range e.UnresolvedAttributes {
+		otherExpr, ok := other.UnresolvedAttributes[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
+	}
+
+	// reverse
+	for key := range other.UnresolvedAttributes {
+		if _, ok := e.UnresolvedAttributes[key]; !ok {
+			return false
+		}
+	}
+
+	return utils.BoolPtrEqual(e.Ignore, other.Ignore)
+
+}
+
+func (e *ErrorConfig) AppendDependsOn(dependsOn ...string) {
+	e.PipelineStepBase.AppendDependsOn(dependsOn...)
+}
+
+func (e *ErrorConfig) AppendCredentialDependsOn(...string) {
+	// not implemented
+}
+
+func (e *ErrorConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
+	e.UnresolvedAttributes[name] = expr
+}
+
+func (e *ErrorConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeIf:
+			e.AddUnresolvedAttribute(name, attr.Expr)
+		case schema.AttributeTypeIgnore:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, e)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				if val.Type() != cty.Bool {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse ignore attribute as boolean",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				e.Ignore = utils.ToPointer(val.True())
+			}
+
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("Unsupported attribute '%s' in error block", attr.Name),
+				Subject:  &attr.NameRange,
+			})
+		}
+	}
+
+	return diags
 }
 
 func (e *ErrorConfig) Validate() bool {
-	return true
-}
-
-func (ec *ErrorConfig) Equals(other *ErrorConfig) bool {
-	if ec == nil || other == nil {
-		return false
-	}
-
-	if ec == nil && other != nil || ec != nil && other == nil {
-		return false
-	}
-
-	if ec.Ignore != other.Ignore {
-		return false
-	}
-
-	// TODO: compare If
-
 	return true
 }
 
@@ -507,7 +568,10 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 	if len(errorBlocks) == 1 {
 		errorBlock := errorBlocks[0]
-		errorDefn := ErrorConfig{}
+		errorDefn := ErrorConfig{
+			PipelineStepBase:     p, // urgh ...
+			UnresolvedAttributes: make(map[string]hcl.Expression),
+		}
 
 		var errorBlockAttributes hcl.Attributes
 		errorBlockAttributes, diags = errorBlock.Body.JustAttributes()
@@ -515,38 +579,11 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 			return diags
 		}
 
-		validAttributes := map[string]bool{
-			"if":     true,
-			"ignore": true,
+		moreDiags := errorDefn.SetAttributes(errorBlockAttributes, evalContext)
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
 		}
-
-		attributesOK := true
-
-		for _, a := range errorBlockAttributes {
-			if !validAttributes[a.Name] {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("Unsupported attribute '%s' in error block", a.Name),
-					Subject:  &a.NameRange,
-				})
-				attributesOK = false
-			}
-		}
-
-		if attributesOK {
-			moreDiags := gohcl.DecodeBody(errorBlock.Body, evalContext, &errorDefn)
-			if len(moreDiags) > 0 {
-				moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeError, errorBlock.Body)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-				}
-			} else if errorBlockAttributes != nil && errorBlockAttributes[schema.AttributeTypeIf] != nil {
-				p.AddUnresolvedBody(schema.BlockTypeError, errorBlock.Body)
-			} else {
-				// fully resolved error block
-				p.ErrorConfig = &errorDefn
-			}
-		}
+		p.ErrorConfig = &errorDefn
 	}
 
 	retryBlocks := blocks.ByType()[schema.BlockTypeRetry]
@@ -709,46 +746,45 @@ func (p *PipelineStepBase) GetPipelineName() string {
 	return p.PipelineName
 }
 
-func (p *PipelineStepBase) SetErrorConfig(errorConfig *ErrorConfig) {
-	p.ErrorConfig = errorConfig
-}
-
 func (p *PipelineStepBase) GetErrorConfig(evalContext *hcl.EvalContext, ifResolution bool) (*ErrorConfig, hcl.Diagnostics) {
-	errorBlock := p.UnresolvedBodies[schema.BlockTypeError]
 
-	if errorBlock == nil {
+	if p.ErrorConfig == nil {
+		return nil, hcl.Diagnostics{}
+	}
+
+	if !ifResolution {
 		return p.ErrorConfig, hcl.Diagnostics{}
 	}
 
-	errorConfig := &ErrorConfig{}
-
-	if ifResolution {
-		errorBlockAttribs, diags := errorBlock.JustAttributes()
+	// do not modify the existing error config, it should always be resolved at runtime
+	newErrorConfig := &ErrorConfig{}
+	if p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIf] != nil {
+		ifValue, diags := p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIf].Value(evalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
 
-		ifAttribute := errorBlockAttribs[schema.AttributeTypeIf]
-		if ifAttribute != nil && ifAttribute.Expr != nil {
-			// check if we should run this retry
-			ifValue, diags := ifAttribute.Expr.Value(evalContext)
-			if len(diags) > 0 {
-				return nil, diags
-			}
+		// If the `if` attribute returns "false" then we return nil for the error config since it doesn't apply
+		if !ifValue.True() {
+			return nil, hcl.Diagnostics{}
+		}
 
-			// If the `if` attribute returns "false" then we return nil for the error config since it doesn't apply
-			if !ifValue.True() {
-				return nil, hcl.Diagnostics{}
-			}
+		newErrorConfig.If = utils.ToPointer(ifValue.True())
+	}
+
+	if p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIgnore] != nil {
+		ignoreValue, diags := p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIgnore].Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+		newErrorConfig.Ignore = utils.ToPointer(ignoreValue.True())
+	} else if p.ErrorConfig.Ignore != nil {
+		if *p.ErrorConfig.Ignore {
+			newErrorConfig.Ignore = utils.ToPointer(true)
 		}
 	}
 
-	diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeError], nil, errorConfig)
-	if len(diags) > 0 {
-		return nil, diags
-	}
-
-	return errorConfig, hcl.Diagnostics{}
+	return newErrorConfig, hcl.Diagnostics{}
 }
 
 func (p *PipelineStepBase) SetOutputConfig(output map[string]*PipelineOutput) {
