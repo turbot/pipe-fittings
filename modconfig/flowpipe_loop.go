@@ -1,17 +1,22 @@
 package modconfig
 
 import (
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type LoopDefn interface {
 	GetType() string
 	UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error)
+	Equals(LoopDefn) bool
 }
 
 func GetLoopDefn(stepType string) LoopDefn {
@@ -44,6 +49,56 @@ type LoopEmailStep struct {
 	Body             *string   `json:"body,omitempty" hcl:"body,optional" cty:"body"`
 	ContentType      *string   `json:"content_type,omitempty" hcl:"content_type,optional" cty:"content_type"`
 	Subject          *string   `json:"subject,omitempty" hcl:"subject,optional" cty:"subject"`
+}
+
+func (l *LoopEmailStep) Equals(other LoopDefn) bool {
+
+	if l == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
+		return false
+	}
+
+	otherLoopEmailStep, ok := other.(*LoopEmailStep)
+	if !ok {
+		return false
+	}
+
+	if l.To == nil && otherLoopEmailStep.To != nil || l.To != nil && otherLoopEmailStep.To == nil {
+		return false
+	}
+
+	if l.To != nil && !helpers.StringSliceEqualIgnoreOrder(*l.To, *otherLoopEmailStep.To) {
+		return false
+	}
+
+	if l.Cc == nil && otherLoopEmailStep.Cc != nil || l.Cc != nil && otherLoopEmailStep.Cc == nil {
+		return false
+	}
+
+	if l.Cc != nil && !helpers.StringSliceEqualIgnoreOrder(*l.Cc, *otherLoopEmailStep.Cc) {
+		return false
+	}
+
+	if l.Bcc == nil && otherLoopEmailStep.Bcc != nil || l.Bcc != nil && otherLoopEmailStep.Bcc == nil {
+		return false
+	}
+
+	if l.Bcc != nil && !helpers.StringSliceEqualIgnoreOrder(*l.Bcc, *otherLoopEmailStep.Bcc) {
+		return false
+	}
+
+	return l.Until == otherLoopEmailStep.Until &&
+		utils.PtrEqual(l.From, otherLoopEmailStep.From) &&
+		utils.PtrEqual(l.SenderCredential, otherLoopEmailStep.SenderCredential) &&
+		utils.PtrEqual(l.Host, otherLoopEmailStep.Host) &&
+		utils.PtrEqual(l.Port, otherLoopEmailStep.Port) &&
+		utils.PtrEqual(l.SenderName, otherLoopEmailStep.SenderName) &&
+		utils.PtrEqual(l.Body, otherLoopEmailStep.Body) &&
+		utils.PtrEqual(l.ContentType, otherLoopEmailStep.ContentType) &&
+		utils.PtrEqual(l.Subject, otherLoopEmailStep.Subject)
 }
 
 func (l *LoopEmailStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
@@ -94,6 +149,36 @@ type LoopQueryStep struct {
 	Args              *[]interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
 }
 
+func (l *LoopQueryStep) Equals(other LoopDefn) bool {
+
+	if l == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
+		return false
+	}
+
+	otherLoopQueryStep, ok := other.(*LoopQueryStep)
+	if !ok {
+		return false
+	}
+
+	if l.Args == nil && otherLoopQueryStep.Args != nil || l.Args != nil && otherLoopQueryStep.Args == nil {
+		return false
+	}
+
+	if l.Args != nil {
+		if !reflect.DeepEqual(*l.Args, *otherLoopQueryStep.Args) {
+			return false
+		}
+	}
+
+	return l.Until == otherLoopQueryStep.Until &&
+		utils.PtrEqual(l.ConnnectionString, otherLoopQueryStep.ConnnectionString) &&
+		utils.PtrEqual(l.Sql, otherLoopQueryStep.Sql)
+}
+
 func (l *LoopQueryStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.ConnnectionString != nil {
 		input["connection_string"] = *l.ConnnectionString
@@ -119,6 +204,39 @@ type LoopHttpStep struct {
 	RequestHeaders *map[string]interface{} `json:"request_headers,omitempty" hcl:"request_headers,optional" cty:"request_headers"`
 	CaCertPem      *string                 `json:"ca_cert_pem,omitempty" hcl:"ca_cert_pem,optional" cty:"ca_cert_pem"`
 	Insecure       *bool                   `json:"insecure,omitempty" hcl:"insecure,optional" cty:"insecure"`
+}
+
+func (l *LoopHttpStep) Equals(other LoopDefn) bool {
+
+	if l == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
+		return false
+	}
+
+	otherLoopHttpStep, ok := other.(*LoopHttpStep)
+	if !ok {
+		return false
+	}
+
+	if l.RequestHeaders == nil && otherLoopHttpStep.RequestHeaders != nil || l.RequestHeaders != nil && otherLoopHttpStep.RequestHeaders == nil {
+		return false
+	}
+
+	if l.RequestHeaders != nil {
+		if !reflect.DeepEqual(*l.RequestHeaders, *otherLoopHttpStep.RequestHeaders) {
+			return false
+		}
+	}
+
+	return l.Until == otherLoopHttpStep.Until &&
+		utils.PtrEqual(l.URL, otherLoopHttpStep.URL) &&
+		utils.PtrEqual(l.Method, otherLoopHttpStep.Method) &&
+		utils.PtrEqual(l.RequestBody, otherLoopHttpStep.RequestBody) &&
+		utils.PtrEqual(l.CaCertPem, otherLoopHttpStep.CaCertPem) &&
+		utils.BoolPtrEqual(l.Insecure, otherLoopHttpStep.Insecure)
 }
 
 func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
@@ -153,6 +271,25 @@ type LoopSleepStep struct {
 	Duration *string `json:"duration,omitempty" hcl:"duration,optional" cty:"duration"`
 }
 
+func (l *LoopSleepStep) Equals(other LoopDefn) bool {
+
+	if l == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
+		return false
+	}
+
+	otherLoopSleepStep, ok := other.(*LoopSleepStep)
+	if !ok {
+		return false
+	}
+
+	return l.Until == otherLoopSleepStep.Until &&
+		utils.PtrEqual(l.Duration, otherLoopSleepStep.Duration)
+}
+
 func (l *LoopSleepStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 	if l.Duration != nil {
 		input["duration"] = *l.Duration
@@ -167,6 +304,25 @@ func (*LoopSleepStep) GetType() string {
 type LoopPipelineStep struct {
 	Until bool        `json:"until" hcl:"until" cty:"until"`
 	Args  interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
+}
+
+func (l *LoopPipelineStep) Equals(other LoopDefn) bool {
+
+	if l == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
+		return false
+	}
+
+	otherLoopPipelineStep, ok := other.(*LoopPipelineStep)
+	if !ok {
+		return false
+	}
+
+	return l.Until == otherLoopPipelineStep.Until &&
+		reflect.DeepEqual(l.Args, otherLoopPipelineStep.Args)
 }
 
 func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
@@ -213,6 +369,25 @@ func (*LoopPipelineStep) GetType() string {
 type LoopTransformStep struct {
 	Until bool        `json:"until" hcl:"until" cty:"until"`
 	Value interface{} `json:"value,omitempty" hcl:"value,optional" cty:"value"`
+}
+
+func (l *LoopTransformStep) Equals(other LoopDefn) bool {
+
+	if l == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
+		return false
+	}
+
+	otherLoopTransformStep, ok := other.(*LoopTransformStep)
+	if !ok {
+		return false
+	}
+
+	return l.Until == otherLoopTransformStep.Until &&
+		reflect.DeepEqual(l.Value, otherLoopTransformStep.Value)
 }
 
 func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {

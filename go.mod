@@ -3,7 +3,6 @@ module github.com/turbot/pipe-fittings
 go 1.21.0
 
 require (
-	github.com/Machiel/slugify v1.0.1
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/bgentry/speakeasy v0.1.0
 	github.com/briandowns/spinner v1.23.0

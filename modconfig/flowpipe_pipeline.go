@@ -567,7 +567,7 @@ func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 		return false
 	}
 
-	if helpers.StringSliceEqualIgnoreOrder(o.DependsOn, other.DependsOn) {
+	if !helpers.StringSliceEqualIgnoreOrder(o.DependsOn, other.DependsOn) {
 		return false
 	}
 
