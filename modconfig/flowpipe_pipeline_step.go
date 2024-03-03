@@ -742,6 +742,14 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		return false
 	}
 
+	// Compare retry config
+	if (p.RetryConfig == nil && other.RetryConfig != nil) || (p.RetryConfig != nil && other.RetryConfig == nil) {
+		return false
+	}
+	if p.RetryConfig != nil && other.RetryConfig != nil && !p.RetryConfig.Equals(other.RetryConfig) {
+		return false
+	}
+
 	// Compare UnresolvedAttributes (map comparison)
 	if len(p.UnresolvedAttributes) != len(other.UnresolvedAttributes) {
 		return false
