@@ -38,8 +38,36 @@ func NewRetryConfig(p *PipelineStepBase) *RetryConfig {
 	}
 }
 
-func (r *RetryConfig) Equals(other *ErrorConfig) bool {
-	return true
+func (r *RetryConfig) Equals(other *RetryConfig) bool {
+
+	if r == nil && other == nil {
+		return true
+	}
+
+	if r == nil && other != nil || r != nil && other == nil {
+		return false
+	}
+
+	for key, expr := range r.UnresolvedAttributes {
+		otherExpr, ok := other.UnresolvedAttributes[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
+	}
+
+	// reverse
+	for key := range other.UnresolvedAttributes {
+		if _, ok := r.UnresolvedAttributes[key]; !ok {
+			return false
+		}
+	}
+
+	return utils.BoolPtrEqual(r.If, other.If) &&
+		utils.PtrEqual(r.MaxAttempts, other.MaxAttempts) &&
+		utils.PtrEqual(r.Strategy, other.Strategy) &&
+		utils.PtrEqual(r.MinInterval, other.MinInterval) &&
+		utils.PtrEqual(r.MaxInterval, other.MaxInterval)
+
 }
 
 func (r *RetryConfig) AppendDependsOn(dependsOn ...string) {
