@@ -42,7 +42,9 @@ func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
-	return p.Image == other.Image && reflect.DeepEqual(p.Cmd, other.Cmd) && reflect.DeepEqual(p.Env, other.Env)
+	return utils.PtrEqual(p.Image, other.Image) &&
+		reflect.DeepEqual(p.Cmd, other.Cmd) &&
+		reflect.DeepEqual(p.Env, other.Env)
 }
 
 func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {

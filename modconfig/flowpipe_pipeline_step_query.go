@@ -1,10 +1,9 @@
 package modconfig
 
 import (
-	"reflect"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -22,8 +21,12 @@ type PipelineStepQuery struct {
 
 func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || p != nil && helpers.IsNil(iOther) {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepQuery)
@@ -44,8 +47,8 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 		}
 	}
 
-	return reflect.DeepEqual(p.Database, other.Database) &&
-		reflect.DeepEqual(p.Sql, other.Sql)
+	return utils.PtrEqual(p.Database, other.Database) &&
+		utils.PtrEqual(p.Sql, other.Sql)
 }
 
 func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {

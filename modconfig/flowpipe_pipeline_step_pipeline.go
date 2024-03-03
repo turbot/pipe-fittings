@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -21,8 +22,12 @@ type PipelineStepPipeline struct {
 
 func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || p != nil && helpers.IsNil(iOther) {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepPipeline)
@@ -55,6 +60,26 @@ func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
 		if _, ok := p.Args[key]; !ok {
 			return false
 		}
+	}
+
+	if p.Pipeline == cty.NilVal && other.Pipeline != cty.NilVal || p.Pipeline != cty.NilVal && other.Pipeline == cty.NilVal {
+		return false
+	}
+
+	// this should never happen?
+	if p.Pipeline == cty.NilVal && other.Pipeline == cty.NilVal {
+		return true
+	}
+
+	pValueMap := p.Pipeline.AsValueMap()
+	otherValueMap := other.Pipeline.AsValueMap()
+
+	if len(pValueMap) != len(otherValueMap) {
+		return false
+	}
+
+	if pValueMap[schema.LabelName] != otherValueMap[schema.LabelName] {
+		return false
 	}
 
 	return p.Pipeline.AsValueMap()[schema.LabelName] == other.Pipeline.AsValueMap()[schema.LabelName]
