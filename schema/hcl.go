@@ -90,6 +90,11 @@ const (
 	AttributeTypeStepName    = "step_name"
 	AttributeTypeFlowpipe    = "flowpipe"
 
+	AttributeTypeMaxAttempts = "max_attempts"
+	AttributeTypeStrategy    = "strategy"
+	AttributeTypeMinInterval = "min_interval"
+	AttributeTypeMaxInterval = "max_interval"
+
 	// pipeline attributes
 	AttributeTypeTags            = "tags"
 	AttributeTypeDocumentation   = "documentation"

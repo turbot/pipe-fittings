@@ -110,12 +110,12 @@ var tests = []testSetup{
 	{
 		title:         "retry - invalid attribute",
 		file:          "./pipelines/retry_invalid_attribute.fp",
-		containsError: "Unsupported attribute except in retry block",
+		containsError: "Unsupported attribute 'except' in retry block",
 	},
 	{
 		title:         "retry - invalid attribute value",
 		file:          "./pipelines/retry_invalid_attribute_value.fp",
-		containsError: "Unsuitable value: a number is required",
+		containsError: "Unable to parse value as number",
 	},
 	{
 		title:         "retry - invalid attribute value for strategy",

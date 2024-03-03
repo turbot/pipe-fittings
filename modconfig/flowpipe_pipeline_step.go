@@ -314,8 +314,15 @@ type ErrorConfig struct {
 	PipelineStepBase *PipelineStepBase `json:"-"`
 
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
-	If                   *bool                     `json:"-" hcl:",remain"`
+	If                   *bool                     `json:"if"`
 	Ignore               *bool                     `json:"ignore,omitempty" hcl:"ignore,optional" cty:"ignore"`
+}
+
+func NewErrorConfig(p *PipelineStepBase) *ErrorConfig {
+	return &ErrorConfig{
+		PipelineStepBase:     p,
+		UnresolvedAttributes: make(map[string]hcl.Expression),
+	}
 }
 
 func (e *ErrorConfig) Equals(other *ErrorConfig) bool {
@@ -387,7 +394,8 @@ func (e *ErrorConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("Unsupported attribute '%s' in error block", attr.Name),
+				Summary:  "Invalid attribute",
+				Detail:   fmt.Sprintf("Unsupported attribute '%s' in error block", attr.Name),
 				Subject:  &attr.NameRange,
 			})
 		}
@@ -464,46 +472,114 @@ func (p *PipelineStepBase) SetFileReference(fileName string, startLineNumber int
 }
 
 func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolution bool) (*RetryConfig, hcl.Diagnostics) {
-	retryBlock := p.UnresolvedBodies[schema.BlockTypeRetry]
 
-	if retryBlock == nil {
+	if p.RetryConfig == nil {
+		return nil, hcl.Diagnostics{}
+	}
+
+	if !ifResolution {
 		return p.RetryConfig, hcl.Diagnostics{}
 	}
 
-	retryConfig := NewRetryConfig()
+	// do not modify the existing retry config, it should always be resolved at runtime
+	newRetryConfig := &RetryConfig{}
 
-	if ifResolution {
-		retryBlockAttribs, diags := retryBlock.JustAttributes()
+	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeIf] != nil {
+		ifValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeIf].Value(evalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
 
-		ifAttribute := retryBlockAttribs[schema.AttributeTypeIf]
-		if ifAttribute != nil && ifAttribute.Expr != nil {
-			// check if we should run this retry
-			ifValue, diags := ifAttribute.Expr.Value(evalContext)
+		// If the `if` attribute returns "false" then we return nil for the retry config, thus we won't be retrying it
+		if !ifValue.True() {
+			return nil, hcl.Diagnostics{}
+		}
+	}
+
+	// resolved the rest of the unresolved attributes
+	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxAttempts] != nil {
+		maxAttemptsValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxAttempts].Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if maxAttemptsValue != cty.NilVal {
+			maxAttemptsInt, diags := hclhelpers.CtyToInt64(maxAttemptsValue)
 			if len(diags) > 0 {
 				return nil, diags
 			}
 
-			// If the `if` attribute returns "false" then we return nil for the retry config, thus we won't be retrying it
-			if !ifValue.True() {
-				return nil, hcl.Diagnostics{}
-			}
+			newRetryConfig.MaxAttempts = maxAttemptsInt
 		}
+	} else {
+		newRetryConfig.MaxAttempts = p.RetryConfig.MaxAttempts
 	}
 
-	diags := gohcl.DecodeBody(p.UnresolvedBodies[schema.BlockTypeRetry], nil, retryConfig)
+	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeStrategy] != nil {
+		strategyValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeStrategy].Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if strategyValue != cty.NilVal {
+			strategyStr, err := hclhelpers.CtyToString(strategyValue)
+			if err != nil {
+				return nil, hcl.Diagnostics{
+					{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse strategy attribute as string",
+					},
+				}
+
+			}
+			newRetryConfig.Strategy = &strategyStr
+		}
+	} else {
+		newRetryConfig.Strategy = p.RetryConfig.Strategy
+	}
+
+	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMinInterval] != nil {
+		minIntervalValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMinInterval].Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if minIntervalValue != cty.NilVal {
+			minIntervalInt, diags := hclhelpers.CtyToInt64(minIntervalValue)
+			if len(diags) > 0 {
+				return nil, diags
+			}
+
+			newRetryConfig.MinInterval = minIntervalInt
+		}
+	} else {
+		newRetryConfig.MinInterval = p.RetryConfig.MinInterval
+	}
+
+	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxInterval] != nil {
+		maxIntervalValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxInterval].Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if maxIntervalValue != cty.NilVal {
+			maxIntervalInt, diags := hclhelpers.CtyToInt64(maxIntervalValue)
+			if len(diags) > 0 {
+				return nil, diags
+			}
+
+			newRetryConfig.MaxInterval = maxIntervalInt
+		}
+	} else {
+		newRetryConfig.MaxInterval = p.RetryConfig.MaxInterval
+	}
+
+	diags := newRetryConfig.Validate()
 	if len(diags) > 0 {
 		return nil, diags
 	}
 
-	diags = append(diags, retryConfig.Validate()...)
-	if len(diags) > 0 {
-		return nil, diags
-	}
-
-	return retryConfig, hcl.Diagnostics{}
+	return newRetryConfig, hcl.Diagnostics{}
 
 }
 
@@ -568,10 +644,7 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 	if len(errorBlocks) == 1 {
 		errorBlock := errorBlocks[0]
-		errorDefn := ErrorConfig{
-			PipelineStepBase:     p, // urgh ...
-			UnresolvedAttributes: make(map[string]hcl.Expression),
-		}
+		errorDefn := NewErrorConfig(p)
 
 		var errorBlockAttributes hcl.Attributes
 		errorBlockAttributes, diags = errorBlock.Body.JustAttributes()
@@ -583,7 +656,7 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 		if len(moreDiags) > 0 {
 			diags = append(diags, moreDiags...)
 		}
-		p.ErrorConfig = &errorDefn
+		p.ErrorConfig = errorDefn
 	}
 
 	retryBlocks := blocks.ByType()[schema.BlockTypeRetry]
@@ -597,7 +670,7 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 	if len(retryBlocks) == 1 {
 		retryBlock := retryBlocks[0]
-		retryConfig := NewRetryConfig()
+		retryConfig := NewRetryConfig(p)
 
 		var retryBlockAttributes hcl.Attributes
 		retryBlockAttributes, diags = retryBlock.Body.JustAttributes()
@@ -605,40 +678,13 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 			return diags
 		}
 
-		moreDiags := gohcl.DecodeBody(retryBlock.Body, evalContext, retryConfig)
+		moreDiags := retryConfig.SetAttributes(retryBlockAttributes, evalContext)
 
 		if len(moreDiags) > 0 {
-			moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeRetry, retryBlock.Body)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-			}
-		} else if retryBlockAttributes != nil && retryBlockAttributes[schema.AttributeTypeIf] != nil {
-			p.AddUnresolvedBody(schema.BlockTypeRetry, retryBlock.Body)
-		} else {
-			// fully resolved retry block
-			p.RetryConfig = retryConfig
-
-			moreDiags := p.RetryConfig.Validate()
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-			}
+			return moreDiags
 		}
 
-		for _, a := range retryBlockAttributes {
-			if !helpers.StringSliceContains([]string{
-				schema.AttributeTypeIf,
-				"max_attempts",
-				"strategy",
-				"min_interval",
-				"max_interval",
-			}, a.Name) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("Unsupported attribute %s in retry block", a.Name),
-					Subject:  &a.NameRange,
-				})
-			}
-		}
+		p.RetryConfig = retryConfig
 	}
 
 	throwBlocks := blocks.ByType()[schema.BlockTypeThrow]
