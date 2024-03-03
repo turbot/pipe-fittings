@@ -5,25 +5,174 @@ import (
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
+)
+
+const (
+	DefaultMaxAttempts = 3
+	DefaultStrategy    = "constant"
+	DefaultMinInterval = 1000
+	DefaultMaxInterval = 10000
 )
 
 type RetryConfig struct {
-	// This means that invalid attributes must be validated "manually"
-	If hcl.Body `json:"-" hcl:",remain"`
+	// circular link to its "parent"
+	PipelineStepBase *PipelineStepBase `json:"-"`
 
-	MaxAttempts int    `json:"max_attempts,omitempty" hcl:"max_attempts,optional" cty:"max_attempts"`
-	Strategy    string `json:"strategy,omitempty" hcl:"strategy,optional" cty:"strategy"`
-	MinInterval int    `json:"min_interval,omitempty" hcl:"min_interval,optional" cty:"min_interval"`
-	MaxInterval int    `json:"max_interval,omitempty" hcl:"max_interval,optional" cty:"max_interval"`
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+
+	If          *bool   `json:"if"`
+	MaxAttempts *int64  `json:"max_attempts,omitempty" hcl:"max_attempts,optional" cty:"max_attempts"`
+	Strategy    *string `json:"strategy,omitempty" hcl:"strategy,optional" cty:"strategy"`
+	MinInterval *int64  `json:"min_interval,omitempty" hcl:"min_interval,optional" cty:"min_interval"`
+	MaxInterval *int64  `json:"max_interval,omitempty" hcl:"max_interval,optional" cty:"max_interval"`
 }
 
-func NewRetryConfig() *RetryConfig {
+func NewRetryConfig(p *PipelineStepBase) *RetryConfig {
 	return &RetryConfig{
-		MaxAttempts: 3, // TODO: should we have max attempts?
-		Strategy:    "constant",
-		MinInterval: 1000,
-		MaxInterval: 10000,
+		PipelineStepBase:     p,
+		UnresolvedAttributes: make(map[string]hcl.Expression),
 	}
+}
+
+func (r *RetryConfig) Equals(other *ErrorConfig) bool {
+	return true
+}
+
+func (r *RetryConfig) AppendDependsOn(dependsOn ...string) {
+	r.PipelineStepBase.AppendDependsOn(dependsOn...)
+}
+
+func (r *RetryConfig) AppendCredentialDependsOn(...string) {
+	// not implemented
+}
+
+func (r *RetryConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
+	r.UnresolvedAttributes[name] = expr
+}
+
+func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeIf:
+			r.AddUnresolvedAttribute(name, attr.Expr)
+		case schema.AttributeTypeMaxAttempts:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			if len(stepDiags) > 0 {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				valInt, stepDiags := hclhelpers.CtyToInt64(val)
+				if len(stepDiags) > 0 {
+					diags = append(diags, stepDiags...)
+					continue
+				}
+
+				r.MaxAttempts = valInt
+			}
+		case schema.AttributeTypeStrategy:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			if len(stepDiags) > 0 {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				valStr, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Invalid strategy",
+						Detail:   "strategy must be a string",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+
+				r.Strategy = &valStr
+			}
+
+		case schema.AttributeTypeMinInterval:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			if len(stepDiags) > 0 {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				valInt, stepDiags := hclhelpers.CtyToInt64(val)
+				if len(stepDiags) > 0 {
+					diags = append(diags, stepDiags...)
+					continue
+				}
+
+				r.MinInterval = valInt
+			}
+
+		case schema.AttributeTypeMaxInterval:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			if len(stepDiags) > 0 {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				valInt, stepDiags := hclhelpers.CtyToInt64(val)
+				if len(stepDiags) > 0 {
+					diags = append(diags, stepDiags...)
+					continue
+				}
+
+				r.MaxInterval = valInt
+			}
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid attribute",
+				Detail:   "Unsupported attribute '" + name + "' in retry block",
+				Subject:  &attr.Range,
+			})
+		}
+	}
+
+	moreDiags := r.Validate()
+	if len(moreDiags) > 0 {
+		diags = append(diags, moreDiags...)
+	}
+
+	return diags
+}
+
+func (r *RetryConfig) ResolveSettings() (int, string, int, int) {
+	maxAttempts := r.MaxAttempts
+	maxInterval := r.MaxInterval
+	minInterval := r.MinInterval
+	strategy := r.Strategy
+
+	if maxAttempts == nil {
+		maxAttempts = utils.ToPointer(int64(DefaultMaxAttempts))
+	}
+	if maxInterval == nil {
+		maxInterval = utils.ToPointer(int64(DefaultMaxInterval))
+	}
+
+	if minInterval == nil {
+		minInterval = utils.ToPointer(int64(DefaultMinInterval))
+	}
+
+	if strategy == nil {
+		strategy = utils.ToPointer(DefaultStrategy)
+	}
+
+	return int(*maxAttempts), *strategy, int(*minInterval), int(*maxInterval)
+
 }
 
 // The first attempt is the first time the operation is tried, NOT the first
@@ -36,16 +185,18 @@ func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
 		return time.Duration(0)
 	}
 
-	maxDuration := time.Duration(r.MaxInterval) * time.Millisecond
+	_, strategy, minInterval, maxInterval := r.ResolveSettings()
 
-	if r.Strategy == "linear" {
-		duration := time.Duration(r.MinInterval*(attempt-1)) * time.Millisecond
+	maxDuration := time.Duration(maxInterval) * time.Millisecond
+
+	if strategy == "linear" {
+		duration := time.Duration(minInterval*(attempt-1)) * time.Millisecond
 		return min(duration, maxDuration)
 	}
 
-	if r.Strategy == "exponential" {
+	if strategy == "exponential" {
 		if attempt == 2 {
-			return time.Duration(r.MinInterval) * time.Millisecond
+			return time.Duration(minInterval) * time.Millisecond
 		}
 
 		// The multiplier factor, usually 2 for exponential growth.
@@ -53,7 +204,7 @@ func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
 
 		// Calculate the delay as baseInterval * 2^(attempt-1).
 		// We subtract 1 from attempt to make the first attempt have no delay if desired.
-		delay := float64(r.MinInterval) * math.Pow(float64(factor), float64(attempt-2))
+		delay := float64(minInterval) * math.Pow(float64(factor), float64(attempt-2))
 
 		duration := time.Duration(delay) * time.Millisecond
 		if duration < 0 {
@@ -63,13 +214,15 @@ func (r *RetryConfig) CalculateBackoff(attempt int) time.Duration {
 		return min(duration, maxDuration)
 	}
 
-	return time.Duration(r.MinInterval) * time.Millisecond
+	return time.Duration(minInterval) * time.Millisecond
 }
 
 func (r *RetryConfig) Validate() hcl.Diagnostics {
 
+	maxAttempts, strategy, minInterval, maxInterval := r.ResolveSettings()
+
 	diags := hcl.Diagnostics{}
-	if r.Strategy != "constant" && r.Strategy != "exponential" && r.Strategy != "linear" {
+	if strategy != "constant" && strategy != "exponential" && strategy != "linear" {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid retry strategy",
@@ -77,7 +230,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MaxAttempts > 3*100 {
+	if maxAttempts > 3*100 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_attempts",
@@ -85,7 +238,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MinInterval > 1000*100 {
+	if minInterval > 1000*100 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
@@ -93,7 +246,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MinInterval < 0 {
+	if minInterval < 0 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
@@ -101,7 +254,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MaxInterval > 10000*100 {
+	if maxInterval > 10000*100 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_interval",
@@ -109,7 +262,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MaxInterval < 0 {
+	if maxInterval < 0 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_interval",
@@ -117,7 +270,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 		})
 	}
 
-	if r.MinInterval >= r.MaxInterval {
+	if minInterval >= maxInterval {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
