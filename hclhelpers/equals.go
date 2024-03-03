@@ -103,5 +103,21 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 		}
 	}
 
+	if expr1TupleConsExpr, ok := expr1.(*hclsyntax.TupleConsExpr); ok {
+		if expr2TupleConsExpr, ok := expr2.(*hclsyntax.TupleConsExpr); !ok {
+			return false
+		} else {
+			if len(expr1TupleConsExpr.Exprs) != len(expr2TupleConsExpr.Exprs) {
+				return false
+			}
+
+			for i, e1 := range expr1TupleConsExpr.Exprs {
+				if !ExpressionsEqual(e1, expr2TupleConsExpr.Exprs[i]) {
+					return false
+				}
+			}
+		}
+	}
+
 	return true
 }

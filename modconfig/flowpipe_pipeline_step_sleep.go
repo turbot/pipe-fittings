@@ -1,8 +1,11 @@
 package modconfig
 
 import (
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
@@ -16,8 +19,12 @@ type PipelineStepSleep struct {
 
 func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || !helpers.IsNil(iOther) && p == nil {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepSleep)
@@ -29,7 +36,7 @@ func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
-	return p.Duration == other.Duration
+	return reflect.DeepEqual(p.Duration, other.Duration)
 }
 
 func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {

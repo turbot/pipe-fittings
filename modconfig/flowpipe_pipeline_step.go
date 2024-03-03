@@ -670,6 +670,17 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		}
 	}
 
+	// best effort for throw config
+	if len(p.ThrowConfig) != len(other.ThrowConfig) {
+		return false
+	}
+
+	for i, throwConfig := range p.ThrowConfig {
+		if !reflect.DeepEqual(throwConfig, other.ThrowConfig[i]) {
+			return false
+		}
+	}
+
 	// Compare ForEach (if not nil)
 	if (p.ForEach == nil && other.ForEach != nil) || (p.ForEach != nil && other.ForEach == nil) {
 		return false
@@ -678,16 +689,14 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		return false
 	}
 
-	return utils.PtrEqual(p.Title, other.Title) &&
-		utils.PtrEqual(p.Description, other.Description) &&
-		p.Name == other.Name &&
+	return p.Name == other.Name &&
 		p.Type == other.Type &&
 		p.PipelineName == other.PipelineName &&
 		p.FileName == other.FileName &&
 		p.StartLineNumber == other.StartLineNumber &&
 		p.EndLineNumber == other.EndLineNumber &&
-		p.MaxConcurrency == other.MaxConcurrency &&
-		p.Timeout == other.Timeout &&
+		utils.PtrEqual(p.MaxConcurrency, other.MaxConcurrency) &&
+		reflect.DeepEqual(p.Timeout, other.Timeout) &&
 		helpers.StringSliceEqualIgnoreOrder(p.DependsOn, other.DependsOn) &&
 		helpers.StringSliceEqualIgnoreOrder(p.CredentialDependsOn, other.CredentialDependsOn) &&
 		p.Resolved == other.Resolved
