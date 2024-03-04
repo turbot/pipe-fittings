@@ -229,7 +229,6 @@ const (
 	AttributeArgs        = "args"
 	AttributeQuery       = "query"
 
-	// TODO KAI should these be AttributeType <MISC>
 	AttributeVar   = "var"
 	AttributeLocal = "local"
 

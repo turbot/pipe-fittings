@@ -10,13 +10,12 @@ const (
 	SqlExtension      = ".sql"
 	MarkdownExtension = ".md"
 
-	JsonExtension        = ".json"
-	CsvExtension         = ".csv"
-	TextExtension        = ".txt"
-	SnapshotExtension    = ".sps"
-	TokenExtension       = ".tptt"
-	LegacyTokenExtension = ".sptt"
-	PipelineExtension    = ".fp"
+	JsonExtension     = ".json"
+	CsvExtension      = ".csv"
+	TextExtension     = ".txt"
+	SnapshotExtension = ".pps"
+	TokenExtension    = ".tptt"
+	PipelineExtension = ".fp"
 )
 
 var YamlExtensions = []string{".yml", ".yaml"}

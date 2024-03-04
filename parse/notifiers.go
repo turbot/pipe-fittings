@@ -73,6 +73,12 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 			}
 
 			notifier.Notifies = append(notifier.Notifies, notify)
+
+			validationDiags := notify.Validate()
+			if len(validationDiags) > 0 {
+				diags = append(diags, validationDiags...)
+				continue
+			}
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -85,6 +91,11 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 	moreDiags := modconfig.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx)
 	if moreDiags != nil {
 		diags = append(diags, moreDiags...)
+	}
+
+	validationDiags := notifier.Validate()
+	if len(validationDiags) > 0 {
+		diags = append(diags, validationDiags...)
 	}
 
 	notifier.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
