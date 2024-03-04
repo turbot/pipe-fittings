@@ -37,5 +37,5 @@ func (e *SnapshotExporter) Name() string {
 }
 
 func (*SnapshotExporter) Alias() string {
-	return "sps"
+	return "pps"
 }
