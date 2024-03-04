@@ -10,14 +10,14 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/credential"
-
 	"github.com/fsnotify/fsnotify"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -91,29 +91,32 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
 	w.validateVariables = cfg.validateVariables
 
-	// load the w mod
-	errAndWarnings := w.loadWorkspaceMod(ctx)
-	return w, errAndWarnings
+	// if there is a modfile, load it
+	if w.ModfileExists() {
+		ew = w.loadWorkspaceMod(ctx)
+	}
+	return
 }
 
 func createShellWorkspace(workspacePath string) (*Workspace, error) {
 	// create shell workspace
-	workspace := &Workspace{
+	w := &Workspace{
 		Path:              workspacePath,
 		VariableValues:    make(map[string]string),
 		validateVariables: true,
+		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
 	}
 
 	// check whether the workspace contains a modfile
 	// this will determine whether we load files recursively, and create pseudo resources for sql files
-	workspace.setModfileExists()
+	w.setModfileExists()
 
 	// load the .steampipe ignore file
-	if err := workspace.loadExclusions(); err != nil {
+	if err := w.loadExclusions(); err != nil {
 		return nil, err
 	}
 
-	return workspace, nil
+	return w, nil
 }
 
 func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
