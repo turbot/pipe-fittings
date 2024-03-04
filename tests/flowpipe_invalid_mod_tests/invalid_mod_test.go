@@ -125,12 +125,12 @@ var tests = []testSetup{
 	{
 		title:         "Number as string in retry block",
 		modDir:        "./mods/number_as_string_retry_block",
-		containsError: "Failed to decode mod:\nUnable to parse min_interval attribute to integer\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/number_as_string_retry_block/mod.fp:12,13-33)",
+		containsError: "Failed to decode mod:\nUnable to parse min_interval attribute to integer",
 	},
 	{
 		title:         "Bool as string in error block",
 		modDir:        "./mods/bool_as_string_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/bool_as_string_error_block/mod.fp:11,13-28)",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean",
 	},
 	{
 		title:         "Bool as number in error block",
