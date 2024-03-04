@@ -45,8 +45,12 @@ type PipelineStepHttp struct {
 
 func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || p != nil && helpers.IsNil(iOther) {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepHttp)
@@ -58,15 +62,13 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
-	// TODO:  check if this is working .. or we should really have an Equals method for BasicAuthConfig
-	// reflect.DeepEqual(p.BasicAuthConfig, other.BasicAuthConfig)
-
 	return utils.PtrEqual(p.Url, other.Url) &&
 		utils.PtrEqual(p.Method, other.Method) &&
 		utils.PtrEqual(p.CaCertPem, other.CaCertPem) &&
 		utils.BoolPtrEqual(p.Insecure, other.Insecure) &&
 		utils.PtrEqual(p.RequestBody, other.RequestBody) &&
-		reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders)
+		reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders) &&
+		reflect.DeepEqual(p.BasicAuthConfig, other.BasicAuthConfig)
 }
 
 func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {

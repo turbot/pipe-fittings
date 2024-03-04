@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -33,12 +34,20 @@ type PipelineStepContainer struct {
 
 func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || p != nil && helpers.IsNil(iOther) {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepContainer)
 	if !ok {
+		return false
+	}
+
+	if !p.PipelineStepBase.Equals(&other.PipelineStepBase) {
 		return false
 	}
 
@@ -411,12 +420,20 @@ type PipelineStepFunction struct {
 
 func (p *PipelineStepFunction) Equals(iOther PipelineStep) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && iOther == nil {
+	if p == nil && helpers.IsNil(iOther) {
 		return true
+	}
+
+	if p == nil && !helpers.IsNil(iOther) || p != nil && helpers.IsNil(iOther) {
+		return false
 	}
 
 	other, ok := iOther.(*PipelineStepFunction)
 	if !ok {
+		return false
+	}
+
+	if !p.PipelineStepBase.Equals(&other.PipelineStepBase) {
 		return false
 	}
 

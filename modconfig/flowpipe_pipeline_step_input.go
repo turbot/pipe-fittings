@@ -49,7 +49,15 @@ func (p *PipelineStepInput) Equals(other PipelineStep) bool {
 		return false
 	}
 
-	// TODO: PipelineStepInputOption equality
+	if len(p.OptionList) != len(pOther.OptionList) {
+		return false
+	}
+
+	for i, opt := range p.OptionList {
+		if !opt.Equals(pOther.OptionList[i]) {
+			return false
+		}
+	}
 
 	return p.Name == other.GetName() &&
 		p.InputType == pOther.InputType &&
@@ -420,6 +428,13 @@ type PipelineStepInputOption struct {
 	Value    *string `json:"value" hcl:"value,optional"`
 	Selected *bool   `json:"selected,omitempty" hcl:"selected,optional"`
 	Style    *string `json:"style,omitempty" hcl:"style,optional"`
+}
+
+func (p *PipelineStepInputOption) Equals(other PipelineStepInputOption) bool {
+	return utils.PtrEqual(p.Label, other.Label) &&
+		utils.PtrEqual(p.Value, other.Value) &&
+		utils.BoolPtrEqual(p.Selected, other.Selected) &&
+		utils.PtrEqual(p.Style, other.Style)
 }
 
 func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInputOption, error) {
