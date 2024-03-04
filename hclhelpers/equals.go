@@ -127,6 +127,24 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 				}
 			}
 		}
+	} else if expr1ObjConsExpr, ok := expr1.(*hclsyntax.ObjectConsExpr); ok {
+		if expr2ObjConsExpr, ok := expr2.(*hclsyntax.ObjectConsExpr); !ok {
+			return false
+		} else {
+			if len(expr1ObjConsExpr.Items) != len(expr2ObjConsExpr.Items) {
+				return false
+			}
+
+			for i, item1 := range expr1ObjConsExpr.Items {
+				if !ExpressionsEqual(item1.KeyExpr, expr2ObjConsExpr.Items[i].KeyExpr) {
+					return false
+				}
+
+				if !ExpressionsEqual(item1.ValueExpr, expr2ObjConsExpr.Items[i].ValueExpr) {
+					return false
+				}
+			}
+		}
 	}
 
 	return true
