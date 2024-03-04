@@ -311,10 +311,10 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 		}
 
 		// if the mod is not installed or needs updating, OR if this is an update command,
-		// pass shouldUpdate=true into installModDependencesRecursively
+		// pass shouldUpdate=true into installModDependenciesRecursively
 		// this ensures that we update any dependencies which have updates available
 		shouldUpdate := modToUse == nil || i.updating()
-		if err := i.installModDependencesRecursively(ctx, requiredModVersion, modToUse, parent, shouldUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, modToUse, parent, shouldUpdate); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -338,7 +338,7 @@ func (i *ModInstaller) buildInstallError(errors []error) error {
 	return err
 }
 
-func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *modconfig.Mod, parent *modconfig.Mod, shouldUpdate bool) error {
+func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *modconfig.Mod, parent *modconfig.Mod, shouldUpdate bool) error {
 	if error_helpers.IsContextCanceled(ctx) {
 		// short circuit if the execution context has been cancelled
 		return ctx.Err()
@@ -366,9 +366,6 @@ func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, req
 			return err
 		}
 
-		// TODO KAI re-add validation <ERRORS>
-		// validationErrors := dependencyMod.ValidateRequirements(i.installedPlugins)
-		// errors = append(errors, validationErrors...)
 	} else {
 		// update the install data
 		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.Constraint, parent)
@@ -383,7 +380,7 @@ func (i *ModInstaller) installModDependencesRecursively(ctx context.Context, req
 			errors = append(errors, err)
 			continue
 		}
-		if err := i.installModDependencesRecursively(ctx, childDependency, childDependencyMod, dependencyMod, shouldUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, childDependency, childDependencyMod, dependencyMod, shouldUpdate); err != nil {
 			errors = append(errors, err)
 			continue
 		}

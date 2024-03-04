@@ -626,7 +626,6 @@ func (m *ResourceMaps) addControlOrQuery(provider QueryProvider) {
 // WalkResources calls resourceFunc for every resource in the mod
 // if any resourceFunc returns false or an error, return immediately
 func (m *ResourceMaps) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
-	// TODO KAI test this with all walk resources usages
 	for _, r := range m.Mods {
 		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
 			return err

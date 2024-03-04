@@ -70,22 +70,12 @@ func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w *Wo
 	if !ok {
 		return nil, nil, nil
 	}
-	// must be mod tree item
-	target, ok := resource.(modconfig.ModTreeItem)
-	if !ok {
-		return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), utils.GetGenericTypeName[T]())
-	}
 
 	// if the target is not the expected type, fail
-	// UNLESS we expect a dashboard and got a benchmark - this IS supported
-	if _, ok = resource.(T); !ok {
+	target, ok := resource.(T)
+	if !ok {
 		typeName := utils.GetGenericTypeName[T]()
-		// TODO find a less messy way of doing this
-		// special case code - if the target is a dashboard we can also run benchmarks
-		benchmarkAsDashboard := typeName == schema.BlockTypeDashboard && resource.BlockType() == schema.BlockTypeBenchmark
-		if !benchmarkAsDashboard {
-			return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), typeName)
-		}
+		return nil, nil, sperr.New("target '%s' is not of the expected type '%s'", resource.GetUnqualifiedName(), typeName)
 	}
 
 	_, args, err := parse.ParseQueryInvocation(input)
