@@ -121,6 +121,19 @@ func (c *NotifierImpl) CtyValue() (cty.Value, error) {
 	return notifierCtyVal, err
 }
 
+func (c *NotifierImpl) Validate() hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	notifies := c.GetNotifies()
+	if len(notifies) < 1 {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  schema.BlockTypeNotifier + " must have at least one " + schema.BlockTypeNotify + " block to send the request to: " + c.Name(),
+		})
+	}
+	return diags
+}
+
 type Notify struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
@@ -293,6 +306,51 @@ func (n *Notify) CtyValue() (cty.Value, error) {
 	return ctyVal, nil
 }
 
+func (c *Notify) Validate() hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	if c.Integration != nil {
+		integrationType := c.Integration.GetIntegrationType()
+
+		if integrationType != schema.IntegrationTypeEmail && len(c.Cc) > 0 {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute '" + schema.AttributeTypeCc + "' is not a valid attribute for " + integrationType + " type integration",
+			})
+		}
+
+		if integrationType != schema.IntegrationTypeEmail && len(c.Bcc) > 0 {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute '" + schema.AttributeTypeBcc + "' is not a valid attribute for " + integrationType + " type integration",
+			})
+		}
+
+		if integrationType != schema.IntegrationTypeEmail && len(c.To) > 0 {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute '" + schema.AttributeTypeTo + "' is not a valid attribute for " + integrationType + " type integration",
+			})
+		}
+
+		if integrationType != schema.IntegrationTypeEmail && c.Subject != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute '" + schema.AttributeTypeSubject + "' is not a valid attribute for " + integrationType + " type integration",
+			})
+		}
+
+		if integrationType != schema.IntegrationTypeSlack && c.Channel != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Attribute '" + schema.AttributeTypeChannel + "' is not a valid attribute for " + integrationType + " type integration",
+			})
+		}
+	}
+
+	return diags
+}
+
 func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diagnostics {
 	attribs, diags := body.JustAttributes()
 	if diags.HasErrors() {
@@ -304,7 +362,7 @@ func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diag
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
-				Summary:  "integration is required",
+				Summary:  "Missing required attribute: " + schema.AttributeTypeIntegration,
 				Subject:  body.MissingItemRange().Ptr(),
 			},
 		}

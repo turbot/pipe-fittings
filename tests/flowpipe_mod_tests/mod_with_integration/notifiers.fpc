@@ -15,7 +15,6 @@ notifier "devs" {
   }
   notify {
     integration = integration.http.default
-    to = ["billie", "joe", "mike"]
   }    
 }
 

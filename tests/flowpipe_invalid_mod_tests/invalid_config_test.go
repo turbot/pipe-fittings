@@ -133,6 +133,42 @@ var invalidConfigTests = []invalidConfigTestSetup{
 		configDirs:    []string{"./mods/bad_email_integration_smtp_tls"},
 		containsError: "Attribute smtp_tls specified with invalid value dummy: email.my_email_app",
 	},
+	{
+		title:         "Invalid notifier - no notify block provided",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_notifier_zero_notify"},
+		containsError: "notifier must have at least one notify block to send the request to: admins",
+	},
+	{
+		title:         "Invalid notify block - missing required attribute integration",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_notify_missing_integration"},
+		containsError: "Missing required attribute: integration",
+	},
+	{
+		title:         "Invalid notify block - invalid attribute 'cc' in slack integration",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_notify_unexpected_attribute_cc"},
+		containsError: "Attribute 'cc' is not a valid attribute for slack type integration",
+	},
+	{
+		title:         "Invalid notify block - invalid attribute 'bcc' in slack integration",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_notify_unexpected_attribute_bcc"},
+		containsError: "Attribute 'bcc' is not a valid attribute for slack type integration",
+	},
+	{
+		title:         "Invalid notify block - invalid attribute 'to' in slack integration",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_notify_unexpected_attribute_to"},
+		containsError: "Attribute 'to' is not a valid attribute for slack type integration",
+	},
+	{
+		title:         "Invalid notify block - invalid attribute 'channel' in slack integration",
+		modDir:        "",
+		configDirs:    []string{"./mods/bad_notify_unexpected_attribute_channel"},
+		containsError: "Attribute 'channel' is not a valid attribute for email type integration",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {
