@@ -49,6 +49,10 @@ func (p *PipelineStepInput) Equals(other PipelineStep) bool {
 		return false
 	}
 
+	if !p.PipelineStepBase.Equals(&pOther.PipelineStepBase) {
+		return false
+	}
+
 	if len(p.OptionList) != len(pOther.OptionList) {
 		return false
 	}
