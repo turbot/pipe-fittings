@@ -24,7 +24,7 @@ var dummyCSVExporter = testExporter{alias: "", extension: ".csv", name: "csv"}
 var dummyJSONExporter = testExporter{alias: "", extension: ".json", name: "json"}
 var dummyASFFExporter = testExporter{alias: "asff.json", extension: ".json", name: "asff"}
 var dummyNUNITExporter = testExporter{alias: "nunit3.xml", extension: ".xml", name: "nunit3"}
-var dummySPSExporter = testExporter{alias: "sps", extension: constants.SnapshotExtension, name: constants.OutputFormatSnapshot}
+var dummyPPSExporter = testExporter{alias: "pps", extension: constants.SnapshotExtension, name: constants.OutputFormatSnapshot}
 
 type exporterTestCase struct {
 	name   string
@@ -50,13 +50,13 @@ var exporterTestCases = []exporterTestCase{
 	},
 	{
 		name:   "Snapshot file name",
-		input:  "file.sps",
-		expect: &dummySPSExporter,
+		input:  "file.pps",
+		expect: &dummyPPSExporter,
 	},
 	{
 		name:   "Snapshot format name",
-		input:  "sps",
-		expect: &dummySPSExporter,
+		input:  "pps",
+		expect: &dummyPPSExporter,
 	},
 	{
 		name:   "json file name",
@@ -94,7 +94,7 @@ func TestDoExport(t *testing.T) {
 	exportersToRegister := []*testExporter{
 		&dummyJSONExporter,
 		&dummyCSVExporter,
-		&dummySPSExporter,
+		&dummyPPSExporter,
 		&dummyASFFExporter,
 		&dummyNUNITExporter,
 	}
