@@ -153,12 +153,12 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare: "./container_a",
 		equal:   true,
 	},
-	// {
-	// 	title:   "container_a != container_b",
-	// 	base:    "./container_a",
-	// 	compare: "./container_b",
-	// 	equal:   false,
-	// },
+	{
+		title:   "container_a != container_b",
+		base:    "./container_a",
+		compare: "./container_b",
+		equal:   false,
+	},
 }
 
 const (
