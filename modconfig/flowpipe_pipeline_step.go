@@ -670,6 +670,24 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		}
 	}
 
+	if len(p.UnresolvedBodies) != len(other.UnresolvedBodies) {
+		return false
+	}
+
+	for key, body := range p.UnresolvedBodies {
+		otherBody, ok := other.UnresolvedBodies[key]
+		if !ok || !reflect.DeepEqual(body, otherBody) {
+			return false
+		}
+	}
+
+	// reverse
+	for key := range other.UnresolvedBodies {
+		if _, ok := p.UnresolvedBodies[key]; !ok {
+			return false
+		}
+	}
+
 	// best effort for throw config
 	if len(p.ThrowConfig) != len(other.ThrowConfig) {
 		return false

@@ -66,85 +66,94 @@ func (suite *FlowpipeConfigEqualityTestSuite) SetupSuite() {
 	suite.SetupSuiteRunCount++
 }
 
-func (suite *FlowpipeConfigEqualityTestSuite) TestFlowpipeConfigEquality() {
-	assert := assert.New(suite.T())
-
-	utils.EmptyDir("./config_notifier_target")                          //nolint:errcheck // test only
-	utils.CopyDir("./config_notifier_base", "./config_notifier_target") //nolint:errcheck // test only
-
-	flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-
-	flowpipeConfigB, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-
-	// First test - A and B reading the same file .. should return true
-	assert.True(flowpipeConfigA.Equals(flowpipeConfigB))
-
-	// Second test - add integration (in config_notifier_base_b)
-
-	utils.EmptyDir("./config_notifier_target")                            //nolint:errcheck // test only
-	utils.CopyDir("./config_notifier_base_b", "./config_notifier_target") //nolint:errcheck // test only
-
-	flowpipeConfigB, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-
-	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
-
-	// Third test - reset A and the equality should be true
-	flowpipeConfigA, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-	assert.True(flowpipeConfigA.Equals(flowpipeConfigB))
-
-	// Fourth test - change the notifier to add a new notify block (that's coming from base_c)
-	// the euqality should be false
-	utils.EmptyDir("./config_notifier_target")                            //nolint:errcheck // test only
-	utils.CopyDir("./config_notifier_base_c", "./config_notifier_target") //nolint:errcheck // test only
-
-	flowpipeConfigB, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-
-	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
-
-	// Fifth test - reset A and the equality should be true
-	flowpipeConfigA, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-	assert.True(flowpipeConfigA.Equals(flowpipeConfigB))
-
-	// Sixth test - update one of the notify block within the notifier
-	utils.EmptyDir("./config_notifier_target")                            //nolint:errcheck // test only
-	utils.CopyDir("./config_notifier_base_d", "./config_notifier_target") //nolint:errcheck // test only
-
-	flowpipeConfigB, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
-
-	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
+type flowpipeConfigEqualityTestCase struct {
+	title   string
+	base    string
+	compare string
+	equal   bool
 }
 
-func (suite *FlowpipeConfigEqualityTestSuite) TestFlowpipeConfigEqualityTwo() {
-	assert := assert.New(suite.T())
+var flowpipeConfigEqualityTestCases = []flowpipeConfigEqualityTestCase{
+	{
+		title:   "test: base == base",
+		base:    "./config_notifier_base",
+		compare: "./config_notifier_base",
+		equal:   true,
+	},
+	{
+		title:   "test: base != base_b",
+		base:    "./config_notifier_base",
+		compare: "./config_notifier_base_b",
+		equal:   false,
+	},
+	{
+		title:   "test: base_b == base_b",
+		base:    "./config_notifier_base_b",
+		compare: "./config_notifier_base_b",
+		equal:   true,
+	},
+	{
+		title:   "test: base_b != base_c",
+		base:    "./config_notifier_base_b",
+		compare: "./config_notifier_base_c",
+		equal:   false,
+	},
+	{
+		title:   "test: base_c == base_c",
+		base:    "./config_notifier_base_c",
+		compare: "./config_notifier_base_c",
+		equal:   true,
+	},
+	{
+		title:   "test: base_c != base_d",
+		base:    "./config_notifier_base_c",
+		compare: "./config_notifier_base_d",
+		equal:   false,
+	},
+	{
+		title:   "test: base_d == base_d",
+		base:    "./config_notifier_base_d",
+		compare: "./config_notifier_base_d",
+		equal:   true,
+	},
+	{
+		title:   "test: base_e == base_e",
+		base:    "./config_notifier_base_e",
+		compare: "./config_notifier_base_e",
+		equal:   true,
+	},
+	{
+		title:   "test: base_e != base_f",
+		base:    "./config_notifier_base_e",
+		compare: "./config_notifier_base_f",
+		equal:   false,
+	},
+}
 
-	utils.EmptyDir("./config_notifier_target")                            //nolint:errcheck // test only
-	utils.CopyDir("./config_notifier_base_e", "./config_notifier_target") //nolint:errcheck // test only
+const (
+	TARGET_DIR = "./config_notifier_target"
+)
 
-	flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
+func (suite *FlowpipeConfigEqualityTestSuite) TestFlowpipeConfigEquality() {
 
-	flowpipeConfigB, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
+	for _, tc := range flowpipeConfigEqualityTestCases {
+		suite.T().Run(tc.title, func(t *testing.T) {
+			assert := assert.New(t)
+			utils.EmptyDir(TARGET_DIR)         //nolint:errcheck // test only
+			utils.CopyDir(tc.base, TARGET_DIR) //nolint:errcheck // test only
 
-	// First test - A and B reading the same file .. should return true
-	assert.True(flowpipeConfigA.Equals(flowpipeConfigB))
+			flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
+			assert.Nil(err.Error)
 
-	// Second test, update notifier's to list
-	utils.EmptyDir("./config_notifier_target")                            //nolint:errcheck // test only
-	utils.CopyDir("./config_notifier_base_f", "./config_notifier_target") //nolint:errcheck // test only
+			utils.EmptyDir(TARGET_DIR)            //nolint:errcheck // test only
+			utils.CopyDir(tc.compare, TARGET_DIR) //nolint:errcheck // test only
 
-	flowpipeConfigB, err = flowpipeconfig.LoadFlowpipeConfig([]string{"./config_notifier_target"})
-	assert.Nil(err.Error)
+			flowpipeConfigB, err := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
+			assert.Nil(err.Error)
 
-	assert.False(flowpipeConfigA.Equals(flowpipeConfigB))
-
+			assert.Equal(tc.equal, flowpipeConfigA.Equals(flowpipeConfigB))
+		})
+	}
 }
 
 // The TearDownSuite method will be run by testify once, at the very

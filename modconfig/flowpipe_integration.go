@@ -90,11 +90,11 @@ type SlackIntegration struct {
 
 func (i *SlackIntegration) Equals(other Integration) bool {
 
-	if i == nil && !helpers.IsNil(other) {
-		return false
+	if i == nil && helpers.IsNil(other) {
+		return true
 	}
 
-	if !helpers.IsNil(i) && other == nil {
+	if i == nil && !helpers.IsNil(other) || i != nil && helpers.IsNil(other) {
 		return false
 	}
 
@@ -338,11 +338,11 @@ func (i *EmailIntegration) MapInterface() (map[string]interface{}, error) {
 
 func (i *EmailIntegration) Equals(other Integration) bool {
 
-	if i == nil && !helpers.IsNil(other) {
-		return false
+	if i == nil && helpers.IsNil(other) {
+		return true
 	}
 
-	if !helpers.IsNil(i) && other == nil {
+	if i == nil && !helpers.IsNil(other) || i != nil && helpers.IsNil(other) {
 		return false
 	}
 
@@ -879,11 +879,11 @@ func (i *HttpIntegration) GetIntegrationType() string {
 
 func (i *HttpIntegration) Equals(other Integration) bool {
 
-	if i == nil && !helpers.IsNil(other) {
-		return false
+	if i == nil && helpers.IsNil(other) {
+		return true
 	}
 
-	if !helpers.IsNil(i) && other == nil {
+	if i == nil && !helpers.IsNil(other) || i != nil && helpers.IsNil(other) {
 		return false
 	}
 

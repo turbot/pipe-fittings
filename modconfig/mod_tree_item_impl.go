@@ -152,13 +152,15 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	if b.IsDependencyResource() {
 		name = b.Name()
 	}
-	res := printers.NewRowData(
-		printers.NewFieldValue("NAME", name),
-	)
+	res := printers.NewRowData()
 	if b.Mod != nil {
 		res.AddField(printers.NewFieldValue("MOD", b.Mod.ShortName))
 	}
-	res.Merge(b.HclResourceImpl.GetListData())
+
+	res.AddField(printers.NewFieldValue("NAME", name))
+	// NOTE - do not merge the base fields here, which only includes NAME, as we want to override the order of the fields
+	//res.Merge(b.HclResourceImpl.GetListData())
+
 	return res
 }
 

@@ -42,17 +42,13 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 				}
 			}
 		}
-	}
-
-	if expr1LiteralValue, ok := expr1.(*hclsyntax.LiteralValueExpr); ok {
+	} else if expr1LiteralValue, ok := expr1.(*hclsyntax.LiteralValueExpr); ok {
 		if expr2LiteralValue, ok := expr2.(*hclsyntax.LiteralValueExpr); !ok {
 			return false
 		} else {
 			return expr1LiteralValue.Val.Equals(expr2LiteralValue.Val) == cty.True
 		}
-	}
-
-	if expr1BinaryOp, ok := expr1.(*hclsyntax.BinaryOpExpr); ok {
+	} else if expr1BinaryOp, ok := expr1.(*hclsyntax.BinaryOpExpr); ok {
 		if expr2BinaryOp, ok := expr2.(*hclsyntax.BinaryOpExpr); !ok {
 			return false
 		} else {
@@ -68,9 +64,7 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 				return false
 			}
 		}
-	}
-
-	if expr1ScopeTraversal, ok := expr1.(*hclsyntax.ScopeTraversalExpr); ok {
+	} else if expr1ScopeTraversal, ok := expr1.(*hclsyntax.ScopeTraversalExpr); ok {
 		if expr2ScopeTraversal, ok := expr2.(*hclsyntax.ScopeTraversalExpr); !ok {
 			return false
 		} else {
@@ -101,9 +95,7 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 				}
 			}
 		}
-	}
-
-	if expr1TupleConsExpr, ok := expr1.(*hclsyntax.TupleConsExpr); ok {
+	} else if expr1TupleConsExpr, ok := expr1.(*hclsyntax.TupleConsExpr); ok {
 		if expr2TupleConsExpr, ok := expr2.(*hclsyntax.TupleConsExpr); !ok {
 			return false
 		} else {
@@ -113,6 +105,42 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 
 			for i, e1 := range expr1TupleConsExpr.Exprs {
 				if !ExpressionsEqual(e1, expr2TupleConsExpr.Exprs[i]) {
+					return false
+				}
+			}
+		}
+	} else if expr1FuncCallExpr, ok := expr1.(*hclsyntax.FunctionCallExpr); ok {
+		if expr2FuncCallExpr, ok := expr2.(*hclsyntax.FunctionCallExpr); !ok {
+			return false
+		} else {
+			if expr1FuncCallExpr.Name != expr2FuncCallExpr.Name {
+				return false
+			}
+
+			if len(expr1FuncCallExpr.Args) != len(expr2FuncCallExpr.Args) {
+				return false
+			}
+
+			for i, a1 := range expr1FuncCallExpr.Args {
+				if !ExpressionsEqual(a1, expr2FuncCallExpr.Args[i]) {
+					return false
+				}
+			}
+		}
+	} else if expr1ObjConsExpr, ok := expr1.(*hclsyntax.ObjectConsExpr); ok {
+		if expr2ObjConsExpr, ok := expr2.(*hclsyntax.ObjectConsExpr); !ok {
+			return false
+		} else {
+			if len(expr1ObjConsExpr.Items) != len(expr2ObjConsExpr.Items) {
+				return false
+			}
+
+			for i, item1 := range expr1ObjConsExpr.Items {
+				if !ExpressionsEqual(item1.KeyExpr, expr2ObjConsExpr.Items[i].KeyExpr) {
+					return false
+				}
+
+				if !ExpressionsEqual(item1.ValueExpr, expr2ObjConsExpr.Items[i].ValueExpr) {
 					return false
 				}
 			}
