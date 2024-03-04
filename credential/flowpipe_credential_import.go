@@ -26,23 +26,9 @@ type CredentialImport struct {
 
 func (c CredentialImport) Equals(other CredentialImport) bool {
 
-	if c.FileName != other.FileName || c.StartLineNumber != other.StartLineNumber || c.EndLineNumber != other.EndLineNumber {
-		return false
-	}
-
-	if !utils.PtrEqual(c.Source, other.Source) {
-		return false
-	}
-
-	if !gokit.StringSliceEqualIgnoreOrder(c.Connections, other.Connections) {
-		return false
-	}
-
-	if !utils.PtrEqual(c.Prefix, other.Prefix) {
-		return false
-	}
-
-	return true
+	return utils.PtrEqual(c.Source, other.Source) &&
+		gokit.StringSliceEqualIgnoreOrder(c.Connections, other.Connections) &&
+		utils.PtrEqual(c.Prefix, other.Prefix)
 }
 
 func (c *CredentialImport) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
