@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
@@ -68,34 +69,64 @@ type modEqualityTestCase struct {
 
 var modEqualityTestCases = []modEqualityTestCase{
 	{
-		title:   "test: base_a == base_a",
+		title:   "base_a == base_a",
 		base:    "./base_a",
 		compare: "./base_a",
 		equal:   true,
 	},
 	{
-		title:   "test: base_a != base_b",
+		title:   "base_a != base_b",
 		base:    "./base_a",
 		compare: "./base_b",
 		equal:   false,
 	},
 	{
-		title:   "test: http_step_with_config == http_step_with_config",
+		title:   "http_step_with_config == http_step_with_config",
 		base:    "./http_step_with_config",
 		compare: "./http_step_with_config",
 		equal:   true,
 	},
 	{
-		title:   "test: http_step_with_config == http_step_with_config_b",
+		title:   "http_step_with_config == http_step_with_config_b",
 		base:    "./http_step_with_config",
 		compare: "./http_step_with_config_b",
 		equal:   false,
 	},
 	{
-		title:   "test: http_step_with_config == http_step_with_config_c",
+		title:   "http_step_with_config == http_step_with_config_c",
 		base:    "./http_step_with_config",
 		compare: "./http_step_with_config_c",
 		equal:   false,
+	},
+	{
+		title:   "input_step_a == input_step_a",
+		base:    "./input_step_a",
+		compare: "./input_step_a",
+		equal:   true,
+	},
+	{
+		title:   "input_step_a != input_step_b",
+		base:    "./input_step_a",
+		compare: "./input_step_b",
+		equal:   false,
+	},
+	{
+		title:   "input_step_b == input_step_b",
+		base:    "./input_step_b",
+		compare: "./input_step_b",
+		equal:   true,
+	},
+	{
+		title:   "input_step_a != input_step_c",
+		base:    "./input_step_a",
+		compare: "./input_step_c",
+		equal:   false,
+	},
+	{
+		title:   "input_step_c == input_step_c",
+		base:    "./input_step_c",
+		compare: "./input_step_c",
+		equal:   true,
 	},
 }
 
@@ -111,7 +142,13 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 			utils.EmptyDir(TARGET_DIR)         //nolint:errcheck // test only
 			utils.CopyDir(tc.base, TARGET_DIR) //nolint:errcheck // test only
 
-			wA, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR)
+			flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
+			if err.Error != nil {
+				assert.FailNow(err.Error.Error())
+				return
+			}
+
+			wA, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigA.Credentials), workspace.WithIntegrations(flowpipeConfigA.Integrations), workspace.WithNotifiers(flowpipeConfigA.Notifiers))
 			assert.NotNil(wA)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))
@@ -119,7 +156,13 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 			utils.EmptyDir(TARGET_DIR)            //nolint:errcheck // test only
 			utils.CopyDir(tc.compare, TARGET_DIR) //nolint:errcheck // test only
 
-			wB, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR)
+			flowpipeConfigB, err := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
+			if err.Error != nil {
+				assert.FailNow(err.Error.Error())
+				return
+			}
+
+			wB, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigB.Credentials), workspace.WithIntegrations(flowpipeConfigB.Integrations), workspace.WithNotifiers(flowpipeConfigB.Notifiers))
 			assert.NotNil(wB)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))
