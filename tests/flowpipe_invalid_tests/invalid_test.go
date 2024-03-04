@@ -1,9 +1,7 @@
-//nolint:forbidigo // Test case: it's OK to use fmt.Println()
 package flowpipe_invalid_tests
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -115,7 +113,7 @@ var tests = []testSetup{
 	{
 		title:         "retry - invalid attribute value",
 		file:          "./pipelines/retry_invalid_attribute_value.fp",
-		containsError: "Unable to parse value as number",
+		containsError: "Failed to decode mod:\nUnable to parse max_attempts attribute to integer\n(pipelines/retry_invalid_attribute_value.fp:7,13-33)",
 	},
 	{
 		title:         "retry - invalid attribute value for strategy",
@@ -224,27 +222,30 @@ var tests = []testSetup{
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
 // more complex error message expectations or complex structure such as mod & var
 func TestSimpleInvalidResources(t *testing.T) {
-	assert := assert.New(t)
 
 	ctx := context.TODO()
 
 	for _, test := range tests {
-		if test.title == "" {
-			assert.Fail("Test must contain a title")
-			continue
-		}
-		if test.containsError == "" {
-			assert.Fail("Test: " + test.title + " does not have containsError test")
-			continue
-		}
+		t.Run(test.title, func(t *testing.T) {
+			assert := assert.New(t)
 
-		fmt.Println("Running test: " + test.title)
+			if test.title == "" {
+				assert.Fail("Test must contain a title")
+				return
+			}
+			if test.containsError == "" {
+				assert.Fail("Test: " + test.title + " does not have containsError test")
+				return
+			}
 
-		_, _, err := load_mod.LoadPipelines(ctx, test.file)
-		if err == nil {
-			assert.Fail("Test: " + test.title + " did not return an error")
-			continue
-		}
-		assert.Contains(err.Error(), test.containsError)
+			_, _, err := load_mod.LoadPipelines(ctx, test.file)
+			if err == nil {
+				assert.Fail("Test: " + test.title + " did not return an error")
+				return
+			}
+
+			assert.Contains(err.Error(), test.containsError)
+		})
 	}
+
 }

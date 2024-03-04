@@ -4,7 +4,6 @@ package invalid_mod_tests
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -124,39 +123,55 @@ var tests = []testSetup{
 		modDir:        "./mods/invalid_cred_types_static",
 		containsError: "invalid depends_on 'foo.default' - credential does not exist for pipeline invalid_cred_types_static.pipeline.with_invalid_cred_type_static",
 	},
+	{
+		title:         "Number as string in retry block",
+		modDir:        "./mods/number_as_string_retry_block",
+		containsError: "Failed to decode mod:\nUnable to parse min_interval attribute to integer\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/number_as_string_retry_block/mod.fp:12,13-33)",
+	},
+	{
+		title:         "Bool as string in error block",
+		modDir:        "./mods/bool_as_string_error_block",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/bool_as_string_error_block/mod.fp:11,13-28)",
+	},
+	{
+		title:         "Bool as number in error block",
+		modDir:        "./mods/bool_as_number_error_block",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/bool_as_number_error_block/mod.fp:11,13-23)",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
-	assert := assert.New(suite.T())
 
 	for _, test := range tests {
-		if test.title == "" {
-			assert.Fail("Test must have title")
-			continue
-		}
-		if test.containsError == "" {
-			assert.Fail("Test " + test.title + " does not have containsError")
-			continue
-		}
+		suite.T().Run(test.title, func(t *testing.T) {
+			assert := assert.New(t)
 
-		fmt.Println("Running test " + test.title)
-
-		_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]credential.Credential{}))
-		assert.NotNil(errorAndWarning.Error)
-		if errorAndWarning.Error != nil {
-			assert.Contains(errorAndWarning.Error.Error(), test.containsError)
-		}
-
-		if test.errorType != "" {
-			var err perr.ErrorModel
-			ok := errors.As(errorAndWarning.Error, &err)
-			if !ok {
-				assert.Fail("should be a pcerr.ErrorModel")
+			if test.title == "" {
+				assert.Fail("Test must have title")
+				return
+			}
+			if test.containsError == "" {
+				assert.Fail("Test " + test.title + " does not have containsError")
 				return
 			}
 
-			assert.Equal(test.errorType, err.Type, "wrong error type")
-		}
+			_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]credential.Credential{}))
+			assert.NotNil(errorAndWarning.Error)
+			if errorAndWarning.Error != nil {
+				assert.Contains(errorAndWarning.Error.Error(), test.containsError)
+			}
+
+			if test.errorType != "" {
+				var err perr.ErrorModel
+				ok := errors.As(errorAndWarning.Error, &err)
+				if !ok {
+					assert.Fail("should be a pcerr.ErrorModel")
+					return
+				}
+
+				assert.Equal(test.errorType, err.Type, "wrong error type")
+			}
+		})
 	}
 }
 

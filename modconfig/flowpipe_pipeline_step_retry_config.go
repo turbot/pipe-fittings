@@ -98,8 +98,12 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 
 			if val != cty.NilVal {
 				valInt, stepDiags := hclhelpers.CtyToInt64(val)
-				if len(stepDiags) > 0 {
-					diags = append(diags, stepDiags...)
+				if stepDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeMaxAttempts + " attribute to integer",
+						Subject:  &attr.Range,
+					})
 					continue
 				}
 
@@ -136,11 +140,14 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 
 			if val != cty.NilVal {
 				valInt, stepDiags := hclhelpers.CtyToInt64(val)
-				if len(stepDiags) > 0 {
-					diags = append(diags, stepDiags...)
+				if stepDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeMinInterval + " attribute to integer",
+						Subject:  &attr.Range,
+					})
 					continue
 				}
-
 				r.MinInterval = valInt
 			}
 
@@ -153,8 +160,12 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 
 			if val != cty.NilVal {
 				valInt, stepDiags := hclhelpers.CtyToInt64(val)
-				if len(stepDiags) > 0 {
-					diags = append(diags, stepDiags...)
+				if stepDiags.HasErrors() {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeMaxInterval + " attribute to integer",
+						Subject:  &attr.Range,
+					})
 					continue
 				}
 
