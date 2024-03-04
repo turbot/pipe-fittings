@@ -128,6 +128,24 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare: "./input_step_c",
 		equal:   true,
 	},
+	{
+		title:   "input_step_d != input_step_d",
+		base:    "./input_step_d",
+		compare: "./input_step_d",
+		equal:   true,
+	},
+	{
+		title:   "input_step_d != input_step_d_line_changes",
+		base:    "./input_step_d",
+		compare: "./input_step_d_line_changes",
+		equal:   true,
+	},
+	{
+		title:   "input_step_d != input_step_e",
+		base:    "./input_step_d",
+		compare: "./input_step_e",
+		equal:   false,
+	},
 }
 
 const (
