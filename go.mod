@@ -54,7 +54,7 @@ require (
 	github.com/jackc/pgx/v5 v5.5.2
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/turbot/steampipe-plugin-code v0.6.0
+	github.com/turbot/steampipe-plugin-code v0.7.0
 	github.com/turbot/terraform-components v0.0.0-20231108031935-358f803c1a8b
 	golang.org/x/oauth2 v0.12.0
 	golang.org/x/text v0.14.0
