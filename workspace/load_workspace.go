@@ -74,6 +74,9 @@ func WithSkipResourceLoadIfNoModfile(enabled bool) LoadWorkspaceOption {
 }
 
 func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, error_helpers.ErrorAndWarnings) {
+	// do not load resources if there is no modfile
+	opts = append(opts, WithSkipResourceLoadIfNoModfile(true))
+
 	t := time.Now()
 	defer func() {
 		slog.Debug("Workspace load complete", "duration (ms)", time.Since(t).Milliseconds())
