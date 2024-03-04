@@ -61,10 +61,11 @@ func (suite *FlowpipeModEqualityTestSuite) SetupSuite() {
 }
 
 type modEqualityTestCase struct {
-	title   string
-	base    string
-	compare string
-	equal   bool
+	title       string
+	description string
+	base        string
+	compare     string
+	equal       bool
 }
 
 var modEqualityTestCases = []modEqualityTestCase{
@@ -178,10 +179,50 @@ var modEqualityTestCases = []modEqualityTestCase{
 		equal:   true,
 	},
 	{
-		title:   "container_d != container_e",
-		base:    "./container_d",
-		compare: "./container_e",
-		equal:   false,
+		title:       "container_d != container_e",
+		description: "cmd attribute has different map values, runtime reference",
+		base:        "./container_d",
+		compare:     "./container_e",
+		equal:       false,
+	},
+	{
+		title:   "container_f == container_f",
+		base:    "./container_f",
+		compare: "./container_f",
+		equal:   true,
+	},
+	{
+		title:       "container_f != container_g",
+		description: "cmd attribute has different map values, not runtime reference",
+		base:        "./container_f",
+		compare:     "./container_g",
+		equal:       false,
+	},
+	{
+		title:   "param_a == param_a",
+		base:    "./param_a",
+		compare: "./param_a",
+		equal:   true,
+	},
+	{
+		title:       "param_a != param_b",
+		description: "param b has a param with a different default value, same name",
+		base:        "./param_a",
+		compare:     "./param_b",
+		equal:       false,
+	},
+	{
+		title:   "param_c == param_c",
+		base:    "./param_c",
+		compare: "./param_c",
+		equal:   true,
+	},
+	{
+		title:       "param_c != param_d",
+		description: "param d has a param with a different type",
+		base:        "./param_c",
+		compare:     "./param_d",
+		equal:       false,
 	},
 }
 
