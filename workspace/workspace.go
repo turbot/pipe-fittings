@@ -91,8 +91,8 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
 	w.validateVariables = cfg.validateVariables
 
-	// if there is a modfile, load it
-	if w.ModfileExists() {
+	// if there is a mod file (or if we are loading resources even with no modfile), load them
+	if w.ModfileExists() || !cfg.skipResourceLoadIfNoModfile {
 		ew = w.loadWorkspaceMod(ctx)
 	}
 	return
