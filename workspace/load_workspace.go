@@ -21,11 +21,12 @@ import (
 type LoadWorkspaceOption func(*LoadWorkspaceConfig)
 
 type LoadWorkspaceConfig struct {
-	credentials         map[string]credential.Credential
-	integrations        map[string]modconfig.Integration
-	notifiers           map[string]modconfig.Notifier
-	blockTypeInclusions []string
-	validateVariables   bool
+	credentials                 map[string]credential.Credential
+	integrations                map[string]modconfig.Integration
+	notifiers                   map[string]modconfig.Notifier
+	blockTypeInclusions         []string
+	validateVariables           bool
+	skipResourceLoadIfNoModfile bool
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
@@ -62,6 +63,13 @@ func WithBlockType(blockTypeInclusions []string) LoadWorkspaceOption {
 func WithVariableValidation(enabled bool) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.validateVariables = enabled
+	}
+}
+
+// TODO this is only needed as Pipe fittings tests rely on loading workspaces without modfiles
+func WithSkipResourceLoadIfNoModfile(enabled bool) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.skipResourceLoadIfNoModfile = enabled
 	}
 }
 
