@@ -15,6 +15,7 @@ var AppVersion *semver.Version
 // filepaths
 
 var DefaultVarsFileName string
+var LegacyDefaultVarsFileName string
 
 // TODO KAI  we need to provide a default (for now) as the flowpipe test code does not (always)
 // call SetAppSpecificConstants so this may be empty we need a proper solution to this
