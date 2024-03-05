@@ -1,6 +1,7 @@
 package modinstaller
 
 import (
+	"log/slog"
 	"os"
 	"sort"
 	"strings"
@@ -24,7 +25,6 @@ func getGitUrl(modName string, urlMode GitUrlMode) string {
 }
 
 func transformToGitURL(input string, urlMode GitUrlMode) string {
-
 	if urlMode == GitUrlModeHTTPS {
 		if !strings.HasPrefix(input, "https://") {
 			input = "https://" + input
@@ -90,17 +90,26 @@ func getTags(repo string) ([]string, error) {
 }
 
 func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Collection, error) {
+	slog.Debug("getTagVersionsFromGit - retrieving tags from Git", "mod", modName)
 	// first try https
 	repo := getGitUrl(modName, GitUrlModeHTTPS)
+
+	slog.Debug("trying HTTPS", "url", repo)
 	tags, err := getTags(repo)
 	if err != nil {
+		slog.Debug("HTTPS failed", "error", err)
 		// if that fails try ssh
 		repo = getGitUrl(modName, GitUrlModeSSH)
+
+		slog.Debug("trying SSH", "url", repo)
 		tags, err = getTags(repo)
 		if err != nil {
+			slog.Debug("SSH failed", "error", err)
 			return nil, err
 		}
 	}
+
+	slog.Debug("retrieved tags from Git")
 
 	versions := make(semver.Collection, len(tags))
 	// handle index manually as we may not add all tags - if we cannot parse them as a version
