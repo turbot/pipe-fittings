@@ -101,6 +101,10 @@ var IntegrationTeamsBlockSchema = &hcl.BodySchema{
 			Name:     schema.AttributeTypeTitle,
 			Required: false,
 		},
+		{
+			Name:     schema.AttributeTypeWebhookUrl,
+			Required: true,
+		},
 	},
 }
 

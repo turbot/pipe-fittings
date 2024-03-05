@@ -196,24 +196,30 @@ func (n *Notify) UnmarshalJSON(data []byte) error {
 	}
 
 	switch typeIndicator.Type {
-	case "slack":
+	case schema.IntegrationTypeSlack:
 		var slackIntegration SlackIntegration
 		if err := json.Unmarshal(temp.Integration, &slackIntegration); err != nil {
 			return err
 		}
 		n.Integration = &slackIntegration
-	case "email":
+	case schema.IntegrationTypeEmail:
 		var emailIntegration EmailIntegration
 		if err := json.Unmarshal(temp.Integration, &emailIntegration); err != nil {
 			return err
 		}
 		n.Integration = &emailIntegration
-	case "http":
+	case schema.IntegrationTypeHttp:
 		var httpIntegration HttpIntegration
 		if err := json.Unmarshal(temp.Integration, &httpIntegration); err != nil {
 			return err
 		}
 		n.Integration = &httpIntegration
+	case schema.IntegrationTypeTeams:
+		var teamsIntegration TeamsIntegration
+		if err := json.Unmarshal(temp.Integration, &teamsIntegration); err != nil {
+			return err
+		}
+		n.Integration = &teamsIntegration
 	default:
 		return perr.InternalWithMessage(fmt.Sprintf("unknown integration type: %s", typeIndicator.Type))
 	}

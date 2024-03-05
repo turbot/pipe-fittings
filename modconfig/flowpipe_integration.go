@@ -860,6 +860,11 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
 		}
+	case schema.IntegrationTypeTeams:
+		return &TeamsIntegration{
+			HclResourceImpl: hclResourceImpl,
+			Type:            integrationType,
+		}
 	}
 
 	return nil
@@ -948,4 +953,104 @@ func (i *HttpIntegration) Validate() hcl.Diagnostics {
 
 func (i *HttpIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	return hcl.Diagnostics{}
+}
+
+type TeamsIntegration struct {
+	// base
+	HclResourceImpl          `json:"-"`
+	ResourceWithMetadataImpl `json:"-"`
+	IntegrationImpl          `json:"-"`
+	Type                     string `json:"type" cty:"type" hcl:"type,label"`
+
+	// teams
+	WebhookUrl *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
+}
+
+func (i *TeamsIntegration) Equals(other Integration) bool {
+	if i == nil && helpers.IsNil(other) {
+		return true
+	}
+
+	if i == nil && !helpers.IsNil(other) || i != nil && helpers.IsNil(other) {
+		return false
+	}
+
+	otherTeams, ok := other.(*TeamsIntegration)
+	if !ok {
+		return false
+	}
+
+	return i.FileName == otherTeams.FileName &&
+		i.StartLineNumber == otherTeams.StartLineNumber &&
+		i.EndLineNumber == otherTeams.EndLineNumber &&
+		((i.WebhookUrl == nil && otherTeams.WebhookUrl == nil) ||
+			(i.WebhookUrl != nil && otherTeams.WebhookUrl != nil && *i.WebhookUrl == *otherTeams.WebhookUrl))
+}
+
+func (i *TeamsIntegration) GetIntegrationType() string {
+	return i.Type
+}
+
+func (i *TeamsIntegration) MapInterface() (map[string]interface{}, error) {
+	res := make(map[string]interface{})
+	res["type"] = i.Type
+
+	if i.WebhookUrl != nil {
+		res["webhook_url"] = *i.WebhookUrl
+	}
+
+	res["full_name"] = i.FullName
+	res["short_name"] = i.ShortName
+	res["unqualified_name"] = i.UnqualifiedName
+
+	if i.Title != nil {
+		res["title"] = *i.Title
+	}
+	if i.Description != nil {
+		res["description"] = *i.Description
+	}
+
+	return res, nil
+}
+
+func (i *TeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	var diags hcl.Diagnostics
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeWebhookUrl:
+			webhookUrl, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			i.WebhookUrl = webhookUrl
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unsupported attribute for Teams Integration: " + attr.Name,
+				Subject:  &attr.Range,
+			})
+		}
+	}
+
+	return diags
+}
+
+func (i *TeamsIntegration) Validate() hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	var whUrl string
+	if i.WebhookUrl != nil {
+		whUrl = *i.WebhookUrl
+	}
+	if whUrl == "" {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Attribute " + schema.AttributeTypeWebhookUrl + " must be defined: " + i.Name(),
+			Subject:  &i.DeclRange,
+		})
+	}
+
+	return diags
 }
