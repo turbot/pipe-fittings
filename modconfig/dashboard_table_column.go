@@ -3,10 +3,10 @@ package modconfig
 import "github.com/turbot/pipe-fittings/utils"
 
 type DashboardTableColumn struct {
-	Name    string  `hcl:"name,label" json:"name"`
-	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
-	Wrap    *string `cty:"wrap" hcl:"wrap" json:"wrap,omitempty"`
-	HREF    *string `cty:"href" hcl:"href" json:"href,omitempty"`
+	Name    string  `hcl:"name,label" json:"name" snapshot:"name"`
+	Display *string `cty:"display" hcl:"display" json:"display,omitempty" snapshot:"display"`
+	Wrap    *string `cty:"wrap" hcl:"wrap" json:"wrap,omitempty" snapshot:"wrap"`
+	HREF    *string `cty:"href" hcl:"href" json:"href,omitempty" snapshot:"href"`
 }
 
 func (c DashboardTableColumn) Equals(other *DashboardTableColumn) bool {

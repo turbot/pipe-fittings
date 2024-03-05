@@ -17,8 +17,8 @@ type DashboardInput struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
 	DashboardName string                  `column:"dashboard,string" json:"dashboard,omitempty"`
-	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty"`
-	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty"`
+	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty" snapshot:"label"`
+	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty" snapshot:"placeholder"`
 	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty" snapshot:"options"`
 	// tactical - exists purely so we can put "unqualified_name" in the snbapshot panel for the input
 	// TODO remove when input names are refactored https://github.com/turbot/steampipe/issues/2863
