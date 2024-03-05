@@ -1,8 +1,8 @@
 package constants
 
-// DefaultWorkspaceContent is the content of the sample workspaces config file(workspaces.spc.sample),
+// DefaultPowerpipeWorkspaceContent is the content of the sample workspaces config file(workspaces.spc.sample),
 // that is created if it does not exist
-const DefaultSteampipeWorkspaceContent = `
+const DefaultPowerpipeWorkspaceContent = `
 #
 # For detailed descriptions, see the reference documentation
 # at https://steampipe.io/docs/reference/config-files/workspace
