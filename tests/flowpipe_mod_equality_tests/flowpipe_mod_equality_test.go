@@ -224,6 +224,19 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare:     "./param_d",
 		equal:       false,
 	},
+	{
+		title:   "foreach_a == foreach_a",
+		base:    "./foreach_a",
+		compare: "./foreach_a",
+		equal:   true,
+	},
+	{
+		title:       "foreach_a != foreach_b",
+		description: "different element in for_each, same length",
+		base:        "./foreach_a",
+		compare:     "./foreach_b",
+		equal:       false,
+	},
 }
 
 const (
