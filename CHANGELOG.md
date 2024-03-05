@@ -2,7 +2,7 @@
 
 Shared Pipes Component
 
-## v0.3.0 [2024-05-05]
+## v0.3.0 [2024-03-05]
 
 _What's new?_
 
