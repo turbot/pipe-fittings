@@ -82,6 +82,12 @@ type testSetup struct {
 
 var tests = []testSetup{
 	{
+		title:  "Missing var",
+		modDir: "./mods/mod_missing_var",
+		// Testing variable not set, if message is different then the variable prompt may not work
+		containsError: "missing 1 variable value:\n\tslack_token not set",
+	},
+	{
 		title:         "Missing var trigger",
 		modDir:        "./mods/mod_missing_var_trigger",
 		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> var.trigger_schedule",
