@@ -104,9 +104,12 @@ func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error 
 		if !hclhelpers.GoTypeMatchesCtyType(v, param.Type) {
 			wanted := param.Type.FriendlyName()
 			typeOfInterface := reflect.TypeOf(v)
-			received := typeOfInterface.String()
-
-			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, wanted, received)))
+			if typeOfInterface == nil {
+				errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received null", k, wanted)))
+			} else {
+				received := typeOfInterface.String()
+				errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, wanted, received)))
+			}
 		} else {
 			delete(pipelineParamsWithNoDefaultValue, k)
 		}
