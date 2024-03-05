@@ -67,7 +67,16 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 		if diags.HasErrors() {
 			return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", defaultVarsPath), diags)
 		}
+	} else {
+		// TACTICAL if the default vars file does not exist, check for a steampipe vars file
+		legacyDefaultVarsPath := filepaths.LegacyDefaultVarsFilePath(workspacePath)
 
+		if _, err := os.Stat(legacyDefaultVarsPath); err == nil {
+			diags := addVarsFromFile(legacyDefaultVarsPath, terraform.ValueFromAutoFile, ret)
+			if diags.HasErrors() {
+				return nil, error_helpers.DiagsToError(fmt.Sprintf("failed to load variables from '%s'", legacyDefaultVarsPath), diags)
+			}
+		}
 	}
 
 	if infos, err := os.ReadDir(workspacePath); err == nil {
