@@ -70,8 +70,8 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfileP
 	switch any(empty).(type) {
 	case *modconfig.FlowpipeWorkspaceProfile:
 		sampleContent = constants.DefaultFlowpipeWorkspaceContent
-	case *modconfig.SteampipeWorkspaceProfile:
-		sampleContent = constants.DefaultSteampipeWorkspaceContent
+	case *modconfig.PowerpipeWorkspaceProfile:
+		sampleContent = constants.DefaultPowerpipeWorkspaceContent
 	}
 	// always write the workspaces sample file; i.e. workspaces.spc.sample
 	err := os.MkdirAll(globalConfigPath, 0755)
@@ -196,9 +196,9 @@ func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	var empty T
 	if IsCloudWorkspaceIdentifier(name) {
 		switch any(empty).(type) {
-		case *modconfig.SteampipeWorkspaceProfile:
+		case *modconfig.PowerpipeWorkspaceProfile:
 			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)
-			var res modconfig.WorkspaceProfile = &modconfig.SteampipeWorkspaceProfile{
+			var res modconfig.WorkspaceProfile = &modconfig.PowerpipeWorkspaceProfile{
 				SnapshotLocation: utils.ToStringPointer(name),
 				Database:         utils.ToStringPointer(name),
 			}
