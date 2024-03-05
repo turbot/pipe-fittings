@@ -36,3 +36,9 @@ func WorkspaceLockPath(workspacePath string) string {
 func DefaultVarsFilePath(workspacePath string) string {
 	return path.Join(workspacePath, app_specific.DefaultVarsFileName)
 }
+func LegacyDefaultVarsFilePath(workspacePath string) string {
+	if app_specific.LegacyDefaultVarsFileName == "" {
+		return ""
+	}
+	return path.Join(workspacePath, app_specific.LegacyDefaultVarsFileName)
+}
