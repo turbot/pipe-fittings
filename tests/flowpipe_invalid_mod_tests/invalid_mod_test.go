@@ -82,6 +82,12 @@ type testSetup struct {
 
 var tests = []testSetup{
 	{
+		title:  "Missing var",
+		modDir: "./mods/mod_missing_var",
+		// Testing variable not set, if message is different then the variable prompt may not work
+		containsError: "missing 1 variable value:\n\tslack_token not set",
+	},
+	{
 		title:         "Missing var trigger",
 		modDir:        "./mods/mod_missing_var_trigger",
 		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> var.trigger_schedule",
@@ -135,7 +141,7 @@ var tests = []testSetup{
 	{
 		title:         "Bool as number in error block",
 		modDir:        "./mods/bool_as_number_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/bool_as_number_error_block/mod.fp:11,13-23)",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean",
 	},
 }
 

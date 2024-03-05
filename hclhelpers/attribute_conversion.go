@@ -14,7 +14,7 @@ func AttributeToString(attr *hcl.Attribute, evalContext *hcl.EvalContext, allowE
 	if len(expr.Variables()) > 0 && !allowExpression {
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Expression not allowed in" + attr.Name,
+			Summary:  "Expression not allowed in " + attr.Name,
 			Subject:  &attr.Range,
 		}}
 	}
@@ -46,7 +46,7 @@ func AttributeToInt(attr *hcl.Attribute, evalContext *hcl.EvalContext, allowExpr
 	if len(expr.Variables()) > 0 && !allowExpression {
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Expression not allowed in" + attr.Name,
+			Summary:  "Expression not allowed in " + attr.Name,
 			Subject:  &attr.Range,
 		}}
 	}
@@ -88,7 +88,7 @@ func AttributeToBool(attr *hcl.Attribute, evalContext *hcl.EvalContext, allowExp
 	if len(expr.Variables()) > 0 && !allowExpression {
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Expression not allowed in" + attr.Name,
+			Summary:  "Expression not allowed in " + attr.Name,
 			Subject:  &attr.Range,
 		}}
 	}
@@ -128,8 +128,8 @@ func AttributeToMap(attr *hcl.Attribute, evalContext *hcl.EvalContext, allowExpr
 
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Expression not allowed in" + attr.Name,
-			Detail:   "Expression not allowed in" + attr.Name + " and we have expression",
+			Summary:  "Expression not allowed in " + attr.Name,
+			Detail:   "Expression not allowed in " + attr.Name + " and we have expression",
 			Subject:  &attr.Range,
 		}}
 	}
