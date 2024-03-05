@@ -31,9 +31,10 @@ type LoadWorkspaceConfig struct {
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
 	return &LoadWorkspaceConfig{
-		credentials:  make(map[string]credential.Credential),
-		integrations: make(map[string]modconfig.Integration),
-		notifiers:    make(map[string]modconfig.Notifier),
+		credentials:       make(map[string]credential.Credential),
+		integrations:      make(map[string]modconfig.Integration),
+		notifiers:         make(map[string]modconfig.Notifier),
+		validateVariables: true,
 	}
 }
 
