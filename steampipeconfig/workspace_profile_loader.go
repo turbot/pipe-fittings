@@ -196,9 +196,9 @@ func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	var empty T
 	if IsCloudWorkspaceIdentifier(name) {
 		switch any(empty).(type) {
-		case *modconfig.SteampipeWorkspaceProfile:
+		case *modconfig.PowerpipeWorkspaceProfile:
 			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)
-			var res modconfig.WorkspaceProfile = &modconfig.SteampipeWorkspaceProfile{
+			var res modconfig.WorkspaceProfile = &modconfig.PowerpipeWorkspaceProfile{
 				SnapshotLocation: utils.ToStringPointer(name),
 				Database:         utils.ToStringPointer(name),
 			}
