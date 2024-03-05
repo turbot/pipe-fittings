@@ -21,10 +21,10 @@ type DashboardFlow struct {
 
 	Nodes     DashboardNodeList `cty:"node_list"  column:"nodes,jsonb" json:"-"`
 	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"-"`
-	NodeNames []string          `json:"nodes"`
-	EdgeNames []string          `json:"edges"`
+	NodeNames []string          `json:"nodes" snapshot:"nodes"`
+	EdgeNames []string          `json:"edges" snapshot:"edges"`
 
-	Categories map[string]*DashboardCategory `cty:"categories" json:"categories"`
+	Categories map[string]*DashboardCategory `cty:"categories" json:"categories" snapshot:"categories"`
 
 	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
 	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
