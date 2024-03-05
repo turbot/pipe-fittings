@@ -4,8 +4,8 @@ import "github.com/turbot/pipe-fittings/utils"
 
 // DashboardInputOption is a struct representing dashboard input option
 type DashboardInputOption struct {
-	Name  string  `hcl:"name,label" json:"name"`
-	Label *string `cty:"label" hcl:"label" json:"label,omitempty"`
+	Name  string  `hcl:"name,label" json:"name" snapshot:"name"`
+	Label *string `cty:"label" hcl:"label" json:"label,omitempty" snapshot:"label"`
 }
 
 func (o DashboardInputOption) Equals(other *DashboardInputOption) bool {

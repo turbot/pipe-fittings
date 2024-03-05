@@ -21,18 +21,15 @@ type DashboardHierarchy struct {
 
 	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"nodes,omitempty"`
 	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"edges,omitempty"`
-	NodeNames []string
-	EdgeNames []string
+	NodeNames []string          `snapshot:"nodes"`
+	EdgeNames []string          `snapshot:"edges"`
 
-	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty"`
+	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty" snapshot:"categories"`
 	Width      *int                          `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
 	Type       *string                       `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
 	Display    *string                       `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardHierarchy `hcl:"base" json:"-"`
-
-	//nolint:unused // TODO: unused attribute
-	parents []ModTreeItem
 }
 
 func NewDashboardHierarchy(block *hcl.Block, mod *Mod, shortName string) HclResource {
