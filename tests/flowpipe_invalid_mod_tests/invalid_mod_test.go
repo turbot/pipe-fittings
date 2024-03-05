@@ -141,7 +141,7 @@ var tests = []testSetup{
 	{
 		title:         "Bool as number in error block",
 		modDir:        "./mods/bool_as_number_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean\n(/Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_invalid_mod_tests/mods/bool_as_number_error_block/mod.fp:11,13-23)",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean",
 	},
 }
 
