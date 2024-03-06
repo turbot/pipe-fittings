@@ -207,6 +207,12 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 
 	// add evaluated variables to the context
 	parseCtx.AddInputVariableValues(inputVariables)
+
+	// if we are ONLY loading variables, we can skip loading resources
+	if w.loadVariablesOnly() {
+		return w.populateVariablesOnlyMod(parseCtx)
+	}
+
 	// do not reload variables as we already have them
 	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
 	if len(w.BlockTypeInclusions) > 0 {
@@ -345,4 +351,18 @@ func (w *Workspace) verifyResourceRuntimeDependencies() error {
 		}
 	}
 	return nil
+}
+
+// are we ONLY loading variables
+func (w *Workspace) loadVariablesOnly() bool {
+	return len(w.BlockTypeInclusions) == 1 && w.BlockTypeInclusions[0] == schema.BlockTypeVariable
+}
+
+// populate the mod resource maps with variables from the parse context
+func (w *Workspace) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) error_helpers.ErrorAndWarnings {
+	var diags hcl.Diagnostics
+	for _, v := range parseCtx.Variables.ToArray() {
+		diags = append(diags, w.Mod.ResourceMaps.AddResource(v)...)
+	}
+	return error_helpers.DiagsToErrorsAndWarnings("", diags)
 }
