@@ -2,6 +2,18 @@
 
 Shared Pipes Component
 
+## v0.3.1 [2024-03-06]
+
+_What's new?_
+
+* Support for Powerpipe workspace profiles.
+
+_Bug fixes_
+
+* Better error message for variable validation errors to indicate the variable location if available. ([#356](https://github.com/turbot/pipe-fittings/issues/356)).
+* Add support for loading variables from  legacy (steampipe) vars file. ([#350](https://github.com/turbot/pipe-fittings/issues/350)).
+* Add missing snapshot tags for dashboard resources. ([#355](https://github.com/turbot/pipe-fittings/issues/355)).
+
 ## v0.3.0 [2024-03-05]
 
 _What's new?_
