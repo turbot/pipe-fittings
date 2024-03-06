@@ -597,6 +597,8 @@ func integrationFromCtyValue(val cty.Value) (Integration, error) {
 		return EmailIntegrationFromCtyValue(val)
 	case schema.IntegrationTypeHttp:
 		return HttpIntegrationFromCtyValue(val)
+	case schema.IntegrationTypeTeams:
+		return TeamsIntegrationFromCtyValue(val)
 	}
 	return nil, perr.BadRequestWithMessage(fmt.Sprintf("Unsupported integration type: %s", integrationType))
 }
@@ -766,6 +768,25 @@ func HttpIntegrationFromCtyValue(val cty.Value) (*HttpIntegration, error) {
 	}
 
 	i.Type = val.GetAttr("type").AsString()
+
+	return i, nil
+}
+
+func TeamsIntegrationFromCtyValue(val cty.Value) (*TeamsIntegration, error) {
+	hclResourceImpl := hclResourceImplFromVal(val)
+	i := &TeamsIntegration{
+		HclResourceImpl: hclResourceImpl,
+	}
+
+	i.Type = val.GetAttr("type").AsString()
+
+	valMap := val.AsValueMap()
+	webhookUrl := valMap["webhook_url"]
+
+	if !webhookUrl.IsNull() {
+		webhookUrlStr := webhookUrl.AsString()
+		i.WebhookUrl = &webhookUrlStr
+	}
 
 	return i, nil
 }
@@ -964,6 +985,28 @@ type TeamsIntegration struct {
 
 	// teams
 	WebhookUrl *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
+}
+
+func (i *TeamsIntegration) CtyValue() (cty.Value, error) {
+	iCty, err := GetCtyValue(i)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := iCty.AsValueMap()
+	valueMap["full_name"] = cty.StringVal(i.FullName)
+	valueMap["short_name"] = cty.StringVal(i.ShortName)
+	valueMap["unqualified_name"] = cty.StringVal(i.UnqualifiedName)
+
+	if i.Title != nil {
+		valueMap["title"] = cty.StringVal(*i.Title)
+	}
+
+	if i.Description != nil {
+		valueMap["description"] = cty.StringVal(*i.Description)
+	}
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (i *TeamsIntegration) Equals(other Integration) bool {
