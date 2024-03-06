@@ -88,6 +88,12 @@ var modEqualityTestCases = []modEqualityTestCase{
 		equal:   true,
 	},
 	{
+		title:   "http_step_with_config == http_step_with_config_line_change",
+		base:    "./http_step_with_config",
+		compare: "./http_step_with_config_line_change",
+		equal:   true,
+	},
+	{
 		title:   "http_step_with_config == http_step_with_config_b",
 		base:    "./http_step_with_config",
 		compare: "./http_step_with_config_b",
@@ -155,6 +161,12 @@ var modEqualityTestCases = []modEqualityTestCase{
 		equal:   true,
 	},
 	{
+		title:   "container_a == container_a_line_change",
+		base:    "./container_a",
+		compare: "./container_a_line_change",
+		equal:   true,
+	},
+	{
 		title:   "container_a != container_b",
 		base:    "./container_a",
 		compare: "./container_b",
@@ -205,6 +217,12 @@ var modEqualityTestCases = []modEqualityTestCase{
 		equal:   true,
 	},
 	{
+		title:   "param_a == param_a_line_change",
+		base:    "./param_a",
+		compare: "./param_a_line_change",
+		equal:   true,
+	},
+	{
 		title:       "param_a != param_b",
 		description: "param b has a param with a different default value, same name",
 		base:        "./param_a",
@@ -228,6 +246,12 @@ var modEqualityTestCases = []modEqualityTestCase{
 		title:   "foreach_a == foreach_a",
 		base:    "./foreach_a",
 		compare: "./foreach_a",
+		equal:   true,
+	},
+	{
+		title:   "foreach_a == foreach_a_line_change",
+		base:    "./foreach_a",
+		compare: "./foreach_a_line_change",
 		equal:   true,
 	},
 	{
