@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v0.3.1 [tbd]
+
+_Bug fixes_
+
+* Better error message for variable validation errors to indicate the variable location if available. ([#356](https://github.com/turbot/pipe-fittings/issues/356)).
+
 ## v0.3.0 [2024-03-05]
 
 _What's new?_

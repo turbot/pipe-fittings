@@ -113,10 +113,17 @@ func (m VariableValidationFailedError) Error() string {
 	var sb strings.Builder
 
 	for i, diag := range m.diags {
+
 		if diag.Severity() == tfdiags.Error {
-			sb.WriteString(fmt.Sprintf("%s: %s",
+			detailedErrorString := fmt.Sprintf("%s: %s",
 				diag.Description().Summary,
-				diag.Description().Detail))
+				diag.Description().Detail)
+
+			if diag.Source().Subject != nil {
+				detailedErrorString = fmt.Sprintf("%s\n(%s)", detailedErrorString, diag.Source().Subject.StartString())
+			}
+
+			sb.WriteString(detailedErrorString)
 			if i < len(m.diags)-1 {
 				sb.WriteString("\n")
 			}
