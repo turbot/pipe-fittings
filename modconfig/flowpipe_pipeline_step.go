@@ -710,9 +710,6 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 	return p.Name == other.Name &&
 		p.Type == other.Type &&
 		p.PipelineName == other.PipelineName &&
-		p.FileName == other.FileName &&
-		p.StartLineNumber == other.StartLineNumber &&
-		p.EndLineNumber == other.EndLineNumber &&
 		utils.PtrEqual(p.MaxConcurrency, other.MaxConcurrency) &&
 		reflect.DeepEqual(p.Timeout, other.Timeout) &&
 		helpers.StringSliceEqualIgnoreOrder(p.DependsOn, other.DependsOn) &&
