@@ -1,15 +1,12 @@
 package modconfig
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -58,7 +55,7 @@ func (p *PipelineStepInput) Equals(other PipelineStep) bool {
 	}
 
 	for i, opt := range p.OptionList {
-		if !opt.Equals(pOther.OptionList[i]) {
+		if !opt.Equals(&pOther.OptionList[i]) {
 			return false
 		}
 	}
@@ -122,47 +119,32 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	// options
 	var err error
 	var resolvedOpts []PipelineStepInputOption
-	unresolvedOptBlocks := make(map[string]int)
-	unresolvedBlockKeys := utils.SortedMapKeys(p.UnresolvedBodies)
 
-	for _, ubk := range unresolvedBlockKeys {
-		if strings.HasPrefix(ubk, schema.BlockTypeOption) && strings.Contains(ubk, ":") {
-			if optIndex, err := strconv.Atoi(strings.Split(ubk, ":")[1]); err != nil {
-				return results, perr.InternalWithMessage(fmt.Sprintf("unable to parse option index to int: %s", err.Error()))
-			} else {
-				unresolvedOptBlocks[ubk] = optIndex
-			}
+	if p.UnresolvedAttributes[schema.AttributeTypeOptions] != nil {
+		// attribute needs resolving, this case may happen if we specify the entire option as an attribute
+		var opts cty.Value
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError(p.Name, diags)
 		}
-	}
+		resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
+		if err != nil {
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse options attribute: " + err.Error())
+		}
+	} else if len(p.OptionList) > 0 {
+		// This may happen if we specify the options as blocks
+		resolvedOpts = make([]PipelineStepInputOption, len(p.OptionList))
 
-	if p.UnresolvedAttributes[schema.AttributeTypeOptions] == nil && len(unresolvedOptBlocks) == 0 && len(p.OptionList) > 0 {
-		// everythings already resolved
-		resolvedOpts = p.OptionList
-	} else {
-		if p.UnresolvedAttributes[schema.AttributeTypeOptions] != nil {
-			// attribute needs resolving
-			var opts cty.Value
-			diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
+		for i, opt := range p.OptionList {
+			var diags hcl.Diagnostics
+			newOpt, diags := opt.GetInput(evalContext)
 			if diags.HasErrors() {
 				return nil, error_helpers.HclDiagsToError(p.Name, diags)
 			}
-			resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
-			if err != nil {
-				return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse options attribute: " + err.Error())
-			}
-		} else if len(unresolvedOptBlocks) > 0 {
-			// blocks need resolving
-			for key, optIndex := range unresolvedOptBlocks {
-				var o PipelineStepInputOption
-				diags := gohcl.DecodeBody(p.UnresolvedBodies[key], evalContext, &o)
-				if len(diags) > 0 {
-					return nil, error_helpers.HclDiagsToError(p.Name, diags)
-				}
-				p.OptionList[optIndex] = o
-			}
-			resolvedOpts = p.OptionList
+			resolvedOpts[i] = *newOpt
 		}
 	}
+
 	results[schema.AttributeTypeOptions] = resolvedOpts
 
 	// notifier
@@ -275,7 +257,10 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 	for _, b := range blocks {
 		switch b.Type {
 		case schema.BlockTypeOption:
-			opt := PipelineStepInputOption{}
+			opt := PipelineStepInputOption{
+				PipelineStepBase:     &p.PipelineStepBase,
+				UnresolvedAttributes: make(map[string]hcl.Expression),
+			}
 			if hasAttrOptions {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
@@ -284,19 +269,26 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 				})
 				continue
 			}
-			moreDiags := gohcl.DecodeBody(b.Body, evalContext, &opt)
+
+			opt.OptionLabel = utils.ToPointer(b.Labels[0])
+
+			optAttributes, moreDiags := b.Body.JustAttributes()
+
+			// This error is not a "handling" error, if we fail to get the attributes it's a fatal error don't call "HandleDecodeDiags"
 			if len(moreDiags) > 0 {
-				moreDiags = p.PipelineStepBase.HandleDecodeBodyDiags(moreDiags, fmt.Sprintf("%s:%d", schema.BlockTypeOption, optionIndex), b.Body)
-				if len(moreDiags) > 0 {
-					diags = append(diags, moreDiags...)
-					continue
-				}
+				diags = append(diags, moreDiags...)
+				continue
 			}
-			if helpers.IsNil(opt.Value) {
-				opt.Value = &b.Labels[0]
+
+			moreDiags = opt.SetAttributes(optAttributes, evalContext)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				continue
 			}
+
 			p.OptionList = append(p.OptionList, opt)
 			optionIndex++
+
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -428,17 +420,154 @@ func ctyValueToNotify(val cty.Value) (Notify, error) {
 }
 
 type PipelineStepInputOption struct {
-	Label    *string `json:"label" hcl:"label,optional"`
-	Value    *string `json:"value" hcl:"value,optional"`
-	Selected *bool   `json:"selected,omitempty" hcl:"selected,optional"`
-	Style    *string `json:"style,omitempty" hcl:"style,optional"`
+	// circular link to its "parent"
+	PipelineStepBase *PipelineStepBase `json:"-"`
+
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+
+	OptionLabel *string `json:"-"` // the label on the option block
+	Label       *string `json:"label,omitempty" hcl:"label,optional"`
+	Value       *string `json:"value,omitempty" hcl:"value,optional"`
+	Selected    *bool   `json:"selected,omitempty" hcl:"selected,optional"`
+	Style       *string `json:"style,omitempty" hcl:"style,optional"`
 }
 
-func (p *PipelineStepInputOption) Equals(other PipelineStepInputOption) bool {
+func (p *PipelineStepInputOption) AppendDependsOn(dependsOn ...string) {
+	p.PipelineStepBase.AppendDependsOn(dependsOn...)
+}
+
+func (p *PipelineStepInputOption) AppendCredentialDependsOn(...string) {
+	// not implemented
+}
+
+func (p *PipelineStepInputOption) AddUnresolvedAttribute(name string, expr hcl.Expression) {
+	p.UnresolvedAttributes[name] = expr
+}
+
+func (p *PipelineStepInputOption) GetInput(evalContext *hcl.EvalContext) (*PipelineStepInputOption, hcl.Diagnostics) {
+
+	newOpt := &PipelineStepInputOption{}
+
+	// make a copy, don't point to the same memory
+	if p.Label != nil {
+		newOpt.Label = utils.ToPointer(*p.Label)
+	} else if p.UnresolvedAttributes[schema.AttributeTypeLabel] != nil {
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeLabel].Value(evalContext)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		if val != cty.NilVal && val.Type() == cty.String {
+			newOpt.Label = utils.ToPointer(val.AsString())
+		}
+	}
+
+	if p.Value != nil {
+		newOpt.Value = utils.ToPointer(*p.Value)
+	} else if p.UnresolvedAttributes[schema.AttributeTypeValue] != nil {
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeValue].Value(evalContext)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		if val != cty.NilVal && val.Type() == cty.String {
+			newOpt.Value = utils.ToPointer(val.AsString())
+		}
+	}
+
+	if p.Selected != nil {
+		newOpt.Selected = utils.ToPointer(*p.Selected)
+	} else if p.UnresolvedAttributes[schema.AttributeTypeSelected] != nil {
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeLabel].Value(evalContext)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		if val != cty.NilVal && val.Type() == cty.Bool {
+			newOpt.Selected = utils.ToPointer(val.True())
+		}
+	}
+
+	if p.Style != nil {
+		newOpt.Style = utils.ToPointer(*p.Style)
+	} else if p.UnresolvedAttributes[schema.AttributeTypeStyle] != nil {
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeStyle].Value(evalContext)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		if val != cty.NilVal && val.Type() == cty.String {
+			newOpt.Style = utils.ToPointer(val.AsString())
+		}
+	}
+
+	// If the Value is nil, get the value from the option label (if it's a block option)
+	if newOpt.Value == nil {
+		newOpt.Value = p.OptionLabel
+	}
+
+	return newOpt, hcl.Diagnostics{}
+}
+
+func (p *PipelineStepInputOption) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	diags := hcl.Diagnostics{}
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeLabel, schema.AttributeTypeValue, schema.AttributeTypeStyle:
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+		case schema.AttributeTypeSelected:
+			stepDiags := setBoolAttribute(attr, evalContext, p, "Selected", true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unsupported attribute for Input Option: " + attr.Name,
+				Subject:  &attr.Range,
+			})
+		}
+	}
+
+	return diags
+}
+
+func (p *PipelineStepInputOption) Equals(other *PipelineStepInputOption) bool {
+	if p == nil && other == nil {
+		return true
+	}
+
+	if p == nil && other != nil || p != nil && other == nil {
+		return false
+	}
+
+	for key, expr := range p.UnresolvedAttributes {
+		otherExpr, ok := other.UnresolvedAttributes[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
+	}
+
+	// reverse
+	for key := range other.UnresolvedAttributes {
+		if _, ok := p.UnresolvedAttributes[key]; !ok {
+			return false
+		}
+	}
+
 	return utils.PtrEqual(p.Label, other.Label) &&
 		utils.PtrEqual(p.Value, other.Value) &&
 		utils.BoolPtrEqual(p.Selected, other.Selected) &&
-		utils.PtrEqual(p.Style, other.Style)
+		utils.PtrEqual(p.Style, other.Style) &&
+		utils.PtrEqual(p.OptionLabel, other.OptionLabel)
 }
 
 func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInputOption, error) {
@@ -450,7 +579,10 @@ func CtyValueToPipelineStepInputOptionList(value cty.Value) ([]PipelineStepInput
 		valueMap := opt.AsValueMap()
 
 		isValid := false
-		option := PipelineStepInputOption{}
+		option := PipelineStepInputOption{
+			UnresolvedAttributes: make(map[string]hcl.Expression),
+		}
+
 		for k, v := range valueMap {
 			switch k {
 			case schema.AttributeTypeValue:

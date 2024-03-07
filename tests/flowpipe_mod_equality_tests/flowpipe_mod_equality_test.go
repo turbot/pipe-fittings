@@ -141,13 +141,12 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare: "./input_step_d",
 		equal:   true,
 	},
-	// This will not work until we change input step option to use "unresolved attributes" instead of unresolved bodies
-	// {
-	// 	title:   "input_step_d != input_step_d_line_changes",
-	// 	base:    "./input_step_d",
-	// 	compare: "./input_step_d_line_changes",
-	// 	equal:   true,
-	// },
+	{
+		title:   "input_step_d != input_step_d_line_change",
+		base:    "./input_step_d",
+		compare: "./input_step_d_line_change",
+		equal:   true,
+	},
 	{
 		title:   "input_step_d != input_step_e",
 		base:    "./input_step_d",

@@ -1321,6 +1321,49 @@ func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p Pip
 	return hcl.Diagnostics{}
 }
 
+func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	if val.Type() != cty.Bool {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to bool",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	t := val.True()
+
+	var err error
+
+	if isPtr {
+		err = setField(p, fieldName, &t)
+	} else {
+		err = setField(p, fieldName, t)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
