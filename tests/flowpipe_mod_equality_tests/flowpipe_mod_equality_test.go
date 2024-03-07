@@ -260,6 +260,19 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare:     "./foreach_b",
 		equal:       false,
 	},
+	{
+		title:   "throw_a == throw_a",
+		base:    "./throw_a",
+		compare: "./throw_a",
+		equal:   true,
+	},
+	// TODO: will not work until we refactor throw config and implement its equals method
+	// {
+	// 	title:   "throw_a == throw_a_line_change",
+	// 	base:    "./throw_a",
+	// 	compare: "./throw_a_line_change",
+	// 	equal:   true,
+	// },
 }
 
 const (
