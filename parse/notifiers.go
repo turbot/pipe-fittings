@@ -89,7 +89,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 	}
 
 	moreDiags := modconfig.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx)
-	if moreDiags != nil {
+	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}
 
