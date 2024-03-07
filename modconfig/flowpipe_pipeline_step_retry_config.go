@@ -319,10 +319,3 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 
 	return diags
 }
-
-type ThrowConfig struct {
-	If             bool     `json:"if" hcl:"if" cty:"if"`
-	Message        *string  `json:"message,omitempty" hcl:"message,optional" cty:"message"`
-	Unresolved     bool     `json:"unresolved"`
-	UnresolvedBody hcl.Body `json:"-"`
-}
