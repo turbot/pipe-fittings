@@ -36,8 +36,7 @@ type IntegrationImpl struct {
 
 	// Slack and Http has URL, Email integration does not it will be null
 	Url *string `json:"url,omitempty" cty:"url" hcl:"url,optional"`
-	// IntegrationName added to extract correct integration later
-	IntegrationName *string `json:"integration_name,omitempty" cty:"integration_name"`
+
 	FileName        string
 	StartLineNumber int
 	EndLineNumber   int
@@ -787,8 +786,8 @@ func TeamsIntegrationFromCtyValue(val cty.Value) (*TeamsIntegration, error) {
 		webhookUrlStr := webhookUrl.AsString()
 		i.WebhookUrl = &webhookUrlStr
 	}
-	iName := val.GetAttr("integration_name").AsString()
-	i.IntegrationName = &iName
+
+	i.IntegrationName = val.GetAttr("integration_name").AsString()
 
 	return i, nil
 }
@@ -867,34 +866,27 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 		blockType:       block.Type,
 	}
 
-	impl := IntegrationImpl{
-		IntegrationName: &integrationFullName,
-	}
-
 	switch integrationType {
 	case schema.IntegrationTypeSlack:
 		return &SlackIntegration{
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
-			IntegrationImpl: impl,
 		}
 	case schema.IntegrationTypeEmail:
 		return &EmailIntegration{
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
-			IntegrationImpl: impl,
 		}
 	case schema.IntegrationTypeHttp:
 		return &HttpIntegration{
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
-			IntegrationImpl: impl,
 		}
 	case schema.IntegrationTypeTeams:
 		return &TeamsIntegration{
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
-			IntegrationImpl: impl,
+			IntegrationName: integrationFullName,
 		}
 	}
 
@@ -992,6 +984,7 @@ type TeamsIntegration struct {
 	ResourceWithMetadataImpl `json:"-"`
 	IntegrationImpl          `json:"-"`
 	Type                     string `json:"type" cty:"type" hcl:"type,label"`
+	IntegrationName          string `json:"integration_name" cty:"integration_name"`
 
 	// teams
 	WebhookUrl *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
@@ -1016,9 +1009,7 @@ func (i *TeamsIntegration) CtyValue() (cty.Value, error) {
 		valueMap["description"] = cty.StringVal(*i.Description)
 	}
 
-	if i.IntegrationName != nil {
-		valueMap["integration_name"] = cty.StringVal(*i.IntegrationName)
-	}
+	valueMap["integration_name"] = cty.StringVal(i.IntegrationName)
 
 	return cty.ObjectVal(valueMap), nil
 }
@@ -1066,9 +1057,8 @@ func (i *TeamsIntegration) MapInterface() (map[string]interface{}, error) {
 	if i.Description != nil {
 		res["description"] = *i.Description
 	}
-	if i.IntegrationName != nil {
-		res["integration_name"] = *i.IntegrationName
-	}
+
+	res["integration_name"] = i.IntegrationName
 
 	return res, nil
 }
