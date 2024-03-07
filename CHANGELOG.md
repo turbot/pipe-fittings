@@ -2,11 +2,17 @@
 
 Shared Pipes Component
 
+## v0.3.3 [2024-03-07]
+
+_What's new?_
+
+* Optimize workspace load time when only variables are being loaded.  ([#357](https://github.com/turbot/pipe-fittings/issues/357)). 
+
 ## v0.3.2 [2024-03-07]
 
 _Bug fixes_
 
-* Pipeline step input should not trigger a re-load with empty line changes in its definition. ([#297](https://github.com/turbot/pipe-fittings/issues/297))
+* Pipeline step input should not trigger a re-load with empty line changes in its definition. ([#297](https://github.com/turbot/pipe-fittings/issues/297)).
 
 ## v0.3.1 [2024-03-06]
 
