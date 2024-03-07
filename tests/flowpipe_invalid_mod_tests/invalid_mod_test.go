@@ -136,12 +136,17 @@ var tests = []testSetup{
 	{
 		title:         "Bool as string in error block",
 		modDir:        "./mods/bool_as_string_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute to bool",
 	},
 	{
 		title:         "Bool as number in error block",
 		modDir:        "./mods/bool_as_number_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute as boolean",
+		containsError: "Failed to decode mod:\nUnable to parse ignore attribute to bool",
+	},
+	{
+		title:         "Input step no label",
+		modDir:        "./mods/input_step_no_label",
+		containsError: "Missing name for option: All option blocks must have 1 labels (name).",
 	},
 }
 

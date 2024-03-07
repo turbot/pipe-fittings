@@ -325,6 +325,37 @@ func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
 	assert.NotNil(unresolvedAttributes["notifier"])
 }
 
+func (suite *FlowpipeModTestSuite) TestModSimpleInputStep() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_input_step_simple"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_input_step_simple", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["mod_with_input_step_simple.pipeline.simple_input_step"]
+
+	step := pipeline.Steps[0]
+	inputStep := step.(*modconfig.PipelineStepInput)
+
+	assert.Equal(2, len(inputStep.OptionList))
+
+	assert.Equal("Approve", *inputStep.OptionList[0].OptionLabel)
+	assert.Equal("Deny", *inputStep.OptionList[1].OptionLabel)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["mod_with_input_step_simple.pipeline.simple_input_step_with_option_list"]
+
+	step = pipeline.Steps[0]
+	inputStep = step.(*modconfig.PipelineStepInput)
+
+	assert.Equal(2, len(inputStep.OptionList))
+
+	assert.Equal("N. Virginia", *inputStep.OptionList[0].Label)
+	assert.Equal("Ohio", *inputStep.OptionList[1].Label)
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeIntegrationSerialiseDeserialise() {
 	assert := assert.New(suite.T())
 

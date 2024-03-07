@@ -7,7 +7,6 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/zclconf/go-cty/cty"
 )
 
 type ErrorConfig struct {
@@ -74,22 +73,10 @@ func (e *ErrorConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 		case schema.AttributeTypeIf:
 			e.AddUnresolvedAttribute(name, attr.Expr)
 		case schema.AttributeTypeIgnore:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, e)
+			stepDiags := setBoolAttribute(attr, evalContext, e, "Ignore", true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
-			}
-
-			if val != cty.NilVal {
-				if val.Type() != cty.Bool {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse ignore attribute as boolean",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				e.Ignore = utils.ToPointer(val.True())
 			}
 
 		default:
