@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v0.3.4 [tbd]
+
+_Bug fixes_
+
+* Only detect logical changes in step's throw block.
+
 ## v0.3.3 [2024-03-07]
 
 _What's new?_
