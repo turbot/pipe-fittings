@@ -598,8 +598,8 @@ func integrationFromCtyValue(val cty.Value) (Integration, error) {
 		return EmailIntegrationFromCtyValue(val)
 	case schema.IntegrationTypeHttp:
 		return HttpIntegrationFromCtyValue(val)
-	case schema.IntegrationTypeTeams:
-		return TeamsIntegrationFromCtyValue(val)
+	case schema.IntegrationTypeMsTeams:
+		return MsTeamsIntegrationFromCtyValue(val)
 	}
 	return nil, perr.BadRequestWithMessage(fmt.Sprintf("Unsupported integration type: %s", integrationType))
 }
@@ -773,9 +773,9 @@ func HttpIntegrationFromCtyValue(val cty.Value) (*HttpIntegration, error) {
 	return i, nil
 }
 
-func TeamsIntegrationFromCtyValue(val cty.Value) (*TeamsIntegration, error) {
+func MsTeamsIntegrationFromCtyValue(val cty.Value) (*MsTeamsIntegration, error) {
 	hclResourceImpl := hclResourceImplFromVal(val)
-	i := &TeamsIntegration{
+	i := &MsTeamsIntegration{
 		HclResourceImpl: hclResourceImpl,
 	}
 	i.Type = val.GetAttr("type").AsString()
@@ -882,8 +882,8 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
 		}
-	case schema.IntegrationTypeTeams:
-		return &TeamsIntegration{
+	case schema.IntegrationTypeMsTeams:
+		return &MsTeamsIntegration{
 			HclResourceImpl: hclResourceImpl,
 			Type:            integrationType,
 			IntegrationName: integrationFullName,
@@ -978,7 +978,7 @@ func (i *HttpIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContex
 	return hcl.Diagnostics{}
 }
 
-type TeamsIntegration struct {
+type MsTeamsIntegration struct {
 	// base
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
@@ -990,7 +990,7 @@ type TeamsIntegration struct {
 	WebhookUrl *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`
 }
 
-func (i *TeamsIntegration) CtyValue() (cty.Value, error) {
+func (i *MsTeamsIntegration) CtyValue() (cty.Value, error) {
 	iCty, err := GetCtyValue(i)
 	if err != nil {
 		return cty.NilVal, err
@@ -1014,7 +1014,7 @@ func (i *TeamsIntegration) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (i *TeamsIntegration) Equals(other Integration) bool {
+func (i *MsTeamsIntegration) Equals(other Integration) bool {
 	if i == nil && helpers.IsNil(other) {
 		return true
 	}
@@ -1023,7 +1023,7 @@ func (i *TeamsIntegration) Equals(other Integration) bool {
 		return false
 	}
 
-	otherTeams, ok := other.(*TeamsIntegration)
+	otherTeams, ok := other.(*MsTeamsIntegration)
 	if !ok {
 		return false
 	}
@@ -1035,11 +1035,11 @@ func (i *TeamsIntegration) Equals(other Integration) bool {
 			(i.WebhookUrl != nil && otherTeams.WebhookUrl != nil && *i.WebhookUrl == *otherTeams.WebhookUrl))
 }
 
-func (i *TeamsIntegration) GetIntegrationType() string {
+func (i *MsTeamsIntegration) GetIntegrationType() string {
 	return i.Type
 }
 
-func (i *TeamsIntegration) MapInterface() (map[string]interface{}, error) {
+func (i *MsTeamsIntegration) MapInterface() (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	res["type"] = i.Type
 
@@ -1063,7 +1063,7 @@ func (i *TeamsIntegration) MapInterface() (map[string]interface{}, error) {
 	return res, nil
 }
 
-func (i *TeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (i *MsTeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	for name, attr := range hclAttributes {
@@ -1078,7 +1078,7 @@ func (i *TeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "Unsupported attribute for Teams Integration: " + attr.Name,
+				Summary:  "Unsupported attribute for msteams Integration: " + attr.Name,
 				Subject:  &attr.Range,
 			})
 		}
@@ -1087,7 +1087,7 @@ func (i *TeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 	return diags
 }
 
-func (i *TeamsIntegration) Validate() hcl.Diagnostics {
+func (i *MsTeamsIntegration) Validate() hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	var whUrl string
