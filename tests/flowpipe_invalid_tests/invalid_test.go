@@ -123,12 +123,12 @@ var tests = []testSetup{
 	{
 		title:         "throw - invalid attribute",
 		file:          "./pipelines/throw_invalid_attribute.fp",
-		containsError: "An argument named \"foo\" is not expected here",
+		containsError: "Unsupported argument 'foo' in throw block",
 	},
 	{
 		title:         "throw - missing if",
 		file:          "./pipelines/throw_missing_if.fp",
-		containsError: "The argument \"if\" is required, but no definition was found",
+		containsError: "The argument 'if' is required",
 	},
 	{
 		title:         "invalid pipeline output attribute - sensitive",
