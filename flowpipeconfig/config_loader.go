@@ -351,7 +351,7 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "invalid integration type",
-				Detail:   "integration type must be one of slack, email, teams or http",
+				Detail:   "integration type must be one of slack, email, msteams or http",
 				Subject:  v.GetDeclRange(),
 			})
 			continue

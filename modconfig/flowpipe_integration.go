@@ -1078,7 +1078,7 @@ func (i *TeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 		default:
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "Unsupported attribute for Teams Integration: " + attr.Name,
+				Summary:  "Unsupported attribute for msteams Integration: " + attr.Name,
 				Subject:  &attr.Range,
 			})
 		}

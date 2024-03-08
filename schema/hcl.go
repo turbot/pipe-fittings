@@ -219,7 +219,7 @@ const (
 	// Integration Types
 	IntegrationTypeSlack = "slack"
 	IntegrationTypeEmail = "email"
-	IntegrationTypeTeams = "teams"
+	IntegrationTypeTeams = "msteams"
 	IntegrationTypeHttp  = "http"
 
 	LabelName = "name"
