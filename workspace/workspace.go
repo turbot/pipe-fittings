@@ -250,13 +250,25 @@ func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool)
 	utils.LogTime("getInputVariables start")
 	defer utils.LogTime("getInputVariables end")
 
+	variablesParseCtx, ew := w.getVariablesParseContext(ctx)
+	if ew.Error != nil {
+		return nil, ew
+	}
+
+	return w.getVariableValues(ctx, variablesParseCtx, validateMissing)
+}
+
+func (w *Workspace) getVariablesParseContext(ctx context.Context) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
 	// build a run context just to use to load variable definitions
 	variablesParseCtx, err := w.getParseContext(ctx)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
-
-	return w.getVariableValues(ctx, variablesParseCtx, validateMissing)
+	// only load variables blocks
+	variablesParseCtx.SetBlockTypes(schema.BlockTypeVariable)
+	// NOTE: exclude mod block as we have already loaded the mod definition
+	variablesParseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
+	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
 }
 
 func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {

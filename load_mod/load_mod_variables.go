@@ -8,7 +8,6 @@ import (
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
@@ -20,10 +19,6 @@ import (
 )
 
 func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error) {
-	// only load variables blocks
-	parseCtx.SetBlockTypes(schema.BlockTypeVariable)
-	// NOTE: exclude mod block as we have already loaded the mod definition
-	parseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
 	mod, errAndWarnings := LoadMod(ctx, variablePath, parseCtx)
 	if errAndWarnings.GetError() != nil {
 		return nil, errAndWarnings.GetError()
