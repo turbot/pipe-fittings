@@ -107,6 +107,9 @@ func (m *ModVariableMap) PopulatePublicVariables() {
 
 // GetPublicVariableValues converts public variables into a map of string variable values
 func (m *ModVariableMap) GetPublicVariableValues() (map[string]string, error) {
+	utils.LogTime("GetPublicVariableValues")
+	defer utils.LogTime("GetPublicVariableValues end")
+
 	res := make(map[string]string, len(m.PublicVariables))
 	for k, v := range m.PublicVariables {
 		// TODO investigate workspace usage of value string and determine whether we can simply format ValueGo

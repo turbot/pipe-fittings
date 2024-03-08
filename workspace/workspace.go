@@ -77,8 +77,8 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 		o(cfg)
 	}
 
-	utils.LogTime("w.Load_ start")
-	defer utils.LogTime("w.Load_ end")
+	utils.LogTime("w.Load start")
+	defer utils.LogTime("w.Load end")
 
 	w, err := createShellWorkspace(workspacePath)
 	if err != nil {
@@ -179,6 +179,9 @@ func (w *Workspace) setModfileExists() {
 }
 
 func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAndWarnings {
+	utils.LogTime("loadWorkspaceMod start")
+	defer utils.LogTime("loadWorkspaceMod end")
+
 	// check if your workspace path is home dir and if modfile exists - if yes then warn and ask user to continue or not
 	if err := HomeDirectoryModfileCheck(ctx, w.Path); err != nil {
 		return error_helpers.NewErrorsAndWarning(err)
@@ -192,6 +195,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	if errorsAndWarnings.Error != nil {
 		return errorsAndWarnings
 	}
+
 	// populate the parsed variable values
 	w.VariableValues, errorsAndWarnings.Error = inputVariables.GetPublicVariableValues()
 	if errorsAndWarnings.Error != nil {
@@ -243,6 +247,9 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 }
 
 func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+	utils.LogTime("getInputVariables start")
+	defer utils.LogTime("getInputVariables end")
+
 	// build a run context just to use to load variable definitions
 	variablesParseCtx, err := w.getParseContext(ctx)
 	if err != nil {
@@ -253,6 +260,9 @@ func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool)
 }
 
 func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+	utils.LogTime("getInputVariables start")
+	defer utils.LogTime("getInputVariables end")
+
 	// load variable definitions
 	variableMap, err := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
 	if err != nil {

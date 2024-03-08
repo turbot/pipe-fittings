@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -25,6 +26,9 @@ var missingVariableErrors = []string{
 }
 
 func decode(parseCtx *ModParseContext) hcl.Diagnostics {
+	utils.LogTime(fmt.Sprintf("decode %s start", parseCtx.CurrentMod.Name()))
+	defer utils.LogTime(fmt.Sprintf("decode %s end", parseCtx.CurrentMod.Name()))
+
 	var diags hcl.Diagnostics
 
 	blocks, err := parseCtx.BlocksToDecode()
