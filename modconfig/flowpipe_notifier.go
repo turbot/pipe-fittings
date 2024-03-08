@@ -214,8 +214,8 @@ func (n *Notify) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		n.Integration = &httpIntegration
-	case schema.IntegrationTypeTeams:
-		var teamsIntegration TeamsIntegration
+	case schema.IntegrationTypeMsTeams:
+		var teamsIntegration MsTeamsIntegration
 		if err := json.Unmarshal(temp.Integration, &teamsIntegration); err != nil {
 			return err
 		}

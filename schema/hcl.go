@@ -217,10 +217,10 @@ const (
 	TriggerTypeHttp     = "http"
 
 	// Integration Types
-	IntegrationTypeSlack = "slack"
-	IntegrationTypeEmail = "email"
-	IntegrationTypeTeams = "teams"
-	IntegrationTypeHttp  = "http"
+	IntegrationTypeSlack   = "slack"
+	IntegrationTypeEmail   = "email"
+	IntegrationTypeMsTeams = "msteams"
+	IntegrationTypeHttp    = "http"
 
 	LabelName = "name"
 	LabelType = "type"
