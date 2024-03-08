@@ -294,7 +294,7 @@ type PipelineStep interface {
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	GetErrorConfig(*hcl.EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
 	GetRetryConfig(*hcl.EvalContext, bool) (*RetryConfig, hcl.Diagnostics)
-	GetThrowConfig() []ThrowConfig
+	GetThrowConfig() []*ThrowConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
 	Equals(other PipelineStep) bool
@@ -348,7 +348,7 @@ type PipelineStepBase struct {
 	Resolved            bool                       `json:"resolved,omitempty"`
 	ErrorConfig         *ErrorConfig               `json:"-"`
 	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
-	ThrowConfig         []ThrowConfig              `json:"throw,omitempty"`
+	ThrowConfig         []*ThrowConfig             `json:"throw,omitempty"`
 	OutputConfig        map[string]*PipelineOutput `json:"-"`
 	FileName            string                     `json:"file_name"`
 	StartLineNumber     int                        `json:"start_line_number"`
@@ -484,7 +484,12 @@ func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolu
 
 }
 
-func (p *PipelineStepBase) GetThrowConfig() []ThrowConfig {
+// For Throw config we want the client to resolve individual element. This to avoid failing on the subsequent throw if an
+// earlier throw is executed.
+//
+// For example: 3 throw configuration. If the first throw condition is met, then there's no reason we should evaluate the subsequent
+// throw conditions, let alone failing their evaluation.
+func (p *PipelineStepBase) GetThrowConfig() []*ThrowConfig {
 	return p.ThrowConfig
 }
 
@@ -591,24 +596,22 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 	throwBlocks := blocks.ByType()[schema.BlockTypeThrow]
 
 	for _, throwBlock := range throwBlocks {
-		throwConfig := ThrowConfig{}
+		throwConfig := NewThrowConfig(p)
 
-		// Decode the loop block
-		moreDiags := gohcl.DecodeBody(throwBlock.Body, evalContext, &throwConfig)
-
+		attrs, moreDiags := throwBlock.Body.JustAttributes()
 		if len(moreDiags) > 0 {
-			moreDiags := p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeThrow, throwBlock.Body)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				// Fill in the blank if we have an error so it's easier for debugging purpose
-			} else {
-				throwConfig.UnresolvedBody = throwBlock.Body
-				throwConfig.Unresolved = true
-				p.ThrowConfig = append(p.ThrowConfig, throwConfig)
-			}
-		} else {
-			p.ThrowConfig = append(p.ThrowConfig, throwConfig)
+			diags = append(diags, moreDiags...)
+			continue
 		}
+
+		moreDiags = throwConfig.SetAttributes(throwBlock, attrs, evalContext)
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
+			continue
+		}
+
+		p.ThrowConfig = append(p.ThrowConfig, throwConfig)
+
 	}
 
 	return diags
@@ -688,13 +691,12 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		}
 	}
 
-	// best effort for throw config
 	if len(p.ThrowConfig) != len(other.ThrowConfig) {
 		return false
 	}
 
 	for i, throwConfig := range p.ThrowConfig {
-		if !reflect.DeepEqual(throwConfig, other.ThrowConfig[i]) {
+		if !throwConfig.Equals(other.ThrowConfig[i]) {
 			return false
 		}
 	}
@@ -1365,6 +1367,10 @@ func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p Pipel
 }
 
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
+	return dependsOnFromExpressionsWithResultControl(attr, evalContext, p, false)
+}
+
+func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, resultsReference bool) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
 	// If there is a param in the expression, then we must assume that we can't resolve it at this stage.
@@ -1447,6 +1453,9 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 						resolvedDiags++
 					}
 				} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == `There is no variable named "loop".` {
+					resolvedDiags++
+				} else if e.Detail == `There is no variable named "result".` && resultsReference {
+					// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
 					resolvedDiags++
 				} else {
 					return cty.NilVal, stepDiags

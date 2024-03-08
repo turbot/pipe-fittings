@@ -13,6 +13,7 @@ import (
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -79,6 +80,24 @@ func (suite *FlowpipeModTestSuite) SetupSuite() {
 // end of the testing suite, after all tests have been run.
 func (suite *FlowpipeModTestSuite) TearDownSuite() {
 	suite.TearDownSuiteRunCount++
+}
+
+func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_throw_config", workspace.WithCredentials(map[string]credential.Credential{}))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipelines := w.Mod.ResourceMaps.Pipelines
+
+	pipeline := pipelines["throw_config.pipeline.error_with_throw_does_not_ignore"]
+
+	stepWithThrow := pipeline.Steps[1]
+
+	// Message attribute is unresolved and refer to itself (using the "result" attribute)
+	assert.NotNil(stepWithThrow.GetThrowConfig()[0].UnresolvedAttributes[schema.AttributeTypeMessage])
 }
 
 func (suite *FlowpipeModTestSuite) TestGoodMod() {

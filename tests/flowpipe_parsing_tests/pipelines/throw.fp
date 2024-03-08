@@ -22,17 +22,25 @@ pipeline "throw_simple_unresolved" {
 
 
 pipeline "throw_multiple" {
+    step "transform" "base" {
+        value = "bar"
+    }
+
+    step "transform" "base_2" {
+        value = "bar"
+    }    
+
     step "transform" "one" {
         value = "foo"
 
         throw {
             if = result.value == "foo"
-            message = "foo"
+            message = step.transform.base.value
         }
 
         throw {
             if = true
-            message = "bar"
+            message = step.transform.base_2.value
         }
 
         throw {

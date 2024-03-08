@@ -90,7 +90,7 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 		case schema.AttributeTypeIf:
 			r.AddUnresolvedAttribute(name, attr.Expr)
 		case schema.AttributeTypeMaxAttempts:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, r, true)
 			if len(stepDiags) > 0 {
 				diags = append(diags, stepDiags...)
 				continue
@@ -110,7 +110,7 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 				r.MaxAttempts = valInt
 			}
 		case schema.AttributeTypeStrategy:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, r, true)
 			if len(stepDiags) > 0 {
 				diags = append(diags, stepDiags...)
 				continue
@@ -132,7 +132,7 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 			}
 
 		case schema.AttributeTypeMinInterval:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, r, true)
 			if len(stepDiags) > 0 {
 				diags = append(diags, stepDiags...)
 				continue
@@ -152,7 +152,7 @@ func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *h
 			}
 
 		case schema.AttributeTypeMaxInterval:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, r)
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, r, true)
 			if len(stepDiags) > 0 {
 				diags = append(diags, stepDiags...)
 				continue

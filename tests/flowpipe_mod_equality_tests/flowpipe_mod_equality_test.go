@@ -266,13 +266,38 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare: "./throw_a",
 		equal:   true,
 	},
-	// TODO: will not work until we refactor throw config and implement its equals method
-	// {
-	// 	title:   "throw_a == throw_a_line_change",
-	// 	base:    "./throw_a",
-	// 	compare: "./throw_a_line_change",
-	// 	equal:   true,
-	// },
+	{
+		title:   "throw_a == throw_a_line_change",
+		base:    "./throw_a",
+		compare: "./throw_a_line_change",
+		equal:   true,
+	},
+	{
+		title:       "throw_a != throw_b",
+		description: "different message",
+		base:        "./throw_a",
+		compare:     "./throw_b",
+		equal:       false,
+	},
+	{
+		title:   "throw_b == throw_b",
+		base:    "./throw_b",
+		compare: "./throw_b",
+		equal:   true,
+	},
+	{
+		title:       "throw_b != throw_c",
+		description: "different if",
+		base:        "./throw_b",
+		compare:     "./throw_c",
+		equal:       false,
+	},
+	{
+		title:   "throw_c == throw_c",
+		base:    "./throw_c",
+		compare: "./throw_c",
+		equal:   true,
+	},
 }
 
 const (

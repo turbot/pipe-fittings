@@ -452,13 +452,26 @@ func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*Pipeli
 	if p.Label != nil {
 		newOpt.Label = utils.ToPointer(*p.Label)
 	} else if p.UnresolvedAttributes[schema.AttributeTypeLabel] != nil {
-		val, diags := p.UnresolvedAttributes[schema.AttributeTypeLabel].Value(evalContext)
+		attr := p.UnresolvedAttributes[schema.AttributeTypeLabel]
+		val, diags := attr.Value(evalContext)
 		if diags.HasErrors() {
 			return nil, diags
 		}
 
-		if val != cty.NilVal && val.Type() == cty.String {
-			newOpt.Label = utils.ToPointer(val.AsString())
+		if val != cty.NilVal {
+			valString, err := hclhelpers.CtyToString(val)
+			if err != nil {
+				return nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeLabel + " attribute to string",
+						Detail:   "Unable to parse " + schema.AttributeTypeLabel + " attribute to string",
+						Subject:  attr.Range().Ptr(),
+					},
+				}
+			}
+
+			newOpt.Label = utils.ToPointer(valString)
 		}
 	}
 
