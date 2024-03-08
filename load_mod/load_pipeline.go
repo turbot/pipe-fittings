@@ -94,7 +94,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 		nil,
 		modDir,
 		parse.WithParseFlags(parse.CreateDefaultMod),
-		parse.WithListOptions(&filehelpers.ListOptions{
+		parse.WithListOptions(filehelpers.ListOptions{
 			Flags:   filehelpers.Files | filehelpers.Recursive,
 			Include: []string{"**/" + fileName},
 		}))
