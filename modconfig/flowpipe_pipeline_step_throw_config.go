@@ -119,30 +119,6 @@ func (t *ThrowConfig) Resolve(evalContext *hcl.EvalContext) (*ThrowConfig, hcl.D
 	newThrowConfig := &ThrowConfig{}
 	diags := hcl.Diagnostics{}
 
-	if t.Message != nil {
-		newThrowConfig.Message = utils.ToPointer(*t.Message)
-	} else if t.UnresolvedAttributes[schema.AttributeTypeMessage] != nil {
-		attr := t.UnresolvedAttributes[schema.AttributeTypeMessage]
-		val, moreDiags := attr.Value(evalContext)
-		if len(moreDiags) > 0 {
-			diags = append(diags, moreDiags...)
-		}
-
-		if val != cty.NilVal {
-			valString, err := hclhelpers.CtyToString(val)
-			if err != nil {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Unable to parse " + schema.AttributeTypeMessage + " attribute to string",
-					Detail:   "Unable to parse " + schema.AttributeTypeMessage + " attribute to string",
-					Subject:  attr.Range().Ptr(),
-				})
-			} else {
-				newThrowConfig.Message = &valString
-			}
-		}
-	}
-
 	// resolve IF
 	if t.If != nil {
 		// this should never happened
@@ -166,6 +142,34 @@ func (t *ThrowConfig) Resolve(evalContext *hcl.EvalContext) (*ThrowConfig, hcl.D
 			} else {
 				valBoolVal := valBool.(bool)
 				newThrowConfig.If = &valBoolVal
+			}
+		}
+	}
+
+	if newThrowConfig.If != nil && !*newThrowConfig.If {
+		return newThrowConfig, diags
+	}
+
+	if t.Message != nil {
+		newThrowConfig.Message = utils.ToPointer(*t.Message)
+	} else if t.UnresolvedAttributes[schema.AttributeTypeMessage] != nil {
+		attr := t.UnresolvedAttributes[schema.AttributeTypeMessage]
+		val, moreDiags := attr.Value(evalContext)
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
+		}
+
+		if val != cty.NilVal {
+			valString, err := hclhelpers.CtyToString(val)
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + schema.AttributeTypeMessage + " attribute to string",
+					Detail:   "Unable to parse " + schema.AttributeTypeMessage + " attribute to string",
+					Subject:  attr.Range().Ptr(),
+				})
+			} else {
+				newThrowConfig.Message = &valString
 			}
 		}
 	}
