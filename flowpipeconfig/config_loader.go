@@ -345,7 +345,7 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 			vars = email
 		case schema.IntegrationTypeHttp:
 			vars = http
-		case schema.IntegrationTypeTeams:
+		case schema.IntegrationTypeMsTeams:
 			vars = teams
 		default:
 			diags = append(diags, &hcl.Diagnostic{
@@ -383,7 +383,7 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 		integrationVariables[schema.IntegrationTypeHttp] = cty.ObjectVal(http)
 	}
 	if len(teams) > 0 {
-		integrationVariables[schema.IntegrationTypeTeams] = cty.ObjectVal(teams)
+		integrationVariables[schema.IntegrationTypeMsTeams] = cty.ObjectVal(teams)
 	}
 
 	variables["integration"] = cty.ObjectVal(integrationVariables)

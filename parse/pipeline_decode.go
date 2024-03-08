@@ -626,7 +626,7 @@ func GetIntegrationBlockSchema(integrationType string) *hcl.BodySchema {
 		return modconfig.IntegrationSlackBlockSchema
 	case schema.IntegrationTypeEmail:
 		return modconfig.IntegrationEmailBlockSchema
-	case schema.IntegrationTypeTeams:
+	case schema.IntegrationTypeMsTeams:
 		return modconfig.IntegrationTeamsBlockSchema
 	default:
 		return nil
