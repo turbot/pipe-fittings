@@ -20,8 +20,10 @@ import (
 )
 
 func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error) {
-	// only load mod and variables blocks
-	parseCtx.BlockTypes = []string{schema.BlockTypeVariable}
+	// only load variables blocks
+	parseCtx.SetBlockTypes(schema.BlockTypeVariable)
+	// NOTE: exclude mod block as we have already loaded the mod definition
+	parseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
 	mod, errAndWarnings := LoadMod(ctx, variablePath, parseCtx)
 	if errAndWarnings.GetError() != nil {
 		return nil, errAndWarnings.GetError()

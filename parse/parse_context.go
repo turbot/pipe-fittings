@@ -25,9 +25,9 @@ type ParseContext struct {
 	RootEvalPath string
 
 	// if set, only decode these blocks
-	BlockTypes []string
+	blockTypes map[string]struct{}
 	// if set, exclude these block types
-	BlockTypeExclusions []string
+	blockTypeExclusions map[string]struct{}
 
 	dependencyGraph *topsort.Graph
 	blocks          hcl.Blocks
@@ -124,7 +124,12 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 }
 
 // BlocksToDecode builds a list of blocks to decode, the order of which is determined by the dependency order
-func (r *ParseContext) BlocksToDecode() (hcl.Blocks, error) {
+func (r *ParseContext) BlocksToDecode() (blocksToDecode hcl.Blocks, _ error) {
+	defer func() {
+		// apply block inclusions and exclusions (if any)
+		blocksToDecode = r.filterBlocks(blocksToDecode)
+	}()
+
 	depOrder, err := r.getDependencyOrder()
 	if err != nil {
 		return nil, err
@@ -138,7 +143,6 @@ func (r *ParseContext) BlocksToDecode() (hcl.Blocks, error) {
 
 	// make a map of blocks we have already included, keyed by the block def range
 	blocksMap := make(map[string]bool)
-	var blocksToDecode hcl.Blocks
 	for _, name := range depOrder {
 		// depOrder is all the blocks required to resolve dependencies.
 		// if this one is unparsed, added to list
@@ -150,6 +154,32 @@ func (r *ParseContext) BlocksToDecode() (hcl.Blocks, error) {
 		}
 	}
 	return blocksToDecode, nil
+}
+func (r *ParseContext) filterBlocks(blocks hcl.Blocks) hcl.Blocks {
+	var res hcl.Blocks
+
+	for _, block := range blocks {
+		if r.shouldIncludeBlock(block) {
+			res = append(res, block)
+		}
+	}
+	return res
+}
+
+func (r *ParseContext) shouldIncludeBlock(block *hcl.Block) bool {
+	// if inclusions are set, only include these block types
+	if len(r.blockTypes) > 0 {
+		if _, ok := r.blockTypes[block.Type]; !ok {
+			return false
+		}
+	}
+	// if exclusions are set, apply them
+	if len(r.blockTypeExclusions) > 0 {
+		if _, ok := r.blockTypeExclusions[block.Type]; ok {
+			return false
+		}
+	}
+	return true
 }
 
 // EvalComplete returns whether all elements in the dependency tree fully evaluated
@@ -181,16 +211,6 @@ func (r *ParseContext) FormatDependencies() string {
 	}
 
 	return helpers.Tabify(strings.Join(depStrings, "\n"), "   ")
-}
-
-func (r *ParseContext) ShouldIncludeBlock(block *hcl.Block) bool {
-	if len(r.BlockTypes) > 0 && !helpers.StringSliceContains(r.BlockTypes, block.Type) {
-		return false
-	}
-	if len(r.BlockTypeExclusions) > 0 && helpers.StringSliceContains(r.BlockTypeExclusions, block.Type) {
-		return false
-	}
-	return true
 }
 
 func (r *ParseContext) newDependencyGraph() *topsort.Graph {
@@ -228,6 +248,7 @@ func (r *ParseContext) getDependencyOrder() ([]string, error) {
 }
 
 // eval functions
+
 func (r *ParseContext) BuildEvalContext(variables map[string]cty.Value) {
 	// create evaluation context
 	r.EvalCtx = &hcl.EvalContext{
