@@ -137,7 +137,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 		for i, opt := range p.OptionList {
 			var diags hcl.Diagnostics
-			newOpt, diags := opt.GetInput(evalContext)
+			newOpt, diags := opt.Resolve(evalContext)
 			if diags.HasErrors() {
 				return nil, error_helpers.HclDiagsToError(p.Name, diags)
 			}
@@ -444,7 +444,7 @@ func (p *PipelineStepInputOption) AddUnresolvedAttribute(name string, expr hcl.E
 	p.UnresolvedAttributes[name] = expr
 }
 
-func (p *PipelineStepInputOption) GetInput(evalContext *hcl.EvalContext) (*PipelineStepInputOption, hcl.Diagnostics) {
+func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*PipelineStepInputOption, hcl.Diagnostics) {
 
 	newOpt := &PipelineStepInputOption{}
 
