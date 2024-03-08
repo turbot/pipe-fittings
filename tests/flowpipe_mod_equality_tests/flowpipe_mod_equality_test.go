@@ -298,6 +298,32 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare: "./throw_c",
 		equal:   true,
 	},
+	{
+		title:   "output_a == output_a",
+		base:    "./output_a",
+		compare: "./output_a",
+		equal:   true,
+	},
+	{
+		title:       "output_a != output_b",
+		description: "value attribute in output is different, also an expression",
+		base:        "./output_a",
+		compare:     "./output_b",
+		equal:       false,
+	},
+	{
+		title:   "output_c == output_c",
+		base:    "./output_c",
+		compare: "./output_c",
+		equal:   true,
+	},
+	{
+		title:       "output_a != output_c",
+		description: "change a value in a ternery expression, change wasn't detected at some point",
+		base:        "./output_a",
+		compare:     "./output_c",
+		equal:       false,
+	},
 }
 
 const (
