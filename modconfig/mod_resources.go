@@ -47,10 +47,11 @@ type ResourceMaps struct {
 	Triggers  map[string]*Trigger
 }
 
-func NewModResources(mod *Mod) *ResourceMaps {
+func NewResourceMaps(mod *Mod, sourceMaps ...*ResourceMaps) *ResourceMaps {
 	res := emptyModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
+	res.AddMaps(sourceMaps...)
 	return res
 }
 
@@ -112,7 +113,7 @@ func (m *ResourceMaps) QueryProviders() []QueryProvider {
 
 // TopLevelResources returns a new ResourceMaps containing only top level resources (i.e. no dependencies)
 func (m *ResourceMaps) TopLevelResources() *ResourceMaps {
-	res := NewModResources(m.Mod)
+	res := NewResourceMaps(m.Mod)
 
 	f := func(item HclResource) (bool, error) {
 		if modItem, ok := item.(ModItem); ok {
@@ -495,6 +496,9 @@ func (m *ResourceMaps) GetResource(parsedName *ParsedResourceName) (resource Hcl
 }
 
 func (m *ResourceMaps) PopulateReferences() {
+	utils.LogTime("ResourceMaps.PopulateReferences")
+	defer utils.LogTime("ResourceMaps.PopulateReferences end")
+
 	// only populate references if introspection is enabled
 	switch viper.GetString(constants.ArgIntrospection) {
 	case constants.IntrospectionInfo:
@@ -946,90 +950,85 @@ func (m *ResourceMaps) AddSnapshots(snapshotPaths []string) {
 	}
 }
 
-func (m *ResourceMaps) Merge(others []*ResourceMaps) *ResourceMaps {
-	res := NewModResources(m.Mod)
-	sourceMaps := append([]*ResourceMaps{m}, others...)
-
+func (m *ResourceMaps) AddMaps(sourceMaps ...*ResourceMaps) {
 	for _, source := range sourceMaps {
 		for k, v := range source.Benchmarks {
-			res.Benchmarks[k] = v
+			m.Benchmarks[k] = v
 		}
 		for k, v := range source.Controls {
-			res.Controls[k] = v
+			m.Controls[k] = v
 		}
 		for k, v := range source.Dashboards {
-			res.Dashboards[k] = v
+			m.Dashboards[k] = v
 		}
 		for k, v := range source.DashboardContainers {
-			res.DashboardContainers[k] = v
+			m.DashboardContainers[k] = v
 		}
 		for k, v := range source.DashboardCards {
-			res.DashboardCards[k] = v
+			m.DashboardCards[k] = v
 		}
 		for k, v := range source.DashboardCategories {
-			res.DashboardCategories[k] = v
+			m.DashboardCategories[k] = v
 		}
 		for k, v := range source.DashboardCharts {
-			res.DashboardCharts[k] = v
+			m.DashboardCharts[k] = v
 		}
 		for k, v := range source.DashboardEdges {
-			res.DashboardEdges[k] = v
+			m.DashboardEdges[k] = v
 		}
 		for k, v := range source.DashboardFlows {
-			res.DashboardFlows[k] = v
+			m.DashboardFlows[k] = v
 		}
 		for k, v := range source.DashboardGraphs {
-			res.DashboardGraphs[k] = v
+			m.DashboardGraphs[k] = v
 		}
 		for k, v := range source.DashboardHierarchies {
-			res.DashboardHierarchies[k] = v
+			m.DashboardHierarchies[k] = v
 		}
 		for k, v := range source.DashboardNodes {
-			res.DashboardNodes[k] = v
+			m.DashboardNodes[k] = v
 		}
 		for k, v := range source.DashboardImages {
-			res.DashboardImages[k] = v
+			m.DashboardImages[k] = v
 		}
 		for k, v := range source.DashboardInputs {
-			res.DashboardInputs[k] = v
+			m.DashboardInputs[k] = v
 		}
 		for k, v := range source.DashboardTables {
-			res.DashboardTables[k] = v
+			m.DashboardTables[k] = v
 		}
 		for k, v := range source.DashboardTexts {
-			res.DashboardTexts[k] = v
+			m.DashboardTexts[k] = v
 		}
 		for k, v := range source.GlobalDashboardInputs {
-			res.GlobalDashboardInputs[k] = v
+			m.GlobalDashboardInputs[k] = v
 		}
 		for k, v := range source.Locals {
-			res.Locals[k] = v
+			m.Locals[k] = v
 		}
 		for k, v := range source.Mods {
-			res.Mods[k] = v
+			m.Mods[k] = v
 		}
 		for k, v := range source.Queries {
-			res.Queries[k] = v
+			m.Queries[k] = v
 		}
 		for k, v := range source.Snapshots {
-			res.Snapshots[k] = v
+			m.Snapshots[k] = v
 		}
 		for k, v := range source.Pipelines {
-			res.Pipelines[k] = v
+			m.Pipelines[k] = v
 		}
 		for k, v := range source.Triggers {
-			res.Triggers[k] = v
+			m.Triggers[k] = v
 		}
 		for k, v := range source.Variables {
 			// TODO check why this was necessary and test variables thoroughly
 			// NOTE: only include variables from root mod  - we add in the others separately
 			//if v.Mod.FullName == m.Mod.FullName {
-			res.Variables[k] = v
+			m.Variables[k] = v
 			//}
 		}
 	}
-
-	return res
 }
 
 func (m *ResourceMaps) queryProviderCount() int {

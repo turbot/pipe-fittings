@@ -26,7 +26,8 @@ var EnvUpdateCheck,
 	EnvMemoryMaxMb,
 	EnvMemoryMaxMbPlugin,
 	EnvConfigPath,
-	EnvLogLevel string
+	EnvLogLevel,
+	EnvProfile string
 
 func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	// set prefix

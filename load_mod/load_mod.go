@@ -3,6 +3,7 @@ package load_mod
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 	"log/slog"
 	"path/filepath"
 
@@ -22,6 +23,9 @@ import (
 // NOTE: it is an error if there is more than 1 mod defined, however zero mods is acceptable
 // - a default mod will be created assuming there are any resource files
 func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+	utils.LogTime(fmt.Sprintf("LoadMod start: %s", modPath))
+	defer utils.LogTime(fmt.Sprintf("LoadMod end: %s", modPath))
+
 	defer func() {
 		if r := recover(); r != nil {
 			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
@@ -59,6 +63,9 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 }
 
 func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+	utils.LogTime(fmt.Sprintf("loadModDefinition start: %s", modPath))
+	defer utils.LogTime(fmt.Sprintf("loadModDefinition end: %s", modPath))
+
 	var mod *modconfig.Mod
 	errorsAndWarnings := error_helpers.ErrorAndWarnings{}
 
@@ -86,6 +93,9 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 }
 
 func loadModDependencies(ctx context.Context, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
+	utils.LogTime(fmt.Sprintf("loadModDependencies start: %s", parent.ModPath))
+	defer utils.LogTime(fmt.Sprintf("loadModDependencies end: %s", parent.ModPath))
+
 	var errors []error
 	if parent.Require != nil {
 		// now ensure there is a lock file - if we have any mod dependencies there MUST be a lock file -
@@ -113,6 +123,9 @@ func loadModDependencies(ctx context.Context, parent *modconfig.Mod, parseCtx *p
 }
 
 func loadModDependency(ctx context.Context, modDependency *versionmap.ResolvedVersionConstraint, parseCtx *parse.ModParseContext) error {
+	utils.LogTime(fmt.Sprintf("loadModDependency start: %s", modDependency.Name))
+	defer utils.LogTime(fmt.Sprintf("loadModDependency end: %s", modDependency.Name))
+
 	// dependency mods are installed to <mod path>/<mod nam>@version
 	// for example workspace_folder/.steampipe/mods/github.com/turbot/steampipe-mod-aws-compliance@v1.0
 
@@ -152,6 +165,9 @@ func loadModDependency(ctx context.Context, modDependency *versionmap.ResolvedVe
 }
 
 func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.ModPath))
+	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.ModPath))
+
 	// get the source files
 	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
 	if err != nil {
