@@ -106,6 +106,13 @@ var modEqualityTestCases = []modEqualityTestCase{
 		equal:   false,
 	},
 	{
+		title:       "http_step_with_config_c != http_step_with_config_c_basic_auth_line_change",
+		description: "one line change in the basic auth section",
+		base:        "./http_step_with_config_c",
+		compare:     "./http_step_with_config_c_basic_auth_line_change",
+		equal:       true,
+	},
+	{
 		title:   "input_step_a == input_step_a",
 		base:    "./input_step_a",
 		compare: "./input_step_a",
