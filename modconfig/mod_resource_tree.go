@@ -19,7 +19,7 @@ func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
 	}()
 
 	// build lookup of children and parents
-	childrenLookup, err := m.getChildParentsLookup(err)
+	childrenLookup, err := m.getChildParentsLookup()
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
 	return nil
 }
 
-func (m *Mod) getChildParentsLookup(err error) (map[string][]ModTreeItem, error) {
+func (m *Mod) getChildParentsLookup() (map[string][]ModTreeItem, error) {
 	// build lookup of all children
 	childrenLookup := make(map[string][]ModTreeItem)
 	resourceFunc := func(parent HclResource) (bool, error) {
@@ -58,7 +58,7 @@ func (m *Mod) getChildParentsLookup(err error) (map[string][]ModTreeItem, error)
 		// continue walking
 		return true, nil
 	}
-	err = m.ResourceMaps.WalkResources(resourceFunc)
+	err := m.ResourceMaps.WalkResources(resourceFunc)
 	if err != nil {
 		return nil, err
 	}

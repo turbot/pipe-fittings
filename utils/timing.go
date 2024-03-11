@@ -11,8 +11,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-var profiling = false
-
 type timeLog struct {
 	Time       time.Time
 	Interval   time.Duration
