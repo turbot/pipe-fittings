@@ -3,7 +3,6 @@ package load_mod
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
 	"log/slog"
 	"path/filepath"
 	"sync"
@@ -16,6 +15,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
@@ -156,9 +156,9 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 	if err != nil {
 		return err
 	}
-
-	// we need to modify the ListOptions to ensure we include hidden files - these are excluded by default
+	// create a parse context for the dependency mod
 	childParseCtx := parse.NewChildModParseContext(parseCtx, modDependency, dependencyDir)
+	// we need to modify the ListOptions to ensure we include hidden files - these are excluded by default
 	childParseCtx.ListOptions.Exclude = nil
 
 	// NOTE: pass in the version and dependency path of the mod - these must be set before it loads its dependencies
