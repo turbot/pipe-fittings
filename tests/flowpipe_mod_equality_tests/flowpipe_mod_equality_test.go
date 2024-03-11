@@ -106,6 +106,13 @@ var modEqualityTestCases = []modEqualityTestCase{
 		equal:   false,
 	},
 	{
+		title:       "http_step_with_config_c != http_step_with_config_c_basic_auth_line_change",
+		description: "one line change in the basic auth section",
+		base:        "./http_step_with_config_c",
+		compare:     "./http_step_with_config_c_basic_auth_line_change",
+		equal:       true,
+	},
+	{
 		title:   "input_step_a == input_step_a",
 		base:    "./input_step_a",
 		compare: "./input_step_a",
@@ -297,6 +304,32 @@ var modEqualityTestCases = []modEqualityTestCase{
 		base:    "./throw_c",
 		compare: "./throw_c",
 		equal:   true,
+	},
+	{
+		title:   "output_a == output_a",
+		base:    "./output_a",
+		compare: "./output_a",
+		equal:   true,
+	},
+	{
+		title:       "output_a != output_b",
+		description: "value attribute in output is different, also an expression",
+		base:        "./output_a",
+		compare:     "./output_b",
+		equal:       false,
+	},
+	{
+		title:   "output_c == output_c",
+		base:    "./output_c",
+		compare: "./output_c",
+		equal:   true,
+	},
+	{
+		title:       "output_a != output_c",
+		description: "change a value in a ternery expression, change wasn't detected at some point",
+		base:        "./output_a",
+		compare:     "./output_c",
+		equal:       false,
 	},
 }
 

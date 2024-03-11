@@ -309,32 +309,6 @@ type PipelineStepBaseInterface interface {
 	AddUnresolvedAttribute(string, hcl.Expression)
 }
 
-type BasicAuthConfig struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-
-	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
-}
-
-func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttributes map[string]hcl.Expression) (*BasicAuthConfig, hcl.Diagnostics) {
-	var username, password string
-	if unresolvedAttributes[schema.AttributeTypeUsername] != nil {
-		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypeUsername], evalContext, &username)
-		if diags.HasErrors() {
-			return nil, diags
-		}
-		b.Username = username
-	}
-	if unresolvedAttributes[schema.AttributeTypePassword] != nil {
-		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypePassword], evalContext, &password)
-		if diags.HasErrors() {
-			return nil, diags
-		}
-		b.Password = password
-	}
-	return b, nil
-}
-
 // A common base struct that all pipeline steps must embed
 type PipelineStepBase struct {
 	Title               *string                    `json:"title,omitempty"`

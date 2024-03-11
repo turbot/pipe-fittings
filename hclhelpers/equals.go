@@ -145,6 +145,22 @@ func ExpressionsEqual(expr1, expr2 hcl.Expression) bool {
 				}
 			}
 		}
+	} else if expr1ConditionalExpr, ok := expr1.(*hclsyntax.ConditionalExpr); ok {
+		if expr2ConditionalExpr, ok := expr2.(*hclsyntax.ConditionalExpr); !ok {
+			return false
+		} else {
+			if !ExpressionsEqual(expr1ConditionalExpr.Condition, expr2ConditionalExpr.Condition) {
+				return false
+			}
+
+			if !ExpressionsEqual(expr1ConditionalExpr.TrueResult, expr2ConditionalExpr.TrueResult) {
+				return false
+			}
+
+			if !ExpressionsEqual(expr1ConditionalExpr.FalseResult, expr2ConditionalExpr.FalseResult) {
+				return false
+			}
+		}
 	}
 
 	return true

@@ -40,7 +40,7 @@ type PipelineStepHttp struct {
 	Insecure        *bool                  `json:"insecure,omitempty"`
 	RequestBody     *string                `json:"request_body,omitempty"`
 	RequestHeaders  map[string]interface{} `json:"request_headers,omitempty"`
-	BasicAuthConfig *BasicAuthConfig       `json:"basic_auth_config,omitempty"`
+	BasicAuthConfig *BasicAuthConfig       `json:"basic_auth,omitempty"`
 }
 
 func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
@@ -62,13 +62,18 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 		return false
 	}
 
+	if p.BasicAuthConfig != nil && !p.BasicAuthConfig.Equals(other.BasicAuthConfig) {
+		return false
+	} else if p.BasicAuthConfig == nil && other.BasicAuthConfig != nil {
+		return false
+	}
+
 	return utils.PtrEqual(p.Url, other.Url) &&
 		utils.PtrEqual(p.Method, other.Method) &&
 		utils.PtrEqual(p.CaCertPem, other.CaCertPem) &&
 		utils.BoolPtrEqual(p.Insecure, other.Insecure) &&
 		utils.PtrEqual(p.RequestBody, other.RequestBody) &&
-		reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders) &&
-		reflect.DeepEqual(p.BasicAuthConfig, other.BasicAuthConfig)
+		reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders)
 }
 
 func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
@@ -319,4 +324,72 @@ func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 func (p *PipelineStepHttp) Validate() hcl.Diagnostics {
 	diags := p.ValidateBaseAttributes()
 	return diags
+}
+
+type BasicAuthConfig struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+}
+
+func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttributes map[string]hcl.Expression) (*BasicAuthConfig, hcl.Diagnostics) {
+
+	newBasicAuthConfig := &BasicAuthConfig{}
+
+	var username, password string
+	if unresolvedAttributes[schema.AttributeTypeUsername] != nil {
+		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypeUsername], evalContext, &username)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+		newBasicAuthConfig.Username = username
+	} else {
+		newBasicAuthConfig.Username = b.Username
+	}
+
+	if unresolvedAttributes[schema.AttributeTypePassword] != nil {
+		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypePassword], evalContext, &password)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+		newBasicAuthConfig.Password = password
+	} else {
+		newBasicAuthConfig.Password = b.Password
+	}
+
+	return newBasicAuthConfig, nil
+}
+
+func (b *BasicAuthConfig) Equals(other *BasicAuthConfig) bool {
+
+	if b == nil && other == nil {
+		return false
+	}
+
+	if b == nil && other != nil || b != nil && other == nil {
+		return false
+	}
+
+	// Compare UnresolvedAttributes (map comparison)
+	if len(b.UnresolvedAttributes) != len(other.UnresolvedAttributes) {
+		return false
+	}
+
+	for key, expr := range b.UnresolvedAttributes {
+		otherExpr, ok := other.UnresolvedAttributes[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
+	}
+
+	// and reverse
+	for key := range other.UnresolvedAttributes {
+		if _, ok := b.UnresolvedAttributes[key]; !ok {
+			return false
+		}
+	}
+
+	return b.Username == other.Username &&
+		b.Password == other.Password
 }

@@ -2,11 +2,12 @@
 
 Shared Pipes Component
 
-## v0.3.4 [tbd]
+## v0.3.4 [2024-03-08]
 
 _Bug fixes_
 
 * Only detect logical changes in step's throw block.
+* HCL expression comparison for conditional operator now works.
 
 ## v0.3.3 [2024-03-07]
 
