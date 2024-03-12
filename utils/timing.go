@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"strings"
 	"time"
@@ -9,8 +10,6 @@ import (
 	"github.com/logrusorgru/aurora"
 	"github.com/olekukonko/tablewriter"
 )
-
-var profiling = false
 
 type timeLog struct {
 	Time       time.Time
@@ -22,12 +21,9 @@ type timeLog struct {
 var Timing []timeLog
 
 func shouldProfile() bool {
-	profilingEnv, exists := os.LookupEnv("STEAMPIPE_PROFILE")
-	if exists {
-		return strings.ToUpper(profilingEnv) == "TRUE"
-	}
-	return profiling
+	return strings.ToUpper(os.Getenv(app_specific.EnvProfile)) == "TRUE"
 }
+
 func LogTime(operation string) {
 	if !shouldProfile() {
 		return

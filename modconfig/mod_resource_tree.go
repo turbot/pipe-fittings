@@ -10,15 +10,21 @@ import (
 // BuildResourceTree builds the control tree structure by setting the parent property for each control and benchmark
 // NOTE: this also builds the sorted benchmark list
 func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
-	utils.LogTime("BuildResourceTree start")
-	defer utils.LogTime("BuildResourceTree end")
+	utils.LogTime(fmt.Sprintf("BuildResourceTree %s start", m.Name()))
+	defer utils.LogTime(fmt.Sprintf("BuildResourceTree %s end", m.Name()))
 	defer func() {
 		if err == nil {
 			err = m.validateResourceTree()
 		}
 	}()
 
-	if err := m.addResourcesIntoTree(m); err != nil {
+	// build lookup of children and parents
+	childrenLookup, err := m.getChildParentsLookup()
+	if err != nil {
+		return err
+	}
+
+	if err := m.addResourcesIntoTree(m, childrenLookup); err != nil {
 		return err
 	}
 
@@ -32,7 +38,7 @@ func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
 		if !ok {
 			return fmt.Errorf("dependency mod %s is not loaded", requiredMod.Name)
 		}
-		if err := m.addResourcesIntoTree(depMod); err != nil {
+		if err := m.addResourcesIntoTree(depMod, childrenLookup); err != nil {
 			return err
 		}
 	}
@@ -40,8 +46,30 @@ func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
 	return nil
 }
 
+func (m *Mod) getChildParentsLookup() (map[string][]ModTreeItem, error) {
+	// build lookup of all children
+	childrenLookup := make(map[string][]ModTreeItem)
+	resourceFunc := func(parent HclResource) (bool, error) {
+		if treeItem, ok := parent.(ModTreeItem); ok {
+			for _, child := range treeItem.GetChildren() {
+				childrenLookup[child.Name()] = append(childrenLookup[child.Name()], treeItem)
+			}
+		}
+		// continue walking
+		return true, nil
+	}
+	err := m.ResourceMaps.WalkResources(resourceFunc)
+	if err != nil {
+		return nil, err
+	}
+	return childrenLookup, nil
+}
+
 // add all resource in sourceMod into _our_ resource tree
-func (m *Mod) addResourcesIntoTree(sourceMod *Mod) error {
+func (m *Mod) addResourcesIntoTree(sourceMod *Mod, childParentLookup map[string][]ModTreeItem) error {
+	utils.LogTime(fmt.Sprintf("addResourcesIntoTree %s source %s start", m.Name(), sourceMod.Name()))
+	defer utils.LogTime(fmt.Sprintf("addResourcesIntoTree %s source %s end", m.Name(), sourceMod.Name()))
+
 	var leafNodes []ModTreeItem
 	var err error
 
@@ -53,7 +81,7 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod) error {
 
 		if treeItem, ok := item.(ModTreeItem); ok {
 			// NOTE: add resource into _our_ resource tree, i.e. mod 'm'
-			if err = m.addItemIntoResourceTree(treeItem); err != nil {
+			if err = m.addItemIntoResourceTree(treeItem, childParentLookup); err != nil {
 				// stop walking
 				return false, err
 			}
@@ -79,10 +107,10 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod) error {
 	return nil
 }
 
-func (m *Mod) addItemIntoResourceTree(item ModTreeItem) error {
-	parents, err := m.getParents(item)
-	if err != nil {
-		return err
+func (m *Mod) addItemIntoResourceTree(item ModTreeItem, childParentLookup map[string][]ModTreeItem) error {
+	parents := childParentLookup[item.Name()]
+	if len(parents) == 0 {
+		parents = []ModTreeItem{m}
 	}
 	for _, p := range parents {
 		// if we are the parent, add as a child

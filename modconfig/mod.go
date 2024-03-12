@@ -76,7 +76,7 @@ func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 		ModPath: modPath,
 		Require: NewRequire(),
 	}
-	mod.ResourceMaps = NewModResources(mod)
+	mod.ResourceMaps = NewResourceMaps(mod)
 
 	return mod
 }

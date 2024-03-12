@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -55,7 +56,7 @@ type ModParseContext struct {
 	WorkspaceLock *versionmap.WorkspaceLock
 
 	Flags       ParseModFlag
-	ListOptions *filehelpers.ListOptions
+	ListOptions filehelpers.ListOptions
 
 	// Variables are populated in an initial parse pass top we store them on the run context
 	// so we can set them on the mod when we do the main parse
@@ -91,6 +92,9 @@ type ModParseContext struct {
 	topLevelDependencyMods modconfig.ModMap
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
+	resourceMaps     *modconfig.ResourceMaps
+	// mutex to control access to topLevelDependencyMods and resourceMaps when asyncronously adding dependency mods
+	depLock sync.Mutex
 }
 
 func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, opts ...ModParseContextOption) *ModParseContext {
@@ -132,8 +136,8 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 		WithParseFlags(parent.Flags),
 		WithListOptions(parent.ListOptions))
 
-	// copy our block tpyes
-	child.BlockTypes = parent.BlockTypes
+	// copy our block types
+	child.blockTypes = parent.blockTypes
 	// set the child's parent
 	child.ParentParseCtx = parent
 	// set the dependency config
@@ -197,6 +201,8 @@ func VariableValueCtyMap(variables map[string]*modconfig.Variable) map[string]ct
 // AddInputVariableValues adds evaluated variables to the run context.
 // This function is called for the root run context after loading all input variables
 func (m *ModParseContext) AddInputVariableValues(inputVariables *modconfig.ModVariableMap) {
+	utils.LogTime("AddInputVariableValues")
+	defer utils.LogTime("AddInputVariableValues end")
 	// store the variables
 	m.Variables = inputVariables
 
@@ -243,7 +249,6 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	}
 
 	var diags hcl.Diagnostics
-
 	moreDiags := m.storeResourceInReferenceValueMap(mod)
 	diags = append(diags, moreDiags...)
 
@@ -342,20 +347,33 @@ func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
 }
 
 func (m *ModParseContext) GetResourceMaps() *modconfig.ResourceMaps {
-	// use the current mod as the base resource map
-	resourceMap := m.CurrentMod.GetResourceMaps()
+	if m.resourceMaps != nil {
+		return m.resourceMaps
+
+	}
+
+	m.setResourceMaps()
+	return m.resourceMaps
+}
+
+func (m *ModParseContext) setResourceMaps() {
+	utils.LogTime(fmt.Sprintf("ModParseContext.setResourceMaps %p", m))
+	defer utils.LogTime(fmt.Sprintf("ModParseContext.setResourceMaps %p end", m))
+
 	// get a map of top level loaded dep mods
 	deps := m.GetTopLevelDependencyMods()
 
-	dependencyResourceMaps := make([]*modconfig.ResourceMaps, 0, len(deps))
+	// use the current mod as the base resource map
+	sourceResourceMaps := make([]*modconfig.ResourceMaps, 0, len(deps)+1)
+
+	sourceResourceMaps = append(sourceResourceMaps, m.CurrentMod.GetResourceMaps())
 
 	// merge in the top level resources of the dependency mods
 	for _, dep := range deps {
-		dependencyResourceMaps = append(dependencyResourceMaps, dep.GetResourceMaps().TopLevelResources())
+		sourceResourceMaps = append(sourceResourceMaps, dep.GetResourceMaps().TopLevelResources())
 	}
 
-	resourceMap = resourceMap.Merge(dependencyResourceMaps)
-	return resourceMap
+	m.resourceMaps = modconfig.NewResourceMaps(m.CurrentMod, sourceResourceMaps...)
 }
 
 func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
@@ -585,7 +603,13 @@ func (m *ModParseContext) IsTopLevelBlock(block *hcl.Block) bool {
 }
 
 func (m *ModParseContext) AddLoadedDependencyMod(mod *modconfig.Mod) {
+	// lock the depLock as this is called async
+	m.depLock.Lock()
+	defer m.depLock.Unlock()
+	slog.Info(fmt.Sprintf("ModParseContext.AddLoadedDependencyMod %p", m), "mod", mod.Name())
+
 	m.topLevelDependencyMods[mod.DependencyName] = mod
+	m.resourceMaps.AddMaps(mod.ResourceMaps.TopLevelResources())
 }
 
 // GetTopLevelDependencyMods build a mod map of top level loaded dependencies, keyed by mod name
@@ -595,6 +619,8 @@ func (m *ModParseContext) GetTopLevelDependencyMods() modconfig.ModMap {
 
 func (m *ModParseContext) SetCurrentMod(mod *modconfig.Mod) error {
 	m.CurrentMod = mod
+	// populate the resource maps
+	m.setResourceMaps()
 	// now we have the mod, load any arg values from the mod require - these will be passed to dependency mods
 	return m.loadModRequireArgs()
 }
@@ -792,4 +818,25 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 	return nil
 }
 
-// TODO: transition period
+// LoadVariablesOnly returns whether we are ONLY loading variables
+func (m *ModParseContext) LoadVariablesOnly() bool {
+	if len(m.blockTypes) != 1 {
+		return false
+	}
+	_, ok := m.blockTypes[schema.BlockTypeVariable]
+	return ok
+}
+
+func (m *ModParseContext) SetBlockTypes(blockTypes ...string) {
+	m.blockTypes = make(map[string]struct{}, len(blockTypes))
+	for _, t := range blockTypes {
+		m.blockTypes[t] = struct{}{}
+	}
+}
+
+func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
+	m.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
+	for _, t := range blockTypes {
+		m.blockTypeExclusions[t] = struct{}{}
+	}
+}

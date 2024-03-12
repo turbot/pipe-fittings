@@ -77,8 +77,8 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 		o(cfg)
 	}
 
-	utils.LogTime("w.Load_ start")
-	defer utils.LogTime("w.Load_ end")
+	utils.LogTime("w.Load start")
+	defer utils.LogTime("w.Load end")
 
 	w, err := createShellWorkspace(workspacePath)
 	if err != nil {
@@ -179,6 +179,9 @@ func (w *Workspace) setModfileExists() {
 }
 
 func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAndWarnings {
+	utils.LogTime("loadWorkspaceMod start")
+	defer utils.LogTime("loadWorkspaceMod end")
+
 	// check if your workspace path is home dir and if modfile exists - if yes then warn and ask user to continue or not
 	if err := HomeDirectoryModfileCheck(ctx, w.Path); err != nil {
 		return error_helpers.NewErrorsAndWarning(err)
@@ -192,6 +195,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	if errorsAndWarnings.Error != nil {
 		return errorsAndWarnings
 	}
+
 	// populate the parsed variable values
 	w.VariableValues, errorsAndWarnings.Error = inputVariables.GetPublicVariableValues()
 	if errorsAndWarnings.Error != nil {
@@ -209,14 +213,14 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	parseCtx.AddInputVariableValues(inputVariables)
 
 	// if we are ONLY loading variables, we can skip loading resources
-	if w.loadVariablesOnly() {
+	if parseCtx.LoadVariablesOnly() {
 		return w.populateVariablesOnlyMod(parseCtx)
 	}
 
-	// do not reload variables as we already have them
-	parseCtx.BlockTypeExclusions = []string{schema.BlockTypeVariable}
+	// do not reload variables or mod block, as we already have them
+	parseCtx.SetBlockTypeExclusions(schema.BlockTypeVariable, schema.BlockTypeMod)
 	if len(w.BlockTypeInclusions) > 0 {
-		parseCtx.BlockTypes = w.BlockTypeInclusions
+		parseCtx.SetBlockTypes(w.BlockTypeInclusions...)
 	}
 	// load the workspace mod
 	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
@@ -243,16 +247,34 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 }
 
 func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
-	// build a run context just to use to load variable definitions
-	variablesParseCtx, err := w.getParseContext(ctx)
-	if err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+	utils.LogTime("getInputVariables start")
+	defer utils.LogTime("getInputVariables end")
+
+	variablesParseCtx, ew := w.getVariablesParseContext(ctx)
+	if ew.Error != nil {
+		return nil, ew
 	}
 
 	return w.getVariableValues(ctx, variablesParseCtx, validateMissing)
 }
 
+func (w *Workspace) getVariablesParseContext(ctx context.Context) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
+	// build a run context just to use to load variable definitions
+	variablesParseCtx, err := w.getParseContext(ctx)
+	if err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+	// only load variables blocks
+	variablesParseCtx.SetBlockTypes(schema.BlockTypeVariable)
+	// NOTE: exclude mod block as we have already loaded the mod definition
+	variablesParseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
+	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
+}
+
 func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+	utils.LogTime("getInputVariables start")
+	defer utils.LogTime("getInputVariables end")
+
 	// load variable definitions
 	variableMap, err := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
 	if err != nil {
@@ -272,7 +294,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 	parseCtx := parse.NewModParseContext(workspaceLock,
 		w.Path,
 		parse.WithParseFlags(parse.CreateDefaultMod),
-		parse.WithListOptions(&filehelpers.ListOptions{
+		parse.WithListOptions(filehelpers.ListOptions{
 			Flags:   filehelpers.FilesRecursive,
 			Exclude: w.exclusions,
 			// load files specified by inclusions
@@ -351,11 +373,6 @@ func (w *Workspace) verifyResourceRuntimeDependencies() error {
 		}
 	}
 	return nil
-}
-
-// are we ONLY loading variables
-func (w *Workspace) loadVariablesOnly() bool {
-	return len(w.BlockTypeInclusions) == 1 && w.BlockTypeInclusions[0] == schema.BlockTypeVariable
 }
 
 // populate the mod resource maps with variables from the parse context

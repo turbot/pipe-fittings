@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -25,6 +26,9 @@ var missingVariableErrors = []string{
 }
 
 func decode(parseCtx *ModParseContext) hcl.Diagnostics {
+	utils.LogTime(fmt.Sprintf("decode %s start", parseCtx.CurrentMod.Name()))
+	defer utils.LogTime(fmt.Sprintf("decode %s end", parseCtx.CurrentMod.Name()))
+
 	var diags hcl.Diagnostics
 
 	blocks, err := parseCtx.BlocksToDecode()
@@ -95,13 +99,6 @@ func decodeLocalsBlock(block *hcl.Block, parseCtx *ModParseContext) ([]modconfig
 	var resources []modconfig.HclResource
 	var res = newDecodeResult()
 
-	// TODO remove and call ShouldIncludeBlock from BlocksToDecode
-	// https://github.com/turbot/steampipe/issues/2640
-	// if opts specifies block types, then check whether this type is included
-	if !parseCtx.ShouldIncludeBlock(block) {
-		return nil, res
-	}
-
 	// check name is valid
 	diags := validateName(block)
 	if diags.HasErrors() {
@@ -122,13 +119,6 @@ func decodeLocalsBlock(block *hcl.Block, parseCtx *ModParseContext) ([]modconfig
 func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
 	var resource modconfig.HclResource
 	var res = newDecodeResult()
-
-	// TODO remove and call ShouldIncludeBlock from BlocksToDecode
-	// https://github.com/turbot/steampipe/issues/2640
-	// if opts specifies block types, then check whether this type is included
-	if !parseCtx.ShouldIncludeBlock(block) {
-		return nil, res
-	}
 
 	// has this block already been decoded?
 	// (this could happen if it is a child block and has been decoded before its parent as part of second decode phase)

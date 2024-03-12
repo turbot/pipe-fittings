@@ -9,7 +9,7 @@ func WithParseFlags(flags ParseModFlag) ModParseContextOption {
 		m.Flags = flags
 	}
 }
-func WithListOptions(listOptions *filehelpers.ListOptions) ModParseContextOption {
+func WithListOptions(listOptions filehelpers.ListOptions) ModParseContextOption {
 	return func(m *ModParseContext) {
 		m.ListOptions = listOptions
 	}
