@@ -197,6 +197,7 @@ const (
 	AttributeTypeStderr            = "stderr"
 	AttributeTypeLines             = "lines"
 	AttributeTypeResult            = "result"
+	AttributeTypeResponse          = "response"
 
 	// Trigger attributes
 	AttributeTypeSchedule   = "schedule"
