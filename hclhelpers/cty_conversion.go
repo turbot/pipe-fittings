@@ -205,13 +205,22 @@ func GoTypeMatchesCtyType(val interface{}, ctyType cty.Type) bool {
 	return false
 }
 
+// stripQuotes strips leading and trailing " from a string
+// only if both are present.
+func stripQuotes(s string) string {
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		return s[1 : len(s)-1]
+	}
+	return s
+}
+
 func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, error) {
 
 	wanted := typ.FriendlyName()
 
 	// Check if the provided type is one of the supported types
 	if typ == cty.String {
-		return input, nil
+		return stripQuotes(input), nil
 	}
 
 	if typ == cty.Number {

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zclconf/go-cty/cty"
 )
 
 func TestConvertInterfaceToCtyValue(t *testing.T) {
@@ -173,4 +174,97 @@ func TestConvertInterfaceToCtyValueWithStruct(t *testing.T) {
 
 	assert.Equal("bar", cty.GetAttr("Bar").AsString())
 	assert.Equal("baz", cty.GetAttr("Baz").AsString())
+}
+
+type coerceValueTest struct {
+	title    string
+	input    string
+	expected interface{}
+	ctyType  cty.Type
+}
+
+var coerceValueTests = []coerceValueTest{
+	{
+		title:    "string",
+		input:    "foo",
+		expected: "foo",
+		ctyType:  cty.String,
+	},
+	{
+		// This is a bit of a weird test, but it's to ensure that we can handle
+		// this use case: --arg 'region="us-east-2"'
+		//
+		// intuitively we'd expect the value to be us-east-2, not literal "us-east-2"
+		//
+		// this is why we need to strip the quotes if they are present in the beginning AND and the
+		// end of the string
+		title:    "string with quotes",
+		input:    "\"foo\"",
+		expected: "foo",
+		ctyType:  cty.String,
+	},
+	{
+		title:    "string with quotes 2",
+		input:    "\"foo bar\"",
+		expected: "foo bar",
+		ctyType:  cty.String,
+	},
+	{
+		title:    "string with quotes 3",
+		input:    "\"foo bar baz\"\"",
+		expected: "foo bar baz\"",
+		ctyType:  cty.String,
+	},
+	{
+		title:    "string with quotes - unbalanced",
+		input:    "\"foo",
+		expected: "\"foo",
+		ctyType:  cty.String,
+	},
+	{
+		title:    "string with quotes - unbalanced 2",
+		input:    "foo\"",
+		expected: "foo\"",
+		ctyType:  cty.String,
+	},
+	{
+		title:    "string with quotes - unbalanced 3",
+		input:    "\"\"foo",
+		expected: "\"\"foo",
+		ctyType:  cty.String,
+	},
+	{
+		title:    "bool",
+		input:    "true",
+		expected: true,
+		ctyType:  cty.Bool,
+	},
+	{
+		title:    "int",
+		input:    "3",
+		expected: 3,
+		ctyType:  cty.Number,
+	},
+	{
+		title:    "float",
+		input:    "3.14",
+		expected: 3.14,
+		ctyType:  cty.Number,
+	},
+}
+
+func TestCoerceValue(tm *testing.T) {
+	for _, tc := range coerceValueTests {
+		tm.Run(tc.title, func(t *testing.T) {
+			assert := assert.New(t)
+
+			ctyValue, err := CoerceStringToGoBasedOnCtyType(tc.input, tc.ctyType)
+			if err != nil {
+				assert.Fail(err.Error())
+				return
+			}
+
+			assert.Equal(tc.expected, ctyValue)
+		})
+	}
 }
