@@ -100,3 +100,8 @@ func diagsToString(diags hcl.Diagnostics, severity hcl.DiagnosticSeverity) []str
 
 	return strs
 }
+
+// HclDiagsToWarnings converts warning diags into a list of warning strings
+func HclDiagsToWarnings(diags hcl.Diagnostics) []string {
+	return diagsToString(diags, hcl.DiagWarning)
+}

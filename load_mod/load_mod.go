@@ -16,7 +16,6 @@ import (
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
 // LoadMod parses all hcl files in modPath and returns a single mod
@@ -187,7 +186,7 @@ func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.M
 	// load the raw file data
 	fileData, diags := parse.LoadFileData(sourcePaths...)
 	if diags.HasErrors() {
-		return nil, error_helpers.NewErrorsAndWarning(plugin.DiagsToError("Failed to load all mod files", diags))
+		return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to load all mod files", diags))
 	}
 
 	// parse all hcl files (NOTE - this reads the CurrentMod out of ParseContext and adds to it)

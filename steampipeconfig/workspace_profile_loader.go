@@ -11,10 +11,10 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
@@ -157,7 +157,7 @@ func (l *WorkspaceProfileLoader[T]) setDefault(workspacesPrecedenceList []map[st
 	var diags hcl.Diagnostics
 	defaultWorkspace, diags := modconfig.NewDefaultWorkspaceProfile[T]()
 	if diags.HasErrors() {
-		return plugin.DiagsToError("failed to create default workspace", diags)
+		return error_helpers.HclDiagsToError("failed to create default workspace", diags)
 	}
 
 	// now travers the list of paths in reverse order (i.e. order if INCREASING precedence)

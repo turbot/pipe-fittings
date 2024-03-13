@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"golang.org/x/exp/slog"
 )
 
@@ -15,8 +14,8 @@ type ErrorAndWarnings struct {
 
 func DiagsToErrorsAndWarnings(errPrefix string, diags hcl.Diagnostics) ErrorAndWarnings {
 	return NewErrorsAndWarning(
-		plugin.DiagsToError(errPrefix, diags),
-		plugin.DiagsToWarnings(diags)...,
+		HclDiagsToError(errPrefix, diags),
+		HclDiagsToWarnings(diags)...,
 	)
 }
 func EmptyErrorsAndWarning() ErrorAndWarnings {

@@ -174,13 +174,13 @@ func (f columnFilter) evaluate(data *printers.RowData) bool {
 	//case ">":
 	//case ">=":
 	case "~~", "like":
-		return sqlLike(data.Fields[f.column].ValueString(), f.values[0], true)
+		return SqlLike(data.Fields[f.column].ValueString(), f.values[0], true)
 	case "!~~", "not like":
-		return !sqlLike(data.Fields[f.column].ValueString(), f.values[0], true)
+		return !SqlLike(data.Fields[f.column].ValueString(), f.values[0], true)
 	case "~~*", "ilike":
-		return sqlLike(data.Fields[f.column].ValueString(), f.values[0], false)
+		return SqlLike(data.Fields[f.column].ValueString(), f.values[0], false)
 	case "!~~*", "not ilike":
-		return !sqlLike(data.Fields[f.column].ValueString(), f.values[0], false)
+		return !SqlLike(data.Fields[f.column].ValueString(), f.values[0], false)
 	case "in":
 		for _, v := range f.values {
 			if data.Fields[f.column].ValueString() == v {
@@ -200,8 +200,8 @@ func (f columnFilter) evaluate(data *printers.RowData) bool {
 	}
 }
 
-// simulates SQL LIKE pattern matching using fnmatch, with an option for case sensitivity.
-func sqlLike(input, pattern string, caseSensitive bool) bool {
+// SqlLike simulates SQL LIKE pattern matching using fnmatch, with an option for case sensitivity.
+func SqlLike(input, pattern string, caseSensitive bool) bool {
 	flag := 0
 	if !caseSensitive {
 		flag = fnmatch.FNM_CASEFOLD
