@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v1.0.0 [tbd]
+
+_What's new?_
+
+* Optimize workspace load time for large workspaces, i.e. multiple dependent mods.
+* Strip quotes in a string if it exists in the beginning and end of the string for string -> type coerce function used by Flowpipe to parse CLI args.
+
 ## v0.3.4 [2024-03-08]
 
 _Bug fixes_
