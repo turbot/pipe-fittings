@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
@@ -139,6 +140,8 @@ func DefaultCredentials() (map[string]Credential, error) {
 		}
 
 		credentials[k+".default"] = defaultCred
+
+		error_helpers.RegisterCredentialType(k)
 	}
 
 	return credentials, nil

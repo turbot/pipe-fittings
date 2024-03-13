@@ -349,7 +349,7 @@ func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext
 			var ctyValue cty.Value
 			diags := gohcl.DecodeExpression(hclAttr.Expr, evalContext, &ctyValue)
 			if len(diags) > 0 {
-				return nil, error_helpers.HclDiagsToError("pipeline loop", diags)
+				return nil, error_helpers.BetterHclDiagsToError("pipeline loop", diags)
 			}
 			goVal, err := hclhelpers.CtyToGoMapInterface(ctyValue)
 			if err != nil {
@@ -414,7 +414,7 @@ func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContex
 			var ctyValue cty.Value
 			diags := gohcl.DecodeExpression(hclAttrib.Expr, evalContext, &ctyValue)
 			if len(diags) > 0 {
-				return nil, error_helpers.HclDiagsToError("transform loop", diags)
+				return nil, error_helpers.BetterHclDiagsToError("transform loop", diags)
 			}
 			goVal, err := hclhelpers.CtyToGo(ctyValue)
 			if err != nil {

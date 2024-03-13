@@ -49,7 +49,7 @@ func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		var sleepDurationCtyValue cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &sleepDurationCtyValue)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
 		goVal, err := hclhelpers.CtyToGo(sleepDurationCtyValue)

@@ -83,37 +83,37 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	// prompt
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypePrompt, p.Prompt)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// channel
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeChannel, p.Channel)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// subject
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSubject, p.Subject)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// to
 	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeTo, "To")
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// cc
 	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Cc")
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// bcc
 	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Bcc")
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// options
@@ -125,7 +125,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		var opts cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 		resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
 		if err != nil {
@@ -139,7 +139,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			var diags hcl.Diagnostics
 			newOpt, diags := opt.Resolve(evalContext)
 			if diags.HasErrors() {
-				return nil, error_helpers.HclDiagsToError(p.Name, diags)
+				return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 			}
 			resolvedOpts[i] = *newOpt
 		}
@@ -153,7 +153,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	} else {
 		notifierCtyVal, moreDiags := attr.Value(evalContext)
 		if moreDiags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, moreDiags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, moreDiags)
 		}
 
 		notifier, err := ctyValueToPipelineStepNotifierValueMap(notifierCtyVal)

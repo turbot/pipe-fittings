@@ -87,19 +87,19 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	// url
 	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeUrl, p.Url)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// method
 	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeMethod, p.Method)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// ca_cert_pem
 	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeCaCertPem, p.CaCertPem)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeInsecure] == nil {
@@ -110,7 +110,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		var insecure bool
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeInsecure], evalContext, &insecure)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 		inputs[schema.AttributeTypeInsecure] = insecure
 	}
@@ -118,7 +118,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	// requets_body
 	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeRequestBody, p.RequestBody)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders] == nil {
@@ -129,7 +129,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		var requestHeaders map[string]string
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders], evalContext, &requestHeaders)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 		inputs[schema.AttributeTypeRequestHeaders] = requestHeaders
 	}
@@ -137,7 +137,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	if p.BasicAuthConfig != nil {
 		basicAuth, diags := p.BasicAuthConfig.GetInputs(evalContext, p.UnresolvedAttributes)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(schema.BlockTypePipelineStep, diags)
+			return nil, error_helpers.BetterHclDiagsToError(schema.BlockTypePipelineStep, diags)
 		}
 		basicAuthMap := make(map[string]interface{})
 		basicAuthMap["Username"] = basicAuth.Username

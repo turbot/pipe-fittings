@@ -62,13 +62,13 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	// sql
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSql, p.Sql)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// database
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeDatabase, p.Database)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	if _, ok := results[schema.AttributeTypeDatabase]; !ok {
@@ -79,7 +79,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		var args cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
 		mapValue, err := hclhelpers.CtyToGoMapInterface(args)

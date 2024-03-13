@@ -55,7 +55,7 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 		var transformValueCtyValue cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &transformValueCtyValue)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
 		goVal, err := hclhelpers.CtyToGo(transformValueCtyValue)
@@ -64,15 +64,6 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 		}
 		value = goVal
 	}
-
-	// if test, ok := value.([]any); ok {
-	// 	if len(test) == 0 {
-	// 		test = make([]any, 0)
-	// 		return map[string]interface{}{
-	// 			schema.AttributeTypeValue: test,
-	// 		}, nil
-	// 	}
-	// }
 
 	return map[string]interface{}{
 		schema.AttributeTypeValue: value,

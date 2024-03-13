@@ -976,7 +976,7 @@ func (p *PipelineStepBase) GetBaseInputs(evalContext *hcl.EvalContext) (map[stri
 		var timeoutDurationCtyValue cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &timeoutDurationCtyValue)
 		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
 		goVal, err := hclhelpers.CtyToGo(timeoutDurationCtyValue)

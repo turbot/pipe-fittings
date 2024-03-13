@@ -60,37 +60,37 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 	// text is a mandatory attribute
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeText, p.Text)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// channel
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeChannel, p.Channel)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// subject
 	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSubject, p.Subject)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// to
 	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeTo, "To")
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// cc
 	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Cc")
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// bcc
 	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCc, "Bcc")
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError(p.Name, diags)
+		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// notifier
@@ -99,7 +99,7 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 	} else {
 		notifierCtyVal, moreDiags := attr.Value(evalContext)
 		if moreDiags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, moreDiags)
+			return nil, error_helpers.BetterHclDiagsToError(p.Name, moreDiags)
 		}
 
 		notifier, err := ctyValueToPipelineStepNotifierValueMap(notifierCtyVal)
