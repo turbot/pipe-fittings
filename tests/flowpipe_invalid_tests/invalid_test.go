@@ -63,12 +63,12 @@ var tests = []testSetup{
 	{
 		title:         "invalid depends",
 		file:          "./pipelines/invalid_depends.fp",
-		containsError: "Failed to decode mod:\ninvalid depends_on 'http.my_step_1' - step 'sleep.sleep_1' does not exist for pipeline local.pipeline.invalid_depends",
+		containsError: "Failed to decode mod: invalid depends_on 'http.my_step_1' - step 'sleep.sleep_1' does not exist for pipeline local.pipeline.invalid_depends",
 	},
 	{
 		title:         "invalid email port",
 		file:          "./pipelines/invalid_email_port.fp",
-		containsError: "Failed to decode mod:\nUnable to convert port into integer\n",
+		containsError: "Failed to decode mod: Unable to convert port into integer\n",
 	},
 	{
 		title:         "invalid email recipient",
@@ -83,7 +83,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid trigger",
 		file:          "./pipelines/invalid_trigger.fp",
-		containsError: "Failed to decode mod:\nMissing required argument: The argument \"pipeline\" is required, but no definition was found.",
+		containsError: "Failed to decode mod: Missing required argument: The argument \"pipeline\" is required, but no definition was found.",
 	},
 	{
 		title:         "invalid trigger - cron",
@@ -113,7 +113,7 @@ var tests = []testSetup{
 	{
 		title:         "retry - invalid attribute value",
 		file:          "./pipelines/retry_invalid_attribute_value.fp",
-		containsError: "Failed to decode mod:\nUnable to parse max_attempts attribute to integer\n(pipelines/retry_invalid_attribute_value.fp:7,13-33)",
+		containsError: "Failed to decode mod: Unable to parse max_attempts attribute to integer\n(pipelines/retry_invalid_attribute_value.fp:7,13-33)",
 	},
 	{
 		title:         "retry - invalid attribute value for strategy",

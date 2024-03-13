@@ -11,7 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"golang.org/x/exp/maps"
@@ -77,7 +76,7 @@ func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 }
 
 func newVariableValidationResult(diags tfdiags.Diagnostics) error_helpers.ErrorAndWarnings {
-	warnings := plugin.DiagsToWarnings(diags.ToHCL())
+	warnings := error_helpers.HclDiagsToWarnings(diags.ToHCL())
 	var err error
 	if diags.HasErrors() {
 		err = steampipeconfig.NewVariableValidationFailedError(diags)

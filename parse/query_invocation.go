@@ -2,13 +2,13 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
 // ParseQueryInvocation parses a query invocation and extracts the args (if any)
@@ -140,11 +140,11 @@ func splitArgString(argsString string) ([]string, error) {
 func parseArg(v string) (any, error) {
 	b, diags := hclsyntax.ParseExpression([]byte(v), "", hcl.Pos{})
 	if diags.HasErrors() {
-		return "", plugin.DiagsToError("bad arg syntax", diags)
+		return "", error_helpers.HclDiagsToError("bad arg syntax", diags)
 	}
 	val, diags := b.Value(nil)
 	if diags.HasErrors() {
-		return "", plugin.DiagsToError("bad arg syntax", diags)
+		return "", error_helpers.HclDiagsToError("bad arg syntax", diags)
 	}
 	return hclhelpers.CtyToGo(val)
 }

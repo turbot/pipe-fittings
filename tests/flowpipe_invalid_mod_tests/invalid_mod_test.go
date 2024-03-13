@@ -131,17 +131,17 @@ var tests = []testSetup{
 	{
 		title:         "Number as string in retry block",
 		modDir:        "./mods/number_as_string_retry_block",
-		containsError: "Failed to decode mod:\nUnable to parse min_interval attribute to integer",
+		containsError: "Failed to decode mod: Unable to parse min_interval attribute to integer",
 	},
 	{
 		title:         "Bool as string in error block",
 		modDir:        "./mods/bool_as_string_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute to bool",
+		containsError: "Failed to decode mod: Unable to parse ignore attribute to bool",
 	},
 	{
 		title:         "Bool as number in error block",
 		modDir:        "./mods/bool_as_number_error_block",
-		containsError: "Failed to decode mod:\nUnable to parse ignore attribute to bool",
+		containsError: "Failed to decode mod: Unable to parse ignore attribute to bool",
 	},
 	{
 		title:         "Input step no label",

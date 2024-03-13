@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	error_helpers "github.com/turbot/pipe-fittings/error_helpers"
 	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +13,6 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
 func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
@@ -39,18 +39,18 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 
 	fileData, diags := LoadFileData(configPaths...)
 	if diags.HasErrors() {
-		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
 	}
 
 	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
-		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
 	}
 
 	// do a partial decode
 	content, diags := body.Content(ConfigBlockSchema)
 	if diags.HasErrors() {
-		return nil, plugin.DiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
 	}
 
 	parseCtx := NewWorkspaceProfileParseContext[T](workspaceProfilePath)
@@ -68,7 +68,7 @@ func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePro
 	for attempts := 0; ; attempts++ {
 		_, diags := decodeWorkspaceProfiles(parseCtx)
 		if diags.HasErrors() {
-			return nil, plugin.DiagsToError("Failed to decode all workspace profile files", diags)
+			return nil, error_helpers.HclDiagsToError("Failed to decode all workspace profile files", diags)
 		}
 
 		// if there are no unresolved blocks, we are done
