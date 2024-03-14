@@ -69,8 +69,7 @@ type Workspace struct {
 	validateVariables   bool
 }
 
-// Load_ creates a Workspace and loads the workspace mod
-
+// Load creates a Workspace and loads the workspace mod
 func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (w *Workspace, ew error_helpers.ErrorAndWarnings) {
 	cfg := newLoadWorkspaceConfig()
 	for _, o := range opts {

@@ -242,9 +242,9 @@ func addVarsFromFile(filename string, sourceType terraform.ValueSourceType, to m
 		if alias, ok := depVarAliases[name]; ok {
 			name = alias
 		}
-		to[name] = unparsedVariableValueExpression{
-			expr:       attr.Expr,
-			sourceType: sourceType,
+		to[name] = UnparsedVariableValueExpression{
+			Expr:       attr.Expr,
+			SourceType: sourceType,
 		}
 	}
 	return diags
@@ -281,21 +281,21 @@ func sanitiseVariableNames(src []byte) ([]byte, map[string]string) {
 // unparsedVariableValueLiteral is a UnparsedVariableValue
 // implementation that was actually already parsed (!). This is
 // intended to deal with expressions inside "tfvars" files.
-type unparsedVariableValueExpression struct {
-	expr       hcl.Expression
-	sourceType terraform.ValueSourceType
+type UnparsedVariableValueExpression struct {
+	Expr       hcl.Expression
+	SourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueExpression) ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v UnparsedVariableValueExpression) ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
-	val, hclDiags := v.expr.Value(nil) // nil because no function calls or variable references are allowed here
+	val, hclDiags := v.Expr.Value(nil) // nil because no function calls or variable references are allowed here
 	diags = diags.Append(hclDiags)
 
-	rng := tfdiags.SourceRangeFromHCL(v.expr.Range())
+	rng := tfdiags.SourceRangeFromHCL(v.Expr.Range())
 
 	return &terraform.InputValue{
 		Value:       val,
-		SourceType:  v.sourceType,
+		SourceType:  v.SourceType,
 		SourceRange: rng,
 	}, diags
 }

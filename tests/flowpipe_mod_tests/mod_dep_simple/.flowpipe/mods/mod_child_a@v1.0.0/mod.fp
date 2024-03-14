@@ -14,6 +14,12 @@ variable "var_two" {
   default     = "this is the value of var_two"
 }
 
+
+variable "var_three" {
+    type = string
+    description = "no default"
+}
+
 pipeline "this_pipeline_is_in_the_child" {
     step "transform" "foo" {
         value = "foo"

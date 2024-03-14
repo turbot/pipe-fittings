@@ -1,1 +1,2 @@
 var_two_parent = "var_two from parent .pvars file"
+mod_child_a.var_three = "nested mod var value from parent"

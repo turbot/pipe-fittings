@@ -1,0 +1,9 @@
+# trigger from this mod
+schedule.my_root_trigger.enabled             = true
+schedule.my_root_trigger.schedule            = "daily"
+
+# trigger from (1st level only) dependency mod
+my_mod.trigger.schedule.my_trigger.enabled   = true
+my_mod.trigger.schedule.my_trigger.schedule  = "1h"
+
+my_mod.trigger.http.http_trigger.enabled = true
