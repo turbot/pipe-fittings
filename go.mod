@@ -13,7 +13,7 @@ require (
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/google/uuid v1.3.1
-	github.com/hashicorp/hcl/v2 v2.19.1
+	github.com/hashicorp/hcl/v2 v2.20.0
 	github.com/jackc/pgconn v1.14.1
 	github.com/karrick/gows v0.3.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
@@ -36,7 +36,7 @@ require (
 	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.8.0
 	github.com/xlab/treeprint v1.2.0
-	github.com/zclconf/go-cty v1.14.1
+	github.com/zclconf/go-cty v1.14.3
 	github.com/zclconf/go-cty-yaml v1.0.3
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 	oras.land/oras-go/v2 v2.3.0
