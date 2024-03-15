@@ -69,7 +69,7 @@ func matchSpecificIssue(summary, detail string) string {
 			credTypeAll = credTypeAll[:len(credTypeAll)-1]
 		}
 
-		pattern := `This object does not have an attribute named "([` + credTypeAll + `]+)"\.`
+		pattern := `This object does not have an attribute named "(` + credTypeAll + `)"\.`
 		matched, err := regexp.MatchString(pattern, detail)
 		if err != nil {
 			return detail
