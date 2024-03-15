@@ -115,7 +115,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		inputs[schema.AttributeTypeInsecure] = insecure
 	}
 
-	// requets_body
+	// request_body
 	inputs, diags = simpleTypeInputFromAttribute(p, inputs, evalContext, schema.AttributeTypeRequestBody, p.RequestBody)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
