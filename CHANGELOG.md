@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v1.0.1 [tbd]
+
+_Bug fixes_
+
+* Erroneous error message detecting a missing credential where there isn't one.
+* HCL `try()` function should be evaluated at runtime rather than parse time.
+
 ## v1.0.0 [2023-03-14]
 
 _What's new?_

@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -1188,6 +1189,82 @@ func simpleTypeInputFromAttribute[T any](p PipelineStep, results map[string]inte
 	return results, hcl.Diagnostics{}
 }
 
+// TODO: unused function
+//
+// Is it better to get gohcl.DecodeExpression to decode expression to cty.Value first and convert to Go manually?
+//
+// Or let it does the conversion to Go automatically?
+func SimpleTypeInputFromAttributeToCty[T any](p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, myVal T) (map[string]interface{}, hcl.Diagnostics) {
+	var ret T
+
+	// Use reflection to work with the type of T directly, handling nil pointers.
+	tType := reflect.TypeOf((*T)(nil)).Elem()
+
+	if p.GetUnresolvedAttributes()[attributeName] == nil {
+		if !helpers.IsNil(myVal) {
+			ret = myVal
+		}
+	} else {
+
+		var tempCty cty.Value
+		diags := gohcl.DecodeExpression(p.GetUnresolvedAttributes()[attributeName], evalContext, &tempCty)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		someVal, err := hclhelpers.CtyToGo(tempCty)
+		if err != nil {
+			return nil, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + attributeName + " attribute to string",
+					Subject:  p.GetUnresolvedAttributes()[attributeName].Range().Ptr(),
+				},
+			}
+		}
+
+		if tType.Kind() == reflect.Ptr {
+			// If T is a pointer type, check if someVal matches the expected base type.
+			valType := reflect.TypeOf(someVal)
+			// Since T is a pointer, we're interested in the type T points to (tType.Elem()).
+			if valType != nil && tType.Elem() == valType {
+				// If someVal is of the type that T points to, create a new pointer to someVal.
+				valPtr := reflect.New(valType)
+				valPtr.Elem().Set(reflect.ValueOf(someVal))
+				ret = valPtr.Interface().(T)
+			} else {
+				// Handle cases where types do not match; you may want to return an error or log a message.
+				fmt.Printf("Type mismatch: someVal is of type %T, but expected a pointer to %v.\n", someVal, tType.Elem())
+
+			}
+		} else if reflect.TypeOf(someVal) == tType {
+			// If T is not a pointer and types match, perform a direct type assertion.
+			ret = someVal.(T)
+		} else {
+			// Handle cases where T is not a pointer and types do not match.
+			fmt.Printf("Type mismatch: someVal is of type %T, but expected %v.\n", someVal, tType)
+
+		}
+	}
+
+	if !helpers.IsNil(ret) {
+		if utils.IsPointer(ret) {
+			// Reflect on tempValue to get its underlying value if it's a pointer
+			valueOfTempValue := reflect.ValueOf(ret)
+			if valueOfTempValue.Kind() == reflect.Ptr && !valueOfTempValue.IsNil() {
+				// Dereference the pointer and set the result in the map
+				results[attributeName] = valueOfTempValue.Elem().Interface()
+			} else {
+				results[attributeName] = ret
+			}
+		} else {
+			results[attributeName] = ret
+		}
+	}
+
+	return results, hcl.Diagnostics{}
+}
+
 // setField sets the field of a struct pointed to by v to the given value.
 // v must be a pointer to a struct, fieldName must be the name of a field in the struct,
 // and value must be assignable to the field.
@@ -1344,6 +1421,64 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 	return dependsOnFromExpressionsWithResultControl(attr, evalContext, p, false)
 }
 
+func findTryFunction(expr hcl.Expression) bool {
+	funcExpr, ok := expr.(*hclsyntax.FunctionCallExpr)
+	if !ok {
+		return false
+	}
+
+	if funcExpr.Name == "try" {
+		return true
+	}
+
+	for _, a1 := range funcExpr.Args {
+		if findTryFunction(a1) {
+			return true
+		}
+	}
+	return false
+}
+
+func allDependsOnFromVariables(traversals []hcl.Traversal) ([]string, []string) {
+	var allDependsOn []string
+	var allCredentialDependsOn []string
+
+	for _, traversal := range traversals {
+		parts := hclhelpers.TraversalAsStringSlice(traversal)
+		if len(parts) > 0 {
+			// When the expression/traversal is referencing an index, the index is also included in the parts
+			// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
+			if parts[0] == schema.BlockTypePipelineStep {
+				if len(parts) < 3 {
+					continue
+				}
+				dependsOn := parts[1] + "." + parts[2]
+				allDependsOn = append(allDependsOn, dependsOn)
+
+			} else if parts[0] == schema.BlockTypeCredential {
+				if len(parts) < 2 {
+					continue
+				}
+
+				if len(parts) == 2 {
+					// dynamic references:
+					// step "transform" "aws" {
+					// 	value   = credential.aws[param.cred].env
+					// }
+					dependsOn := parts[1] + ".<dynamic>"
+					allCredentialDependsOn = append(allCredentialDependsOn, dependsOn)
+
+				} else {
+					dependsOn := parts[1] + "." + parts[2]
+					allCredentialDependsOn = append(allCredentialDependsOn, dependsOn)
+				}
+			}
+		}
+	}
+
+	return allDependsOn, allCredentialDependsOn
+}
+
 func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, resultsReference bool) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
@@ -1381,6 +1516,18 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		}
 	}
 
+	isTryFunction := findTryFunction(expr)
+	if isTryFunction {
+		p.AddUnresolvedAttribute(attr.Name, expr)
+
+		dependsOn, credsDependsOn := allDependsOnFromVariables(expr.Variables())
+		p.AppendDependsOn(dependsOn...)
+		p.AppendCredentialDependsOn(credsDependsOn...)
+
+		// don't bother continuing, we should not resolve it if there's an "if" function
+		return cty.NilVal, hcl.Diagnostics{}
+	}
+
 	// resolve it first if we can
 	val, stepDiags := expr.Value(evalContext)
 	if stepDiags != nil && stepDiags.HasErrors() {
@@ -1388,45 +1535,21 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		for _, e := range stepDiags {
 			if e.Severity == hcl.DiagError {
 				if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
-					traversals := expr.Variables()
-					dependsOnAdded := false
-					for _, traversal := range traversals {
-						parts := hclhelpers.TraversalAsStringSlice(traversal)
-						if len(parts) > 0 {
-							// When the expression/traversal is referencing an index, the index is also included in the parts
-							// for example: []string len: 5, cap: 5, ["step","sleep","sleep_1","0","duration"]
-							if parts[0] == schema.BlockTypePipelineStep {
-								if len(parts) < 3 {
-									return cty.NilVal, stepDiags
-								}
-								dependsOn := parts[1] + "." + parts[2]
-								p.AppendDependsOn(dependsOn)
-								dependsOnAdded = true
-							} else if parts[0] == schema.BlockTypeCredential {
-								if len(parts) < 2 {
-									return cty.NilVal, stepDiags
-								}
 
-								if len(parts) == 2 {
-									// dynamic references:
-									// step "transform" "aws" {
-									// 	value   = credential.aws[param.cred].env
-									// }
-									dependsOn := parts[1] + ".<dynamic>"
-									p.AppendCredentialDependsOn(dependsOn)
-									dependsOnAdded = true
-								} else {
-									dependsOn := parts[1] + "." + parts[2]
-									p.AppendCredentialDependsOn(dependsOn)
-									dependsOnAdded = true
-								}
-							}
-						}
-					}
+					dependsOn, credsDependsOn := allDependsOnFromVariables(expr.Variables())
+					p.AppendDependsOn(dependsOn...)
+					p.AppendCredentialDependsOn(credsDependsOn...)
+
+					dependsOnAdded := len(dependsOn) > 0 || len(credsDependsOn) > 0
+
 					if dependsOnAdded {
 						resolvedDiags++
 					}
 				} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == `There is no variable named "loop".` {
+					resolvedDiags++
+					// try function generate this different error message:
+					// "Call to function \"try\" failed: no expression succeeded:\n- Unknown variable (at /Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_mod_tests/mod_try_function/mod.fp:25,21-25)\n  There is no variable named \"each\".\n- Unknown variable (at /Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_mod_tests/mod_try_function/mod.fp:25,85-89)\n  There is no variable named \"each\".\n\nAt least one expression must produce a successful result."
+				} else if strings.Contains(e.Detail, `Call to function "try" failed`) && strings.Contains(e.Detail, `There is no variable named "each".`) {
 					resolvedDiags++
 				} else if e.Detail == `There is no variable named "result".` && resultsReference {
 					// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
@@ -1439,6 +1562,10 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 
 		// check if all diags have been resolved
 		if resolvedDiags == len(stepDiags) {
+			// mop up any other depends on that may be missed with the above logic
+			dependsOn, credsDependsOn := allDependsOnFromVariables(expr.Variables())
+			p.AppendDependsOn(dependsOn...)
+			p.AppendCredentialDependsOn(credsDependsOn...)
 
 			// * Don't forget to add this, if you change the logic ensure that the code flow still
 			// * calls AddUnresolvedAttribute

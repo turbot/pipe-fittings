@@ -1452,6 +1452,60 @@ func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 	assert.NotNil(steps[1].GetUnresolvedAttributes()["pipeline"])
 }
 
+func (suite *FlowpipeModTestSuite) TestModTryFunction() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_try_function"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_try_function", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function"]
+	assert.NotNil(pipeline)
+
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.max_function"]
+	assert.NotNil(pipeline)
+
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_no_for_each"]
+	assert.NotNil(pipeline)
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["value"])
+	assert.Equal("transform.first", pipeline.Steps[1].GetDependsOn()[0])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_no_for_each_combination_1"]
+	assert.NotNil(pipeline)
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["value"])
+	assert.Equal("transform.first", pipeline.Steps[1].GetDependsOn()[0])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_no_for_each_combination_2"]
+	assert.NotNil(pipeline)
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+	// the second step (number) should not have any unresolved attributes
+	assert.Nil(pipeline.Steps[1].GetUnresolvedAttributes()["value"])
+
+	assert.NotNil(pipeline.Steps[2].GetUnresolvedAttributes()["value"])
+	assert.Equal("transform.first", pipeline.Steps[2].GetDependsOn()[0])
+	assert.Equal("transform.number", pipeline.Steps[2].GetDependsOn()[1])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_within_json_encode"]
+	assert.NotNil(pipeline)
+	// step 0 -> transform.nexus
+	// step 1 -> the http step
+	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["request_body"])
+	assert.Equal("transform.nexus", pipeline.Steps[1].GetDependsOn()[0])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_from_param"]
+	assert.NotNil(pipeline)
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {
