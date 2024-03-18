@@ -23,7 +23,7 @@ var tests = []testSetup{
 	{
 		title:         "bad output reference",
 		file:          "./pipelines/bad_output_reference.fp",
-		containsError: `invalid depends_on 'transform.does_not_exist' - does not exist for pipeline local.pipeline`,
+		containsError: `invalid depends_on 'transform.does_not_exist' in output block, 'transform.does_not_exist' does not exist in pipeline local.pipeline.bad_output_reference`,
 	},
 	{
 		title:         "duplicate pipeline",

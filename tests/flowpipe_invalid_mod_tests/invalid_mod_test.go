@@ -168,6 +168,14 @@ var tests = []testSetup{
 			"bad_step_reference_from_output/mod.fp:",
 		},
 	},
+	{
+		title:  "Bad reference to another step from step output block",
+		modDir: "./mods/bad_step_reference_from_step_output",
+		expectedContains: []string{
+			"invalid depends_on 'transform.does_not_exist', step 'transform.does_not_exist' does not exist in pipeline test.pipeline.bad_step_ref",
+			"bad_step_reference_from_step_output/mod.fp:",
+		},
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
