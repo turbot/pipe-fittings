@@ -87,8 +87,14 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 		}
 		// just create a default mod
 		mod = modconfig.CreateDefaultMod(modPath)
-
 	}
+	// add metadata
+	// NOTE: set the current mod on the parse context before adding metadata
+	parseCtx.CurrentMod = mod
+	diags := parse.AddResourceMetadata(mod, mod.GetHclResourceImpl().DeclRange, parseCtx)
+	ew := error_helpers.DiagsToErrorsAndWarnings("", diags)
+	errorsAndWarnings.Merge(ew)
+
 	return mod, errorsAndWarnings
 }
 
