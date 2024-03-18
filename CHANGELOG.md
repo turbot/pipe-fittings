@@ -2,7 +2,7 @@
 
 Shared Pipes Component
 
-## v1.0.1 [tbd]
+## v1.0.1 [2023-03-15]
 
 _Bug fixes_
 
