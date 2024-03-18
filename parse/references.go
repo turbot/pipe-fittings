@@ -26,7 +26,7 @@ func AddReferences(resource modconfig.HclResource, block *hcl.Block, parseCtx *M
 					}
 					reference := modconfig.NewResourceReference(resource, block, referenceString, blockName, attr)
 
-					moreDiags := addResourceMetadata(reference, attr.SrcRange, parseCtx)
+					moreDiags := AddResourceMetadata(reference, attr.SrcRange, parseCtx)
 					diags = append(diags, moreDiags...)
 					resourceWithMetadata.AddReference(reference)
 					break

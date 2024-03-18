@@ -678,7 +678,7 @@ func handleModDecodeResult(resource modconfig.HclResource, res *DecodeResult, bl
 
 	// if resource supports metadata, save it
 	if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
-		moreDiags = addResourceMetadata(resourceWithMetadata, resource.GetHclResourceImpl().DeclRange, parseCtx)
+		moreDiags = AddResourceMetadata(resourceWithMetadata, resource.GetHclResourceImpl().DeclRange, parseCtx)
 		res.addDiags(moreDiags)
 	}
 }
@@ -690,7 +690,7 @@ func resourceIsAnonymous(resource modconfig.HclResource) bool {
 	return anonymousResource
 }
 
-func addResourceMetadata(resourceWithMetadata modconfig.ResourceWithMetadata, srcRange hcl.Range, parseCtx *ModParseContext) hcl.Diagnostics {
+func AddResourceMetadata(resourceWithMetadata modconfig.ResourceWithMetadata, srcRange hcl.Range, parseCtx *ModParseContext) hcl.Diagnostics {
 	metadata, err := GetMetadataForParsedResource(resourceWithMetadata.Name(), srcRange, parseCtx.FileData, parseCtx.CurrentMod)
 	if err != nil {
 		return hcl.Diagnostics{&hcl.Diagnostic{
