@@ -100,12 +100,12 @@ var tests = []testSetup{
 	{
 		title:         "Bad step reference",
 		modDir:        "./mods/bad_step_reference",
-		containsError: "invalid depends_on 'echozzzz.bar' - step 'transform.baz' does not exist for pipeline pipeline_with_references.pipeline.foo",
+		containsError: "invalid depends_on 'echozzzz.bar', step 'echozzzz.bar' does not exist in pipeline pipeline_with_references.pipeline.foo",
 	},
 	{
 		title:         "Bad step reference 2",
 		modDir:        "./mods/bad_step_reference_two",
-		containsError: "invalid depends_on 'transform.barrs' - step 'transform.baz' does not exist for pipeline pipeline_with_references.pipeline.foo",
+		containsError: "invalid depends_on 'transform.barrs', step 'transform.barrs' does not exist in pipeline pipeline_with_references.pipeline.foo",
 	},
 	{
 		title:         "Bad trigger reference to pipeline",
@@ -116,17 +116,17 @@ var tests = []testSetup{
 	{
 		title:         "Invalid credential reference",
 		modDir:        "./mods/invalid_creds_reference",
-		containsError: "invalid depends_on 'aws.abc' - credential does not exist for pipeline mod_with_creds.pipeline.with_creds",
+		containsError: "invalid depends_on 'aws.abc', credential does not exist in pipeline mod_with_creds.pipeline.with_creds",
 	},
 	{
 		title:         "Invalid credential type reference - dynamic",
 		modDir:        "./mods/invalid_cred_types_dynamic",
-		containsError: "invalid depends_on 'foo.<dynamic>' - credential type 'foo' not supported for pipeline invalid_cred_types_dynamic.pipeline.with_invalid_cred_type_dynamic",
+		containsError: "invalid depends_on 'foo.<dynamic>', credential type 'foo' not supported in pipeline invalid_cred_types_dynamic.pipeline.with_invalid_cred_type_dynamic",
 	},
 	{
 		title:         "Invalid credential type reference - static",
 		modDir:        "./mods/invalid_cred_types_static",
-		containsError: "invalid depends_on 'foo.default' - credential does not exist for pipeline invalid_cred_types_static.pipeline.with_invalid_cred_type_static",
+		containsError: "invalid depends_on 'foo.default', credential does not exist in pipeline invalid_cred_types_static.pipeline.with_invalid_cred_type_static",
 	},
 	{
 		title:         "Number as string in retry block",
@@ -147,6 +147,11 @@ var tests = []testSetup{
 		title:         "Input step no label",
 		modDir:        "./mods/input_step_no_label",
 		containsError: "Missing name for option: All option blocks must have 1 labels (name).",
+	},
+	{
+		title:         "Bad reference to another step",
+		modDir:        "./mods/bad_step_reference_from_another_step",
+		containsError: "invalid depends_on 'transform.onex', step 'transform.onex' does not exist in pipeline test.pipeline.bad_step_ref",
 	},
 }
 

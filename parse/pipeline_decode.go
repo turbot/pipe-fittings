@@ -387,6 +387,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 				// but not the end line
 				step.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
 			}
+			step.SetRange(block.DefRange.Ptr())
 			pipelineHcl.Steps = append(pipelineHcl.Steps, step)
 
 		case schema.BlockTypePipelineOutput:
@@ -510,8 +511,9 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 			if !helpers.StringSliceContains(stepRegisters, dep) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("invalid depends_on '%s' - step '%s' does not exist for pipeline %s", dep, step.GetFullyQualifiedName(), pipelineHcl.Name()),
+					Summary:  fmt.Sprintf("invalid depends_on '%s', step '%s' does not exist in pipeline %s", dep, dep, pipelineHcl.Name()),
 					Detail:   fmt.Sprintf("valid steps are: %s", strings.Join(stepRegisters, ", ")),
+					Subject:  step.GetRange(),
 				})
 			}
 		}
@@ -528,8 +530,9 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 				if !availableCredentialTypes[parts[0]] {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  fmt.Sprintf("invalid depends_on '%s' - credential type '%s' not supported for pipeline %s", dep, parts[0], pipelineHcl.Name()),
+						Summary:  fmt.Sprintf("invalid depends_on '%s', credential type '%s' not supported in pipeline %s", dep, parts[0], pipelineHcl.Name()),
 						Detail:   fmt.Sprintf("valid credential types are: %s", strings.Join(credentialTypes, ", ")),
+						Subject:  step.GetRange(),
 					})
 				}
 				continue
@@ -538,8 +541,9 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 			if !helpers.StringSliceContains(credentialRegisters, dep) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("invalid depends_on '%s' - credential does not exist for pipeline %s", dep, pipelineHcl.Name()),
+					Summary:  fmt.Sprintf("invalid depends_on '%s', credential does not exist in pipeline %s", dep, pipelineHcl.Name()),
 					Detail:   fmt.Sprintf("valid credentials are: %s", strings.Join(credentialRegisters, ", ")),
+					Subject:  step.GetRange(),
 				})
 			}
 		}

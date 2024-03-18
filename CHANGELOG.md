@@ -8,6 +8,7 @@ _Bug fixes_
 
 * Erroneous error message detecting a missing credential where there isn't one.
 * HCL `try()` function should be evaluated at runtime rather than parse time.
+* Add filename and line number information in step validation error messages.
 
 ## v1.0.0 [2023-03-14]
 

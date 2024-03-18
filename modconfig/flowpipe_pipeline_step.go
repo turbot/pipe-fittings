@@ -301,6 +301,8 @@ type PipelineStep interface {
 	Equals(other PipelineStep) bool
 	Validate() hcl.Diagnostics
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
+	SetRange(*hcl.Range)
+	GetRange() *hcl.Range
 	GetMaxConcurrency() *int
 }
 
@@ -329,6 +331,7 @@ type PipelineStepBase struct {
 	StartLineNumber     int                        `json:"start_line_number"`
 	EndLineNumber       int                        `json:"end_line_number"`
 	MaxConcurrency      *int                       `json:"max_concurrency,omitempty"`
+	Range               *hcl.Range                 `json:"range"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -345,6 +348,14 @@ func (p *PipelineStepBase) SetFileReference(fileName string, startLineNumber int
 	p.FileName = fileName
 	p.StartLineNumber = startLineNumber
 	p.EndLineNumber = endLineNumber
+}
+
+func (p *PipelineStepBase) SetRange(r *hcl.Range) {
+	p.Range = r
+}
+
+func (p *PipelineStepBase) GetRange() *hcl.Range {
+	return p.Range
 }
 
 func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolution bool) (*RetryConfig, hcl.Diagnostics) {

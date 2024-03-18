@@ -63,7 +63,7 @@ var tests = []testSetup{
 	{
 		title:         "invalid depends",
 		file:          "./pipelines/invalid_depends.fp",
-		containsError: "Failed to decode mod: invalid depends_on 'http.my_step_1' - step 'sleep.sleep_1' does not exist for pipeline local.pipeline.invalid_depends",
+		containsError: "Failed to decode mod: invalid depends_on 'http.my_step_1', step 'http.my_step_1' does not exist in pipeline local.pipeline.invalid_depends",
 	},
 	{
 		title:         "invalid email port",
