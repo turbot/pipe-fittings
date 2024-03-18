@@ -212,7 +212,8 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineOutput, hcl.Diagnostics) {
 
 	o := &modconfig.PipelineOutput{
-		Name: block.Labels[0],
+		Name:  block.Labels[0],
+		Range: block.DefRange.Ptr(),
 	}
 
 	outputOptions, diags := block.Body.Content(modconfig.PipelineOutputBlockSchema)
@@ -556,7 +557,8 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 			if !helpers.StringSliceContains(stepRegisters, dep) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("invalid depends_on '%s' - does not exist for pipeline %s", dep, pipelineHcl.Name()),
+					Summary:  fmt.Sprintf("invalid depends_on '%s' in output block, '%s' does not exist in pipeline %s", dep, dep, pipelineHcl.Name()),
+					Subject:  outputConfig.Range,
 				})
 			}
 		}

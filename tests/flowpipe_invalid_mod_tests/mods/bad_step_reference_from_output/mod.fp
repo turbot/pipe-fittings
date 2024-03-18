@@ -19,5 +19,4 @@ pipeline "bad_step_ref" {
   output "approved" {
     value = alltrue([for decision in step.input.approve : decision.value == "approve"])
   }
-
 }

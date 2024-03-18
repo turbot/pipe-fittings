@@ -539,6 +539,7 @@ type PipelineOutput struct {
 	Resolved            bool           `json:"resolved,omitempty"`
 	Value               interface{}    `json:"value,omitempty"`
 	UnresolvedValue     hcl.Expression `json:"-"`
+	Range               *hcl.Range     `json:"Range"`
 }
 
 // GetShowData implements the Showable interface

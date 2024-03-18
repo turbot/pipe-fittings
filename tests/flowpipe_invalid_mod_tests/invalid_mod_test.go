@@ -74,10 +74,11 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TearDownSuite() {
 }
 
 type testSetup struct {
-	title         string
-	modDir        string
-	containsError string
-	errorType     string
+	title            string
+	modDir           string
+	containsError    string
+	errorType        string
+	expectedContains []string
 }
 
 var tests = []testSetup{
@@ -127,6 +128,9 @@ var tests = []testSetup{
 		title:         "Invalid credential type reference - static",
 		modDir:        "./mods/invalid_cred_types_static",
 		containsError: "invalid depends_on 'foo.default', credential does not exist in pipeline invalid_cred_types_static.pipeline.with_invalid_cred_type_static",
+		expectedContains: []string{
+			"invalid_cred_types_static/mod.fp:",
+		},
 	},
 	{
 		title:         "Number as string in retry block",
@@ -152,6 +156,17 @@ var tests = []testSetup{
 		title:         "Bad reference to another step",
 		modDir:        "./mods/bad_step_reference_from_another_step",
 		containsError: "invalid depends_on 'transform.onex', step 'transform.onex' does not exist in pipeline test.pipeline.bad_step_ref",
+		expectedContains: []string{
+			"bad_step_reference_from_another_step/mod.fp",
+		},
+	},
+	{
+		title:  "Bad reference to another step from output block",
+		modDir: "./mods/bad_step_reference_from_output",
+		expectedContains: []string{
+			"invalid depends_on 'input.approve' in output block, 'input.approve' does not exist in pipeline test.pipeline.bad_step_ref",
+			"bad_step_reference_from_output/mod.fp:",
+		},
 	},
 }
 
@@ -165,8 +180,8 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 				assert.Fail("Test must have title")
 				return
 			}
-			if test.containsError == "" {
-				assert.Fail("Test " + test.title + " does not have containsError")
+			if test.containsError == "" && len(test.expectedContains) == 0 {
+				assert.Fail("Test " + test.title + " does not have expected error")
 				return
 			}
 
@@ -174,6 +189,10 @@ func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {
 			assert.NotNil(errorAndWarning.Error)
 			if errorAndWarning.Error != nil {
 				assert.Contains(errorAndWarning.Error.Error(), test.containsError)
+
+				for _, expectedContains := range test.expectedContains {
+					assert.Contains(errorAndWarning.Error.Error(), expectedContains)
+				}
 			}
 
 			if test.errorType != "" {
