@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.0.2 [2023-03-18]
+
+_Bug fixes_
+
+* Add resource metadata after loading mod definition. ([#372](https://github.com/turbot/pipe-fittings/issues/372)).
+
 ## v1.0.1 [2023-03-15]
 
 _Bug fixes_
