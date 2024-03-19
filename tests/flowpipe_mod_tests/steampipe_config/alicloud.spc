@@ -1,13 +1,13 @@
 connection "alicloud_1" {
   plugin = "alicloud"
 
-  access_key = "LTAI4GBVFakeKey09Kxezv66"
+  access_key = "XXXXGBV"
   secret_key = "6iNPvThisIsNotARealSecretk1sZF"
 }
 
 connection "alicloud_2" {
   plugin = "alicloud"
 
-  access_key = "LTAI4GBVFakeKey09Kxezv66"
+  access_key = "XXXXGBV"
   secret_key = "6iNPvThisIsNotARealSecretk1sZF"
 }
