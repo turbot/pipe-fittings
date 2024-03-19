@@ -584,6 +584,10 @@ func integrationFromCtyValue(val cty.Value) (Integration, error) {
 		return nil, perr.BadRequestWithMessage("Integration is required")
 	}
 
+	if !val.Type().IsMapType() && !val.Type().IsObjectType() {
+		return nil, perr.BadRequestWithMessage("Invalid integration reference")
+	}
+
 	valMap := val.AsValueMap()
 	integrationType := valMap["type"]
 

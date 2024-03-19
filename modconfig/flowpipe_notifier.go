@@ -384,7 +384,8 @@ func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diag
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
-				Summary:  "error decoding integration",
+				Summary:  "Error parsing " + schema.AttributeTypeIntegration + " attribute",
+				Detail:   err.Error(),
 				Subject:  body.MissingItemRange().Ptr(),
 			},
 		}
