@@ -29,8 +29,8 @@ type loadConfigOptions struct {
 	include []string
 }
 
-func LoadFlowpipeConfig(configPaths []string) (*FlowpipeConfig, error_helpers.ErrorAndWarnings) {
-	errorsAndWarnings := error_helpers.NewErrorsAndWarning(nil)
+func LoadFlowpipeConfig(configPaths []string) (res *FlowpipeConfig, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+	errorsAndWarnings = error_helpers.NewErrorsAndWarning(nil)
 	defer func() {
 		if r := recover(); r != nil {
 			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
@@ -42,7 +42,7 @@ func LoadFlowpipeConfig(configPaths []string) (*FlowpipeConfig, error_helpers.Er
 	include := filehelpers.InclusionsFromExtensions(connectionConfigExtensions)
 	loadOptions := &loadConfigOptions{include: include}
 
-	var res = NewFlowpipeConfig(configPaths)
+	res = NewFlowpipeConfig(configPaths)
 
 	lastErrorLength := 0
 

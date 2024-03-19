@@ -238,6 +238,14 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	os.Unsetenv("ACCESS_KEY")
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
+	assert := assert.New(suite.T())
+
+	// Reading from different file will always result in different config
+	_, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_invalid_integration"})
+	assert.NotNil(err.Error)
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
 	assert := assert.New(suite.T())
 
