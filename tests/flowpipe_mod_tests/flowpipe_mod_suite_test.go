@@ -1514,6 +1514,17 @@ func (suite *FlowpipeModTestSuite) TestModTryFunction() {
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
 }
 
+func (suite *FlowpipeModTestSuite) TestInputStepWithThrow() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_throw"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_throw", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {

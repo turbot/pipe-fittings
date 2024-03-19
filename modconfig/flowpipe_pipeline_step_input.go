@@ -250,7 +250,8 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 }
 
 func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
+
+	diags := p.PipelineStepBase.SetBlockConfig(blocks, evalContext)
 
 	hasAttrOptions := len(p.OptionList) > 0 || p.UnresolvedAttributes["options"] != nil
 	optionIndex := 0
@@ -288,13 +289,6 @@ func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.E
 
 			p.OptionList = append(p.OptionList, opt)
 			optionIndex++
-
-		default:
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Unsupported block type for Input Step: " + b.Type,
-				Subject:  &b.DefRange,
-			})
 		}
 	}
 
