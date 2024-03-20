@@ -12,8 +12,8 @@ func GenericTypeToBlockType[T ModTreeItem]() string {
 	var resourceType string
 	var empty T
 	switch any(empty).(type) {
-	case Variable:
-		resourceType = schema.AttributeVar
+	case *Variable:
+		resourceType = schema.BlockTypeVariable
 	case *DashboardCard:
 		resourceType = schema.BlockTypeCard
 	case *DashboardChart:

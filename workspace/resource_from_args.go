@@ -109,6 +109,11 @@ func createQueryResourceForCommandLineQuery(queryString string, mod *modconfig.M
 func extractResourceNameFromQuery[T modconfig.ModTreeItem](input string) (*modconfig.ParsedResourceName, error) {
 	// convert the type T into a resource type name
 	resourceType := modconfig.GenericTypeToBlockType[T]()
+	// special case handling for variables
+	if resourceType == schema.BlockTypeVariable {
+		// variables are named var.xxxx, not variable.xxxx
+		resourceType = schema.AttributeVar
+	}
 
 	// remove parameters from the input string before calling ParseResourceName
 	// as parameters may break parsing
