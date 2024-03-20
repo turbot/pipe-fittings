@@ -9,5 +9,5 @@ import (
 func GetGenericTypeName[T any]() string {
 	longName := fmt.Sprintf("%T", *new(T))
 	split := strings.Split(longName, ".")
-	return strings.ToLower(split[len(split)-1])
+	return split[len(split)-1]
 }
