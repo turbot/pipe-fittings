@@ -31,6 +31,8 @@ func GetLoopDefn(stepType string) LoopDefn {
 		return &LoopPipelineStep{}
 	case schema.BlockTypePipelineStepTransform:
 		return &LoopTransformStep{}
+	case schema.BlockTypePipelineStepContainer:
+		return &LoopContainerStep{}
 	}
 
 	return nil
