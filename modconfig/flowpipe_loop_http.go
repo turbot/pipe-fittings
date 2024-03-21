@@ -5,8 +5,11 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type LoopHttpStep struct {
@@ -54,26 +57,60 @@ func (l *LoopHttpStep) Equals(other LoopDefn) bool {
 }
 
 func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
-	if l.URL != nil {
-		input["url"] = *l.URL
-	}
-	if l.Method != nil {
-		input["method"] = *l.Method
-	}
-	if l.RequestBody != nil {
-		input["request_body"] = *l.RequestBody
-	}
-	if l.RequestHeaders != nil {
-		input["request_headers"] = *l.RequestHeaders
-	}
-	if l.CaCertPem != nil {
-		input["ca_cert_pem"] = *l.CaCertPem
-	}
-	if l.Insecure != nil {
-		input["insecure"] = *l.Insecure
+
+	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeUrl, l.URL)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("http", diags)
 	}
 
-	return input, nil
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeMethod, l.Method)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("http", diags)
+	}
+
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeRequestBody, l.RequestBody)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("http", diags)
+	}
+
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeCaCertPem, l.CaCertPem)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("http", diags)
+	}
+
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeInsecure, l.Insecure)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("http", diags)
+	}
+
+	if l.RequestHeaders != nil {
+		input[schema.AttributeTypeRequestHeaders] = *l.RequestHeaders
+	} else if l.UnresolvedAttributes[schema.AttributeTypeRequestHeaders] != nil {
+		attr := l.UnresolvedAttributes[schema.AttributeTypeRequestHeaders]
+		val, diags := attr.Value(evalContext)
+		if len(diags) > 0 {
+			return nil, error_helpers.BetterHclDiagsToError("http", diags)
+		}
+
+		if val != cty.NilVal {
+			requestHeader, err := hclhelpers.CtyToGoMapInterface(val)
+			if err != nil {
+				return nil, error_helpers.BetterHclDiagsToError("http", hcl.Diagnostics{
+					{
+						Severity: hcl.DiagError,
+						Summary:  "Invalid request_headers",
+						Detail:   "Invalid request_headers in the step loop block",
+						Subject:  attr.Range().Ptr(),
+					},
+				})
+			}
+
+			input[schema.AttributeTypeRequestHeaders] = requestHeader
+		}
+	}
+
+	return result, nil
+
 }
 
 func (*LoopHttpStep) GetType() string {
@@ -81,6 +118,70 @@ func (*LoopHttpStep) GetType() string {
 }
 
 func (l *LoopHttpStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
+	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeUrl:
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "URL", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeMethod:
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "Method", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeRequestBody:
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "RequestBody", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeRequestHeaders:
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, l, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+			if val == cty.NilVal {
+				continue
+			}
+
+			requestHeader, err := hclhelpers.CtyToGoMapInterface(val)
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid request_headers",
+					Detail:   "Invalid request_headers in the step loop block",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
+			l.RequestHeaders = &requestHeader
+
+		case schema.AttributeTypeCaCertPem:
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "CaCertPem", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeInsecure:
+			stepDiags := setBoolAttributeWithResultReference(attr, evalContext, l, "Insecure", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+		case schema.AttributeTypeUntil:
+			// already handled in SetAttributes
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid attribute",
+				Detail:   "Invalid attribute '" + name + "' in the step loop block",
+				Subject:  &attr.Range,
+			})
+		}
+	}
+
 	return diags
 }

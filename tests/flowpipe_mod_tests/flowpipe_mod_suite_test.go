@@ -1563,6 +1563,23 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
 
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_4"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.http"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("https://bar", *step.GetLoopConfig().(*modconfig.LoopHttpStep).URL)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.http_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUrl])
 }
 
 // In order for 'go test' to run this suite, we need to create

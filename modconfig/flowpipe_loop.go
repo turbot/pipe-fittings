@@ -66,10 +66,9 @@ func GetLoopDefn(stepType string, p *PipelineStepBase, hclRange *hcl.Range) Loop
 
 type LoopStep struct {
 	// circular link to its "parent"
-	PipelineStepBase *PipelineStepBase
-
-	Range                *hcl.Range
-	UnresolvedAttributes map[string]hcl.Expression
+	PipelineStepBase     *PipelineStepBase         `json:"-"`
+	Range                *hcl.Range                `json:"-"`
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
 	Until                *bool
 }
 
@@ -117,7 +116,7 @@ func (s *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.
 	diags := hcl.Diagnostics{}
 
 	if attr, ok := hclAttributes[schema.AttributeTypeUntil]; ok {
-		stepDiags := setBoolAttribute(attr, evalContext, s, "Until", true)
+		stepDiags := setBoolAttributeWithResultReference(attr, evalContext, s, "Until", true, true)
 		if stepDiags.HasErrors() {
 			diags = append(diags, stepDiags...)
 		}
@@ -181,7 +180,7 @@ func (s *LoopSleepStep) SetAttributes(hclAttributes hcl.Attributes, evalContext 
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeDuration:
-			stepDiags := setStringAttribute(attr, evalContext, s, "Duration", true)
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, s, "Duration", true, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 			}

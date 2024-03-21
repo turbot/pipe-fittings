@@ -67,7 +67,7 @@ func (s *LoopTransformStep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeValue:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, s)
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, s, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue

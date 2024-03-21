@@ -314,25 +314,26 @@ type PipelineStepBaseInterface interface {
 
 // A common base struct that all pipeline steps must embed
 type PipelineStepBase struct {
-	Title               *string                    `json:"title,omitempty"`
-	Description         *string                    `json:"description,omitempty"`
-	Name                string                     `json:"name"`
-	Type                string                     `json:"step_type"`
-	PipelineName        string                     `json:"pipeline_name,omitempty"`
-	Timeout             interface{}                `json:"timeout,omitempty"`
-	DependsOn           []string                   `json:"depends_on,omitempty"`
-	CredentialDependsOn []string                   `json:"credential_depends_on,omitempty"`
-	Resolved            bool                       `json:"resolved,omitempty"`
-	ErrorConfig         *ErrorConfig               `json:"-"`
-	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
-	ThrowConfig         []*ThrowConfig             `json:"throw,omitempty"`
-	LoopConfig          LoopDefn                   `json:"loop"`
-	OutputConfig        map[string]*PipelineOutput `json:"-"`
-	FileName            string                     `json:"file_name"`
-	StartLineNumber     int                        `json:"start_line_number"`
-	EndLineNumber       int                        `json:"end_line_number"`
-	MaxConcurrency      *int                       `json:"max_concurrency,omitempty"`
-	Range               *hcl.Range                 `json:"range"`
+	Title               *string        `json:"title,omitempty"`
+	Description         *string        `json:"description,omitempty"`
+	Name                string         `json:"name"`
+	Type                string         `json:"step_type"`
+	PipelineName        string         `json:"pipeline_name,omitempty"`
+	Timeout             interface{}    `json:"timeout,omitempty"`
+	DependsOn           []string       `json:"depends_on,omitempty"`
+	CredentialDependsOn []string       `json:"credential_depends_on,omitempty"`
+	Resolved            bool           `json:"resolved,omitempty"`
+	ErrorConfig         *ErrorConfig   `json:"-"`
+	RetryConfig         *RetryConfig   `json:"retry,omitempty"`
+	ThrowConfig         []*ThrowConfig `json:"throw,omitempty"`
+	// TODO: we should serialise this, it's used in PipelineLoaded event to have a record the exact pipeline config loaded. There's no further need apart from record keeping, so it's OK to have it unserializeable for now.
+	LoopConfig      LoopDefn                   `json:"-"`
+	OutputConfig    map[string]*PipelineOutput `json:"-"`
+	FileName        string                     `json:"file_name"`
+	StartLineNumber int                        `json:"start_line_number"`
+	EndLineNumber   int                        `json:"end_line_number"`
+	MaxConcurrency  *int                       `json:"max_concurrency,omitempty"`
+	Range           *hcl.Range                 `json:"range"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -1244,8 +1245,8 @@ func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, 
 	return hcl.Diagnostics{}
 }
 
-func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
-	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+func setStringAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
 	}
@@ -1284,8 +1285,12 @@ func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p Pip
 	return hcl.Diagnostics{}
 }
 
-func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
-	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	return setStringAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
+}
+
+func setBoolAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
 	}
@@ -1325,6 +1330,9 @@ func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p Pipel
 	}
 
 	return hcl.Diagnostics{}
+}
+func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	return setBoolAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }
 
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
