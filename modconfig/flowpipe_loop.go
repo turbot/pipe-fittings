@@ -1,13 +1,11 @@
 package modconfig
 
 import (
-	"reflect"
+	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -22,12 +20,14 @@ type LoopDefn interface {
 	AppendCredentialDependsOn(...string)
 	AddUnresolvedAttribute(string, hcl.Expression)
 	GetUnresolvedAttributes() map[string]hcl.Expression
+	ResolveUntil(evalContext *hcl.EvalContext) (bool, hcl.Diagnostics)
 }
 
-func GetLoopDefn(stepType string, p *PipelineStepBase) LoopDefn {
+func GetLoopDefn(stepType string, p *PipelineStepBase, hclRange *hcl.Range) LoopDefn {
 	loopStep := LoopStep{
 		PipelineStepBase:     p,
 		UnresolvedAttributes: map[string]hcl.Expression{},
+		Range:                hclRange,
 	}
 
 	switch stepType {
@@ -68,8 +68,33 @@ type LoopStep struct {
 	// circular link to its "parent"
 	PipelineStepBase *PipelineStepBase
 
+	Range                *hcl.Range
 	UnresolvedAttributes map[string]hcl.Expression
 	Until                *bool
+}
+
+func (l *LoopStep) ResolveUntil(evalContext *hcl.EvalContext) (bool, hcl.Diagnostics) {
+
+	diags := hcl.Diagnostics{}
+	if l.Until != nil {
+		return *l.Until, diags
+	}
+
+	if l.UnresolvedAttributes[schema.AttributeTypeUntil] != nil {
+		until, diags := l.UnresolvedAttributes[schema.AttributeTypeUntil].Value(evalContext)
+		if diags.HasErrors() {
+			slog.Error("Error resolving until", "diags", diags)
+			return false, diags
+		}
+
+		if until == cty.NilVal {
+			return false, diags
+		}
+
+		return until.True(), diags
+	}
+
+	return false, diags
 }
 
 func (l *LoopStep) GetUnresolvedAttributes() map[string]hcl.Expression {
@@ -96,6 +121,15 @@ func (s *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.
 		if stepDiags.HasErrors() {
 			diags = append(diags, stepDiags...)
 		}
+	}
+
+	if s.Until == nil && s.UnresolvedAttributes[schema.AttributeTypeUntil] == nil {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Missing required attribute",
+			Detail:   "The argument 'until' is required, but no definition was found",
+			Subject:  s.Range,
+		})
 	}
 
 	return diags
@@ -129,8 +163,12 @@ func (l *LoopSleepStep) Equals(other LoopDefn) bool {
 
 func (l *LoopSleepStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 
-	simpleTypeInputFromAttribute(l.LoopStep, input, evalContext, schema.AttributeTypeDuration, l.Duration)
-	return input, nil
+	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeDuration, l.Duration)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("sleep", diags)
+	}
+
+	return result, nil
 }
 
 func (*LoopSleepStep) GetType() string {
@@ -153,83 +191,11 @@ func (s *LoopSleepStep) SetAttributes(hclAttributes hcl.Attributes, evalContext 
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Invalid attribute",
-				Detail:   "Invalid attribute " + name + " for loop sleep step",
+				Detail:   "Invalid attribute '" + name + "' in the step loop block",
 				Subject:  &attr.Range,
 			})
 		}
 	}
 
-	return diags
-}
-
-type LoopTransformStep struct {
-	LoopStep
-
-	Value interface{} `json:"value,omitempty" hcl:"value,optional" cty:"value"`
-}
-
-func (l *LoopTransformStep) Equals(other LoopDefn) bool {
-
-	if l == nil && helpers.IsNil(other) {
-		return true
-	}
-
-	if l == nil && !helpers.IsNil(other) || !helpers.IsNil(l) && other == nil {
-		return false
-	}
-
-	otherLoopTransformStep, ok := other.(*LoopTransformStep)
-	if !ok {
-		return false
-	}
-
-	return l.Until == otherLoopTransformStep.Until &&
-		reflect.DeepEqual(l.Value, otherLoopTransformStep.Value)
-}
-
-func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
-
-	expr, ok := l.Value.(hcl.Expression)
-	if ok {
-		val, err := expr.Value(nil)
-		if err != nil {
-			return nil, err
-		}
-
-		if !val.IsNull() {
-			goVal, err := hclhelpers.CtyToGo(val)
-			if err != nil {
-				return nil, err
-			}
-			input["value"] = goVal
-		}
-	} else {
-		hclAttrib, ok := l.Value.(*hcl.Attribute)
-		if !ok {
-			input["value"] = l.Value
-		} else {
-			var ctyValue cty.Value
-			diags := gohcl.DecodeExpression(hclAttrib.Expr, evalContext, &ctyValue)
-			if len(diags) > 0 {
-				return nil, error_helpers.BetterHclDiagsToError("transform loop", diags)
-			}
-			goVal, err := hclhelpers.CtyToGo(ctyValue)
-			if err != nil {
-				return nil, err
-			}
-			input["value"] = goVal
-		}
-
-	}
-
-	return input, nil
-}
-
-func (*LoopTransformStep) GetType() string {
-	return schema.BlockTypePipelineStepTransform
-}
-
-func (s *LoopTransformStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
 	return diags
 }

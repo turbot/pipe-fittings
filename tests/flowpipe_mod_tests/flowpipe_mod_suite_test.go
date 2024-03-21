@@ -1550,6 +1550,19 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.NotNil(pipeline)
 	step := pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("10s", *step.GetLoopConfig().(*modconfig.LoopSleepStep).Duration)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
+
 }
 
 // In order for 'go test' to run this suite, we need to create

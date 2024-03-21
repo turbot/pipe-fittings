@@ -501,7 +501,7 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 	if len(loopBlocks) == 1 {
 		loopBlock := loopBlocks[0]
 
-		loopDefn := GetLoopDefn(stepType, p)
+		loopDefn := GetLoopDefn(stepType, p, &loopBlock.DefRange)
 		if loopDefn == nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
