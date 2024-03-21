@@ -58,19 +58,19 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 	var diags hcl.Diagnostics
 
 	// text is a mandatory attribute
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeText, p.Text)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeText, p.Text)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// channel
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeChannel, p.Channel)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeChannel, p.Channel)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// subject
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSubject, p.Subject)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeSubject, p.Subject)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}

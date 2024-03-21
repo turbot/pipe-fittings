@@ -1168,15 +1168,15 @@ func stringSliceInputFromAttribute(p PipelineStep, results map[string]interface{
 	return results, hcl.Diagnostics{}
 }
 
-func simpleTypeInputFromAttribute[T any](p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue T) (map[string]interface{}, hcl.Diagnostics) {
+func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue T) (map[string]interface{}, hcl.Diagnostics) {
 	var tempValue T
 
-	if p.GetUnresolvedAttributes()[attributeName] == nil {
+	if unresolvedAttributes[attributeName] == nil {
 		if !helpers.IsNil(fieldValue) {
 			tempValue = fieldValue
 		}
 	} else {
-		diags := gohcl.DecodeExpression(p.GetUnresolvedAttributes()[attributeName], evalContext, &tempValue)
+		diags := gohcl.DecodeExpression(unresolvedAttributes[attributeName], evalContext, &tempValue)
 		if diags.HasErrors() {
 			return nil, diags
 		}

@@ -66,13 +66,13 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	var diags hcl.Diagnostics
 
 	// image
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeImage, p.Image)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeImage, p.Image)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// source
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSource, p.Source)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeSource, p.Source)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
@@ -109,49 +109,49 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}
 
 	// cpu_shares
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeCpuShares, p.CpuShares)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCpuShares, p.CpuShares)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// memory
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemory, p.Memory)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemory, p.Memory)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// memory_reservation
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemoryReservation, p.MemoryReservation)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemoryReservation, p.MemoryReservation)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// memory_swap
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemorySwap, p.MemorySwap)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemorySwap, p.MemorySwap)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// memory_swappiness
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeMemorySwappiness, p.MemorySwappiness)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemorySwappiness, p.MemorySwappiness)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// user
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeUser, p.User)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeUser, p.User)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// workdir
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeWorkdir, p.Workdir)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeWorkdir, p.Workdir)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// read_only
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeReadOnly, p.ReadOnly)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeReadOnly, p.ReadOnly)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}

@@ -60,13 +60,13 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 
 	// sql
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeSql, p.Sql)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeSql, p.Sql)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// database
-	results, diags = simpleTypeInputFromAttribute(p, results, evalContext, schema.AttributeTypeDatabase, p.Database)
+	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeDatabase, p.Database)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
