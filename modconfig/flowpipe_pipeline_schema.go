@@ -900,6 +900,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeOption,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 

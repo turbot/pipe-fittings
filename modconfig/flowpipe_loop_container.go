@@ -143,3 +143,8 @@ func (s *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContex
 
 	return input, nil
 }
+
+func (s *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+	return diags
+}
