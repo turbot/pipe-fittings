@@ -13,8 +13,9 @@ import (
 )
 
 type LoopPipelineStep struct {
-	Until bool        `json:"until" hcl:"until" cty:"until"`
-	Args  interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
+	LoopStep
+
+	Args interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`
 }
 
 func (l *LoopPipelineStep) Equals(other LoopDefn) bool {

@@ -10,7 +10,8 @@ import (
 )
 
 type LoopQueryStep struct {
-	Until             bool           `json:"until" hcl:"until" cty:"until"`
+	LoopStep
+
 	ConnnectionString *string        `json:"connection_string,omitempty" hcl:"connection_string,optional" cty:"connection_string"`
 	Sql               *string        `json:"sql,omitempty" hcl:"sql,optional" cty:"sql"`
 	Args              *[]interface{} `json:"args,omitempty" hcl:"args,optional" cty:"args"`

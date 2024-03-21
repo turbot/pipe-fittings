@@ -11,7 +11,7 @@ import (
 )
 
 type LoopInputStep struct {
-	Until bool `json:"until" hcl:"until" cty:"until"`
+	LoopStep
 
 	Notifier *cty.Value `json:"notifier" cty:"-" hcl:"-"`
 

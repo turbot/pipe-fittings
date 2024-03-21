@@ -18,32 +18,93 @@ type LoopDefn interface {
 	UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error)
 	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	Equals(LoopDefn) bool
+	AppendDependsOn(...string)
+	AppendCredentialDependsOn(...string)
+	AddUnresolvedAttribute(string, hcl.Expression)
+	GetUnresolvedAttributes() map[string]hcl.Expression
 }
 
-func GetLoopDefn(stepType string) LoopDefn {
+func GetLoopDefn(stepType string, p *PipelineStepBase) LoopDefn {
+	loopStep := LoopStep{
+		PipelineStepBase:     p,
+		UnresolvedAttributes: map[string]hcl.Expression{},
+	}
+
 	switch stepType {
 	case schema.BlockTypePipelineStepHttp:
-		return &LoopHttpStep{}
+		return &LoopHttpStep{
+			LoopStep: loopStep,
+		}
 	case schema.BlockTypePipelineStepSleep:
-		return &LoopSleepStep{}
+		return &LoopSleepStep{
+			LoopStep: loopStep,
+		}
 	case schema.BlockTypePipelineStepQuery:
-		return &LoopQueryStep{}
+		return &LoopQueryStep{
+			LoopStep: loopStep,
+		}
 	case schema.BlockTypePipelineStepPipeline:
-		return &LoopPipelineStep{}
+		return &LoopPipelineStep{
+			LoopStep: loopStep,
+		}
 	case schema.BlockTypePipelineStepTransform:
-		return &LoopTransformStep{}
+		return &LoopTransformStep{
+			LoopStep: loopStep,
+		}
 	case schema.BlockTypePipelineStepContainer:
-		return &LoopContainerStep{}
+		return &LoopContainerStep{
+			LoopStep: loopStep,
+		}
 	case schema.BlockTypePipelineStepInput:
-		return &LoopInputStep{}
+		return &LoopInputStep{
+			LoopStep: loopStep,
+		}
 	}
 
 	return nil
 }
 
+type LoopStep struct {
+	// circular link to its "parent"
+	PipelineStepBase *PipelineStepBase
+
+	UnresolvedAttributes map[string]hcl.Expression
+	Until                *bool
+}
+
+func (l *LoopStep) GetUnresolvedAttributes() map[string]hcl.Expression {
+	return l.UnresolvedAttributes
+}
+
+func (l *LoopStep) AppendDependsOn(dependsOn ...string) {
+	l.PipelineStepBase.AppendDependsOn(dependsOn...)
+}
+
+func (*LoopStep) AppendCredentialDependsOn(...string) {
+	// not implemented
+}
+
+func (l *LoopStep) AddUnresolvedAttribute(name string, expr hcl.Expression) {
+	l.UnresolvedAttributes[name] = expr
+}
+
+func (s *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	if attr, ok := hclAttributes[schema.AttributeTypeUntil]; ok {
+		stepDiags := setBoolAttribute(attr, evalContext, s, "Until", true)
+		if stepDiags.HasErrors() {
+			diags = append(diags, stepDiags...)
+		}
+	}
+
+	return diags
+}
+
 type LoopSleepStep struct {
+	LoopStep
+
 	UnresolvedAttributes hcl.Attributes `json:"-"`
-	Until                bool           `json:"until"`
 	Duration             *string        `json:"duration,omitempty"`
 }
 
@@ -67,9 +128,8 @@ func (l *LoopSleepStep) Equals(other LoopDefn) bool {
 }
 
 func (l *LoopSleepStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
-	if l.Duration != nil {
-		input["duration"] = *l.Duration
-	}
+
+	simpleTypeInputFromAttribute(l.LoopStep, input, evalContext, schema.AttributeTypeDuration, l.Duration)
 	return input, nil
 }
 
@@ -78,20 +138,33 @@ func (*LoopSleepStep) GetType() string {
 }
 
 func (s *LoopSleepStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
+	diags := s.LoopStep.SetAttributes(hclAttributes, evalContext)
 
-	// for name, attr := range hclAttributes {
-	// 	switch name {
-	// 	case schema.AttributeTypeDuration:
-	// 		s.Duration = hclhelpers.StringPtr(attr)
-	// 	}
-	// }
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeDuration:
+			stepDiags := setStringAttribute(attr, evalContext, s, "Duration", true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeUntil:
+			// already handled in SetAttributes
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid attribute",
+				Detail:   "Invalid attribute " + name + " for loop sleep step",
+				Subject:  &attr.Range,
+			})
+		}
+	}
 
 	return diags
 }
 
 type LoopTransformStep struct {
-	Until bool        `json:"until" hcl:"until" cty:"until"`
+	LoopStep
+
 	Value interface{} `json:"value,omitempty" hcl:"value,optional" cty:"value"`
 }
 

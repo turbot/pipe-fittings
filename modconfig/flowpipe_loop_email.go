@@ -8,7 +8,8 @@ import (
 )
 
 type LoopEmailStep struct {
-	Until            bool      `json:"until" hcl:"until" cty:"until"`
+	LoopStep
+
 	To               *[]string `json:"to,omitempty" hcl:"to,optional" cty:"to"`
 	From             *string   `json:"from,omitempty" hcl:"from,optional" cty:"from"`
 	SenderCredential *string   `json:"sender_credential,omitempty" hcl:"sender_credential,optional" cty:"sender_credential"`

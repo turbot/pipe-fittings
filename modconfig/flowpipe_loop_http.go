@@ -10,7 +10,8 @@ import (
 )
 
 type LoopHttpStep struct {
-	Until          bool                    `json:"until" hcl:"until" cty:"until"`
+	LoopStep
+
 	URL            *string                 `json:"url,omitempty" hcl:"url,optional" cty:"url"`
 	Method         *string                 `json:"method,omitempty" hcl:"method,optional" cty:"method"`
 	RequestBody    *string                 `json:"request_body,omitempty" hcl:"request_body,optional" cty:"request_body"`

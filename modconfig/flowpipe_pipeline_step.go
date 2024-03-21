@@ -284,17 +284,17 @@ type PipelineStep interface {
 	SetPipelineName(string)
 	GetPipelineName() string
 	IsResolved() bool
-	GetUnresolvedAttributes() map[string]hcl.Expression
 	AddUnresolvedBody(string, hcl.Body)
-	GetUnresolvedBodies() map[string]hcl.Body
 	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
 	GetDependsOn() []string
 	GetCredentialDependsOn() []string
 	GetForEach() hcl.Expression
 	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	GetUnresolvedAttributes() map[string]hcl.Expression
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	GetErrorConfig(*hcl.EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
 	GetRetryConfig(*hcl.EvalContext, bool) (*RetryConfig, hcl.Diagnostics)
+	GetLoopConfig() LoopDefn
 	GetThrowConfig() []*ThrowConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
@@ -326,6 +326,7 @@ type PipelineStepBase struct {
 	ErrorConfig         *ErrorConfig               `json:"-"`
 	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
 	ThrowConfig         []*ThrowConfig             `json:"throw,omitempty"`
+	LoopConfig          LoopDefn                   `json:"loop"`
 	OutputConfig        map[string]*PipelineOutput `json:"-"`
 	FileName            string                     `json:"file_name"`
 	StartLineNumber     int                        `json:"start_line_number"`
@@ -342,6 +343,10 @@ type PipelineStepBase struct {
 func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedAttributes = make(map[string]hcl.Expression)
 	p.UnresolvedBodies = make(map[string]hcl.Body)
+}
+
+func (p *PipelineStepBase) GetLoopConfig() LoopDefn {
+	return p.LoopConfig
 }
 
 func (p *PipelineStepBase) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -496,7 +501,7 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 	if len(loopBlocks) == 1 {
 		loopBlock := loopBlocks[0]
 
-		loopDefn := GetLoopDefn(stepType)
+		loopDefn := GetLoopDefn(stepType, p)
 		if loopDefn == nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -504,23 +509,15 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 				Subject:  &loopBlock.DefRange,
 			})
 		} else {
-			moreDiags := gohcl.DecodeBody(loopBlock.Body, evalContext, loopDefn)
-
-			// Loop should always be unresolved
+			attribs, moreDiags := loopBlock.Body.JustAttributes()
 			if len(moreDiags) > 0 {
-				moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeLoop, loopBlock.Body)
+				diags = append(diags, moreDiags...)
+			} else {
+				moreDiags := loopDefn.SetAttributes(attribs, evalContext)
 				if len(moreDiags) > 0 {
 					diags = append(diags, moreDiags...)
 				}
-			} else {
-				// still need to add the loop to "unresolved" body even if it's fully resolved. Consider this scenario:
-				//     loop {
-				// 			until = try(result.response_body.next, null) == null
-				// 			url   = try(result.response_body.next, "")
-				//		}
-				//
-				// The above fragment will not result in diagnostics error.
-				p.AddUnresolvedBody(schema.BlockTypeLoop, loopBlock.Body)
+				p.LoopConfig = loopDefn
 			}
 		}
 	}
@@ -605,10 +602,6 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 
 func (p *PipelineStepBase) AddUnresolvedBody(name string, body hcl.Body) {
 	p.UnresolvedBodies[name] = body
-}
-
-func (p *PipelineStepBase) GetUnresolvedBodies() map[string]hcl.Body {
-	return p.UnresolvedBodies
 }
 
 func (p *PipelineStepBase) Validate() hcl.Diagnostics {

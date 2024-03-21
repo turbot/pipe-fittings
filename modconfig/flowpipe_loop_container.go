@@ -11,7 +11,8 @@ import (
 )
 
 type LoopContainerStep struct {
-	Until             bool               `json:"until" hcl:"until" cty:"until"`
+	LoopStep
+
 	Image             *string            `json:"image,omitempty" hcl:"image,optional" cty:"image"`
 	Source            *string            `json:"source,omitempty" hcl:"source,optional" cty:"source"`
 	Cmd               *[]string          `json:"cmd,omitempty" hcl:"cmd,optional" cty:"cmd"`

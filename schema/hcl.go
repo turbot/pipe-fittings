@@ -78,6 +78,7 @@ const (
 
 	// error block
 	AttributeTypeIgnore = "ignore"
+	AttributeTypeUntil  = "until"
 
 	// Common step attributes
 	AttributeTypeTitle       = "title"

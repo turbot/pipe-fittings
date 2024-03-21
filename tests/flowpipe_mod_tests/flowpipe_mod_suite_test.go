@@ -1536,6 +1536,22 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
 	assert.Nil(errorAndWarning.Error)
 }
 
+func (suite *FlowpipeModTestSuite) TestLoopVarious() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_loop_various"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_loop_various", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep"]
+	assert.NotNil(pipeline)
+	step := pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {
