@@ -78,7 +78,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}
 
 	// cmd
-	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeCmd, "Cmd")
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCmd, p.Cmd)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
@@ -103,7 +103,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	results[schema.AttributeTypeEnv] = env
 
 	// entry_point
-	results, diags = stringSliceInputFromAttribute(p, results, evalContext, schema.AttributeTypeEntryPoint, "EntryPoint")
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeEntryPoint, p.EntryPoint)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}

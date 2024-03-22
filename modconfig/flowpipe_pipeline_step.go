@@ -1115,31 +1115,13 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseStepAttributes, name)
 }
 
-func stringSliceInputFromAttribute(p PipelineStep, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName, fieldName string) (map[string]interface{}, hcl.Diagnostics) {
+func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue []string) (map[string]interface{}, hcl.Diagnostics) {
 	var tempValue []string
 
-	unresolvedAttrib := p.GetUnresolvedAttributes()[attributeName]
+	unresolvedAttrib := unresolvedAttributes[attributeName]
 
 	if unresolvedAttrib == nil {
-		val := reflect.ValueOf(p)
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem() // If a pointer to a struct is passed, get the struct
-		}
-
-		field := val.FieldByName(fieldName)
-
-		if !field.IsValid() {
-			return nil, hcl.Diagnostics{
-				&hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "No such field: " + fieldName + " in obj for " + p.GetFullyQualifiedName(),
-				},
-			}
-		}
-
-		if !helpers.IsNil(field.Interface()) {
-			tempValue = field.Interface().([]string)
-		}
+		tempValue = fieldValue
 	} else {
 		var args cty.Value
 
