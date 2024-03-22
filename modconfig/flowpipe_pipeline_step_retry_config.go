@@ -266,6 +266,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid retry strategy",
 			Detail:   "Valid values are constant, exponential or linear",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 
@@ -274,6 +275,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_attempts",
 			Detail:   "max_attempts must be less than 300",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 
@@ -282,6 +284,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
 			Detail:   "min_interval must be less than 100000",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 
@@ -290,6 +293,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
 			Detail:   "min_interval must be greater than 0",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 
@@ -298,6 +302,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_interval",
 			Detail:   "max_interval must be less than 1000000",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 
@@ -306,6 +311,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid max_interval",
 			Detail:   "max_interval must be greater than 0",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 
@@ -314,6 +320,7 @@ func (r *RetryConfig) Validate() hcl.Diagnostics {
 			Severity: hcl.DiagError,
 			Summary:  "Invalid min_interval",
 			Detail:   "min_interval must be less than max_interval",
+			Subject:  r.PipelineStepBase.Range,
 		})
 	}
 

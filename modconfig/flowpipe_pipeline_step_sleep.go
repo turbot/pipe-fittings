@@ -115,6 +115,7 @@ func (p *PipelineStepSleep) Validate() hcl.Diagnostics {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Value of the attribute '" + schema.AttributeTypeDuration + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+				Subject:  p.Range,
 			})
 		}
 	}

@@ -30,6 +30,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		}}
 	}
 	step.SetPipelineName(pipelineHcl.FullName)
+	step.SetRange(block.DefRange.Ptr())
 
 	pipelineStepBlockSchema := GetPipelineStepBlockSchema(stepType)
 	if pipelineStepBlockSchema == nil {
@@ -388,7 +389,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 				// but not the end line
 				step.SetFileReference(block.DefRange.Filename, block.DefRange.Start.Line, block.DefRange.End.Line)
 			}
-			step.SetRange(block.DefRange.Ptr())
+
 			pipelineHcl.Steps = append(pipelineHcl.Steps, step)
 
 		case schema.BlockTypePipelineOutput:

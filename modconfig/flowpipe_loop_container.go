@@ -149,6 +149,11 @@ func (l *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContex
 		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
+	result, diags = stringMapInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeEnv, l.Env)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
+	}
+
 	return result, nil
 }
 

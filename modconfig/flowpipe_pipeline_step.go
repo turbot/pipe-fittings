@@ -1007,6 +1007,7 @@ func (p *PipelineStepBase) ValidateBaseAttributes() hcl.Diagnostics {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Value of the attribute '" + schema.AttributeTypeTimeout + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+				Subject:  p.Range,
 			})
 		}
 	}
@@ -1173,6 +1174,35 @@ func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Exp
 			}
 		} else {
 			results[attributeName] = tempValue
+		}
+	}
+
+	return results, hcl.Diagnostics{}
+}
+
+func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *map[string]string) (map[string]interface{}, hcl.Diagnostics) {
+	if fieldValue != nil {
+		results[attributeName] = *fieldValue
+	} else if unresolvedAttributes[attributeName] != nil {
+		attr := unresolvedAttributes[attributeName]
+		val, diags := attr.Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if val != cty.NilVal {
+			mapValues, err := hclhelpers.CtyToGoMapInterface(val)
+			if err != nil {
+				return nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + attributeName + " attribute to map",
+						Subject:  attr.Range().Ptr(),
+					},
+				}
+			}
+
+			results[attributeName] = mapValues
 		}
 	}
 

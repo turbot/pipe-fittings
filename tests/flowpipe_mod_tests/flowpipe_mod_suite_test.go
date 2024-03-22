@@ -1602,6 +1602,16 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Cmd)
 	assert.Equal([]string{"1", "2"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Entrypoint)
 	assert.Equal(int64(4), *step.GetLoopConfig().(*modconfig.LoopContainerStep).CpuShares)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_4"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Cmd)
+	assert.Equal([]string{"1", "2"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Entrypoint)
+	assert.Equal(int64(4), *step.GetLoopConfig().(*modconfig.LoopContainerStep).CpuShares)
+	assert.Equal(map[string]string{"bar": "baz"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Env)
 }
 
 // In order for 'go test' to run this suite, we need to create
