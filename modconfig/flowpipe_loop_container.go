@@ -21,7 +21,7 @@ type LoopContainerStep struct {
 	Source            *string            `json:"source,omitempty" hcl:"source,optional" cty:"source"`
 	Cmd               *[]string          `json:"cmd,omitempty" hcl:"cmd,optional" cty:"cmd"`
 	Env               *map[string]string `json:"env,omitempty" hcl:"env,optional" cty:"env"`
-	EntryPoint        *[]string          `json:"entrypoint,omitempty" hcl:"entrypoint,optional" cty:"entrypoint"`
+	Entrypoint        *[]string          `json:"entrypoint,omitempty" hcl:"entrypoint,optional" cty:"entrypoint"`
 	CpuShares         *int64             `json:"cpu_shares,omitempty" hcl:"cpu_shares,optional" cty:"cpu_shares"`
 	Memory            *int64             `json:"memory,omitempty" hcl:"memory,optional" cty:"memory"`
 	MemoryReservation *int64             `json:"memory_reservation,omitempty" hcl:"memory_reservation,optional" cty:"memory_reservation"`
@@ -59,10 +59,10 @@ func (l *LoopContainerStep) Equals(other LoopDefn) bool {
 		}
 	}
 
-	if l.EntryPoint == nil && otherLoopContainerStep.EntryPoint != nil || l.EntryPoint != nil && otherLoopContainerStep.EntryPoint == nil {
+	if l.Entrypoint == nil && otherLoopContainerStep.Entrypoint != nil || l.Entrypoint != nil && otherLoopContainerStep.Entrypoint == nil {
 		return false
-	} else if l.EntryPoint != nil {
-		if slices.Compare(*l.EntryPoint, *otherLoopContainerStep.EntryPoint) != 0 {
+	} else if l.Entrypoint != nil {
+		if slices.Compare(*l.Entrypoint, *otherLoopContainerStep.Entrypoint) != 0 {
 			return false
 		}
 	}
@@ -139,6 +139,16 @@ func (l *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContex
 		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
+	result, diags = stringSliceInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeCmd, l.Cmd)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
+	}
+
+	result, diags = stringSliceInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeEntrypoint, l.Entrypoint)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
+	}
+
 	return result, nil
 }
 
@@ -153,8 +163,9 @@ func (l *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 			}
-		case schema.AttributeTypeCmd:
-			stepDiags := setStringSliceAttributeWithResultReference(attr, evalContext, l, "Cmd", true, true)
+		case schema.AttributeTypeCmd, schema.AttributeTypeEntrypoint:
+			fieldName := strcase.ToCamel(name)
+			stepDiags := setStringSliceAttributeWithResultReference(attr, evalContext, l, fieldName, true, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 			}
@@ -180,11 +191,7 @@ func (l *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalCont
 			}
 
 			l.Env = &env
-		case schema.AttributeTypeEntryPoint:
-			stepDiags := setStringSliceAttributeWithResultReference(attr, evalContext, l, "EntryPoint", true, true)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-			}
+
 		case schema.AttributeTypeCpuShares, schema.AttributeTypeMemory, schema.AttributeTypeMemoryReservation, schema.AttributeTypeMemorySwap, schema.AttributeTypeMemorySwappiness:
 			fieldName := strcase.ToCamel(name)
 			stepDiags := setInt64AttributeWithResultReference(attr, evalContext, l, fieldName, true, true)

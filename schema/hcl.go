@@ -183,7 +183,7 @@ const (
 	AttributeTypeUser              = "user"
 	AttributeTypeWorkdir           = "workdir"
 	AttributeTypeCmd               = "cmd"
-	AttributeTypeEntryPoint        = "entrypoint"
+	AttributeTypeEntrypoint        = "entrypoint"
 	AttributeTypeTimeout           = "timeout"
 	AttributeTypeMaxConcurrency    = "max_concurrency"
 	AttributeTypeCpuShares         = "cpu_shares"

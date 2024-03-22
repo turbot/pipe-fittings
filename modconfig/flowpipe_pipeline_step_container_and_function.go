@@ -21,7 +21,7 @@ type PipelineStepContainer struct {
 	Source            *string           `json:"source"`
 	Cmd               []string          `json:"cmd"`
 	Env               map[string]string `json:"env"`
-	EntryPoint        []string          `json:"entrypoint"`
+	Entrypoint        []string          `json:"entrypoint"`
 	CpuShares         *int64            `json:"cpu_shares"`
 	Memory            *int64            `json:"memory"`
 	MemoryReservation *int64            `json:"memory_reservation"`
@@ -78,7 +78,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}
 
 	// cmd
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCmd, p.Cmd)
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCmd, &p.Cmd)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
@@ -103,7 +103,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	results[schema.AttributeTypeEnv] = env
 
 	// entry_point
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeEntryPoint, p.EntryPoint)
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeEntrypoint, &p.Entrypoint)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
@@ -224,7 +224,7 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				}
 				p.Env = env
 			}
-		case schema.AttributeTypeEntryPoint:
+		case schema.AttributeTypeEntrypoint:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
@@ -236,12 +236,12 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				if moreErr != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse '" + schema.AttributeTypeEntryPoint + "' attribute to string slice",
+						Summary:  "Unable to parse '" + schema.AttributeTypeEntrypoint + "' attribute to string slice",
 						Subject:  &attr.Range,
 					})
 					continue
 				}
-				p.EntryPoint = ep
+				p.Entrypoint = ep
 			}
 		case schema.AttributeTypeCpuShares:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)

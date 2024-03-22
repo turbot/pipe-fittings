@@ -1109,8 +1109,8 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseStepAttributes, name)
 }
 
-func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue []string) (map[string]interface{}, hcl.Diagnostics) {
-	var tempValue []string
+func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]string) (map[string]interface{}, hcl.Diagnostics) {
+	var tempValue *[]string
 
 	unresolvedAttrib := unresolvedAttributes[attributeName]
 
@@ -1125,7 +1125,7 @@ func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expressio
 		}
 
 		var err error
-		tempValue, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
+		stringSlice, err := hclhelpers.CtyToGoStringSlice(args, args.Type())
 		if err != nil {
 			return nil, hcl.Diagnostics{
 				&hcl.Diagnostic{
@@ -1135,10 +1135,13 @@ func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expressio
 				},
 			}
 		}
+		if stringSlice != nil {
+			tempValue = &stringSlice
+		}
 	}
 
 	if tempValue != nil {
-		results[attributeName] = tempValue
+		results[attributeName] = *tempValue
 	}
 
 	return results, hcl.Diagnostics{}

@@ -53,10 +53,10 @@ func TestContainerStep(t *testing.T) {
 	}
 	assert.Equal(2, len(inputs[schema.AttributeTypeCmd].([]string)))
 
-	if _, ok := inputs[schema.AttributeTypeEntryPoint].([]string); !ok {
+	if _, ok := inputs[schema.AttributeTypeEntrypoint].([]string); !ok {
 		assert.Fail("attribute entry_point should be a list of strings")
 	}
-	assert.Equal(2, len(inputs[schema.AttributeTypeEntryPoint].([]string)))
+	assert.Equal(2, len(inputs[schema.AttributeTypeEntrypoint].([]string)))
 
 	if _, ok := inputs[schema.AttributeTypeEnv].(map[string]string); !ok {
 		assert.Fail("env block is not defined correctly")
@@ -128,10 +128,10 @@ func TestContainerStep(t *testing.T) {
 	}
 	assert.Equal(2, len(inputs[schema.AttributeTypeCmd].([]string)))
 
-	if _, ok := inputs[schema.AttributeTypeEntryPoint].([]string); !ok {
+	if _, ok := inputs[schema.AttributeTypeEntrypoint].([]string); !ok {
 		assert.Fail("attribute entrypoint should be a list of strings")
 	}
-	assert.Equal(3, len(inputs[schema.AttributeTypeEntryPoint].([]string)))
+	assert.Equal(3, len(inputs[schema.AttributeTypeEntrypoint].([]string)))
 
 	if _, ok := inputs[schema.AttributeTypeEnv].(map[string]string); !ok {
 		assert.Fail("env block is not defined correctly")
@@ -175,10 +175,10 @@ func TestContainerStep(t *testing.T) {
 	}
 	assert.Equal(2, len(inputs[schema.AttributeTypeCmd].([]string)))
 
-	if _, ok := inputs[schema.AttributeTypeEntryPoint].([]string); !ok {
+	if _, ok := inputs[schema.AttributeTypeEntrypoint].([]string); !ok {
 		assert.Fail("attribute entry_point should be a list of strings")
 	}
-	assert.Equal(2, len(inputs[schema.AttributeTypeEntryPoint].([]string)))
+	assert.Equal(2, len(inputs[schema.AttributeTypeEntrypoint].([]string)))
 
 	if _, ok := inputs[schema.AttributeTypeEnv].(map[string]string); !ok {
 		assert.Fail("env block is not defined correctly")
@@ -250,10 +250,10 @@ func TestContainerStep(t *testing.T) {
 	}
 	assert.Equal(2, len(inputs[schema.AttributeTypeCmd].([]string)))
 
-	if _, ok := inputs[schema.AttributeTypeEntryPoint].([]string); !ok {
+	if _, ok := inputs[schema.AttributeTypeEntrypoint].([]string); !ok {
 		assert.Fail("attribute entrypoint should be a list of strings")
 	}
-	assert.Equal(3, len(inputs[schema.AttributeTypeEntryPoint].([]string)))
+	assert.Equal(3, len(inputs[schema.AttributeTypeEntrypoint].([]string)))
 
 	if _, ok := inputs[schema.AttributeTypeEnv].(map[string]string); !ok {
 		assert.Fail("env block is not defined correctly")
