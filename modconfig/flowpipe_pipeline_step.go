@@ -1205,8 +1205,8 @@ func setField(v interface{}, fieldName string, value interface{}) error {
 	return nil
 }
 
-func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
-	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
 	}
@@ -1243,6 +1243,9 @@ func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, 
 	}
 
 	return hcl.Diagnostics{}
+}
+func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	return setStringSliceAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }
 
 func setStringAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
@@ -1334,6 +1337,56 @@ func setBoolAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.E
 func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	return setBoolAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }
+
+func setInt64AttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultReference)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	if val.Type() != cty.Number {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to number",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	tPtr, moreDiags := hclhelpers.CtyToInt64(val)
+	if moreDiags != nil && moreDiags.HasErrors() {
+		return moreDiags
+	}
+
+	var err error
+
+	if isPtr {
+		err = setField(p, fieldName, tPtr)
+	} else {
+		err = setField(p, fieldName, *tPtr)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
+// func setInt64Attribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+// 	return setInt64AttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
+// }
 
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
 	return dependsOnFromExpressionsWithResultControl(attr, evalContext, p, false)

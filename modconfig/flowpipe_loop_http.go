@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/iancoleman/strcase"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -127,13 +128,9 @@ func (l *LoopHttpStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 			}
-		case schema.AttributeTypeMethod:
-			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "Method", true, true)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-			}
-		case schema.AttributeTypeRequestBody:
-			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "RequestBody", true, true)
+		case schema.AttributeTypeMethod, schema.AttributeTypeRequestBody, schema.AttributeTypeCaCertPem:
+			fieldName := strcase.ToCamel(name)
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, fieldName, true, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 			}
@@ -160,11 +157,6 @@ func (l *LoopHttpStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *
 
 			l.RequestHeaders = &requestHeader
 
-		case schema.AttributeTypeCaCertPem:
-			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, "CaCertPem", true, true)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-			}
 		case schema.AttributeTypeInsecure:
 			stepDiags := setBoolAttributeWithResultReference(attr, evalContext, l, "Insecure", true, true)
 			if stepDiags.HasErrors() {

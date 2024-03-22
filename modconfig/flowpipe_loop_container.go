@@ -5,9 +5,13 @@ import (
 	"slices"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/iancoleman/strcase"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type LoopContainerStep struct {
@@ -28,12 +32,12 @@ type LoopContainerStep struct {
 	Workdir           *string            `json:"workdir,omitempty" hcl:"workdir,optional" cty:"workdir"`
 }
 
-func (s *LoopContainerStep) Equals(other LoopDefn) bool {
-	if s == nil && helpers.IsNil(other) {
+func (l *LoopContainerStep) Equals(other LoopDefn) bool {
+	if l == nil && helpers.IsNil(other) {
 		return true
 	}
 
-	if s == nil && !helpers.IsNil(other) || s != nil && helpers.IsNil(other) {
+	if l == nil && !helpers.IsNil(other) || l != nil && helpers.IsNil(other) {
 		return false
 	}
 
@@ -43,109 +47,168 @@ func (s *LoopContainerStep) Equals(other LoopDefn) bool {
 	}
 
 	// compare env using reflection
-	if reflect.DeepEqual(s.Env, otherLoopContainerStep.Env) {
+	if reflect.DeepEqual(l.Env, otherLoopContainerStep.Env) {
 		return false
 	}
 
-	if s.Cmd == nil && otherLoopContainerStep.Cmd != nil || s.Cmd != nil && otherLoopContainerStep.Cmd == nil {
+	if l.Cmd == nil && otherLoopContainerStep.Cmd != nil || l.Cmd != nil && otherLoopContainerStep.Cmd == nil {
 		return false
-	} else if s.Cmd != nil {
-		if slices.Compare(*s.Cmd, *otherLoopContainerStep.Cmd) != 0 {
+	} else if l.Cmd != nil {
+		if slices.Compare(*l.Cmd, *otherLoopContainerStep.Cmd) != 0 {
 			return false
 		}
 	}
 
-	if s.EntryPoint == nil && otherLoopContainerStep.EntryPoint != nil || s.EntryPoint != nil && otherLoopContainerStep.EntryPoint == nil {
+	if l.EntryPoint == nil && otherLoopContainerStep.EntryPoint != nil || l.EntryPoint != nil && otherLoopContainerStep.EntryPoint == nil {
 		return false
-	} else if s.EntryPoint != nil {
-		if slices.Compare(*s.EntryPoint, *otherLoopContainerStep.EntryPoint) != 0 {
+	} else if l.EntryPoint != nil {
+		if slices.Compare(*l.EntryPoint, *otherLoopContainerStep.EntryPoint) != 0 {
 			return false
 		}
 	}
 
-	if s.Env == nil && otherLoopContainerStep.Env != nil || s.Env != nil && otherLoopContainerStep.Env == nil {
+	if l.Env == nil && otherLoopContainerStep.Env != nil || l.Env != nil && otherLoopContainerStep.Env == nil {
 		return false
-	} else if s.Env != nil {
-		if !reflect.DeepEqual(*s.Env, *otherLoopContainerStep.Env) {
+	} else if l.Env != nil {
+		if !reflect.DeepEqual(*l.Env, *otherLoopContainerStep.Env) {
 			return false
 		}
 	}
 
-	return s.Until == otherLoopContainerStep.Until &&
-		utils.PtrEqual(s.Image, otherLoopContainerStep.Image) &&
-		utils.PtrEqual(s.Source, otherLoopContainerStep.Source) &&
-		utils.PtrEqual(s.CpuShares, otherLoopContainerStep.CpuShares) &&
-		utils.PtrEqual(s.Memory, otherLoopContainerStep.Memory) &&
-		utils.PtrEqual(s.MemoryReservation, otherLoopContainerStep.MemoryReservation) &&
-		utils.PtrEqual(s.MemorySwap, otherLoopContainerStep.MemorySwap) &&
-		utils.PtrEqual(s.MemorySwappiness, otherLoopContainerStep.MemorySwappiness) &&
-		utils.BoolPtrEqual(s.ReadOnly, otherLoopContainerStep.ReadOnly) &&
-		utils.PtrEqual(s.User, otherLoopContainerStep.User) &&
-		utils.PtrEqual(s.Workdir, otherLoopContainerStep.Workdir)
+	return l.Until == otherLoopContainerStep.Until &&
+		utils.PtrEqual(l.Image, otherLoopContainerStep.Image) &&
+		utils.PtrEqual(l.Source, otherLoopContainerStep.Source) &&
+		utils.PtrEqual(l.CpuShares, otherLoopContainerStep.CpuShares) &&
+		utils.PtrEqual(l.Memory, otherLoopContainerStep.Memory) &&
+		utils.PtrEqual(l.MemoryReservation, otherLoopContainerStep.MemoryReservation) &&
+		utils.PtrEqual(l.MemorySwap, otherLoopContainerStep.MemorySwap) &&
+		utils.PtrEqual(l.MemorySwappiness, otherLoopContainerStep.MemorySwappiness) &&
+		utils.BoolPtrEqual(l.ReadOnly, otherLoopContainerStep.ReadOnly) &&
+		utils.PtrEqual(l.User, otherLoopContainerStep.User) &&
+		utils.PtrEqual(l.Workdir, otherLoopContainerStep.Workdir)
 }
 
-func (s *LoopContainerStep) GetType() string {
+func (*LoopContainerStep) GetType() string {
 	return schema.BlockTypePipelineStepContainer
 }
 
-func (s *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+func (l *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 
-	if s.Cmd != nil {
-		input[schema.AttributeTypeCmd] = *s.Cmd
+	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeImage, l.Image)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.EntryPoint != nil {
-		input[schema.AttributeTypeEntryPoint] = *s.EntryPoint
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeSource, l.Source)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.Env != nil {
-		input[schema.AttributeTypeEnv] = *s.Env
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeCpuShares, l.CpuShares)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.Image != nil {
-		input[schema.AttributeTypeImage] = *s.Image
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeMemory, l.Memory)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.Source != nil {
-		input[schema.AttributeTypeSource] = *s.Source
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeMemoryReservation, l.MemoryReservation)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.CpuShares != nil {
-		input[schema.AttributeTypeCpuShares] = *s.CpuShares
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeMemorySwap, l.MemorySwap)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.Memory != nil {
-		input[schema.AttributeTypeMemory] = *s.Memory
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeMemorySwappiness, l.MemorySwappiness)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.MemoryReservation != nil {
-		input[schema.AttributeTypeMemoryReservation] = *s.MemoryReservation
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeUser, l.User)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.MemorySwap != nil {
-		input[schema.AttributeTypeMemorySwap] = *s.MemorySwap
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeWorkdir, l.Workdir)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("container", diags)
 	}
 
-	if s.MemorySwappiness != nil {
-		input[schema.AttributeTypeMemorySwappiness] = *s.MemorySwappiness
-	}
-
-	if s.ReadOnly != nil {
-		input[schema.AttributeTypeReadOnly] = *s.ReadOnly
-	}
-
-	if s.User != nil {
-		input[schema.AttributeTypeUser] = *s.User
-	}
-
-	if s.Workdir != nil {
-		input[schema.AttributeTypeWorkdir] = *s.Workdir
-	}
-
-	return input, nil
+	return result, nil
 }
 
-func (s *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
+func (l *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypeImage, schema.AttributeTypeSource, schema.AttributeTypeUser, schema.AttributeTypeWorkdir:
+			fieldName := strcase.ToCamel(name)
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, fieldName, true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeCmd:
+			stepDiags := setStringSliceAttributeWithResultReference(attr, evalContext, l, "Cmd", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeEnv:
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, l, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+			if val == cty.NilVal {
+				continue
+			}
+
+			env, err := hclhelpers.CtyToGoMapString(val)
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid env",
+					Detail:   "Invalid env in the step loop block",
+					Subject:  &attr.Range,
+				})
+				continue
+			}
+
+			l.Env = &env
+		case schema.AttributeTypeEntryPoint:
+			stepDiags := setStringSliceAttributeWithResultReference(attr, evalContext, l, "EntryPoint", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeCpuShares, schema.AttributeTypeMemory, schema.AttributeTypeMemoryReservation, schema.AttributeTypeMemorySwap, schema.AttributeTypeMemorySwappiness:
+			fieldName := strcase.ToCamel(name)
+			stepDiags := setInt64AttributeWithResultReference(attr, evalContext, l, fieldName, true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+		case schema.AttributeTypeReadOnly:
+			stepDiags := setBoolAttributeWithResultReference(attr, evalContext, l, "ReadOnly", true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+
+		case schema.AttributeTypeUntil:
+			// already handled in SetAttributes
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid attribute",
+				Detail:   "Invalid attribute '" + name + "' in the step loop block",
+				Subject:  &attr.Range,
+			})
+		}
+
+	}
 	return diags
 }
