@@ -1426,6 +1426,12 @@ func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext,
 }
 
 func findTryFunction(expr hcl.Expression) bool {
+
+	binaryOpExpr, ok := expr.(*hclsyntax.BinaryOpExpr)
+	if ok {
+		return findTryFunction(binaryOpExpr.LHS) || findTryFunction(binaryOpExpr.RHS)
+	}
+
 	funcExpr, ok := expr.(*hclsyntax.FunctionCallExpr)
 	if !ok {
 		return false

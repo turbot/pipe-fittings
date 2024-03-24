@@ -1612,6 +1612,27 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal([]string{"1", "2"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Entrypoint)
 	assert.Equal(int64(4), *step.GetLoopConfig().(*modconfig.LoopContainerStep).CpuShares)
 	assert.Equal(map[string]string{"bar": "baz"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Env)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*modconfig.LoopPipelineStep).Args.(map[string]interface{}))
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*modconfig.LoopPipelineStep).Args.(map[string]interface{}))
+
 }
 
 // In order for 'go test' to run this suite, we need to create

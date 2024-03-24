@@ -206,3 +206,81 @@ pipeline "container_4" {
         }        
     }
 }
+
+pipeline "pipeline" {
+
+    step "pipeline" "pipeline" {
+        pipeline = pipeline.nested
+
+        args = {
+            a = "foo_2"
+            c = 44
+        }
+
+        loop {
+            until = loop.index >= 2
+            args = {
+                a = "foo_10"
+                c = 44 + loop.index
+            }
+        }
+    }
+}
+
+pipeline "pipeline_2" {
+
+    step "pipeline" "pipeline" {
+        pipeline = pipeline.nested
+
+        args = {
+            a = "foo_2"
+            c = 44
+        }
+
+        loop {
+            until = loop.index >= 2
+            args = {
+                a = "foo_10"
+                c = 44
+            }
+        }
+    }
+}
+
+pipeline "pipeline_3" {
+
+    step "pipeline" "pipeline" {
+        pipeline = pipeline.nested
+
+        args = {
+            a = "foo_2"
+            c = 44
+        }
+
+        loop {
+            until = try(result.output.test, null) == null
+            args = {
+                a = "foo_10"
+                c = 44
+            }
+        }
+    }
+}
+
+pipeline "nested" {
+    param "a" {
+        default = "foo"
+    }
+
+    param "b" {
+        default = "bar"
+    }
+
+    param "c" {
+        default = 42
+    }
+
+    step "transform" "echo" {
+        value = "bar"
+    }
+}
