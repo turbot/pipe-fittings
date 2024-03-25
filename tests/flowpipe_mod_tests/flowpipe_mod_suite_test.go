@@ -1692,6 +1692,19 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
 
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.input"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("Shall we play a game 2?", *step.GetLoopConfig().(*modconfig.LoopInputStep).Prompt)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.input_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeNotifier])
+	assert.Equal("Shall we play a game 2?", *step.GetLoopConfig().(*modconfig.LoopInputStep).Prompt)
+
 	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]

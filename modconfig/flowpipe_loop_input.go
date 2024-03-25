@@ -4,7 +4,9 @@ import (
 	"slices"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/iancoleman/strcase"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -13,10 +15,7 @@ import (
 type LoopInputStep struct {
 	LoopStep
 
-	Notifier *cty.Value `json:"notifier" cty:"-" hcl:"-"`
-
-	// required to allow partial decoding
-	Remain hcl.Body `hcl:",remain" json:"-"`
+	Notifier *NotifierImpl `json:"notifier" cty:"-" hcl:"-"`
 
 	Prompt  *string   `json:"prompt" cty:"prompt" hcl:"prompt,optional"`
 	Cc      *[]string `json:"cc,omitempty" cty:"cc" hcl:"cc,optional"`
@@ -74,35 +73,103 @@ func (s *LoopInputStep) GetType() string {
 	return schema.BlockTypeInput
 }
 
-func (s *LoopInputStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
-	if s.Prompt != nil {
-		input[schema.AttributeTypePrompt] = *s.Prompt
+func (l *LoopInputStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypePrompt, l.Prompt)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("input", diags)
 	}
 
-	if s.Cc != nil {
-		input[schema.AttributeTypeCc] = *s.Cc
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeChannel, l.Channel)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("input", diags)
 	}
 
-	if s.Bcc != nil {
-		input[schema.AttributeTypeBcc] = *s.Bcc
+	result, diags = simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeSubject, l.Subject)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("input", diags)
 	}
 
-	if s.Channel != nil {
-		input[schema.AttributeTypeChannel] = *s.Channel
+	result, diags = stringSliceInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeCc, l.Cc)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("input", diags)
 	}
 
-	if s.Subject != nil {
-		input[schema.AttributeTypeSubject] = *s.Subject
+	result, diags = stringSliceInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeBcc, l.Bcc)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("input", diags)
 	}
 
-	if s.To != nil {
-		input[schema.AttributeTypeTo] = *s.To
+	result, diags = stringSliceInputFromAttribute(l.GetUnresolvedAttributes(), result, evalContext, schema.AttributeTypeTo, l.To)
+	if len(diags) > 0 {
+		return nil, error_helpers.BetterHclDiagsToError("input", diags)
 	}
 
-	return input, nil
+	if l.Notifier != nil {
+		input[schema.AttributeTypeNotifier] = *l.Notifier
+	} else if attr, ok := l.GetUnresolvedAttributes()[schema.AttributeTypeNotifier]; ok {
+		val, diags := attr.Value(evalContext)
+		if len(diags) > 0 {
+			return nil, error_helpers.BetterHclDiagsToError("input", diags)
+		}
+
+		if val != cty.NilVal {
+			ntfy, err := ctyValueToPipelineStepNotifierValueMap(val)
+			if err != nil {
+				return nil, err
+			}
+			input[schema.AttributeTypeNotifier] = ntfy
+		}
+	}
+
+	return result, nil
 }
 
-func (s *LoopInputStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
+func (l *LoopInputStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
+
+	for name, attr := range hclAttributes {
+		switch name {
+		case schema.AttributeTypePrompt, schema.AttributeTypeChannel, schema.AttributeTypeSubject:
+			fieldName := strcase.ToCamel(name)
+			stepDiags := setStringAttributeWithResultReference(attr, evalContext, l, fieldName, true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeCc, schema.AttributeTypeBcc, schema.AttributeTypeTo:
+			fieldName := strcase.ToCamel(name)
+			stepDiags := setStringSliceAttributeWithResultReference(attr, evalContext, l, fieldName, true, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+			}
+		case schema.AttributeTypeNotifier:
+			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, l, true)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
+
+			if val != cty.NilVal {
+				ntfy, err := ctyValueToPipelineStepNotifierValueMap(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute to notifier",
+						Detail:   err.Error(),
+						Subject:  &attr.Range,
+					})
+				}
+				l.Notifier = &ntfy
+			}
+		case schema.AttributeTypeUntil:
+			// already handled in SetAttributes
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid attribute",
+				Detail:   "Invalid attribute '" + name + "' in the step loop block",
+				Subject:  &attr.Range,
+			})
+		}
+	}
 	return diags
 }

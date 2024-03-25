@@ -15,7 +15,7 @@ pipeline "input_with_loop" {
 
         loop {
             until = loop.index > 2
-            notifier = notifier["notifier_{$loop.index}"]
+            notifier = notifier["notifier_${loop.index}"]
         }
     }
 }

@@ -429,6 +429,42 @@ pipeline "message_6" {
     }
 }
 
+pipeline "input" {
+
+    step "input" "input" {
+        notifier = notifier.default
+        prompt   = "Shall we play a game?"
+        type     = "select"
+
+        option "Tic Tac Toe" {}
+        option "Checkers" {}
+        
+        loop {
+            until = loop.index >= 2
+            prompt   = "Shall we play a game 2?"
+        }
+    }
+}
+
+pipeline "input_2" {
+
+    step "input" "input" {
+        notifier = notifier.default
+        prompt   = "Shall we play a game?"
+        type     = "select"
+
+        option "Tic Tac Toe" {}
+        option "Checkers" {}
+        
+        loop {
+            until = loop.index >= 2
+            notifier = notifier[result.fake]
+            prompt   = "Shall we play a game 2?"
+        }
+    }
+}
+
+
 pipeline "function" {
 
     step "function" "function" {
