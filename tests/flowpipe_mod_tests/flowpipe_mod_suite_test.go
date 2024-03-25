@@ -1691,6 +1691,25 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeBcc])
 	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal(map[string]string{"restrictedActions": "def", "foo": "bar"}, *step.GetLoopConfig().(*modconfig.LoopFunctionStep).Env)
+	assert.Equal(map[string]interface{}{"a": "c", "c": 44}, *step.GetLoopConfig().(*modconfig.LoopFunctionStep).Event)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function_4"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeEvent])
+	assert.Equal(map[string]string{"restrictedActions": "def", "foo": "bar"}, *step.GetLoopConfig().(*modconfig.LoopFunctionStep).Env)
 }
 
 // In order for 'go test' to run this suite, we need to create

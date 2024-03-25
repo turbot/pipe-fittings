@@ -428,3 +428,107 @@ pipeline "message_6" {
         }
     }
 }
+
+pipeline "function" {
+
+    step "function" "function" {
+        runtime = "nodejs:18"
+        handler = "index.handler"
+        source  = "./functions/validate-policy"
+        event = {
+            a = "b"
+            c = 42
+        }
+
+        env = {
+            "restrictedActions" = "abc"
+        }
+
+        loop {
+            until = loop.index >= 2
+        }
+    }
+}
+
+pipeline "function_2" {
+
+    step "function" "function" {
+        runtime = "nodejs:18"
+        handler = "index.handler"
+        source  = "./functions/validate-policy"
+        event = {
+            a = "b"
+            c = 42
+        }
+
+        env = {
+            "restrictedActions" = "abc"
+        }
+
+        loop {
+            until = loop.index >= 2
+            env = {
+                "restrictedActions" = "def"
+                "foo" = "bar"
+            }
+        }
+    }
+}
+
+pipeline "function_3" {
+
+    step "function" "function" {
+        runtime = "nodejs:18"
+        handler = "index.handler"
+        source  = "./functions/validate-policy"
+        event = {
+            a = "b"
+            c = 42
+        }
+
+        env = {
+            "restrictedActions" = "abc"
+        }
+
+        loop {
+            until = loop.index >= 2
+            env = {
+                "restrictedActions" = "def"
+                "foo" = "bar"
+            }
+            event = {
+                a = "c"
+                c = 44
+            }            
+        }
+    }
+}
+
+pipeline "function_4" {
+
+    step "function" "function" {
+        runtime = "nodejs:18"
+        handler = "index.handler"
+        source  = "./functions/validate-policy"
+        event = {
+            a = "b"
+            c = 42
+        }
+
+        env = {
+            "restrictedActions" = "abc"
+        }
+
+        loop {
+            until = loop.index >= 2
+            env = {
+                "restrictedActions" = "def"
+                "foo" = "bar"
+            }
+            event = {
+                a = "c"
+                c = loop.index
+            }            
+        }
+    }
+}

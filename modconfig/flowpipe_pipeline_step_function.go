@@ -14,8 +14,6 @@ import (
 type PipelineStepFunction struct {
 	PipelineStepBase
 
-	Function cty.Value `json:"-"`
-
 	Runtime string `json:"runtime" cty:"runtime"`
 	Source  string `json:"source" cty:"source"`
 	Handler string `json:"handler" cty:"handler"`

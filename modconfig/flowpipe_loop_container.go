@@ -47,7 +47,7 @@ func (l *LoopContainerStep) Equals(other LoopDefn) bool {
 	}
 
 	// compare env using reflection
-	if reflect.DeepEqual(l.Env, otherLoopContainerStep.Env) {
+	if !reflect.DeepEqual(l.Env, otherLoopContainerStep.Env) {
 		return false
 	}
 

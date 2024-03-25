@@ -63,6 +63,10 @@ func GetLoopDefn(stepType string, p *PipelineStepBase, hclRange *hcl.Range) Loop
 		return &LoopMessageStep{
 			LoopStep: loopStep,
 		}
+	case schema.BlockTypePipelineStepFunction:
+		return &LoopFunctionStep{
+			LoopStep: loopStep,
+		}
 	}
 
 	return nil

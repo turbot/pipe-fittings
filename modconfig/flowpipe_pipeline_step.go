@@ -1254,6 +1254,35 @@ func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression,
 	return results, hcl.Diagnostics{}
 }
 
+func mapInterfaceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *map[string]interface{}) (map[string]interface{}, hcl.Diagnostics) {
+	if fieldValue != nil {
+		results[attributeName] = *fieldValue
+	} else if unresolvedAttributes[attributeName] != nil {
+		attr := unresolvedAttributes[attributeName]
+		val, diags := attr.Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if val != cty.NilVal {
+			mapValues, err := hclhelpers.CtyToGoMapInterface(val)
+			if err != nil {
+				return nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + attributeName + " attribute to map",
+						Subject:  attr.Range().Ptr(),
+					},
+				}
+			}
+
+			results[attributeName] = mapValues
+		}
+	}
+
+	return results, hcl.Diagnostics{}
+}
+
 // setField sets the field of a struct pointed to by v to the given value.
 // v must be a pointer to a struct, fieldName must be the name of a field in the struct,
 // and value must be assignable to the field.
