@@ -1110,6 +1110,44 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseStepAttributes, name)
 }
 
+func interfaceSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]interface{}) (map[string]interface{}, hcl.Diagnostics) {
+	var tempValue *[]interface{}
+
+	unresolvedAttrib := unresolvedAttributes[attributeName]
+
+	if unresolvedAttrib == nil {
+		tempValue = fieldValue
+	} else {
+		var args cty.Value
+
+		diags := gohcl.DecodeExpression(unresolvedAttrib, evalContext, &args)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		var err error
+		interfaceSlice, err := hclhelpers.CtyToGoInterfaceSlice(args)
+		if err != nil {
+			return nil, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + attributeName + " attribute to interface slice",
+					Subject:  unresolvedAttrib.Range().Ptr(),
+				},
+			}
+		}
+		if interfaceSlice != nil {
+			tempValue = &interfaceSlice
+		}
+	}
+
+	if tempValue != nil {
+		results[attributeName] = *tempValue
+	}
+
+	return results, hcl.Diagnostics{}
+}
+
 func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]string) (map[string]interface{}, hcl.Diagnostics) {
 	var tempValue *[]string
 
@@ -1236,6 +1274,46 @@ func setField(v interface{}, fieldName string, value interface{}) error {
 
 	field.Set(fieldValue)
 	return nil
+}
+
+func setInterfaceSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	t, err := hclhelpers.CtyToGoInterfaceSlice(val)
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to interface slice",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	if isPtr {
+		err = setField(p, fieldName, &t)
+	} else {
+		err = setField(p, fieldName, t)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
 }
 
 func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {

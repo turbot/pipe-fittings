@@ -1633,6 +1633,18 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*modconfig.LoopPipelineStep).Args.(map[string]interface{}))
 
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.query"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+	assert.Equal([]interface{}{"bar"}, *step.GetLoopConfig().(*modconfig.LoopQueryStep).Args)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.query_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 }
 
 // In order for 'go test' to run this suite, we need to create

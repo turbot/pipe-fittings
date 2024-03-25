@@ -284,3 +284,41 @@ pipeline "nested" {
         value = "bar"
     }
 }
+
+pipeline "query" {
+
+    step "query" "query" {
+        sql      = "select * from aws_account"
+        database = "postgres://steampipe:@host.docker.internal:9193/steampipe"
+        args = [
+            "foo"
+        ]
+
+        loop {
+            until = loop.index >= 2
+            args = [
+                "bar"
+            ]
+        }
+    }
+}
+
+pipeline "query_2" {
+
+    step "query" "query" {
+        sql      = "select * from aws_account"
+        database = "postgres://steampipe:@host.docker.internal:9193/steampipe"
+        args = [
+            "foo"
+        ]
+
+        loop {
+            until = loop.index >= 2
+            args = [
+                "bar",
+                loop.index
+            ]
+        }
+    }
+}
+
