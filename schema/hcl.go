@@ -78,6 +78,7 @@ const (
 
 	// error block
 	AttributeTypeIgnore = "ignore"
+	AttributeTypeUntil  = "until"
 
 	// Common step attributes
 	AttributeTypeTitle       = "title"
@@ -182,7 +183,7 @@ const (
 	AttributeTypeUser              = "user"
 	AttributeTypeWorkdir           = "workdir"
 	AttributeTypeCmd               = "cmd"
-	AttributeTypeEntryPoint        = "entrypoint"
+	AttributeTypeEntrypoint        = "entrypoint"
 	AttributeTypeTimeout           = "timeout"
 	AttributeTypeMaxConcurrency    = "max_concurrency"
 	AttributeTypeCpuShares         = "cpu_shares"

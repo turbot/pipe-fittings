@@ -1525,6 +1525,174 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithThrow() {
 	assert.Nil(errorAndWarning.Error)
 }
 
+func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_loop"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_loop", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+}
+
+func (suite *FlowpipeModTestSuite) TestLoopVarious() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_loop_various"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_loop_various", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep"]
+	assert.NotNil(pipeline)
+	step := pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("10s", *step.GetLoopConfig().(*modconfig.LoopSleepStep).Duration)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_4"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.http"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("https://bar", *step.GetLoopConfig().(*modconfig.LoopHttpStep).URL)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.http_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUrl])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Cmd)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Cmd)
+	assert.Equal([]string{"1", "2"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Entrypoint)
+	assert.Equal(int64(4), *step.GetLoopConfig().(*modconfig.LoopContainerStep).CpuShares)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_4"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Cmd)
+	assert.Equal([]string{"1", "2"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Entrypoint)
+	assert.Equal(int64(4), *step.GetLoopConfig().(*modconfig.LoopContainerStep).CpuShares)
+	assert.Equal(map[string]string{"bar": "baz"}, *step.GetLoopConfig().(*modconfig.LoopContainerStep).Env)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*modconfig.LoopPipelineStep).Args.(map[string]interface{}))
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*modconfig.LoopPipelineStep).Args.(map[string]interface{}))
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.query"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+	assert.Equal([]interface{}{"bar"}, *step.GetLoopConfig().(*modconfig.LoopQueryStep).Args)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.query_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_2"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_4"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeBcc])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_5"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeBcc])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
+	assert.Equal("new", step.GetLoopConfig().(*modconfig.LoopMessageStep).Notifier.GetHclResourceImpl().FullName)
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_6"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeNotifier])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeBcc])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*modconfig.LoopMessageStep).Text)
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*modconfig.LoopMessageStep).To)
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {

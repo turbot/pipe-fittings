@@ -777,7 +777,7 @@ var PipelineStepContainerBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeEnv,
 		},
 		{
-			Name: schema.AttributeTypeEntryPoint,
+			Name: schema.AttributeTypeEntrypoint,
 		},
 		{
 			Name: schema.AttributeTypeCpuShares,
@@ -900,6 +900,9 @@ var PipelineStepInputBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeOption,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 
@@ -962,6 +965,9 @@ var PipelineStepMessageBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type: schema.BlockTypeThrow,
+		},
+		{
+			Type: schema.BlockTypeLoop,
 		},
 	},
 }

@@ -99,19 +99,19 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	}
 
 	// to
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeTo, p.To)
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeTo, &p.To)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// cc
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCc, p.Cc)
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCc, &p.Cc)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	// bcc
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCc, p.Bcc)
+	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCc, &p.Bcc)
 	if diags.HasErrors() {
 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
@@ -337,6 +337,13 @@ func ctyValueToPipelineStepNotifierValueMap(value cty.Value) (NotifierImpl, erro
 			return notifier, err
 		}
 		notifier.Notifies = append(notifier.Notifies, n)
+	}
+
+	if valueMap["full_name"] != cty.NilVal {
+		notifier.FullName = valueMap["full_name"].AsString()
+	}
+	if valueMap["short_name"] != cty.NilVal {
+		notifier.ShortName = valueMap["short_name"].AsString()
 	}
 
 	return notifier, nil

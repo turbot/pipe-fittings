@@ -2,6 +2,7 @@ package flowpipe_invalid_tests
 
 import (
 	"context"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -91,14 +92,19 @@ var tests = []testSetup{
 		containsError: "bad cron format. Specify valid intervals hourly, daily, weekly, monthly or valid cron expression:",
 	},
 	{
-		title:         "invalid loop - bad definition for echo step loop",
+		title:         "invalid loop - bad definition for transform step loop",
 		file:          "./pipelines/loop_invalid_transform.fp",
-		containsError: "An argument named \"baz\" is not expected here",
+		containsError: "Invalid attribute 'baz' in step loop block",
+	},
+	{
+		title:         "invalid loop - bad definition for sleep step loop",
+		file:          "./pipelines/loop_invalid_sleep.fp",
+		containsError: "Invalid attribute 'baz' in the step loop block",
 	},
 	{
 		title:         "invalid loop - no if",
 		file:          "./pipelines/loop_no_if.fp",
-		containsError: "The argument \"until\" is required, but no definition was found",
+		containsError: "The argument 'until' is required, but no definition was found",
 	},
 	{
 		title:         "retry - multiple retry blocks",
@@ -245,6 +251,9 @@ func TestSimpleInvalidResources(t *testing.T) {
 			}
 
 			assert.Contains(err.Error(), test.containsError)
+
+			// check that the error contains the filename
+			assert.Contains(err.Error(), path.Base(test.file))
 		})
 	}
 

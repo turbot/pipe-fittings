@@ -284,17 +284,17 @@ type PipelineStep interface {
 	SetPipelineName(string)
 	GetPipelineName() string
 	IsResolved() bool
-	GetUnresolvedAttributes() map[string]hcl.Expression
 	AddUnresolvedBody(string, hcl.Body)
-	GetUnresolvedBodies() map[string]hcl.Body
 	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
 	GetDependsOn() []string
 	GetCredentialDependsOn() []string
 	GetForEach() hcl.Expression
 	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	GetUnresolvedAttributes() map[string]hcl.Expression
 	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	GetErrorConfig(*hcl.EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
 	GetRetryConfig(*hcl.EvalContext, bool) (*RetryConfig, hcl.Diagnostics)
+	GetLoopConfig() LoopDefn
 	GetThrowConfig() []*ThrowConfig
 	SetOutputConfig(map[string]*PipelineOutput)
 	GetOutputConfig() map[string]*PipelineOutput
@@ -314,24 +314,26 @@ type PipelineStepBaseInterface interface {
 
 // A common base struct that all pipeline steps must embed
 type PipelineStepBase struct {
-	Title               *string                    `json:"title,omitempty"`
-	Description         *string                    `json:"description,omitempty"`
-	Name                string                     `json:"name"`
-	Type                string                     `json:"step_type"`
-	PipelineName        string                     `json:"pipeline_name,omitempty"`
-	Timeout             interface{}                `json:"timeout,omitempty"`
-	DependsOn           []string                   `json:"depends_on,omitempty"`
-	CredentialDependsOn []string                   `json:"credential_depends_on,omitempty"`
-	Resolved            bool                       `json:"resolved,omitempty"`
-	ErrorConfig         *ErrorConfig               `json:"-"`
-	RetryConfig         *RetryConfig               `json:"retry,omitempty"`
-	ThrowConfig         []*ThrowConfig             `json:"throw,omitempty"`
-	OutputConfig        map[string]*PipelineOutput `json:"-"`
-	FileName            string                     `json:"file_name"`
-	StartLineNumber     int                        `json:"start_line_number"`
-	EndLineNumber       int                        `json:"end_line_number"`
-	MaxConcurrency      *int                       `json:"max_concurrency,omitempty"`
-	Range               *hcl.Range                 `json:"range"`
+	Title               *string        `json:"title,omitempty"`
+	Description         *string        `json:"description,omitempty"`
+	Name                string         `json:"name"`
+	Type                string         `json:"step_type"`
+	PipelineName        string         `json:"pipeline_name,omitempty"`
+	Timeout             interface{}    `json:"timeout,omitempty"`
+	DependsOn           []string       `json:"depends_on,omitempty"`
+	CredentialDependsOn []string       `json:"credential_depends_on,omitempty"`
+	Resolved            bool           `json:"resolved,omitempty"`
+	ErrorConfig         *ErrorConfig   `json:"-"`
+	RetryConfig         *RetryConfig   `json:"retry,omitempty"`
+	ThrowConfig         []*ThrowConfig `json:"throw,omitempty"`
+	// TODO: we should serialise this, it's used in PipelineLoaded event to have a record the exact pipeline config loaded. There's no further need apart from record keeping, so it's OK to have it unserializeable for now.
+	LoopConfig      LoopDefn                   `json:"-"`
+	OutputConfig    map[string]*PipelineOutput `json:"-"`
+	FileName        string                     `json:"file_name"`
+	StartLineNumber int                        `json:"start_line_number"`
+	EndLineNumber   int                        `json:"end_line_number"`
+	MaxConcurrency  *int                       `json:"max_concurrency,omitempty"`
+	Range           *hcl.Range                 `json:"range"`
 
 	// This cant' be serialised
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
@@ -342,6 +344,10 @@ type PipelineStepBase struct {
 func (p *PipelineStepBase) Initialize() {
 	p.UnresolvedAttributes = make(map[string]hcl.Expression)
 	p.UnresolvedBodies = make(map[string]hcl.Body)
+}
+
+func (p *PipelineStepBase) GetLoopConfig() LoopDefn {
+	return p.LoopConfig
 }
 
 func (p *PipelineStepBase) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -496,7 +502,7 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 	if len(loopBlocks) == 1 {
 		loopBlock := loopBlocks[0]
 
-		loopDefn := GetLoopDefn(stepType)
+		loopDefn := GetLoopDefn(stepType, p, &loopBlock.DefRange)
 		if loopDefn == nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -504,23 +510,15 @@ func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.Ev
 				Subject:  &loopBlock.DefRange,
 			})
 		} else {
-			moreDiags := gohcl.DecodeBody(loopBlock.Body, evalContext, loopDefn)
-
-			// Loop should always be unresolved
+			attribs, moreDiags := loopBlock.Body.JustAttributes()
 			if len(moreDiags) > 0 {
-				moreDiags = p.HandleDecodeBodyDiags(moreDiags, schema.BlockTypeLoop, loopBlock.Body)
+				diags = append(diags, moreDiags...)
+			} else {
+				moreDiags := loopDefn.SetAttributes(attribs, evalContext)
 				if len(moreDiags) > 0 {
 					diags = append(diags, moreDiags...)
 				}
-			} else {
-				// still need to add the loop to "unresolved" body even if it's fully resolved. Consider this scenario:
-				//     loop {
-				// 			until = try(result.response_body.next, null) == null
-				// 			url   = try(result.response_body.next, "")
-				//		}
-				//
-				// The above fragment will not result in diagnostics error.
-				p.AddUnresolvedBody(schema.BlockTypeLoop, loopBlock.Body)
+				p.LoopConfig = loopDefn
 			}
 		}
 	}
@@ -607,10 +605,6 @@ func (p *PipelineStepBase) AddUnresolvedBody(name string, body hcl.Body) {
 	p.UnresolvedBodies[name] = body
 }
 
-func (p *PipelineStepBase) GetUnresolvedBodies() map[string]hcl.Body {
-	return p.UnresolvedBodies
-}
-
 func (p *PipelineStepBase) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
@@ -692,6 +686,13 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		return false
 	}
 	if p.ForEach != nil && other.ForEach != nil && !hclhelpers.ExpressionsEqual(p.ForEach, other.ForEach) {
+		return false
+	}
+
+	if (p.LoopConfig == nil && other.LoopConfig != nil) || (p.LoopConfig != nil && other.LoopConfig == nil) {
+		return false
+	}
+	if p.LoopConfig != nil && !p.LoopConfig.Equals(other.LoopConfig) {
 		return false
 	}
 
@@ -1013,6 +1014,7 @@ func (p *PipelineStepBase) ValidateBaseAttributes() hcl.Diagnostics {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Value of the attribute '" + schema.AttributeTypeTimeout + "' must be a string or a whole number: " + p.GetFullyQualifiedName(),
+				Subject:  p.Range,
 			})
 		}
 	}
@@ -1115,8 +1117,8 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseStepAttributes, name)
 }
 
-func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue []string) (map[string]interface{}, hcl.Diagnostics) {
-	var tempValue []string
+func interfaceSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]interface{}) (map[string]interface{}, hcl.Diagnostics) {
+	var tempValue *[]interface{}
 
 	unresolvedAttrib := unresolvedAttributes[attributeName]
 
@@ -1131,7 +1133,45 @@ func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expressio
 		}
 
 		var err error
-		tempValue, err = hclhelpers.CtyToGoStringSlice(args, args.Type())
+		interfaceSlice, err := hclhelpers.CtyToGoInterfaceSlice(args)
+		if err != nil {
+			return nil, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse " + attributeName + " attribute to interface slice",
+					Subject:  unresolvedAttrib.Range().Ptr(),
+				},
+			}
+		}
+		if interfaceSlice != nil {
+			tempValue = &interfaceSlice
+		}
+	}
+
+	if tempValue != nil {
+		results[attributeName] = *tempValue
+	}
+
+	return results, hcl.Diagnostics{}
+}
+
+func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]string) (map[string]interface{}, hcl.Diagnostics) {
+	var tempValue *[]string
+
+	unresolvedAttrib := unresolvedAttributes[attributeName]
+
+	if unresolvedAttrib == nil {
+		tempValue = fieldValue
+	} else {
+		var args cty.Value
+
+		diags := gohcl.DecodeExpression(unresolvedAttrib, evalContext, &args)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+
+		var err error
+		stringSlice, err := hclhelpers.CtyToGoStringSlice(args, args.Type())
 		if err != nil {
 			return nil, hcl.Diagnostics{
 				&hcl.Diagnostic{
@@ -1141,10 +1181,13 @@ func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expressio
 				},
 			}
 		}
+		if stringSlice != nil {
+			tempValue = &stringSlice
+		}
 	}
 
 	if tempValue != nil {
-		results[attributeName] = tempValue
+		results[attributeName] = *tempValue
 	}
 
 	return results, hcl.Diagnostics{}
@@ -1182,6 +1225,35 @@ func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Exp
 	return results, hcl.Diagnostics{}
 }
 
+func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *map[string]string) (map[string]interface{}, hcl.Diagnostics) {
+	if fieldValue != nil {
+		results[attributeName] = *fieldValue
+	} else if unresolvedAttributes[attributeName] != nil {
+		attr := unresolvedAttributes[attributeName]
+		val, diags := attr.Value(evalContext)
+		if len(diags) > 0 {
+			return nil, diags
+		}
+
+		if val != cty.NilVal {
+			mapValues, err := hclhelpers.CtyToGoMapInterface(val)
+			if err != nil {
+				return nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + attributeName + " attribute to map",
+						Subject:  attr.Range().Ptr(),
+					},
+				}
+			}
+
+			results[attributeName] = mapValues
+		}
+	}
+
+	return results, hcl.Diagnostics{}
+}
+
 // setField sets the field of a struct pointed to by v to the given value.
 // v must be a pointer to a struct, fieldName must be the name of a field in the struct,
 // and value must be assignable to the field.
@@ -1211,8 +1283,48 @@ func setField(v interface{}, fieldName string, value interface{}) error {
 	return nil
 }
 
-func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
-	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+func setInterfaceSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	t, err := hclhelpers.CtyToGoInterfaceSlice(val)
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to interface slice",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	if isPtr {
+		err = setField(p, fieldName, &t)
+	} else {
+		err = setField(p, fieldName, t)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
+func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
 	}
@@ -1250,9 +1362,12 @@ func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, 
 
 	return hcl.Diagnostics{}
 }
+func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	return setStringSliceAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
+}
 
-func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
-	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+func setStringAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
 	}
@@ -1291,8 +1406,12 @@ func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p Pip
 	return hcl.Diagnostics{}
 }
 
-func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
-	val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	return setStringAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
+}
+
+func setBoolAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
 	}
@@ -1333,12 +1452,71 @@ func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p Pipel
 
 	return hcl.Diagnostics{}
 }
+func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+	return setBoolAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
+}
+
+func setInt64AttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
+	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultReference)
+	if stepDiags.HasErrors() {
+		return stepDiags
+	}
+
+	if val == cty.NilVal {
+		return hcl.Diagnostics{}
+	}
+
+	if val.Type() != cty.Number {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to parse " + attr.Name + " attribute to number",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	tPtr, moreDiags := hclhelpers.CtyToInt64(val)
+	if moreDiags != nil && moreDiags.HasErrors() {
+		return moreDiags
+	}
+
+	var err error
+
+	if isPtr {
+		err = setField(p, fieldName, tPtr)
+	} else {
+		err = setField(p, fieldName, *tPtr)
+	}
+
+	if err != nil {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unable to set " + attr.Name + " attribute to struct",
+				Subject:  &attr.Range,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
+// func setInt64Attribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+// 	return setInt64AttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
+// }
 
 func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
 	return dependsOnFromExpressionsWithResultControl(attr, evalContext, p, false)
 }
 
 func findTryFunction(expr hcl.Expression) bool {
+
+	binaryOpExpr, ok := expr.(*hclsyntax.BinaryOpExpr)
+	if ok {
+		return findTryFunction(binaryOpExpr.LHS) || findTryFunction(binaryOpExpr.RHS)
+	}
+
 	funcExpr, ok := expr.(*hclsyntax.FunctionCallExpr)
 	if !ok {
 		return false
