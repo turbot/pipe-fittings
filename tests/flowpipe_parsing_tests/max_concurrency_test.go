@@ -21,8 +21,8 @@ func TestMaxConcurrency(t *testing.T) {
 
 	pipeline := pipelines["local.pipeline.step_with_max_concurrency"]
 	assert.NotNil(pipeline)
-	assert.Equal(15, *pipeline.Steps[0].GetMaxConcurrency(), "max concurrency not set")
-	assert.Nil(pipeline.Steps[1].GetMaxConcurrency())
+	assert.Equal(15, *pipeline.Steps[0].GetMaxConcurrency(nil), "max concurrency not set")
+	assert.Nil(pipeline.Steps[1].GetMaxConcurrency(nil))
 
 	pipeline = pipelines["local.pipeline.pipeline_with_max_concurrency"]
 	assert.NotNil(pipeline)

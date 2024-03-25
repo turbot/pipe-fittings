@@ -303,7 +303,7 @@ type PipelineStep interface {
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 	SetRange(*hcl.Range)
 	GetRange() *hcl.Range
-	GetMaxConcurrency() *int
+	GetMaxConcurrency(*hcl.EvalContext) *int
 }
 
 type PipelineStepBaseInterface interface {
@@ -865,7 +865,31 @@ func decodeDependsOn(attr *hcl.Attribute) ([]hcl.Traversal, hcl.Diagnostics) {
 	return ret, diags
 }
 
-func (p *PipelineStepBase) GetMaxConcurrency() *int {
+func (p *PipelineStepBase) GetMaxConcurrency(evalContext *hcl.EvalContext) *int {
+	if p.MaxConcurrency != nil {
+		return p.MaxConcurrency
+	} else if p.UnresolvedAttributes[schema.AttributeTypeMaxConcurrency] != nil {
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeMaxConcurrency].Value(evalContext)
+		if len(diags) > 0 {
+			return nil
+		}
+
+		if val == cty.NilVal {
+			return nil
+		}
+
+		maxConcurrency, err := hclhelpers.CtyToGo(val)
+		if err != nil {
+			return nil
+		}
+
+		maxConcurrencyInt, ok := maxConcurrency.(int)
+		if !ok {
+			return nil
+		}
+
+		return &maxConcurrencyInt
+	}
 	return p.MaxConcurrency
 }
 
@@ -937,13 +961,32 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalC
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeMaxConcurrency]; exists {
-		maxConcurrency, moreDiags := hclhelpers.AttributeToInt(attr, nil, false)
-		if moreDiags != nil && moreDiags.HasErrors() {
-			diags = append(diags, moreDiags...)
-		} else {
-			mcInt := int(*maxConcurrency)
-			p.MaxConcurrency = &mcInt
+		val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+		if stepDiags.HasErrors() {
+			diags = append(diags, stepDiags...)
+		} else if val != cty.NilVal {
+			maxConcurrency, err := hclhelpers.CtyToGo(val)
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unable to parse '" + schema.AttributeTypeMaxConcurrency + "' attribute to interface",
+					Subject:  &attr.Range,
+				})
+			} else {
+				maxConcurrencyInt, ok := maxConcurrency.(int)
+				if !ok {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Value of the attribute '" + schema.AttributeTypeMaxConcurrency + "' must be a whole number: " + p.GetFullyQualifiedName(),
+						Subject:  &attr.Range,
+					})
+				} else {
+
+					p.MaxConcurrency = &maxConcurrencyInt
+				}
+			}
 		}
+
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeTimeout]; exists {
