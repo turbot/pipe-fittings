@@ -966,6 +966,9 @@ var PipelineStepMessageBlockSchema = &hcl.BodySchema{
 		{
 			Type: schema.BlockTypeThrow,
 		},
+		{
+			Type: schema.BlockTypeLoop,
+		},
 	},
 }
 

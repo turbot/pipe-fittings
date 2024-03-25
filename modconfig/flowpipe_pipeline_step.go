@@ -689,6 +689,13 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		return false
 	}
 
+	if (p.LoopConfig == nil && other.LoopConfig != nil) || (p.LoopConfig != nil && other.LoopConfig == nil) {
+		return false
+	}
+	if p.LoopConfig != nil && !p.LoopConfig.Equals(other.LoopConfig) {
+		return false
+	}
+
 	return p.Name == other.Name &&
 		p.Type == other.Type &&
 		p.PipelineName == other.PipelineName &&

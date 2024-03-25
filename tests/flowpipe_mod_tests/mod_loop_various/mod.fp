@@ -322,3 +322,109 @@ pipeline "query_2" {
     }
 }
 
+pipeline "message" {
+
+    step "message" "message" {
+        notifier = notifier.default
+        channel  = "#ops"
+        to       = ["ops@bluth.com"]
+        subject  = "Sample message"
+        text     = "I'm a sample message."
+
+        loop {
+            until = loop.index >= 2
+            text = "I'm a sample message two"
+        }
+    }
+}
+
+pipeline "message_2" {
+
+    step "message" "message" {
+        notifier = notifier.default
+        channel  = "#ops"
+        to       = ["ops@bluth.com"]
+        subject  = "Sample message"
+        text     = "I'm a sample message."
+
+        loop {
+            until = loop.index >= 2
+            text = "I'm a sample message two"
+            to = ["a", "b", "c"]
+        }
+    }
+}
+
+pipeline "message_3" {
+
+    step "message" "message" {
+        notifier = notifier.default
+        channel  = "#ops"
+        to       = ["ops@bluth.com"]
+        subject  = "Sample message"
+        text     = "I'm a sample message."
+
+        loop {
+            until = loop.index >= 2
+            text = "I'm a sample message two"
+            to = ["a", "b", "c"]
+            bcc = ["c", result.fake]
+        }
+    }
+}
+
+pipeline "message_4" {
+
+    step "message" "message" {
+        notifier = notifier.default
+        channel  = "#ops"
+        to       = ["ops@bluth.com"]
+        subject  = "Sample message"
+        text     = "I'm a sample message."
+
+        loop {
+            until = loop.index >= 2
+            text = "I'm a sample message two"
+            to = ["a", "b", "c"]
+            bcc = ["c", result.fake]
+        }
+    }
+}
+
+pipeline "message_5" {
+
+    step "message" "message" {
+        notifier = notifier.default
+        channel  = "#ops"
+        to       = ["ops@bluth.com"]
+        subject  = "Sample message"
+        text     = "I'm a sample message."
+
+        loop {
+            until = loop.index >= 2
+            notifier = notifier.new
+            text = "I'm a sample message two"
+            to = ["a", "b", "c"]
+            bcc = ["c", result.fake]
+        }
+    }
+}
+
+pipeline "message_6" {
+
+    step "message" "message" {
+        notifier = notifier.default
+        channel  = "#ops"
+        to       = ["ops@bluth.com"]
+        subject  = "Sample message"
+        text     = "I'm a sample message."
+
+        loop {
+            until = loop.index >= 2
+            notifier = notifier[result.fake]
+            text = "I'm a sample message two"
+            to = ["a", "b", "c"]
+            bcc = ["c", result.fake]
+        }
+    }
+}

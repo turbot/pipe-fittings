@@ -157,7 +157,7 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute to InputNotifier",
+						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute to notifier",
 						Detail:   err.Error(),
 						Subject:  &attr.Range,
 					})
