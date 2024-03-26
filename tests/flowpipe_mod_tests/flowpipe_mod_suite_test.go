@@ -1424,6 +1424,34 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	assert.Equal("channel override", *messageStep.Channel)
 	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"foo", "baz"}, messageStep.Cc))
 	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"bar"}, messageStep.Bcc))
+
+	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_throw"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	messageStepInterface = pipeline.Steps[0]
+	if messageStepInterface == nil {
+		assert.Fail("message step not found")
+		return
+	}
+
+	assert.Equal(1, len(messageStepInterface.GetThrowConfig()))
+
+	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_error"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	messageStepInterface = pipeline.Steps[0]
+	if messageStepInterface == nil {
+		assert.Fail("message step not found")
+		return
+	}
+
+	assert.NotNil(messageStepInterface.GetErrorConfig(nil, false))
 }
 
 func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {

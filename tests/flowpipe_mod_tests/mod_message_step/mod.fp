@@ -31,3 +31,37 @@ pipeline "message_step_with_overrides" {
         value = "Hello World!"
     }
 }
+
+pipeline "message_step_with_throw" {
+
+    step "message" "hello" {
+        notifier = notifier.default
+        text = "Hello World"
+
+        throw {
+            if      = result.text == "Hello World"
+            message = "Message is Hello World"
+        }
+    }
+    
+    output "val" {
+        value = "Hello World!"
+    }
+}
+
+
+pipeline "message_step_with_error" {
+
+    step "message" "hello" {
+        notifier = notifier.default
+        text = "Hello World"
+
+        error {
+            ignore = true
+        }
+    }
+    
+    output "val" {
+        value = "Hello World!"
+    }
+}
