@@ -2,6 +2,14 @@
 
 Shared Pipes Component
 
+## v1.0.3 [tbd]
+
+_Bug fixes_
+
+* Enable `loop` block for `container`, `function`, `message` and `input` steps.
+* Allow using HCL expression for `max_currency` attribute.
+* `throw`, `error` and `retry` block now works for `input` step.
+
 ## v1.0.2 [2023-03-18]
 
 _Bug fixes_
