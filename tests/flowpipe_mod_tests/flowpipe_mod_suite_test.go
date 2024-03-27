@@ -1562,6 +1562,17 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
 	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_loop", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.input_with_loop_2"]
+
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	step := pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeNotifier])
 }
 
 func (suite *FlowpipeModTestSuite) TestLoopVarious() {

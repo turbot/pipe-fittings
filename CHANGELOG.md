@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.0.4 [tbd]
+
+_Bug fixes_
+
+* Fixed misleading error messsage when parsing step dependencies.
+
 ## v1.0.3 [2023-03-26]
 
 _Bug fixes_

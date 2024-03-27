@@ -1695,6 +1695,7 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		return cty.NilVal, hcl.Diagnostics{}
 	}
 
+	leftOverDiags := hcl.Diagnostics{}
 	// resolve it first if we can
 	val, stepDiags := expr.Value(evalContext)
 	if stepDiags != nil && stepDiags.HasErrors() {
@@ -1722,9 +1723,13 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 					// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
 					resolvedDiags++
 				} else {
-					return cty.NilVal, stepDiags
+					leftOverDiags = append(leftOverDiags, e)
 				}
 			}
+		}
+
+		if len(leftOverDiags) > 0 {
+			return cty.NilVal, leftOverDiags
 		}
 
 		// check if all diags have been resolved
