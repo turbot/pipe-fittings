@@ -206,7 +206,7 @@ func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, eval
 				p.Cmd = cmds
 			}
 		case schema.AttributeTypeEnv:
-			val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, true)
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
