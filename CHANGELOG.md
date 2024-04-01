@@ -2,13 +2,13 @@
 
 Shared Pipes Component
 
-## v1.0.4 [tbd]
+## v1.0.4 [2024-04-01]
 
 _Bug fixes_
 
 * Fixed misleading error messsage when parsing step dependencies.
 
-## v1.0.3 [2023-03-26]
+## v1.0.3 [2024-03-26]
 
 _Bug fixes_
 
@@ -16,13 +16,13 @@ _Bug fixes_
 * Allow using HCL expression for `max_currency` attribute.
 * `throw`, `error` and `retry` block now works for `input` step.
 
-## v1.0.2 [2023-03-18]
+## v1.0.2 [2024-03-18]
 
 _Bug fixes_
 
 * Add resource metadata after loading mod definition. ([#372](https://github.com/turbot/pipe-fittings/issues/372)).
 
-## v1.0.1 [2023-03-15]
+## v1.0.1 [2024-03-15]
 
 _Bug fixes_
 
@@ -30,7 +30,7 @@ _Bug fixes_
 * HCL `try()` function should be evaluated at runtime rather than parse time.
 * Add filename and line number information in step validation error messages.
 
-## v1.0.0 [2023-03-14]
+## v1.0.0 [2024-03-14]
 
 _What's new?_
 
