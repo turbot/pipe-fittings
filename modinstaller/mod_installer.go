@@ -7,10 +7,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
-	gh "github.com/google/go-github/v61/github"
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/app_specific"
@@ -516,7 +517,7 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 			i.installData.onModInstalled(dependency, modDef, parent)
 		}
 	}()
-	// if the target path exists, use the exiting file
+	// if the target path exists, use the existing file
 	// if it does not exist (the usual case), install it
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		slog.Debug("installing", "dependency", dependencyPath, "in", destPath)
@@ -547,15 +548,24 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath string) error {
 	// get the mod from git = first try https
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
-	slog.Debug(">>> cloning", gitUrl, dependency.GitReference)
+	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.GitReference)
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
+
+	// if the token is an app token, we must spawn a clone shell command
+	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
+		return installWithBearerToken(gitUrl, installPath, gitHubToken, dependency)
+	}
+
+	// otherwise use go-got to clone
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,
 		ReferenceName: dependency.GitReference,
 		Depth:         1,
 		SingleBranch:  true,
-		Auth: GetAuthForGithubToken(gitHubToken),
+		Auth: &http.BasicAuth{
+			Username: gitHubToken,
+		},
 	}
 
 	_, err := git.PlainClone(installPath,
