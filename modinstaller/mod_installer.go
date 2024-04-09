@@ -551,7 +551,7 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
 	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.GitReference)
 
-	gitHubToken := os.Getenv("GITHUB_TOKEN")
+	gitHubToken := getGitToken()
 
 	// if the token is an app token, we must spawn a clone shell command
 	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {

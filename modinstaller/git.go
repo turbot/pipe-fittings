@@ -1,6 +1,7 @@
 package modinstaller
 
 import (
+	"github.com/turbot/pipe-fittings/app_specific"
 	"log/slog"
 	"os"
 	"sort"
@@ -55,7 +56,7 @@ func transformToGitURL(input string, urlMode GitUrlMode) string {
 }
 
 func getTags(repo string) ([]string, error) {
-	gitHubToken := os.Getenv("GITHUB_TOKEN")
+	gitHubToken := getGitToken()
 
 	// if authentication token is an app token, we need to use the GitHub API to list
 	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
@@ -93,6 +94,14 @@ func getTags(repo string) ([]string, error) {
 	}
 
 	return tags, nil
+}
+
+func getGitToken() string {
+	if val, isSet := os.LookupEnv(app_specific.EnvGitToken); isSet {
+		return val
+	}
+	// fallback to GITHUB_TOKEN
+	return os.Getenv("GITHUB_TOKEN")
 }
 
 func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Collection, error) {
