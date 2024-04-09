@@ -9,7 +9,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
-	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/turbot/pipe-fittings/perr"
 )
@@ -73,7 +73,7 @@ func getTags(repo string) ([]string, error) {
 	var listOption git.ListOptions
 	if gitHubToken != "" {
 		listOption = git.ListOptions{
-			Auth: &githttp.BasicAuth{
+			Auth: &http.BasicAuth{
 				Username: gitHubToken,
 			},
 		}
