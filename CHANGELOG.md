@@ -2,11 +2,12 @@
 
 Shared Pipes Component
 
-## v1.1.0 [tbd]
+## v1.1.0 [2024-04-09]
 
 _What's new?_
 
 * Support installing private mods using a github app token. ([#381](https://github.com/turbot/pipe-fittings/issues/381)).
+* Update mod installation to use app-specific git token env vars - POWERPIPE_GIT_TOKEN and FLOWPIPE_GIT_TOKEN. ([#382](https://github.com/turbot/pipe-fittings/issues/382)).
 
 ## v1.0.4 [2024-04-01]
 
