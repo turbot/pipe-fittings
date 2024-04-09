@@ -1,15 +1,19 @@
 package modinstaller
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	githttp "github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"github.com/turbot/pipe-fittings/perr"
 )
 
 type GitUrlMode int
@@ -53,15 +57,28 @@ func transformToGitURL(input string, urlMode GitUrlMode) string {
 }
 
 func getTags(repo string) ([]string, error) {
+	gitHubToken := os.Getenv("GITHUB_TOKEN")
+
+	// if authentication token is an app token, we need to use the GitHub API to list
+	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
+		return getTagsUsingGithubAPI(repo, gitHubToken)
+	}
+
+	// ok so basic auth or no auth
+
 	// Create the remote with repository URL
 	rem := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
 		Name: "origin",
 		URLs: []string{repo},
 	})
 
-	gitHubToken := os.Getenv("GITHUB_TOKEN")
-	var listOption = git.ListOptions{
-		Auth: GetAuthForGithubToken(gitHubToken),
+	var listOption git.ListOptions
+	if gitHubToken != "" {
+		listOption = git.ListOptions{
+			Auth: &githttp.BasicAuth{
+				Username: gitHubToken,
+			},
+		}
 	}
 	// load remote references
 	refs, err := rem.List(&listOption)
@@ -123,4 +140,36 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Colle
 	// sort the versions in REVERSE order
 	sort.Sort(sort.Reverse(versions))
 	return versions, nil
+}
+
+func getOwnerAndOrgFromGitUrl(modPath string) (string, string, error) {
+	// Split the repo into owner and repo name
+	split := strings.Split(modPath, "/")
+	if len(split) < 2 {
+		return "", "", perr.BadRequestWithMessage("invalid mod path")
+	}
+	// name is last element
+	name := split[len(split)-1]
+	// owner is second last element
+	owner := split[len(split)-2]
+	return owner, name, nil
+}
+
+func installWithBearerToken(url string, installPath string, token string, dependency *ResolvedModRef) error {
+	// get owner and repo name
+	owner, name, err := getOwnerAndOrgFromGitUrl(url)
+	if err != nil {
+		return err
+	}
+	// get the ref name
+	refName := getShortRefName(dependency.GitReference.String())
+	// prepare the Git command with extra headers for authentication
+	cmd := exec.Command("git", "clone", fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, name), installPath, "--branch", refName, "--depth", "1")
+	// run it
+	return cmd.Run()
+}
+
+// return the last '/' separated part of the ref name
+func getShortRefName(refName string) string {
+	return refName[strings.LastIndex(refName, "/")+1:]
 }
