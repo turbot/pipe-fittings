@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
@@ -516,7 +518,7 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 			i.installData.onModInstalled(dependency, modDef, parent)
 		}
 	}()
-	// if the target path exists, use the exiting file
+	// if the target path exists, use the existing file
 	// if it does not exist (the usual case), install it
 	if _, err := os.Stat(destPath); os.IsNotExist(err) {
 		slog.Debug("installing", "dependency", dependencyPath, "in", destPath)
@@ -547,20 +549,24 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath string) error {
 	// get the mod from git = first try https
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
-	slog.Debug(">>> cloning", gitUrl, dependency.GitReference)
+	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.GitReference)
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
+
+	// if the token is an app token, we must spawn a clone shell command
+	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
+		return i.installWithBearerToken(gitUrl, installPath, gitHubToken, dependency)
+	}
+
+	// otherwise use go-got to clone
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,
 		ReferenceName: dependency.GitReference,
 		Depth:         1,
 		SingleBranch:  true,
-	}
-
-	if gitHubToken != "" {
-		cloneOptions.Auth = &http.BasicAuth{
+		Auth: &http.BasicAuth{
 			Username: gitHubToken,
-		}
+		},
 	}
 
 	_, err := git.PlainClone(installPath,
@@ -584,6 +590,20 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	}
 	// verify the cloned repo contains a valid modfile
 	return i.verifyModFile(dependency, installPath)
+}
+
+func (i *ModInstaller) installWithBearerToken(url string, installPath string, token string, dependency *ResolvedModRef) error {
+	// get owner and repo name
+	owner, name, err := getOwnerAndOrgFromGitUrl(url)
+	if err != nil {
+		return err
+	}
+	// get the ref name
+	refName := getShortRefName(dependency.GitReference.String())
+	// prepare the Git command with extra headers for authentication
+	cmd := exec.Command("git", "clone", fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, name), installPath, "--branch", refName, "--depth", "1") //nolint:gosec // we trust all inputs
+	// run it
+	return cmd.Run()
 }
 
 // build the path of the temp location to copy this depednency to
