@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -554,7 +555,7 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 
 	// if the token is an app token, we must spawn a clone shell command
 	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
-		return installWithBearerToken(gitUrl, installPath, gitHubToken, dependency)
+		return i.installWithBearerToken(gitUrl, installPath, gitHubToken, dependency)
 	}
 
 	// otherwise use go-got to clone
@@ -589,6 +590,20 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	}
 	// verify the cloned repo contains a valid modfile
 	return i.verifyModFile(dependency, installPath)
+}
+
+func (i *ModInstaller) installWithBearerToken(url string, installPath string, token string, dependency *ResolvedModRef) error {
+	// get owner and repo name
+	owner, name, err := getOwnerAndOrgFromGitUrl(url)
+	if err != nil {
+		return err
+	}
+	// get the ref name
+	refName := getShortRefName(dependency.GitReference.String())
+	// prepare the Git command with extra headers for authentication
+	cmd := exec.Command("git", "clone", fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, name), installPath, "--branch", refName, "--depth", "1") //nolint:gosec // we trust all inputs
+	// run it
+	return cmd.Run()
 }
 
 // build the path of the temp location to copy this depednency to

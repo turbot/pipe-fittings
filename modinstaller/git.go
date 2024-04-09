@@ -1,10 +1,8 @@
 package modinstaller
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"sort"
 	"strings"
 
@@ -153,20 +151,6 @@ func getOwnerAndOrgFromGitUrl(modPath string) (string, string, error) {
 	// owner is second last element
 	owner := split[len(split)-2]
 	return owner, name, nil
-}
-
-func installWithBearerToken(url string, installPath string, token string, dependency *ResolvedModRef) error {
-	// get owner and repo name
-	owner, name, err := getOwnerAndOrgFromGitUrl(url)
-	if err != nil {
-		return err
-	}
-	// get the ref name
-	refName := getShortRefName(dependency.GitReference.String())
-	// prepare the Git command with extra headers for authentication
-	cmd := exec.Command("git", "clone", fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, name), installPath, "--branch", refName, "--depth", "1")
-	// run it
-	return cmd.Run()
 }
 
 // return the last '/' separated part of the ref name
