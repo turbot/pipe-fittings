@@ -259,14 +259,14 @@ func sanitiseVariableNames(src []byte) ([]byte, map[string]string) {
 
 	for i, line := range lines {
 
-		r := regexp.MustCompile(`^ ?(([a-z0-9\-_]+)\.([a-z0-9\-_]+)) ?=`)
+		r := regexp.MustCompile(`^ *(([a-z0-9\-_]+)\.([a-z0-9\-_]+)) *=`)
 		captureGroups := r.FindStringSubmatch(line)
 		if len(captureGroups) == 4 {
 			fullVarName := captureGroups[1]
 			mod := captureGroups[2]
 			varName := captureGroups[3]
 
-			aliasedName := fmt.Sprintf("____steampipe_mod_%s_variable_%s____", mod, varName)
+			aliasedName := fmt.Sprintf("____%s_mod_%s_variable_%s____", app_specific.AppName, mod, varName)
 			depVarAliases[aliasedName] = fullVarName
 			lines[i] = strings.Replace(line, fullVarName, aliasedName, 1)
 
