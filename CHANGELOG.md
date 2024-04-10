@@ -2,6 +2,11 @@
 
 Shared Pipes Component
 
+## v1.1.1 [2024-04-10]
+
+_Bug fixes_
+Update variable parsing to better handle extraneous space characters - update sanitiseVariableNames to handle multiple spaces. ([#384](https://github.com/turbot/pipe-fittings/issues/384)).
+
 ## v1.1.0 [2024-04-09]
 
 _What's new?_
