@@ -29,7 +29,7 @@ func Test_sanitiseVariableNames(t *testing.T) {
 			name:    "qualified",
 			src:     []byte(`m1.var1="foo"`),
 			wantSrc: []byte(`____powerpipe_mod_m1_variable_var1____="foo"`),
-			wantMap: map[string]string{`____powerpipe_mod_m1_variable_var1____="foo0`: "m1.var1"},
+			wantMap: map[string]string{`____powerpipe_mod_m1_variable_var1____`: "m1.var1"},
 		},
 		{
 			name:    "qualified single spaces",
