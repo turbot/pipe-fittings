@@ -331,6 +331,97 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare:     "./output_c",
 		equal:       false,
 	},
+	{
+		title:   "loop_input_a == loop_input_a",
+		base:    "./loop_input_a",
+		compare: "./loop_input_a",
+		equal:   true,
+	},
+	{
+		title:   "loop_input_a == loop_input_a_line_change",
+		base:    "./loop_input_a",
+		compare: "./loop_input_a_line_change",
+		equal:   true,
+	},
+	{
+		title:       "loop_input_a != loop_input_b",
+		description: "different change in the until attribute of the loop",
+		base:        "./loop_input_a",
+		compare:     "./loop_input_b",
+		equal:       false,
+	},
+	{
+		title:   "loop_input_b != loop_input_a_line_change",
+		base:    "./loop_input_b",
+		compare: "./loop_input_a_line_change",
+		equal:   false,
+	},
+	{
+		title:   "loop_sleep_a == loop_sleep_a",
+		base:    "./loop_sleep_a",
+		compare: "./loop_sleep_a",
+		equal:   true,
+	},
+	{
+		title:   "loop_sleep_a == loop_sleep_a_line_change",
+		base:    "./loop_sleep_a",
+		compare: "./loop_sleep_a_line_change",
+		equal:   true,
+	},
+	{
+		title:   "loop_sleep_a != loop_sleep_b",
+		base:    "./loop_sleep_a",
+		compare: "./loop_sleep_b",
+		equal:   false,
+	},
+	{
+		title:   "loop_sleep_b != loop_sleep_a_line_change",
+		base:    "./loop_sleep_b",
+		compare: "./loop_sleep_a_line_change",
+		equal:   false,
+	},
+	{
+		title:   "loop_sleep_b == loop_sleep_b",
+		base:    "./loop_sleep_b",
+		compare: "./loop_sleep_b",
+		equal:   true,
+	},
+	{
+		title:   "loop_sleep_b != loop_sleep_c",
+		base:    "./loop_sleep_b",
+		compare: "./loop_sleep_c",
+		equal:   false,
+	},
+	{
+		title:   "loop_sleep_c == loop_sleep_c",
+		base:    "./loop_sleep_c",
+		compare: "./loop_sleep_c",
+		equal:   true,
+	},
+	{
+		title:   "loop_sleep_c != loop_sleep_d",
+		base:    "./loop_sleep_c",
+		compare: "./loop_sleep_d",
+		equal:   false,
+	},
+	{
+		title:   "loop_http_a == loop_http_a",
+		base:    "./loop_http_a",
+		compare: "./loop_http_a",
+		equal:   true,
+	},
+	{
+		title:   "loop_http_a == loop_http_a_line_change",
+		base:    "./loop_http_a",
+		compare: "./loop_http_a_line_change",
+		equal:   true,
+	},
+	{
+		title:   "loop_http_a != loop_http_b",
+		base:    "./loop_http_a",
+		compare: "./loop_http_b",
+		equal:   false,
+	},
 }
 
 const (

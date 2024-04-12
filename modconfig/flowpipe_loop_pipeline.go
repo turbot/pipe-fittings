@@ -32,8 +32,11 @@ func (l *LoopPipelineStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
-	return l.Until == otherLoopPipelineStep.Until &&
-		reflect.DeepEqual(l.Args, otherLoopPipelineStep.Args)
+	if !l.LoopStep.Equals(otherLoopPipelineStep.LoopStep) {
+		return false
+	}
+
+	return reflect.DeepEqual(l.Args, otherLoopPipelineStep.Args)
 }
 
 func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {

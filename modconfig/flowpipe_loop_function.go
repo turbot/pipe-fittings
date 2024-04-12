@@ -37,6 +37,10 @@ func (l *LoopFunctionStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
+	if !l.LoopStep.Equals(otherLoopFunctionStep.LoopStep) {
+		return false
+	}
+
 	// compare env using reflection
 	if !reflect.DeepEqual(l.Env, otherLoopFunctionStep.Env) || !reflect.DeepEqual(l.Event, otherLoopFunctionStep.Event) {
 		return false

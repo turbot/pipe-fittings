@@ -46,6 +46,10 @@ func (l *LoopContainerStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
+	if !l.LoopStep.Equals(otherLoopContainerStep.LoopStep) {
+		return false
+	}
+
 	// compare env using reflection
 	if !reflect.DeepEqual(l.Env, otherLoopContainerStep.Env) {
 		return false
@@ -75,7 +79,7 @@ func (l *LoopContainerStep) Equals(other LoopDefn) bool {
 		}
 	}
 
-	return l.Until == otherLoopContainerStep.Until &&
+	return utils.BoolPtrEqual(l.Until, otherLoopContainerStep.Until) &&
 		utils.PtrEqual(l.Image, otherLoopContainerStep.Image) &&
 		utils.PtrEqual(l.Source, otherLoopContainerStep.Source) &&
 		utils.PtrEqual(l.CpuShares, otherLoopContainerStep.CpuShares) &&

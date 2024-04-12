@@ -34,6 +34,10 @@ func (l *LoopQueryStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
+	if !l.LoopStep.Equals(otherLoopQueryStep.LoopStep) {
+		return false
+	}
+
 	if l.Args == nil && otherLoopQueryStep.Args != nil || l.Args != nil && otherLoopQueryStep.Args == nil {
 		return false
 	}
@@ -44,8 +48,7 @@ func (l *LoopQueryStep) Equals(other LoopDefn) bool {
 		}
 	}
 
-	return l.Until == otherLoopQueryStep.Until &&
-		utils.PtrEqual(l.Database, otherLoopQueryStep.Database) &&
+	return utils.PtrEqual(l.Database, otherLoopQueryStep.Database) &&
 		utils.PtrEqual(l.Sql, otherLoopQueryStep.Sql)
 }
 
