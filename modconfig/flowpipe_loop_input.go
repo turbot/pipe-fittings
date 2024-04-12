@@ -25,13 +25,13 @@ type LoopInputStep struct {
 	To      *[]string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
-func (s *LoopInputStep) Equals(other LoopDefn) bool {
+func (l *LoopInputStep) Equals(other LoopDefn) bool {
 
-	if s == nil && helpers.IsNil(other) {
+	if l == nil && helpers.IsNil(other) {
 		return true
 	}
 
-	if s == nil && !helpers.IsNil(other) || s != nil && helpers.IsNil(other) {
+	if l == nil && !helpers.IsNil(other) || l != nil && helpers.IsNil(other) {
 		return false
 	}
 
@@ -40,33 +40,37 @@ func (s *LoopInputStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
-	if s.Cc == nil && otherLoopInputStep.Cc != nil || s.Cc != nil && otherLoopInputStep.Cc == nil {
+	if !l.LoopStep.Equals(otherLoopInputStep.LoopStep) {
 		return false
-	} else if s.Cc != nil {
-		if slices.Compare(*s.Cc, *otherLoopInputStep.Cc) != 0 {
+	}
+
+	if l.Cc == nil && otherLoopInputStep.Cc != nil || l.Cc != nil && otherLoopInputStep.Cc == nil {
+		return false
+	} else if l.Cc != nil {
+		if slices.Compare(*l.Cc, *otherLoopInputStep.Cc) != 0 {
 			return false
 		}
 	}
 
-	if s.Bcc == nil && otherLoopInputStep.Bcc != nil || s.Bcc != nil && otherLoopInputStep.Bcc == nil {
+	if l.Bcc == nil && otherLoopInputStep.Bcc != nil || l.Bcc != nil && otherLoopInputStep.Bcc == nil {
 		return false
-	} else if s.Bcc != nil {
-		if slices.Compare(*s.Bcc, *otherLoopInputStep.Bcc) != 0 {
+	} else if l.Bcc != nil {
+		if slices.Compare(*l.Bcc, *otherLoopInputStep.Bcc) != 0 {
 			return false
 		}
 	}
 
-	if s.To == nil && otherLoopInputStep.To != nil || s.To != nil && otherLoopInputStep.To == nil {
+	if l.To == nil && otherLoopInputStep.To != nil || l.To != nil && otherLoopInputStep.To == nil {
 		return false
-	} else if s.To != nil {
-		if slices.Compare(*s.To, *otherLoopInputStep.To) != 0 {
+	} else if l.To != nil {
+		if slices.Compare(*l.To, *otherLoopInputStep.To) != 0 {
 			return false
 		}
 	}
 
-	return utils.PtrEqual(s.Prompt, otherLoopInputStep.Prompt) &&
-		utils.PtrEqual(s.Channel, otherLoopInputStep.Channel) &&
-		utils.PtrEqual(s.Subject, otherLoopInputStep.Subject)
+	return utils.PtrEqual(l.Prompt, otherLoopInputStep.Prompt) &&
+		utils.PtrEqual(l.Channel, otherLoopInputStep.Channel) &&
+		utils.PtrEqual(l.Subject, otherLoopInputStep.Subject)
 }
 
 func (s *LoopInputStep) GetType() string {

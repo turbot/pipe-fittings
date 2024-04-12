@@ -38,6 +38,10 @@ func (l *LoopEmailStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
+	if !l.LoopStep.Equals(otherLoopEmailStep.LoopStep) {
+		return false
+	}
+
 	if l.To == nil && otherLoopEmailStep.To != nil || l.To != nil && otherLoopEmailStep.To == nil {
 		return false
 	}
@@ -62,8 +66,7 @@ func (l *LoopEmailStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
-	return l.Until == otherLoopEmailStep.Until &&
-		utils.PtrEqual(l.From, otherLoopEmailStep.From) &&
+	return utils.PtrEqual(l.From, otherLoopEmailStep.From) &&
 		utils.PtrEqual(l.SenderCredential, otherLoopEmailStep.SenderCredential) &&
 		utils.PtrEqual(l.Host, otherLoopEmailStep.Host) &&
 		utils.PtrEqual(l.Port, otherLoopEmailStep.Port) &&

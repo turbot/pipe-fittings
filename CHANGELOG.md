@@ -14,6 +14,15 @@ _What's new?_
 * Support installing private mods using a github app token. ([#381](https://github.com/turbot/pipe-fittings/issues/381)).
 * Update mod installation to use app-specific git token env vars - POWERPIPE_GIT_TOKEN and FLOWPIPE_GIT_TOKEN. ([#382](https://github.com/turbot/pipe-fittings/issues/382)).
 
+## v1.0.5 [2024-04-12]
+
+_Bug fixes_
+
+* Fixed loop equality check.
+* Duplicate step names are now detected and reported as an error.
+* Crash when using param in query step's args.
+* Better error message for invalid notifier reference.
+
 ## v1.0.4 [2024-04-01]
 
 _Bug fixes_

@@ -322,6 +322,14 @@ func (p *PipelineStepInput) Validate() hcl.Diagnostics {
 func ctyValueToPipelineStepNotifierValueMap(value cty.Value) (NotifierImpl, error) {
 	notifier := NotifierImpl{}
 
+	if value == cty.NilVal {
+		return notifier, perr.BadRequestWithMessage("notifier value is nil")
+	}
+
+	if !value.Type().IsMapType() && !value.Type().IsObjectType() {
+		return notifier, perr.BadRequestWithMessage("notifier value must be a reference to a notifier resource")
+	}
+
 	valueMap := value.AsValueMap()
 	notifiesCty := valueMap[schema.AttributeTypeNotifies]
 

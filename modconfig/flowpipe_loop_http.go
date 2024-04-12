@@ -39,6 +39,10 @@ func (l *LoopHttpStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
+	if !l.LoopStep.Equals(otherLoopHttpStep.LoopStep) {
+		return false
+	}
+
 	if l.RequestHeaders == nil && otherLoopHttpStep.RequestHeaders != nil || l.RequestHeaders != nil && otherLoopHttpStep.RequestHeaders == nil {
 		return false
 	}
@@ -49,8 +53,7 @@ func (l *LoopHttpStep) Equals(other LoopDefn) bool {
 		}
 	}
 
-	return l.Until == otherLoopHttpStep.Until &&
-		utils.PtrEqual(l.URL, otherLoopHttpStep.URL) &&
+	return utils.PtrEqual(l.URL, otherLoopHttpStep.URL) &&
 		utils.PtrEqual(l.Method, otherLoopHttpStep.Method) &&
 		utils.PtrEqual(l.RequestBody, otherLoopHttpStep.RequestBody) &&
 		utils.PtrEqual(l.CaCertPem, otherLoopHttpStep.CaCertPem) &&
