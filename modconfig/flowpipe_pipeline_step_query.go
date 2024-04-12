@@ -82,9 +82,9 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
-		mapValue, err := hclhelpers.CtyToGoMapInterface(args)
+		mapValue, err := hclhelpers.CtyToGoInterfaceSlice(args)
 		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to map[string]interface{}: " + err.Error())
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to an array " + err.Error())
 		}
 		results[schema.AttributeTypeArgs] = mapValue
 

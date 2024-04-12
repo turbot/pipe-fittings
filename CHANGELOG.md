@@ -8,6 +8,7 @@ _Bug fixes_
 
 * Fixed loop equality check.
 * Duplicate step names are now detected and reported as an error.
+* Crash when using param in query step's args.
 
 ## v1.0.4 [2024-04-01]
 
