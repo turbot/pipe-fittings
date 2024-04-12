@@ -175,6 +175,13 @@ var invalidConfigTests = []invalidConfigTestSetup{
 		ignoreConfigParse: true,
 		containsError:     "duplicate step name 'message.test' - step names must be unique",
 	},
+	{
+		title:             "Bad notifier reference to a string rather than an object",
+		modDir:            "./mods/bad_notifier_reference",
+		configDirs:        []string{"./mods/bad_notifier_reference"},
+		ignoreConfigParse: true,
+		containsError:     "Bad Request: notifier value must be a reference to a notifier resource",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {
