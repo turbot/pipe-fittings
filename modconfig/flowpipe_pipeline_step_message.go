@@ -104,7 +104,7 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 
 		notifier, err := ctyValueToPipelineStepNotifierValueMap(notifierCtyVal)
 		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse notifier attribute: " + err.Error())
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse notifier attribute " + err.Error())
 		}
 		results[schema.AttributeTypeNotifier] = notifier
 	}
@@ -157,7 +157,7 @@ func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalCo
 				if err != nil {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
-						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute to notifier",
+						Summary:  "Unable to parse " + schema.AttributeTypeNotifier + " attribute",
 						Detail:   err.Error(),
 						Subject:  &attr.Range,
 					})
