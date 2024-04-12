@@ -456,6 +456,13 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		}
 	}
 
+	diags = validatePipelineSteps(pipelineHcl)
+	if len(diags) > 0 {
+		res.handleDecodeDiags(diags)
+
+		return pipelineHcl, res
+	}
+
 	handlePipelineDecodeResult(pipelineHcl, res, block, parseCtx)
 	diags = validatePipelineDependencies(pipelineHcl, parseCtx.Credentials)
 	if len(diags) > 0 {
@@ -476,6 +483,34 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	}
 
 	return pipelineHcl, res
+}
+
+func validatePipelineSteps(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	stepMap := map[string]bool{}
+
+	for _, step := range pipelineHcl.Steps {
+
+		if _, ok := stepMap[step.GetFullyQualifiedName()]; ok {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("duplicate step name '%s' - step names must be unique", step.GetFullyQualifiedName()),
+				Subject:  step.GetRange(),
+			})
+			continue
+		}
+
+		stepMap[step.GetFullyQualifiedName()] = true
+
+		moreDiags := step.Validate()
+		if len(moreDiags) > 0 {
+			diags = append(diags, moreDiags...)
+			continue
+		}
+	}
+
+	return diags
 }
 
 func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential) hcl.Diagnostics {
