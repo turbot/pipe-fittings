@@ -1299,9 +1299,8 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert.Equal("using value from locals: value of key_two", pipelineOne.Steps[6].(*modconfig.PipelineStepTransform).Value)
 	assert.Equal("using value from locals: value of key_two", pipelineOne.Steps[7].(*modconfig.PipelineStepTransform).Value)
 	assert.Equal("using value from locals: 33", pipelineOne.Steps[8].(*modconfig.PipelineStepTransform).Value)
-	assert.Equal("var_four value is: value from auto.vars file", pipelineOne.Steps[9].(*modconfig.PipelineStepTransform).Value)
-	assert.Equal("var_five value is: value from two.auto.vars file", pipelineOne.Steps[10].(*modconfig.PipelineStepTransform).Value)
-	assert.Equal("var_six value is: set from env var", pipelineOne.Steps[11].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("var_five value is: value from two.auto.vars file", pipelineOne.Steps[9].(*modconfig.PipelineStepTransform).Value)
+	assert.Equal("var_six value is: set from env var", pipelineOne.Steps[10].(*modconfig.PipelineStepTransform).Value)
 
 	githubIssuePipeline := pipelines["test_mod.pipeline.github_issue"]
 	if githubIssuePipeline == nil {

@@ -7,6 +7,7 @@ Shared Pipes Component
 _Bug fixes_
 
 * Fixed loop equality check.
+* Duplicate step names are now detected and reported as an error.
 
 ## v1.0.4 [2024-04-01]
 

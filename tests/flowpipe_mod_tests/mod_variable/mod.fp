@@ -90,10 +90,6 @@ pipeline "one" {
     value = "using value from locals: ${local.locals_three_merge.key_three}"
   }
 
-  step "transform" "eight" {
-    value = "var_four value is: ${var.var_four}"
-  }
-
   step "transform" "nine" {
     value = "var_five value is: ${var.var_five}"
   }

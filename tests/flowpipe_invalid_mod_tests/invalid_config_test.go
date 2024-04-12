@@ -4,7 +4,6 @@ package invalid_mod_tests
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"testing"
@@ -77,11 +76,12 @@ func (suite *FlowpipeSimpleInvalidConfigTestSuite) TearDownSuite() {
 }
 
 type invalidConfigTestSetup struct {
-	title         string
-	modDir        string
-	configDirs    []string
-	containsError string
-	errorType     string
+	title             string
+	modDir            string
+	configDirs        []string
+	containsError     string
+	errorType         string
+	ignoreConfigParse bool
 }
 
 var invalidConfigTests = []invalidConfigTestSetup{
@@ -169,49 +169,59 @@ var invalidConfigTests = []invalidConfigTestSetup{
 		configDirs:    []string{"./mods/bad_notify_unexpected_attribute_channel"},
 		containsError: "Attribute 'channel' is not a valid attribute for email type integration",
 	},
+	{
+		title:             "Duplicate message step",
+		modDir:            "./mods/duplicate_message_step",
+		configDirs:        []string{"./mods/duplicate_message_step"},
+		ignoreConfigParse: true,
+		containsError:     "duplicate step name 'message.test' - step names must be unique",
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {
-	assert := assert.New(suite.T())
 
 	for _, test := range invalidConfigTests {
-		if test.title == "" {
-			assert.Fail("Test must have title")
-			continue
-		}
-		if test.containsError == "" {
-			assert.Fail("Test " + test.title + " does not have containsError")
-			continue
-		}
 
-		fmt.Println("Running test " + test.title)
+		suite.T().Run(test.title, func(t *testing.T) {
+			assert := assert.New(t)
+			if test.title == "" {
+				assert.Fail("Test must have title")
+				return
+			}
+			if test.containsError == "" {
+				assert.Fail("Test " + test.title + " does not have containsError")
+				return
+			}
 
-		_, errorAndWarning := flowpipeconfig.LoadFlowpipeConfig(test.configDirs)
-		if errorAndWarning.Error == nil {
-			assert.FailNow("Expected error")
-			return
-		}
+			fpConfig, errorAndWarning := flowpipeconfig.LoadFlowpipeConfig(test.configDirs)
+			if errorAndWarning.Error == nil && !test.ignoreConfigParse {
+				assert.FailNow("Expecting error but got nil")
+				return
+			}
 
-		assert.Contains(errorAndWarning.Error.Error(), test.containsError)
-
-		if test.modDir != "" {
-			_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]credential.Credential{}))
-			assert.NotNil(errorAndWarning.Error)
-			if errorAndWarning.Error != nil {
+			if !test.ignoreConfigParse {
 				assert.Contains(errorAndWarning.Error.Error(), test.containsError)
 			}
 
-			if test.errorType != "" {
-				var err perr.ErrorModel
-				ok := errors.As(errorAndWarning.Error, &err)
-				if !ok {
-					assert.Fail("should be a pcerr.ErrorModel")
-					return
+			if test.modDir != "" {
+				_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithCredentials(map[string]credential.Credential{}), workspace.WithNotifiers(fpConfig.Notifiers))
+				assert.NotNil(errorAndWarning.Error)
+				if errorAndWarning.Error != nil {
+					assert.Contains(errorAndWarning.Error.Error(), test.containsError)
 				}
 
-				assert.Equal(test.errorType, err.Type, "wrong error type")
+				if test.errorType != "" {
+					var err perr.ErrorModel
+					ok := errors.As(errorAndWarning.Error, &err)
+					if !ok {
+						assert.Fail("should be a pcerr.ErrorModel")
+						return
+					}
+
+					assert.Equal(test.errorType, err.Type, "wrong error type")
+				}
 			}
-		}
+		})
 	}
 }
 
