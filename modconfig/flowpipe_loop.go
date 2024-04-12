@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -120,26 +121,51 @@ func (l *LoopStep) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	l.UnresolvedAttributes[name] = expr
 }
 
-func (s *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (l *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	if attr, ok := hclAttributes[schema.AttributeTypeUntil]; ok {
-		stepDiags := setBoolAttributeWithResultReference(attr, evalContext, s, "Until", true, true)
+		stepDiags := setBoolAttributeWithResultReference(attr, evalContext, l, "Until", true, true)
 		if stepDiags.HasErrors() {
 			diags = append(diags, stepDiags...)
 		}
 	}
 
-	if s.Until == nil && s.UnresolvedAttributes[schema.AttributeTypeUntil] == nil {
+	if l.Until == nil && l.UnresolvedAttributes[schema.AttributeTypeUntil] == nil {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Missing required attribute",
 			Detail:   "The argument 'until' is required, but no definition was found",
-			Subject:  s.Range,
+			Subject:  l.Range,
 		})
 	}
 
 	return diags
+}
+
+func (l LoopStep) Equals(other LoopStep) bool {
+
+	// Compare UnresolvedAttributes (map comparison)
+	otherUnresolvedAttributes := other.GetUnresolvedAttributes()
+	if len(l.UnresolvedAttributes) != len(otherUnresolvedAttributes) {
+		return false
+	}
+
+	for key, expr := range l.UnresolvedAttributes {
+		otherExpr, ok := otherUnresolvedAttributes[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
+	}
+
+	// and reverse
+	for key := range otherUnresolvedAttributes {
+		if _, ok := l.UnresolvedAttributes[key]; !ok {
+			return false
+		}
+	}
+
+	return utils.BoolPtrEqual(l.Until, other.Until)
 }
 
 type LoopSleepStep struct {
@@ -164,7 +190,11 @@ func (l *LoopSleepStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
-	return l.Until == otherLoopSleepStep.Until &&
+	if !l.LoopStep.Equals(otherLoopSleepStep.LoopStep) {
+		return false
+	}
+
+	return utils.BoolPtrEqual(l.Until, otherLoopSleepStep.Until) &&
 		utils.PtrEqual(l.Duration, otherLoopSleepStep.Duration)
 }
 

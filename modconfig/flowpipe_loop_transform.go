@@ -31,8 +31,11 @@ func (l *LoopTransformStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
-	return l.Until == otherLoopTransformStep.Until &&
-		reflect.DeepEqual(l.Value, otherLoopTransformStep.Value)
+	if !l.LoopStep.Equals(otherLoopTransformStep.LoopStep) {
+		return false
+	}
+
+	return reflect.DeepEqual(l.Value, otherLoopTransformStep.Value)
 }
 
 func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {

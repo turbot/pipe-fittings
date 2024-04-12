@@ -25,13 +25,13 @@ type LoopMessageStep struct {
 	To      *[]string `json:"to,omitempty" cty:"to" hcl:"to,optional"`
 }
 
-func (s *LoopMessageStep) Equals(other LoopDefn) bool {
+func (l *LoopMessageStep) Equals(other LoopDefn) bool {
 
-	if s == nil && helpers.IsNil(other) {
+	if l == nil && helpers.IsNil(other) {
 		return true
 	}
 
-	if s == nil && !helpers.IsNil(other) || s != nil && helpers.IsNil(other) {
+	if l == nil && !helpers.IsNil(other) || l != nil && helpers.IsNil(other) {
 		return false
 	}
 
@@ -40,33 +40,37 @@ func (s *LoopMessageStep) Equals(other LoopDefn) bool {
 		return false
 	}
 
-	if s.Cc == nil && otherLoopInputMessage.Cc != nil || s.Cc != nil && otherLoopInputMessage.Cc == nil {
+	if !l.LoopStep.Equals(otherLoopInputMessage.LoopStep) {
 		return false
-	} else if s.Cc != nil {
-		if slices.Compare(*s.Cc, *otherLoopInputMessage.Cc) != 0 {
+	}
+
+	if l.Cc == nil && otherLoopInputMessage.Cc != nil || l.Cc != nil && otherLoopInputMessage.Cc == nil {
+		return false
+	} else if l.Cc != nil {
+		if slices.Compare(*l.Cc, *otherLoopInputMessage.Cc) != 0 {
 			return false
 		}
 	}
 
-	if s.Bcc == nil && otherLoopInputMessage.Bcc != nil || s.Bcc != nil && otherLoopInputMessage.Bcc == nil {
+	if l.Bcc == nil && otherLoopInputMessage.Bcc != nil || l.Bcc != nil && otherLoopInputMessage.Bcc == nil {
 		return false
-	} else if s.Bcc != nil {
-		if slices.Compare(*s.Bcc, *otherLoopInputMessage.Bcc) != 0 {
+	} else if l.Bcc != nil {
+		if slices.Compare(*l.Bcc, *otherLoopInputMessage.Bcc) != 0 {
 			return false
 		}
 	}
 
-	if s.To == nil && otherLoopInputMessage.To != nil || s.To != nil && otherLoopInputMessage.To == nil {
+	if l.To == nil && otherLoopInputMessage.To != nil || l.To != nil && otherLoopInputMessage.To == nil {
 		return false
-	} else if s.To != nil {
-		if slices.Compare(*s.To, *otherLoopInputMessage.To) != 0 {
+	} else if l.To != nil {
+		if slices.Compare(*l.To, *otherLoopInputMessage.To) != 0 {
 			return false
 		}
 	}
 
-	return utils.PtrEqual(s.Text, otherLoopInputMessage.Text) &&
-		utils.PtrEqual(s.Channel, otherLoopInputMessage.Channel) &&
-		utils.PtrEqual(s.Subject, otherLoopInputMessage.Subject)
+	return utils.PtrEqual(l.Text, otherLoopInputMessage.Text) &&
+		utils.PtrEqual(l.Channel, otherLoopInputMessage.Channel) &&
+		utils.PtrEqual(l.Subject, otherLoopInputMessage.Subject)
 }
 
 func (s *LoopMessageStep) GetType() string {

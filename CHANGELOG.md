@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.0.5 [2024-04-12]
+
+_Bug fixes_
+
+* Fixed loop equality check.
+
 ## v1.0.4 [2024-04-01]
 
 _Bug fixes_
