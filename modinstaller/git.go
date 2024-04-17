@@ -3,7 +3,6 @@ package modinstaller
 import (
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants"
 	"log/slog"
 	"os"
 	"sort"
@@ -111,11 +110,7 @@ func getGitAuthForToken(gitHubToken string) transport.AuthMethod {
 }
 
 func getGitToken() string {
-	if val, isSet := os.LookupEnv(app_specific.EnvGitToken); isSet {
-		return val
-	}
-	// fallback to GIT_TOKEN
-	return os.Getenv(constants.EnvGitToken)
+	return os.Getenv(app_specific.EnvGitToken)
 }
 
 func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Collection, error) {
