@@ -3,9 +3,13 @@ package modinstaller
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"os"
+	"path"
+	"path/filepath"
+
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/app_specific"
@@ -17,10 +21,6 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
-	"log/slog"
-	"os"
-	"path"
-	"path/filepath"
 )
 
 type ModInstaller struct {
@@ -558,13 +558,9 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 		SingleBranch:  true,
 	}
 
-	// if we have a token, use it
 	if gitHubToken != "" {
-		// (NOTE: set user to x-access-token - this is required for github application tokens))
-		cloneOptions.Auth = &http.BasicAuth{
-			Username: "x-access-token",
-			Password: gitHubToken,
-		}
+		// if we have a token, use it
+		cloneOptions.Auth = getGitAuthForToken(gitHubToken)
 	}
 
 	_, err := git.PlainClone(installPath,

@@ -1,6 +1,7 @@
 package modinstaller
 
 import (
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"log/slog"
@@ -67,13 +68,9 @@ func getTags(repo string) ([]string, error) {
 
 	var listOption git.ListOptions
 	// if a token was provided, use it
-	// (NOTE: set user to x-access-token - this is required for github application tokens))
 	if gitHubToken != "" {
 		listOption = git.ListOptions{
-			Auth: &http.BasicAuth{
-				Username: "x-access-token",
-				Password: gitHubToken,
-			},
+			Auth: getGitAuthForToken(gitHubToken),
 		}
 	}
 	// load remote references
@@ -91,6 +88,26 @@ func getTags(repo string) ([]string, error) {
 	}
 
 	return tags, nil
+}
+
+func getGitAuthForToken(gitHubToken string) transport.AuthMethod {
+	if gitHubToken == "" {
+		return nil
+	}
+	var auth transport.AuthMethod
+	// if authentication token is an app token, we need to use the GitHub API to list
+	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
+		// (NOTE: set user to x-access-token - this is required for github application tokens))
+		auth = &http.BasicAuth{
+			Username: "x-access-token",
+			Password: gitHubToken,
+		}
+	} else {
+		auth = &http.BasicAuth{
+			Username: gitHubToken,
+		}
+	}
+	return auth
 }
 
 func getGitToken() string {
