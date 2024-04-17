@@ -5,4 +5,5 @@ const (
 	EnvPipesHost       = "PIPES_HOST"
 	EnvPipesToken      = "PIPES_TOKEN"
 	EnvPipesInstallDir = "PIPES_INSTALL_DIR"
+	EnvGitToken        = "GIT_TOKEN"
 )

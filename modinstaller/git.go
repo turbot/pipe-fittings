@@ -2,6 +2,7 @@ package modinstaller
 
 import (
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/constants"
 	"log/slog"
 	"os"
 	"sort"
@@ -58,13 +59,6 @@ func transformToGitURL(input string, urlMode GitUrlMode) string {
 func getTags(repo string) ([]string, error) {
 	gitHubToken := getGitToken()
 
-	// if authentication token is an app token, we need to use the GitHub API to list
-	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
-		return getTagsUsingGithubAPI(repo, gitHubToken)
-	}
-
-	// ok so basic auth or no auth
-
 	// Create the remote with repository URL
 	rem := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
 		Name: "origin",
@@ -72,10 +66,13 @@ func getTags(repo string) ([]string, error) {
 	})
 
 	var listOption git.ListOptions
+	// if a token was provided, use it
+	// (NOTE: set user to x-access-token - this is required for github application tokens))
 	if gitHubToken != "" {
 		listOption = git.ListOptions{
 			Auth: &http.BasicAuth{
-				Username: gitHubToken,
+				Username: "x-access-token",
+				Password: gitHubToken,
 			},
 		}
 	}
@@ -100,8 +97,8 @@ func getGitToken() string {
 	if val, isSet := os.LookupEnv(app_specific.EnvGitToken); isSet {
 		return val
 	}
-	// fallback to GITHUB_TOKEN
-	return os.Getenv("GITHUB_TOKEN")
+	// fallback to GIT_TOKEN
+	return os.Getenv(constants.EnvGitToken)
 }
 
 func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Collection, error) {

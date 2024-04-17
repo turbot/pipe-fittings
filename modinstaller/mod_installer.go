@@ -3,13 +3,6 @@ package modinstaller
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"os"
-	"os/exec"
-	"path"
-	"path/filepath"
-	"strings"
-
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -24,6 +17,10 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"log/slog"
+	"os"
+	"path"
+	"path/filepath"
 )
 
 type ModInstaller struct {
@@ -553,20 +550,21 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 
 	gitHubToken := getGitToken()
 
-	// if the token is an app token, we must spawn a clone shell command
-	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
-		return i.installWithBearerToken(gitUrl, installPath, gitHubToken, dependency)
-	}
-
 	// otherwise use go-got to clone
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,
 		ReferenceName: dependency.GitReference,
 		Depth:         1,
 		SingleBranch:  true,
-		Auth: &http.BasicAuth{
-			Username: gitHubToken,
-		},
+	}
+
+	// if we have a token, use it
+	if gitHubToken != "" {
+		// (NOTE: set user to x-access-token - this is required for github application tokens))
+		cloneOptions.Auth = &http.BasicAuth{
+			Username: "x-access-token",
+			Password: gitHubToken,
+		}
 	}
 
 	_, err := git.PlainClone(installPath,
@@ -590,20 +588,6 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	}
 	// verify the cloned repo contains a valid modfile
 	return i.verifyModFile(dependency, installPath)
-}
-
-func (i *ModInstaller) installWithBearerToken(url string, installPath string, token string, dependency *ResolvedModRef) error {
-	// get owner and repo name
-	owner, name, err := getOwnerAndOrgFromGitUrl(url)
-	if err != nil {
-		return err
-	}
-	// get the ref name
-	refName := getShortRefName(dependency.GitReference.String())
-	// prepare the Git command with extra headers for authentication
-	cmd := exec.Command("git", "clone", fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, name), installPath, "--branch", refName, "--depth", "1") //nolint:gosec // we trust all inputs
-	// run it
-	return cmd.Run()
 }
 
 // build the path of the temp location to copy this depednency to
