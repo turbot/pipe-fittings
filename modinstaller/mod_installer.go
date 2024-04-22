@@ -370,7 +370,7 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	}
 
 	// if we are updating dependencyMod, we should update all its children
-	forceUpdate = i.updatingMod(dependencyMod.DependencyName)
+	forceUpdate = i.isUpdateCommandTargettingMod(dependencyMod.DependencyName)
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
@@ -387,6 +387,20 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	}
 
 	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
+}
+
+// is this an update command and this mod was included in the args - or there were no args
+func (i *ModInstaller) isUpdateCommandTargettingMod(modName string) bool {
+	if !i.updating() {
+		return false
+	}
+	// this is an update command - if there are no args, sdo we are updating all mods
+	if len(i.mods) == 0 {
+		return true
+	}
+	// if this mod in the list of updates?
+	_, updateMod := i.mods[modName]
+	return updateMod
 }
 
 func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod, forceUpdate bool) (*modconfig.Mod, error) {
@@ -468,7 +482,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.ResolvedVers
 	}
 
 	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
-	updating := forceUpdate || i.updatingMod(installedVersion.Name)
+	updating := forceUpdate || i.isUpdateCommandTargettingMod(installedVersion.Name)
 
 	// if this is an update command, or if the current version does not satisfy the required version constraint,
 	// check for update
@@ -624,17 +638,4 @@ func (i *ModInstaller) verifyModFile(dependency *ResolvedModRef, installPath str
 		}
 	}
 	return sperr.New("mod '%s' does not contain a valid mod file", dependency.Name)
-}
-
-// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args)
-// TODO rename
-func (i *ModInstaller) updatingMod(modName string) bool {
-	if !i.updating() {
-		return false
-	}
-	if len(i.mods) == 0 {
-		return true
-	}
-	_, updateMod := i.mods[modName]
-	return updateMod
 }
