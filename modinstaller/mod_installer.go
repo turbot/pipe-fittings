@@ -370,7 +370,9 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	}
 
 	// if we are updating dependencyMod, we should update all its children
-	forceUpdate = i.isUpdateCommandTargettingMod(dependencyMod.DependencyName)
+	if !forceUpdate {
+		forceUpdate = i.isUpdateCommandTargettingMod(dependencyMod.DependencyName)
+	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
