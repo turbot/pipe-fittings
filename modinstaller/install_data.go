@@ -107,13 +107,13 @@ func (d *InstallData) onInstallComplete() {
 }
 
 func (d *InstallData) GetUpdatedTree() treeprint.Tree {
-	return d.Upgraded.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey())
+	return d.Upgraded.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey(), d.Lock)
 }
 
 func (d *InstallData) GetInstalledTree() treeprint.Tree {
-	return d.Installed.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey())
+	return d.Installed.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey(), d.Lock)
 }
 
 func (d *InstallData) GetUninstalledTree() treeprint.Tree {
-	return d.Uninstalled.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey())
+	return d.Uninstalled.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey(), d.Lock)
 }

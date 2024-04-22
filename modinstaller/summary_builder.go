@@ -2,7 +2,6 @@ package modinstaller
 
 import (
 	"fmt"
-
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
@@ -35,10 +34,10 @@ func getVerb(verb string) string {
 func BuildInstallSummary(installData *InstallData) string {
 	// for now treat an install as update - we only install deps which are in the mod.sp but missing in the mod folder
 	modDependencyPath := installData.WorkspaceMod.GetInstallCacheKey()
-	installCount, installedTreeString := getInstallationResultString(installData.Installed, modDependencyPath)
-	uninstallCount, uninstalledTreeString := getInstallationResultString(installData.Uninstalled, modDependencyPath)
-	upgradeCount, upgradeTreeString := getInstallationResultString(installData.Upgraded, modDependencyPath)
-	downgradeCount, downgradeTreeString := getInstallationResultString(installData.Downgraded, modDependencyPath)
+	installCount, installedTreeString := getInstallationResultString(installData.Installed, modDependencyPath, installData.NewLock)
+	uninstallCount, uninstalledTreeString := getInstallationResultString(installData.Uninstalled, modDependencyPath, installData.NewLock)
+	upgradeCount, upgradeTreeString := getInstallationResultString(installData.Upgraded, modDependencyPath, installData.NewLock)
+	downgradeCount, downgradeTreeString := getInstallationResultString(installData.Downgraded, modDependencyPath, installData.NewLock)
 
 	var installString, upgradeString, downgradeString, uninstallString string
 	if installCount > 0 {
@@ -67,11 +66,11 @@ func BuildInstallSummary(installData *InstallData) string {
 	return fmt.Sprintf("%s%s%s%s", installString, upgradeString, downgradeString, uninstallString)
 }
 
-func getInstallationResultString(items versionmap.DependencyVersionMap, modDependencyPath string) (int, string) {
+func getInstallationResultString(items versionmap.DependencyVersionMap, modDependencyPath string, lock *versionmap.WorkspaceLock) (int, string) {
 	var res string
 	count := len(items.FlatMap())
 	if count > 0 {
-		tree := items.GetDependencyTree(modDependencyPath)
+		tree := items.GetDependencyTree(modDependencyPath, lock)
 		res = tree.String()
 	}
 	return count, res

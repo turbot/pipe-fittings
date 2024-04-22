@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/app_specific"
@@ -301,22 +298,20 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 
 		// force remove the shadow directory - we can ignore any error here, since
 		// these directories get cleaned up before any install session
-		os.RemoveAll(i.shadowDirPath)
+		_ = os.RemoveAll(i.shadowDirPath)
 	}()
 
 	var errors []error
+	// forceupdate is used for child depdency mods - if the parent is being updated
+	const forceUpdate = false
 	for _, requiredModVersion := range mods {
-		modToUse, err := i.getCurrentlyInstalledVersionToUse(ctx, requiredModVersion, parent, i.updating())
+		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, parent, forceUpdate)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 
-		// if the mod is not installed or needs updating, OR if this is an update command,
-		// pass shouldUpdate=true into installModDependenciesRecursively
-		// this ensures that we update any dependencies which have updates available
-		shouldUpdate := modToUse == nil || i.updating()
-		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, modToUse, parent, shouldUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, forceUpdate); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -340,22 +335,22 @@ func (i *ModInstaller) buildInstallError(errors []error) error {
 	return err
 }
 
-func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *modconfig.Mod, parent *modconfig.Mod, shouldUpdate bool) error {
+func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *modconfig.Mod, parent *modconfig.Mod, forceUpdate bool) error {
 	if error_helpers.IsContextCanceled(ctx) {
 		// short circuit if the execution context has been cancelled
 		return ctx.Err()
 	}
-	// get available versions for this mod
-	includePrerelease := requiredModVersion.Constraint.IsPrerelease()
-	availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
-
-	if err != nil {
-		return err
-	}
 
 	var errors []error
-
+	// if dependencyMod we must install it
 	if dependencyMod == nil {
+		// get available versions for this mod
+		includePrerelease := requiredModVersion.Constraint.IsPrerelease()
+		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
+		if err != nil {
+			return err
+		}
+
 		// get a resolved mod ref that satisfies the version constraints
 		resolvedRef, err := i.getModRefSatisfyingConstraints(requiredModVersion, availableVersions)
 		if err != nil {
@@ -369,20 +364,25 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 		}
 
 	} else {
-		// update the install data
+		// this mod is already installed - just update the install data
 		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.Constraint, parent)
 		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.Constraint.Original, dependencyMod.Version))
+	}
+
+	// if we are updating dependencyMod, we should update all its children
+	if !forceUpdate {
+		forceUpdate = i.isUpdateCommandTargettingMod(dependencyMod.DependencyName)
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
 	for _, childDependency := range dependencyMod.Require.Mods {
-		childDependencyMod, err := i.getCurrentlyInstalledVersionToUse(ctx, childDependency, dependencyMod, shouldUpdate)
+		childDependencyMod, err := i.getModForRequirement(ctx, childDependency, dependencyMod, forceUpdate)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		if err := i.installModDependenciesRecursively(ctx, childDependency, childDependencyMod, dependencyMod, shouldUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, childDependency, childDependencyMod, dependencyMod, forceUpdate); err != nil {
 			errors = append(errors, err)
 			continue
 		}
@@ -391,7 +391,21 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
 }
 
-func (i *ModInstaller) getCurrentlyInstalledVersionToUse(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod, forceUpdate bool) (*modconfig.Mod, error) {
+// is this an update command and this mod was included in the args - or there were no args
+func (i *ModInstaller) isUpdateCommandTargettingMod(modName string) bool {
+	if !i.updating() {
+		return false
+	}
+	// this is an update command - if there are no args, sdo we are updating all mods
+	if len(i.mods) == 0 {
+		return true
+	}
+	// if this mod in the list of updates?
+	_, updateMod := i.mods[modName]
+	return updateMod
+}
+
+func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod, forceUpdate bool) (*modconfig.Mod, error) {
 	// do we have an installed version of this mod matching the required mod constraint
 	installedVersion, err := i.installData.Lock.GetLockedModVersion(requiredModVersion, parent)
 	if err != nil {
@@ -402,16 +416,15 @@ func (i *ModInstaller) getCurrentlyInstalledVersionToUse(ctx context.Context, re
 	}
 
 	// can we update this
-	canUpdate, err := i.canUpdateMod(installedVersion, requiredModVersion, forceUpdate)
+	shouldUpdate, err := i.shouldUpdateMod(installedVersion, requiredModVersion, forceUpdate)
 	if err != nil {
 		return nil, err
-
 	}
-	if canUpdate {
+
+	if shouldUpdate {
 		// return nil mod to indicate we should update
 		return nil, nil
 	}
-
 	// load the existing mod and return
 	return i.loadDependencyMod(ctx, installedVersion)
 }
@@ -462,14 +475,20 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 }
 
 // determine if we should update this mod, and if so whether there is an update available
-func (i *ModInstaller) canUpdateMod(installedVersion *versionmap.ResolvedVersionConstraint, requiredModVersion *modconfig.ModVersionConstraint, forceUpdate bool) (bool, error) {
+func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.ResolvedVersionConstraint, requiredModVersion *modconfig.ModVersionConstraint, forceUpdate bool) (bool, error) {
 	// so should we update?
 	// if forceUpdate is set or if the required version constraint is different to the locked version constraint, update
 	isSatisfied, errs := requiredModVersion.Constraint.Validate(installedVersion.Version)
 	if len(errs) > 0 {
 		return false, error_helpers.CombineErrors(errs...)
 	}
-	if forceUpdate || !isSatisfied {
+
+	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
+	updating := forceUpdate || i.isUpdateCommandTargettingMod(installedVersion.Name)
+
+	// if this is an update command, or if the current version does not satisfy the required version constraint,
+	// check for update
+	if updating || !isSatisfied {
 		// get available versions for this mod
 		includePrerelease := requiredModVersion.Constraint.IsPrerelease()
 		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
@@ -553,20 +572,17 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 
 	gitHubToken := getGitToken()
 
-	// if the token is an app token, we must spawn a clone shell command
-	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
-		return i.installWithBearerToken(gitUrl, installPath, gitHubToken, dependency)
-	}
-
 	// otherwise use go-got to clone
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,
 		ReferenceName: dependency.GitReference,
 		Depth:         1,
 		SingleBranch:  true,
-		Auth: &http.BasicAuth{
-			Username: gitHubToken,
-		},
+	}
+
+	if gitHubToken != "" {
+		// if we have a token, use it
+		cloneOptions.Auth = getGitAuthForToken(gitHubToken)
 	}
 
 	_, err := git.PlainClone(installPath,
@@ -590,20 +606,6 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	}
 	// verify the cloned repo contains a valid modfile
 	return i.verifyModFile(dependency, installPath)
-}
-
-func (i *ModInstaller) installWithBearerToken(url string, installPath string, token string, dependency *ResolvedModRef) error {
-	// get owner and repo name
-	owner, name, err := getOwnerAndOrgFromGitUrl(url)
-	if err != nil {
-		return err
-	}
-	// get the ref name
-	refName := getShortRefName(dependency.GitReference.String())
-	// prepare the Git command with extra headers for authentication
-	cmd := exec.Command("git", "clone", fmt.Sprintf("https://x-access-token:%s@github.com/%s/%s.git", token, owner, name), installPath, "--branch", refName, "--depth", "1") //nolint:gosec // we trust all inputs
-	// run it
-	return cmd.Run()
 }
 
 // build the path of the temp location to copy this depednency to

@@ -2,6 +2,7 @@ package versionmap
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -36,8 +37,23 @@ func (m DependencyVersionMap) FlatMap() ResolvedVersionMap {
 	return res
 }
 
-func (m DependencyVersionMap) GetDependencyTree(rootName string) treeprint.Tree {
+func (m DependencyVersionMap) GetDependencyTree(rootName string, lock *WorkspaceLock) treeprint.Tree {
 	tree := treeprint.NewWithRoot(rootName)
+	// TACTICAL: make sure there is a path from the root to the keys in the map
+	// (this only happens 1 level deep transitive dependencies)
+	if _, containsRoot := m[rootName]; !containsRoot {
+		rootMap := make(ResolvedVersionMap)
+		rootDeps := lock.InstallCache[rootName]
+
+		for dep := range m {
+			depName := strings.Split(dep, "@")[0]
+			if rootDep, ok := rootDeps[depName]; ok {
+				rootMap[depName] = rootDep
+			}
+		}
+		m[rootName] = rootMap
+	}
+
 	m.buildTree(rootName, tree)
 	return tree
 }

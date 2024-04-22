@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.1.2 [2024-04-22]
+- When calling mod update, respect the argument (if any) and only update specified mods. ([#388](https://github.com/turbot/pipe-fittings/issues/388)).
+- Fix display of updates to transitive dependencies. ([#389](https://github.com/turbot/pipe-fittings/issues/389)).
+
+_Bug fixes_
+
 ## v1.1.1 [2024-04-10]
 
 _Bug fixes_
