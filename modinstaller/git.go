@@ -13,7 +13,6 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"github.com/turbot/pipe-fittings/perr"
 )
 
 type GitUrlMode int
@@ -156,22 +155,4 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Colle
 	// sort the versions in REVERSE order
 	sort.Sort(sort.Reverse(versions))
 	return versions, nil
-}
-
-func getOwnerAndOrgFromGitUrl(modPath string) (string, string, error) {
-	// Split the repo into owner and repo name
-	split := strings.Split(modPath, "/")
-	if len(split) < 2 {
-		return "", "", perr.BadRequestWithMessage("invalid mod path")
-	}
-	// name is last element
-	name := split[len(split)-1]
-	// owner is second last element
-	owner := split[len(split)-2]
-	return owner, name, nil
-}
-
-// return the last '/' separated part of the ref name
-func getShortRefName(refName string) string {
-	return refName[strings.LastIndex(refName, "/")+1:]
 }
