@@ -3,6 +3,7 @@ package constants
 // Argument name constants
 const (
 	ArgArg                     = "arg"
+	ArgBenchmarkTimeout        = "benchmark-timeout"
 	ArgAutoComplete            = "auto-complete"
 	ArgCacheMaxTtl             = "cache-max-ttl"
 	ArgCacheTtl                = "cache-ttl"
@@ -10,6 +11,7 @@ const (
 	ArgDashboardStartTimeout   = "dashboard-start-timeout"
 	ArgDatabaseListenAddresses = "database-listen"
 	ArgDatabasePort            = "database-port"
+	ArgDashboardTimeout        = "dashboard-timeout"
 	ArgDatabaseQueryTimeout    = "query-timeout"
 	ArgDatabaseStartTimeout    = "database-start-timeout"
 	ArgDetach                  = "detach"

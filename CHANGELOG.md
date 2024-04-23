@@ -2,16 +2,24 @@
 
 Shared Pipes Component
 
+## v1.2.0 [2024-04-23]
+
+_What's new?_
+ 
+- Add `benchmark_timeout` and `dashboard_timeout` to Powerpipe workspace profile ([#391](https://github.com/turbot/pipe-fittings/issues/391)).
+
 ## v1.1.2 [2024-04-22]
-- When calling mod update, respect the argument (if any) and only update specified mods. ([#388](https://github.com/turbot/pipe-fittings/issues/388)).
-- Fix display of updates to transitive dependencies. ([#389](https://github.com/turbot/pipe-fittings/issues/389)).
 
 _Bug fixes_
+ 
+- When calling mod update, respect the argument (if any) and only update specified mods. ([#388](https://github.com/turbot/pipe-fittings/issues/388)).
+- Fix display of updates to transitive dependencies. ([#389](https://github.com/turbot/pipe-fittings/issues/389)).
 
 ## v1.1.1 [2024-04-10]
 
 _Bug fixes_
-Update variable parsing to better handle extraneous space characters - update sanitiseVariableNames to handle multiple spaces. ([#384](https://github.com/turbot/pipe-fittings/issues/384)).
+
+- Update variable parsing to better handle extraneous space characters - update sanitiseVariableNames to handle multiple spaces. ([#384](https://github.com/turbot/pipe-fittings/issues/384)).
 
 ## v1.1.0 [2024-04-09]
 

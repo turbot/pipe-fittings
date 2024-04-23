@@ -22,6 +22,9 @@ const DefaultPowerpipeWorkspaceContent = `
 #   log_level           = "info"
 #   memory_max_mb       = "1024"
 #   input               = true
+#
+#   benchmark_timeout   = 300
+#   dashboard_timeout   = 300
 # 
 #   # Pipes Integration Options
 #   cloud_host          = "pipes.turbot.com"
