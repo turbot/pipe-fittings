@@ -26,6 +26,10 @@ type PowerpipeWorkspaceProfile struct {
 	LogLevel    *string `hcl:"log_level" cty:"log_level"`
 	MemoryMaxMb *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
 
+	// execution timeouts
+	BenchmarkTimeout *int `hcl:"benchmark_timeout" cty:"benchmark_timeout"`
+	DashboardTimeout *int `hcl:"dashboard_timeout" cty:"dashboard_timeout"`
+
 	// pipes integration options
 	PipesHost        *string `hcl:"pipes_host,optional" cty:"pipes_host"`
 	PipesToken       *string `hcl:"pipes_token,optional" cty:"pipes_token"`
@@ -110,6 +114,12 @@ func (p *PowerpipeWorkspaceProfile) setBaseProperties() {
 	if p.MemoryMaxMb == nil {
 		p.MemoryMaxMb = p.Base.MemoryMaxMb
 	}
+	if p.BenchmarkTimeout == nil {
+		p.BenchmarkTimeout = p.Base.BenchmarkTimeout
+	}
+	if p.DashboardTimeout == nil {
+		p.DashboardTimeout = p.Base.DashboardTimeout
+	}
 	if p.PipesHost == nil {
 		p.PipesHost = p.Base.PipesHost
 	}
@@ -177,6 +187,9 @@ func (p *PowerpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetStringItem(p.Telemetry, constants.ArgTelemetry)
 	res.SetStringItem(p.LogLevel, constants.ArgLogLevel)
 	res.SetIntItem(p.MemoryMaxMb, constants.ArgMemoryMaxMb)
+
+	res.SetIntItem(p.BenchmarkTimeout, constants.ArgBenchmarkTimeout)
+	res.SetIntItem(p.DashboardTimeout, constants.ArgDashboardTimeout)
 
 	res.SetStringItem(p.PipesHost, constants.ArgPipesHost)
 	res.SetStringItem(p.PipesToken, constants.ArgPipesToken)
