@@ -46,6 +46,7 @@ func (d *InstallData) onModInstalled(dependency *versionmap.ResolvedVersionConst
 	installedModVersion := &versionmap.InstalledModVersion{
 		ResolvedVersionConstraint: dependency,
 		Alias:                     modDef.ShortName,
+		InstallPath:               modDef.GetInstallCacheKey(),
 	}
 	// update lock
 	d.NewLock.InstallCache.AddDependency(parentPath, installedModVersion)
