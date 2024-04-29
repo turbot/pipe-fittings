@@ -305,7 +305,8 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 	// forceupdate is used for child depdency mods - if the parent is being updated
 	const forceUpdate = false
 	for _, requiredModVersion := range mods {
-		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, parent, forceUpdate)
+		// do we have this mod installed for another parent?
+		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, forceUpdate)
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -335,7 +336,7 @@ func (i *ModInstaller) buildInstallError(errors []error) error {
 	return err
 }
 
-func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *modconfig.Mod, parent *modconfig.Mod, forceUpdate bool) error {
+func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *DependencyMod, parent *modconfig.Mod, forceUpdate bool) error {
 	if error_helpers.IsContextCanceled(ctx) {
 		// short circuit if the execution context has been cancelled
 		return ctx.Err()
@@ -377,12 +378,12 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
 	for _, childDependency := range dependencyMod.Require.Mods {
-		childDependencyMod, err := i.getModForRequirement(ctx, childDependency, dependencyMod, forceUpdate)
+		childDependencyMod, err := i.getModForRequirement(ctx, childDependency, forceUpdate)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-		if err := i.installModDependenciesRecursively(ctx, childDependency, childDependencyMod, dependencyMod, forceUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, childDependency, childDependencyMod, dependencyMod.Mod, forceUpdate); err != nil {
 			errors = append(errors, err)
 			continue
 		}
@@ -405,14 +406,21 @@ func (i *ModInstaller) isUpdateCommandTargettingMod(modName string) bool {
 	return updateMod
 }
 
-func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod, forceUpdate bool) (*modconfig.Mod, error) {
+func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, forceUpdate bool) (*DependencyMod, error) {
 	// do we have an installed version of this mod matching the required mod constraint
-	installedVersion, err := i.installData.Lock.GetLockedModVersion(requiredModVersion, parent)
+	installedVersion, err := i.installData.Lock.FindLockedModVersion(requiredModVersion)
 	if err != nil {
 		return nil, err
 	}
 	if installedVersion == nil {
-		return nil, nil
+		// try new lock - we may have just installed it
+		installedVersion, err = i.installData.NewLock.FindLockedModVersion(requiredModVersion)
+		if err != nil {
+			return nil, err
+		}
+		if installedVersion == nil {
+			return nil, nil
+		}
 	}
 
 	// can we update this
@@ -426,7 +434,15 @@ func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVers
 		return nil, nil
 	}
 	// load the existing mod and return
-	return i.loadDependencyMod(ctx, installedVersion)
+	mod, err := i.loadDependencyMod(ctx, installedVersion)
+	if err != nil {
+		return nil, err
+	}
+	return &DependencyMod{
+		Mod:    mod,
+		GitRef: installedVersion.GitRef,
+		Commit: installedVersion.Commit,
+	}, nil
 }
 
 // loadDependencyMod tries to load the mod definition from the shadow directory
@@ -503,19 +519,19 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.ResolvedVers
 }
 
 // determine whether there is a newer mod version avoilable which satisfies the dependency version constraint
-func (i *ModInstaller) updateAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version, availableVersions []*semver.Version) (bool, error) {
+func (i *ModInstaller) updateAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version, availableVersions versionmap.DependencyVersionList) (bool, error) {
 	latestVersion, err := i.getModRefSatisfyingConstraints(requiredVersion, availableVersions)
 	if err != nil {
 		return false, err
 	}
-	if latestVersion.Version.GreaterThan(currentVersion) {
+	if latestVersion.Version.Version.GreaterThan(currentVersion) {
 		return true, nil
 	}
 	return false, nil
 }
 
 // get the most recent available mod version which satisfies the version constraint
-func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions []*semver.Version) (*ResolvedModRef, error) {
+func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.DependencyVersionList) (*ResolvedModRef, error) {
 	// find a version which satisfies the version constraint
 	var version = getVersionSatisfyingConstraint(modVersion.Constraint, availableVersions)
 	if version == nil {
@@ -526,7 +542,7 @@ func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModV
 }
 
 // install a mod
-func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, parent *modconfig.Mod) (_ *modconfig.Mod, err error) {
+func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, parent *modconfig.Mod) (_ *DependencyMod, err error) {
 	var modDef *modconfig.Mod
 	// get the temp location to install the mod to
 	dependencyPath := dependency.DependencyPath()
@@ -537,15 +553,25 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 			i.installData.onModInstalled(dependency, modDef, parent)
 		}
 	}()
-	// if the target path exists, use the existing file
-	// if it does not exist (the usual case), install it
-	if _, err := os.Stat(destPath); os.IsNotExist(err) {
-		slog.Debug("installing", "dependency", dependencyPath, "in", destPath)
-		if err := i.installFromGit(dependency, destPath); err != nil {
-			return nil, err
+
+	gitRef := dependency.GitReference.Name().String()
+	commit := dependency.GitReference.Hash().String()
+	// does target dir exist>
+	if _, err := os.Stat(destPath); err == nil {
+		// this is unexpected - if the mod was successfully installed it would have been found in the lock file so we
+		// would not be installing it
+		// so just delete this folder and reinstall
+		slog.Info("dependency mod folder already exists but not found in lock file - deleting and reinstalling", "mod", dependencyPath, "path", destPath)
+		// delete the det path
+		if err := os.RemoveAll(destPath); err != nil {
+			return nil, fmt.Errorf("could not remove existing mod path '%s': %w", destPath, err)
 		}
 	}
 
+	slog.Debug("installing", "dependency", dependencyPath, "in", destPath)
+	if err = i.installFromGit(dependency, destPath); err != nil {
+		return nil, err
+	}
 	// now load the installed mod and return it
 	modDef, err = parse.LoadModfile(destPath)
 	if err != nil {
@@ -562,20 +588,24 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 		}
 	}
 
-	return modDef, nil
+	return &DependencyMod{
+		Mod:    modDef,
+		GitRef: gitRef,
+		Commit: commit,
+	}, nil
 }
 
 func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath string) error {
 	// get the mod from git = first try https
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
-	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.GitReference)
+	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.Version.GitRef)
 
 	gitHubToken := getGitToken()
 
 	// otherwise use go-got to clone
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,
-		ReferenceName: dependency.GitReference,
+		ReferenceName: dependency.GitReference.Name(),
 		Depth:         1,
 		SingleBranch:  true,
 	}
@@ -596,7 +626,7 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 			false,
 			&git.CloneOptions{
 				URL:           gitUrl,
-				ReferenceName: dependency.GitReference,
+				ReferenceName: dependency.GitReference.Name(),
 				Depth:         1,
 				SingleBranch:  true,
 			})
@@ -604,8 +634,16 @@ func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath st
 	if err != nil {
 		return err
 	}
+
+	// If your function returns an error, make sure to handle it
+	return nil
+
 	// verify the cloned repo contains a valid modfile
-	return i.verifyModFile(dependency, installPath)
+	if err := i.verifyModFile(dependency, installPath); err != nil {
+		return err
+
+	}
+	return nil
 }
 
 // build the path of the temp location to copy this depednency to
@@ -613,7 +651,7 @@ func (i *ModInstaller) getDependencyDestPath(dependencyFullName string) string {
 	return filepath.Join(i.modsPath, dependencyFullName)
 }
 
-// build the path of the temp location to copy this depednency to
+// build the path of the temp location to copy this dependency to
 func (i *ModInstaller) getDependencyShadowPath(dependencyFullName string) string {
 	return filepath.Join(i.shadowDirPath, dependencyFullName)
 }
