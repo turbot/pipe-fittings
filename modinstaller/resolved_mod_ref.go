@@ -32,7 +32,7 @@ type _ResolvedModRef struct {
 //		Branch:     requiredModVersion.Branch(),
 //	}
 //	if res.FilePath == "" {
-//		res.GitReference = version.GitRef
+//		res.GitReference = version.GitRefStr
 //	}
 //
 //	return res, nil

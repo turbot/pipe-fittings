@@ -4,16 +4,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/maps"
 )
 
+// DependencyVersionMap is a map of parent names to a map of dependencies for that parent
 type DependencyVersionMap map[string]ResolvedVersionMap
 
-// Add adds a dependency to the list of items installed for the given parent
-func (m DependencyVersionMap) AddDependency(dependency *ResolvedVersionConstraint, alias string, dependencyVersion *semver.Version, parentName string) {
+// AddDependency adds a dependency to the list of items installed for the given parent
+func (m DependencyVersionMap) AddDependency(parentName string, dependency *ResolvedVersionConstraint) {
 	// get the map for this parent
 	parentItems := m[parentName]
 	// create if needed
@@ -21,7 +21,7 @@ func (m DependencyVersionMap) AddDependency(dependency *ResolvedVersionConstrain
 		parentItems = make(ResolvedVersionMap)
 	}
 	// add the dependency
-	parentItems.Add(dependencyName, NewResolvedVersionConstraint(dependencyName, alias, dependencyVersion, constraintString, gitRef, commit))
+	parentItems.AddResolvedVersion(dependency)
 	// save
 	m[parentName] = parentItems
 }
@@ -81,7 +81,8 @@ func (m DependencyVersionMap) GetMissingFromOther(other DependencyVersionMap) De
 		}
 		for name, dep := range deps {
 			if _, ok := otherDeps[name]; !ok {
-				res.AddDependency(dep.Name, dep.Alias, dep.Version, dep.Constraint, parent, dep.GitRef, dep.Commit)
+				// TODO CHECK THIS STILL WORKS
+				res.AddDependency(parent, dep)
 			}
 		}
 	}
@@ -98,7 +99,8 @@ func (m DependencyVersionMap) GetUpgradedInOther(other DependencyVersionMap) Dep
 		for name, dep := range deps {
 			if otherDep, ok := otherDeps[name]; ok {
 				if otherDep.Version.GreaterThan(dep.Version) {
-					res.AddDependency(otherDep.Name, dep.Alias, otherDep.Version, otherDep.Constraint, parent, otherDep.GitRef, otherDep.Commit)
+					// TODO CHECK THIS STILL WORKS
+					res.AddDependency(parent, otherDep)
 				}
 			}
 		}
@@ -116,7 +118,7 @@ func (m DependencyVersionMap) GetDowngradedInOther(other DependencyVersionMap) D
 		for name, dep := range deps {
 			if otherDep, ok := otherDeps[name]; ok {
 				if otherDep.Version.LessThan(dep.Version) {
-					res.AddDependency(otherDep.Name, dep.Alias, otherDep.Version, otherDep.Constraint, parent, otherDep.GitRef, otherDep.Commit)
+					res.AddDependency(parent, otherDep)
 				}
 			}
 		}

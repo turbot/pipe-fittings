@@ -46,7 +46,7 @@ func (d *InstallData) onModInstalled(dependency *versionmap.ResolvedVersionConst
 	//modVersionConstraint := parent.Require.GetModDependency(dependency.Name).ConstraintString
 
 	// update lock
-	d.NewLock.InstallCache.AddDependency(dependency, modDef.ShortName, modDef.Version, parentPath)
+	d.NewLock.InstallCache.AddDependency(parentPath, dependency)
 	//d.NewLock.InstallCache.AddDependency(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath, dependency.GitReference.Name().String(), dependency.GitReference.Hash().String())
 }
 
@@ -55,7 +55,7 @@ func (d *InstallData) onModInstalled(dependency *versionmap.ResolvedVersionConst
 func (d *InstallData) addExisting(dependencyName string, existingDep *DependencyMod, constraintString string, parent *modconfig.Mod) {
 	// update lock
 	parentPath := parent.GetInstallCacheKey()
-	d.NewLock.InstallCache.AddDependency(existingDep.Constraint, existingDep.Mod.ShortName, existingDep.Mod.Version, parentPath)
+	d.NewLock.InstallCache.AddDependency(parentPath, existingDep.Constraint)
 }
 
 // retrieve all available mod versions from our cache, or from Git if not yet cached

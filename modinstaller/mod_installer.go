@@ -366,8 +366,8 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 
 	} else {
 		// this mod is already installed - just update the install data
-		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.ConstraintString, parent)
-		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.ConstraintString, dependencyMod.Mod.Version))
+		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.VersionString, parent)
+		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
 	}
 
 	// if we are updating dependencyMod, we should update all its children
@@ -533,14 +533,14 @@ func (i *ModInstaller) updateAvailable(requiredVersion *modconfig.ModVersionCons
 // get the most recent available mod version which satisfies the version constraint
 func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.DependencyVersionList) (*versionmap.ResolvedVersionConstraint, error) {
 	// find a version which satisfies the version constraint
-	var version = getVersionSatisfyingConstraint(modVersion.Constraint(), availableVersions)
-	if version == nil {
-		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.ConstraintString)
+	var dependencyVersion = getVersionSatisfyingConstraint(modVersion.Constraint(), availableVersions)
+	if dependencyVersion == nil {
+		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.VersionString)
 	}
 
 	//name, alias string, version *semver.Version, constraintString string, gitRef, commit string
-	mod
-	return versionmap.NewResolvedVersionConstraint(version, modVersion.Name, modVersion.Alias, modVersion.ConstraintString, version.GitRef, version.Commit), nil
+
+	return versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, modVersion.Name /*TODO KAI ALIAS*/, modVersion.VersionString, dependencyVersion.GitRef), nil
 }
 
 // install a mod
@@ -597,14 +597,14 @@ func (i *ModInstaller) install(ctx context.Context, dependency *versionmap.Resol
 func (i *ModInstaller) installFromGit(dependency *versionmap.ResolvedVersionConstraint, installPath string) error {
 	// get the mod from git = first try https
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
-	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.Version.GitRef)
+	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.GitRefStr)
 
 	gitHubToken := getGitToken()
 
 	// otherwise use go-got to clone
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,
-		ReferenceName: dependency.GitReference.Name(),
+		ReferenceName: dependency.GitRef.Name(),
 		Depth:         1,
 		SingleBranch:  true,
 	}
@@ -620,12 +620,12 @@ func (i *ModInstaller) installFromGit(dependency *versionmap.ResolvedVersionCons
 	if err != nil {
 		// if that failed, try ssh
 		gitUrl := getGitUrl(dependency.Name, GitUrlModeSSH)
-		slog.Debug(">>> cloning", gitUrl, dependency.GitReference)
+		slog.Debug(">>> cloning", gitUrl, dependency.GitRefStr)
 		_, err = git.PlainClone(installPath,
 			false,
 			&git.CloneOptions{
 				URL:           gitUrl,
-				ReferenceName: dependency.GitReference.Name(),
+				ReferenceName: dependency.GitRef.Name(),
 				Depth:         1,
 				SingleBranch:  true,
 			})
