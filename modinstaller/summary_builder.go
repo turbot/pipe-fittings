@@ -88,7 +88,7 @@ func BuildUninstallSummary(installData *InstallData) string {
 	return fmt.Sprintf("\n%s %d %s:\n\n%s", verb, uninstallCount, utils.Pluralize("mod", uninstallCount), uninstalledTree.String())
 }
 
-func BuildPruneSummary(pruned versionmap.VersionListMap) string {
+func BuildPruneSummary(pruned versionmap.DepdencyVersionListMap) string {
 	pruneCount := len(pruned.FlatMap())
 
 	verb := getVerb(VerbPruned)
