@@ -366,7 +366,7 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 
 	} else {
 		// this mod is already installed - just update the install data
-		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.VersionString, parent)
+		i.installData.addExisting(dependencyMod, parent)
 		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
 	}
 
@@ -424,7 +424,7 @@ func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVers
 	}
 
 	// can we update this
-	shouldUpdate, err := i.shouldUpdateMod(installedVersion, requiredModVersion, forceUpdate)
+	shouldUpdate, err := i.shouldUpdateMod(installedVersion.ResolvedVersionConstraint, requiredModVersion, forceUpdate)
 	if err != nil {
 		return nil, err
 	}
@@ -434,13 +434,13 @@ func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVers
 		return nil, nil
 	}
 	// load the existing mod and return
-	mod, err := i.loadDependencyMod(ctx, installedVersion)
+	mod, err := i.loadDependencyMod(ctx, installedVersion.ResolvedVersionConstraint)
 	if err != nil {
 		return nil, err
 	}
 	return &DependencyMod{
-		Mod:        mod,
-		Constraint: installedVersion,
+		Mod:              mod,
+		InstalledVersion: installedVersion,
 	}, nil
 }
 
@@ -540,7 +540,7 @@ func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModV
 
 	//name, alias string, version *semver.Version, constraintString string, gitRef, commit string
 
-	return versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, modVersion.Name /*TODO KAI ALIAS*/, modVersion.VersionString, dependencyVersion.GitRef), nil
+	return versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, modVersion.VersionString, dependencyVersion.GitRef), nil
 }
 
 // install a mod
@@ -588,9 +588,15 @@ func (i *ModInstaller) install(ctx context.Context, dependency *versionmap.Resol
 		}
 	}
 
+	// create installed version
+	installedModVersion := &versionmap.InstalledModVersion{
+		ResolvedVersionConstraint: dependency,
+		Alias:                     modDef.ShortName,
+	}
+
 	return &DependencyMod{
-		Mod:        modDef,
-		Constraint: dependency,
+		Mod:              modDef,
+		InstalledVersion: installedModVersion,
 	}, nil
 }
 
