@@ -79,7 +79,7 @@ func getRefs(repo string) ([]*plumbing.Reference, error) {
 	if err != nil {
 		return nil, err
 	}
-``	return refs, nil
+	return refs, nil
 }
 
 func getGitAuthForToken(gitHubToken string) transport.AuthMethod {

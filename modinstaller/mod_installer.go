@@ -346,7 +346,7 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	// if dependencyMod we must install it
 	if dependencyMod == nil {
 		// get available versions for this mod
-		includePrerelease := requiredModVersion.Constraint.IsPrerelease()
+		includePrerelease := requiredModVersion.IsPrerelease()
 		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
 		if err != nil {
 			return err
@@ -366,8 +366,8 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 
 	} else {
 		// this mod is already installed - just update the install data
-		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.Constraint, parent)
-		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.Constraint.Original, dependencyMod.Version))
+		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.ConstraintString, parent)
+		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.ConstraintString, dependencyMod.Version))
 	}
 
 	// if we are updating dependencyMod, we should update all its children
@@ -494,10 +494,12 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.ResolvedVersionConstraint, requiredModVersion *modconfig.ModVersionConstraint, forceUpdate bool) (bool, error) {
 	// so should we update?
 	// if forceUpdate is set or if the required version constraint is different to the locked version constraint, update
-	isSatisfied, errs := requiredModVersion.Constraint.Validate(installedVersion.Version)
-	if len(errs) > 0 {
-		return false, error_helpers.CombineErrors(errs...)
-	}
+	// TODO KAI FIX ME
+	//isSatisfied, errs := requiredModVersion.Constraint.Validate(installedVersion.Version)
+	//if len(errs) > 0 {
+	//	return false, error_helpers.CombineErrors(errs...)
+	//}
+	isSatisfied := true
 
 	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
 	updating := forceUpdate || i.isUpdateCommandTargettingMod(installedVersion.Name)
@@ -506,7 +508,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.ResolvedVers
 	// check for update
 	if updating || !isSatisfied {
 		// get available versions for this mod
-		includePrerelease := requiredModVersion.Constraint.IsPrerelease()
+		includePrerelease := requiredModVersion.IsPrerelease()
 		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
 		if err != nil {
 			return false, err
@@ -533,9 +535,9 @@ func (i *ModInstaller) updateAvailable(requiredVersion *modconfig.ModVersionCons
 // get the most recent available mod version which satisfies the version constraint
 func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.DependencyVersionList) (*ResolvedModRef, error) {
 	// find a version which satisfies the version constraint
-	var version = getVersionSatisfyingConstraint(modVersion.Constraint, availableVersions)
+	var version = getVersionSatisfyingConstraint(modVersion.Constraint(), availableVersions)
 	if version == nil {
-		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.Constraint.Original)
+		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.ConstraintString)
 	}
 
 	return NewResolvedModRef(modVersion, version)

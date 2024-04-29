@@ -16,7 +16,9 @@ type ResolvedModRef struct {
 	// the version constraint
 	Constraint *versionhelpers.Constraints
 	// the file path for local mods
-	FilePath     string
+	FilePath string
+	Branch   string
+
 	GitReference *plumbing.Reference
 }
 
@@ -24,9 +26,9 @@ func NewResolvedModRef(requiredModVersion *modconfig.ModVersionConstraint, versi
 	res := &ResolvedModRef{
 		Name:       requiredModVersion.Name,
 		Version:    version,
-		Constraint: requiredModVersion.Constraint,
-		// this may be empty strings
-		FilePath: requiredModVersion.FilePath,
+		Constraint: requiredModVersion.Constraint(),
+		FilePath:   requiredModVersion.FilePath(),
+		Branch:     requiredModVersion.Branch(),
 	}
 	if res.FilePath == "" {
 		res.GitReference = version.GitRef

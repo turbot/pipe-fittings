@@ -6,6 +6,8 @@ import (
 
 // Constraints wraps semver.Constraints type, adding the Original property
 type Constraints struct {
+	//  TODO KAI cant we just use a single constraint
+	// TODO maybe remove this struct altogether and just use ConstraintString from ModVersionConstraint
 	constraint *semver.Constraints
 	Original   string
 }

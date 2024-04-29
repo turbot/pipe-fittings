@@ -5,6 +5,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
+// DependencyVersion is a struct that encapsulates the version os a mod dependency
+// the version may be specified as a filepath, a branch or a semver version
 type DependencyVersion struct {
 	*semver.Version
 	GitRef *plumbing.Reference
