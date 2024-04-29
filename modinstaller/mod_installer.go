@@ -367,17 +367,17 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	} else {
 		// this mod is already installed - just update the install data
 		i.installData.addExisting(requiredModVersion.Name, dependencyMod, requiredModVersion.ConstraintString, parent)
-		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.ConstraintString, dependencyMod.Version))
+		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.ConstraintString, dependencyMod.Mod.Version))
 	}
 
 	// if we are updating dependencyMod, we should update all its children
 	if !forceUpdate {
-		forceUpdate = i.isUpdateCommandTargettingMod(dependencyMod.DependencyName)
+		forceUpdate = i.isUpdateCommandTargettingMod(dependencyMod.Mod.DependencyName)
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
-	for _, childDependency := range dependencyMod.Require.Mods {
+	for _, childDependency := range dependencyMod.Mod.Require.Mods {
 		childDependencyMod, err := i.getModForRequirement(ctx, childDependency, forceUpdate)
 		if err != nil {
 			errors = append(errors, err)
@@ -439,9 +439,8 @@ func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVers
 		return nil, err
 	}
 	return &DependencyMod{
-		Mod:    mod,
-		GitRef: installedVersion.GitRef,
-		Commit: installedVersion.Commit,
+		Mod:        mod,
+		Constraint: installedVersion,
 	}, nil
 }
 
@@ -494,12 +493,11 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.ResolvedVersionConstraint, requiredModVersion *modconfig.ModVersionConstraint, forceUpdate bool) (bool, error) {
 	// so should we update?
 	// if forceUpdate is set or if the required version constraint is different to the locked version constraint, update
-	// TODO KAI FIX ME
-	//isSatisfied, errs := requiredModVersion.Constraint.Validate(installedVersion.Version)
-	//if len(errs) > 0 {
-	//	return false, error_helpers.CombineErrors(errs...)
-	//}
-	isSatisfied := true
+	// TODO update to not assume a constraint
+	isSatisfied, errs := requiredModVersion.Constraint().Validate(installedVersion.Version)
+	if len(errs) > 0 {
+		return false, error_helpers.CombineErrors(errs...)
+	}
 
 	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
 	updating := forceUpdate || i.isUpdateCommandTargettingMod(installedVersion.Name)
@@ -526,25 +524,27 @@ func (i *ModInstaller) updateAvailable(requiredVersion *modconfig.ModVersionCons
 	if err != nil {
 		return false, err
 	}
-	if latestVersion.Version.Version.GreaterThan(currentVersion) {
+	if latestVersion.Version.GreaterThan(currentVersion) {
 		return true, nil
 	}
 	return false, nil
 }
 
 // get the most recent available mod version which satisfies the version constraint
-func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.DependencyVersionList) (*ResolvedModRef, error) {
+func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.DependencyVersionList) (*versionmap.ResolvedVersionConstraint, error) {
 	// find a version which satisfies the version constraint
 	var version = getVersionSatisfyingConstraint(modVersion.Constraint(), availableVersions)
 	if version == nil {
 		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.ConstraintString)
 	}
 
-	return NewResolvedModRef(modVersion, version)
+	//name, alias string, version *semver.Version, constraintString string, gitRef, commit string
+	mod
+	return versionmap.NewResolvedVersionConstraint(version, modVersion.Name, modVersion.Alias, modVersion.ConstraintString, version.GitRef, version.Commit), nil
 }
 
 // install a mod
-func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, parent *modconfig.Mod) (_ *DependencyMod, err error) {
+func (i *ModInstaller) install(ctx context.Context, dependency *versionmap.ResolvedVersionConstraint, parent *modconfig.Mod) (_ *DependencyMod, err error) {
 	var modDef *modconfig.Mod
 	// get the temp location to install the mod to
 	dependencyPath := dependency.DependencyPath()
@@ -556,8 +556,6 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 		}
 	}()
 
-	gitRef := dependency.GitReference.Name().String()
-	commit := dependency.GitReference.Hash().String()
 	// does target dir exist>
 	if _, err := os.Stat(destPath); err == nil {
 		// this is unexpected - if the mod was successfully installed it would have been found in the lock file so we
@@ -591,13 +589,12 @@ func (i *ModInstaller) install(ctx context.Context, dependency *ResolvedModRef, 
 	}
 
 	return &DependencyMod{
-		Mod:    modDef,
-		GitRef: gitRef,
-		Commit: commit,
+		Mod:        modDef,
+		Constraint: dependency,
 	}, nil
 }
 
-func (i *ModInstaller) installFromGit(dependency *ResolvedModRef, installPath string) error {
+func (i *ModInstaller) installFromGit(dependency *versionmap.ResolvedVersionConstraint, installPath string) error {
 	// get the mod from git = first try https
 	gitUrl := getGitUrl(dependency.Name, GitUrlModeHTTPS)
 	slog.Debug("installFromGit cloning the repo", gitUrl, dependency.Version.GitRef)
@@ -671,7 +668,7 @@ func (i *ModInstaller) uninstalling() bool {
 	return i.command == "uninstall"
 }
 
-func (i *ModInstaller) verifyModFile(dependency *ResolvedModRef, installPath string) error {
+func (i *ModInstaller) verifyModFile(dependency *versionmap.ResolvedVersionConstraint, installPath string) error {
 	for _, modFilePath := range app_specific.ModFilePaths(installPath) {
 		_, err := os.Stat(modFilePath)
 		if err == nil {

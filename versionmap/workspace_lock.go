@@ -18,7 +18,7 @@ import (
 	"github.com/turbot/pipe-fittings/versionhelpers"
 )
 
-const WorkspaceLockStructVersion = 20220411
+const WorkspaceLockStructVersion = 20240429
 
 // WorkspaceLock is a map of ModVersionMaps items keyed by the parent mod whose dependencies are installed
 type WorkspaceLock struct {

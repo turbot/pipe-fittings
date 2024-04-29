@@ -138,7 +138,8 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (versionmap.D
 		}
 		versions[idx] = &versionmap.DependencyVersion{
 			Version: v,
-			GitRef:  raw,
+			GitRef:  raw.Name().String(),
+			Commit:  raw.Hash().String(),
 		}
 		idx++
 	}
