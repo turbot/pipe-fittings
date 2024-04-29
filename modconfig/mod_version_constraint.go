@@ -19,7 +19,8 @@ type VersionConstrainCollection []*ModVersionConstraint
 // ModVersionConstraint is a struct to represent a version as specified in a mod require block
 type ModVersionConstraint struct {
 	// the fully qualified mod name, e.g. github.com/turbot/mod1
-	Name          string `cty:"name" hcl:"name,label"`
+	Name string `cty:"name" hcl:"name,label"`
+	// the original constraint string
 	VersionString string `cty:"version" hcl:"version"`
 	// variable values to be set on the dependency mod
 	Args map[string]cty.Value `cty:"args"  hcl:"args,optional"`
@@ -29,9 +30,6 @@ type ModVersionConstraint struct {
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
 
-	// TODO implement
-	// the original constraint string
-	ConstraintString string
 	// only one of Constraint, Branch and FilePath will be set
 	constraint *versionhelpers.Constraints
 	// the local file location to use

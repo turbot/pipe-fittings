@@ -1,6 +1,7 @@
 package versionmap
 
 import (
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
@@ -8,21 +9,23 @@ import (
 // (either a git tag, git commit (for a branch constraint) or a file location)
 type ResolvedVersionConstraint struct {
 	*DependencyVersion
-	Name          string `json:"name,omitempty"`
-	Alias         string `json:"alias,omitempty"`
-	Constraint    string `json:"constraint,omitempty"`
-	Commit        string `json:"commit,omitempty"`
-	GitRef        string `json:"git_ref,omitempty"`
-	StructVersion int    `json:"struct_version,omitempty"`
+	Name          string              `json:"name,omitempty"`
+	Alias         string              `json:"alias,omitempty"`
+	Constraint    string              `json:"constraint,omitempty"`
+	Commit        string              `json:"commit,omitempty"`
+	GitRefStr     string              `json:"git_ref,omitempty"`
+	StructVersion int                 `json:"struct_version,omitempty"`
+	GitRef        *plumbing.Reference `json:"-"`
 }
 
-func NewResolvedVersionConstraint(version *DependencyVersion, name, alias string, constraintString string, gitRef, commit string) *ResolvedVersionConstraint {
+func NewResolvedVersionConstraint(version *DependencyVersion, name, alias, constraintString string, gitRef *plumbing.Reference) *ResolvedVersionConstraint {
 	return &ResolvedVersionConstraint{
 		DependencyVersion: version,
 		Name:              name,
 		Alias:             alias,
 		Constraint:        constraintString,
-		Commit:            commit,
+		Commit:            gitRef.Hash().String(),
+		GitRefStr:         gitRef.Name().String(),
 		GitRef:            gitRef,
 		StructVersion:     WorkspaceLockStructVersion,
 	}
@@ -34,7 +37,7 @@ func (c ResolvedVersionConstraint) Equals(other *ResolvedVersionConstraint) bool
 		c.Constraint == other.Constraint &&
 		c.Branch == other.Branch &&
 		c.Commit == other.Commit &&
-		c.GitRef == other.GitRef &&
+		c.GitRefStr == other.GitRefStr &&
 		c.FilePath == other.FilePath
 }
 

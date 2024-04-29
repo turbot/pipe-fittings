@@ -137,9 +137,9 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (versionmap.D
 			continue
 		}
 		versions[idx] = &versionmap.DependencyVersion{
+			// TODO KAI BRANCH AND FILEPATH
 			Version: v,
-			GitRef:  raw.Name().String(),
-			Commit:  raw.Hash().String(),
+			GitRef:  raw,
 		}
 		idx++
 	}
