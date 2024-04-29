@@ -168,7 +168,7 @@ func (l *WorkspaceLock) setMissing() {
 				// get the mod name from the constraint (fullName includes the version)
 				name := resolvedConstraint.Name
 				// remove this item from the install cache and add into missing
-				l.MissingVersions.Add(name, resolvedConstraint.Alias, resolvedConstraint.Version, resolvedConstraint.Constraint, parent, resolvedConstraint.GitRef, resolvedConstraint.Commit)
+				l.MissingVersions.AddDependency(name, resolvedConstraint.Alias, resolvedConstraint.Version, resolvedConstraint.Constraint, parent, resolvedConstraint.GitRef, resolvedConstraint.Commit)
 				l.InstallCache[parent].Remove(name)
 			}
 		}
@@ -260,7 +260,8 @@ func (l *WorkspaceLock) GetLockedModVersion(requiredModVersion *modconfig.ModVer
 	}
 
 	// verify the locked version satisfies the version constraint
-	if !requiredModVersion.Constraint.Check(lockedVersion.Version) {
+	// TODO KAI FIX to use requiredModVersion.Check
+	if !requiredModVersion.Constraint().Check(lockedVersion.Version) { // TODO KAI FIX
 		return nil, nil
 	}
 
@@ -275,7 +276,8 @@ func (l *WorkspaceLock) FindLockedModVersion(requiredModVersion *modconfig.ModVe
 
 	for _, lockedVersion := range lockedVersions {
 		// verify the locked version satisfies the version constraint
-		if requiredModVersion.Constraint.Check(lockedVersion.Version) {
+		// TODO KAI FIX to use requiredModVersion.Check
+		if requiredModVersion.Constraint().Check(lockedVersion.Version) { // TODO KAI FIX
 
 			return lockedVersion, nil
 		}
@@ -291,8 +293,8 @@ func (l *WorkspaceLock) EnsureLockedModVersion(requiredModVersion *modconfig.Mod
 	}
 
 	// verify the locked version satisfies the version constraint
-	if !requiredModVersion.Constraint.Check(lockedVersion.Version) {
-		return nil, fmt.Errorf("failed to resolve dependencies for %s - locked version %s does not meet the constraint %s", parent.GetInstallCacheKey(), modconfig.BuildModDependencyPath(requiredModVersion.Name, lockedVersion.Version), requiredModVersion.Constraint.Original)
+	if !requiredModVersion.Constraint().Check(lockedVersion.Version) { // TODO KAI FIX
+		return nil, fmt.Errorf("failed to resolve dependencies for %s - locked version %s does not meet the constraint %s", parent.GetInstallCacheKey(), modconfig.BuildModDependencyPath(requiredModVersion.Name, lockedVersion.Version), "") //TODO requiredModVersion.Constraint.Original)
 	}
 
 	return lockedVersion, nil

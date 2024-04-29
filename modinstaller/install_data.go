@@ -3,7 +3,6 @@ package modinstaller
 import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/versionhelpers"
 	"github.com/turbot/pipe-fittings/versionmap"
 	"github.com/xlab/treeprint"
 )
@@ -44,18 +43,18 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 func (d *InstallData) onModInstalled(dependency *ResolvedModRef, modDef *modconfig.Mod, parent *modconfig.Mod) {
 	parentPath := parent.GetInstallCacheKey()
 	// get the constraint from the parent (it must be there)
-	modVersionConstraint := parent.Require.GetModDependency(dependency.Name).Constraint.Original
+	modVersionConstraint := parent.Require.GetModDependency(dependency.Name).ConstraintString
 
 	// update lock
-	d.NewLock.InstallCache.Add(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath, dependency.GitReference.Name().String(), dependency.GitReference.Hash().String())
+	d.NewLock.InstallCache.AddDependency(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath, dependency.GitReference.Name().String(), dependency.GitReference.Hash().String())
 }
 
 // addExisting is called when a dependency is satisfied by a mod which is already installed
 // (perhaps as a depdency of another mod)
-func (d *InstallData) addExisting(dependencyName string, existingDep *DependencyMod, constraint *versionhelpers.Constraints, parent *modconfig.Mod) {
+func (d *InstallData) addExisting(dependencyName string, existingDep *DependencyMod, constraintString string, parent *modconfig.Mod) {
 	// update lock
 	parentPath := parent.GetInstallCacheKey()
-	d.NewLock.InstallCache.Add(dependencyName, existingDep.ShortName, existingDep.Version, constraint.Original, parentPath, existingDep.GitRef, existingDep.Commit)
+	d.NewLock.InstallCache.AddDependency(dependencyName, existingDep.ShortName, existingDep.Version, constraintString, parentPath, existingDep.GitRef, existingDep.Commit)
 }
 
 // retrieve all available mod versions from our cache, or from Git if not yet cached

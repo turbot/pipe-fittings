@@ -197,6 +197,7 @@ func (i *ModInstaller) calcChangesForInstall(oldRequire *modconfig.Require, newR
 
 // calculates the changes required in mod.sp to reflect updates
 func (i *ModInstaller) calcChangesForUpdate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+	// TODO KAI THIS WILL CHANGE FOR FILE/BRANCH
 	changes := ChangeSet{}
 	for _, requiredMod := range oldRequire.Mods {
 		modInUpdated := newRequire.GetModDependency(requiredMod.Name)
