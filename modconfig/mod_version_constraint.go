@@ -16,6 +16,7 @@ const filePrefix = "file:"
 
 type VersionConstrainCollection []*ModVersionConstraint
 
+// ModVersionConstraint is a struct to represent a version as specified in a mod require block
 type ModVersionConstraint struct {
 	// the fully qualified mod name, e.g. github.com/turbot/mod1
 	Name          string `cty:"name" hcl:"name,label"`
@@ -37,6 +38,7 @@ type ModVersionConstraint struct {
 	filePath string
 	// the branch name to use
 	branchName string
+
 	// contains the range of the definition of the mod block
 	DefRange hcl.Range
 	// contains the range of the body of the mod block

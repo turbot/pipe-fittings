@@ -40,13 +40,14 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 }
 
 // onModInstalled is called when a dependency is satisfied by installing a mod version
-func (d *InstallData) onModInstalled(dependency *ResolvedModRef, modDef *modconfig.Mod, parent *modconfig.Mod) {
+func (d *InstallData) onModInstalled(dependency *versionmap.ResolvedVersionConstraint, modDef *modconfig.Mod, parent *modconfig.Mod) {
 	parentPath := parent.GetInstallCacheKey()
 	// get the constraint from the parent (it must be there)
-	modVersionConstraint := parent.Require.GetModDependency(dependency.Name).ConstraintString
+	//modVersionConstraint := parent.Require.GetModDependency(dependency.Name).ConstraintString
 
 	// update lock
-	d.NewLock.InstallCache.AddDependency(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath, dependency.GitReference.Name().String(), dependency.GitReference.Hash().String())
+	d.NewLock.InstallCache.AddDependency(dependency, modDef.ShortName, modDef.Version, parentPath)
+	//d.NewLock.InstallCache.AddDependency(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath, dependency.GitReference.Name().String(), dependency.GitReference.Hash().String())
 }
 
 // addExisting is called when a dependency is satisfied by a mod which is already installed
@@ -54,7 +55,7 @@ func (d *InstallData) onModInstalled(dependency *ResolvedModRef, modDef *modconf
 func (d *InstallData) addExisting(dependencyName string, existingDep *DependencyMod, constraintString string, parent *modconfig.Mod) {
 	// update lock
 	parentPath := parent.GetInstallCacheKey()
-	d.NewLock.InstallCache.AddDependency(dependencyName, existingDep.ShortName, existingDep.Version, constraintString, parentPath, existingDep.GitRef, existingDep.Commit)
+	d.NewLock.InstallCache.AddDependency(existingDep.Constraint, existingDep.Mod.ShortName, existingDep.Mod.Version, parentPath)
 }
 
 // retrieve all available mod versions from our cache, or from Git if not yet cached

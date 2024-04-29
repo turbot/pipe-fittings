@@ -13,7 +13,7 @@ import (
 type DependencyVersionMap map[string]ResolvedVersionMap
 
 // Add adds a dependency to the list of items installed for the given parent
-func (m DependencyVersionMap) AddDependency(dependencyName, alias string, dependencyVersion *semver.Version, constraintString, parentName, gitRef, commit string) {
+func (m DependencyVersionMap) AddDependency(dependency *ResolvedVersionConstraint, alias string, dependencyVersion *semver.Version, parentName string) {
 	// get the map for this parent
 	parentItems := m[parentName]
 	// create if needed

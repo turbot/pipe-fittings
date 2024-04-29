@@ -2,14 +2,14 @@ package versionmap
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
-// DependencyVersion is a struct that encapsulates the version os a mod dependency
+// DependencyVersion is a struct that encapsulates the version of a mod dependency
 // the version may be specified as a filepath, a branch or a semver version
 type DependencyVersion struct {
-	*semver.Version
-	GitRef *plumbing.Reference
+	Version  *semver.Version `json:"version,omitempty"`
+	Branch   string          `json:"branch,omitempty"`
+	FilePath string          `json:"file_path,omitempty"`
 }
 
 // make a collection type for this
