@@ -11,7 +11,7 @@ type DependencyVersion struct {
 	Version  *semver.Version `json:"version,omitempty"`
 	Branch   string          `json:"branch,omitempty"`
 	FilePath string          `json:"file_path,omitempty"`
-	// TODO KAI do we reallyn eed this
+
 	GitRef *plumbing.Reference `json:"-"`
 }
 
