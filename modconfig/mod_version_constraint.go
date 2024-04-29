@@ -28,12 +28,15 @@ type ModVersionConstraint struct {
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
 
+	// TODO implement
+	// the original constraint string
+	ConstraintString string
 	// only one of Constraint, Branch and FilePath will be set
-	Constraint *versionhelpers.Constraints
+	constraint *versionhelpers.Constraints
 	// the local file location to use
-	FilePath string
+	filePath string
 	// the branch name to use
-	BranchName string
+	branchName string
 	// contains the range of the definition of the mod block
 	DefRange hcl.Range
 	// contains the range of the body of the mod block
@@ -69,7 +72,7 @@ func NewModVersionConstraint(modFullName string) (*ModVersionConstraint, error) 
 				return nil, fmt.Errorf("invalid mod name %s", modFullName)
 			}
 			m.Name = segments[0]
-			m.BranchName = segments[1]
+			m.branchName = segments[1]
 
 		} else {
 			m.Name = modFullName
@@ -99,8 +102,8 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 		m.setFilePath()
 		return nil
 	}
-	// if a branch name was passed, nothing more to do
-	if m.BranchName != "" {
+	// if a branch name or file path was passed, nothing more to do
+	if m.branchName != "" || m.filePath != "" {
 		return nil
 	}
 	// otherwise, if create a version constraint from the version
@@ -112,7 +115,7 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 	// does the version parse as a semver version
 	if c, err := versionhelpers.NewConstraint(m.VersionString); err == nil {
 		// no error
-		m.Constraint = c
+		m.constraint = c
 		return nil
 	}
 
@@ -143,10 +146,30 @@ func (m *ModVersionConstraint) String() string {
 }
 
 func (m *ModVersionConstraint) setFilePath() {
-	m.FilePath = strings.TrimPrefix(m.FilePath, filePrefix)
+	m.filePath = strings.TrimPrefix(m.filePath, filePrefix)
 }
 
 func (m *ModVersionConstraint) Equals(other *ModVersionConstraint) bool {
 	// just check the hcl properties
 	return m.Name == other.Name && m.VersionString == other.VersionString
+}
+
+func (m *ModVersionConstraint) Check(version string) bool {
+	return true
+}
+
+func (m *ModVersionConstraint) IsPrerelease() bool {
+	return m.constraint != nil && m.constraint.IsPrerelease()
+}
+
+func (m *ModVersionConstraint) Constraint() *versionhelpers.Constraints {
+	return m.constraint
+}
+
+func (m *ModVersionConstraint) FilePath() string {
+	return m.filePath
+}
+
+func (m *ModVersionConstraint) Branch() string {
+	return m.branchName
 }
