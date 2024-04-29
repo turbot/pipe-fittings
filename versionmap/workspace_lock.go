@@ -271,19 +271,22 @@ func (l *WorkspaceLock) GetLockedModVersion(requiredModVersion *modconfig.ModVer
 
 // FindLockedModVersion looks for a lock file entry matching the required constraint and returns nil if not found
 func (l *WorkspaceLock) FindLockedModVersion(requiredModVersion *modconfig.ModVersionConstraint) (*InstalledModVersion, error) {
+	// find all v ersions of this mod in the lock file
 	lockedVersions := l.FindMod(requiredModVersion.Name)
 
-	// todo if there are mnore than 1 mod satiusfyinh constraint, pick newest???
+	potentialVersions := make([]*InstalledModVersion, 0)
 
 	for _, lockedVersion := range lockedVersions {
 		// verify the locked version satisfies the version constraint
-		// TODO KAI FIX to use requiredModVersion.Check
-		if requiredModVersion.Constraint().Check(lockedVersion.Version) { // TODO KAI FIX
-
-			return lockedVersion, nil
+		if lockedVersion.SatisfiesConstraint(requiredModVersion) {
+			potentialVersions = append(potentialVersions, lockedVersion)
 		}
 	}
-	return nil, nil
+	if len(potentialVersions) == 0 {
+		return nil, nil
+	}
+	// TODO KAI choose the best version
+	return potentialVersions[0], nil
 }
 
 // EnsureLockedModVersion looks for a lock file entry matching the required mod name
