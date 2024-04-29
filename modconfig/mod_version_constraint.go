@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/versionhelpers"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -31,6 +32,8 @@ type ModVersionConstraint struct {
 	Constraint *versionhelpers.Constraints
 	// the local file location to use
 	FilePath string
+	// the branch name to use
+	BranchName string
 	// contains the range of the definition of the mod block
 	DefRange hcl.Range
 	// contains the range of the body of the mod block
@@ -49,20 +52,33 @@ func NewModVersionConstraint(modFullName string) (*ModVersionConstraint, error) 
 	if strings.HasPrefix(modFullName, filePrefix) {
 		m.Name = modFullName
 	} else {
-		// otherwise try to extract version from name
-		segments := strings.Split(modFullName, "@")
-		if len(segments) > 2 {
-			return nil, fmt.Errorf("invalid mod name %s", modFullName)
-		}
-		m.Name = segments[0]
-		if len(segments) == 2 {
+		if strings.Contains(modFullName, "@") {
+
+			// otherwise try to extract version from name
+			segments := strings.Split(modFullName, "@")
+			if len(segments) > 2 {
+				return nil, fmt.Errorf("invalid mod name %s", modFullName)
+			}
+			m.Name = segments[0]
 			m.VersionString = segments[1]
+
+		} else if strings.Contains(modFullName, "#") {
+			// otherwise try to extract version from name
+			segments := strings.Split(modFullName, "#")
+			if len(segments) > 2 {
+				return nil, fmt.Errorf("invalid mod name %s", modFullName)
+			}
+			m.Name = segments[0]
+			m.BranchName = segments[1]
+
+		} else {
+			m.Name = modFullName
 		}
 	}
 
 	// try to convert version into a semver constraint
-	if err := m.Initialise(nil); err != nil {
-		return nil, err
+	if diags := m.Initialise(nil); diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError("failed to initialise version constraint", diags)
 	}
 	return m, nil
 }
@@ -83,7 +99,11 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 		m.setFilePath()
 		return nil
 	}
-
+	// if a branch name was passed, nothing more to do
+	if m.BranchName != "" {
+		return nil
+	}
+	// otherwise, if create a version constraint from the version
 	// now default the version string to latest
 	if m.VersionString == "" || m.VersionString == "latest" {
 		m.VersionString = "*"

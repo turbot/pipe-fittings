@@ -11,15 +11,19 @@ type ResolvedVersionConstraint struct {
 	Version       *semver.Version `json:"version,omitempty"`
 	Constraint    string          `json:"constraint,omitempty"`
 	StructVersion int             `json:"struct_version,omitempty"`
+	Commit        string          `json:"commit,omitempty"`
+	GitRef        string          `json:"git_ref,omitempty"`
 }
 
-func NewResolvedVersionConstraint(name, alias string, version *semver.Version, constraintString string) *ResolvedVersionConstraint {
+func NewResolvedVersionConstraint(name, alias string, version *semver.Version, constraintString string, gitRef, commit string) *ResolvedVersionConstraint {
 	return &ResolvedVersionConstraint{
 		Name:          name,
 		Alias:         alias,
 		Version:       version,
 		Constraint:    constraintString,
 		StructVersion: WorkspaceLockStructVersion,
+		Commit:        commit,
+		GitRef:        gitRef,
 	}
 }
 

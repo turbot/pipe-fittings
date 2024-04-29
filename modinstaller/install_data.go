@@ -1,7 +1,6 @@
 package modinstaller
 
 import (
-	"github.com/Masterminds/semver/v3"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/versionhelpers"
@@ -15,7 +14,7 @@ type InstallData struct {
 	NewLock *versionmap.WorkspaceLock
 
 	// ALL the available versions for each dependency mod(we populate this in a lazy fashion)
-	allAvailable versionmap.VersionListMap
+	allAvailable versionmap.DepdencyVersionListMap
 
 	// list of dependencies installed by recent install operation
 	Installed versionmap.DependencyVersionMap
@@ -33,32 +32,12 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 		Lock:         workspaceLock,
 		WorkspaceMod: workspaceMod,
 		NewLock:      versionmap.EmptyWorkspaceLock(workspaceLock),
-		allAvailable: make(versionmap.VersionListMap),
+		allAvailable: make(versionmap.DepdencyVersionListMap),
 		Installed:    make(versionmap.DependencyVersionMap),
 		Upgraded:     make(versionmap.DependencyVersionMap),
 		Downgraded:   make(versionmap.DependencyVersionMap),
 		Uninstalled:  make(versionmap.DependencyVersionMap),
 	}
-}
-
-// GetAvailableUpdates returns a map of all installed mods which are not in the lock file
-func (d *InstallData) GetAvailableUpdates() (versionmap.DependencyVersionMap, error) {
-	res := make(versionmap.DependencyVersionMap)
-	for parent, deps := range d.Lock.InstallCache {
-		for name, resolvedConstraint := range deps {
-			includePrerelease := resolvedConstraint.IsPrerelease()
-			availableVersions, err := d.getAvailableModVersions(name, includePrerelease)
-			if err != nil {
-				return nil, err
-			}
-			constraint, _ := versionhelpers.NewConstraint(resolvedConstraint.Constraint)
-			var latestVersion = getVersionSatisfyingConstraint(constraint, availableVersions)
-			if latestVersion.GreaterThan(resolvedConstraint.Version) {
-				res.Add(name, resolvedConstraint.Alias, latestVersion, constraint.Original, parent)
-			}
-		}
-	}
-	return res, nil
 }
 
 // onModInstalled is called when a dependency is satisfied by installing a mod version
@@ -68,23 +47,25 @@ func (d *InstallData) onModInstalled(dependency *ResolvedModRef, modDef *modconf
 	modVersionConstraint := parent.Require.GetModDependency(dependency.Name).Constraint.Original
 
 	// update lock
-	d.NewLock.InstallCache.Add(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath)
+	d.NewLock.InstallCache.Add(dependency.Name, modDef.ShortName, modDef.Version, modVersionConstraint, parentPath, dependency.GitReference.Name().String(), dependency.GitReference.Hash().String())
 }
 
 // addExisting is called when a dependency is satisfied by a mod which is already installed
-func (d *InstallData) addExisting(dependencyName string, existingDep *modconfig.Mod, constraint *versionhelpers.Constraints, parent *modconfig.Mod) {
+// (perhaps as a depdency of another mod)
+func (d *InstallData) addExisting(dependencyName string, existingDep *DependencyMod, constraint *versionhelpers.Constraints, parent *modconfig.Mod) {
 	// update lock
 	parentPath := parent.GetInstallCacheKey()
-	d.NewLock.InstallCache.Add(dependencyName, existingDep.ShortName, existingDep.Version, constraint.Original, parentPath)
+	d.NewLock.InstallCache.Add(dependencyName, existingDep.ShortName, existingDep.Version, constraint.Original, parentPath, existingDep.GitRef, existingDep.Commit)
 }
 
 // retrieve all available mod versions from our cache, or from Git if not yet cached
-func (d *InstallData) getAvailableModVersions(modName string, includePrerelease bool) ([]*semver.Version, error) {
+func (d *InstallData) getAvailableModVersions(modName string, includePrerelease bool) (versionmap.DependencyVersionList, error) {
 	// have we already loaded the versions for this mod
 	availableVersions, ok := d.allAvailable[modName]
 	if ok {
 		return availableVersions, nil
 	}
+
 	// so we have not cached this yet - retrieve from Git
 	var err error
 	availableVersions, err = getTagVersionsFromGit(modName, includePrerelease)
