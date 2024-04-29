@@ -9,7 +9,22 @@ import (
 // (either a git tag, git commit (for a branch constraint) or a file location)
 type InstalledModVersion struct {
 	*ResolvedVersionConstraint
-	Alias string `json:"alias,omitempty"`
+	Alias       string `json:"alias"`
+	InstallPath string `json:"install_path"`
+}
+
+func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModVersionConstraint) bool {
+	if c := requiredVersion.Constraint(); c != nil {
+		return c.Check(v.Version)
+	}
+	if b := requiredVersion.Branch(); b != "" {
+		return v.Branch == b
+	}
+	if f := requiredVersion.FilePath(); f != "" {
+		return v.FilePath == f
+	}
+	// unexpected
+	return false
 }
 
 // ResolvedVersionConstraint is a struct to represent a version constraint which has been resolved to specific version

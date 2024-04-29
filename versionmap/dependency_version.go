@@ -12,6 +12,7 @@ type DependencyVersion struct {
 	Branch   string          `json:"branch,omitempty"`
 	FilePath string          `json:"file_path,omitempty"`
 
+	// TODO KAI do not store git ref in the struct
 	GitRef *plumbing.Reference `json:"-"`
 }
 

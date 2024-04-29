@@ -15,16 +15,19 @@ type InstallOpts struct {
 	DryRun         bool
 	Force          bool
 	PluginVersions *modconfig.PluginVersionMap
+	UpdateStrategy string
 }
 
 func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *InstallOpts {
 	cmdName := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command).Name()
 	opts := &InstallOpts{
-		WorkspaceMod: workspaceMod,
-		DryRun:       viper.GetBool(constants.ArgDryRun),
-		Force:        viper.GetBool(constants.ArgForce),
-		ModArgs:      utils.TrimGitUrls(modsToInstall),
-		Command:      cmdName,
+		WorkspaceMod:   workspaceMod,
+		DryRun:         viper.GetBool(constants.ArgDryRun),
+		Force:          viper.GetBool(constants.ArgForce),
+		ModArgs:        utils.TrimGitUrls(modsToInstall),
+		Command:        cmdName,
+		UpdateStrategy: constants.ModStrategyDefault,
 	}
+	opts.ModArgs = utils.TrimGitUrls(opts.ModArgs)
 	return opts
 }
