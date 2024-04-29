@@ -1,21 +1,21 @@
 package versionmap
 
-// ResolvedVersionMap represents a map of ResolvedVersionConstraint, keyed by dependency name
-type ResolvedVersionMap map[string]*ResolvedVersionConstraint
+// InstalledVersionMap represents a map of ResolvedVersionConstraint, keyed by dependency name
+type InstalledVersionMap map[string]*InstalledModVersion
 
-func (m ResolvedVersionMap) AddResolvedVersion(constraint *ResolvedVersionConstraint) {
+func (m InstalledVersionMap) AddResolvedVersion(constraint *InstalledModVersion) {
 	m[constraint.Name] = constraint
 }
 
-func (m ResolvedVersionMap) Remove(name string) {
+func (m InstalledVersionMap) Remove(name string) {
 	delete(m, name)
 }
 
-// ToVersionListMap converts this map into a ResolvedVersionListMap
-func (m ResolvedVersionMap) ToVersionListMap() ResolvedVersionListMap {
-	res := make(ResolvedVersionListMap, len(m))
-	for k, v := range m {
-		res.Add(k, v)
-	}
-	return res
-}
+//// ToVersionListMap converts this map into a ResolvedVersionListMap
+//func (m InstalledVersionMap) ToVersionListMap() ResolvedVersionListMap {
+//	res := make(ResolvedVersionListMap, len(m))
+//	for k, v := range m {
+//		res.Add(k, v)
+//	}
+//	return res
+//}
