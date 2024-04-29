@@ -6,8 +6,7 @@ import (
 )
 
 // DependencyMod is a mod which has been installed as a dependency
-// enrich the mod with commit hash and ref
 type DependencyMod struct {
-	Constraint *versionmap.ResolvedVersionConstraint
-	Mod        *modconfig.Mod
+	InstalledVersion *versionmap.InstalledModVersion
+	Mod              *modconfig.Mod
 }

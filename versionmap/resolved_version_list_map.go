@@ -5,18 +5,18 @@ import (
 )
 
 // ResolvedVersionListMap represents a map of ResolvedVersionConstraint arrays, keyed by dependency name
-type ResolvedVersionListMap map[string][]*ResolvedVersionConstraint
+type ResolvedVersionListMap map[string][]*InstalledModVersion
 
 // Add appends the version constraint to the list for the given name
-func (m ResolvedVersionListMap) Add(name string, versionConstraint *ResolvedVersionConstraint) {
+func (m ResolvedVersionListMap) Add(name string, versionConstraint *InstalledModVersion) {
 	// if there is already an entry for the same name, replace it
 	// TODO handle alias
-	m[name] = []*ResolvedVersionConstraint{versionConstraint}
+	m[name] = []*InstalledModVersion{versionConstraint}
 }
 
 // Remove removes the given version constraint from the list for the given name
 func (m ResolvedVersionListMap) Remove(name string, constraint *ResolvedVersionConstraint) {
-	var res []*ResolvedVersionConstraint
+	var res []*InstalledModVersion
 	for _, c := range m[name] {
 		if !c.Equals(constraint) {
 			res = append(res, c)
@@ -26,8 +26,8 @@ func (m ResolvedVersionListMap) Remove(name string, constraint *ResolvedVersionC
 }
 
 // FlatMap converts the ResolvedVersionListMap map into a map keyed by the FULL dependency name (i.e. including version(
-func (m ResolvedVersionListMap) FlatMap() map[string]*ResolvedVersionConstraint {
-	var res = make(map[string]*ResolvedVersionConstraint)
+func (m ResolvedVersionListMap) FlatMap() map[string]*InstalledModVersion {
+	var res = make(map[string]*InstalledModVersion)
 	for name, versions := range m {
 		for _, version := range versions {
 			key := modconfig.BuildModDependencyPath(name, version.Version)
