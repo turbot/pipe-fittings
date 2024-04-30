@@ -31,9 +31,9 @@ func (m VersionListMap) FlatMap() map[string]bool {
 }
 
 // DepdencyVersionListMap is a map keyed by dependency name storing a list of versions for each dependency
-type DepdencyVersionListMap map[string]DependencyVersionList
+type DepdencyVersionListMap map[string]modconfig.DependencyVersionList
 
-func (m DepdencyVersionListMap) Add(name string, version *DependencyVersion) {
+func (m DepdencyVersionListMap) Add(name string, version *modconfig.DependencyVersion) {
 	versions := append(m[name], version) //nolint:gocritic // TODO: potential bug here?
 	// reverse sort the versions
 	sort.Sort(sort.Reverse(versions))

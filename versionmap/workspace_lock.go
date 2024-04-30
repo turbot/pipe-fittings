@@ -114,7 +114,8 @@ func (l *WorkspaceLock) getInstalledMods() error {
 		}
 
 		// add this mod version to the map
-		installedMods.Add(modDependencyName, version)
+		// TODO KAI version map must handle different version types
+		installedMods.Add(modDependencyName, version.Version)
 	}
 
 	if len(errors) > 0 {
@@ -124,18 +125,22 @@ func (l *WorkspaceLock) getInstalledMods() error {
 	return nil
 }
 
-func (l *WorkspaceLock) validateAndFixFolderNamingFormat(modName string, version *semver.Version, modfilePath string) error {
-	// verify folder name is of correct format (i.e. including patch number)
-	modDir := filepath.Dir(modfilePath)
-	parts := strings.Split(modDir, "@")
-	currentVersionString := parts[1]
-	desiredVersionString := fmt.Sprintf("v%s", version.String())
-	if desiredVersionString != currentVersionString {
-		desiredDir := fmt.Sprintf("%s@%s", parts[0], desiredVersionString)
-		slog.Debug("renaming dependency mod folder %s to %s", modDir, desiredDir)
-		return os.Rename(modDir, desiredDir)
+func (l *WorkspaceLock) validateAndFixFolderNamingFormat(modName string, version *modconfig.DependencyVersion, modfilePath string) error {
+	switch {
+	case version.Version != nil:
+		// verify folder name is of correct format (i.e. including patch number)
+		modDir := filepath.Dir(modfilePath)
+		parts := strings.Split(modDir, "@")
+		currentVersionString := parts[1]
+		desiredVersionString := fmt.Sprintf("v%s", version.Version.String())
+		if desiredVersionString != currentVersionString {
+			desiredDir := fmt.Sprintf("%s@%s", parts[0], desiredVersionString)
+			slog.Debug("renaming dependency mod folder %s to %s", modDir, desiredDir)
+			return os.Rename(modDir, desiredDir)
+		}
 	}
 	return nil
+
 }
 
 // GetUnreferencedMods returns a map of all installed mods which are not in the lock file
@@ -177,7 +182,7 @@ func (l *WorkspaceLock) setMissing() {
 }
 
 // extract the mod name and version from the modfile path
-func (l *WorkspaceLock) parseModPath(modfilePath string) (modDependencyName string, modVersion *semver.Version, err error) {
+func (l *WorkspaceLock) parseModPath(modfilePath string) (modDependencyName string, modVersion *modconfig.DependencyVersion, err error) {
 	modFullName, err := filepath.Rel(l.ModInstallationPath, filepath.Dir(modfilePath))
 	if err != nil {
 		return
