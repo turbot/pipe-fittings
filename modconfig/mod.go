@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -40,7 +39,7 @@ type Mod struct {
 	// Dependency attributes - set if this mod is loaded as a dependency
 
 	// the mod version
-	Version *semver.Version `json:"-"`
+	Version *DependencyVersion `json:"-"`
 	// DependencyPath is the fully qualified mod name including version,
 	// which will by the map key in the workspace lock file
 	// NOTE: this is the relative path to the mod location from the depdemncy install dir (.steampipe/mods)
@@ -359,13 +358,13 @@ func (m *Mod) GetInstallCacheKey() string {
 // SetDependencyConfig sets DependencyPath, DependencyName and Version
 func (m *Mod) SetDependencyConfig(dependencyPath string) error {
 	// parse the dependency path to get the dependency name and version
-	dependencyName, version, branch, err := ParseModDependencyPath(dependencyPath)
+	dependencyName, dependencyVersion, err := ParseModDependencyPath(dependencyPath)
 	if err != nil {
 		return err
 	}
 	m.DependencyPath = &dependencyPath
 	m.DependencyName = dependencyName
-	m.Version = version
+	m.Version = dependencyVersion
 	return nil
 }
 
