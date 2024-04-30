@@ -1,4 +1,4 @@
-package versionmap
+package modconfig
 
 import (
 	"github.com/Masterminds/semver/v3"

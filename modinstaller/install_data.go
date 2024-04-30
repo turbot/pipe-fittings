@@ -61,7 +61,7 @@ func (d *InstallData) addExisting(existingDep *DependencyMod, parent *modconfig.
 }
 
 // retrieve all available mod versions from our cache, or from Git if not yet cached
-func (d *InstallData) getAvailableModVersions(modName string, includePrerelease bool) (versionmap.DependencyVersionList, error) {
+func (d *InstallData) getAvailableModVersions(modName string, includePrerelease bool) (modconfig.DependencyVersionList, error) {
 	// have we already loaded the versions for this mod
 	availableVersions, ok := d.allAvailable[modName]
 	if ok {

@@ -2,8 +2,8 @@ package modinstaller
 
 import (
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/versionhelpers"
-	"github.com/turbot/pipe-fittings/versionmap"
 )
 
 // ResolvedModRef is a struct to represent a resolved mod git reference
@@ -12,7 +12,7 @@ type _ResolvedModRef struct {
 	// the FQN of the mod - also the Git URL of the mod repo
 	Name string
 	// the mod version
-	Version *versionmap.DependencyVersion
+	Version *modconfig.DependencyVersion
 	// the version constraint
 	Constraint *versionhelpers.Constraints
 	// the file path for local mods

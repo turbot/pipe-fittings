@@ -2,8 +2,8 @@ package modinstaller
 
 import (
 	"github.com/Masterminds/semver/v3"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/versionmap"
 	"log/slog"
 	"os"
 	"sort"
@@ -106,7 +106,7 @@ func getGitToken() string {
 	return os.Getenv(app_specific.EnvGitToken)
 }
 
-func getTagVersionsFromGit(modName string, includePrerelease bool) (versionmap.DependencyVersionList, error) {
+func getTagVersionsFromGit(modName string, includePrerelease bool) (modconfig.DependencyVersionList, error) {
 	// get and cache all references for the mod
 	refs, err := getRefsFromGit(modName)
 	if err != nil {
@@ -124,7 +124,7 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (versionmap.D
 
 	slog.Debug("retrieved tags from Git")
 
-	versions := make(versionmap.DependencyVersionList, len(tags))
+	versions := make(modconfig.DependencyVersionList, len(tags))
 	// handle index manually as we may not add all tags - if we cannot parse them as a version
 	idx := 0
 	for _, raw := range tags {
@@ -136,7 +136,7 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (versionmap.D
 		if (!includePrerelease && v.Metadata() != "") || (!includePrerelease && v.Prerelease() != "") {
 			continue
 		}
-		versions[idx] = &versionmap.DependencyVersion{
+		versions[idx] = &modconfig.DependencyVersion{
 			Version: v,
 			GitRef:  raw,
 		}

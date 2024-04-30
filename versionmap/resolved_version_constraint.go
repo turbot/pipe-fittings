@@ -30,7 +30,7 @@ func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModV
 // ResolvedVersionConstraint is a struct to represent a version constraint which has been resolved to specific version
 // (either a git tag, git commit (for a branch constraint) or a file location)
 type ResolvedVersionConstraint struct {
-	*DependencyVersion
+	*modconfig.DependencyVersion
 	Name          string `json:"name,omitempty"`
 	Constraint    string `json:"constraint,omitempty"`
 	Commit        string `json:"commit,omitempty"`
@@ -38,7 +38,7 @@ type ResolvedVersionConstraint struct {
 	StructVersion int    `json:"struct_version,omitempty"`
 }
 
-func NewResolvedVersionConstraint(version *DependencyVersion, name, constraintString string, gitRef *plumbing.Reference) *ResolvedVersionConstraint {
+func NewResolvedVersionConstraint(version *modconfig.DependencyVersion, name, constraintString string, gitRef *plumbing.Reference) *ResolvedVersionConstraint {
 	return &ResolvedVersionConstraint{
 		DependencyVersion: version,
 		Name:              name,
