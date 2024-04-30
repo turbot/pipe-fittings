@@ -8,14 +8,26 @@ import (
 )
 
 // BuildModDependencyPath converts a mod dependency name of form github.com/turbot/steampipe-mod-m2
-// and a version into a dependency path of form github.com/turbot/steampipe-mod-m2@v1.0.0
-func BuildModDependencyPath(dependencyName string, version *semver.Version) string {
+// and a DependencyVersion into a dependency path of form:
+// - github.com/turbot/steampipe-mod-m2@v1.0.0
+// - github.com/turbot/steampipe-mod-m2#branch
+// - github.com/turbot/steampipe-mod-m2:filepath
+func BuildModDependencyPath(dependencyName string, version *DependencyVersion) string {
 	if version == nil {
 		// not expected
 		return dependencyName
 	}
 
-	return fmt.Sprintf("%s@v%s", dependencyName, version.String())
+	switch {
+	case version.Version != nil:
+		return fmt.Sprintf("%s@v%s", dependencyName, version.Version.String())
+	case version.Branch != "":
+		return fmt.Sprintf("%s#%s", dependencyName, version.Branch)
+	case version.FilePath != "":
+		// TODO KAI what???
+		return version.FilePath
+	}
+	panic("one of version, branch or file path must be set")
 }
 
 // BuildModBranchDependencyPath converts a mod dependency name of form github.com/turbot/steampipe-mod-m2
