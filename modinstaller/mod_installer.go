@@ -473,7 +473,7 @@ func (i *ModInstaller) installFromTag(ctx context.Context, dependency *versionma
 	}
 
 	slog.Debug("installing", "dependency", dependencyPath, "in", destPath)
-	if _, err := i.installFromGit(dependency.Name, dependency.GitRef.Name(), destPath); err != nil {
+	if _, err := i.installFromGit(dependency.Name, plumbing.ReferenceName(dependency.GitRefStr), destPath); err != nil {
 		return "", err
 	}
 	return destPath, nil
@@ -512,9 +512,6 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 	}
 	// get the commit hash
 	ref, err := repo.Reference(gitRef, true)
-
-	// TODO KAI avoid needing to do this
-	dependencyVersion.GitRef = ref
 
 	// build a ResolvedVersionConstraint
 	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, modVersion.Branch(), ref)
