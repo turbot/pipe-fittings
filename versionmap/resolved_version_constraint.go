@@ -30,7 +30,7 @@ func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModV
 // ResolvedVersionConstraint is a struct to represent a version constraint which has been resolved to specific version
 // (either a git tag, git commit (for a branch constraint) or a file location)
 type ResolvedVersionConstraint struct {
-	DependencyVersion
+	*DependencyVersion
 	Name          string `json:"name,omitempty"`
 	Constraint    string `json:"constraint,omitempty"`
 	Commit        string `json:"commit,omitempty"`
@@ -40,7 +40,7 @@ type ResolvedVersionConstraint struct {
 
 func NewResolvedVersionConstraint(version *DependencyVersion, name, constraintString string, gitRef *plumbing.Reference) *ResolvedVersionConstraint {
 	return &ResolvedVersionConstraint{
-		DependencyVersion: *version,
+		DependencyVersion: version,
 		Name:              name,
 		Constraint:        constraintString,
 		Commit:            gitRef.Hash().String(),
@@ -64,5 +64,14 @@ func (c ResolvedVersionConstraint) IsPrerelease() bool {
 }
 
 func (c ResolvedVersionConstraint) DependencyPath() string {
-	return modconfig.BuildModDependencyPath(c.Name, c.Version)
+	switch {
+	case c.Version != nil:
+		return modconfig.BuildModDependencyPath(c.Name, c.Version)
+	case c.Branch != "":
+		return modconfig.BuildModBranchDependencyPath(c.Name, c.Branch)
+	case c.FilePath != "":
+		// TODO KAI what???
+		return c.FilePath
+	}
+	panic("one of version, branch or file path must be set")
 }

@@ -37,7 +37,7 @@ type Mod struct {
 	LegacyRequire *Require   `hcl:"requires,block"  json:"-"`
 	OpenGraph     *OpenGraph `hcl:"opengraph,block" json:"open_graph,omitempty"`
 
-	// Depency attributes - set if this mod is loaded as a dependency
+	// Dependency attributes - set if this mod is loaded as a dependency
 
 	// the mod version
 	Version *semver.Version `json:"-"`
@@ -359,7 +359,7 @@ func (m *Mod) GetInstallCacheKey() string {
 // SetDependencyConfig sets DependencyPath, DependencyName and Version
 func (m *Mod) SetDependencyConfig(dependencyPath string) error {
 	// parse the dependency path to get the dependency name and version
-	dependencyName, version, err := ParseModDependencyPath(dependencyPath)
+	dependencyName, version, branch, err := ParseModDependencyPath(dependencyPath)
 	if err != nil {
 		return err
 	}
