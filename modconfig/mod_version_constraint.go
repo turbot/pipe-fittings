@@ -20,7 +20,7 @@ type VersionConstrainCollection []*ModVersionConstraint
 type ModVersionConstraint struct {
 	// the fully qualified mod name, e.g. github.com/turbot/mod1
 	Name string `cty:"name" hcl:"name,label"`
-	// the original constraint string
+	// the version constraint string
 	VersionString string `cty:"version" hcl:"version"`
 	// variable values to be set on the dependency mod
 	Args map[string]cty.Value `cty:"args"  hcl:"args,optional"`
@@ -106,6 +106,7 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 	if m.branchName != "" || m.filePath != "" {
 		return nil
 	}
+
 	// otherwise, if create a version constraint from the version
 	// now default the version string to latest
 	if m.VersionString == "" || m.VersionString == "latest" {
