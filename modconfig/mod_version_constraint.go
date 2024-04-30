@@ -30,8 +30,8 @@ type ModVersionConstraint struct {
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
 
-	// only one of Constraint, Branch and FilePath will be set
-	constraint *versionhelpers.Constraints
+	// only one of VersionConstraint, Branch and FilePath will be set
+	versionConstraint *versionhelpers.Constraints
 	// the local file location to use
 	filePath string
 	// the branch name to use
@@ -116,7 +116,7 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 	// does the version parse as a semver version
 	if c, err := versionhelpers.NewConstraint(m.VersionString); err == nil {
 		// no error
-		m.constraint = c
+		m.versionConstraint = c
 		return nil
 	}
 
@@ -160,11 +160,11 @@ func (m *ModVersionConstraint) Check(version string) bool {
 }
 
 func (m *ModVersionConstraint) IsPrerelease() bool {
-	return m.constraint != nil && m.constraint.IsPrerelease()
+	return m.versionConstraint != nil && m.versionConstraint.IsPrerelease()
 }
 
-func (m *ModVersionConstraint) Constraint() *versionhelpers.Constraints {
-	return m.constraint
+func (m *ModVersionConstraint) VersionConstraint() *versionhelpers.Constraints {
+	return m.versionConstraint
 }
 
 func (m *ModVersionConstraint) FilePath() string {
@@ -173,4 +173,16 @@ func (m *ModVersionConstraint) FilePath() string {
 
 func (m *ModVersionConstraint) Branch() string {
 	return m.branchName
+}
+
+func (m *ModVersionConstraint) OriginalConstraint() any {
+	switch {
+	case m.VersionString != "":
+		return m.VersionString
+	case m.filePath != "":
+		return fmt.Sprintf("file:m.filePath")
+	case m.branchName != "":
+		return fmt.Sprintf("branch:%s", m.branchName)
+	}
+	panic("one of version, branch or file path must be set")
 }

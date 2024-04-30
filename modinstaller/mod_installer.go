@@ -35,7 +35,7 @@ type ModInstaller struct {
 	// to be able to calculate changes
 	oldRequire *modconfig.Require
 
-	mods versionmap.VersionConstraintMap
+	mods map[string]*modconfig.ModVersionConstraint
 
 	// the final resting place of all dependency mods
 	modsPath string
@@ -398,7 +398,7 @@ func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfi
 	}()
 
 	switch {
-	case requiredModVersion.Constraint() != nil:
+	case requiredModVersion.VersionConstraint() != nil:
 		// get available versions for this mod
 		includePrerelease := requiredModVersion.IsPrerelease()
 		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
@@ -480,10 +480,15 @@ func (i *ModInstaller) installFromTag(ctx context.Context, dependency *versionma
 
 }
 
-func (i *ModInstaller) installFromBranch(ctx context.Context, version *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*versionmap.ResolvedVersionConstraint, string, error) {
+func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*versionmap.ResolvedVersionConstraint, string, error) {
+	// build a DependencyVersion
+	var dependencyVersion = &modconfig.DependencyVersion{
+		Branch: modVersion.Branch(),
+	}
+
 	// get the temp location to install the mod to
 	// just use the original constraint as the dependency path
-	dependencyPath := modconfig.BuildModBranchDependencyPath(version.Name, version.Branch())
+	dependencyPath := modconfig.BuildModDependencyPath(modVersion.Name, dependencyVersion)
 	destPath := i.getDependencyShadowPath(dependencyPath)
 
 	// does target dir exist>
@@ -500,20 +505,19 @@ func (i *ModInstaller) installFromBranch(ctx context.Context, version *modconfig
 
 	slog.Debug("installing", "dependency", dependencyPath, "in", destPath)
 	// build a git ref for the branch
-	gitRef := plumbing.NewBranchReferenceName(version.Branch())
-	repo, err := i.installFromGit(version.Name, gitRef, destPath)
+	gitRef := plumbing.NewBranchReferenceName(dependencyVersion.Branch)
+	repo, err := i.installFromGit(modVersion.Name, gitRef, destPath)
 	if err != nil {
 		return nil, "", err
 	}
 	// get the commit hash
 	ref, err := repo.Reference(gitRef, true)
-	// build a ResolvedVersionConstraint
-	var dependencyVersion = &modconfig.DependencyVersion{
-		Branch: version.Branch(),
-		GitRef: ref,
-	}
 
-	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, version.Name, version.Branch(), ref)
+	// TODO KAI avoid needing to do this
+	dependencyVersion.GitRef = ref
+
+	// build a ResolvedVersionConstraint
+	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, modVersion.Branch(), ref)
 	return resolvedRef, destPath, nil
 }
 
@@ -706,7 +710,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 			return true, nil
 		}
 		// if there is a (satisfied) version constraint, do not update
-		if requiredModVersion.Constraint() != nil {
+		if requiredModVersion.VersionConstraint() != nil {
 			return false, nil
 		}
 		// if there is a branch constraint, do a commit check
@@ -733,7 +737,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 	}
 
 	// if the constraint is a version, check for available versions
-	if requiredModVersion.Constraint() != nil {
+	if requiredModVersion.VersionConstraint() != nil {
 		// get available versions for this mod
 		includePrerelease := requiredModVersion.IsPrerelease()
 		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
@@ -795,7 +799,7 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 // get the most recent available mod version which satisfies the version constraint
 func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions modconfig.DependencyVersionList) (*versionmap.ResolvedVersionConstraint, error) {
 	// find a version which satisfies the version constraint
-	var dependencyVersion = getVersionSatisfyingConstraint(modVersion.Constraint(), availableVersions)
+	var dependencyVersion = getVersionSatisfyingConstraint(modVersion.VersionConstraint(), availableVersions)
 	if dependencyVersion == nil {
 		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.VersionString)
 	}

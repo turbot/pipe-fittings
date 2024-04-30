@@ -5,8 +5,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-// ResolvedVersionConstraint is a struct to represent a version constraint which has been resolved to specific version
-// (either a git tag, git commit (for a branch constraint) or a file location)
+// InstalledModVersion is a struct to represent a version of a mod which has been installed
 type InstalledModVersion struct {
 	*ResolvedVersionConstraint
 	Alias       string `json:"alias"`
@@ -14,7 +13,7 @@ type InstalledModVersion struct {
 }
 
 func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModVersionConstraint) bool {
-	if c := requiredVersion.Constraint(); c != nil {
+	if c := requiredVersion.VersionConstraint(); c != nil {
 		return c.Check(v.Version)
 	}
 	if b := requiredVersion.Branch(); b != "" {
@@ -66,7 +65,7 @@ func (c ResolvedVersionConstraint) IsPrerelease() bool {
 func (c ResolvedVersionConstraint) DependencyPath() string {
 	switch {
 	case c.Version != nil:
-		return modconfig.BuildModDependencyPath(c.Name, c.Version)
+		return modconfig.BuildModDependencyPath(c.Name, c.DependencyVersion)
 	case c.Branch != "":
 		return modconfig.BuildModBranchDependencyPath(c.Name, c.Branch)
 	case c.FilePath != "":
