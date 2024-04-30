@@ -30,7 +30,7 @@ func (m ResolvedVersionListMap) FlatMap() map[string]*InstalledModVersion {
 	var res = make(map[string]*InstalledModVersion)
 	for name, versions := range m {
 		for _, version := range versions {
-			key := modconfig.BuildModDependencyPath(name, version.Version)
+			key := modconfig.BuildModDependencyPath(name, version.DependencyVersion)
 			res[key] = version
 		}
 	}
@@ -42,7 +42,7 @@ func (m ResolvedVersionListMap) FlatNames() []string {
 	var res []string
 	for name, versions := range m {
 		for _, version := range versions {
-			res = append(res, modconfig.BuildModDependencyPath(name, version.Version))
+			res = append(res, modconfig.BuildModDependencyPath(name, version.DependencyVersion))
 		}
 	}
 	return res

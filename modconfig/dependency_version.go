@@ -16,6 +16,42 @@ type DependencyVersion struct {
 	GitRef *plumbing.Reference `json:"-"`
 }
 
+func (v DependencyVersion) Equal(other *DependencyVersion) bool {
+	if other == nil {
+		return false
+
+	}
+	// if both have Version, check that
+	if v.Version != nil && other.Version != nil {
+		return v.Version.Equal(other.Version) && v.Version.Metadata() == other.Version.Metadata()
+	}
+	// if both have Branch, check that
+	if v.Branch != "" && other.Branch != "" {
+		return v.Branch == other.Branch
+	}
+	// if both have FilePath, check that
+	if v.FilePath != "" && other.FilePath != "" {
+		return v.FilePath == other.FilePath
+	}
+	return false
+}
+
+func (v DependencyVersion) LessThan(other *DependencyVersion) bool {
+	// if bother have versions, check
+	if v.Version != nil && other.Version != nil {
+		return v.Version.LessThan(other.Version)
+	}
+	return false
+}
+
+func (v DependencyVersion) GreaterThan(other *DependencyVersion) bool {
+	// if bother have versions, check
+	if v.Version != nil && other.Version != nil {
+		return v.Version.GreaterThan(other.Version)
+	}
+	return false
+}
+
 // make a collection type for this
 type DependencyVersionList []*DependencyVersion
 
@@ -28,7 +64,7 @@ func (c DependencyVersionList) Len() int {
 // Less is needed for the sort interface to compare two Version objects on the
 // slice. If checks if one is less than the other.
 func (c DependencyVersionList) Less(i, j int) bool {
-	return c[i].Version.LessThan(c[j].Version)
+	return c[i].LessThan(c[j])
 }
 
 // Swap is needed for the sort interface to replace the Version objects

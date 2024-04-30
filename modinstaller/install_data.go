@@ -13,16 +13,16 @@ type InstallData struct {
 	NewLock *versionmap.WorkspaceLock
 
 	// ALL the available versions for each dependency mod(we populate this in a lazy fashion)
-	allAvailable versionmap.DepdencyVersionListMap
+	allAvailable versionmap.DependencyVersionListMap
 
 	// list of dependencies installed by recent install operation
-	Installed versionmap.DependencyVersionMap
+	Installed versionmap.InstalledDependencyVersionsMap
 	// list of dependencies which have been upgraded
-	Upgraded versionmap.DependencyVersionMap
+	Upgraded versionmap.InstalledDependencyVersionsMap
 	// list of dependencies which have been downgraded
-	Downgraded versionmap.DependencyVersionMap
+	Downgraded versionmap.InstalledDependencyVersionsMap
 	// list of dependencies which have been uninstalled
-	Uninstalled  versionmap.DependencyVersionMap
+	Uninstalled  versionmap.InstalledDependencyVersionsMap
 	WorkspaceMod *modconfig.Mod
 }
 
@@ -31,11 +31,11 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 		Lock:         workspaceLock,
 		WorkspaceMod: workspaceMod,
 		NewLock:      versionmap.EmptyWorkspaceLock(workspaceLock),
-		allAvailable: make(versionmap.DepdencyVersionListMap),
-		Installed:    make(versionmap.DependencyVersionMap),
-		Upgraded:     make(versionmap.DependencyVersionMap),
-		Downgraded:   make(versionmap.DependencyVersionMap),
-		Uninstalled:  make(versionmap.DependencyVersionMap),
+		allAvailable: make(versionmap.DependencyVersionListMap),
+		Installed:    make(versionmap.InstalledDependencyVersionsMap),
+		Upgraded:     make(versionmap.InstalledDependencyVersionsMap),
+		Downgraded:   make(versionmap.InstalledDependencyVersionsMap),
+		Uninstalled:  make(versionmap.InstalledDependencyVersionsMap),
 	}
 }
 

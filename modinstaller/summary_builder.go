@@ -66,7 +66,7 @@ func BuildInstallSummary(installData *InstallData) string {
 	return fmt.Sprintf("%s%s%s%s", installString, upgradeString, downgradeString, uninstallString)
 }
 
-func getInstallationResultString(items versionmap.DependencyVersionMap, modDependencyPath string, lock *versionmap.WorkspaceLock) (int, string) {
+func getInstallationResultString(items versionmap.InstalledDependencyVersionsMap, modDependencyPath string, lock *versionmap.WorkspaceLock) (int, string) {
 	var res string
 	count := len(items.FlatMap())
 	if count > 0 {
@@ -86,11 +86,4 @@ func BuildUninstallSummary(installData *InstallData) string {
 
 	verb := getVerb(VerbUninstalled)
 	return fmt.Sprintf("\n%s %d %s:\n\n%s", verb, uninstallCount, utils.Pluralize("mod", uninstallCount), uninstalledTree.String())
-}
-
-func BuildPruneSummary(pruned versionmap.DepdencyVersionListMap) string {
-	pruneCount := len(pruned.FlatMap())
-
-	verb := getVerb(VerbPruned)
-	return fmt.Sprintf("\n%s %d %s:\n", verb, pruneCount, utils.Pluralize("mod", pruneCount))
 }
