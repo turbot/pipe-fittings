@@ -2,9 +2,11 @@ package modinstaller
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/parse"
 )
 
 func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[string]*modconfig.ModVersionConstraint, error) {
@@ -12,7 +14,15 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 	mods := make(map[string]*modconfig.ModVersionConstraint, len(modsArgs))
 	for _, modArg := range modsArgs {
 		// create mod version from arg
-		modVersion, err := modconfig.NewModVersionConstraint(modArg)
+		// special case for file: prefix
+		var modVersion *modconfig.ModVersionConstraint
+		var err error
+		if i.isFilePath(modArg) {
+			// special case for file paths
+			modVersion, err = i.newFilepathModVersionConstraint(modArg)
+		} else {
+			modVersion, err = modconfig.NewModVersionConstraint(modArg)
+		}
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -39,6 +49,17 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 		return nil, error_helpers.CombineErrors(errors...)
 	}
 	return mods, nil
+}
+
+func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.ModVersionConstraint, error) {
+	// remove the file: prefix
+	filePath := strings.TrimPrefix(arg, modconfig.FilePrefix)
+	// try to load the mod definition
+	modDef, err := parse.LoadModfile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return modconfig.NewFilepathModVersionConstraint(modDef), nil
 }
 
 func (i *ModInstaller) getUpdateVersion(modArg string, modVersion *modconfig.ModVersionConstraint) (*modconfig.ModVersionConstraint, error) {

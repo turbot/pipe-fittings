@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // DependencyVersion is a struct that encapsulates the version of a mod dependency
@@ -11,9 +10,6 @@ type DependencyVersion struct {
 	Version  *semver.Version `json:"version,omitempty"`
 	Branch   string          `json:"branch,omitempty"`
 	FilePath string          `json:"file_path,omitempty"`
-
-	// TODO KAI do not store git ref in the struct
-	GitRef *plumbing.Reference `json:"-"`
 }
 
 func (v DependencyVersion) Equal(other *DependencyVersion) bool {

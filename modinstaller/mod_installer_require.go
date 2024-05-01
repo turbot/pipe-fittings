@@ -144,7 +144,16 @@ func (i *ModInstaller) calculateChangeSet(oldRequire *modconfig.Require, newRequ
 // creates a new "mod" block which can be written as part of the "require" block in mod.sp
 func (i *ModInstaller) createNewModRequireBlock(modVersion *modconfig.ModVersionConstraint) *hclwrite.Block {
 	modRequireBlock := hclwrite.NewBlock("mod", []string{modVersion.Name})
-	modRequireBlock.Body().SetAttributeValue("version", cty.StringVal(modVersion.VersionString))
+	// TODO KAI maybe only set version with appropriate branch/file/version
+	if modVersion.BranchName != "" {
+		modRequireBlock.Body().SetAttributeValue("branch", cty.StringVal(modVersion.BranchName))
+	}
+	if modVersion.FilePath != "" {
+		modRequireBlock.Body().SetAttributeValue("file_path", cty.StringVal(modVersion.FilePath))
+	}
+	if modVersion.VersionString != "" {
+		modRequireBlock.Body().SetAttributeValue("version", cty.StringVal(modVersion.VersionString))
+	}
 	return modRequireBlock
 }
 
