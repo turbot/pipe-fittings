@@ -22,7 +22,7 @@ func NewDependencyConfig(modDependency *versionmap.ResolvedVersionConstraint) *M
 	var d string
 	switch {
 	case modDependency.Branch != "":
-		d = fmt.Sprintf("%s@branch-%s", modDependency.Name, modDependency.Branch)
+		d = fmt.Sprintf("%s#%s", modDependency.Name, modDependency.Branch)
 	case modDependency.FilePath != "":
 		d = modDependency.Name
 	case modDependency.Version != nil:
