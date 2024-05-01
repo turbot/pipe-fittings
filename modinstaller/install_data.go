@@ -40,16 +40,10 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 }
 
 // onModInstalled is called when a dependency is satisfied by installing a mod version
-func (d *InstallData) onModInstalled(dependency *versionmap.ResolvedVersionConstraint, modDef *modconfig.Mod, parent *modconfig.Mod) {
+func (d *InstallData) onModInstalled(installedMod *DependencyMod, parent *modconfig.Mod) {
 	parentPath := parent.GetInstallCacheKey()
-	// build the installed version
-	installedModVersion := &versionmap.InstalledModVersion{
-		ResolvedVersionConstraint: dependency,
-		Alias:                     modDef.ShortName,
-		InstallPath:               modDef.GetInstallCacheKey(),
-	}
 	// update lock
-	d.NewLock.InstallCache.AddDependency(parentPath, installedModVersion)
+	d.NewLock.InstallCache.AddDependency(parentPath, installedMod.InstalledVersion)
 }
 
 // addExisting is called when a dependency is satisfied by a mod which is already installed
