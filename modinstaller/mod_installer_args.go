@@ -59,6 +59,9 @@ func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.M
 	if err != nil {
 		return nil, err
 	}
+	if modDef == nil {
+		return nil, fmt.Errorf("'%s' does not contain a mod definition", filePath)
+	}
 	return modconfig.NewFilepathModVersionConstraint(modDef), nil
 }
 
