@@ -19,7 +19,15 @@ func (c ModDependencyConfig) SetModProperties(mod *modconfig.Mod) {
 }
 
 func NewDependencyConfig(modDependency *versionmap.ResolvedVersionConstraint) *ModDependencyConfig {
-	d := fmt.Sprintf("%s@v%s", modDependency.Name, modDependency.Version.String())
+	var d string
+	switch {
+	case modDependency.Branch != "":
+		d = fmt.Sprintf("%s@branch-%s", modDependency.Name, modDependency.Branch)
+	case modDependency.FilePath != "":
+		d = modDependency.Name
+	case modDependency.Version != nil:
+		d = fmt.Sprintf("%s@v%s", modDependency.Name, modDependency.Version.String())
+	}
 	return &ModDependencyConfig{
 		DependencyPath: &d,
 		ModDependency:  modDependency,

@@ -14,7 +14,6 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/versionhelpers"
 )
 
 const WorkspaceLockStructVersion = 20240429
@@ -119,6 +118,18 @@ func (l *WorkspaceLock) getInstalledMods() error {
 		installedMods.Add(modDependencyName, version)
 	}
 
+	// now add in any local mod references
+	for _, versions := range l.InstallCache {
+		for _, version := range versions {
+			if version.FilePath != "" {
+				// verify the folder exists
+				if filehelpers.DirectoryExists(version.FilePath) {
+					// add this mod version to the map
+					installedMods.Add(version.Name, version.DependencyVersion)
+				}
+			}
+		}
+	}
 	if len(errors) > 0 {
 		return error_helpers.CombineErrors(errors...)
 	}
@@ -174,7 +185,6 @@ func (l *WorkspaceLock) setMissing() {
 				// get the mod name from the constraint (fullName includes the version)
 				name := resolvedConstraint.Name
 				// remove this item from the install cache and add into missing
-				// TODO CHECK THIS
 				l.MissingVersions.AddDependency(parent, resolvedConstraint)
 				delete(l.InstallCache[parent], name)
 			}
@@ -341,16 +351,16 @@ func (l *WorkspaceLock) ContainsModVersion(modName string, modVersion *modconfig
 	return false
 }
 
-func (l *WorkspaceLock) ContainsModConstraint(modName string, constraint *versionhelpers.Constraints) bool {
-	for _, modVersionMap := range l.InstallCache {
-		for lockName, lockVersion := range modVersionMap {
-			if lockName == modName && lockVersion.Constraint == constraint.Original {
-				return true
-			}
-		}
-	}
-	return false
-}
+//func (l *WorkspaceLock) ContainsModConstraint(modName string, constraint *versionhelpers.Constraints) bool {
+//	for _, modVersionMap := range l.InstallCache {
+//		for lockName, lockVersion := range modVersionMap {
+//			if lockName == modName && lockVersion.Constraint == constraint.Original {
+//				return true
+//			}
+//		}
+//	}
+//	return false
+//}
 
 // Incomplete returned whether there are any missing dependencies
 // (i.e. they exist in the lock file but ate not installed)
@@ -377,7 +387,12 @@ func (l *WorkspaceLock) StructVersion() int {
 }
 
 func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionConstraint) (string, error) {
-	dependencyFilepath := path.Join(l.ModInstallationPath, modDependency.DependencyPath())
+	var dependencyFilepath string
+	if modDependency.FilePath != "" {
+		dependencyFilepath = modDependency.FilePath
+	} else {
+		dependencyFilepath = path.Join(l.ModInstallationPath, modDependency.DependencyPath())
+	}
 
 	if filehelpers.DirectoryExists(dependencyFilepath) {
 		return dependencyFilepath, nil
