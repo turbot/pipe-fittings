@@ -13,7 +13,7 @@ type InstallData struct {
 	NewLock *versionmap.WorkspaceLock
 
 	// ALL the available versions for each dependency mod(we populate this in a lazy fashion)
-	allAvailable versionmap.DependencyVersionListMap
+	allAvailable versionmap.ResolvedVersionConstraintListMap
 
 	// list of dependencies installed by recent install operation
 	Installed versionmap.InstalledDependencyVersionsMap
@@ -31,7 +31,7 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 		Lock:         workspaceLock,
 		WorkspaceMod: workspaceMod,
 		NewLock:      versionmap.EmptyWorkspaceLock(workspaceLock),
-		allAvailable: make(versionmap.DependencyVersionListMap),
+		allAvailable: make(versionmap.ResolvedVersionConstraintListMap),
 		Installed:    make(versionmap.InstalledDependencyVersionsMap),
 		Upgraded:     make(versionmap.InstalledDependencyVersionsMap),
 		Downgraded:   make(versionmap.InstalledDependencyVersionsMap),
@@ -61,7 +61,7 @@ func (d *InstallData) addExisting(existingDep *DependencyMod, parent *modconfig.
 }
 
 // retrieve all available mod versions from our cache, or from Git if not yet cached
-func (d *InstallData) getAvailableModVersions(modName string, includePrerelease bool) (modconfig.DependencyVersionList, error) {
+func (d *InstallData) getAvailableModVersions(modName string, includePrerelease bool) (versionmap.ResolvedVersionConstraintList, error) {
 	// have we already loaded the versions for this mod
 	availableVersions, ok := d.allAvailable[modName]
 	if ok {

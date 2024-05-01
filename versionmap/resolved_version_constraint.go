@@ -30,8 +30,11 @@ func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModV
 // (either a git tag, git commit (for a branch constraint) or a file location)
 type ResolvedVersionConstraint struct {
 	*modconfig.DependencyVersion
-	Name          string `json:"name,omitempty"`
-	Constraint    string `json:"constraint,omitempty"`
+	Name string `json:"name,omitempty"`
+	// TODO KAI WHAT IS THIS USED FOR
+	// is this the original constraint string? Rename?
+	Constraint string `json:"constraint,omitempty"`
+
 	Commit        string `json:"commit,omitempty"`
 	GitRefStr     string `json:"git_ref,omitempty"`
 	StructVersion int    `json:"struct_version,omitempty"`
@@ -74,3 +77,26 @@ func (c ResolvedVersionConstraint) DependencyPath() string {
 	}
 	panic("one of version, branch or file path must be set")
 }
+
+type ResolvedVersionConstraintList []*ResolvedVersionConstraint
+
+// Len returns the length of a collection. The number of Version instances
+// on the slice.
+func (c ResolvedVersionConstraintList) Len() int {
+	return len(c)
+}
+
+// Less is needed for the sort interface to compare two Version objects on the
+// slice. If checks if one is less than the other.
+func (c ResolvedVersionConstraintList) Less(i, j int) bool {
+	// if both i and j have versions,
+	return c[i].Version.LessThan(c[j].Version)
+}
+
+// Swap is needed for the sort interface to replace the Version objects
+// at two different positions in the slice.
+func (c ResolvedVersionConstraintList) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}
+
+type ResolvedVersionConstraintListMap map[string]ResolvedVersionConstraintList

@@ -406,7 +406,7 @@ func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfi
 			return nil, err
 		}
 		// get a resolved mod ref that satisfies the version constraints
-		resolvedRef, err = i.getModRefSatisfyingConstraints(requiredModVersion, availableVersions)
+		resolvedRef, err = i.getModRefSatisfyingVersionConstraint(requiredModVersion, availableVersions)
 		if err != nil {
 			return nil, err
 		}
@@ -763,8 +763,8 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 }
 
 // determine whether there is a newer mod version avoilable which satisfies the dependency version constraint
-func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version, availableVersions modconfig.DependencyVersionList) (bool, error) {
-	latestVersion, err := i.getModRefSatisfyingConstraints(requiredVersion, availableVersions)
+func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version, availableVersions versionmap.ResolvedVersionConstraintList) (bool, error) {
+	latestVersion, err := i.getModRefSatisfyingVersionConstraint(requiredVersion, availableVersions)
 	if err != nil {
 		return false, err
 	}
@@ -778,14 +778,19 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 	var latestCommit string
 	var err error
 
-	// if this is a branch, get the latest commit for the branch
-	if version.Branch != "" {
-		// get the latest commit for the branch
-		latestCommit, err = i.getLatestCommitForBranch(version.Name, version.Branch)
-	} else {
-		// check the commit for the tag
+	switch {
+	case version.Branch != "":
+		latestCommit, err = i.getLatestCommitForBranch(version)
+	case version.Version != nil:
+
 		latestCommit, err = i.getLatestCommitForTag(version)
+	case version.FilePath != "":
+		// TODO CHECK FILE VERSIONS? OR EXPECT TO NEVER GET HERE
+		return false, nil
+	default:
+		err = fmt.Errorf("no version, branch or file path set for installed mod")
 	}
+
 	if err != nil {
 		return false, err
 	}
@@ -794,22 +799,56 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 }
 
 // get the most recent available mod version which satisfies the version constraint
-func (i *ModInstaller) getModRefSatisfyingConstraints(modVersion *modconfig.ModVersionConstraint, availableVersions modconfig.DependencyVersionList) (*versionmap.ResolvedVersionConstraint, error) {
+func (i *ModInstaller) getModRefSatisfyingVersionConstraint(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.ResolvedVersionConstraintList) (*versionmap.ResolvedVersionConstraint, error) {
+	// mod version MUST have a version constrait to be here
+	if modVersion.VersionConstraint() == nil {
+		return nil, fmt.Errorf("getModRefSatisfyingVersionConstraint should not be called if mod version has no version constraint")
+	}
+
 	// find a version which satisfies the version constraint
 	var dependencyVersion = getVersionSatisfyingConstraint(modVersion.VersionConstraint(), availableVersions)
 	if dependencyVersion == nil {
 		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.VersionString)
 	}
 
-	return versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, modVersion.VersionString, dependencyVersion.GitRef), nil
+	return dependencyVersion, nil
 }
+func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.InstalledModVersion) (string, error) {
+	branch := installedVersion.Branch
+	if branch == "" {
+		return "", fmt.Errorf("getLatestCommitForBranch called but installed version has no branch")
+	}
+	// Open the local repository
+	modPath := path.Join(i.modsPath, installedVersion.InstallPath)
+	repo, err := git.PlainOpen(modPath)
+	if err != nil {
+		return "", err
+	}
 
-func (i *ModInstaller) getLatestCommitForBranch(name string, branch string) (string, error) {
-	return "", nil
+	// Fetch the latest changes from the remote for the specific branch
+	err = repo.Fetch(&git.FetchOptions{
+		RefSpecs: []config.RefSpec{config.RefSpec("+refs/heads/" + branch + ":refs/remotes/origin/" + branch)},
+		Force:    true,
+	})
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return "", fmt.Errorf("error fetching branch '%s' from remote: %w", branch, err)
+	}
 
+	// Get the latest commit on the fetched remote branch
+	ref, err := repo.Reference(plumbing.ReferenceName("refs/remotes/origin/"+branch), true)
+	if err != nil {
+		return "", fmt.Errorf("error finding reference for branch '%s': %w", branch, err)
+	}
+
+	// Return the hash of the latest commit
+	return ref.Hash().String(), nil
 }
 
 func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.InstalledModVersion) (string, error) {
+	// a version must be set to call this function
+	if installedVersion.Version == nil {
+		return "", fmt.Errorf("getLatestCommitForTag called but installed version has no version")
+	}
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.InstallPath)
 	repo, err := git.PlainOpen(modPath)
@@ -832,7 +871,6 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 	}
 
 	return remoteRef.Hash().String(), nil
-
 }
 
 // build the path of the temp location to copy this depednency to

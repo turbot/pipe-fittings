@@ -1,14 +1,12 @@
 package modinstaller
 
 import (
-	"github.com/Masterminds/semver/v3"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/perr"
 	"log/slog"
 	"os"
 	"sort"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -16,6 +14,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/versionmap"
 )
 
 type GitUrlMode int
@@ -106,7 +107,7 @@ func getGitToken() string {
 	return os.Getenv(app_specific.EnvGitToken)
 }
 
-func getTagVersionsFromGit(modName string, includePrerelease bool) (modconfig.DependencyVersionList, error) {
+func getTagVersionsFromGit(modName string, includePrerelease bool) ([]*versionmap.ResolvedVersionConstraint, error) {
 	// get and cache all references for the mod
 	refs, err := getRefsFromGit(modName)
 	if err != nil {
@@ -124,7 +125,7 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (modconfig.De
 
 	slog.Debug("retrieved tags from Git")
 
-	versions := make(modconfig.DependencyVersionList, len(tags))
+	versions := make(versionmap.ResolvedVersionConstraintList, len(tags))
 	// handle index manually as we may not add all tags - if we cannot parse them as a version
 	idx := 0
 	for _, raw := range tags {
@@ -136,9 +137,16 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) (modconfig.De
 		if (!includePrerelease && v.Metadata() != "") || (!includePrerelease && v.Prerelease() != "") {
 			continue
 		}
-		versions[idx] = &modconfig.DependencyVersion{
-			Version: v,
-			GitRef:  raw,
+		versions[idx] = &versionmap.ResolvedVersionConstraint{
+			DependencyVersion: &modconfig.DependencyVersion{
+				Version: v,
+				GitRef:  raw,
+			},
+			Name:          modName,
+			Constraint:    raw.Name().Short(),
+			Commit:        raw.Hash().String(),
+			GitRefStr:     raw.Name().String(),
+			StructVersion: versionmap.WorkspaceLockStructVersion,
 		}
 		idx++
 	}
