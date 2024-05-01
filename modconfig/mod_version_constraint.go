@@ -155,10 +155,6 @@ func (m *ModVersionConstraint) Equals(other *ModVersionConstraint) bool {
 	return m.Name == other.Name && m.VersionString == other.VersionString
 }
 
-func (m *ModVersionConstraint) Check(version string) bool {
-	return true
-}
-
 func (m *ModVersionConstraint) IsPrerelease() bool {
 	return m.versionConstraint != nil && m.versionConstraint.IsPrerelease()
 }

@@ -98,8 +98,18 @@ func (m InstalledDependencyVersionsMap) GetUpgradedInOther(other InstalledDepend
 		}
 		for name, dep := range deps {
 			if otherDep, ok := otherDeps[name]; ok {
-				if otherDep.GreaterThan(dep.DependencyVersion) {
-					res.AddDependency(parent, otherDep)
+				switch {
+				case dep.Version != nil && otherDep.Version != nil:
+					if dep.Version.LessThan(otherDep.Version) {
+						res.AddDependency(parent, otherDep)
+					}
+				case dep.Branch != "" && otherDep.Branch != "":
+					if dep.Commit != otherDep.Commit {
+						res.AddDependency(parent, otherDep)
+					}
+				case dep.FilePath != "" && otherDep.FilePath != "":
+					// TODO - check file hash????
+
 				}
 			}
 		}

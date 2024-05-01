@@ -26,7 +26,11 @@ type WorkspaceLock struct {
 	MissingVersions InstalledDependencyVersionsMap
 
 	ModInstallationPath string
-	installedMods       DependencyVersionListMap
+	// TODO KAI look at using InstalledDependencyVersionsMap - or possibly only load this when pruning
+	// installed mods is a map of all modfiles found in the mod installation path
+	// (i.e. the mods which are installed)
+	// it is poppulated when we load the lock  file and used to prunine uninsed mods
+	installedMods DependencyVersionListMap
 }
 
 // EmptyWorkspaceLock creates a new empty workspace lock based,
