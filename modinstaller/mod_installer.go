@@ -592,8 +592,9 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 		return nil, nil, fmt.Errorf("'%s' has no mod definition file", modVersion.Name)
 	}
 
-	// build a ResolvedVersionConstraint - use alias as the Name - this will be the install cache key
-	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, modDef.ShortName, nil)
+	// build a ResolvedVersionConstraint
+	// NOTE: use the file path as the name
+	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.FilePath, nil)
 
 	return resolvedRef, modDef, nil
 }
