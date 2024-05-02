@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	filehelpers "github.com/turbot/go-kit/files"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -11,8 +12,6 @@ import (
 	"github.com/turbot/pipe-fittings/versionhelpers"
 	"github.com/zclconf/go-cty/cty"
 )
-
-const FilePrefix = "file:"
 
 type VersionConstrainCollection []*ModVersionConstraint
 
@@ -29,11 +28,13 @@ type ModVersionConstraint struct {
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
 	// the version constraint string
 	VersionString string `cty:"version" hcl:"version,optional"`
-	// TODO KAI maybe only export version and populate filepath/branch name after loading
 	// the local file location to use
-	FilePath string `cty:"file_path" hcl:"file_path,optional"`
+	FilePath string `cty:"path" hcl:"path,optional"`
 	// the branch name to use
 	BranchName string `cty:"branch" hcl:"branch,optional"`
+	// the (non-version) tag to use
+	// populated only if a tag which is not a semver is used
+	Tag string `cty:"tag" hcl:"tag,optional"`
 
 	// only one of VersionConstraint, Branch and FilePath will be set
 	versionConstraint *versionhelpers.Constraints
@@ -59,11 +60,7 @@ func NewModVersionConstraint(modFullName string) (*ModVersionConstraint, error) 
 	m := &ModVersionConstraint{
 		Args: make(map[string]cty.Value),
 	}
-
 	switch {
-	case strings.HasPrefix(modFullName, FilePrefix):
-		// filepath constraints should be handled separately
-		return nil, fmt.Errorf("NewModVersionConstraint does not support file paths - use NewFilepathModVersionConstraint")
 	case strings.Contains(modFullName, "@"):
 		// try to extract version from name
 		segments := strings.Split(modFullName, "@")
@@ -80,6 +77,10 @@ func NewModVersionConstraint(modFullName string) (*ModVersionConstraint, error) 
 		}
 		m.Name = segments[0]
 		m.BranchName = segments[1]
+	case filehelpers.DirectoryExists(modFullName):
+		// filepath constraints should be handled separately
+		return nil, fmt.Errorf("NewModVersionConstraint does not support file paths - use NewFilepathModVersionConstraint")
+
 	default:
 		m.Name = modFullName
 	}
@@ -103,27 +104,25 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 		}
 	}
 
-	// only 1 of version, branch or file path should be set
-	count := 0
-	if m.VersionString != "" {
-		count++
-	}
-	if m.BranchName != "" {
-		count++
-	}
-	if m.FilePath != "" {
-		count++
-	}
-	if count > 1 {
-		return hcl.Diagnostics{&hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "only one of 'version', 'branch' or 'file_path' should be set",
-			Subject:  &m.DefRange,
-		}}
+	// only 1 of version, branch, file path or tag should be set
+	// Ensure that only one of version, branch, file path, or tag is set.
+	fields := []string{m.VersionString, m.BranchName, m.FilePath, m.Tag}
+	var activeField string
+	for _, field := range fields {
+		if field != "" {
+			if activeField != "" {
+				return hcl.Diagnostics{&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "only one of 'version', 'branch', 'file_path', or 'tag' should be set",
+					Subject:  &m.DefRange,
+				}}
+			}
+			activeField = field
+		}
 	}
 
 	// if a branch name or file path is set, nothing more to do
-	if m.BranchName != "" || m.FilePath != "" {
+	if m.BranchName != "" || m.FilePath != "" || m.Tag != "" {
 		return nil
 	}
 
@@ -139,27 +138,24 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 		m.versionConstraint = c
 		return nil
 	}
-
-	// so there was an error
-	return hcl.Diagnostics{&hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  fmt.Sprintf("invalid mod version %s", m.VersionString),
-		Subject:  &m.DefRange,
-	}}
-
+	// if we get here we failed to parse the version string as a semver - treat it as a git tag instead
+	m.Tag = m.VersionString
+	return nil
 }
 
 func (m *ModVersionConstraint) DependencyPath() string {
-	if m.HasVersion() {
+	switch {
+	case m.HasVersion():
 		return fmt.Sprintf("%s@%s", m.Name, m.VersionString)
-	}
-	if m.BranchName != "" {
+	case m.Tag != "":
+		return fmt.Sprintf("%s@%s", m.Name, m.Tag)
+	case m.BranchName != "":
 		return fmt.Sprintf("%s#%s", m.Name, m.BranchName)
+	case m.FilePath != "":
+		return m.FilePath
+	default:
+		return m.Name
 	}
-	if m.FilePath != "" {
-		return fmt.Sprintf("%s%s", FilePrefix, m.FilePath)
-	}
-	return m.Name
 }
 
 // HasVersion returns whether the mod has a version specified, or is the latest
@@ -193,6 +189,8 @@ func (m *ModVersionConstraint) OriginalConstraint() any {
 		return fmt.Sprintf("file:m.FilePath")
 	case m.BranchName != "":
 		return fmt.Sprintf("branch:%s", m.BranchName)
+	case m.Tag != "":
+		return fmt.Sprintf("branch:%s", m.Tag)
 	}
-	panic("one of version, branch or file path must be set")
+	panic("one of version, branch, file path or tag must be set")
 }
