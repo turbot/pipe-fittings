@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	git "github.com/go-git/go-git/v5"
@@ -15,6 +14,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
+	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -415,7 +415,17 @@ func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfi
 		if err != nil {
 			return nil, err
 		}
-
+	//case requiredModVersion.Tag != "":
+	//	// get a resolved mod ref that satisfies the version constraints
+	//	resolvedRef, err = i.getModRefSatisfyingVersionConstraint(requiredModVersion, availableVersions)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	// install the mod
+	//	modDef, err = i.installFromTag(resolvedRef)
+	//	if err != nil {
+	//		return nil, err
+	//	}
 	case requiredModVersion.BranchName != "":
 		resolvedRef, modDef, err = i.installFromBranch(ctx, requiredModVersion)
 		if err != nil {
@@ -577,11 +587,14 @@ func (i *ModInstaller) installFromGit(repoName string, gitRefName plumbing.Refer
 
 func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*versionmap.ResolvedVersionConstraint, *modconfig.Mod, error) {
 	// build a DependencyVersion
+	// convert the filename to absolute
+	filePath := i.toAbsoluteFilepath(modVersion.FilePath, parent.ModPath)
+
 	var dependencyVersion = &modconfig.DependencyVersion{
-		FilePath: modVersion.FilePath,
+		FilePath: filePath,
 	}
 
-	slog.Debug("installing a local file mod", "file location", modVersion.FilePath)
+	slog.Debug("installing a local file mod", "file location", filePath)
 
 	// now load the installed mod and return it
 	modDef, err := parse.LoadModfile(dependencyVersion.FilePath)
@@ -594,7 +607,7 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 
 	// build a ResolvedVersionConstraint
 	// NOTE: use the file path as the name
-	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.FilePath, nil)
+	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, filePath, nil)
 
 	return resolvedRef, modDef, nil
 }
@@ -793,7 +806,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 		}
 	}
 
-	// do we need to performa a commit check?
+	// do we need to perform a a commit check?
 	if !commitCheck {
 		return false, nil
 	}
@@ -842,6 +855,22 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 
 // get the most recent available mod version which satisfies the version constraint
 func (i *ModInstaller) getModRefSatisfyingVersionConstraint(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.ResolvedVersionConstraintList) (*versionmap.ResolvedVersionConstraint, error) {
+	// mod version MUST have a version constrait to be here
+	if modVersion.VersionConstraint() == nil {
+		return nil, fmt.Errorf("getModRefSatisfyingVersionConstraint should not be called if mod version has no version constraint")
+	}
+
+	// find a version which satisfies the version constraint
+	var dependencyVersion = getVersionSatisfyingConstraint(modVersion.VersionConstraint(), availableVersions)
+	if dependencyVersion == nil {
+		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.VersionString)
+	}
+
+	return dependencyVersion, nil
+}
+
+// get the most recent available mod version which satisfies the version constraint
+func (i *ModInstaller) getModRefForTag(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.ResolvedVersionConstraintList) (*versionmap.ResolvedVersionConstraint, error) {
 	// mod version MUST have a version constrait to be here
 	if modVersion.VersionConstraint() == nil {
 		return nil, fmt.Errorf("getModRefSatisfyingVersionConstraint should not be called if mod version has no version constraint")
@@ -950,7 +979,17 @@ func (i *ModInstaller) verifyModFile(name, installPath string) error {
 	return sperr.New("mod '%s' does not contain a valid mod file", name)
 }
 
-// is the given modArg a file path (check for file: prefix)
-func (i *ModInstaller) isFilePath(modArg string) bool {
-	return strings.HasPrefix(modArg, modconfig.FilePrefix)
+// is the given string a file path, and if so, return as an absolute path, realtive to the given base
+func (i *ModInstaller) toAbsoluteFilepath(modArg, basePath string) string {
+	filePath := modArg
+	// Check if the path is already absolute
+	if !filepath.IsAbs(filePath) {
+		// If it's not absolute, join it with the workspace path
+		filePath = filepath.Join(basePath, filePath)
+	}
+
+	if filehelpers.DirectoryExists(filePath) {
+		return filePath
+	}
+	return ""
 }
