@@ -163,8 +163,6 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 	}
 	// create a parse context for the dependency mod
 	childParseCtx := parse.NewChildModParseContext(parseCtx, modDependency.ResolvedVersionConstraint, dependencyDir)
-	// we need to modify the ListOptions to ensure we include hidden files - these are excluded by default
-	childParseCtx.ListOptions.Exclude = nil
 
 	// NOTE: pass in the version and dependency path of the mod - these must be set before it loads its dependencies
 	dependencyMod, errAndWarnings := LoadMod(ctx, dependencyDir, childParseCtx)

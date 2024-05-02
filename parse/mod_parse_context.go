@@ -156,6 +156,18 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 	child.CredentialImports = parent.CredentialImports
 	child.Notifiers = parent.Notifiers
 
+	// if this is a filepath dependency, we need to exclude hidden files underneath the target filepath
+	// (so we ignore any .steampipe or .powerpipe folders under the mod folder)
+	if modVersion.FilePath != "" {
+		child.ListOptions.Exclude = []string{
+			fmt.Sprintf("%s/.*", modVersion.FilePath),
+			fmt.Sprintf("%s/.*/**", modVersion.FilePath),
+		}
+	} else {
+		// otherwise if this is a normal dependency modify the ListOptions to ensure we include hidden files - these are excluded by default
+		child.ListOptions.Exclude = nil
+
+	}
 	return child
 }
 
@@ -606,7 +618,7 @@ func (m *ModParseContext) AddLoadedDependencyMod(mod *modconfig.Mod) {
 	// lock the depLock as this is called async
 	m.depLock.Lock()
 	defer m.depLock.Unlock()
-	slog.Info(fmt.Sprintf("ModParseContext.AddLoadedDependencyMod %p", m), "mod", mod.Name())
+	slog.Info(fmt.Sprintf("ModParseContext.AddLoadedDependencyMod_____ %p", m), "mod", mod.Name())
 
 	m.topLevelDependencyMods[mod.DependencyName] = mod
 	m.resourceMaps.AddMaps(mod.ResourceMaps.TopLevelResources())
