@@ -2,8 +2,6 @@ package modinstaller
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
@@ -17,9 +15,12 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 		// special case for file: prefix
 		var modVersion *modconfig.ModVersionConstraint
 		var err error
-		if i.isFilePath(modArg) {
+		// check is this a file path
+		// if modArg IS a filepath, argToFilePath will return the absolute path
+		if filePath := i.toAbsoluteFilepath(modArg, i.workspaceMod.ModPath); filePath != "" {
 			// special case for file paths
-			modVersion, err = i.newFilepathModVersionConstraint(modArg)
+			modVersion, err = i.newFilepathModVersionConstraint(filePath)
+
 		} else {
 			modVersion, err = modconfig.NewModVersionConstraint(modArg)
 		}
@@ -52,15 +53,13 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 }
 
 func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.ModVersionConstraint, error) {
-	// remove the file: prefix
-	filePath := strings.TrimPrefix(arg, modconfig.FilePrefix)
 	// try to load the mod definition
-	modDef, err := parse.LoadModfile(filePath)
+	modDef, err := parse.LoadModfile(arg)
 	if err != nil {
 		return nil, err
 	}
 	if modDef == nil {
-		return nil, fmt.Errorf("'%s' does not contain a mod definition", filePath)
+		return nil, fmt.Errorf("'%s' does not contain a mod definition", arg)
 	}
 	return modconfig.NewFilepathModVersionConstraint(modDef), nil
 }
