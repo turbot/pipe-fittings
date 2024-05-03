@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -12,6 +13,7 @@ import (
 // - github.com/turbot/steampipe-mod-m2@v1.0.0
 // - github.com/turbot/steampipe-mod-m2#branch
 // - github.com/turbot/steampipe-mod-m2:filepath
+// This represents the relative path the depdency will be installed at underneath the mods directory
 func BuildModDependencyPath(dependencyName string, version *DependencyVersion) string {
 	if version == nil {
 		// not expected
@@ -24,10 +26,11 @@ func BuildModDependencyPath(dependencyName string, version *DependencyVersion) s
 	case version.Branch != "":
 		return fmt.Sprintf("%s#%s", dependencyName, version.Branch)
 	case version.FilePath != "":
-		// TODO KAI what???
+		// for filepath, we do not use DependencyPath - just return the filepath
 		return version.FilePath
 	}
-	panic("one of version, branch or file path must be set")
+	slog.Warn("one of version, branch or file path must be set")
+	return dependencyName
 }
 
 // BuildModBranchDependencyPath converts a mod dependency name of form github.com/turbot/steampipe-mod-m2

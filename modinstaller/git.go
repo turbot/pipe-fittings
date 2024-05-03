@@ -138,7 +138,7 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) ([]*versionma
 			continue
 		}
 		versions[idx] = &versionmap.ResolvedVersionConstraint{
-			DependencyVersion: &modconfig.DependencyVersion{
+			DependencyVersion: modconfig.DependencyVersion{
 				Version: v,
 			},
 			Name:          modName,

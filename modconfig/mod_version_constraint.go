@@ -49,8 +49,9 @@ type ModVersionConstraint struct {
 
 func NewFilepathModVersionConstraint(mod *Mod) *ModVersionConstraint {
 	return &ModVersionConstraint{
-		Args:     make(map[string]cty.Value),
-		Name:     mod.ShortName,
+		Args: make(map[string]cty.Value),
+		// set name and filepath to the same value
+		Name:     mod.ModPath,
 		FilePath: mod.ModPath,
 	}
 }
@@ -113,7 +114,7 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 			if activeField != "" {
 				return hcl.Diagnostics{&hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "only one of 'version', 'branch', 'file_path', or 'tag' should be set",
+					Summary:  "only one of 'version', 'branch', 'path', or 'tag' should be set",
 					Subject:  &m.DefRange,
 				}}
 			}

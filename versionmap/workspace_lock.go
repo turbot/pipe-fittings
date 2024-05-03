@@ -125,7 +125,7 @@ func (l *WorkspaceLock) getInstalledMods() error {
 				// verify the folder exists
 				if filehelpers.DirectoryExists(version.FilePath) {
 					// add this mod version to the map
-					installedMods.Add(version.Name, version.DependencyVersion)
+					installedMods.Add(version.Name, &version.DependencyVersion)
 				}
 			}
 		}
@@ -179,7 +179,7 @@ func (l *WorkspaceLock) setMissing() {
 		// flatten and iterate
 
 		for name, resolvedConstraint := range deps {
-			fullName := modconfig.BuildModDependencyPath(name, resolvedConstraint.DependencyVersion)
+			fullName := modconfig.BuildModDependencyPath(name, &resolvedConstraint.DependencyVersion)
 
 			if _, isInstalled := flatInstalled[fullName]; !isInstalled {
 				// get the mod name from the constraint (fullName includes the version)
@@ -315,7 +315,7 @@ func (l *WorkspaceLock) EnsureLockedModVersion(requiredModVersion *modconfig.Mod
 	if !lockedVersion.SatisfiesConstraint(requiredModVersion) {
 		return nil, fmt.Errorf("failed to resolve dependencies for %s - locked version %s does not meet the constraint %s",
 			parent.GetInstallCacheKey(),
-			modconfig.BuildModDependencyPath(requiredModVersion.Name, lockedVersion.DependencyVersion),
+			modconfig.BuildModDependencyPath(requiredModVersion.Name, &lockedVersion.DependencyVersion),
 			requiredModVersion.OriginalConstraint())
 	}
 
@@ -335,7 +335,7 @@ func (l *WorkspaceLock) GetLockedModVersionConstraint(requiredModVersion *modcon
 		return nil, nil
 	}
 	// create a new ModVersionConstraint using the locked version
-	lockedVersionFullName := modconfig.BuildModDependencyPath(requiredModVersion.Name, lockedVersion.DependencyVersion)
+	lockedVersionFullName := modconfig.BuildModDependencyPath(requiredModVersion.Name, &lockedVersion.DependencyVersion)
 	return modconfig.NewModVersionConstraint(lockedVersionFullName)
 }
 

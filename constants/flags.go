@@ -8,7 +8,6 @@ package constants
 type ModUpdateStrategy int
 
 const (
-	ModStrategyDefault   = "default" // default for command
 	ModUpdateFull        = "full"
 	ModUpdateLatest      = "latest"
 	ModUpdateDevelopment = "development"
@@ -17,8 +16,7 @@ const (
 )
 
 const (
-	ModStrategyIdDefault ModUpdateStrategy = iota // default for command
-	ModUpdateIdFull
+	ModUpdateIdFull ModUpdateStrategy = iota // default for command
 	ModUpdateIdLatest
 	ModUpdateIdDevelopment
 	ModUpdateIdMinimal
@@ -26,7 +24,6 @@ const (
 )
 
 var ModUpdateStrategyIds = map[ModUpdateStrategy][]string{
-	ModStrategyIdDefault:   {ModStrategyDefault},
 	ModUpdateIdFull:        {ModUpdateFull},
 	ModUpdateIdLatest:      {ModUpdateLatest},
 	ModUpdateIdDevelopment: {ModUpdateDevelopment},
