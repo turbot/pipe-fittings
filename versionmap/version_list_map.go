@@ -3,7 +3,7 @@ package versionmap
 import (
 	"sort"
 
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
 
 // DependencyVersionListMap is a map keyed by dependency name storing a list of versions for each dependency

@@ -9,9 +9,9 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-fittings/v2/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 

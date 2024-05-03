@@ -3,8 +3,8 @@ package printers
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/color"
-	"github.com/turbot/pipe-fittings/sanitize"
+	"github.com/turbot/pipe-fittings/v2/color"
+	"github.com/turbot/pipe-fittings/v2/sanitize"
 	"io"
 )
 

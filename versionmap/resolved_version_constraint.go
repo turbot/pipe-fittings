@@ -2,7 +2,7 @@ package versionmap
 
 import (
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
 
 // InstalledModVersion is a struct to represent a version of a mod which has been installed

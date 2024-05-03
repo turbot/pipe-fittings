@@ -8,9 +8,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
 )
 
 // Viper fetches the global viper instance

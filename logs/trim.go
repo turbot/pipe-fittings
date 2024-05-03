@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/v2/filepaths"
 )
 
 const logRetentionDays = 7

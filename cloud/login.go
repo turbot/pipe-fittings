@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/filepaths"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )

@@ -3,7 +3,7 @@ package cmdconfig
 import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 )
 
 // persistent flags

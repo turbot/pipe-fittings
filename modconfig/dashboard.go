@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/v2/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/stevenle/topsort"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

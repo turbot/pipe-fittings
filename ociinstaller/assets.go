@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"path/filepath"
 
-	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/v2/constants"
 )
 
 // InstallAssets installs the Steampipe report server assets

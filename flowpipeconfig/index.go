@@ -8,8 +8,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
-	"github.com/turbot/pipe-fittings/credential"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/credential"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
 
 type FlowpipeConfig struct {

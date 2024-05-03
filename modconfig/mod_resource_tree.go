@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 // BuildResourceTree builds the control tree structure by setting the parent property for each control and benchmark

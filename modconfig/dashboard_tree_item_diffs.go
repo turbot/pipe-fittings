@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"golang.org/x/exp/maps"
 )
 
