@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/utils"
 
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
 
 // NOTE: all query arg values must be JSON representations

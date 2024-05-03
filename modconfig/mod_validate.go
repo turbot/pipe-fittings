@@ -3,7 +3,7 @@ package modconfig
 import (
 	"fmt"
 
-	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 )
 
 // ensure we have resolved all children in the resource tree

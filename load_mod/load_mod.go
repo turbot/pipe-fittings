@@ -10,12 +10,12 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-fittings/v2/perr"
+	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 // LoadMod parses all hcl files in modPath and returns a single mod

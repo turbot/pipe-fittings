@@ -5,8 +5,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants/runtime"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/constants/runtime"
 )
 
 // mod related constants

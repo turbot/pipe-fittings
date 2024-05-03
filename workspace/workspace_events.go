@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
 
 var EventCount int64 = 0

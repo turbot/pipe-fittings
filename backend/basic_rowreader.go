@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"github.com/turbot/pipe-fittings/queryresult"
+	"github.com/turbot/pipe-fittings/v2/queryresult"
 )
 
 // BasicRowReader is a RowReader implementation for generic database/sql driver

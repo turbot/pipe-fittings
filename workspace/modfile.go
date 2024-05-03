@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 )
 
 // FindModFilePath search up the directory tree to find the modfile

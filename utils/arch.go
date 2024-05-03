@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/v2/constants"
 )
 
 // UnderlyingArch detects the underlying architecture(amd64/arm64) of the system

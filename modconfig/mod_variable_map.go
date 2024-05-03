@@ -1,8 +1,8 @@
 package modconfig
 
 import (
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 // ModVariableMap is a struct containing maps of variable definitions

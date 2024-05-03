@@ -1,8 +1,8 @@
 package modconfig
 
 import (
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"strings"
 )
 

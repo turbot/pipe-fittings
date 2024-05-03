@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/gertd/go-pluralize"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/turbot/terraform-components/tfdiags"
 )
 

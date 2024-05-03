@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/v2/filepaths"
 )
 
 const StateStructVersion = 20220411

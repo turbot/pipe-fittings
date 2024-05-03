@@ -3,15 +3,15 @@ package modinstaller
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"os"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 // ValidateModLocation checks whether you are running from the home directory or if you have

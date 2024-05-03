@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-fittings/v2/perr"
 )
 
 // ToError formats the supplied value as an error (or just returns it if already an error)

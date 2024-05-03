@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/printers"
+	"github.com/turbot/pipe-fittings/v2/printers"
 )
 
 type ResourceReference struct {

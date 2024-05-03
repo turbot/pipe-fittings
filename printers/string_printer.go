@@ -6,9 +6,9 @@ import (
 	"io"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/color"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/sanitize"
+	"github.com/turbot/pipe-fittings/v2/color"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/sanitize"
 )
 
 type StringPrinter[T any] struct {
