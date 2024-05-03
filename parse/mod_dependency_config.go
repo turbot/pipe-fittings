@@ -13,7 +13,7 @@ type ModDependencyConfig struct {
 }
 
 func (c ModDependencyConfig) SetModProperties(mod *modconfig.Mod) {
-	mod.Version = c.ModDependency.DependencyVersion
+	mod.Version = &c.ModDependency.DependencyVersion
 	mod.DependencyPath = c.DependencyPath
 	mod.DependencyName = c.ModDependency.Name
 }

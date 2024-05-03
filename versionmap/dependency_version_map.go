@@ -31,7 +31,7 @@ func (m InstalledDependencyVersionsMap) FlatMap() map[string]*InstalledModVersio
 	res := make(map[string]*InstalledModVersion)
 	for _, deps := range m {
 		for _, dep := range deps {
-			res[modconfig.BuildModDependencyPath(dep.Name, dep.DependencyVersion)] = dep
+			res[modconfig.BuildModDependencyPath(dep.Name, &dep.DependencyVersion)] = dep
 		}
 	}
 	return res
@@ -64,7 +64,7 @@ func (m InstalledDependencyVersionsMap) buildTree(name string, tree treeprint.Tr
 	sort.Strings(depNames)
 	for _, name := range depNames {
 		installedVersion := deps[name]
-		fullName := modconfig.BuildModDependencyPath(name, installedVersion.DependencyVersion)
+		fullName := modconfig.BuildModDependencyPath(name, &installedVersion.DependencyVersion)
 		child := tree.AddBranch(fullName)
 		// if there are children add them
 		m.buildTree(fullName, child)
@@ -126,7 +126,7 @@ func (m InstalledDependencyVersionsMap) GetDowngradedInOther(other InstalledDepe
 		}
 		for name, dep := range deps {
 			if otherDep, ok := otherDeps[name]; ok {
-				if otherDep.LessThan(dep.DependencyVersion) {
+				if otherDep.LessThan(&dep.DependencyVersion) {
 					res.AddDependency(parent, otherDep)
 				}
 			}
