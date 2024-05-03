@@ -9,7 +9,8 @@ import (
 type DependencyVersion struct {
 	Version  *semver.Version `json:"version,omitempty"`
 	Branch   string          `json:"branch,omitempty"`
-	FilePath string          `json:"file_path,omitempty"`
+	FilePath string          `json:"path,omitempty"`
+	Tag      string          `json:"tag,omitempty"`
 }
 
 func (v DependencyVersion) Equal(other *DependencyVersion) bool {
