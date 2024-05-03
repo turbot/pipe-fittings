@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"

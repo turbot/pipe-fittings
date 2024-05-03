@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

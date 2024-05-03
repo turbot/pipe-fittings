@@ -8,8 +8,8 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/credential"
-	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/v2/credential"
+	"github.com/turbot/pipe-fittings/v2/funcs"
 	"github.com/zclconf/go-cty/cty"
 )
 

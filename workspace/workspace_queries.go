@@ -3,7 +3,7 @@ package workspace
 import (
 	"fmt"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"log/slog"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/v2/perr"
+	"github.com/turbot/pipe-fittings/v2/schema"
 )
 
 type ParsedResourceName struct {

@@ -2,8 +2,8 @@ package inputvars
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/versionmap"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 )

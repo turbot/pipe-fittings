@@ -2,17 +2,17 @@ package parse
 
 import (
 	"fmt"
-	error_helpers "github.com/turbot/pipe-fittings/error_helpers"
+	error_helpers "github.com/turbot/pipe-fittings/v2/error_helpers"
 	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/schema"
 )
 
 func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {

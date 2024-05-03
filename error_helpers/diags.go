@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/terraform-components/tfdiags"
 )
 

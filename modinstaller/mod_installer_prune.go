@@ -4,8 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/versionmap"
 )
 
 func (i *ModInstaller) Prune() (versionmap.DependencyVersionListMap, error) {

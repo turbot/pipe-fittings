@@ -1,8 +1,8 @@
 package modinstaller
 
 import (
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/versionmap"
 )
 
 // DependencyMod is a mod which has been installed as a dependency

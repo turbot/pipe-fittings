@@ -2,7 +2,7 @@ package constants
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
 )
 
 // DashboardListenAddresses is an arrays is listen addresses which Steampipe accepts

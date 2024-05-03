@@ -1,7 +1,7 @@
 package versionmap
 
 import (
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
 
 // ResolvedVersionListMap represents a map of ResolvedVersionConstraint arrays, keyed by dependency name

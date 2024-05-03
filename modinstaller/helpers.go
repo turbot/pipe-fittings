@@ -1,8 +1,8 @@
 package modinstaller
 
 import (
-	"github.com/turbot/pipe-fittings/versionhelpers"
-	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/pipe-fittings/v2/versionhelpers"
+	"github.com/turbot/pipe-fittings/v2/versionmap"
 )
 
 func getVersionSatisfyingConstraint(constraint *versionhelpers.Constraints, availableVersions versionmap.ResolvedVersionConstraintList) *versionmap.ResolvedVersionConstraint {

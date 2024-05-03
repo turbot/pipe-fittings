@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/queryresult"
+	"github.com/turbot/pipe-fittings/v2/queryresult"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 

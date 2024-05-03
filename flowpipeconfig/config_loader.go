@@ -9,20 +9,20 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/turbot/pipe-fittings/credential"
-	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/v2/credential"
+	"github.com/turbot/pipe-fittings/v2/filepaths"
+	"github.com/turbot/pipe-fittings/v2/funcs"
+	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function"
 
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/parse"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-fittings/v2/schema"
 )
 
 type loadConfigOptions struct {

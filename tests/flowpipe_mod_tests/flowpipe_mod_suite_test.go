@@ -11,18 +11,18 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/credential"
-	"github.com/turbot/pipe-fittings/flowpipeconfig"
-	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/pipe-fittings/tests/test_init"
-	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/v2/credential"
+	"github.com/turbot/pipe-fittings/v2/flowpipeconfig"
+	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-fittings/v2/tests/test_init"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/workspace"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/workspace"
 )
 
 type FlowpipeModTestSuite struct {

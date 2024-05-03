@@ -3,9 +3,9 @@ package modinstaller
 import (
 	"fmt"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/v2/versionmap"
 )
 
 const (

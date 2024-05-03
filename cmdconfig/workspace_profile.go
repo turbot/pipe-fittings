@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace

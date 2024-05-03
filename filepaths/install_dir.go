@@ -2,11 +2,11 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"os"
 	"path/filepath"
 
-	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 )
 
 // Constants for Config
