@@ -13,7 +13,7 @@ import (
 // - github.com/turbot/steampipe-mod-m2@v1.0.0
 // - github.com/turbot/steampipe-mod-m2#branch
 // - github.com/turbot/steampipe-mod-m2:filepath
-// This represents the relative path the depdency will be installed at underneath the mods directory
+// This represents the relative path the dependency will be installed at underneath the mods directory
 func BuildModDependencyPath(dependencyName string, version *DependencyVersion) string {
 	if version == nil {
 		// not expected
@@ -21,6 +21,8 @@ func BuildModDependencyPath(dependencyName string, version *DependencyVersion) s
 	}
 
 	switch {
+	case version.Tag != "":
+		return fmt.Sprintf("%s@%s", dependencyName, version.Tag)
 	case version.Version != nil:
 		return fmt.Sprintf("%s@v%s", dependencyName, version.Version.String())
 	case version.Branch != "":
@@ -82,9 +84,9 @@ func ParseModDependencyPath(fullName string) (string, *DependencyVersion, error)
 			Branch: branchName,
 		}
 		return modDependencyName, modVersion, nil
-		// TODO local filepath look for format modname:file/path
 
 	}
-	// TODO KAI: should we return an error here?
+	// TODO KAI local filepath look for format modname:file/path
+
 	return fullName, nil, nil
 }

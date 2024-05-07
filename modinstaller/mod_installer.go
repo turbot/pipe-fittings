@@ -415,17 +415,17 @@ func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfi
 		if err != nil {
 			return nil, err
 		}
-	//case requiredModVersion.Tag != "":
-	//	// get a resolved mod ref that satisfies the version constraints
-	//	resolvedRef, err = i.getModRefSatisfyingVersionConstraint(requiredModVersion, availableVersions)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	// install the mod
-	//	modDef, err = i.installFromTag(resolvedRef)
-	//	if err != nil {
-	//		return nil, err
-	//	}
+	case requiredModVersion.Tag != "":
+		// get a resolved mod ref that satisfies the version constraints
+		resolvedRef, err = i.getModRefForTag(requiredModVersion)
+		if err != nil {
+			return nil, err
+		}
+		// install the mod
+		modDef, err = i.installFromTag(resolvedRef)
+		if err != nil {
+			return nil, err
+		}
 	case requiredModVersion.BranchName != "":
 		resolvedRef, modDef, err = i.installFromBranch(ctx, requiredModVersion)
 		if err != nil {
@@ -546,36 +546,16 @@ func (i *ModInstaller) installFromGit(repoName string, gitRefName plumbing.Refer
 	gitUrl := getGitUrl(repoName, GitUrlModeHTTPS)
 	slog.Debug("installFromGit cloning the repo", gitUrl, gitRefName.String())
 
-	gitHubToken := getGitToken()
-	cloneOptions := git.CloneOptions{
-		URL:           gitUrl,
-		ReferenceName: gitRefName,
-		Depth:         1,
-		SingleBranch:  true,
-	}
-	if gitHubToken != "" {
-		// if we have a token, use it
-		cloneOptions.Auth = getGitAuthForToken(gitHubToken)
-	}
-
-	repo, err := git.PlainClone(installPath,
-		false, &cloneOptions)
+	repo, err := i.cloneRepo(gitUrl, gitRefName, installPath)
 
 	if err != nil {
 		// if that failed, try ssh
 		gitUrl := getGitUrl(repoName, GitUrlModeSSH)
 		slog.Debug(">>> cloning", gitUrl, gitRefName.String())
-		_, err = git.PlainClone(installPath,
-			false,
-			&git.CloneOptions{
-				URL:           gitUrl,
-				ReferenceName: gitRefName,
-				Depth:         1,
-				SingleBranch:  true,
-			})
-	}
-	if err != nil {
-		return nil, err
+		repo, err = i.cloneRepo(gitUrl, gitRefName, installPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// verify the cloned repo contains a valid modfile
@@ -741,6 +721,8 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 		return false, nil
 	}
 
+	// TODO KAI think about tags
+
 	commitCheck := false
 	// if this command IS targetting this mod, a[pply the update strategy
 	switch i.updateStrategy {
@@ -870,16 +852,19 @@ func (i *ModInstaller) getModRefSatisfyingVersionConstraint(modVersion *modconfi
 }
 
 // get the most recent available mod version which satisfies the version constraint
-func (i *ModInstaller) getModRefForTag(modVersion *modconfig.ModVersionConstraint, availableVersions versionmap.ResolvedVersionConstraintList) (*versionmap.ResolvedVersionConstraint, error) {
+func (i *ModInstaller) getModRefForTag(modVersion *modconfig.ModVersionConstraint) (*versionmap.ResolvedVersionConstraint, error) {
 	// mod version MUST have a version constrait to be here
-	if modVersion.VersionConstraint() == nil {
-		return nil, fmt.Errorf("getModRefSatisfyingVersionConstraint should not be called if mod version has no version constraint")
+	if modVersion.Tag == "" {
+		return nil, fmt.Errorf("getModRefForTag should not be called if mod version has no tag")
 	}
 
 	// find a version which satisfies the version constraint
-	var dependencyVersion = getVersionSatisfyingConstraint(modVersion.VersionConstraint(), availableVersions)
+	dependencyVersion, err := getTagFromGit(modVersion.Name, modVersion.Tag)
+	if err != nil {
+		return nil, err
+	}
 	if dependencyVersion == nil {
-		return nil, fmt.Errorf("no version of %s found satisfying version constraint: %s", modVersion.Name, modVersion.VersionString)
+		return nil, fmt.Errorf("tag %s not found for mod %s", modVersion.Tag, modVersion.Name)
 	}
 
 	return dependencyVersion, nil
@@ -892,16 +877,22 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 	}
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
-	repo, err := git.PlainOpen(modPath)
+	repo, err := i.openRepo(modPath)
 	if err != nil {
 		return "", err
 	}
 
 	// Fetch the latest changes from the remote for the specific branch
-	err = repo.Fetch(&git.FetchOptions{
+	fetchOptions := &git.FetchOptions{
 		RefSpecs: []config.RefSpec{config.RefSpec("+refs/heads/" + branch + ":refs/remotes/origin/" + branch)},
 		Force:    true,
-	})
+	}
+
+	if gitHubToken := getGitToken(); gitHubToken != "" {
+		// if we have a token, use it
+		fetchOptions.Auth = getGitAuthForToken(gitHubToken)
+	}
+	err = repo.Fetch(fetchOptions)
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return "", fmt.Errorf("error fetching branch '%s' from remote: %w", branch, err)
 	}
@@ -923,15 +914,22 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 	}
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
-	repo, err := git.PlainOpen(modPath)
+	repo, err := i.openRepo(modPath)
 	if err != nil {
 		return "", err
 	}
 
 	// Fetch only tag information from the remote
-	err = repo.Fetch(&git.FetchOptions{
+	// Fetch the latest changes from the remote for the specific branch
+	fetchOptions := &git.FetchOptions{
 		RefSpecs: []config.RefSpec{"+refs/tags/*:refs/tags/*"},
-	})
+	}
+
+	if gitHubToken := getGitToken(); gitHubToken != "" {
+		// if we have a token, use it
+		fetchOptions.Auth = getGitAuthForToken(gitHubToken)
+	}
+	err = repo.Fetch(fetchOptions)
 	if err != nil && err != git.NoErrAlreadyUpToDate {
 		return "", fmt.Errorf("error fetching tags from remote: %w", err)
 	}

@@ -139,7 +139,8 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 		m.versionConstraint = c
 		return nil
 	}
-	// if we get here we failed to parse the version string as a semver - treat it as a git tag instead
+
+	// if we get here we failed to parse the version string as a semver - treat it as a git tag instead - we will verify it later
 	m.Tag = m.VersionString
 	return nil
 }
