@@ -156,6 +156,30 @@ func getTagVersionsFromGit(modName string, includePrerelease bool) ([]*versionma
 	return versions, nil
 }
 
+func getTagFromGit(modName string, tag string) (*versionmap.ResolvedVersionConstraint, error) {
+	// get and cache all references for the mod
+	refs, err := getRefsFromGit(modName)
+	if err != nil {
+		return nil, perr.BadRequestWithMessage("could not retrieve tag data from Git URL " + modName + " - " + err.Error())
+	}
+
+	for _, ref := range refs {
+		if ref.Name().IsTag() && ref.Name().Short() == tag {
+			ref := &versionmap.ResolvedVersionConstraint{
+				DependencyVersion: modconfig.DependencyVersion{
+					Tag: tag,
+				},
+				Name:          modName,
+				Commit:        ref.Hash().String(),
+				GitRefStr:     ref.Name().String(),
+				StructVersion: versionmap.WorkspaceLockStructVersion,
+			}
+			return ref, nil
+		}
+	}
+	return nil, nil
+}
+
 func getRefsFromGit(modName string) ([]*plumbing.Reference, error) {
 	slog.Debug("getTagVersionsFromGit - retrieving tags from Git", "mod", modName)
 	// first try https

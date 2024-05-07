@@ -25,7 +25,7 @@ type WorkspaceLock struct {
 	MissingVersions InstalledDependencyVersionsMap
 
 	ModInstallationPath string
-	// TODO KAI look at using InstalledDependencyVersionsMap - or possibly only load this when pruning
+
 	// installed mods is a map of all modfiles found in the mod installation path
 	// (i.e. the mods which are installed)
 	// it is poppulated when we load the lock  file and used to prunine uninsed mods
@@ -350,17 +350,6 @@ func (l *WorkspaceLock) ContainsModVersion(modName string, modVersion *modconfig
 	}
 	return false
 }
-
-//func (l *WorkspaceLock) ContainsModConstraint(modName string, constraint *versionhelpers.Constraints) bool {
-//	for _, modVersionMap := range l.InstallCache {
-//		for lockName, lockVersion := range modVersionMap {
-//			if lockName == modName && lockVersion.Constraint == constraint.Original {
-//				return true
-//			}
-//		}
-//	}
-//	return false
-//}
 
 // Incomplete returned whether there are any missing dependencies
 // (i.e. they exist in the lock file but ate not installed)
