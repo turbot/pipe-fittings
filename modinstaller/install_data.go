@@ -5,6 +5,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/versionmap"
 	"github.com/xlab/treeprint"
+	"log/slog"
 )
 
 type InstallData struct {
@@ -76,10 +77,39 @@ func (d *InstallData) getAvailableModVersions(modName string, includePrerelease 
 
 // update the lock with the NewLock and dtermine if any mods have been uninstalled
 func (d *InstallData) onInstallComplete() {
-	d.Installed = d.NewLock.InstallCache.GetMissingFromOther(d.Lock.InstallCache)
-	d.Uninstalled = d.Lock.InstallCache.GetMissingFromOther(d.NewLock.InstallCache)
-	d.Upgraded = d.Lock.InstallCache.GetUpgradedInOther(d.NewLock.InstallCache)
-	d.Downgraded = d.Lock.InstallCache.GetDowngradedInOther(d.NewLock.InstallCache)
+	installed := d.NewLock.InstallCache.GetMissingFromOther(d.Lock.InstallCache)
+	uninstalled := d.Lock.InstallCache.GetMissingFromOther(d.NewLock.InstallCache)
+	upgraded := d.Lock.InstallCache.GetUpgradedInOther(d.NewLock.InstallCache)
+	downgraded := d.Lock.InstallCache.GetDowngradedInOther(d.NewLock.InstallCache)
+
+	// for each installed parent in the installed map, check whethe rthe parent was actually upgraded
+	// - if so the children will wrongly have been identified as installed,
+	// (as their parent has a new version so GetMissingFromOther will not find the parent in the prev)
+	// when actually they may have been upgraded or unchanged
+	for installedParent, deps := range installed {
+		for _, updgradedForParent := range upgraded {
+			for _, u := range updgradedForParent {
+				if u.DependencyPath() == installedParent {
+					slog.Info("Checking for parent upgrade", "installedParent", installedParent, "u", u)
+				}
+				slog.Info("Checking for parent upgrade", "installedParent", installedParent, "u", u)
+				slog.Info("Checking for parent upgrade", "deps", deps)
+
+			}
+			//if updgraded.Name != installedParent.Name {
+			//	for name, dep := range deps {
+			//		if _, ok := updgraded[name]; ok {
+			//			delete(installed[parent], name)
+			//		}
+			//	}
+			//}
+		}
+	}
+	d.Installed = installed
+	d.Uninstalled = uninstalled
+	d.Upgraded = upgraded
+	d.Downgraded = downgraded
+
 	d.Lock = d.NewLock
 }
 

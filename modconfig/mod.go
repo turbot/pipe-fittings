@@ -42,11 +42,10 @@ type Mod struct {
 	Version *DependencyVersion `json:"-"`
 	// DependencyPath is the fully qualified mod name including version,
 	// which will by the map key in the workspace lock file
-	// NOTE: this is the relative path to the mod location from the depdency install dir (.steampipe/mods)
+	// NOTE: this is the relative path to the mod location from the dependency install dir (.steampipe/mods)
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty@v1.0.0
-	// It is populated for depdency mods as part of the mod loading process
-	// NOTE: if this mod depdency is a local file depdency, the depdency path will be the alias
-	// TODO KAI or alias@file:local/path ???
+	// It is populated for dependency mods as part of the mod loading process
+	// NOTE: if this mod dependency is a local file dependency, the dependency path will be the file path
 	DependencyPath *string `json:"dependency_path,omitempty"`
 	// DependencyName return the name of the mod as a dependency, i.e. the mod dependency path, _without_ the version
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty
