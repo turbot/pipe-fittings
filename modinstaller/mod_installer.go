@@ -324,8 +324,9 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 	}
 
 	// update the lock to be the new lock, and record any uninstalled mods
-	i.installData.onInstallComplete()
-
+	if len(errors) == 0 {
+		i.installData.onInstallComplete()
+	}
 	return i.buildInstallError(errors)
 }
 
