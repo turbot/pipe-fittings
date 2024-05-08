@@ -148,7 +148,7 @@ func (i *ModInstaller) createNewModRequireBlock(modVersion *modconfig.ModVersion
 		modRequireBlock.Body().SetAttributeValue("branch", cty.StringVal(modVersion.BranchName))
 	}
 	if modVersion.FilePath != "" {
-		modRequireBlock.Body().SetAttributeValue("file_path", cty.StringVal(modVersion.FilePath))
+		modRequireBlock.Body().SetAttributeValue("path", cty.StringVal(modVersion.FilePath))
 	}
 	if modVersion.Tag != "" {
 		modRequireBlock.Body().SetAttributeValue("tag", cty.StringVal(modVersion.Tag))
