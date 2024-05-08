@@ -58,15 +58,23 @@ func ParseModDependencyPath(fullName string) (string, *DependencyVersion, error)
 			err := fmt.Errorf("invalid mod full name %s", fullName)
 			return "", nil, err
 		}
+		var modVersion *DependencyVersion
 		modDependencyName := parts[0]
 		versionString := parts[1]
 		version, err := semver.NewVersion(versionString)
-		// NOTE: we expect the version to be in format 'vx.x.x', i.e. a semver with a preceding v
-		if !strings.HasPrefix(versionString, "v") || err != nil {
-			err = fmt.Errorf("mod file %s has invalid version", fullName)
-		}
-		modVersion := &DependencyVersion{
-			Version: version,
+		if err != nil {
+			// if we failed to parse as a semver, treat as a tag
+			modVersion = &DependencyVersion{
+				Tag: versionString,
+			}
+		} else {
+			// NOTE: we expect the version to be in format 'vx.x.x', i.e. a semver with a preceding v
+			if !strings.HasPrefix(versionString, "v") || err != nil {
+				return "", nil, fmt.Errorf("mod file %s has invalid version", fullName)
+			}
+			modVersion = &DependencyVersion{
+				Version: version,
+			}
 		}
 		return modDependencyName, modVersion, nil
 

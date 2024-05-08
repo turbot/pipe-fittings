@@ -795,9 +795,6 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 	}
 
 	return i.newCommitAvailable(installedVersion)
-	// if commitCheck flag is set, perform
-	return false, nil
-
 }
 
 // determine whether there is a newer mod version avoilable which satisfies the dependency version constraint
