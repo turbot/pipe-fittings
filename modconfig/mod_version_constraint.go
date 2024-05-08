@@ -43,7 +43,7 @@ type ModVersionConstraint struct {
 	DefRange hcl.Range
 	// contains the range of the body of the mod block
 	BodyRange hcl.Range
-	// contains the range of the total version field
+	// contains the range of the version/branch/tag/path field
 	VersionRange hcl.Range
 }
 
@@ -96,12 +96,9 @@ func NewModVersionConstraint(modFullName string) (*ModVersionConstraint, error) 
 // Initialise parses the version and name properties
 func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 	if block != nil {
-		// record all the ranges in the source file
-		m.DefRange = block.DefRange
-		m.BodyRange = block.Body.(*hclsyntax.Body).SrcRange
-		// record the range of the version attribute in this structure
-		if versionAttribute, ok := block.Body.(*hclsyntax.Body).Attributes["version"]; ok {
-			m.VersionRange = versionAttribute.SrcRange
+		diags := m.setRanges(block)
+		if diags.HasErrors() {
+			return diags
 		}
 	}
 
@@ -142,6 +139,32 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 
 	// if we get here we failed to parse the version string as a semver - treat it as a git tag instead - we will verify it later
 	m.Tag = m.VersionString
+	// NOTE: clear the version string
+	m.VersionString = ""
+	return nil
+}
+
+func (m *ModVersionConstraint) setRanges(block *hcl.Block) hcl.Diagnostics {
+	// record all the ranges in the source file
+	m.DefRange = block.DefRange
+	m.BodyRange = block.Body.(*hclsyntax.Body).SrcRange
+	// record the range of the version/branch/path/tag attribute in this structure
+	if versionAttribute, ok := block.Body.(*hclsyntax.Body).Attributes["version"]; ok {
+		m.VersionRange = versionAttribute.SrcRange
+	} else if branchAttribute, ok := block.Body.(*hclsyntax.Body).Attributes["branch"]; ok {
+		m.VersionRange = branchAttribute.SrcRange
+	} else if pathAttribute, ok := block.Body.(*hclsyntax.Body).Attributes["path"]; ok {
+		m.VersionRange = pathAttribute.SrcRange
+	} else if tagAttribute, ok := block.Body.(*hclsyntax.Body).Attributes["tag"]; ok {
+		m.VersionRange = tagAttribute.SrcRange
+	} else {
+		// one of these must be present
+		return hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Failed to load mod require block: one of 'version', 'branch', 'path', or 'tag' must be set",
+			Subject:  &m.DefRange,
+		}}
+	}
 	return nil
 }
 

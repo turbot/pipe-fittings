@@ -207,21 +207,44 @@ func (i *ModInstaller) calcChangesForInstall(oldRequire *modconfig.Require, newR
 
 // calculates the changes required in mod.sp to reflect updates
 func (i *ModInstaller) calcChangesForUpdate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
-	// TODO KAI THIS WILL CHANGE FOR FILE/BRANCH
 	changes := ChangeSet{}
-	for _, requiredMod := range oldRequire.Mods {
-		modInUpdated := newRequire.GetModDependency(requiredMod.Name)
-		if modInUpdated == nil {
+	for _, oldRequiredMod := range oldRequire.Mods {
+		newRequiredMod := newRequire.GetModDependency(oldRequiredMod.Name)
+		if newRequiredMod == nil {
 			continue
 		}
-		if modInUpdated.VersionString != requiredMod.VersionString {
+		// requiredMod.VersionRange contains the locaiton of the current version/tag/branch/path field
+		// this field will be replaced with the new value
+		var content []byte
+		// content will depdend on which property exists in the newRequiredMod
+		switch {
+		case newRequiredMod.VersionString != "":
+			if newRequiredMod.VersionString != oldRequiredMod.VersionString {
+				content = []byte(fmt.Sprintf("version = \"%s\"", newRequiredMod.VersionString))
+			}
+		case newRequiredMod.BranchName != "":
+			if newRequiredMod.BranchName != oldRequiredMod.BranchName {
+				content = []byte(fmt.Sprintf("branch = \"%s\"", newRequiredMod.BranchName))
+			}
+		case newRequiredMod.FilePath != "":
+			if newRequiredMod.FilePath != oldRequiredMod.FilePath {
+				content = []byte(fmt.Sprintf("file_path = \"%s\"", newRequiredMod.FilePath))
+			}
+		case newRequiredMod.Tag != "":
+			if newRequiredMod.Tag != oldRequiredMod.Tag {
+				content = []byte(fmt.Sprintf("tag = \"%s\"", newRequiredMod.Tag))
+			}
+		}
+		// has anything changed?
+		if len(content) > 0 {
 			changes = append(changes, &Change{
 				Operation:   Replace,
-				OffsetStart: requiredMod.VersionRange.Start.Byte,
-				OffsetEnd:   requiredMod.VersionRange.End.Byte,
-				Content:     []byte(fmt.Sprintf("version = \"%s\"", modInUpdated.VersionString)),
+				OffsetStart: oldRequiredMod.VersionRange.Start.Byte,
+				OffsetEnd:   oldRequiredMod.VersionRange.End.Byte,
+				Content:     content,
 			})
 		}
 	}
+
 	return changes
 }
