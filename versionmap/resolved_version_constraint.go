@@ -9,11 +9,13 @@ import (
 type InstalledModVersion struct {
 	*ResolvedVersionConstraint
 	Alias string `json:"alias"`
-	//InstallPath string `json:"install_path"`
 }
 
 func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModVersionConstraint) bool {
 	if c := requiredVersion.VersionConstraint(); c != nil {
+		if v.Version == nil {
+			return false
+		}
 		return c.Check(v.Version)
 	}
 	if b := requiredVersion.BranchName; b != "" {
@@ -21,6 +23,9 @@ func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModV
 	}
 	if f := requiredVersion.FilePath; f != "" {
 		return v.FilePath == f
+	}
+	if t := requiredVersion.Tag; t != "" {
+		return v.Tag == t
 	}
 	// unexpected
 	return false
@@ -57,7 +62,8 @@ func (c ResolvedVersionConstraint) Equals(other *ResolvedVersionConstraint) bool
 		c.Branch == other.Branch &&
 		c.Commit == other.Commit &&
 		c.GitRefStr == other.GitRefStr &&
-		c.FilePath == other.FilePath
+		c.FilePath == other.FilePath &&
+		c.Tag == other.Tag
 }
 
 func (c ResolvedVersionConstraint) IsPrerelease() bool {
