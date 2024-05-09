@@ -659,25 +659,31 @@ func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVers
 // loadDependencyMod tries to load the mod definition from the shadow directory
 // and falls back to the 'mods' directory of the root mod
 func (i *ModInstaller) loadDependencyMod(ctx context.Context, modVersion *versionmap.ResolvedVersionConstraint) (*modconfig.Mod, error) {
-	// if the mod has a FilePath, just load it
-	if modVersion.DependencyVersion.FilePath != "" {
-		return parse.LoadModfile(modVersion.DependencyVersion.FilePath)
-	}
+	var modDefinition *modconfig.Mod
 
 	// construct the dependency path - this is the relative path of the dependency we are installing
 	dependencyPath := modVersion.DependencyPath()
 
-	// first try loading from the shadow dir
-	modDefinition, err := i.loadDependencyModFromRoot(ctx, i.shadowDirPath, dependencyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	// failed to load from shadow dir, try mods dir
-	if modDefinition == nil {
-		modDefinition, err = i.loadDependencyModFromRoot(ctx, i.modsPath, dependencyPath)
+	var err error
+	// if the mod has a FilePath, just load it
+	if modVersion.DependencyVersion.FilePath != "" {
+		modDefinition, err = parse.LoadModfile(modVersion.DependencyVersion.FilePath)
 		if err != nil {
 			return nil, err
+		}
+	} else {
+		// first try loading from the shadow dir
+		modDefinition, err = i.loadDependencyModFromRoot(ctx, i.shadowDirPath, dependencyPath)
+		if err != nil {
+			return nil, err
+		}
+
+		// failed to load from shadow dir, try mods dir
+		if modDefinition == nil {
+			modDefinition, err = i.loadDependencyModFromRoot(ctx, i.modsPath, dependencyPath)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -715,14 +721,14 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 	isSatisfied := installedVersion.SatisfiesConstraint(requiredModVersion)
 
 	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
+	commandTargettingThisMod := i.isCommandTargettingMod(installedVersion.Name)
+
 	// commandTargettingParent is set when this is a dependency mod and the parent mod is being updated
-	commandTargettingThisMod := i.isCommandTargettingMod(installedVersion.Name) || commandTargettingParent
-	if !commandTargettingThisMod {
-		// if this command is not targetting this mod, do not update under any circumstances
+
+	// if this command is not targetting this mod or it;s parent, do not update under any circumstances
+	if !(commandTargettingThisMod || commandTargettingParent) {
 		return false, nil
 	}
-
-	// TODO KAI think about tags
 
 	commitCheck := false
 	// if this command IS targetting this mod, a[pply the update strategy
@@ -756,9 +762,6 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 	case constants.ModUpdateMinimal:
 		// 'ModUpdateDevelopment' only updates broken constraints, do not check branches for new commits
 		return !isSatisfied, nil
-	case constants.ModUpdateNone:
-		// no dependency updates
-		return false, nil
 
 	}
 

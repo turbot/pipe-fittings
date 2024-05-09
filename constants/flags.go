@@ -12,7 +12,6 @@ const (
 	ModUpdateLatest      = "latest"
 	ModUpdateDevelopment = "development"
 	ModUpdateMinimal     = "minimal"
-	ModUpdateNone        = "none"
 )
 
 const (
@@ -28,7 +27,6 @@ var ModUpdateStrategyIds = map[ModUpdateStrategy][]string{
 	ModUpdateIdLatest:      {ModUpdateLatest},
 	ModUpdateIdDevelopment: {ModUpdateDevelopment},
 	ModUpdateIdMinimal:     {ModUpdateMinimal},
-	ModUpdateIdNone:        {ModUpdateNone},
 }
 
 func FlagValues[T comparable](mappings map[T][]string) []string {
