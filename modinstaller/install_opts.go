@@ -18,15 +18,14 @@ type InstallOpts struct {
 	UpdateStrategy string
 }
 
-func NewInstallOpts(workspaceMod *modconfig.Mod, updateStrategy string, modsToInstall ...string) *InstallOpts {
+func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *InstallOpts {
 	cmdName := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command).Name()
 	opts := &InstallOpts{
-		WorkspaceMod:   workspaceMod,
-		DryRun:         viper.GetBool(constants.ArgDryRun),
-		Force:          viper.GetBool(constants.ArgForce),
-		ModArgs:        utils.TrimGitUrls(modsToInstall),
-		Command:        cmdName,
-		UpdateStrategy: updateStrategy,
+		WorkspaceMod: workspaceMod,
+		DryRun:       viper.GetBool(constants.ArgDryRun),
+		Force:        viper.GetBool(constants.ArgForce),
+		ModArgs:      utils.TrimGitUrls(modsToInstall),
+		Command:      cmdName,
 	}
 	opts.ModArgs = utils.TrimGitUrls(opts.ModArgs)
 	return opts
