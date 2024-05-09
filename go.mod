@@ -52,7 +52,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/iancoleman/strcase v0.3.0
-	github.com/jackc/pgx/v5 v5.5.2
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/steampipe-plugin-code v0.7.0
