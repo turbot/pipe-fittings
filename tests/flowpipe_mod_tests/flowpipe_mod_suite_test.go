@@ -100,6 +100,60 @@ func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 	assert.NotNil(stepWithThrow.GetThrowConfig()[0].UnresolvedAttributes[schema.AttributeTypeMessage])
 }
 
+func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_with_tags", workspace.WithCredentials(map[string]credential.Credential{}))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["test_mod.pipeline.simple_tags"]
+	assert.NotNil(pipeline)
+	assert.Equal(2, len(pipeline.Tags))
+	assert.Equal("Bar", pipeline.Tags["Foo"])
+	assert.Equal("Qux", pipeline.Tags["Baz"])
+
+	pipeline = mod.ResourceMaps.Pipelines["test_mod.pipeline.merging_tags"]
+	assert.NotNil(pipeline)
+	assert.Equal(4, len(pipeline.Tags))
+	assert.Equal("unused", pipeline.Tags["class"])
+	assert.Equal("Cost", pipeline.Tags["category"])
+
+	trigger := mod.ResourceMaps.Triggers["test_mod.trigger.schedule.every_hour_trigger_on_if"]
+	assert.NotNil(trigger)
+	assert.Equal("## Hello World\n\nThis is a markdown **text** in a heredoc!\n", *trigger.Documentation)
+	assert.Equal(4, len(trigger.Tags))
+	assert.Equal("unused", trigger.Tags["class"])
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithDocs() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./with_docs", workspace.WithCredentials(map[string]credential.Credential{}))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["test_mod.pipeline.doc_from_file"]
+	assert.NotNil(pipeline)
+	assert.Equal("## Hello World\n\nThis is a markdown **text** in a heredoc!\n", *pipeline.Documentation)
+
+	trigger := mod.ResourceMaps.Triggers["test_mod.trigger.query.t"]
+	assert.NotNil(trigger)
+	assert.Equal("## Hello World Two\n\nThis is a markdown **text** in a heredoc!\n", *trigger.Documentation)
+}
+
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 
