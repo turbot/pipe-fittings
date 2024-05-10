@@ -1,10 +1,10 @@
 package modinstaller
 
 import (
+	"fmt"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/versionmap"
-	"github.com/xlab/treeprint"
 	"log/slog"
 )
 
@@ -16,14 +16,11 @@ type InstallData struct {
 	// ALL the available versions for each dependency mod(we populate this in a lazy fashion)
 	allAvailable versionmap.ResolvedVersionConstraintListMap
 
-	// list of dependencies installed by recent install operation
-	Installed versionmap.InstalledDependencyVersionsMap
-	// list of dependencies which have been upgraded
-	Upgraded versionmap.InstalledDependencyVersionsMap
-	// list of dependencies which have been downgraded
-	Downgraded versionmap.InstalledDependencyVersionsMap
-	// list of dependencies which have been uninstalled
-	Uninstalled  versionmap.InstalledDependencyVersionsMap
+	Installed   [][]string
+	Uninstalled [][]string
+	Upgraded    [][]string
+	Downgraded  [][]string
+
 	WorkspaceMod *modconfig.Mod
 }
 
@@ -33,10 +30,6 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 		WorkspaceMod: workspaceMod,
 		NewLock:      versionmap.EmptyWorkspaceLock(workspaceLock),
 		allAvailable: make(versionmap.ResolvedVersionConstraintListMap),
-		Installed:    make(versionmap.InstalledDependencyVersionsMap),
-		Upgraded:     make(versionmap.InstalledDependencyVersionsMap),
-		Downgraded:   make(versionmap.InstalledDependencyVersionsMap),
-		Uninstalled:  make(versionmap.InstalledDependencyVersionsMap),
 	}
 }
 
@@ -75,52 +68,86 @@ func (d *InstallData) getAvailableModVersions(modName string, includePrerelease 
 	return availableVersions, nil
 }
 
-// update the lock with the NewLock and dtermine if any mods have been uninstalled
-func (d *InstallData) onInstallComplete() {
-	installed := d.NewLock.InstallCache.GetMissingFromOther(d.Lock.InstallCache)
-	uninstalled := d.Lock.InstallCache.GetMissingFromOther(d.NewLock.InstallCache)
-	upgraded := d.Lock.InstallCache.GetUpgradedInOther(d.NewLock.InstallCache)
-	downgraded := d.Lock.InstallCache.GetDowngradedInOther(d.NewLock.InstallCache)
+// update the lock with the NewLock and determine if mod installs, upgrades, downgrades or uninstalls have occurred
+func (d *InstallData) onInstallComplete() error {
+	root := d.WorkspaceMod.GetInstallCacheKey()
 
-	// for each installed parent in the installed map, check whethe rthe parent was actually upgraded
-	// - if so the children will wrongly have been identified as installed,
-	// (as their parent has a new version so GetMissingFromOther will not find the parent in the prev)
-	// when actually they may have been upgraded or unchanged
-	for installedParent, deps := range installed {
-		for _, updgradedForParent := range upgraded {
-			for _, u := range updgradedForParent {
-				if u.DependencyPath() == installedParent {
-					slog.Info("Checking for parent upgrade", "installedParent", installedParent, "u", u)
-				}
-				slog.Info("Checking for parent upgrade", "installedParent", installedParent, "u", u)
-				slog.Info("Checking for parent upgrade", "deps", deps)
+	getUpgradedDowngradedUninstalled := func(depPath []string, dep *versionmap.InstalledModVersion) error {
+		// find this path in new lock
+		newDep, fullPath := d.NewLock.InstallCache.GetDependency(depPath)
 
-			}
-			//if updgraded.Name != installedParent.Name {
-			//	for name, dep := range deps {
-			//		if _, ok := updgraded[name]; ok {
-			//			delete(installed[parent], name)
-			//		}
-			//	}
-			//}
+		if newDep == nil {
+			// get the full path from the old lock
+			_, oldFullPath := d.Lock.InstallCache.GetDependency(depPath)
+			d.Uninstalled = append(d.Uninstalled, oldFullPath)
+			return nil
 		}
+
+		switch {
+
+		// if they are both version constraints, compare the versions
+		case dep.DependencyVersion.Version != nil && newDep.DependencyVersion.Version != nil:
+			switch {
+			case dep.DependencyVersion.Version.GreaterThan(newDep.DependencyVersion.Version):
+				d.Upgraded = append(d.Upgraded, fullPath)
+			case newDep.DependencyVersion.Version.LessThan(dep.DependencyVersion.Version):
+				d.Downgraded = append(d.Downgraded, fullPath)
+			// otherwise check the commit hash
+			case dep.Commit != newDep.Commit:
+				d.Upgraded = append(d.Upgraded, fullPath)
+			}
+
+		// if they are both the same branch, compare the commit hash
+		case dep.Branch != "" && dep.Branch == newDep.Branch:
+			if dep.Commit != newDep.Commit {
+				d.Upgraded = append(d.Upgraded, fullPath)
+			}
+			// if they are bothe the same tag, compare the commit hash
+		case dep.Tag != "" && dep.Tag == newDep.Tag:
+			if dep.Commit != newDep.Commit {
+				d.Upgraded = append(d.Upgraded, fullPath)
+			}
+			// both the same filepath - nothing to do
+		case dep.FilePath != "" && newDep.FilePath == dep.FilePath:
+			// nothing to do here
+		default:
+			// to get here, then they have must have different constraint types or different filepaths
+			//- mark as uninstalled and installed
+			_, oldFullPath := d.Lock.InstallCache.GetDependency(depPath)
+			d.Installed = append(d.Installed, fullPath)
+			d.Uninstalled = append(d.Uninstalled, oldFullPath)
+		}
+		//
+		slog.Info("newDep", newDep)
+		return nil
 	}
-	d.Installed = installed
-	d.Uninstalled = uninstalled
-	d.Upgraded = upgraded
-	d.Downgraded = downgraded
+
+	if err := d.Lock.WalkCache(root, getUpgradedDowngradedUninstalled); err != nil {
+		return err
+	}
+
+	// we also need to check for any new dependencies which have been installed
+	// do this by walking the new lock and checking if the path exists in the old lock
+	getInstalled := func(depPath []string, newDep *versionmap.InstalledModVersion) error {
+		// find this path in new lock
+		oldDep, _ := d.Lock.InstallCache.GetDependency(depPath)
+
+		if oldDep == nil {
+			// get the full path from the new lock
+			_, fullPath := d.NewLock.InstallCache.GetDependency(depPath)
+			if fullPath == nil {
+				return fmt.Errorf("could not find path %v in new lock", depPath)
+			}
+			d.Installed = append(d.Installed, fullPath)
+			return nil
+		}
+		slog.Info("newDep", newDep)
+		return nil
+	}
+	if err := d.NewLock.WalkCache(root, getInstalled); err != nil {
+		return err
+	}
 
 	d.Lock = d.NewLock
-}
-
-func (d *InstallData) GetUpdatedTree() treeprint.Tree {
-	return d.Upgraded.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey(), d.Lock)
-}
-
-func (d *InstallData) GetInstalledTree() treeprint.Tree {
-	return d.Installed.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey(), d.Lock)
-}
-
-func (d *InstallData) GetUninstalledTree() treeprint.Tree {
-	return d.Uninstalled.GetDependencyTree(d.WorkspaceMod.GetInstallCacheKey(), d.Lock)
+	return nil
 }

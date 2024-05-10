@@ -89,48 +89,28 @@ func (m InstalledDependencyVersionsMap) GetMissingFromOther(other InstalledDepen
 	return res
 }
 
-func (m InstalledDependencyVersionsMap) GetUpgradedInOther(other InstalledDependencyVersionsMap) InstalledDependencyVersionsMap {
-	res := make(InstalledDependencyVersionsMap)
-	for parent, deps := range m {
-		otherDeps := other[parent]
-		if otherDeps == nil {
-			otherDeps = make(map[string]*InstalledModVersion)
-		}
-		for name, dep := range deps {
-			if otherDep, ok := otherDeps[name]; ok {
-				switch {
-				case dep.Version != nil && otherDep.Version != nil:
-					if dep.Version.LessThan(otherDep.Version) {
-						res.AddDependency(parent, otherDep)
-					}
-				case dep.Branch != "" && otherDep.Branch != "":
-					if dep.Commit != otherDep.Commit {
-						res.AddDependency(parent, otherDep)
-					}
-				case dep.FilePath != "" && otherDep.FilePath != "":
-					// TODO - check file hash????
-
-				}
-			}
-		}
+// GetDependency returns the InstalledModVersion for the given path (with no constraints), and the full path (i.e. with constraints) to that dependency
+func (m InstalledDependencyVersionsMap) GetDependency(path []string) (*InstalledModVersion, []string) {
+	// build fully qualified path
+	var fullPath []string
+	if len(path) == 0 {
+		return nil, nil
 	}
-	return res
-}
-
-func (m InstalledDependencyVersionsMap) GetDowngradedInOther(other InstalledDependencyVersionsMap) InstalledDependencyVersionsMap {
-	res := make(InstalledDependencyVersionsMap)
-	for parent, deps := range m {
-		otherDeps := other[parent]
-		if otherDeps == nil {
-			otherDeps = make(map[string]*InstalledModVersion)
+	depName := path[0]
+	key := depName
+	fullPath = append(fullPath, key)
+	depsForParent := m[key]
+	var depVersion *InstalledModVersion
+	var ok bool
+	for i := 1; i < len(path); i++ {
+		depName := path[i]
+		depVersion, ok = depsForParent[depName]
+		if !ok {
+			return nil, nil
 		}
-		for name, dep := range deps {
-			if otherDep, ok := otherDeps[name]; ok {
-				if otherDep.LessThan(&dep.DependencyVersion) {
-					res.AddDependency(parent, otherDep)
-				}
-			}
-		}
+		key := depVersion.DependencyPath()
+		fullPath = append(fullPath, key)
+		depsForParent = m[key]
 	}
-	return res
+	return depVersion, fullPath
 }

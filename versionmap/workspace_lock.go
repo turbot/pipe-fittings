@@ -3,7 +3,6 @@ package versionmap
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"log/slog"
 	"os"
 	"path"
@@ -11,6 +10,7 @@ import (
 	"strings"
 
 	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -388,4 +388,28 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 	}
 
 	return "", fmt.Errorf("dependency mod '%s' is not installed - run '"+app_specific.AppName+" mod install'", modDependency.DependencyPath())
+}
+
+// WalkCache down from the root, traversing each branch down to the leaf
+func (l *WorkspaceLock) WalkCache(root string, f func(depPath []string, dep *InstalledModVersion) error) error {
+	parent := root
+
+	p := []string{root}
+	return l.walkDeps(parent, p, f)
+}
+
+func (l *WorkspaceLock) walkDeps(parent string, p []string, f func(depPath []string, dep *InstalledModVersion) error) error {
+	deps := l.InstallCache[parent]
+	for name, dep := range deps {
+		depPath := append(p, name)
+		// call callback
+		if err := f(depPath, dep); err != nil {
+			return err
+		}
+		// now walk child deps
+		if err := l.walkDeps(dep.DependencyPath(), depPath, f); err != nil {
+			return err
+		}
+	}
+	return nil
 }
