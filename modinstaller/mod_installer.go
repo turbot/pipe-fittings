@@ -72,6 +72,11 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		updateStrategy: opts.UpdateStrategy,
 	}
 
+	// default update strategy to "latest"
+	if i.updateStrategy == "" {
+		i.updateStrategy = constants.ModUpdateLatest
+	}
+
 	if opts.WorkspaceMod.Require != nil {
 		i.oldRequire = opts.WorkspaceMod.Require.Clone()
 	}
