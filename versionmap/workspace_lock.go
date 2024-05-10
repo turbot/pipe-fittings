@@ -393,15 +393,14 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 // WalkCache down from the root, traversing each branch down to the leaf
 func (l *WorkspaceLock) WalkCache(root string, f func(depPath []string, dep *InstalledModVersion) error) error {
 	parent := root
-
 	p := []string{root}
 	return l.walkDeps(parent, p, f)
 }
 
-func (l *WorkspaceLock) walkDeps(parent string, p []string, f func(depPath []string, dep *InstalledModVersion) error) error {
+func (l *WorkspaceLock) walkDeps(parent string, depPath []string, f func(depPath []string, dep *InstalledModVersion) error) error {
 	deps := l.InstallCache[parent]
 	for name, dep := range deps {
-		depPath := append(p, name)
+		depPath = append(depPath, name)
 		// call callback
 		if err := f(depPath, dep); err != nil {
 			return err

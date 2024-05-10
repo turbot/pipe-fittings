@@ -8,9 +8,9 @@ import (
 func (i *ModInstaller) openRepo(modPath string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(modPath)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
-	return repo, err
+	return repo, nil
 }
 
 func (i *ModInstaller) cloneRepo(gitUrl string, gitRefName plumbing.ReferenceName, installPath string) (*git.Repository, error) {

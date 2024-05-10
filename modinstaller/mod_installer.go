@@ -156,7 +156,7 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 	defer func() {
 		if err != nil && i.force {
 			// suppress the error since this is a forced install
-			slog.Debug("suppressing error in InstallWorkspaceDependencies because force is enabled", err)
+			slog.Debug("suppressing error in InstallWorkspaceDependencies because force is enabled", "error", err)
 			err = nil
 		}
 		// tidy unused mods

@@ -211,7 +211,7 @@ func (m *ModVersionConstraint) OriginalConstraint() any {
 	case m.VersionString != "":
 		return m.VersionString
 	case m.FilePath != "":
-		return fmt.Sprintf("file:m.FilePath")
+		return m.FilePath
 	case m.BranchName != "":
 		return fmt.Sprintf("branch:%s", m.BranchName)
 	case m.Tag != "":

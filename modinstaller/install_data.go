@@ -5,7 +5,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/versionmap"
-	"log/slog"
 )
 
 type InstallData struct {
@@ -117,8 +116,6 @@ func (d *InstallData) onInstallComplete() error {
 			d.Installed = append(d.Installed, fullPath)
 			d.Uninstalled = append(d.Uninstalled, oldFullPath)
 		}
-		//
-		slog.Info("newDep", newDep)
 		return nil
 	}
 
@@ -141,7 +138,6 @@ func (d *InstallData) onInstallComplete() error {
 			d.Installed = append(d.Installed, fullPath)
 			return nil
 		}
-		slog.Info("newDep", newDep)
 		return nil
 	}
 	if err := d.NewLock.WalkCache(root, getInstalled); err != nil {
