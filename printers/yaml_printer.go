@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	"github.com/turbot/pipe-fittings/sanitize"
 	"io"
 
 	"github.com/fatih/color"

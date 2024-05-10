@@ -3,10 +3,10 @@ package export
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/constants"
 )
 
 type SnapshotExporter struct {

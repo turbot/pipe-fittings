@@ -3,7 +3,7 @@ package var_config
 // github.com/turbot/terraform-components/configs/parser_config.go
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"unicode"
 
 	"github.com/hashicorp/hcl/v2"

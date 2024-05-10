@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/constants"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 )
 

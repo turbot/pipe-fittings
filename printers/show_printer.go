@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"github.com/logrusorgru/aurora"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	"github.com/turbot/pipe-fittings/sanitize"
 	"io"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/constants"
 )
 
 type ShowPrinter[T any] struct{}

@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/turbot/pipe-fittings/v2/credential"
-	"github.com/turbot/pipe-fittings/v2/flowpipeconfig"
-	"github.com/turbot/pipe-fittings/v2/perr"
-	"github.com/turbot/pipe-fittings/v2/tests/test_init"
-	"github.com/turbot/pipe-fittings/v2/workspace"
+	"github.com/turbot/pipe-fittings/credential"
+	"github.com/turbot/pipe-fittings/flowpipeconfig"
+	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/tests/test_init"
+	"github.com/turbot/pipe-fittings/workspace"
 )
 
 type FlowpipeSimpleInvalidConfigTestSuite struct {

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/v2/load_mod"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 type testSetup struct {

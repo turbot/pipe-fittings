@@ -1,7 +1,7 @@
 package workspace
 
 import (
-	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 // GetWorkspaceResourcesOfType returns all resources of type T from a workspace

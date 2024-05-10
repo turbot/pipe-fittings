@@ -3,7 +3,7 @@ package versionmap
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"log/slog"
 	"os"
 	"path"
@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/filepaths"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 const WorkspaceLockStructVersion = 20240429

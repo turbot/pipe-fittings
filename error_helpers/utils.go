@@ -10,8 +10,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shiena/ansicolor"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/statushooks"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/statushooks"
 	"golang.org/x/exp/maps"
 )
 

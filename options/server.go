@@ -5,7 +5,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/constants"
 )
 
 // TODO KAI this is Flowpipe specific - should it be named as such

@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/printers"
+	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
 

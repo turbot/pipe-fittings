@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/v2/load_mod"
+	"github.com/turbot/pipe-fittings/load_mod"
 )
 
 func TestParamValidation(t *testing.T) {
