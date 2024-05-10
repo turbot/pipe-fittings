@@ -532,9 +532,6 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 	if err != nil {
 		return nil, nil, err
 	}
-	if err != nil {
-		return nil, nil, err
-	}
 	// get the commit hash
 	ref, err := repo.Reference(gitRef, true)
 	if err != nil {
