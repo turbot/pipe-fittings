@@ -323,7 +323,6 @@ func (l *WorkspaceLock) Empty() bool {
 	return l == nil || len(l.InstallCache) == 0
 }
 
-// StructVersion returns the struct version of the workspace lock
 // because only the InstallCache is serialised, read the StructVersion from the first install cache entry
 func (l *WorkspaceLock) StructVersion() int {
 	for _, depVersionMap := range l.InstallCache {
