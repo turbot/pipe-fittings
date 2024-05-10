@@ -1,12 +1,10 @@
 package versionmap
 
 import (
-	"sort"
-	"strings"
-
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/maps"
+	"sort"
 )
 
 // InstalledDependencyVersionsMap is a map of parent names to a map of dependencies for that parent, keyed by dependency name
@@ -39,21 +37,6 @@ func (m InstalledDependencyVersionsMap) FlatMap() map[string]*InstalledModVersio
 
 func (m InstalledDependencyVersionsMap) GetDependencyTree(rootName string, lock *WorkspaceLock) treeprint.Tree {
 	tree := treeprint.NewWithRoot(rootName)
-	// TACTICAL: make sure there is a path from the root to the keys in the map
-	// (this only happens 1 level deep transitive dependencies)
-	if _, containsRoot := m[rootName]; !containsRoot {
-		rootMap := make(map[string]*InstalledModVersion)
-		rootDeps := lock.InstallCache[rootName]
-
-		for dep := range m {
-			depName := strings.Split(dep, "@")[0]
-			if rootDep, ok := rootDeps[depName]; ok {
-				rootMap[depName] = rootDep
-			}
-		}
-		m[rootName] = rootMap
-	}
-
 	m.buildTree(rootName, tree)
 	return tree
 }
@@ -69,24 +52,6 @@ func (m InstalledDependencyVersionsMap) buildTree(name string, tree treeprint.Tr
 		// if there are children add them
 		m.buildTree(fullName, child)
 	}
-}
-
-// GetMissingFromOther returns a map of dependencies which exit in this map but not 'other'
-func (m InstalledDependencyVersionsMap) GetMissingFromOther(other InstalledDependencyVersionsMap) InstalledDependencyVersionsMap {
-	res := make(InstalledDependencyVersionsMap)
-	for parent, deps := range m {
-		otherDeps := other[parent]
-		if otherDeps == nil {
-			otherDeps = make(map[string]*InstalledModVersion)
-		}
-		for name, dep := range deps {
-			if _, ok := otherDeps[name]; !ok {
-				// TODO CHECK THIS STILL WORKS
-				res.AddDependency(parent, dep)
-			}
-		}
-	}
-	return res
 }
 
 // GetDependency returns the InstalledModVersion for the given path (with no constraints), and the full path (i.e. with constraints) to that dependency

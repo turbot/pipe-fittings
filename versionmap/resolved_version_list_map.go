@@ -10,7 +10,6 @@ type ResolvedVersionListMap map[string][]*InstalledModVersion
 // Add appends the version constraint to the list for the given name
 func (m ResolvedVersionListMap) Add(name string, versionConstraint *InstalledModVersion) {
 	// if there is already an entry for the same name, replace it
-	// TODO handle alias
 	m[name] = []*InstalledModVersion{versionConstraint}
 }
 

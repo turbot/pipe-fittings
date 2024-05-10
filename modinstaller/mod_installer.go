@@ -330,7 +330,10 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 
 	// update the lock to be the new lock, and record any uninstalled mods
 	if len(errors) == 0 {
-		i.installData.onInstallComplete()
+		err = i.installData.onInstallComplete()
+		if err != nil {
+			errors = append(errors, err)
+		}
 	}
 	return i.buildInstallError(errors)
 }
@@ -529,8 +532,14 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 	if err != nil {
 		return nil, nil, err
 	}
+	if err != nil {
+		return nil, nil, err
+	}
 	// get the commit hash
 	ref, err := repo.Reference(gitRef, true)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// build a ResolvedVersionConstraint
 	resolvedRef := versionmap.NewResolvedVersionConstraint(dependencyVersion, modVersion.Name, ref)
@@ -601,20 +610,6 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 // is this command targetting this mod - i.e. mod was included in the args - or there were no args
 func (i *ModInstaller) isCommandTargettingMod(modName string) bool {
 	// if there are no args, all mods are targetted
-	if len(i.mods) == 0 {
-		return true
-	}
-	// if this mod in the list of updates?
-	_, updateMod := i.mods[modName]
-	return updateMod
-}
-
-// is this an update command and this mod was included in the args - or there were no args
-func (i *ModInstaller) isUpdateCommandTargettingMod(modName string) bool {
-	if !i.updating() {
-		return false
-	}
-	// this is an update command - if there are no args, sdo we are updating all mods
 	if len(i.mods) == 0 {
 		return true
 	}

@@ -618,7 +618,6 @@ func (m *ModParseContext) AddLoadedDependencyMod(mod *modconfig.Mod) {
 	// lock the depLock as this is called async
 	m.depLock.Lock()
 	defer m.depLock.Unlock()
-	slog.Info(fmt.Sprintf("ModParseContext.AddLoadedDependencyMod_____ %p", m), "mod", mod.Name())
 
 	m.topLevelDependencyMods[mod.DependencyName] = mod
 	m.resourceMaps.AddMaps(mod.ResourceMaps.TopLevelResources())
