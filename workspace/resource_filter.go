@@ -3,8 +3,8 @@ package workspace
 import (
 	"fmt"
 	"github.com/danwakefield/fnmatch"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/printers"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/printers"
 	filter2 "github.com/turbot/steampipe-plugin-sdk/v5/filter"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"golang.org/x/exp/maps"

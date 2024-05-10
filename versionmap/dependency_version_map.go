@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/maps"
 )

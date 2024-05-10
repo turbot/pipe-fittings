@@ -3,9 +3,9 @@ package modinstaller
 import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 type InstallOpts struct {

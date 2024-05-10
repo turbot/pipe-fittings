@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"log/slog"
 
 	"path"
@@ -11,9 +11,9 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/options"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/options"
+	"github.com/turbot/pipe-fittings/utils"
 	"golang.org/x/exp/maps"
 )
 

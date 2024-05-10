@@ -5,9 +5,9 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/funcs"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
 

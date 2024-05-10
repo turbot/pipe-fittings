@@ -2,14 +2,14 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/printers"
+	"github.com/turbot/pipe-fittings/printers"
 	"sort"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

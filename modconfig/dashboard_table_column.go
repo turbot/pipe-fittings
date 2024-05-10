@@ -1,6 +1,6 @@
 package modconfig
 
-import "github.com/turbot/pipe-fittings/v2/utils"
+import "github.com/turbot/pipe-fittings/utils"
 
 type DashboardTableColumn struct {
 	Name    string  `hcl:"name,label" json:"name" snapshot:"name"`

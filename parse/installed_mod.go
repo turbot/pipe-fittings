@@ -2,7 +2,7 @@ package parse
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 type InstalledMod struct {

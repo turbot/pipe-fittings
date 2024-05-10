@@ -5,11 +5,11 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/constants"
 	"os"
-	// "github.com/turbot/pipe-fittings/v2/plugin"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	// "github.com/turbot/pipe-fittings/plugin"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 type AvailableVersionCache struct {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 // Steampipe Media Types

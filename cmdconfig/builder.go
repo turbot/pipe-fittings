@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 var CustomPreRunHook func(cmd *cobra.Command, args []string) error

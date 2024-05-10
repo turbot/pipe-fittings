@@ -1,4 +1,4 @@
-module github.com/turbot/pipe-fittings/v2
+module github.com/turbot/pipe-fittings
 
 go 1.21.0
 

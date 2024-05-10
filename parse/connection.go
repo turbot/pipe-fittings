@@ -2,15 +2,15 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"log/slog"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
 )

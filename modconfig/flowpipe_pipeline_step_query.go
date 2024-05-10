@@ -4,11 +4,11 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/perr"
-	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/perr"
+	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

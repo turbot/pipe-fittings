@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-fittings/schema"
 )
 
 var IntegrationSlackBlockSchema = &hcl.BodySchema{

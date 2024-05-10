@@ -5,9 +5,9 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 // ResourceMaps is a struct containing maps of all mod resource types

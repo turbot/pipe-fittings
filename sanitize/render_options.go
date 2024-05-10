@@ -2,7 +2,7 @@ package sanitize
 
 import (
 	"github.com/hokaccha/go-prettyjson"
-	"github.com/turbot/pipe-fittings/v2/color"
+	"github.com/turbot/pipe-fittings/color"
 )
 
 type RenderOptions struct {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/constants"
 )
 
 type testExporter struct {

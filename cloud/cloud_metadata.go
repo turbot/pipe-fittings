@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
+	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )

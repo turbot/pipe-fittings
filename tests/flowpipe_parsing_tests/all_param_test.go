@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/v2/load_mod"
+	"github.com/turbot/pipe-fittings/load_mod"
 
 	"github.com/stretchr/testify/assert"
 )

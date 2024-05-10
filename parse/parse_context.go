@@ -7,9 +7,9 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stevenle/topsort"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/funcs"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
 

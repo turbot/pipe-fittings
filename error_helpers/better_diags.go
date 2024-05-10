@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/perr"
+	"github.com/turbot/pipe-fittings/perr"
 )
 
 var credentialTypeRegistry = make(map[string]struct{}, 0)
