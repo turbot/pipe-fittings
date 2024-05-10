@@ -32,6 +32,15 @@ func getVerb(verb string) string {
 }
 
 func BuildInstallSummary(installData *InstallData) string {
+	/* - walk source lock, building path without version number
+	   - look for corresponding node in new lock, check for added/deleted/updated/downgraded
+
+	 OR
+
+	- walk old lock, down tree starting at root and traversing down to leaf nodes
+
+	*/
+
 	// for now treat an install as update - we only install deps which are in the mod.sp but missing in the mod folder
 	modDependencyPath := installData.WorkspaceMod.GetInstallCacheKey()
 	installCount, installedTreeString := getInstallationResultString(installData.Installed, modDependencyPath, installData.NewLock)
