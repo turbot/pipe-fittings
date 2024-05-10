@@ -100,6 +100,28 @@ func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 	assert.NotNil(stepWithThrow.GetThrowConfig()[0].UnresolvedAttributes[schema.AttributeTypeMessage])
 }
 
+func (suite *FlowpipeModTestSuite) TestModWithDocs() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./with_docs", workspace.WithCredentials(map[string]credential.Credential{}))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	pipeline := mod.ResourceMaps.Pipelines["test_mod.pipeline.doc_from_file"]
+	assert.NotNil(pipeline)
+	assert.Equal("## Hello World\n\nThis is a markdown **text** in a heredoc!\n", *pipeline.Documentation)
+
+	trigger := mod.ResourceMaps.Triggers["test_mod.trigger.query.t"]
+	assert.NotNil(trigger)
+	assert.Equal("## Hello World Two\n\nThis is a markdown **text** in a heredoc!\n", *trigger.Documentation)
+}
+
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 

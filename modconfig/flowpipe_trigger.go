@@ -92,7 +92,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	var diags hcl.Diagnostics
 
 	if attr, exists := hclAttributes[schema.AttributeTypeDescription]; exists {
-		desc, moreDiags := hclhelpers.AttributeToString(attr, nil, false)
+		desc, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -101,7 +101,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeTitle]; exists {
-		title, moreDiags := hclhelpers.AttributeToString(attr, nil, false)
+		title, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -110,7 +110,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeDocumentation]; exists {
-		doc, moreDiags := hclhelpers.AttributeToString(attr, nil, false)
+		doc, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -119,7 +119,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeTags]; exists {
-		tags, moreDiags := hclhelpers.AttributeToMap(attr, nil, false)
+		tags, moreDiags := hclhelpers.AttributeToMap(attr, evalContext, false)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
