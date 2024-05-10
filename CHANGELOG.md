@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.2.1 [tbd]
+
+_Bug fixes_
+
+* Trigger's common attributes (title, description, tags, documentation) should allow expresion. ([#394](https://github.com/turbot/pipe-fittings/issues/394)).
+
 ## v1.2.0 [2024-04-23]
 
 _What's new?_
