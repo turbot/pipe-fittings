@@ -218,7 +218,7 @@ func (i *ModInstaller) GetModList() string {
 }
 
 func (i *ModInstaller) removeOldShadowDirectories() error {
-	removeErrors := []error{}
+	var removeErrors []error
 	// get the parent of the 'mods' directory - all shadow directories are siblings of this
 	parent := filepath.Base(i.modsPath)
 	entries, err := os.ReadDir(parent)
@@ -362,7 +362,7 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	} else {
 		// this mod is already installed - just update the install data
 		i.installData.addExisting(dependencyMod, parent)
-		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
+		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already Installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
 	}
 
 	// if we are updating dependencyMod, we should update all its children
@@ -769,8 +769,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 
 	// handle file separately??
 	if requiredModVersion.FilePath != "" {
-		// TODO KAI how to handle file? hash? modified date
-		// just return true for now
+		// so there is a file path - return true as child dependency requirements may have changed
 		return true, nil
 	}
 
@@ -826,7 +825,7 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 		// TODO CHECK FILE VERSIONS? OR EXPECT TO NEVER GET HERE
 		return false, nil
 	default:
-		err = fmt.Errorf("no version, branch or file path set for installed mod")
+		err = fmt.Errorf("no version, branch or file path set for Installed mod")
 	}
 
 	if err != nil {
@@ -874,7 +873,7 @@ func (i *ModInstaller) getModRefForTag(modVersion *modconfig.ModVersionConstrain
 func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.InstalledModVersion) (string, error) {
 	branch := installedVersion.Branch
 	if branch == "" {
-		return "", fmt.Errorf("getLatestCommitForBranch called but installed version has no branch")
+		return "", fmt.Errorf("getLatestCommitForBranch called but Installed version has no branch")
 	}
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
@@ -911,7 +910,7 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.InstalledModVersion) (string, error) {
 	// a version must be set to call this function
 	if installedVersion.Version == nil {
-		return "", fmt.Errorf("getLatestCommitForTag called but installed version has no version")
+		return "", fmt.Errorf("getLatestCommitForTag called but Installed version has no version")
 	}
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())

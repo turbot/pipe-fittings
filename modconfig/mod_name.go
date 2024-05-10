@@ -94,7 +94,6 @@ func ParseModDependencyPath(fullName string) (string, *DependencyVersion, error)
 		return modDependencyName, modVersion, nil
 
 	}
-	// TODO KAI local filepath look for format modname:file/path
 
 	return fullName, nil, nil
 }
