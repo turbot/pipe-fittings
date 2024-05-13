@@ -42,7 +42,7 @@ func RunTasks(ctx context.Context, cmd *cobra.Command, args []string, options ..
 
 	// if there are any notifications from the previous run - display them
 	if err := runner.displayNotifications(cmd, args); err != nil {
-		slog.Debug("faced error displaying notifications:", err)
+		slog.Debug("faced error displaying notifications", "error", err)
 	}
 
 	// asynchronously run the task runner
@@ -80,7 +80,7 @@ func newRunner(config *taskRunConfig) *Runner {
 	if err != nil {
 		// this error should never happen
 		// log this and carry on
-		slog.Debug("error loading state,", err)
+		slog.Debug("error loading state", "error", err)
 	}
 	r.currentState = state
 	return r

@@ -157,14 +157,12 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 	// for each folder we parse the mod name and version and determine whether it meets the version constraint
 
 	// search the parent folder for a mod installation which satisfied the given mod dependency
-	dependencyDir, err := parseCtx.WorkspaceLock.FindInstalledDependency(modDependency)
+	dependencyDir, err := parseCtx.WorkspaceLock.FindInstalledDependency(modDependency.ResolvedVersionConstraint)
 	if err != nil {
 		return err
 	}
 	// create a parse context for the dependency mod
-	childParseCtx := parse.NewChildModParseContext(parseCtx, modDependency, dependencyDir)
-	// we need to modify the ListOptions to ensure we include hidden files - these are excluded by default
-	childParseCtx.ListOptions.Exclude = nil
+	childParseCtx := parse.NewChildModParseContext(parseCtx, modDependency.ResolvedVersionConstraint, dependencyDir)
 
 	// NOTE: pass in the version and dependency path of the mod - these must be set before it loads its dependencies
 	dependencyMod, errAndWarnings := LoadMod(ctx, dependencyDir, childParseCtx)

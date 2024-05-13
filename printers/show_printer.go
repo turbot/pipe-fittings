@@ -154,7 +154,6 @@ func (p ShowPrinter[T]) renderKeyValue(fieldVal FieldValue, columnName string, m
 		}
 	}
 
-	// TODO KAI CAN WE ALWAYS ADD NEWLINE _ CHECK WITH FLOWPIPE
 	// now combine
 	return fmt.Sprintf("%s%s", keyStr, valStr)
 }

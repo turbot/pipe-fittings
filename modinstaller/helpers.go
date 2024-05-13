@@ -1,14 +1,14 @@
 package modinstaller
 
 import (
-	"github.com/Masterminds/semver/v3"
 	"github.com/turbot/pipe-fittings/versionhelpers"
+	"github.com/turbot/pipe-fittings/versionmap"
 )
 
-func getVersionSatisfyingConstraint(constraint *versionhelpers.Constraints, availableVersions []*semver.Version) *semver.Version {
+func getVersionSatisfyingConstraint(constraint *versionhelpers.Constraints, availableVersions versionmap.ResolvedVersionConstraintList) *versionmap.ResolvedVersionConstraint {
 	// search the reverse sorted versions, finding the highest version which satisfies ALL constraints
 	for _, version := range availableVersions {
-		if constraint.Check(version) {
+		if constraint.Check(version.Version) {
 			return version
 		}
 	}
