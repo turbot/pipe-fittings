@@ -45,7 +45,6 @@ const (
 	ArgPort                    = "port"
 	ArgProgress                = "progress"
 	ArgPrune                   = "prune"
-	ArgPull                    = "pull"
 	ArgSearchPath              = "search-path"
 	ArgSearchPathPrefix        = "search-path-prefix"
 	ArgSeparator               = "separator"

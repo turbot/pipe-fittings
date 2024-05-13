@@ -3,6 +3,7 @@ package parse
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/utils"
 	"log/slog"
 	"path"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -176,48 +176,4 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	res.Error = mod.BuildResourceTree(parseCtx.GetTopLevelDependencyMods())
 
 	return mod, res
-}
-
-// ParseModRequireAndShortName is used when migrating the workspace lock
-// It loads the require block from the mod file and returns the require object, as well as the mod short name
-// The migration occurs the first time the workspace lock is loaded - this will be when we load the variables
-// the migration is done by dimply installing the workspace dependencies
-// At this point we have not yet loaded the full mod definition so the require block is not yet loaded -
-// we need to manually load the reuire block, as well as the mod short name, which is used as a key in the workspace lock
-func ParseModRequireAndShortName(modFilePath string) (*modconfig.Require, string, hcl.Diagnostics) {
-	fileData, diags := LoadFileData(modFilePath)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	body, diags := ParseHclFiles(fileData)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	workspaceContent, diags := body.Content(WorkspaceBlockSchema)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	// tactical - we also return the mod short name
-	modBlock := hclhelpers.GetFirstBlockOfType(workspaceContent.Blocks, schema.BlockTypeMod)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-	modShortName := modBlock.Labels[0]
-
-	requireBlock, diags := modconfig.FindRequireBlock(modBlock)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	require, diags := DecodeRequire(requireBlock, &hcl.EvalContext{})
-	// ignore errors - all was care about is whether the require is non-nil
-	if require != nil {
-		moreDiags := require.InitialiseConstraints(modBlock)
-		diags = append(diags, moreDiags...)
-
-	}
-	return require, modShortName, diags
 }

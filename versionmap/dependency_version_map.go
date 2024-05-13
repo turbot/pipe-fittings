@@ -1,84 +1,125 @@
 package versionmap
 
 import (
+	"sort"
+	"strings"
+
+	"github.com/Masterminds/semver/v3"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/maps"
-	"sort"
 )
 
-// InstalledDependencyVersionsMap is a map of parent names to a map of dependencies for that parent, keyed by dependency name
-type InstalledDependencyVersionsMap map[string]map[string]*InstalledModVersion
+type DependencyVersionMap map[string]ResolvedVersionMap
 
-// AddDependency adds a dependency to the list of items installed for the given parent
-func (m InstalledDependencyVersionsMap) AddDependency(parentName string, dependency *InstalledModVersion) {
+// Add adds a dependency to the list of items installed for the given parent
+func (m DependencyVersionMap) Add(dependencyName, alias string, dependencyVersion *semver.Version, constraintString string, parentName string) {
 	// get the map for this parent
 	parentItems := m[parentName]
 	// create if needed
 	if parentItems == nil {
-		parentItems = make(map[string]*InstalledModVersion)
+		parentItems = make(ResolvedVersionMap)
 	}
 	// add the dependency
-	parentItems[dependency.Name] = dependency
-	// TACTICAL: update the struct version to the current - to enable migration
-	dependency.StructVersion = WorkspaceLockStructVersion
-
+	parentItems.Add(dependencyName, NewResolvedVersionConstraint(dependencyName, alias, dependencyVersion, constraintString))
 	// save
 	m[parentName] = parentItems
 }
 
-// FlatMap converts the InstalledDependencyVersionsMap into a map[string]*InstalledModVersion, keyed by mod dependency path
-func (m InstalledDependencyVersionsMap) FlatMap() map[string]*InstalledModVersion {
-	res := make(map[string]*InstalledModVersion)
+// FlatMap converts the DependencyVersionMap into a ResolvedVersionMap, keyed by mod dependency path
+func (m DependencyVersionMap) FlatMap() ResolvedVersionMap {
+	res := make(ResolvedVersionMap)
 	for _, deps := range m {
 		for _, dep := range deps {
-			res[modconfig.BuildModDependencyPath(dep.Name, &dep.DependencyVersion)] = dep
+			res[modconfig.BuildModDependencyPath(dep.Name, dep.Version)] = dep
 		}
 	}
 	return res
 }
 
-func (m InstalledDependencyVersionsMap) GetDependencyTree(rootName string, lock *WorkspaceLock) treeprint.Tree {
+func (m DependencyVersionMap) GetDependencyTree(rootName string, lock *WorkspaceLock) treeprint.Tree {
 	tree := treeprint.NewWithRoot(rootName)
+	// TACTICAL: make sure there is a path from the root to the keys in the map
+	// (this only happens 1 level deep transitive dependencies)
+	if _, containsRoot := m[rootName]; !containsRoot {
+		rootMap := make(ResolvedVersionMap)
+		rootDeps := lock.InstallCache[rootName]
+
+		for dep := range m {
+			depName := strings.Split(dep, "@")[0]
+			if rootDep, ok := rootDeps[depName]; ok {
+				rootMap[depName] = rootDep
+			}
+		}
+		m[rootName] = rootMap
+	}
+
 	m.buildTree(rootName, tree)
 	return tree
 }
 
-func (m InstalledDependencyVersionsMap) buildTree(name string, tree treeprint.Tree) {
+func (m DependencyVersionMap) buildTree(name string, tree treeprint.Tree) {
 	deps := m[name]
 	depNames := maps.Keys(deps)
 	sort.Strings(depNames)
 	for _, name := range depNames {
-		installedVersion := deps[name]
-		fullName := modconfig.BuildModDependencyPath(name, &installedVersion.DependencyVersion)
+		version := deps[name]
+		fullName := modconfig.BuildModDependencyPath(name, version.Version)
 		child := tree.AddBranch(fullName)
 		// if there are children add them
 		m.buildTree(fullName, child)
 	}
 }
 
-// GetDependency returns the InstalledModVersion for the given path (with no constraints), and the full path (i.e. with constraints) to that dependency
-func (m InstalledDependencyVersionsMap) GetDependency(path []string) (*InstalledModVersion, []string) {
-	// build fully qualified path
-	var fullPath []string
-	if len(path) == 0 {
-		return nil, nil
-	}
-	depName := path[0]
-	key := depName
-	fullPath = append(fullPath, key)
-	depsForParent := m[key]
-	var depVersion *InstalledModVersion
-	var ok bool
-	for i := 1; i < len(path); i++ {
-		depName := path[i]
-		depVersion, ok = depsForParent[depName]
-		if !ok {
-			return nil, nil
+// GetMissingFromOther returns a map of dependencies which exit in this map but not 'other'
+func (m DependencyVersionMap) GetMissingFromOther(other DependencyVersionMap) DependencyVersionMap {
+	res := make(DependencyVersionMap)
+	for parent, deps := range m {
+		otherDeps := other[parent]
+		if otherDeps == nil {
+			otherDeps = make(ResolvedVersionMap)
 		}
-		key := depVersion.DependencyPath()
-		fullPath = append(fullPath, key)
-		depsForParent = m[key]
+		for name, dep := range deps {
+			if _, ok := otherDeps[name]; !ok {
+				res.Add(dep.Name, dep.Alias, dep.Version, dep.Constraint, parent)
+			}
+		}
 	}
-	return depVersion, fullPath
+	return res
+}
+
+func (m DependencyVersionMap) GetUpgradedInOther(other DependencyVersionMap) DependencyVersionMap {
+	res := make(DependencyVersionMap)
+	for parent, deps := range m {
+		otherDeps := other[parent]
+		if otherDeps == nil {
+			otherDeps = make(ResolvedVersionMap)
+		}
+		for name, dep := range deps {
+			if otherDep, ok := otherDeps[name]; ok {
+				if otherDep.Version.GreaterThan(dep.Version) {
+					res.Add(otherDep.Name, dep.Alias, otherDep.Version, otherDep.Constraint, parent)
+				}
+			}
+		}
+	}
+	return res
+}
+
+func (m DependencyVersionMap) GetDowngradedInOther(other DependencyVersionMap) DependencyVersionMap {
+	res := make(DependencyVersionMap)
+	for parent, deps := range m {
+		otherDeps := other[parent]
+		if otherDeps == nil {
+			otherDeps = make(ResolvedVersionMap)
+		}
+		for name, dep := range deps {
+			if otherDep, ok := otherDeps[name]; ok {
+				if otherDep.Version.LessThan(dep.Version) {
+					res.Add(otherDep.Name, dep.Alias, otherDep.Version, otherDep.Constraint, parent)
+				}
+			}
+		}
+	}
+	return res
 }

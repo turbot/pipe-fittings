@@ -180,16 +180,6 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	return mod, res
 }
 
-func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Require, hcl.Diagnostics) {
-	require := modconfig.NewRequire()
-	// set ranges
-	require.DeclRange = hclhelpers.BlockRange(block)
-	require.TypeRange = block.TypeRange
-	// decode
-	diags := gohcl.DecodeBody(block.Body, evalCtx, require)
-	return require, diags
-}
-
 // generic decode function for any resource we do not have custom decode logic for
 func decodeResource(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
 	res := newDecodeResult()

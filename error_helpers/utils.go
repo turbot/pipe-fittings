@@ -10,6 +10,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/shiena/ansicolor"
+	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/statushooks"
 	"golang.org/x/exp/maps"
@@ -96,6 +97,13 @@ func HandleCancelError(err error) error {
 		err = errors.New("execution cancelled")
 	}
 
+	return err
+}
+
+func HandleQueryTimeoutError(err error) error {
+	if errors.Is(err, context.DeadlineExceeded) {
+		err = fmt.Errorf("query timeout exceeded (%ds)", viper.GetInt(constants.ArgDatabaseQueryTimeout))
+	}
 	return err
 }
 

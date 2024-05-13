@@ -175,7 +175,6 @@ func (w *Workspace) setModfileExists() {
 		// also set it in the viper config, so that it is available to whoever is using it
 		viper.Set(constants.ArgModLocation, filepath.Dir(modFile))
 		w.Path = filepath.Dir(modFile)
-		w.Mod.SetFilePath(modFile)
 	}
 }
 
@@ -320,18 +319,7 @@ func (w *Workspace) loadWorkspaceLock(ctx context.Context) (*versionmap.Workspac
 
 	// if this is the old format, migrate by reinstalling dependencies
 	if workspaceLock.StructVersion() != versionmap.WorkspaceLockStructVersion {
-		// NOTE - this migration will be occurring when we are loading the variable values, i.e. we have not
-		// loaded the full mod definition yet - so we have not loaded the require block yet
-		// Load the require block, ignoring any variable errors
-		if w.ModfileExists() {
-			require, modShortName, _ := parse.ParseModRequireAndShortName(w.modFilePath)
-			// ignore any errors loading the require block
-			w.Mod.Require = require
-			w.Mod.ShortName = modShortName
-		}
-
-		opts := &modinstaller.InstallOpts{WorkspaceMod: w.Mod, UpdateStrategy: constants.ModUpdateMinimal}
-
+		opts := &modinstaller.InstallOpts{WorkspaceMod: w.Mod}
 		installData, err := modinstaller.InstallWorkspaceDependencies(ctx, opts)
 		if err != nil {
 			return nil, err

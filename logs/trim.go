@@ -15,7 +15,7 @@ func TrimLogs() {
 	fileLocation := filepaths.EnsureLogDir()
 	files, err := os.ReadDir(fileLocation)
 	if err != nil {
-		slog.Debug("error listing db log directory", "error", err)
+		slog.Debug("error listing db log directory", err)
 	}
 	for _, file := range files {
 		fi, err := file.Info()

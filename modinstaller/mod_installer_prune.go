@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/versionmap"
 )
 
-func (i *ModInstaller) Prune() (versionmap.DependencyVersionListMap, error) {
+func (i *ModInstaller) Prune() (versionmap.VersionListMap, error) {
 	unusedMods := i.installData.Lock.GetUnreferencedMods()
 	// now delete any mod folders which are not in the lock file
 	for name, versions := range unusedMods {

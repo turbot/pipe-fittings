@@ -1,6 +1,8 @@
 package modinstaller
 
 import (
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"log/slog"
 	"os"
 	"sort"
@@ -9,14 +11,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/perr"
-	"github.com/turbot/pipe-fittings/versionmap"
 )
 
 type GitUrlMode int
@@ -59,7 +55,7 @@ func transformToGitURL(input string, urlMode GitUrlMode) string {
 	return input
 }
 
-func getRefs(repo string) ([]*plumbing.Reference, error) {
+func getTags(repo string) ([]string, error) {
 	gitHubToken := getGitToken()
 
 	// Create the remote with repository URL
@@ -80,7 +76,16 @@ func getRefs(repo string) ([]*plumbing.Reference, error) {
 	if err != nil {
 		return nil, err
 	}
-	return refs, nil
+
+	// filters the references list and only keeps tags
+	var tags []string
+	for _, ref := range refs {
+		if ref.Name().IsTag() {
+			tags = append(tags, ref.Name().Short())
+		}
+	}
+
+	return tags, nil
 }
 
 func getGitAuthForToken(gitHubToken string) transport.AuthMethod {
@@ -107,93 +112,20 @@ func getGitToken() string {
 	return os.Getenv(app_specific.EnvGitToken)
 }
 
-func getTagVersionsFromGit(modName string, includePrerelease bool) ([]*versionmap.ResolvedVersionConstraint, error) {
-	// get and cache all references for the mod
-	refs, err := getRefsFromGit(modName)
-	if err != nil {
-		return nil, perr.BadRequestWithMessage("could not retrieve version data from Git URL " + modName + " - " + err.Error())
-	}
-
-	// filters the references list and only keeps tags
-	var tags []*plumbing.Reference
-
-	for _, ref := range refs {
-		if ref.Name().IsTag() {
-			tags = append(tags, ref)
-		}
-	}
-
-	slog.Debug("retrieved tags from Git")
-
-	versions := make(versionmap.ResolvedVersionConstraintList, len(tags))
-	// handle index manually as we may not add all tags - if we cannot parse them as a version
-	idx := 0
-	for _, raw := range tags {
-		v, err := semver.NewVersion(raw.Name().Short())
-		if err != nil {
-			continue
-		}
-
-		if (!includePrerelease && v.Metadata() != "") || (!includePrerelease && v.Prerelease() != "") {
-			continue
-		}
-		versions[idx] = &versionmap.ResolvedVersionConstraint{
-			DependencyVersion: modconfig.DependencyVersion{
-				Version: v,
-			},
-			Name:          modName,
-			Commit:        raw.Hash().String(),
-			GitRefStr:     raw.Name().String(),
-			StructVersion: versionmap.WorkspaceLockStructVersion,
-		}
-		idx++
-	}
-	// shrink slice
-	versions = versions[:idx]
-
-	// sort the versions in REVERSE order
-	sort.Sort(sort.Reverse(versions))
-	return versions, nil
-}
-
-func getTagFromGit(modName string, tag string) (*versionmap.ResolvedVersionConstraint, error) {
-	// get and cache all references for the mod
-	refs, err := getRefsFromGit(modName)
-	if err != nil {
-		return nil, perr.BadRequestWithMessage("could not retrieve tag data from Git URL " + modName + " - " + err.Error())
-	}
-
-	for _, ref := range refs {
-		if ref.Name().IsTag() && ref.Name().Short() == tag {
-			ref := &versionmap.ResolvedVersionConstraint{
-				DependencyVersion: modconfig.DependencyVersion{
-					Tag: tag,
-				},
-				Name:          modName,
-				Commit:        ref.Hash().String(),
-				GitRefStr:     ref.Name().String(),
-				StructVersion: versionmap.WorkspaceLockStructVersion,
-			}
-			return ref, nil
-		}
-	}
-	return nil, nil
-}
-
-func getRefsFromGit(modName string) ([]*plumbing.Reference, error) {
+func getTagVersionsFromGit(modName string, includePrerelease bool) (semver.Collection, error) {
 	slog.Debug("getTagVersionsFromGit - retrieving tags from Git", "mod", modName)
 	// first try https
 	repo := getGitUrl(modName, GitUrlModeHTTPS)
 
 	slog.Debug("trying HTTPS", "url", repo)
-	refs, err := getRefs(repo)
+	tags, err := getTags(repo)
 	if err != nil {
 		slog.Debug("HTTPS failed", "error", err)
 		// if that fails try ssh
 		repo = getGitUrl(modName, GitUrlModeSSH)
 
 		slog.Debug("trying SSH", "url", repo)
-		refs, err = getRefs(repo)
+		tags, err = getTags(repo)
 		if err != nil {
 			slog.Debug("SSH failed", "error", err)
 			return nil, err
@@ -202,5 +134,25 @@ func getRefsFromGit(modName string) ([]*plumbing.Reference, error) {
 
 	slog.Debug("retrieved tags from Git")
 
-	return refs, nil
+	versions := make(semver.Collection, len(tags))
+	// handle index manually as we may not add all tags - if we cannot parse them as a version
+	idx := 0
+	for _, raw := range tags {
+		v, err := semver.NewVersion(raw)
+		if err != nil {
+			continue
+		}
+
+		if (!includePrerelease && v.Metadata() != "") || (!includePrerelease && v.Prerelease() != "") {
+			continue
+		}
+		versions[idx] = v
+		idx++
+	}
+	// shrink slice
+	versions = versions[:idx]
+
+	// sort the versions in REVERSE order
+	sort.Sort(sort.Reverse(versions))
+	return versions, nil
 }

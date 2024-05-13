@@ -2,28 +2,18 @@ package modinstaller
 
 import (
 	"fmt"
+
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/versionmap"
 )
 
-func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[string]*modconfig.ModVersionConstraint, error) {
+func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (versionmap.VersionConstraintMap, error) {
 	var errors []error
-	mods := make(map[string]*modconfig.ModVersionConstraint, len(modsArgs))
+	mods := make(versionmap.VersionConstraintMap, len(modsArgs))
 	for _, modArg := range modsArgs {
 		// create mod version from arg
-		// special case for file: prefix
-		var modVersion *modconfig.ModVersionConstraint
-		var err error
-		// check is this a file path
-		// if modArg IS a filepath, argToFilePath will return the absolute path
-		if filePath := i.toAbsoluteFilepath(modArg, i.workspaceMod.ModPath); filePath != "" {
-			// special case for file paths
-			modVersion, err = i.newFilepathModVersionConstraint(filePath)
-
-		} else {
-			modVersion, err = modconfig.NewModVersionConstraint(modArg)
-		}
+		modVersion, err := modconfig.NewModVersionConstraint(modArg)
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -50,18 +40,6 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 		return nil, error_helpers.CombineErrors(errors...)
 	}
 	return mods, nil
-}
-
-func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.ModVersionConstraint, error) {
-	// try to load the mod definition
-	modDef, err := parse.LoadModfile(arg)
-	if err != nil {
-		return nil, err
-	}
-	if modDef == nil {
-		return nil, fmt.Errorf("'%s' does not contain a mod definition", arg)
-	}
-	return modconfig.NewFilepathModVersionConstraint(modDef), nil
 }
 
 func (i *ModInstaller) getUpdateVersion(modArg string, modVersion *modconfig.ModVersionConstraint) (*modconfig.ModVersionConstraint, error) {
