@@ -71,7 +71,7 @@ func (d *InstallData) getAvailableModVersions(modName string, includePrerelease 
 func (d *InstallData) onInstallComplete() error {
 	root := d.WorkspaceMod.GetInstallCacheKey()
 
-	getUpgradedDowngradedUninstalled := func(depPath []string, dep *versionmap.InstalledModVersion) error {
+	getUpgradedDowngradedUninstalled := func(depPath []string, oldDep *versionmap.InstalledModVersion) error {
 		// find this path in new lock
 		newDep, fullPath := d.NewLock.InstallCache.GetDependency(depPath)
 
@@ -85,29 +85,29 @@ func (d *InstallData) onInstallComplete() error {
 		switch {
 
 		// if they are both version constraints, compare the versions
-		case dep.DependencyVersion.Version != nil && newDep.DependencyVersion.Version != nil:
+		case oldDep.DependencyVersion.Version != nil && newDep.DependencyVersion.Version != nil:
 			switch {
-			case dep.DependencyVersion.Version.GreaterThan(newDep.DependencyVersion.Version):
+			case oldDep.DependencyVersion.Version.GreaterThan(newDep.DependencyVersion.Version):
 				d.Upgraded = append(d.Upgraded, fullPath)
-			case newDep.DependencyVersion.Version.LessThan(dep.DependencyVersion.Version):
+			case newDep.DependencyVersion.Version.LessThan(oldDep.DependencyVersion.Version):
 				d.Downgraded = append(d.Downgraded, fullPath)
 			// otherwise check the commit hash
-			case dep.Commit != newDep.Commit:
+			case oldDep.Commit != newDep.Commit:
 				d.Upgraded = append(d.Upgraded, fullPath)
 			}
 
 		// if they are both the same branch, compare the commit hash
-		case dep.Branch != "" && dep.Branch == newDep.Branch:
-			if dep.Commit != newDep.Commit {
+		case oldDep.Branch != "" && oldDep.Branch == newDep.Branch:
+			if oldDep.Commit != newDep.Commit {
 				d.Upgraded = append(d.Upgraded, fullPath)
 			}
 			// if they are bothe the same tag, compare the commit hash
-		case dep.Tag != "" && dep.Tag == newDep.Tag:
-			if dep.Commit != newDep.Commit {
+		case oldDep.Tag != "" && oldDep.Tag == newDep.Tag:
+			if oldDep.Commit != newDep.Commit {
 				d.Upgraded = append(d.Upgraded, fullPath)
 			}
 			// both the same filepath - nothing to do
-		case dep.FilePath != "" && newDep.FilePath == dep.FilePath:
+		case oldDep.FilePath != "" && newDep.FilePath == oldDep.FilePath:
 			// nothing to do here
 		default:
 			// to get here, then they have must have different constraint types or different filepaths
