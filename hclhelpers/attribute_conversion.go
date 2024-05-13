@@ -137,7 +137,7 @@ func AttributeToMap(attr *hcl.Attribute, evalContext *hcl.EvalContext, allowExpr
 	val, err := attr.Expr.Value(evalContext)
 
 	if err != nil {
-		diags = append(diags, err...)
+		return nil, err
 	}
 
 	if !val.Type().IsObjectType() {
