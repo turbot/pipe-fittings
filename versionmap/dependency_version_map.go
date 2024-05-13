@@ -20,6 +20,9 @@ func (m InstalledDependencyVersionsMap) AddDependency(parentName string, depende
 	}
 	// add the dependency
 	parentItems[dependency.Name] = dependency
+	// TACTICAL: update the struct version
+	dependency.StructVersion = WorkspaceLockStructVersion
+
 	// save
 	m[parentName] = parentItems
 }

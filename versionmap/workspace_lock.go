@@ -400,13 +400,13 @@ func (l *WorkspaceLock) WalkCache(root string, f func(depPath []string, dep *Ins
 func (l *WorkspaceLock) walkDeps(parent string, depPath []string, f func(depPath []string, dep *InstalledModVersion) error) error {
 	deps := l.InstallCache[parent]
 	for name, dep := range deps {
-		depPath = append(depPath, name)
+		childDepPath := append(depPath, name)
 		// call callback
 		if err := f(depPath, dep); err != nil {
 			return err
 		}
 		// now walk child deps
-		if err := l.walkDeps(dep.DependencyPath(), depPath, f); err != nil {
+		if err := l.walkDeps(dep.DependencyPath(), childDepPath, f); err != nil {
 			return err
 		}
 	}

@@ -31,6 +31,17 @@ func (v InstalledModVersion) SatisfiesConstraint(requiredVersion *modconfig.ModV
 	return false
 }
 
+//// copy the InstalledModVersion, updating the struct version to support migration
+//func (v InstalledModVersion) Clone() *InstalledModVersion {
+//	res := &InstalledModVersion{
+//		ResolvedVersionConstraint: v.ResolvedVersionConstraint,
+//		Alias:                     v.Alias,
+//	}
+//	// update struct version
+//	res.StructVersion = WorkspaceLockStructVersion
+//	return res
+//}
+
 // ResolvedVersionConstraint is a struct to represent a version constraint which has been resolved to specific version
 // (either a git tag, git commit (for a branch constraint) or a file location)
 type ResolvedVersionConstraint struct {

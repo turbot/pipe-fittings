@@ -49,7 +49,6 @@ func (v DependencyVersion) GreaterThan(other *DependencyVersion) bool {
 	return false
 }
 
-// make a collection type for this
 type DependencyVersionList []*DependencyVersion
 
 // Len returns the length of a collection. The number of Version instances

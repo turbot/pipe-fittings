@@ -35,17 +35,6 @@ func BuildModDependencyPath(dependencyName string, version *DependencyVersion) s
 	return dependencyName
 }
 
-// BuildModBranchDependencyPath converts a mod dependency name of form github.com/turbot/steampipe-mod-m2
-// and a branch into a dependency path of form github.com/turbot/steampipe-mod-m2#branch
-func BuildModBranchDependencyPath(dependencyName string, branchName string) string {
-	if branchName == "" {
-		// not expected
-		return dependencyName
-	}
-
-	return fmt.Sprintf("%s#%s", dependencyName, branchName)
-}
-
 // ParseModDependencyPath converts a mod depdency path of form github.com/turbot/steampipe-mod-m2@v1.0.0
 // into the dependency name (github.com/turbot/steampipe-mod-m2) and version
 func ParseModDependencyPath(fullName string) (string, *DependencyVersion, error) {
