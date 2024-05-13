@@ -132,6 +132,23 @@ func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 	assert.Equal("unused", trigger.Tags["class"])
 }
 
+func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./tags_multiple_files"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./tags_multiple_files", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+}
+
 func (suite *FlowpipeModTestSuite) TestModWithDocs() {
 	assert := assert.New(suite.T())
 
