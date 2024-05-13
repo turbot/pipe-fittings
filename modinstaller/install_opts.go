@@ -15,6 +15,7 @@ type InstallOpts struct {
 	DryRun         bool
 	Force          bool
 	PluginVersions *modconfig.PluginVersionMap
+	UpdateStrategy string
 }
 
 func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *InstallOpts {
@@ -26,5 +27,6 @@ func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *Insta
 		ModArgs:      utils.TrimGitUrls(modsToInstall),
 		Command:      cmdName,
 	}
+	opts.ModArgs = utils.TrimGitUrls(opts.ModArgs)
 	return opts
 }

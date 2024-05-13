@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -37,15 +36,16 @@ type Mod struct {
 	LegacyRequire *Require   `hcl:"requires,block"  json:"-"`
 	OpenGraph     *OpenGraph `hcl:"opengraph,block" json:"open_graph,omitempty"`
 
-	// Depency attributes - set if this mod is loaded as a dependency
+	// Dependency attributes - set if this mod is loaded as a dependency
 
 	// the mod version
-	Version *semver.Version `json:"-"`
+	Version *DependencyVersion `json:"-"`
 	// DependencyPath is the fully qualified mod name including version,
 	// which will by the map key in the workspace lock file
-	// NOTE: this is the relative path to the mod location from the depdemncy install dir (.steampipe/mods)
+	// NOTE: this is the relative path to the mod location from the dependency install dir (.steampipe/mods)
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty@v1.0.0
-	// (NOTE: pointer so it is nil in introspection tables if unpopulated)
+	// It is populated for dependency mods as part of the mod loading process
+	// NOTE: if this mod dependency is a local file dependency, the dependency path will be the file path
 	DependencyPath *string `json:"dependency_path,omitempty"`
 	// DependencyName return the name of the mod as a dependency, i.e. the mod dependency path, _without_ the version
 	// e.g. github.com/turbot/steampipe-mod-azure-thrifty
@@ -359,13 +359,13 @@ func (m *Mod) GetInstallCacheKey() string {
 // SetDependencyConfig sets DependencyPath, DependencyName and Version
 func (m *Mod) SetDependencyConfig(dependencyPath string) error {
 	// parse the dependency path to get the dependency name and version
-	dependencyName, version, err := ParseModDependencyPath(dependencyPath)
+	dependencyName, dependencyVersion, err := ParseModDependencyPath(dependencyPath)
 	if err != nil {
 		return err
 	}
 	m.DependencyPath = &dependencyPath
 	m.DependencyName = dependencyName
-	m.Version = version
+	m.Version = dependencyVersion
 	return nil
 }
 

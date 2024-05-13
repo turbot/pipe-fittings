@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/xlab/treeprint"
 )
 
 const (
@@ -32,12 +32,12 @@ func getVerb(verb string) string {
 }
 
 func BuildInstallSummary(installData *InstallData) string {
+
 	// for now treat an install as update - we only install deps which are in the mod.sp but missing in the mod folder
-	modDependencyPath := installData.WorkspaceMod.GetInstallCacheKey()
-	installCount, installedTreeString := getInstallationResultString(installData.Installed, modDependencyPath, installData.NewLock)
-	uninstallCount, uninstalledTreeString := getInstallationResultString(installData.Uninstalled, modDependencyPath, installData.NewLock)
-	upgradeCount, upgradeTreeString := getInstallationResultString(installData.Upgraded, modDependencyPath, installData.NewLock)
-	downgradeCount, downgradeTreeString := getInstallationResultString(installData.Downgraded, modDependencyPath, installData.NewLock)
+	installCount, installedTreeString := getInstallationResultString(installData.Installed)
+	uninstallCount, uninstalledTreeString := getInstallationResultString(installData.Uninstalled)
+	upgradeCount, upgradeTreeString := getInstallationResultString(installData.Upgraded)
+	downgradeCount, downgradeTreeString := getInstallationResultString(installData.Downgraded)
 
 	var installString, upgradeString, downgradeString, uninstallString string
 	if installCount > 0 {
@@ -66,31 +66,51 @@ func BuildInstallSummary(installData *InstallData) string {
 	return fmt.Sprintf("%s%s%s%s", installString, upgradeString, downgradeString, uninstallString)
 }
 
-func getInstallationResultString(items versionmap.DependencyVersionMap, modDependencyPath string, lock *versionmap.WorkspaceLock) (int, string) {
-	var res string
-	count := len(items.FlatMap())
-	if count > 0 {
-		tree := items.GetDependencyTree(modDependencyPath, lock)
-		res = tree.String()
+func getInstallationResultString(paths [][]string) (int, string) {
+	count := len(paths)
+	if count == 0 {
+		return count, ""
 	}
-	return count, res
+	// build tree
+	var tree treeprint.Tree
+	nodeMap := map[string]treeprint.Tree{}
+	for _, path := range paths {
+
+		var parentNode treeprint.Tree
+		pathString := ""
+
+		for _, segment := range path {
+
+			if pathString != "" {
+				pathString += "/"
+			}
+			pathString += segment
+
+			// do we have a node for this path already?
+			node, ok := nodeMap[pathString]
+			if !ok {
+				if parentNode == nil {
+					tree = treeprint.NewWithRoot(segment)
+					node = tree
+				} else {
+					node = parentNode.AddBranch(segment)
+				}
+				nodeMap[pathString] = node
+			}
+			parentNode = node
+		}
+	}
+
+	treeString := tree.String()
+
+	return count, treeString
 }
 
 func BuildUninstallSummary(installData *InstallData) string {
-	// for now treat an install as update - we only install deps which are in the mod.sp but missing in the mod folder
-	uninstallCount := len(installData.Uninstalled.FlatMap())
+	uninstallCount, uninstalledTreeString := getInstallationResultString(installData.Uninstalled)
 	if uninstallCount == 0 {
 		return "Nothing uninstalled"
 	}
-	uninstalledTree := installData.GetUninstalledTree()
-
 	verb := getVerb(VerbUninstalled)
-	return fmt.Sprintf("\n%s %d %s:\n\n%s", verb, uninstallCount, utils.Pluralize("mod", uninstallCount), uninstalledTree.String())
-}
-
-func BuildPruneSummary(pruned versionmap.VersionListMap) string {
-	pruneCount := len(pruned.FlatMap())
-
-	verb := getVerb(VerbPruned)
-	return fmt.Sprintf("\n%s %d %s:\n", verb, pruneCount, utils.Pluralize("mod", pruneCount))
+	return fmt.Sprintf("\n%s %d %s:\n\n%s\n", verb, uninstallCount, utils.Pluralize("mod", uninstallCount), uninstalledTreeString)
 }

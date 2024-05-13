@@ -104,7 +104,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 	// first hide spinner if it is there
 	statushooks.Done(ctx)
 	if err := promptForMissingVariables(ctx, missingVariablesError.MissingVariables, workspacePath); err != nil {
-		slog.Debug("Interactive variables prompting returned error %v", err)
+		slog.Debug("Interactive variables prompting returned error", "error", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 	// ok we should have all variables now - reload workspace
