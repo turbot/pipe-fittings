@@ -62,8 +62,13 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 	if opts.WorkspaceMod == nil {
 		return nil, fmt.Errorf("no workspace mod passed to mod installer")
 	}
+	// NOTE: ensure worksapace path is absolute
+	workspacePath, err := filepath.Abs(opts.WorkspaceMod.ModPath)
+	if err != nil {
+		return nil, err
+	}
 	i := &ModInstaller{
-		workspacePath:  opts.WorkspaceMod.ModPath,
+		workspacePath:  workspacePath,
 		workspaceMod:   opts.WorkspaceMod,
 		command:        opts.Command,
 		dryRun:         opts.DryRun,
