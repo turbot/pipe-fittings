@@ -4,4 +4,6 @@ locals {
     plugin   = "aws"
     service  = "AWS"
   }
+
+  run_step_with_if = true
 }

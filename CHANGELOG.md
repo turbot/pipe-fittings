@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v1.2.2 [2024-05-11]
+
+_Bug fixes_
+
+* File load ordering issue with map type `locals`. Manifest in issue ([#399](https://github.com/turbot/pipe-fittings/issues/399))
+
+
 ## v1.2.1 [2024-05-10]
 
 _Bug fixes_
