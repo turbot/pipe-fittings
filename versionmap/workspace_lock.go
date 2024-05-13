@@ -400,7 +400,7 @@ func (l *WorkspaceLock) WalkCache(root string, f func(depPath []string, dep *Ins
 func (l *WorkspaceLock) walkDeps(parent string, depPath []string, f func(depPath []string, dep *InstalledModVersion) error) error {
 	deps := l.InstallCache[parent]
 	for name, dep := range deps {
-		childDepPath := append(depPath, name)
+		childDepPath := append(depPath, name) //nolint:gocritic // intentionally assigning to different slice
 		// call callback
 		if err := f(depPath, dep); err != nil {
 			return err
