@@ -1,10 +1,10 @@
 package constants
 
+// ModUpdateStrategy controls how mods are updated. It is one of:
 // 1. full - check everything for both latest and accuracy
 // 2. latest - update everything to latest, but only branches - not tags - are commit checked (which is the same as latest)
 // 3. development - update branches and broken constraints to latest, leave satisfied constraints unchanged
 // 4. minimal - only update broken constraints, do not check branches for new commits
-// 5. none - no dependency updates
 type ModUpdateStrategy int
 
 const (
@@ -19,7 +19,6 @@ const (
 	ModUpdateIdLatest
 	ModUpdateIdDevelopment
 	ModUpdateIdMinimal
-	ModUpdateIdNone
 )
 
 var ModUpdateStrategyIds = map[ModUpdateStrategy][]string{
