@@ -402,7 +402,7 @@ func (l *WorkspaceLock) walkDeps(parent string, depPath []string, f func(depPath
 	for name, dep := range deps {
 		childDepPath := append(depPath, name) //nolint:gocritic // intentionally assigning to different slice
 		// call callback
-		if err := f(depPath, dep); err != nil {
+		if err := f(childDepPath, dep); err != nil {
 			return err
 		}
 		// now walk child deps
