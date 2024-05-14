@@ -66,20 +66,25 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 	moreDiags := r.handleDeprecations()
 	diags = append(diags, moreDiags...)
 
-	// find the require block
-	requireBlock := hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeRequire)
-	if requireBlock == nil {
-		// was this the legacy 'requires' block?
-		requireBlock = hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeLegacyRequires)
+	requireBlock, moreDiags := FindRequireBlock(modBlock)
+	diags = append(diags, moreDiags...)
+	if diags.HasErrors() {
+		return diags
 	}
 	if requireBlock == nil {
 		// nothing else to populate
 		return nil
 	}
-
 	// set our Ranges
 	r.DeclRange = hclhelpers.BlockRange(requireBlock)
 	r.TypeRange = requireBlock.TypeRange
+
+	return r.InitialiseConstraints(requireBlock)
+
+}
+
+func (r *Require) InitialiseConstraints(requireBlock *hcl.Block) hcl.Diagnostics {
+	var diags hcl.Diagnostics
 
 	// build maps of plugin and mod blocks
 	pluginBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypePlugin))
@@ -107,7 +112,6 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 			r.modMap[m.Name] = m
 		}
 	}
-
 	return diags
 }
 
@@ -260,4 +264,14 @@ func (r *Require) FlowpipeVersionConstraint() *semver.Constraints {
 		return nil
 	}
 	return r.Flowpipe.Constraint
+}
+
+// FindRequireBlock finds the require block under the given mod block
+func FindRequireBlock(modBlock *hcl.Block) (*hcl.Block, hcl.Diagnostics) {
+	requireBlock := hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeRequire)
+	if requireBlock == nil {
+		// was this the legacy 'requires' block?
+		requireBlock = hclhelpers.FindFirstChildBlock(modBlock, schema.BlockTypeLegacyRequires)
+	}
+	return requireBlock, nil
 }

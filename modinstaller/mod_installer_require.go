@@ -144,7 +144,17 @@ func (i *ModInstaller) calculateChangeSet(oldRequire *modconfig.Require, newRequ
 // creates a new "mod" block which can be written as part of the "require" block in mod.sp
 func (i *ModInstaller) createNewModRequireBlock(modVersion *modconfig.ModVersionConstraint) *hclwrite.Block {
 	modRequireBlock := hclwrite.NewBlock("mod", []string{modVersion.Name})
-	modRequireBlock.Body().SetAttributeValue("version", cty.StringVal(modVersion.VersionString))
+	if modVersion.BranchName != "" {
+		modRequireBlock.Body().SetAttributeValue("branch", cty.StringVal(modVersion.BranchName))
+	}
+	if modVersion.FilePath != "" {
+		modRequireBlock.Body().SetAttributeValue("path", cty.StringVal(modVersion.FilePath))
+	}
+	if modVersion.Tag != "" {
+		modRequireBlock.Body().SetAttributeValue("tag", cty.StringVal(modVersion.Tag))
+	} else if modVersion.VersionString != "" {
+		modRequireBlock.Body().SetAttributeValue("version", cty.StringVal(modVersion.VersionString))
+	}
 	return modRequireBlock
 }
 
@@ -198,19 +208,43 @@ func (i *ModInstaller) calcChangesForInstall(oldRequire *modconfig.Require, newR
 // calculates the changes required in mod.sp to reflect updates
 func (i *ModInstaller) calcChangesForUpdate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	changes := ChangeSet{}
-	for _, requiredMod := range oldRequire.Mods {
-		modInUpdated := newRequire.GetModDependency(requiredMod.Name)
-		if modInUpdated == nil {
+	for _, oldRequiredMod := range oldRequire.Mods {
+		newRequiredMod := newRequire.GetModDependency(oldRequiredMod.Name)
+		if newRequiredMod == nil {
 			continue
 		}
-		if modInUpdated.VersionString != requiredMod.VersionString {
+		// requiredMod.VersionRange contains the locaiton of the current version/tag/branch/path field
+		// this field will be replaced with the new value
+		var content []byte
+		// content will depdend on which property exists in the newRequiredMod
+		switch {
+		case newRequiredMod.VersionString != "":
+			if newRequiredMod.VersionString != oldRequiredMod.VersionString {
+				content = []byte(fmt.Sprintf("version = \"%s\"", newRequiredMod.VersionString))
+			}
+		case newRequiredMod.BranchName != "":
+			if newRequiredMod.BranchName != oldRequiredMod.BranchName {
+				content = []byte(fmt.Sprintf("branch = \"%s\"", newRequiredMod.BranchName))
+			}
+		case newRequiredMod.FilePath != "":
+			if newRequiredMod.FilePath != oldRequiredMod.FilePath {
+				content = []byte(fmt.Sprintf("file_path = \"%s\"", newRequiredMod.FilePath))
+			}
+		case newRequiredMod.Tag != "":
+			if newRequiredMod.Tag != oldRequiredMod.Tag {
+				content = []byte(fmt.Sprintf("tag = \"%s\"", newRequiredMod.Tag))
+			}
+		}
+		// has anything changed?
+		if len(content) > 0 {
 			changes = append(changes, &Change{
 				Operation:   Replace,
-				OffsetStart: requiredMod.VersionRange.Start.Byte,
-				OffsetEnd:   requiredMod.VersionRange.End.Byte,
-				Content:     []byte(fmt.Sprintf("version = \"%s\"", modInUpdated.VersionString)),
+				OffsetStart: oldRequiredMod.VersionRange.Start.Byte,
+				OffsetEnd:   oldRequiredMod.VersionRange.End.Byte,
+				Content:     content,
 			})
 		}
 	}
+
 	return changes
 }
