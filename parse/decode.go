@@ -96,7 +96,7 @@ func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *
 // special case decode logic for locals
 func decodeLocalsBlock(block *hcl.Block, parseCtx *ModParseContext) ([]modconfig.HclResource, *DecodeResult) {
 	var resources []modconfig.HclResource
-	var res = newDecodeResult()
+	var res = NewDecodeResult()
 
 	// check name is valid
 	diags := validateName(block)
@@ -117,7 +117,7 @@ func decodeLocalsBlock(block *hcl.Block, parseCtx *ModParseContext) ([]modconfig
 
 func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
 	var resource modconfig.HclResource
-	var res = newDecodeResult()
+	var res = NewDecodeResult()
 
 	// has this block already been decoded?
 	// (this could happen if it is a child block and has been decoded before its parent as part of second decode phase)
@@ -172,7 +172,7 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 }
 
 func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (*modconfig.Mod, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	// decode the body
 	diags := decodeHclBody(block.Body, evalCtx, mod, mod)
 	res.handleDecodeDiags(diags)
@@ -192,7 +192,7 @@ func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Requi
 
 // generic decode function for any resource we do not have custom decode logic for
 func decodeResource(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	// get shell resource
 	resource, diags := resourceForBlock(block, parseCtx)
 	res.handleDecodeDiags(diags)
@@ -251,7 +251,7 @@ func resourceForBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.Hc
 }
 
 func decodeLocals(block *hcl.Block, parseCtx *ModParseContext) ([]*modconfig.Local, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	attrs, diags := block.Body.JustAttributes()
 	if len(attrs) == 0 {
 		res.Diags = diags
@@ -282,7 +282,7 @@ func decodeLocals(block *hcl.Block, parseCtx *ModParseContext) ([]*modconfig.Loc
 }
 
 func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Variable, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 
 	var variable *modconfig.Variable
 	content, diags := block.Body.Content(VariableBlockSchema)
@@ -300,7 +300,7 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 }
 
 func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig.QueryProvider, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	// get shell resource
 	resource, diags := resourceForBlock(block, parseCtx)
 	res.handleDecodeDiags(diags)
@@ -326,7 +326,7 @@ func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig
 
 func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resource modconfig.HclResource, parseCtx *ModParseContext) *DecodeResult {
 	var diags hcl.Diagnostics
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	queryProvider, ok := resource.(modconfig.QueryProvider)
 	if !ok {
 		// coding error
@@ -366,7 +366,7 @@ func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resour
 }
 
 func decodeNodeAndEdgeProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 
 	// get shell resource
 	resource, diags := resourceForBlock(block, parseCtx)
@@ -407,7 +407,7 @@ func decodeNodeAndEdgeProvider(block *hcl.Block, parseCtx *ModParseContext) (mod
 }
 
 func decodeNodeAndEdgeProviderBlocks(content *hclsyntax.Body, nodeAndEdgeProvider modconfig.NodeAndEdgeProvider, parseCtx *ModParseContext) *DecodeResult {
-	var res = newDecodeResult()
+	var res = NewDecodeResult()
 
 	for _, b := range content.Blocks {
 		block := b.AsHCLBlock()
@@ -457,7 +457,7 @@ func decodeNodeAndEdgeProviderBlocks(content *hclsyntax.Body, nodeAndEdgeProvide
 }
 
 func decodeDashboard(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Dashboard, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	dashboard := modconfig.NewDashboard(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.Dashboard)
 
 	// do a partial decode using an empty schema - use to pull out all body content in the remain block
@@ -491,7 +491,7 @@ func decodeDashboard(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Da
 }
 
 func decodeDashboardBlocks(content *hclsyntax.Body, dashboard *modconfig.Dashboard, parseCtx *ModParseContext) *DecodeResult {
-	var res = newDecodeResult()
+	var res = NewDecodeResult()
 	// set dashboard as parent on the run context - this is used when generating names for anonymous blocks
 	parseCtx.PushParent(dashboard)
 	defer func() {
@@ -526,7 +526,7 @@ func decodeDashboardBlocks(content *hclsyntax.Body, dashboard *modconfig.Dashboa
 }
 
 func decodeDashboardContainer(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.DashboardContainer, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	container := modconfig.NewDashboardContainer(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.DashboardContainer)
 
 	// do a partial decode using an empty schema - use to pull out all body content in the remain block
@@ -552,7 +552,7 @@ func decodeDashboardContainer(block *hcl.Block, parseCtx *ModParseContext) (*mod
 }
 
 func decodeDashboardContainerBlocks(content *hclsyntax.Body, dashboardContainer *modconfig.DashboardContainer, parseCtx *ModParseContext) *DecodeResult {
-	var res = newDecodeResult()
+	var res = NewDecodeResult()
 
 	// set container as parent on the run context - this is used when generating names for anonymous blocks
 	parseCtx.PushParent(dashboardContainer)
@@ -588,7 +588,7 @@ func decodeDashboardContainerBlocks(content *hclsyntax.Body, dashboardContainer 
 }
 
 func decodeBenchmark(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Benchmark, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	benchmark := modconfig.NewBenchmark(block, parseCtx.CurrentMod, parseCtx.DetermineBlockName(block)).(*modconfig.Benchmark)
 	content, diags := block.Body.Content(BenchmarkBlockSchema)
 	res.handleDecodeDiags(diags)

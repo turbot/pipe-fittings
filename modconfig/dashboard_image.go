@@ -16,11 +16,11 @@ type DashboardImage struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Src *string `cty:"src" hcl:"src" column:"src,string"  json:"src,omitempty" snapshot:"src"`
-	Alt *string `cty:"alt" hcl:"alt" column:"alt,string"  json:"alt,omitempty" snapshot:"alt"`
+	Src *string `cty:"src" hcl:"src"  json:"src,omitempty" snapshot:"src"`
+	Alt *string `cty:"alt" hcl:"alt"  json:"alt,omitempty" snapshot:"alt"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty" `
+	Width   *int    `cty:"width" hcl:"width"  json:"width,omitempty" `
 	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardImage `hcl:"base" json:"-"`

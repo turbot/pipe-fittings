@@ -24,12 +24,12 @@ type Benchmark struct {
 	// child names as NamedItem structs - used to allow setting children via the 'children' property
 	ChildNames NamedItemList `cty:"child_names" json:"-"`
 	// used for introspection tables
-	ChildNameStrings []string `cty:"child_name_strings" column:"children,jsonb" json:"children,omitempty"`
+	ChildNameStrings []string `cty:"child_name_strings" json:"children,omitempty"`
 
 	// dashboard specific properties
 	Base    *Benchmark `hcl:"base" json:"-"`
-	Width   *int       `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
-	Type    *string    `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Width   *int       `cty:"width" hcl:"width"  json:"width,omitempty"`
+	Type    *string    `cty:"type" hcl:"type"  json:"type,omitempty"`
 	Display *string    `cty:"display" hcl:"display" json:"display,omitempty"`
 }
 

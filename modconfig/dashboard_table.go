@@ -19,9 +19,9 @@ type DashboardTable struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Width      *int                             `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
-	Type       *string                          `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
-	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" column:"columns,jsonb" json:"columns,omitempty"`
+	Width      *int                             `cty:"width" hcl:"width"  json:"width,omitempty"`
+	Type       *string                          `cty:"type" hcl:"type"  json:"type,omitempty"`
+	ColumnList DashboardTableColumnList         `cty:"column_list" hcl:"column,block" json:"columns,omitempty"`
 	Columns    map[string]*DashboardTableColumn `cty:"columns" snapshot:"columns"`
 	Display    *string                          `cty:"display" hcl:"display" json:"display,omitempty" snapshot:"display"`
 	Base       *DashboardTable                  `hcl:"base" json:"-"`
