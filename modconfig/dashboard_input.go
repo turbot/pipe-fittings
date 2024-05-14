@@ -16,17 +16,17 @@ type DashboardInput struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	DashboardName string                  `column:"dashboard,string" json:"dashboard,omitempty"`
-	Label         *string                 `cty:"label" hcl:"label" column:"label,string" json:"label,omitempty" snapshot:"label"`
-	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" column:"placeholder,string" json:"placeholder,omitempty" snapshot:"placeholder"`
+	DashboardName string                  `json:"dashboard,omitempty"`
+	Label         *string                 `cty:"label" hcl:"label" json:"label,omitempty" snapshot:"label"`
+	Placeholder   *string                 `cty:"placeholder" hcl:"placeholder" json:"placeholder,omitempty" snapshot:"placeholder"`
 	Options       []*DashboardInputOption `cty:"options" hcl:"option,block" json:"options,omitempty" snapshot:"options"`
 	// tactical - exists purely so we can put "unqualified_name" in the snbapshot panel for the input
 	// TODO remove when input names are refactored https://github.com/turbot/steampipe/issues/2863
 	InputName string `cty:"input_name" json:"unqualified_name" snapshot:"unqualified_name"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width     *int            `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
-	Type      *string         `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Width     *int            `cty:"width" hcl:"width"  json:"width,omitempty"`
+	Type      *string         `cty:"type" hcl:"type"  json:"type,omitempty"`
 	Display   *string         `cty:"display" hcl:"display" json:"display,omitempty"`
 	Base      *DashboardInput `hcl:"base" json:"-"`
 	dashboard *Dashboard

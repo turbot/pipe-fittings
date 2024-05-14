@@ -16,9 +16,9 @@ type DashboardText struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Value   *string `cty:"value" hcl:"value" column:"value,string" snapshot:"value"  json:"value,omitempty"`
-	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
-	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Value   *string `cty:"value" hcl:"value" snapshot:"value"  json:"value,omitempty"`
+	Width   *int    `cty:"width" hcl:"width"  json:"width,omitempty"`
+	Type    *string `cty:"type" hcl:"type"  json:"type,omitempty"`
 	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardText `hcl:"base" json:"-"`

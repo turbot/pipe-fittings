@@ -24,8 +24,8 @@ type Variable struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Default cty.Value `column:"default_value,jsonb" json:"-"`
-	Type    cty.Type  `column:"var_type,string" json:"-"`
+	Default cty.Value `json:"-"`
+	Type    cty.Type  `json:"-"`
 
 	TypeString string `json:"type"`
 	DefaultGo  any    `json:"value_default"`
@@ -33,11 +33,11 @@ type Variable struct {
 	ModName    string `json:"mod_name"`
 
 	// set after value resolution `column:"value,jsonb"`
-	Value                      cty.Value                      `column:"value,jsonb" json:"-"`
-	ValueSourceType            string                         `column:"value_source,string" json:"-"`
-	ValueSourceFileName        string                         `column:"value_source_file_name,string" json:"-"`
-	ValueSourceStartLineNumber int                            `column:"value_source_start_line_number,integer" json:"-"`
-	ValueSourceEndLineNumber   int                            `column:"value_source_end_line_number,integer" json:"-"`
+	Value                      cty.Value                      `json:"-"`
+	ValueSourceType            string                         `json:"-"`
+	ValueSourceFileName        string                         `json:"-"`
+	ValueSourceStartLineNumber int                            `json:"-"`
+	ValueSourceEndLineNumber   int                            `json:"-"`
 	ParsingMode                var_config.VariableParsingMode `json:"-"`
 
 	metadata *ResourceMetadata //nolint:unused // TODO: check this is not used
