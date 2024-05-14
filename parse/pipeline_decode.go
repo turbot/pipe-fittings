@@ -390,7 +390,7 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 
 func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Trigger, *DecodeResult) {
 
-	res := newDecodeResult()
+	res := NewDecodeResult()
 
 	if len(block.Labels) != 2 {
 		res.handleDecodeDiags(hcl.Diagnostics{
@@ -482,7 +482,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 // TODO: validation - if you specify invalid depends_on it doesn't error out
 // TODO: validation - invalid name?
 func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipeline, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 
 	// get shell pipelineHcl
 	pipelineHcl := modconfig.NewPipeline(mod, block)

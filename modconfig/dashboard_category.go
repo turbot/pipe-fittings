@@ -22,7 +22,7 @@ type DashboardCategory struct {
 	Icon          *string                               `cty:"icon" hcl:"icon" snapshot:"icon" json:"icon,omitempty"`
 	HREF          *string                               `cty:"href" hcl:"href" snapshot:"href" json:"href,omitempty"`
 	Fold          *DashboardCategoryFold                `cty:"fold" hcl:"fold,block" snapshot:"fold" json:"fold,omitempty"`
-	PropertyList  DashboardCategoryPropertyList         `cty:"property_list" hcl:"property,block" column:"properties,jsonb" json:"-"`
+	PropertyList  DashboardCategoryPropertyList         `cty:"property_list" hcl:"property,block" json:"-"`
 	Properties    map[string]*DashboardCategoryProperty `cty:"properties" snapshot:"properties" json:"properties,omitempty"`
 	PropertyOrder []string                              `cty:"property_order" hcl:"property_order,optional" snapshot:"property_order" json:"property_order,omitempty"`
 	Base          *DashboardCategory                    `hcl:"base" json:"base,omitempty"`

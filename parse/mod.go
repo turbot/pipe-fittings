@@ -43,7 +43,7 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 //
 // This function only parse the "mod" block, and does not parse any resources in the mod file
 func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 
 	fileData, diags := LoadFileData(modFilePath)
 	res.addDiags(diags)

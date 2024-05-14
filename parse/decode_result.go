@@ -12,7 +12,7 @@ type DecodeResult struct {
 	Depends map[string]*modconfig.ResourceDependency
 }
 
-func newDecodeResult() *DecodeResult {
+func NewDecodeResult() *DecodeResult {
 	return &DecodeResult{Depends: make(map[string]*modconfig.ResourceDependency)}
 }
 

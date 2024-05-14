@@ -135,7 +135,7 @@ func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePr
 
 func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
 	var emptyProfile T
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	// get shell resource
 	resource, diags := modconfig.NewWorkspaceProfile[T](block)
 	if diags.HasErrors() {
