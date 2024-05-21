@@ -356,13 +356,13 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	pipelineOptions, diags := block.Body.Content(modconfig.PipelineBlockSchema)
 	if diags.HasErrors() {
 		res.handleDecodeDiags(diags)
-		return nil, res
+		return pipelineHcl, res
 	}
 
 	diags = pipelineHcl.SetAttributes(pipelineOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.handleDecodeDiags(diags)
-		return nil, res
+		return pipelineHcl, res
 	}
 
 	// use a map keyed by a string for fast lookup

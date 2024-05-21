@@ -21,7 +21,7 @@ trigger "query" "detect_and_correct_ebs_snapshots_exceeding_max_age" {
 }
 
 pipeline "merging_tags" {
-    # tags = merge(local.ebs_common_tags, { class = "unused" })
+    tags = merge(local.ebs_common_tags, { class = "unused" })
 
     step "transform" "name" {
         value    = "hello"

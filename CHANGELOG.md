@@ -2,6 +2,15 @@
 
 Shared Pipes Component
 
+## v1.3.1 [2024-05-21]
+
+_Bug fixes_
+
+* Unresolved pipeline should be added to the "unresolved block" so it can be resolved in a subsequent parse. ([#402](https://github.com/turbot/pipe-fittings/issues/402))
+
+## v1.3.0 [2024-05-13]
+
+
 ## v1.2.2 [2024-05-11]
 
 _Bug fixes_
