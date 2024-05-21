@@ -2,6 +2,8 @@
 
 Shared Pipes Component
 
+## v1.3.0 [2024-05-13]
+
 ## v1.2.2 [2024-05-11]
 
 _Bug fixes_
