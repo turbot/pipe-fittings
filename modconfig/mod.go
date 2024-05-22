@@ -266,9 +266,9 @@ func (m *Mod) Save() error {
 	if require := m.Require; require != nil && !require.Empty() {
 		requiresBody := modBody.AppendNewBlock("require", nil).Body()
 
-		if require.Steampipe != nil && require.Steampipe.MinVersionString != "" {
-			steampipeRequiresBody := requiresBody.AppendNewBlock("steampipe", nil).Body()
-			steampipeRequiresBody.SetAttributeValue("min_version", cty.StringVal(require.Steampipe.MinVersionString))
+		if require.App != nil && require.App.MinVersionString != "" {
+			steampipeRequiresBody := requiresBody.AppendNewBlock(app_specific.AppName, nil).Body()
+			steampipeRequiresBody.SetAttributeValue("min_version", cty.StringVal(require.App.MinVersionString))
 		}
 		if len(require.Plugins) > 0 {
 			pluginValues := make([]cty.Value, len(require.Plugins))
@@ -311,7 +311,7 @@ func (m *Mod) SetFilePath(modFilePath string) {
 // ValidateRequirements validates that the current steampipe CLI and the installed plugins is compatible with the mod
 func (m *Mod) ValidateRequirements(pluginVersionMap *PluginVersionMap) []error {
 	var validationErrors []error
-	if err := m.validateSteampipeVersion(); err != nil {
+	if err := m.validateAppVersion(); err != nil {
 		validationErrors = append(validationErrors, err)
 	}
 
@@ -326,7 +326,7 @@ func (m *Mod) FilePath() string {
 	return m.modFilePath
 }
 
-func (m *Mod) validateSteampipeVersion() error {
+func (m *Mod) validateAppVersion() error {
 	if m.Require == nil {
 		return nil
 	}

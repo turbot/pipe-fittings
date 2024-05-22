@@ -2,16 +2,18 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 // A consistent detail message for all "not a valid identifier" diagnostics.
@@ -176,8 +178,49 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	res := newDecodeResult()
 	// decode the body
 	diags := decodeHclBody(block.Body, evalCtx, mod, mod)
+	// tactical - ignore errors related to the app require block
+	diags = ignoreAppRequireErrors(diags)
 	res.handleDecodeDiags(diags)
+
+	// the require block (if present) may have a powerpipe|steampipe|flowpipe (depending on the app)
+	// this is used to set the app version constraint - manually decode
+	if mod.Require != nil {
+		diags := decodeAppRequire(block, evalCtx, mod)
+		res.handleDecodeDiags(diags)
+	}
 	return mod, res
+}
+
+func decodeAppRequire(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) hcl.Diagnostics {
+	var diags hcl.Diagnostics
+	requireBlock := hclhelpers.FindFirstChildBlock(block, schema.BlockTypeRequire)
+	if requireBlock != nil {
+		appRequireBlock := hclhelpers.FindFirstChildBlock(requireBlock, app_specific.AppName)
+		if appRequireBlock != nil {
+			target := &modconfig.AppRequire{}
+			diags := gohcl.DecodeBody(appRequireBlock.Body, evalCtx, target)
+			if !diags.HasErrors() {
+				mod.Require.App = target
+			}
+		}
+	}
+	return diags
+}
+
+// because the app require block may have the block type powerpipe|steampipe|flowpipe (depending on the app),
+// we manually parse just that block - so ignore any errors from the implicit parse relating to this block
+func ignoreAppRequireErrors(diags hcl.Diagnostics) hcl.Diagnostics {
+	var newDiags hcl.Diagnostics
+	for _, diag := range diags {
+		ignore := strings.HasPrefix(diag.Detail, fmt.Sprintf(`Blocks of type "%s" are not expected here`, app_specific.AppName)) ||
+			// powerpipe ignores 'steampipe' cblock but does not fail
+			strings.HasPrefix(diag.Detail, `Blocks of type "steampipe" are not expected here`) && app_specific.AppName == "powerpipe"
+
+		if !ignore {
+			newDiags = append(newDiags, diag)
+		}
+	}
+	return newDiags
 }
 
 func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Require, hcl.Diagnostics) {
