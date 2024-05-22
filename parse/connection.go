@@ -122,7 +122,7 @@ func decodeConnectionPluginProperty(connectionContent *hcl.BodyContent, connecti
 
 	diags := gohcl.DecodeExpression(connectionContent.Attributes["plugin"].Expr, evalCtx, &pluginName)
 	res := NewDecodeResult()
-	res.handleDecodeDiags(diags)
+	res.HandleDecodeDiags(diags)
 	if res.Diags.HasErrors() {
 		return res.Diags
 	}

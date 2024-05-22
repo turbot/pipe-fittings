@@ -9,6 +9,7 @@ const (
 	ArgCacheMaxTtl             = "cache-max-ttl"
 	ArgCacheTtl                = "cache-ttl"
 	ArgClientCacheEnabled      = "client-cache-enabled"
+	ArgCollection              = "collection"
 	ArgConfigPath              = "config-path"
 	ArgDashboardStartTimeout   = "dashboard-start-timeout"
 	ArgDashboardTimeout        = "dashboard-timeout"
@@ -70,6 +71,7 @@ const (
 	ArgWatch                   = "watch"
 	ArgWhere                   = "where"
 	ArgWorkspaceProfile        = "workspace"
+
 
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
