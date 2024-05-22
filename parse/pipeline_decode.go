@@ -393,7 +393,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 	res := NewDecodeResult()
 
 	if len(block.Labels) != 2 {
-		res.handleDecodeDiags(hcl.Diagnostics{
+		res.HandleDecodeDiags(hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
 				Summary:  fmt.Sprintf("invalid trigger block - expected 2 labels, found %d", len(block.Labels)),
@@ -410,7 +410,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 
 	triggerSchema := GetTriggerBlockSchema(triggerType)
 	if triggerSchema == nil {
-		res.handleDecodeDiags(hcl.Diagnostics{
+		res.HandleDecodeDiags(hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
 				Summary:  "invalid trigger type: " + triggerType,
@@ -423,12 +423,12 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 	triggerOptions, diags := block.Body.Content(triggerSchema)
 
 	if diags.HasErrors() {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return nil, res
 	}
 
 	if triggerHcl == nil {
-		res.handleDecodeDiags(hcl.Diagnostics{
+		res.HandleDecodeDiags(hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
 				Summary:  fmt.Sprintf("invalid trigger type '%s'", triggerType),
@@ -440,13 +440,13 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 
 	diags = triggerHcl.Config.SetAttributes(mod, triggerHcl, triggerOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return triggerHcl, res
 	}
 
 	diags = triggerHcl.Config.SetBlocks(mod, triggerHcl, triggerOptions.Blocks, parseCtx.EvalCtx)
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return triggerHcl, res
 	}
 
@@ -472,7 +472,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 	}
 
 	moreDiags := parseCtx.AddTrigger(triggerHcl)
-	res.addDiags(moreDiags)
+	res.AddDiags(moreDiags)
 
 	triggerHcl.Params = triggerParams
 
@@ -508,7 +508,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		case schema.BlockTypePipelineStep:
 			step, diags := decodeStep(mod, block, parseCtx, pipelineHcl)
 			if diags.HasErrors() {
-				res.handleDecodeDiags(diags)
+				res.HandleDecodeDiags(diags)
 
 				// Must also return the pipelineHcl even if it failed parsing, because later on the handling of "unresolved blocks" expect
 				// the resource to be there
@@ -530,7 +530,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			output, cfgDiags := decodeOutput(block, parseCtx)
 			diags = append(diags, cfgDiags...)
 			if len(diags) > 0 {
-				res.handleDecodeDiags(diags)
+				res.HandleDecodeDiags(diags)
 				return pipelineHcl, res
 			}
 
@@ -545,7 +545,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 								Summary:  fmt.Sprintf("duplicate output name '%s' - output names must be unique", output.Name),
 								Subject:  &block.DefRange,
 							})
-							res.handleDecodeDiags(diags)
+							res.HandleDecodeDiags(diags)
 							return pipelineHcl, res
 						}
 					}
@@ -558,7 +558,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			pipelineParam, moreDiags := decodePipelineParam(block, parseCtx)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
-				res.handleDecodeDiags(diags)
+				res.HandleDecodeDiags(diags)
 				return pipelineHcl, res
 			}
 
@@ -574,7 +574,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 							Summary:  fmt.Sprintf("duplicate pipeline parameter name '%s' - parameter names must be unique", pipelineParam.Name),
 							Subject:  &block.DefRange,
 						})
-						res.handleDecodeDiags(diags)
+						res.HandleDecodeDiags(diags)
 						return pipelineHcl, res
 					}
 				}
@@ -594,7 +594,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 
 	diags = validatePipelineSteps(pipelineHcl)
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 
 		return pipelineHcl, res
 	}
@@ -602,7 +602,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	handlePipelineDecodeResult(pipelineHcl, res, block, parseCtx)
 	diags = validatePipelineDependencies(pipelineHcl, parseCtx.Credentials, parseCtx.PipelingConnections)
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 
 		// Must also return the pipelineHcl even if it failed parsing, because later on the handling of "unresolved blocks" expect
 		// the resource to be there
@@ -794,17 +794,17 @@ func handlePipelineDecodeResult(resource *modconfig.Pipeline, res *DecodeResult,
 		// call post decode hook
 		// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property
 		moreDiags := resource.OnDecoded(block, parseCtx)
-		res.addDiags(moreDiags)
+		res.AddDiags(moreDiags)
 
 		moreDiags = parseCtx.AddPipeline(resource)
-		res.addDiags(moreDiags)
+		res.AddDiags(moreDiags)
 		return
 	}
 
 	// failure :(
 	if len(res.Depends) > 0 {
 		moreDiags := parseCtx.AddDependencies(block, resource.Name(), res.Depends)
-		res.addDiags(moreDiags)
+		res.AddDiags(moreDiags)
 	}
 }
 

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -32,8 +33,10 @@ type HclResourceImpl struct {
 	isTopLevel          bool
 }
 
-func NewHclResourceImpl(block *hcl.Block, mod *Mod, shortName string) HclResourceImpl {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
+func NewHclResourceImpl(block *hcl.Block, fullName string) HclResourceImpl {
+	parts := strings.Split(fullName, ".")
+	shortName := parts[len(parts)-1]
+
 	return HclResourceImpl{
 		ShortName:       shortName,
 		FullName:        fullName,

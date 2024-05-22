@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"golang.org/x/exp/maps"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -14,7 +15,7 @@ import (
 )
 
 type ParseContext struct {
-	UnresolvedBlocks map[string]*unresolvedBlock
+	UnresolvedBlocks map[string]*UnresolvedBlock
 	FileData         map[string][]byte
 
 	// the eval context used to decode references in HCL
@@ -29,17 +30,23 @@ type ParseContext struct {
 	// if set, exclude these block types
 	blockTypeExclusions map[string]struct{}
 
-	dependencyGraph *topsort.Graph
+	DependencyGraph *topsort.Graph
 	blocks          hcl.Blocks
+
+	// function used to parse resource property path
+	// - this will be different for tailpipe and flowpipe/powerpipe (which support mods)
+	ResourceNameFromDependencyFunc func(propertyPath string) (string, error)
 }
 
 func NewParseContext(rootEvalPath string) ParseContext {
 	c := ParseContext{
-		UnresolvedBlocks: make(map[string]*unresolvedBlock),
+		UnresolvedBlocks: make(map[string]*UnresolvedBlock),
 		RootEvalPath:     rootEvalPath,
+		// use the default func
+		ResourceNameFromDependencyFunc: resourceNameFromDependency,
 	}
 	// add root node - this will depend on all other nodes
-	c.dependencyGraph = c.newDependencyGraph()
+	c.DependencyGraph = c.newDependencyGraph()
 
 	return c
 }
@@ -50,8 +57,8 @@ func (r *ParseContext) SetDecodeContent(content *hcl.BodyContent, fileData map[s
 }
 
 func (r *ParseContext) ClearDependencies() {
-	r.UnresolvedBlocks = make(map[string]*unresolvedBlock)
-	r.dependencyGraph = r.newDependencyGraph()
+	r.UnresolvedBlocks = make(map[string]*UnresolvedBlock)
+	r.DependencyGraph = r.newDependencyGraph()
 }
 
 // AddDependencies is called when a block could not be resolved as it has dependencies
@@ -71,14 +78,14 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 	}
 
 	// store unresolved block
-	r.UnresolvedBlocks[name] = newUnresolvedBlock(block, name, dependencies)
+	r.UnresolvedBlocks[name] = NewUnresolvedBlock(block, name, dependencies)
 
 	// store dependency in tree - d
-	if !r.dependencyGraph.ContainsNode(name) {
-		r.dependencyGraph.AddNode(name)
+	if !r.DependencyGraph.ContainsNode(name) {
+		r.DependencyGraph.AddNode(name)
 	}
 	// add root dependency
-	if err := r.dependencyGraph.AddEdge(rootDependencyNode, name); err != nil {
+	if err := r.DependencyGraph.AddEdge(RootDependencyNode, name); err != nil {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "failed to add root dependency to graph",
@@ -90,8 +97,7 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 	for _, dep := range dependencies {
 		// each dependency object may have multiple traversals
 		for _, t := range dep.Traversals {
-			parsedPropertyPath, err := modconfig.ParseResourcePropertyPath(hclhelpers.TraversalAsString(t))
-
+			dependencyResourceName, err := r.ResourceNameFromDependencyFunc(hclhelpers.TraversalAsString(t))
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
@@ -101,16 +107,13 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 				})
 				continue
 			}
-			if parsedPropertyPath == nil {
+			if dependencyResourceName == "" {
 				continue
 			}
-
-			// 'd' may be a property path - when storing dependencies we only care about the resource names
-			dependencyResourceName := parsedPropertyPath.ToResourceName()
-			if !r.dependencyGraph.ContainsNode(dependencyResourceName) {
-				r.dependencyGraph.AddNode(dependencyResourceName)
+			if !r.DependencyGraph.ContainsNode(dependencyResourceName) {
+				r.DependencyGraph.AddNode(dependencyResourceName)
 			}
-			if err := r.dependencyGraph.AddEdge(name, dependencyResourceName); err != nil {
+			if err := r.DependencyGraph.AddEdge(name, dependencyResourceName); err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "failed to add dependency to graph",
@@ -155,6 +158,7 @@ func (r *ParseContext) BlocksToDecode() (blocksToDecode hcl.Blocks, _ error) {
 	}
 	return blocksToDecode, nil
 }
+
 func (r *ParseContext) filterBlocks(blocks hcl.Blocks) hcl.Blocks {
 	var res hcl.Blocks
 
@@ -216,35 +220,33 @@ func (r *ParseContext) FormatDependencies() string {
 func (r *ParseContext) newDependencyGraph() *topsort.Graph {
 	dependencyGraph := topsort.NewGraph()
 	// add root node - this will depend on all other nodes
-	dependencyGraph.AddNode(rootDependencyNode)
+	dependencyGraph.AddNode(RootDependencyNode)
 	return dependencyGraph
 }
 
 // return the optimal run order required to resolve dependencies
 
 func (r *ParseContext) getDependencyOrder() ([]string, error) {
-	rawDeps, err := r.dependencyGraph.TopSort(rootDependencyNode)
+	rawDeps, err := r.DependencyGraph.TopSort(RootDependencyNode)
 	if err != nil {
 		return nil, err
 	}
 
 	// now remove the variable names and dedupe
-	var deps []string
+	var deps = map[string]struct{}{}
 	for _, d := range rawDeps {
-		if d == rootDependencyNode {
+		if d == RootDependencyNode {
 			continue
 		}
 
-		propertyPath, err := modconfig.ParseResourcePropertyPath(d)
+		dep, err := r.ResourceNameFromDependencyFunc(d)
 		if err != nil {
 			return nil, err
 		}
-		dep := modconfig.BuildModResourceName(propertyPath.ItemType, propertyPath.Name)
-		if !helpers.StringSliceContains(deps, dep) {
-			deps = append(deps, dep)
-		}
+		deps[dep] = struct{}{}
+
 	}
-	return deps, nil
+	return maps.Keys(deps), nil
 }
 
 // eval functions
@@ -253,7 +255,23 @@ func (r *ParseContext) BuildEvalContext(variables map[string]cty.Value) {
 	// create evaluation context
 	r.EvalCtx = &hcl.EvalContext{
 		Variables: variables,
-		// use the mod path as the file root for functions
+		// use the RootEvalPath as the file root for functions
 		Functions: funcs.ContextFunctions(r.RootEvalPath),
 	}
+}
+
+// default resourceNameFromDependency func
+func resourceNameFromDependency(propertyPath string) (string, error) {
+	parsedPropertyPath, err := modconfig.ParseResourcePropertyPath(propertyPath)
+
+	if err != nil {
+		return "", err
+	}
+	if parsedPropertyPath == nil {
+		return "", nil
+	}
+
+	// 'd' may be a property path - when storing dependencies we only care about the resource names
+	dependencyResourceName := parsedPropertyPath.ToResourceName()
+	return dependencyResourceName, nil
 }

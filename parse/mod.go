@@ -46,19 +46,19 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfi
 	res := NewDecodeResult()
 
 	fileData, diags := LoadFileData(modFilePath)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
 	}
 
 	body, diags := ParseHclFiles(fileData)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
 	}
 
 	workspaceContent, diags := body.Content(WorkspaceBlockSchema)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
 	}
@@ -83,9 +83,10 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfi
 
 	// NOTE: IGNORE DEPENDENCY ERRORS
 
+	//
 	// call decode callback
 	diags = mod.OnDecoded(block, nil)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 
 	return mod, res
 }

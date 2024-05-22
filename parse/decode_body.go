@@ -13,12 +13,12 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
-func decodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceMapsProvider, resource modconfig.HclResource) (diags hcl.Diagnostics) {
+func DecodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceProvider, resource modconfig.HclResource) (diags hcl.Diagnostics) {
 	defer func() {
 		if r := recover(); r != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "unexpected error in decodeHclBody",
+				Summary:  "unexpected error in DecodeHclBody",
 				Detail:   helpers.ToError(r).Error()})
 		}
 	}()
@@ -42,7 +42,7 @@ func decodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider mod
 	return diags
 }
 
-func decodeHclBodyIntoStruct(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceMapsProvider, resource any) hcl.Diagnostics {
+func decodeHclBodyIntoStruct(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceProvider, resource any) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	// call decodeHclBodyIntoStruct to do actual decode
 	moreDiags := gohcl.DecodeBody(body, evalCtx, resource)
@@ -172,7 +172,7 @@ func getSchemaForStruct(t reflect.Type) *hcl.BodySchema {
 // (which has the issue that when deserializing from cty we do not receive all base struct values)
 // instead resolve the reference by parsing the resource name and finding the resource in the ResourceMap
 // and use this resource to set the target property
-func resolveReferences(body hcl.Body, resourceMapsProvider modconfig.ResourceMapsProvider, val any) (diags hcl.Diagnostics) {
+func resolveReferences(body hcl.Body, resourceMapsProvider modconfig.ResourceProvider, val any) (diags hcl.Diagnostics) {
 	defer func() {
 		if r := recover(); r != nil {
 			if r := recover(); r != nil {
