@@ -9,15 +9,15 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-type unresolvedBlock struct {
+type UnresolvedBlock struct {
 	Name         string
 	Block        *hcl.Block
 	DeclRange    hcl.Range
 	Dependencies map[string]*modconfig.ResourceDependency
 }
 
-func newUnresolvedBlock(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) *unresolvedBlock {
-	return &unresolvedBlock{
+func NewUnresolvedBlock(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) *UnresolvedBlock {
+	return &UnresolvedBlock{
 		Name:         name,
 		Block:        block,
 		Dependencies: dependencies,
@@ -25,7 +25,7 @@ func newUnresolvedBlock(block *hcl.Block, name string, dependencies map[string]*
 	}
 }
 
-func (b unresolvedBlock) String() string {
+func (b UnresolvedBlock) String() string {
 	depStrings := make([]string, len(b.Dependencies))
 	idx := 0
 	for _, dep := range b.Dependencies {
