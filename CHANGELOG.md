@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.3.2 [2024-05-23]
+
+_Bug fixes_
+
+* Apps should respect the app version constraint defined in the correctly name `require` sub-block. ([#405](https://github.com/turbot/pipe-fittings/issues/405))
+
 ## v1.3.1 [2024-05-21]
 
 _Bug fixes_
