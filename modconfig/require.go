@@ -276,7 +276,7 @@ func (r *Require) initialiseAppRequire() hcl.Diagnostics {
 		} else {
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("`blocks of type 'flowpipe' are not expected here"),
+				Summary:  `blocks of type "flowpipe" are not expected here`,
 				Subject:  &r.DeclRange,
 			}}
 		}
@@ -288,7 +288,7 @@ func (r *Require) initialiseAppRequire() hcl.Diagnostics {
 			// powerpipe does not error for steampipe block, but ignores it
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("`blocks of type 'steampipe' are not expected here"),
+				Summary:  `blocks of type "steampipe"" are not expected here`,
 				Subject:  &r.DeclRange,
 			}}
 		}
@@ -299,7 +299,7 @@ func (r *Require) initialiseAppRequire() hcl.Diagnostics {
 		} else {
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("`blocks of type 'powerpipe' are not expected here"),
+				Summary:  `blocks of type "powerpipe" are not expected here`,
 				Subject:  &r.DeclRange,
 			}}
 		}
