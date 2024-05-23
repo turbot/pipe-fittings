@@ -2,29 +2,29 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/schema"
 )
 
-type SteampipeRequire struct {
+type AppRequire struct {
 	MinVersionString string `hcl:"min_version,optional"`
 	Constraint       *semver.Constraints
 	DeclRange        hcl.Range
 }
 
-func (r *SteampipeRequire) initialise(requireBlock *hcl.Block) hcl.Diagnostics {
+func (r *AppRequire) initialise(requireBlock *hcl.Block) hcl.Diagnostics {
 	// find the steampipe block
-	steampipeBlock := hclhelpers.FindFirstChildBlock(requireBlock, schema.BlockTypeSteampipe)
-	if steampipeBlock == nil {
+	appBlock := hclhelpers.FindFirstChildBlock(requireBlock, app_specific.AppName)
+	if appBlock == nil {
 		// can happen if there is a legacy property - just use the parent block
-		steampipeBlock = requireBlock
+		appBlock = requireBlock
 	}
 	// set DeclRange
-	r.DeclRange = hclhelpers.BlockRange(steampipeBlock)
+	r.DeclRange = hclhelpers.BlockRange(appBlock)
 
 	if r.MinVersionString == "" {
 		return nil
@@ -39,7 +39,7 @@ func (r *SteampipeRequire) initialise(requireBlock *hcl.Block) hcl.Diagnostics {
 		return hcl.Diagnostics{
 			&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid required steampipe version %s", r.MinVersionString),
+				Summary:  fmt.Sprintf("invalid required %s version %s", app_specific.AppName, r.MinVersionString),
 				Subject:  &r.DeclRange,
 			}}
 	}
