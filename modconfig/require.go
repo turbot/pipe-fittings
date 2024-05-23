@@ -48,6 +48,8 @@ func (r *Require) Clone() *Require {
 	require.Flowpipe = r.Flowpipe
 	require.Steampipe = r.Steampipe
 	require.Powerpipe = r.Powerpipe
+	require.app = r.app
+
 	require.Plugins = r.Plugins
 	require.Mods = r.Mods
 	require.DeclRange = r.DeclRange
