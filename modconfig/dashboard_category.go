@@ -13,10 +13,11 @@ type DashboardCategory struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	// TACTICAL: include a title property (with a different name to the property in HclResourceImpl  for clarity)
-	// This is purely to ensure the title is included in the panel properties of snapshots
+	// TACTICAL: include a title and name property (with a different name to the property in HclResourceImpl  for clarity)
+	// This is purely to ensure the title and name is included in the panel properties of snapshots
 	// Note: this will be parsed from HCL, but we must set this explicitly in setBaseProperties if there is a base
 	CategoryTitle *string                               `cty:"title" hcl:"title" snapshot:"title" json:"title,omitempty"`
+	CategoryName  string                                `json:"name,omitempty"`
 	Color         *string                               `cty:"color" hcl:"color" snapshot:"color" json:"color,omitempty"`
 	Depth         *int                                  `cty:"depth" hcl:"depth" snapshot:"depth" json:"depth,omitempty"`
 	Icon          *string                               `cty:"icon" hcl:"icon" snapshot:"icon" json:"icon,omitempty"`
@@ -46,6 +47,10 @@ func (c *DashboardCategory) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) 
 			c.Properties[p.ShortName] = p
 		}
 	}
+
+	// TACTICAL: DashboardCategory overrides the title and name properties to ensure they are included in the snapshot
+	c.CategoryTitle = c.Title
+	c.CategoryName = c.ShortName
 	return nil
 }
 
@@ -64,9 +69,6 @@ func (c *DashboardCategory) setBaseProperties() {
 	c.base = c.Base
 	// call into parent nested struct setBaseProperties
 	c.ModTreeItemImpl.setBaseProperties()
-
-	// TACTICAL: DashboardCategory overrides the title property to ensure is included in the snapshot
-	c.CategoryTitle = c.Title
 
 	if c.Color == nil {
 		c.Color = c.Base.Color
