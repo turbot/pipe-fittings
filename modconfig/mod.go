@@ -266,9 +266,9 @@ func (m *Mod) Save() error {
 	if require := m.Require; require != nil && !require.Empty() {
 		requiresBody := modBody.AppendNewBlock("require", nil).Body()
 
-		if require.App != nil && require.App.MinVersionString != "" {
+		if require.app != nil && require.app.MinVersionString != "" {
 			steampipeRequiresBody := requiresBody.AppendNewBlock(app_specific.AppName, nil).Body()
-			steampipeRequiresBody.SetAttributeValue("min_version", cty.StringVal(require.App.MinVersionString))
+			steampipeRequiresBody.SetAttributeValue("min_version", cty.StringVal(require.app.MinVersionString))
 		}
 		if len(require.Plugins) > 0 {
 			pluginValues := make([]cty.Value, len(require.Plugins))

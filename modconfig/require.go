@@ -20,8 +20,10 @@ type Require struct {
 	Plugins                          []*PluginVersion `hcl:"plugin,block"`
 	DeprecatedSteampipeVersionString string           `hcl:"steampipe,optional"`
 
-	// this is manually parsed
-	App *AppRequire
+	// one of these may be set
+	Flowpipe  *AppRequire `hcl:"flowpipe,block"`
+	Steampipe *AppRequire `hcl:"steampipe,block"`
+	Powerpipe *AppRequire `hcl:"powerpipe,block"`
 
 	Mods []*ModVersionConstraint `hcl:"mod,block"`
 	// map keyed by name [and alias]
@@ -30,6 +32,9 @@ type Require struct {
 	DeclRange hcl.Range
 	// range of the require block type
 	TypeRange hcl.Range
+
+	// the app require block - reference it as 'app' to avoid having to check all the blocks
+	app *AppRequire
 }
 
 func NewRequire() *Require {
@@ -40,7 +45,9 @@ func NewRequire() *Require {
 
 func (r *Require) Clone() *Require {
 	require := NewRequire()
-	require.App = r.App
+	require.Flowpipe = r.Flowpipe
+	require.Steampipe = r.Steampipe
+	require.Powerpipe = r.Powerpipe
 	require.Plugins = r.Plugins
 	require.Mods = r.Mods
 	require.DeclRange = r.DeclRange
@@ -81,6 +88,11 @@ func (r *Require) initialise(modBlock *hcl.Block) hcl.Diagnostics {
 	r.DeclRange = hclhelpers.BlockRange(requireBlock)
 	r.TypeRange = requireBlock.TypeRange
 
+	// initialise the app block (powerpipe/steampipe/flowpipe)
+	diags = append(diags, r.initialiseAppRequire()...)
+	if diags.HasErrors() {
+		return diags
+	}
 	return r.InitialiseConstraints(requireBlock)
 
 }
@@ -92,8 +104,8 @@ func (r *Require) InitialiseConstraints(requireBlock *hcl.Block) hcl.Diagnostics
 	pluginBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypePlugin))
 	modBlockMap := hclhelpers.BlocksToMap(hclhelpers.FindChildBlocks(requireBlock, schema.BlockTypeMod))
 
-	if r.App != nil {
-		moreDiags := r.App.initialise(requireBlock)
+	if r.app != nil {
+		moreDiags := r.app.initialise(requireBlock)
 		diags = append(diags, moreDiags...)
 	}
 
@@ -117,14 +129,14 @@ func (r *Require) handleDeprecations() hcl.Diagnostics {
 	// the 'steampipe' property is deprecated and replace with a steampipe block
 	if r.DeprecatedSteampipeVersionString != "" {
 		// if there is both a steampipe block and property, fail
-		if r.App != nil {
+		if r.app != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Both 'steampipe' block and deprecated 'steampipe' property are set",
 				Subject:  &r.DeclRange,
 			})
 		} else {
-			r.App = &AppRequire{MinVersionString: r.DeprecatedSteampipeVersionString}
+			r.app = &AppRequire{MinVersionString: r.DeprecatedSteampipeVersionString}
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagWarning,
 				Summary:  "Property 'steampipe' is deprecated for mod require block - use a steampipe block instead",
@@ -139,7 +151,7 @@ func (r *Require) handleDeprecations() hcl.Diagnostics {
 func (r *Require) validateAppVersion(modName string) error {
 	if appVersionConstraint := r.AppVersionConstraint(); appVersionConstraint != nil {
 		if !appVersionConstraint.Check(app_specific.AppVersion) {
-			return fmt.Errorf("%s version %s does not satisfy %s which requires version %s", app_specific.AppName, app_specific.AppVersion.String(), modName, r.App.MinVersionString)
+			return fmt.Errorf("%s version %s does not satisfy %s which requires version %s", app_specific.AppName, app_specific.AppVersion.String(), modName, r.app.MinVersionString)
 		}
 	}
 	return nil
@@ -250,10 +262,49 @@ func (r *Require) Empty() bool {
 }
 
 func (r *Require) AppVersionConstraint() *semver.Constraints {
-	if r.App == nil {
+	if r.app == nil {
 		return nil
 	}
-	return r.App.Constraint
+	return r.app.Constraint
+}
+
+func (r *Require) initialiseAppRequire() hcl.Diagnostics {
+	// ensure the app block matching the app name is set
+	if r.Flowpipe != nil {
+		if app_specific.AppName == "flowpipe" {
+			r.app = r.Flowpipe
+		} else {
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("`blocks of type 'flowpipe' are not expected here"),
+				Subject:  &r.DeclRange,
+			}}
+		}
+	}
+	if r.Steampipe != nil {
+		if app_specific.AppName == "steampipe" {
+			r.app = r.Steampipe
+		} else if app_specific.AppName != "powerpipe" {
+			// powerpipe does not error for steampipe block, but ignores it
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("`blocks of type 'steampipe' are not expected here"),
+				Subject:  &r.DeclRange,
+			}}
+		}
+	}
+	if r.Powerpipe != nil {
+		if app_specific.AppName == "powerpipe" {
+			r.app = r.Powerpipe
+		} else {
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("`blocks of type 'powerpipe' are not expected here"),
+				Subject:  &r.DeclRange,
+			}}
+		}
+	}
+	return nil
 }
 
 // FindRequireBlock finds the require block under the given mod block
