@@ -2,8 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -12,6 +10,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 // A consistent detail message for all "not a valid identifier" diagnostics.
@@ -177,6 +176,7 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	// decode the body
 	diags := decodeHclBody(block.Body, evalCtx, mod, mod)
 	res.handleDecodeDiags(diags)
+
 	return mod, res
 }
 
