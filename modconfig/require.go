@@ -33,7 +33,8 @@ type Require struct {
 	// range of the require block type
 	TypeRange hcl.Range
 
-	// the app require block - reference it as 'app' to avoid having to check all the blocks
+	// the app require block - one of Flowpipe/Steampipe/Powerpipe
+	// reference it as 'app' to avoid having to check all the blocks
 	app *AppRequire
 }
 
