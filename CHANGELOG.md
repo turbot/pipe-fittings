@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v1.3.3 [2024-05-23]
+
+_Bug fixes_
+
+* Fix mod `require` block being rewritten incorrectly when installing a mod if the require block exists but does not contain mod requirements. ([#406](https://github.com/turbot/pipe-fittings/issues/406))
+* Fix install status display when  updating transitive dependencies. 
+
 ## v1.3.2 [2024-05-23]
 
 _Bug fixes_
