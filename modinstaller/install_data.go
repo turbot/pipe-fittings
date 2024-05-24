@@ -27,7 +27,7 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 	return &InstallData{
 		Lock:         workspaceLock,
 		WorkspaceMod: workspaceMod,
-		NewLock:      versionmap.EmptyWorkspaceLock(workspaceLock),
+		NewLock:      workspaceLock.Clone(),
 		allAvailable: make(versionmap.ResolvedVersionConstraintListMap),
 	}
 }

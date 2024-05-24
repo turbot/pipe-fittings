@@ -28,19 +28,19 @@ type WorkspaceLock struct {
 
 	// installed mods is a map of all modfiles found in the mod installation path
 	// (i.e. the mods which are installed)
-	// it is poppulated when we load the lock  file and used to prunine uninsed mods
+	// it is populated when we load the lock  file and used to prune unused mods
 	installedMods DependencyVersionListMap
 }
 
 // EmptyWorkspaceLock creates a new empty workspace lock based,
 // sharing workspace path and installedMods with 'existingLock'
-func EmptyWorkspaceLock(existingLock *WorkspaceLock) *WorkspaceLock {
+func (l *WorkspaceLock) Clone() *WorkspaceLock {
 	return &WorkspaceLock{
-		WorkspacePath:       existingLock.WorkspacePath,
-		ModInstallationPath: filepaths.WorkspaceModPath(existingLock.WorkspacePath),
-		InstallCache:        make(InstalledDependencyVersionsMap),
-		MissingVersions:     make(InstalledDependencyVersionsMap),
-		installedMods:       existingLock.installedMods,
+		WorkspacePath:       l.WorkspacePath,
+		ModInstallationPath: filepaths.WorkspaceModPath(l.WorkspacePath),
+		InstallCache:        l.InstallCache.clone(),
+		MissingVersions:     l.MissingVersions.clone(),
+		installedMods:       l.installedMods.clone(),
 	}
 }
 

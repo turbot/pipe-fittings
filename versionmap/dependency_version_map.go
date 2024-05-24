@@ -82,3 +82,14 @@ func (m InstalledDependencyVersionsMap) GetDependency(path []string) (*Installed
 	}
 	return depVersion, fullPath
 }
+
+func (m InstalledDependencyVersionsMap) clone() InstalledDependencyVersionsMap {
+	res := make(InstalledDependencyVersionsMap)
+	for parent, deps := range m {
+		res[parent] = make(map[string]*InstalledModVersion)
+		for dep, v := range deps {
+			res[parent][dep] = v
+		}
+	}
+	return res
+}

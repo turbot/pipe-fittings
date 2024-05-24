@@ -3,6 +3,7 @@ package modinstaller
 import (
 	"context"
 	"fmt"
+	"golang.org/x/exp/maps"
 	"log/slog"
 	"os"
 	"path"
@@ -36,7 +37,7 @@ type ModInstaller struct {
 	// to be able to calculate changes
 	oldRequire *modconfig.Require
 
-	mods map[string]*modconfig.ModVersionConstraint
+	targetMods map[string]*modconfig.ModVersionConstraint
 
 	// the final resting place of all dependency mods
 	modsPath string
@@ -104,7 +105,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 	if err != nil {
 		return nil, err
 	}
-	i.mods = requiredMods
+	i.targetMods = requiredMods
 
 	return i, nil
 }
@@ -112,17 +113,18 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error {
 	workspaceMod := i.workspaceMod
 
+	// TODO KAI WHAT PULL MOD IS DEFAULT???
+	// SHOULD BE MINIMAL
 	// remove required dependencies from the mod file
-	if len(i.mods) == 0 {
+	if len(i.targetMods) == 0 {
 		workspaceMod.RemoveAllModDependencies()
-
 	} else {
 		// verify all the mods specifed in the args exist in the modfile
-		workspaceMod.RemoveModDependencies(i.mods)
+		workspaceMod.RemoveModDependencies(i.targetMods)
 	}
 
 	// uninstall by calling Install
-	if err := i.installMods(ctx, workspaceMod.Require.Mods, workspaceMod); err != nil {
+	if err := i.installMods(ctx, workspaceMod); err != nil {
 		return err
 	}
 
@@ -189,11 +191,15 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 
 	// if mod args have been provided, add them to the workspace mod requires
 	// (this will replace any existing dependencies of same name)
-	if len(i.mods) > 0 {
-		workspaceMod.AddModDependencies(i.mods)
+	if len(i.targetMods) > 0 {
+		workspaceMod.AddModDependencies(i.targetMods)
+		// remove from the new lock file all the target mods - these will be re-added by the install
+		for _, targetMod := range i.targetMods {
+			delete(i.installData.NewLock.InstallCache, targetMod.Name)
+		}
 	}
 
-	if err := i.installMods(ctx, workspaceMod.Require.Mods, workspaceMod); err != nil {
+	if err := i.installMods(ctx, workspaceMod); err != nil {
 		return err
 	}
 
@@ -294,7 +300,7 @@ func (i *ModInstaller) shouldCommitShadow(ctx context.Context, installError erro
 	return installError == nil || i.force
 }
 
-func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVersionConstraint, parent *modconfig.Mod) (err error) {
+func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (err error) {
 	defer func() {
 		var commitErr error
 		if i.shouldCommitShadow(ctx, err) {
@@ -320,7 +326,20 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 	var errors []error
 	// forceupdate is used for child depdency mods - if the parent is being updated
 	const forceUpdate = false
-	for _, requiredModVersion := range mods {
+
+	// identify the targets
+	var targets []*modconfig.ModVersionConstraint
+	if len(i.targetMods) > 0 {
+		// TODO override the update strategy to latest???
+		//if !viper.IsSet(constants.ArgPull) {
+		//	i.updateStrategy = constants.ModUpdateLatest
+		//}
+		targets = maps.Values(i.targetMods)
+	} else {
+		// if not mods were specified, install all dependencies
+		targets = i.workspaceMod.Require.Mods
+	}
+	for _, requiredModVersion := range targets {
 		// do we have this mod installed for any parent?
 		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, forceUpdate)
 		if err != nil {
@@ -611,12 +630,9 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 
 // is this command targetting this mod - i.e. mod was included in the args - or there were no args
 func (i *ModInstaller) isCommandTargettingMod(modName string) bool {
-	// if there are no args, all mods are targetted
-	if len(i.mods) == 0 {
-		return true
-	}
+
 	// if this mod in the list of updates?
-	_, updateMod := i.mods[modName]
+	_, updateMod := i.targetMods[modName]
 	return updateMod
 }
 
@@ -727,8 +743,8 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 
 	// commandTargettingParent is set when this is a dependency mod and the parent mod is being updated
 
-	// if this command is not targetting this mod or it;s parent, do not update under any circumstances
-	if !(commandTargettingThisMod || commandTargettingParent) {
+	// if this command is not targetting this mod or it's parent, do not update under any circumstances
+	if !(commandTargettingThisMod || commandTargettingParent || len(i.targetMods) == 0) {
 		return false, nil
 	}
 
