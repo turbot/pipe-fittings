@@ -27,7 +27,7 @@ type Require struct {
 
 	Mods []*ModVersionConstraint `hcl:"mod,block"`
 	// map keyed by name [and alias]
-	modMap map[string]*ModVersionConstraint
+	ModMap map[string]*ModVersionConstraint
 	// range of the require block body
 	DeclRange hcl.Range
 	// range of the require block type
@@ -40,7 +40,7 @@ type Require struct {
 
 func NewRequire() *Require {
 	return &Require{
-		modMap: make(map[string]*ModVersionConstraint),
+		ModMap: make(map[string]*ModVersionConstraint),
 	}
 }
 
@@ -59,8 +59,8 @@ func (r *Require) Clone() *Require {
 	// we need to shallow copy the map
 	// if we don't, when the other one gets
 	// modified - this one gets as well
-	for k, mvc := range r.modMap {
-		require.modMap[k] = mvc
+	for k, mvc := range r.ModMap {
+		require.ModMap[k] = mvc
 	}
 	return require
 }
@@ -121,7 +121,7 @@ func (r *Require) InitialiseConstraints(requireBlock *hcl.Block) hcl.Diagnostics
 		diags = append(diags, moreDiags...)
 		if !diags.HasErrors() {
 			// key map entry by name [and alias]
-			r.modMap[m.Name] = m
+			r.ModMap[m.Name] = m
 		}
 	}
 	return diags
@@ -211,13 +211,13 @@ func (r *Require) AddModDependencies(newModVersions map[string]*ModVersionConstr
 
 	// first rebuild the mod map
 	for name, newVersion := range newModVersions {
-		r.modMap[name] = newVersion
+		r.ModMap[name] = newVersion
 	}
 
 	// now update the mod array from the map
-	var newMods = make([]*ModVersionConstraint, len(r.modMap))
+	var newMods = make([]*ModVersionConstraint, len(r.ModMap))
 	idx := 0
-	for _, requiredVersion := range r.modMap {
+	for _, requiredVersion := range r.ModMap {
 		newMods[idx] = requiredVersion
 		idx++
 	}
@@ -230,12 +230,12 @@ func (r *Require) AddModDependencies(newModVersions map[string]*ModVersionConstr
 func (r *Require) RemoveModDependencies(versions map[string]*ModVersionConstraint) {
 	// first rebuild the mod map
 	for name := range versions {
-		delete(r.modMap, name)
+		delete(r.ModMap, name)
 	}
 	// now update the mod array from the map
-	var newMods = make([]*ModVersionConstraint, len(r.modMap))
+	var newMods = make([]*ModVersionConstraint, len(r.ModMap))
 	idx := 0
-	for _, requiredVersion := range r.modMap {
+	for _, requiredVersion := range r.ModMap {
 		newMods[idx] = requiredVersion
 		idx++
 	}
@@ -250,7 +250,7 @@ func (r *Require) RemoveAllModDependencies() {
 }
 
 func (r *Require) GetModDependency(name string /*,alias string*/) *ModVersionConstraint {
-	return r.modMap[name]
+	return r.ModMap[name]
 }
 
 func (r *Require) ContainsMod(requiredModVersion *ModVersionConstraint) bool {

@@ -34,13 +34,13 @@ type WorkspaceLock struct {
 
 // EmptyWorkspaceLock creates a new empty workspace lock based,
 // sharing workspace path and installedMods with 'existingLock'
-func (l *WorkspaceLock) Clone() *WorkspaceLock {
+func EmptyWorkspaceLock(existingLock *WorkspaceLock) *WorkspaceLock {
 	return &WorkspaceLock{
-		WorkspacePath:       l.WorkspacePath,
-		ModInstallationPath: filepaths.WorkspaceModPath(l.WorkspacePath),
-		InstallCache:        l.InstallCache.clone(),
-		MissingVersions:     l.MissingVersions.clone(),
-		installedMods:       l.installedMods.clone(),
+		WorkspacePath:       existingLock.WorkspacePath,
+		ModInstallationPath: filepaths.WorkspaceModPath(existingLock.WorkspacePath),
+		InstallCache:        make(InstalledDependencyVersionsMap),
+		MissingVersions:     make(InstalledDependencyVersionsMap),
+		installedMods:       existingLock.installedMods,
 	}
 }
 

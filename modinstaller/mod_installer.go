@@ -113,14 +113,21 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error {
 	workspaceMod := i.workspaceMod
 
-	// TODO KAI WHAT PULL MOD IS DEFAULT???
-	// SHOULD BE MINIMAL
 	// remove required dependencies from the mod file
 	if len(i.targetMods) == 0 {
 		workspaceMod.RemoveAllModDependencies()
 	} else {
-		// verify all the mods specifed in the args exist in the modfile
 		workspaceMod.RemoveModDependencies(i.targetMods)
+
+		// because we actually call installMods to uninstall, invert the targets
+		var newTargets = map[string]*modconfig.ModVersionConstraint{}
+		root := i.workspaceMod.ShortName
+		for _, mod := range i.installData.Lock.InstallCache[root] {
+			if _, ok := i.targetMods[mod.Name]; !ok {
+				newTargets[mod.Name] = i.workspaceMod.Require.ModMap[mod.Name]
+			}
+		}
+		i.targetMods = newTargets
 	}
 
 	// uninstall by calling Install
@@ -193,10 +200,18 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 	// (this will replace any existing dependencies of same name)
 	if len(i.targetMods) > 0 {
 		workspaceMod.AddModDependencies(i.targetMods)
-		// remove from the new lock file all the target mods - these will be re-added by the install
-		for _, targetMod := range i.targetMods {
-			delete(i.installData.NewLock.InstallCache, targetMod.Name)
+		// add to the new lock file install cache all top level mods which are NOT target mods
+		root := i.workspaceMod.ShortName
+		// iterate through all mods in the lock file from the root downward - if the top level dep is not in the targets,
+
+		//add the whole dep tree to the new lock
+		for _, mod := range i.installData.Lock.InstallCache[root] {
+			if _, ok := i.targetMods[mod.Name]; !ok {
+				i.installData.NewLock.InstallCache.AddDependency(root, mod)
+				i.copyDependenciesRecursively(mod.DependencyPath())
+			}
 		}
+
 	}
 
 	if err := i.installMods(ctx, workspaceMod); err != nil {
@@ -227,6 +242,13 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 	}
 	return nil
+}
+
+func (i *ModInstaller) copyDependenciesRecursively(modName string) {
+	for _, mod := range i.installData.Lock.InstallCache[modName] {
+		i.installData.NewLock.InstallCache.AddDependency(modName, mod)
+		i.copyDependenciesRecursively(mod.DependencyPath())
+	}
 }
 
 func (i *ModInstaller) GetModList() string {
