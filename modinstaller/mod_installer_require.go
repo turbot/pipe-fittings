@@ -40,7 +40,7 @@ func (i *ModInstaller) updateModFile() error {
 		changes = i.buildChangeSetForRequireDelete(oldRequire, newRequire)
 	} else if i.shouldCreateRequireBlock(oldRequire, newRequire) {
 		changes = i.buildChangeSetForRequireCreate(oldRequire, newRequire)
-	} else if !newRequire.Empty() && !oldRequire.Empty() {
+	} else if !newRequire.Empty() {
 		changes = i.calculateChangeSet(oldRequire, newRequire)
 	}
 
@@ -72,7 +72,12 @@ func (i *ModInstaller) shouldDeleteRequireBlock(oldRequire *modconfig.Require, n
 }
 
 func (i *ModInstaller) shouldCreateRequireBlock(oldRequire *modconfig.Require, newRequire *modconfig.Require) bool {
-	return !newRequire.Empty() && oldRequire.Empty()
+	// NOTE;: only create a new require block if there is NO require block currently
+	// if there is an mepty require block we just update it
+	// we can detect no require block by examining the TypeRange
+	currentModHasRequireBlock := oldRequire.TypeRange.Start.Byte != 0
+
+	return !newRequire.Empty() && !currentModHasRequireBlock
 }
 
 func (i *ModInstaller) buildChangeSetForRequireDelete(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
@@ -92,17 +97,10 @@ func (i *ModInstaller) buildChangeSetForRequireCreate(oldRequire *modconfig.Requ
 	var body *hclwrite.Body
 	var insertOffset int
 
-	if oldRequire.TypeRange.Start.Byte != 0 {
-		// this means that there is a require block
-		// but is probably empty
-		body = f.Body()
-		insertOffset = oldRequire.TypeRange.End.Byte - 1
-	} else {
-		// we don't have a require block at all
-		// let's create one to append to
-		body = f.Body().AppendNewBlock("require", nil).Body()
-		insertOffset = i.workspaceMod.DeclRange.End.Byte - 1
-	}
+	// we don't have a require block at all
+	// let's create one to append to
+	body = f.Body().AppendNewBlock("require", nil).Body()
+	insertOffset = i.workspaceMod.DeclRange.End.Byte - 1
 
 	for _, mvc := range newRequire.Mods {
 		newBlock := i.createNewModRequireBlock(mvc)
