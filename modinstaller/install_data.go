@@ -87,7 +87,7 @@ func (d *InstallData) onInstallComplete() error {
 		// if they are both version constraints, compare the versions
 		case oldDep.DependencyVersion.Version != nil && newDep.DependencyVersion.Version != nil:
 			switch {
-			case oldDep.DependencyVersion.Version.GreaterThan(newDep.DependencyVersion.Version):
+			case newDep.DependencyVersion.Version.GreaterThan(oldDep.DependencyVersion.Version):
 				d.Upgraded = append(d.Upgraded, fullPath)
 			case newDep.DependencyVersion.Version.LessThan(oldDep.DependencyVersion.Version):
 				d.Downgraded = append(d.Downgraded, fullPath)
