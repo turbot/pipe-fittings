@@ -42,7 +42,7 @@ func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
 		},
 		// TODO: hack to serialise pipeline name because HclResourceImpl is not serialised
 		PipelineName: pipelineFullName,
-		Params:       map[string]*PipelineParam{},
+		Params:       []PipelineParam{},
 		mod:          mod,
 	}
 
@@ -69,12 +69,21 @@ type Pipeline struct {
 	// Unparsed JSON raw message, needed so we can unmarshall the step JSON into the correct struct
 	StepsRawJson json.RawMessage `json:"-"`
 
-	Steps           []PipelineStep            `json:"steps,omitempty"`
-	OutputConfig    []PipelineOutput          `json:"outputs,omitempty"`
-	Params          map[string]*PipelineParam `json:"params"`
-	FileName        string                    `json:"file_name"`
-	StartLineNumber int                       `json:"start_line_number"`
-	EndLineNumber   int                       `json:"end_line_number"`
+	Steps           []PipelineStep   `json:"steps,omitempty"`
+	OutputConfig    []PipelineOutput `json:"outputs,omitempty"`
+	Params          []PipelineParam  `json:"params,omitempty"`
+	FileName        string           `json:"file_name"`
+	StartLineNumber int              `json:"start_line_number"`
+	EndLineNumber   int              `json:"end_line_number"`
+}
+
+func (p *Pipeline) GetParam(paramName string) *PipelineParam {
+	for _, param := range p.Params {
+		if param.Name == paramName {
+			return &param
+		}
+	}
+	return nil
 }
 
 func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -88,15 +97,16 @@ func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error 
 
 	// Lists out all the pipeline params that don't have a default value
 	pipelineParamsWithNoDefaultValue := map[string]bool{}
-	for k, p := range p.Params {
-		if p.Default.IsNull() && !p.Optional {
-			pipelineParamsWithNoDefaultValue[k] = true
+	for _, v := range p.Params {
+		if v.Default.IsNull() && !v.Optional {
+			pipelineParamsWithNoDefaultValue[v.Name] = true
 		}
 	}
 
 	for k, v := range params {
-		param, ok := p.Params[k]
-		if !ok {
+
+		param := p.GetParam(k)
+		if param == nil {
 			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("unknown parameter specified '%s'", k)))
 			continue
 		}
@@ -136,17 +146,17 @@ func (p *Pipeline) CoercePipelineParams(params map[string]string) (map[string]in
 
 	// Lists out all the pipeline params that don't have a default value
 	pipelineParamsWithNoDefaultValue := map[string]bool{}
-	for k, p := range p.Params {
+	for _, p := range p.Params {
 		if p.Default.IsNull() && !p.Optional {
-			pipelineParamsWithNoDefaultValue[k] = true
+			pipelineParamsWithNoDefaultValue[p.Name] = true
 		}
 	}
 
 	res := map[string]interface{}{}
 
 	for k, v := range params {
-		param, ok := p.Params[k]
-		if !ok {
+		param := p.GetParam(k)
+		if param == nil {
 			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("unknown parameter specified '%s'", k)))
 			continue
 		}
@@ -354,21 +364,27 @@ func (p *Pipeline) Equals(other *Pipeline) bool {
 		return false
 	}
 
+	// Order of params does not matter, but the value does
 	if len(p.Params) != len(other.Params) {
 		return false
 	}
 
-	for k, v := range p.Params {
-		if _, ok := other.Params[k]; !ok {
+	// Compare param values
+	for _, v := range p.Params {
+		otherParam := other.GetParam(v.Name)
+		if otherParam == nil {
 			return false
-		} else if !v.Equals(other.Params[k]) {
+		}
+
+		if !v.Equals(otherParam) {
 			return false
 		}
 	}
 
 	// catch name change of the other param
-	for k := range other.Params {
-		if _, ok := p.Params[k]; !ok {
+	for _, v := range other.Params {
+		pParam := p.GetParam(v.Name)
+		if pParam == nil {
 			return false
 		}
 	}
