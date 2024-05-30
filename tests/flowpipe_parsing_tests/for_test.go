@@ -130,7 +130,7 @@ func TestParamsProcessing(t *testing.T) {
 		return
 	}
 
-	variable := pipeline.Params["users"]
+	variable := pipeline.GetParam("users")
 	if variable == nil {
 		assert.Fail("users variable not found")
 		return
@@ -140,8 +140,8 @@ func TestParamsProcessing(t *testing.T) {
 	evalContext.Variables = map[string]cty.Value{}
 
 	params := map[string]cty.Value{}
-	for k, v := range pipeline.Params {
-		params[k] = v.Default
+	for _, v := range pipeline.Params {
+		params[v.Name] = v.Default
 	}
 
 	evalContext.Variables["param"] = cty.ObjectVal(params)

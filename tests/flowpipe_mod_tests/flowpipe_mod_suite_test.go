@@ -1380,8 +1380,8 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	}
 
 	assert.Equal(1, len(githubIssuePipeline.Params))
-	assert.NotNil(githubIssuePipeline.Params["gh_repo"])
-	assert.Equal("hello-world", githubIssuePipeline.Params["gh_repo"].Default.AsString())
+	assert.NotNil(githubIssuePipeline.GetParam("gh_repo"))
+	assert.Equal("hello-world", githubIssuePipeline.GetParam("gh_repo").Default.AsString())
 
 	githubGetIssueWithNumber := pipelines["test_mod.pipeline.github_get_issue_with_number"]
 	if githubGetIssueWithNumber == nil {
@@ -1390,8 +1390,8 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	}
 
 	assert.Equal(2, len(githubGetIssueWithNumber.Params))
-	assert.Equal("cty.String", githubGetIssueWithNumber.Params["github_token"].Type.GoString())
-	assert.Equal("cty.Number", githubGetIssueWithNumber.Params["github_issue_number"].Type.GoString())
+	assert.Equal("cty.String", githubGetIssueWithNumber.GetParam("github_token").Type.GoString())
+	assert.Equal("cty.Number", githubGetIssueWithNumber.GetParam("github_issue_number").Type.GoString())
 
 	triggers := mod.ResourceMaps.Triggers
 
@@ -1832,6 +1832,33 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeEvent])
 	assert.Equal(map[string]string{"restrictedActions": "def", "foo": "bar"}, *step.GetLoopConfig().(*modconfig.LoopFunctionStep).Env)
+}
+
+func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_param_order", workspace.WithCredentials(map[string]credential.Credential{}))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	pipelines := mod.ResourceMaps.Pipelines
+	pipeline := pipelines["test_mod.pipeline.github_issue"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	assert.Equal(3, len(pipeline.Params))
+	assert.Equal("gh_repo", pipeline.Params[0].Name)
+	assert.Equal("azure_repo", pipeline.Params[1].Name)
+	assert.Equal("gcp_repo", pipeline.Params[2].Name)
 }
 
 // In order for 'go test' to run this suite, we need to create

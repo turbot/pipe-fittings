@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.3.4 [tbd]
+
+_Bug fixes_
+
+* Params should be ordered as defined in the pipeline definition ([#408](https://github.com/turbot/pipe-fittings/issues/408))
+
 ## v1.3.3 [2024-05-23]
 
 _Bug fixes_
