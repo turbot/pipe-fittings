@@ -14,7 +14,7 @@ require (
 	github.com/go-playground/validator/v10 v10.15.5
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/hcl/v2 v2.20.0
-	github.com/jackc/pgconn v1.14.1
+	github.com/jackc/pgconn v1.14.3
 	github.com/karrick/gows v0.3.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-isatty v0.0.19
@@ -52,7 +52,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/iancoleman/strcase v0.3.0
-	github.com/jackc/pgx/v5 v5.5.4
+	github.com/jackc/pgx/v5 v5.6.0
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/steampipe-plugin-code v0.7.0
@@ -123,7 +123,7 @@ require (
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
 	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect

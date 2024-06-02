@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.3.4 [tbd]
+
+_What's new_
+
+* Updated `pgx` and `pgconn` to latest versions.
+
 ## v1.3.4 [2024-05-31]
 
 _Bug fixes_
