@@ -19,6 +19,7 @@ const (
 	ArgDryRun                  = "dry-run"
 	ArgEnvironment             = "environment"
 	ArgExport                  = "export"
+	ArgEventStore              = "event-store"
 	ArgForce                   = "force"
 	ArgHeader                  = "header"
 	ArgHelp                    = "help"
