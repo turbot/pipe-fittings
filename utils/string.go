@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"math/rand"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -31,4 +33,15 @@ func CapitalizeFirst(s string) string {
 	}
 	r, size := utf8.DecodeRuneInString(s)
 	return string(unicode.ToUpper(r)) + s[size:]
+}
+
+// RandomString generates a random string of length n
+func RandomString(n int) string {
+	const letters = "abcdefghijklmnopqrstuvwxyz"
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
