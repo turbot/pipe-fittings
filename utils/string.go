@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"math/rand"
-	"time"
+	"crypto/rand"
+	"encoding/base64"
 	"unicode"
 	"unicode/utf8"
 
@@ -35,13 +35,19 @@ func CapitalizeFirst(s string) string {
 	return string(unicode.ToUpper(r)) + s[size:]
 }
 
-// RandomString generates a random string of length n
+// RandomString generates a random string of length n.
 func RandomString(n int) string {
-	const letters = "abcdefghijklmnopqrstuvwxyz"
-	rand.Seed(time.Now().UnixNano())
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+	if n <= 0 {
+		return ""
 	}
-	return string(b)
+
+	// Generate n random bytes
+	randomBytes := make([]byte, n)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return ""
+	}
+
+	// Encode the random bytes to a base64 string and return the first n characters
+	randomString := base64.URLEncoding.EncodeToString(randomBytes)
+	return randomString[:n]
 }
