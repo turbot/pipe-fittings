@@ -67,6 +67,8 @@ func NewUniqueNameGenerator() *UniqueNameGenerator {
 
 // GetUniqueName returns a unique name based on the input name
 // If the input name is not unique, a random lowercase string is appended to the name
+// This is used in steampipe and powerpipe to ensure unique column names in JSON output
+// when same columns are requested.
 func (g *UniqueNameGenerator) GetUniqueName(name string) string {
 	// ensure a unique column name
 	for {
