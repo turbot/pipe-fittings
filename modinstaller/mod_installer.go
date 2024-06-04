@@ -710,23 +710,16 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 
 // determine if we should update this mod, and if so whether there is an update available
 func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledModVersion, requiredModVersion *modconfig.ModVersionConstraint, commandTargettingParent bool) (bool, error) {
-	// so should we update?
-	// if commandTargettingParent is set or if the required version constraint is different to the locked version constraint, update
+	// user non-method, injecting updateChecker interface to make unit testing easier
+	return shouldUpdateMod(installedVersion, requiredModVersion, commandTargettingParent, i)
+}
 
-	// does the current version satisfy the required version constraint
-	isSatisfied := installedVersion.SatisfiesConstraint(requiredModVersion)
-
-	// if this command is not targetting this mod or it's parent, do not update under any circumstances
-	if !(commandTargettingParent || len(i.targetMods) == 0) {
-		return false, nil
-	}
-
-	commitCheck := false
-	// if this command IS targetting this mod, a[pply the update strategy
-	switch i.updateStrategy {
+func getUpdateOperations(requiredModVersion *modconfig.ModVersionConstraint, updateStrategy string) (commitCheck bool, updatedVersionCheck bool) {
+	switch updateStrategy {
 	case constants.ModUpdateFull:
 		// 'ModUpdateFull' - check everything for both latest and accuracy
 		commitCheck = true
+		updatedVersionCheck = true
 
 	case constants.ModUpdateLatest:
 		// 'ModUpdateLatest' update everything to latest, but only branches - not tags - are commit checked (which is the same as latest)
@@ -734,64 +727,36 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 		if requiredModVersion.BranchName != "" {
 			commitCheck = true
 		}
+		updatedVersionCheck = true
+
 	case constants.ModUpdateDevelopment:
 		// 'ModUpdateDevelopment' updates branches, file system and broken constraints to latest, leave satisfied constraints unchanged
 
-		// if constraint is not satisfied, update
-		if !isSatisfied {
-			return true, nil
-		}
-		// if there is a (satisfied) version constraint, do not update
-		if requiredModVersion.VersionConstraint() != nil {
-			return false, nil
-		}
 		// if there is a branch constraint, do a commit check
 		if requiredModVersion.BranchName != "" {
 			commitCheck = true
 		}
 
 	case constants.ModUpdateMinimal:
-		// 'ModUpdateDevelopment' only updates broken constraints, do not check branches for new commits
-		return !isSatisfied, nil
+		// 'ModUpdateMinimal' only updates broken constraints, do not check branches for new commits
 
 	}
+	return commitCheck, updatedVersionCheck
+}
 
-	// ok to get here, we will see if an update is available.
-
-	// handle file separately??
-	if requiredModVersion.FilePath != "" {
-		// so there is a file path - return true as child dependency requirements may have changed
-		return true, nil
-	}
-
-	// if the constraint is a version, check for available versions
-	if requiredModVersion.VersionConstraint() != nil {
-		// get available versions for this mod
-		includePrerelease := requiredModVersion.IsPrerelease()
-		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
-		if err != nil {
-			return false, err
-		}
-
-		updateAvailable, err := i.newerVersionAvailable(requiredModVersion, installedVersion.Version, availableVersions)
-		if err != nil {
-			return false, err
-		}
-		if updateAvailable {
-			return true, nil
-		}
-	}
-
-	// do we need to perform a a commit check?
-	if !commitCheck {
-		return false, nil
-	}
-
-	return i.newCommitAvailable(installedVersion)
+func (i *ModInstaller) getUpdateStrategy() string {
+	return i.updateStrategy
 }
 
 // determine whether there is a newer mod version avoilable which satisfies the dependency version constraint
-func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version, availableVersions versionmap.ResolvedVersionConstraintList) (bool, error) {
+func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version) (bool, error) {
+	// get available versions for this mod
+	includePrerelease := requiredVersion.IsPrerelease()
+	availableVersions, err := i.installData.getAvailableModVersions(requiredVersion.Name, includePrerelease)
+	if err != nil {
+		return false, err
+	}
+
 	latestVersion, err := i.getModRefSatisfyingVersionConstraint(requiredVersion, availableVersions)
 	if err != nil {
 		return false, err
@@ -809,8 +774,7 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 	switch {
 	case version.Branch != "":
 		latestCommit, err = i.getLatestCommitForBranch(version)
-	case version.Version != nil:
-
+	case version.Version != nil, version.Tag != "":
 		latestCommit, err = i.getLatestCommitForTag(version)
 	case version.FilePath != "":
 		// TODO CHECK FILE VERSIONS? OR EXPECT TO NEVER GET HERE
@@ -899,10 +863,11 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 }
 
 func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.InstalledModVersion) (string, error) {
-	// a version must be set to call this function
-	if installedVersion.Version == nil {
-		return "", fmt.Errorf("getLatestCommitForTag called but Installed version has no version")
+	// a version or tag must be set to call this function
+	if installedVersion.Version == nil && installedVersion.Tag == "" {
+		return "", fmt.Errorf("getLatestCommitForTag called but Installed version has no version or tag")
 	}
+
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
 	repo, err := i.openRepo(modPath)
