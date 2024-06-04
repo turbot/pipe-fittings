@@ -40,7 +40,7 @@ func (d *InstallData) onModInstalled(installedMod *DependencyMod, parent *modcon
 }
 
 // addExisting is called when a dependency is satisfied by a mod which is already installed
-// (perhaps as a depdency of another mod)
+// (perhaps as a dependency of another mod)
 func (d *InstallData) addExisting(existingDep *DependencyMod, parent *modconfig.Mod) {
 	// update lock
 	parentPath := parent.GetInstallCacheKey()

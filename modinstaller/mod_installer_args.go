@@ -67,19 +67,25 @@ func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.M
 func (i *ModInstaller) getUpdateVersion(modArg string, modVersion *modconfig.ModVersionConstraint) (*modconfig.ModVersionConstraint, error) {
 	// verify the mod is already installed
 	if i.installData.Lock.GetMod(modVersion.Name, i.workspaceMod) == nil {
-		return nil, fmt.Errorf("cannot update '%s' as it is not installed", modArg)
+		return nil, fmt.Errorf("cannot update '%s' as it is not a direct dependency of this workspace", modArg)
 	}
 
 	// find the current dependency with this mod name
 	// - this is what we will be using, to ensure we keep the same version constraint
 	currentDependency := i.workspaceMod.GetModDependency(modVersion.Name)
 	if currentDependency == nil {
-		return nil, fmt.Errorf("cannot update '%s' as it is not a dependency of this workspace", modArg)
+		return nil, fmt.Errorf("cannot update '%s' as it is not a direct dependency of this workspace", modArg)
 	}
 
 	// it is not valid to specify a mod version - we will set the constraint from the modfile
 	if modVersion.HasVersion() {
 		return nil, fmt.Errorf("invalid arg '%s' - cannot specify a version when updating", modArg)
+	}
+	if modVersion.BranchName != "" {
+		return nil, fmt.Errorf("invalid arg '%s' - cannot specify a branch when updating", modArg)
+	}
+	if modVersion.FilePath != "" {
+		return nil, fmt.Errorf("invalid arg '%s' - cannot update mod referenced via filepath", modArg)
 	}
 	return currentDependency, nil
 }

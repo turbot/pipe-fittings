@@ -36,7 +36,7 @@ type ModInstaller struct {
 	// to be able to calculate changes
 	oldRequire *modconfig.Require
 
-	mods map[string]*modconfig.ModVersionConstraint
+	targetMods map[string]*modconfig.ModVersionConstraint
 
 	// the final resting place of all dependency mods
 	modsPath string
@@ -77,11 +77,6 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		updateStrategy: opts.UpdateStrategy,
 	}
 
-	// default update strategy to "latest"
-	if i.updateStrategy == "" {
-		i.updateStrategy = constants.ModUpdateLatest
-	}
-
 	if opts.WorkspaceMod.Require != nil {
 		i.oldRequire = opts.WorkspaceMod.Require.Clone()
 	}
@@ -104,7 +99,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 	if err != nil {
 		return nil, err
 	}
-	i.mods = requiredMods
+	i.targetMods = requiredMods
 
 	return i, nil
 }
@@ -113,16 +108,14 @@ func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error
 	workspaceMod := i.workspaceMod
 
 	// remove required dependencies from the mod file
-	if len(i.mods) == 0 {
+	if len(i.targetMods) == 0 {
 		workspaceMod.RemoveAllModDependencies()
-
 	} else {
-		// verify all the mods specifed in the args exist in the modfile
-		workspaceMod.RemoveModDependencies(i.mods)
+		workspaceMod.RemoveModDependencies(i.targetMods)
 	}
 
 	// uninstall by calling Install
-	if err := i.installMods(ctx, workspaceMod.Require.Mods, workspaceMod); err != nil {
+	if err := i.installMods(ctx, workspaceMod); err != nil {
 		return err
 	}
 
@@ -189,11 +182,11 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 
 	// if mod args have been provided, add them to the workspace mod requires
 	// (this will replace any existing dependencies of same name)
-	if len(i.mods) > 0 {
-		workspaceMod.AddModDependencies(i.mods)
+	if len(i.targetMods) > 0 {
+		workspaceMod.AddModDependencies(i.targetMods)
 	}
 
-	if err := i.installMods(ctx, workspaceMod.Require.Mods, workspaceMod); err != nil {
+	if err := i.installMods(ctx, workspaceMod); err != nil {
 		return err
 	}
 
@@ -278,7 +271,6 @@ func (i *ModInstaller) commitShadow(ctx context.Context) error {
 		destination := filepath.Join(i.modsPath, entry.Name())
 		slog.Debug("copying", source, destination)
 		if err := copy.Copy(source, destination); err != nil {
-			// return sperr.WrapWithRootMessage(err, "could not commit shadow directory '%s'", entry.Name())
 			return fmt.Errorf("could not commit shadow directory '%s': %w", entry.Name(), err)
 		}
 	}
@@ -294,7 +286,7 @@ func (i *ModInstaller) shouldCommitShadow(ctx context.Context, installError erro
 	return installError == nil || i.force
 }
 
-func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVersionConstraint, parent *modconfig.Mod) (err error) {
+func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (err error) {
 	defer func() {
 		var commitErr error
 		if i.shouldCommitShadow(ctx, err) {
@@ -318,17 +310,19 @@ func (i *ModInstaller) installMods(ctx context.Context, mods []*modconfig.ModVer
 	}()
 
 	var errors []error
-	// forceupdate is used for child depdency mods - if the parent is being updated
-	const forceUpdate = false
-	for _, requiredModVersion := range mods {
+
+	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
+		// if we are updating dependencyMod, we should update all its children
+		commandTargettingMod := i.isCommandTargettingMod(requiredModVersion)
+
 		// do we have this mod installed for any parent?
-		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, forceUpdate)
+		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, commandTargettingMod)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 
-		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, forceUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, commandTargettingMod); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -363,25 +357,23 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	}
 
 	var errors []error
-	// if dependencyMod we must install it
-	if dependencyMod == nil {
-		// find a gitref to install
-		var err error
-		dependencyMod, err = i.install(ctx, requiredModVersion, parent)
-		if err != nil {
-			return err
-		}
 
+	// if dependencyMod is nil, this means it is not installed. If this mod or it's parent is one of the targets, we must install it
+	if dependencyMod == nil {
+		if commandTargettingParent {
+			// find a gitref to install
+			var err error
+			dependencyMod, err = i.install(ctx, requiredModVersion, parent)
+			if err != nil {
+				return err
+			}
+		} else {
+			return nil
+		}
 	} else {
 		// this mod is already installed - just update the install data
 		i.installData.addExisting(dependencyMod, parent)
 		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already Installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
-	}
-
-	// if we are updating dependencyMod, we should update all its children
-	// set the value of commandTargettingParent to pass down to child mods
-	if !commandTargettingParent {
-		commandTargettingParent = i.isCommandTargettingMod(dependencyMod.Mod.DependencyName)
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
@@ -398,7 +390,10 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 		}
 	}
 
-	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
+	if len(errors) > 0 {
+		return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
+	}
+	return nil
 }
 
 func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (installedMod *DependencyMod, err error) {
@@ -609,15 +604,14 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 	return resolvedRef, modDef, nil
 }
 
-// is this command targetting this mod - i.e. mod was included in the args - or there were no args
-func (i *ModInstaller) isCommandTargettingMod(modName string) bool {
-	// if there are no args, all mods are targetted
-	if len(i.mods) == 0 {
+// is this command targetting this mod - i.e. mod was included in the args
+func (i *ModInstaller) isCommandTargettingMod(m *modconfig.ModVersionConstraint) bool {
+	if len(i.targetMods) == 0 {
 		return true
 	}
 	// if this mod in the list of updates?
-	_, updateMod := i.mods[modName]
-	return updateMod
+	constraint, isTarget := i.targetMods[m.Name]
+	return isTarget && constraint.Equals(m)
 }
 
 func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, commandTargettingParent bool) (*DependencyMod, error) {
@@ -716,28 +710,16 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 
 // determine if we should update this mod, and if so whether there is an update available
 func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledModVersion, requiredModVersion *modconfig.ModVersionConstraint, commandTargettingParent bool) (bool, error) {
-	// so should we update?
-	// if commandTargettingParent is set or if the required version constraint is different to the locked version constraint, update
+	// user non-method, injecting updateChecker interface to make unit testing easier
+	return shouldUpdateMod(installedVersion, requiredModVersion, commandTargettingParent, i)
+}
 
-	// does the current version satisfy the required version constraint
-	isSatisfied := installedVersion.SatisfiesConstraint(requiredModVersion)
-
-	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
-	commandTargettingThisMod := i.isCommandTargettingMod(installedVersion.Name)
-
-	// commandTargettingParent is set when this is a dependency mod and the parent mod is being updated
-
-	// if this command is not targetting this mod or it;s parent, do not update under any circumstances
-	if !(commandTargettingThisMod || commandTargettingParent) {
-		return false, nil
-	}
-
-	commitCheck := false
-	// if this command IS targetting this mod, a[pply the update strategy
-	switch i.updateStrategy {
+func getUpdateOperations(requiredModVersion *modconfig.ModVersionConstraint, updateStrategy string) (commitCheck bool, updatedVersionCheck bool) {
+	switch updateStrategy {
 	case constants.ModUpdateFull:
 		// 'ModUpdateFull' - check everything for both latest and accuracy
 		commitCheck = true
+		updatedVersionCheck = true
 
 	case constants.ModUpdateLatest:
 		// 'ModUpdateLatest' update everything to latest, but only branches - not tags - are commit checked (which is the same as latest)
@@ -745,64 +727,36 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 		if requiredModVersion.BranchName != "" {
 			commitCheck = true
 		}
+		updatedVersionCheck = true
+
 	case constants.ModUpdateDevelopment:
 		// 'ModUpdateDevelopment' updates branches, file system and broken constraints to latest, leave satisfied constraints unchanged
 
-		// if constraint is not satisfied, update
-		if !isSatisfied {
-			return true, nil
-		}
-		// if there is a (satisfied) version constraint, do not update
-		if requiredModVersion.VersionConstraint() != nil {
-			return false, nil
-		}
 		// if there is a branch constraint, do a commit check
 		if requiredModVersion.BranchName != "" {
 			commitCheck = true
 		}
-		// TODO handle branch/file system update
+
 	case constants.ModUpdateMinimal:
-		// 'ModUpdateDevelopment' only updates broken constraints, do not check branches for new commits
-		return !isSatisfied, nil
+		// 'ModUpdateMinimal' only updates broken constraints, do not check branches for new commits
 
 	}
+	return commitCheck, updatedVersionCheck
+}
 
-	// ok to get here, we will see if an update is available.
-
-	// handle file separately??
-	if requiredModVersion.FilePath != "" {
-		// so there is a file path - return true as child dependency requirements may have changed
-		return true, nil
-	}
-
-	// if the constraint is a version, check for available versions
-	if requiredModVersion.VersionConstraint() != nil {
-		// get available versions for this mod
-		includePrerelease := requiredModVersion.IsPrerelease()
-		availableVersions, err := i.installData.getAvailableModVersions(requiredModVersion.Name, includePrerelease)
-		if err != nil {
-			return false, err
-		}
-
-		updateAvailable, err := i.newerVersionAvailable(requiredModVersion, installedVersion.Version, availableVersions)
-		if err != nil {
-			return false, err
-		}
-		if updateAvailable {
-			return true, nil
-		}
-	}
-
-	// do we need to perform a a commit check?
-	if !commitCheck {
-		return false, nil
-	}
-
-	return i.newCommitAvailable(installedVersion)
+func (i *ModInstaller) getUpdateStrategy() string {
+	return i.updateStrategy
 }
 
 // determine whether there is a newer mod version avoilable which satisfies the dependency version constraint
-func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version, availableVersions versionmap.ResolvedVersionConstraintList) (bool, error) {
+func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version) (bool, error) {
+	// get available versions for this mod
+	includePrerelease := requiredVersion.IsPrerelease()
+	availableVersions, err := i.installData.getAvailableModVersions(requiredVersion.Name, includePrerelease)
+	if err != nil {
+		return false, err
+	}
+
 	latestVersion, err := i.getModRefSatisfyingVersionConstraint(requiredVersion, availableVersions)
 	if err != nil {
 		return false, err
@@ -820,8 +774,7 @@ func (i *ModInstaller) newCommitAvailable(version *versionmap.InstalledModVersio
 	switch {
 	case version.Branch != "":
 		latestCommit, err = i.getLatestCommitForBranch(version)
-	case version.Version != nil:
-
+	case version.Version != nil, version.Tag != "":
 		latestCommit, err = i.getLatestCommitForTag(version)
 	case version.FilePath != "":
 		// TODO CHECK FILE VERSIONS? OR EXPECT TO NEVER GET HERE
@@ -910,10 +863,11 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 }
 
 func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.InstalledModVersion) (string, error) {
-	// a version must be set to call this function
-	if installedVersion.Version == nil {
-		return "", fmt.Errorf("getLatestCommitForTag called but Installed version has no version")
+	// a version or tag must be set to call this function
+	if installedVersion.Version == nil && installedVersion.Tag == "" {
+		return "", fmt.Errorf("getLatestCommitForTag called but Installed version has no version or tag")
 	}
+
 	// Open the local repository
 	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
 	repo, err := i.openRepo(modPath)
