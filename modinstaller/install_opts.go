@@ -20,13 +20,25 @@ type InstallOpts struct {
 
 func NewInstallOpts(workspaceMod *modconfig.Mod, modsToInstall ...string) *InstallOpts {
 	cmdName := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command).Name()
-	opts := &InstallOpts{
-		WorkspaceMod: workspaceMod,
-		DryRun:       viper.GetBool(constants.ArgDryRun),
-		Force:        viper.GetBool(constants.ArgForce),
-		ModArgs:      utils.TrimGitUrls(modsToInstall),
-		Command:      cmdName,
+
+	// for install command, if there is a target mod, and if the pull strategy has not been explicitly set, set it to latest
+	if cmdName == "install" && len(modsToInstall) > 0 && !viper.IsSet(constants.ArgPull) {
+		viper.Set(constants.ArgPull, constants.ModUpdateIdLatest)
 	}
+	// for uninstall default to minimal
+	if cmdName == "uninstall" {
+		viper.Set(constants.ArgPull, constants.ModUpdateIdMinimal)
+	}
+
+	opts := &InstallOpts{
+		WorkspaceMod:   workspaceMod,
+		DryRun:         viper.GetBool(constants.ArgDryRun),
+		Force:          viper.GetBool(constants.ArgForce),
+		ModArgs:        utils.TrimGitUrls(modsToInstall),
+		Command:        cmdName,
+		UpdateStrategy: viper.GetString(constants.ArgPull),
+	}
+
 	opts.ModArgs = utils.TrimGitUrls(opts.ModArgs)
 	return opts
 }

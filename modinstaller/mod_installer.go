@@ -3,7 +3,6 @@ package modinstaller
 import (
 	"context"
 	"fmt"
-	"golang.org/x/exp/maps"
 	"log/slog"
 	"os"
 	"path"
@@ -78,11 +77,6 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		updateStrategy: opts.UpdateStrategy,
 	}
 
-	// default update strategy to "latest"
-	if i.updateStrategy == "" {
-		i.updateStrategy = constants.ModUpdateLatest
-	}
-
 	if opts.WorkspaceMod.Require != nil {
 		i.oldRequire = opts.WorkspaceMod.Require.Clone()
 	}
@@ -118,16 +112,6 @@ func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error
 		workspaceMod.RemoveAllModDependencies()
 	} else {
 		workspaceMod.RemoveModDependencies(i.targetMods)
-
-		// because we actually call installMods to uninstall, invert the targets
-		var newTargets = map[string]*modconfig.ModVersionConstraint{}
-		root := i.workspaceMod.ShortName
-		for _, mod := range i.installData.Lock.InstallCache[root] {
-			if _, ok := i.targetMods[mod.Name]; !ok {
-				newTargets[mod.Name] = i.workspaceMod.Require.ModMap[mod.Name]
-			}
-		}
-		i.targetMods = newTargets
 	}
 
 	// uninstall by calling Install
@@ -200,18 +184,6 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 	// (this will replace any existing dependencies of same name)
 	if len(i.targetMods) > 0 {
 		workspaceMod.AddModDependencies(i.targetMods)
-		// add to the new lock file install cache all top level mods which are NOT target mods
-		root := i.workspaceMod.ShortName
-		// iterate through all mods in the lock file from the root downward - if the top level dep is not in the targets,
-
-		//add the whole dep tree to the new lock
-		for _, mod := range i.installData.Lock.InstallCache[root] {
-			if _, ok := i.targetMods[mod.Name]; !ok {
-				i.installData.NewLock.InstallCache.AddDependency(root, mod)
-				i.copyDependenciesRecursively(mod.DependencyPath())
-			}
-		}
-
 	}
 
 	if err := i.installMods(ctx, workspaceMod); err != nil {
@@ -242,13 +214,6 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 		}
 	}
 	return nil
-}
-
-func (i *ModInstaller) copyDependenciesRecursively(modName string) {
-	for _, mod := range i.installData.Lock.InstallCache[modName] {
-		i.installData.NewLock.InstallCache.AddDependency(modName, mod)
-		i.copyDependenciesRecursively(mod.DependencyPath())
-	}
 }
 
 func (i *ModInstaller) GetModList() string {
@@ -306,7 +271,6 @@ func (i *ModInstaller) commitShadow(ctx context.Context) error {
 		destination := filepath.Join(i.modsPath, entry.Name())
 		slog.Debug("copying", source, destination)
 		if err := copy.Copy(source, destination); err != nil {
-			// return sperr.WrapWithRootMessage(err, "could not commit shadow directory '%s'", entry.Name())
 			return fmt.Errorf("could not commit shadow directory '%s': %w", entry.Name(), err)
 		}
 	}
@@ -346,30 +310,19 @@ func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (
 	}()
 
 	var errors []error
-	// forceupdate is used for child depdency mods - if the parent is being updated
-	const forceUpdate = false
 
-	// identify the targets
-	var targets []*modconfig.ModVersionConstraint
-	if len(i.targetMods) > 0 {
-		// TODO override the update strategy to latest???
-		//if !viper.IsSet(constants.ArgPull) {
-		//	i.updateStrategy = constants.ModUpdateLatest
-		//}
-		targets = maps.Values(i.targetMods)
-	} else {
-		// if not mods were specified, install all dependencies
-		targets = i.workspaceMod.Require.Mods
-	}
-	for _, requiredModVersion := range targets {
+	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
+		// if we are updating dependencyMod, we should update all its children
+		commandTargettingMod := i.isCommandTargettingMod(requiredModVersion)
+
 		// do we have this mod installed for any parent?
-		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, forceUpdate)
+		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, commandTargettingMod)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 
-		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, forceUpdate); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, commandTargettingMod); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -404,25 +357,23 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	}
 
 	var errors []error
-	// if dependencyMod we must install it
-	if dependencyMod == nil {
-		// find a gitref to install
-		var err error
-		dependencyMod, err = i.install(ctx, requiredModVersion, parent)
-		if err != nil {
-			return err
-		}
 
+	// if dependencyMod is nil, this means it is not installed. If this mod or it's parent is one of the targets, we must install it
+	if dependencyMod == nil {
+		if commandTargettingParent {
+			// find a gitref to install
+			var err error
+			dependencyMod, err = i.install(ctx, requiredModVersion, parent)
+			if err != nil {
+				return err
+			}
+		} else {
+			return nil
+		}
 	} else {
 		// this mod is already installed - just update the install data
 		i.installData.addExisting(dependencyMod, parent)
 		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already Installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
-	}
-
-	// if we are updating dependencyMod, we should update all its children
-	// set the value of commandTargettingParent to pass down to child mods
-	if !commandTargettingParent {
-		commandTargettingParent = i.isCommandTargettingMod(dependencyMod.Mod.DependencyName)
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
@@ -439,7 +390,10 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 		}
 	}
 
-	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
+	if len(errors) > 0 {
+		return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
+	}
+	return nil
 }
 
 func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (installedMod *DependencyMod, err error) {
@@ -650,12 +604,14 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 	return resolvedRef, modDef, nil
 }
 
-// is this command targetting this mod - i.e. mod was included in the args - or there were no args
-func (i *ModInstaller) isCommandTargettingMod(modName string) bool {
-
+// is this command targetting this mod - i.e. mod was included in the args
+func (i *ModInstaller) isCommandTargettingMod(m *modconfig.ModVersionConstraint) bool {
+	if len(i.targetMods) == 0 {
+		return true
+	}
 	// if this mod in the list of updates?
-	_, updateMod := i.targetMods[modName]
-	return updateMod
+	constraint, isTarget := i.targetMods[m.Name]
+	return isTarget && constraint.Equals(m)
 }
 
 func (i *ModInstaller) getModForRequirement(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, commandTargettingParent bool) (*DependencyMod, error) {
@@ -760,13 +716,8 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 	// does the current version satisfy the required version constraint
 	isSatisfied := installedVersion.SatisfiesConstraint(requiredModVersion)
 
-	// is this mod being updated (i.e. is this an update command and this mod was included in the args - or there were no args))
-	commandTargettingThisMod := i.isCommandTargettingMod(installedVersion.Name)
-
-	// commandTargettingParent is set when this is a dependency mod and the parent mod is being updated
-
 	// if this command is not targetting this mod or it's parent, do not update under any circumstances
-	if !(commandTargettingThisMod || commandTargettingParent || len(i.targetMods) == 0) {
+	if !(commandTargettingParent || len(i.targetMods) == 0) {
 		return false, nil
 	}
 
