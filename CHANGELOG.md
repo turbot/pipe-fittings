@@ -2,10 +2,10 @@
 
 Shared Pipes Component
 
-## v1.3.4 [tbd]
+## v1.3.5 [tbd]
 
 _What's new_
-
+* Update mod install to only install or update mods which are command targets (and their dependencies). Default pull mode for install is `latest` if there is a target, and `minimal` if no target is given.  ([#415](https://github.com/turbot/pipe-fittings/issues/415))
 * Updated `pgx` and `pgconn` to latest versions.
 
 ## v1.3.4 [2024-05-31]

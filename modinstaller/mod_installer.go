@@ -312,7 +312,8 @@ func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (
 	var errors []error
 
 	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
-		// if we are updating dependencyMod, we should update all its children
+		// is this mod targetted by the command (i.e. was the mod name passed as an arg
+		// - or else were no args passed, targetting all mods)
 		commandTargettingMod := i.isCommandTargettingMod(requiredModVersion)
 
 		// do we have this mod installed for any parent?
@@ -361,13 +362,13 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	// if dependencyMod is nil, this means it is not installed. If this mod or it's parent is one of the targets, we must install it
 	if dependencyMod == nil {
 		if commandTargettingParent {
-			// find a gitref to install
 			var err error
 			dependencyMod, err = i.install(ctx, requiredModVersion, parent)
 			if err != nil {
 				return err
 			}
 		} else {
+			// nothing further to do
 			return nil
 		}
 	} else {
