@@ -36,8 +36,19 @@ func CapitalizeFirst(s string) string {
 	return string(unicode.ToUpper(r)) + s[size:]
 }
 
-// RandomString generates a random lowercase string of length n.
-func RandomString(n int) string {
+type UniqueNameGenerator struct {
+	lookup map[string]struct{}
+}
+
+// ctor
+func NewUniqueNameGenerator() *UniqueNameGenerator {
+	return &UniqueNameGenerator{
+		lookup: make(map[string]struct{}),
+	}
+}
+
+// randomString generates a random lowercase string of length n.
+func (g *UniqueNameGenerator) randomString(n int) string {
 	const alphabet = "abcdefghijklmnopqrstuvwxyz"
 	if n <= 0 {
 		return ""
@@ -58,22 +69,14 @@ func RandomString(n int) string {
 	return sb.String()
 }
 
-type UniqueNameGenerator struct {
-	lookup map[string]struct{}
-}
-
-// ctor
-func NewUniqueNameGenerator() *UniqueNameGenerator {
-	return &UniqueNameGenerator{
-		lookup: make(map[string]struct{}),
-	}
-}
-
 // GetUniqueName returns a unique name based on the input name
 // If the input name is not unique, a random lowercase string is appended to the name
 // This is used in steampipe and powerpipe to ensure unique column names in JSON output
 // when same columns are requested.
 func (g *UniqueNameGenerator) GetUniqueName(name string) string {
+	// store the original name
+	originalName := name
+
 	// ensure a unique column name
 	for {
 		// check the lookup to see if this name exists
@@ -82,11 +85,7 @@ func (g *UniqueNameGenerator) GetUniqueName(name string) string {
 			break
 		}
 		// name is not unique - generate a new name
-		// store the original name
-		originalName := name
-
-		// generate a new name
-		name = fmt.Sprintf("%s_%s", originalName, RandomString(4))
+		name = fmt.Sprintf("%s_%s", originalName, g.randomString(4))
 	}
 	// add the unique name into the lookup
 	g.lookup[name] = struct{}{}
