@@ -749,7 +749,7 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 		if requiredModVersion.BranchName != "" {
 			commitCheck = true
 		}
-		// TODO handle branch/file system update
+
 	case constants.ModUpdateMinimal:
 		// 'ModUpdateDevelopment' only updates broken constraints, do not check branches for new commits
 		return !isSatisfied, nil
