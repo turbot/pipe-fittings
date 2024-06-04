@@ -2,7 +2,6 @@ package utils
 
 import (
 	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"strings"
 	"unicode"
@@ -39,6 +38,7 @@ func CapitalizeFirst(s string) string {
 
 // RandomString generates a random lowercase string of length n.
 func RandomString(n int) string {
+	const alphabet = "abcdefghijklmnopqrstuvwxyz"
 	if n <= 0 {
 		return ""
 	}
@@ -49,9 +49,13 @@ func RandomString(n int) string {
 		return ""
 	}
 
-	// Encode the random bytes to a base64 string and return the first n characters
-	randomString := base64.URLEncoding.EncodeToString(randomBytes)
-	return strings.ToLower(randomString[:n])
+	// Map each random byte to a character in the alphabet
+	var sb strings.Builder
+	for _, b := range randomBytes {
+		sb.WriteByte(alphabet[int(b)%len(alphabet)])
+	}
+
+	return sb.String()
 }
 
 type UniqueNameGenerator struct {
