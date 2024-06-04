@@ -29,11 +29,3 @@ func (m DependencyVersionListMap) FlatMap() map[string]struct{} {
 	}
 	return res
 }
-
-func (m DependencyVersionListMap) clone() DependencyVersionListMap {
-	clone := make(DependencyVersionListMap)
-	for name, versions := range m {
-		clone[name] = versions
-	}
-	return clone
-}
