@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
+	steampipecloud "github.com/turbot/pipes-sdk-go"
 )
 
 var SteampipeSnapshotSchemaVersion int64 = 20240130

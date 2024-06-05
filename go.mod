@@ -33,7 +33,6 @@ require (
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.9.0
 	github.com/turbot/go-kit v0.10.0-rc.0
-	github.com/turbot/steampipe-cloud-sdk-go v0.6.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.8.0
 	github.com/xlab/treeprint v1.2.0
 	github.com/zclconf/go-cty v1.14.3
@@ -55,6 +54,7 @@ require (
 	github.com/jackc/pgx/v5 v5.6.0
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/turbot/pipes-sdk-go v0.9.1
 	github.com/turbot/steampipe-plugin-code v0.7.0
 	github.com/turbot/terraform-components v0.0.0-20231108031935-358f803c1a8b
 	golang.org/x/oauth2 v0.12.0

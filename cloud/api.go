@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
+	steampipecloud "github.com/turbot/pipes-sdk-go"
 )
 
 func newSteampipeCloudClient(token string) *steampipecloud.APIClient {
