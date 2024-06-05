@@ -69,6 +69,7 @@ const (
 	ArgWorkspaceProfile        = "workspace"
 	ArgConfigPath              = "config-path"
 	ArgBaseUrl                 = "base-url"
+	ArgExecutionId             = "execution-id"
 
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
