@@ -6,7 +6,7 @@ import "reflect"
 type ColumnDef struct {
 	Name         string `json:"name"`
 	DataType     string `json:"data_type"`
-	OriginalName string `json:"original_name"`
+	OriginalName string `json:"original_name,omitempty"`
 	isScalar     *bool
 }
 
