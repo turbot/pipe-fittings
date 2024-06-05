@@ -2,6 +2,7 @@ package modinstaller
 
 import (
 	"github.com/Masterminds/semver/v3"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/versionmap"
 )
@@ -19,20 +20,19 @@ func shouldUpdateMod(installedVersion *versionmap.InstalledModVersion,
 	updateChecker updateChecker) (bool, error) {
 
 	// so should we update?
-	// if commandTargettingParent is set or if the required version constraint is different to the locked version constraint, update
 
 	// if this command is not targetting this mod or it's parent, do not update under any circumstances
 	if !commandTargettingParent {
 		return false, nil
 	}
 
-	// does the current version satisfy the required version constraint - if not we always update
-	if !installedVersion.SatisfiesConstraint(requiredModVersion) {
+	// if there is a file path - always update as child dependency requirements may have changed
+	if requiredModVersion.FilePath != "" {
 		return true, nil
 	}
 
-	// if there is a file path - always update as child dependency requirements may have changed
-	if requiredModVersion.FilePath != "" {
+	// does the current version satisfy the required version constraint - if not we always update
+	if !installedVersion.SatisfiesConstraint(requiredModVersion) {
 		return true, nil
 	}
 
@@ -61,4 +61,31 @@ func shouldUpdateMod(installedVersion *versionmap.InstalledModVersion,
 
 	// do not update!
 	return false, nil
+}
+
+func getUpdateOperations(requiredModVersion *modconfig.ModVersionConstraint, updateStrategy string) (commitCheck bool, updatedVersionCheck bool) {
+	switch updateStrategy {
+	case constants.ModUpdateFull:
+		// 'ModUpdateFull' - check everything for both latest and accuracy
+		commitCheck = true
+		updatedVersionCheck = true
+	case constants.ModUpdateLatest:
+		// 'ModUpdateLatest' update everything to latest, but only branches - not tags - are commit checked (which is the same as latest)
+		// if there is a branch constraint, do a commit check
+		if requiredModVersion.BranchName != "" {
+			commitCheck = true
+		}
+		updatedVersionCheck = true
+	case constants.ModUpdateDevelopment:
+		// 'ModUpdateDevelopment' updates branches, file system and broken constraints to latest,
+		// leave satisfied constraints unchanged, i.e. DO NOT do an updatedVersionCheck
+
+		// if there is a branch constraint, do a commit check
+		if requiredModVersion.BranchName != "" {
+			commitCheck = true
+		}
+	case constants.ModUpdateMinimal:
+		// 'ModUpdateMinimal' only updates broken constraints, do not check branches for new commits
+	}
+	return commitCheck, updatedVersionCheck
 }

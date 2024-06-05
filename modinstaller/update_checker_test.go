@@ -14,11 +14,11 @@ type mockUpdateChecker struct {
 	commitAvailable bool ``
 }
 
-func (m mockUpdateChecker) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version) (bool, error) {
+func (m mockUpdateChecker) newerVersionAvailable(_ *modconfig.ModVersionConstraint, _ *semver.Version) (bool, error) {
 	return m.updateAvailable, nil
 }
 
-func (m mockUpdateChecker) newCommitAvailable(version *versionmap.InstalledModVersion) (bool, error) {
+func (m mockUpdateChecker) newCommitAvailable(_ *versionmap.InstalledModVersion) (bool, error) {
 	return m.commitAvailable, nil
 }
 
