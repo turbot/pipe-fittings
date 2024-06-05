@@ -715,36 +715,6 @@ func (i *ModInstaller) shouldUpdateMod(installedVersion *versionmap.InstalledMod
 	return shouldUpdateMod(installedVersion, requiredModVersion, commandTargettingParent, i)
 }
 
-func getUpdateOperations(requiredModVersion *modconfig.ModVersionConstraint, updateStrategy string) (commitCheck bool, updatedVersionCheck bool) {
-	switch updateStrategy {
-	case constants.ModUpdateFull:
-		// 'ModUpdateFull' - check everything for both latest and accuracy
-		commitCheck = true
-		updatedVersionCheck = true
-
-	case constants.ModUpdateLatest:
-		// 'ModUpdateLatest' update everything to latest, but only branches - not tags - are commit checked (which is the same as latest)
-		// if there is a branch constraint, do a commit check
-		if requiredModVersion.BranchName != "" {
-			commitCheck = true
-		}
-		updatedVersionCheck = true
-
-	case constants.ModUpdateDevelopment:
-		// 'ModUpdateDevelopment' updates branches, file system and broken constraints to latest, leave satisfied constraints unchanged
-
-		// if there is a branch constraint, do a commit check
-		if requiredModVersion.BranchName != "" {
-			commitCheck = true
-		}
-
-	case constants.ModUpdateMinimal:
-		// 'ModUpdateMinimal' only updates broken constraints, do not check branches for new commits
-
-	}
-	return commitCheck, updatedVersionCheck
-}
-
 func (i *ModInstaller) getUpdateStrategy() string {
 	return i.updateStrategy
 }
