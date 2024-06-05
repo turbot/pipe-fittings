@@ -14,7 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/utils"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
+	steampipecloud "github.com/turbot/pipes-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
