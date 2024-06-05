@@ -19,6 +19,7 @@ const (
 	ArgDryRun                  = "dry-run"
 	ArgEnvironment             = "environment"
 	ArgExport                  = "export"
+	ArgEventStore              = "event-store"
 	ArgForce                   = "force"
 	ArgHeader                  = "header"
 	ArgHelp                    = "help"
@@ -68,6 +69,7 @@ const (
 	ArgWorkspaceProfile        = "workspace"
 	ArgConfigPath              = "config-path"
 	ArgBaseUrl                 = "base-url"
+	ArgExecutionId             = "execution-id"
 
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"

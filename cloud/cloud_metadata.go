@@ -7,7 +7,7 @@ import (
 
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
+	steampipecloud "github.com/turbot/pipes-sdk-go"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 

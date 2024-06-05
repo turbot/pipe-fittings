@@ -10,8 +10,7 @@ const DefaultPowerpipeWorkspaceContent = `
 
 # workspace "all_options" {
 # 
-#   # Dashboard / API Server Options
-#   host                = "local"
+#   # Dashboard Server Options
 #   listen              = "network"
 #   port                = 9033
 #   watch               = true

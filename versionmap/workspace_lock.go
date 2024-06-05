@@ -28,7 +28,7 @@ type WorkspaceLock struct {
 
 	// installed mods is a map of all modfiles found in the mod installation path
 	// (i.e. the mods which are installed)
-	// it is poppulated when we load the lock  file and used to prunine uninsed mods
+	// it is populated when we load the lock  file and used to prune unused mods
 	installedMods DependencyVersionListMap
 }
 
@@ -286,7 +286,7 @@ func (l *WorkspaceLock) GetLockedModVersion(requiredModVersion *modconfig.ModVer
 
 // FindLockedModVersion looks for a lock file entry matching the required constraint and returns nil if not found
 func (l *WorkspaceLock) FindLockedModVersion(requiredModVersion *modconfig.ModVersionConstraint) (*InstalledModVersion, error) {
-	// find all v ersions of this mod in the lock file
+	// find all versions of this mod in the lock file
 	lockedVersions := l.FindMod(requiredModVersion.Name)
 
 	potentialVersions := make([]*InstalledModVersion, 0)

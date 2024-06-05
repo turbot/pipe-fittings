@@ -30,6 +30,11 @@ func (v DependencyVersion) Equal(other *DependencyVersion) bool {
 	if v.FilePath != "" && other.FilePath != "" {
 		return v.FilePath == other.FilePath
 	}
+
+	// if both have Tag, check that
+	if v.Tag != "" && other.Tag != "" {
+		return v.Tag == other.Tag
+	}
 	return false
 }
 
