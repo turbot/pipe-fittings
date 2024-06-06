@@ -32,15 +32,7 @@ func (g *UniqueNameGenerator) GetUniqueName(name string) (string, error) {
 			return "", err
 		}
 
-		// we expect this name to be unique - however on the chance that it is not, keep incrementing the count
-		// TODO THINK ABOUT THIS
-		//for {
 		uniqueName = fmt.Sprintf("%s_%s%d", name, hash, nameCount)
-		//	if g.lookup[name] == 0 {
-		//		break
-		//	}
-		//	nameCount++
-		//}
 	}
 
 	// increment the name count
