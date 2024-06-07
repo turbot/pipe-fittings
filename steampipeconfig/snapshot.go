@@ -7,7 +7,7 @@ import (
 	steampipecloud "github.com/turbot/pipes-sdk-go"
 )
 
-var SteampipeSnapshotSchemaVersion int64 = 20240130
+var SteampipeSnapshotSchemaVersion int64 = 20240607
 
 type SteampipeSnapshot struct {
 	SchemaVersion string                   `json:"schema_version"`
