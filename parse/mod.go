@@ -83,7 +83,6 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfi
 
 	// NOTE: IGNORE DEPENDENCY ERRORS
 
-	//
 	// call decode callback
 	diags = mod.OnDecoded(block, nil)
 	res.AddDiags(diags)
