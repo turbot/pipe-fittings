@@ -489,13 +489,13 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 
 	pipelineOptions, diags := block.Body.Content(modconfig.PipelineBlockSchema)
 	if diags.HasErrors() {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return pipelineHcl, res
 	}
 
 	diags = pipelineHcl.SetAttributes(pipelineOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return pipelineHcl, res
 	}
 

@@ -178,22 +178,10 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (*modconfig.Mod, *DecodeResult) {
 	res := NewDecodeResult()
 	// decode the body
-	diags := decodeHclBody(block.Body, evalCtx, mod, mod)
-	res.handleDecodeDiags(diags)
+	diags := DecodeHclBody(block.Body, evalCtx, mod, mod)
+	res.HandleDecodeDiags(diags)
 
 	return mod, res
-}
-
-// because the app require block may have the block type powerpipe|steampipe|flowpipe (depending on the app),
-// we manually parse just that block - so ignore any errors from the implicit parse relating to this block
-func ignoreAppRequireErrors(diags hcl.Diagnostics) hcl.Diagnostics {
-	var newDiags hcl.Diagnostics
-	for _, diag := range diags {
-		if !strings.HasPrefix(diag.Detail, fmt.Sprintf(`Blocks of type "%s" are not expected here`, app_specific.AppName)) {
-			newDiags = append(newDiags, diag)
-		}
-	}
-	return newDiags
 }
 
 func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Require, hcl.Diagnostics) {
