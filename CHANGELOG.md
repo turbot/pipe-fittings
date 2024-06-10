@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v1.4.2 [TBD]
+
+* Unique column name generator should take hash using the column index as an input rather than appending occurrence index to the hashed output. ([#426](https://github.com/turbot/pipe-fittings/issues/426))
+
 ## v1.4.1 [2024-06-10]
 
 * Update snapshot schema version to `20240607`. ([#423](https://github.com/turbot/pipe-fittings/issues/423))
