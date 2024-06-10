@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v1.4.1 [2024-06-10]
+
+* Update snapshot schema version to `20240607`. ([#423](https://github.com/turbot/pipe-fittings/issues/423))
+
 ## v1.4.0 [2024-06-07]
 
 _What's new_
