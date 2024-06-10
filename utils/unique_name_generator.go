@@ -20,14 +20,14 @@ func NewUniqueNameGenerator() *UniqueNameGenerator {
 // If the input name is not unique, a random lowercase string is appended to the name
 // This is used in steampipe and powerpipe to ensure unique column names in JSON output
 // when same columns are requested.
-func (g *UniqueNameGenerator) GetUniqueName(name string, columnIndex int) (string, error) {
+func (g *UniqueNameGenerator) GetUniqueName(name string, index int) (string, error) {
 	uniqueName := name
 
 	// check the lookup to see if this column name already exists
 	_, isDuplicate := g.lookup[name]
 	if isDuplicate {
-		// name is not unique - generate a new name using the hash of the name and the column index
-		hash, err := Base36Hash(fmt.Sprintf("%s%d", name, columnIndex), 4)
+		// name is not unique - generate a new name using the hash of the name and the index
+		hash, err := Base36Hash(fmt.Sprintf("%s%d", name, index), 4)
 		if err != nil {
 			return "", err
 		}
