@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/Masterminds/semver/v3"
-	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/otiai10/copy"
@@ -21,9 +21,9 @@ import (
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 type ModInstaller struct {

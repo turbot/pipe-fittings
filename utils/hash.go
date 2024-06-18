@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 func Base36Hash(input string, length int) (string, error) {

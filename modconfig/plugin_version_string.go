@@ -2,7 +2,7 @@ package modconfig
 
 import (
 	"github.com/Masterminds/semver/v3"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 type PluginVersionMap struct {

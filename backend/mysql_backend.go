@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/turbot/pipe-fittings/queryresult"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 const (

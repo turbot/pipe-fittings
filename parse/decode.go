@@ -2,19 +2,16 @@ package parse
 
 import (
 	"fmt"
-	"log/slog"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
+	"log/slog"
 )
 
 // A consistent detail message for all "not a valid identifier" diagnostics.

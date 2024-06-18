@@ -8,8 +8,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )

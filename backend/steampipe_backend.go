@@ -9,7 +9,7 @@ import (
 	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 type SteampipeBackend struct {

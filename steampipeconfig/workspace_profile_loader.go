@@ -14,8 +14,8 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 func defaultWorkspaceSampleFileName() string {

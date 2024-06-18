@@ -12,7 +12,7 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/schema"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 // Require is a struct representing mod dependencies
