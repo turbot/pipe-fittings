@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/export"
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	steampipecloud "github.com/turbot/pipes-sdk-go"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 func PublishSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSnapshot, share bool) (string, error) {

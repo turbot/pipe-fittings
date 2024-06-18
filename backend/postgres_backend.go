@@ -15,8 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/queryresult"
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 var postgresConnectionStringPrefixes = []string{"postgresql://", "postgres://"}
