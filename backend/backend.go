@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/turbot/pipe-fittings/queryresult"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 var ErrUnknownBackend = errors.New("unknown backend")

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 	"net"
 	"strings"
 )

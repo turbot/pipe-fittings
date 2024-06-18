@@ -2,13 +2,10 @@ package parse
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"

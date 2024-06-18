@@ -6,8 +6,8 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/modconfig"
