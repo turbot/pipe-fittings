@@ -2,6 +2,11 @@ package constants
 
 // viper config keys
 const (
+	ConfigKeyVersion = "main.version"
+	ConfigKeyCommit  = "main.commit"
+	ConfigKeyDate    = "main.date"
+	ConfigKeyBuiltBy = "main.builtBy"
+
 	ConfigKeyInteractive                 = "interactive"
 	ConfigKeyActiveCommand               = "cmd"
 	ConfigKeyActiveCommandArgs           = "cmd_args"
