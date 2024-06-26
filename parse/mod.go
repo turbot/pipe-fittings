@@ -181,9 +181,9 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 // ParseModRequireAndShortName is used when migrating the workspace lock
 // It loads the require block from the mod file and returns the require object, as well as the mod short name
 // The migration occurs the first time the workspace lock is loaded - this will be when we load the variables
-// the migration is done by dimply installing the workspace dependencies
+// the migration is done by simply installing the workspace dependencies
 // At this point we have not yet loaded the full mod definition so the require block is not yet loaded -
-// we need to manually load the reuire block, as well as the mod short name, which is used as a key in the workspace lock
+// we need to manually load the require block, as well as the mod short name, which is used as a key in the workspace lock
 func ParseModRequireAndShortName(modFilePath string) (*modconfig.Require, string, hcl.Diagnostics) {
 	fileData, diags := LoadFileData(modFilePath)
 	if diags.HasErrors() {
@@ -215,7 +215,7 @@ func ParseModRequireAndShortName(modFilePath string) (*modconfig.Require, string
 	require, diags := DecodeRequire(requireBlock, &hcl.EvalContext{})
 	// ignore errors - all was care about is whether the require is non-nil
 	if require != nil {
-		moreDiags := require.InitialiseConstraints(modBlock)
+		moreDiags := require.InitialiseConstraints(requireBlock)
 		diags = append(diags, moreDiags...)
 
 	}
