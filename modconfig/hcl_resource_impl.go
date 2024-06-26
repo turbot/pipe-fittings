@@ -34,6 +34,8 @@ type HclResourceImpl struct {
 }
 
 func NewHclResourceImpl(block *hcl.Block, fullName string) HclResourceImpl {
+	// full name has been constructed with the correct short name - which may be a synthetic anonymous block name
+	// extract short name from final section of full name
 	parts := strings.Split(fullName, ".")
 	shortName := parts[len(parts)-1]
 
