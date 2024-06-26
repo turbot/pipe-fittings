@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v1.4.2 [TBD]
+
+* Unique column name generator should take hash using the column index as an input rather than appending occurrence index to the hashed output. ([#426](https://github.com/turbot/pipe-fittings/issues/426))
+
 ## v1.4.1 [2024-06-10]
 
 * Update snapshot schema version to `20240607`. ([#423](https://github.com/turbot/pipe-fittings/issues/423))
@@ -12,7 +16,7 @@ _What's new_
 
 * Update mod install to only install or update mods which are command targets (and their dependencies). Default pull mode for install is `latest` if there is a target, and `minimal` if no target is given. ([#415](https://github.com/turbot/pipe-fittings/issues/415))
 * Add UniqueNameGenerator functions to generate random unique column names for query JSON output. ([#417](https://github.com/turbot/pipe-fittings/issues/417))
-* use `github.com/turbot/pipes-sdk-go` instead of `github.com/turbot/ steampipe-cloud-sdk-go`. ([#418](https://github.com/turbot/pipe-fittings/issues/418))
+* use `github.com/turbot/pipes-sdk-go` instead of `github.com/turbot/steampipe-cloud-sdk-go`. ([#418](https://github.com/turbot/pipe-fittings/issues/418))
 * Updated `pgx` and `pgconn` to latest versions.
 
 ## v1.3.4 [2024-05-31]
