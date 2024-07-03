@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v1.4.3 [tbd]
+
+* Updated github.com/hashicorp/go-getter to v1.7.5.
+
 ## v1.4.2 [2024-07-03]
 
 _Bug fixes_
