@@ -722,17 +722,15 @@ func AddResourceMetadata(resourceWithMetadata modconfig.ResourceWithMetadata, sr
 }
 
 func ValidateName(block *hcl.Block) hcl.Diagnostics {
-	if len(block.Labels) == 0 {
-		return nil
-	}
-
-	if !hclsyntax.ValidIdentifier(block.Labels[0]) {
-		return hcl.Diagnostics{&hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Invalid name",
-			Detail:   badIdentifierDetail,
-			Subject:  &block.LabelRanges[0],
-		}}
+	for _, label := range block.Labels {
+		if !hclsyntax.ValidIdentifier(label) {
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid name",
+				Detail:   badIdentifierDetail,
+				Subject:  &block.LabelRanges[0],
+			}}
+		}
 	}
 	return nil
 }
