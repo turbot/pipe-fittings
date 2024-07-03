@@ -27,7 +27,6 @@ variable "var_two" {
   default     = "default of var_two"
 }
 
-
 # var_three has no default
 variable "var_three" {
   type        = string
