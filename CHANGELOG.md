@@ -2,9 +2,12 @@
 
 Shared Pipes Component
 
-## v1.4.2 [TBD]
+## v1.4.2 [2024-07-03]
+
+_Bug fixes_
 
 * Unique column name generator should take hash using the column index as an input rather than appending occurrence index to the hashed output. ([#426](https://github.com/turbot/pipe-fittings/issues/426))
+* Fix exception when migrating steampipe mod lock file for powerpipe.  ([#429](https://github.com/turbot/pipe-fittings/issues/429))
 
 ## v1.4.1 [2024-06-10]
 
