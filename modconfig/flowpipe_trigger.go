@@ -18,13 +18,19 @@ type Trigger struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
-	FileName        string `json:"file_name"`
-	StartLineNumber int    `json:"start_line_number"`
-	EndLineNumber   int    `json:"end_line_number"`
+	FileName        string          `json:"file_name"`
+	StartLineNumber int             `json:"start_line_number"`
+	EndLineNumber   int             `json:"end_line_number"`
+	Params          []PipelineParam `json:"params,omitempty"`
 
-	// 27/09/23 - Args is introduces combination of both parse time and runtime arguments. "var" should be resolved
-	// at parse time, the vars all should be supplied when we start the system. However, args can also contain
-	// runtime variable, i.e. self.request_body, self.rows
+	// 27/09/23 - Args is a combination of both parse time and runtime arguments. "var" should be resolved
+	// at parse time, the vars all should be supplied when we start the system.
+	//
+	// However, args can also contain runtime variable, i.e. self.request_body, self.rows
+	//
+	// Args are not currently validated at parse time. To validate Args at parse time we need to:
+	// - identity which args are parse time (var and param)
+	// - validate those parse time args
 	//
 	ArgsRaw hcl.Expression `json:"-"`
 

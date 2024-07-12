@@ -1866,6 +1866,60 @@ func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
 	assert.Equal("gcp_repo", pipeline.Params[2].Name)
 }
 
+func (suite *FlowpipeModTestSuite) TestModTriggers() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./triggers", workspace.WithCredentials(map[string]credential.Credential{}))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	triggers := w.Mod.ResourceMaps.Triggers
+	reportTrigger := triggers["test_mod.trigger.schedule.report_trigger"]
+	if reportTrigger == nil {
+		assert.Fail("report_trigger not found")
+		return
+	}
+
+	params := reportTrigger.Params
+	assert.NotNil(params)
+
+	for _, param := range params {
+		if param.Name == "param_one" {
+			assert.Equal("cty.String", param.Type.GoString())
+			assert.Equal("value_one", param.Default.AsString())
+		} else if param.Name == "param_two" {
+			assert.Equal("cty.String", param.Type.GoString())
+			assert.Equal("value_two", param.Default.AsString())
+		} else if param.Name == "param_three" {
+			assert.Equal("cty.Number", param.Type.GoString())
+			val, _ := param.Default.AsBigFloat().Int64()
+			assert.Equal(int64(42), val)
+		} else if param.Name == "param_four" {
+			assert.Equal("cty.Map(cty.String)", param.Type.GoString())
+			valMap := param.Default.AsValueMap()
+			assert.Equal("bar", valMap["foo"].AsString())
+			assert.Equal("baz", valMap["bar"].AsString())
+		} else if param.Name == "param_five" {
+			assert.Equal("cty.Map(cty.Number)", param.Type.GoString())
+			valMap := param.Default.AsValueMap()
+			fooVal, _ := valMap["foo"].AsBigFloat().Int64()
+			barVal, _ := valMap["bar"].AsBigFloat().Int64()
+			assert.Equal(int64(1), fooVal)
+			assert.Equal(int64(2), barVal)
+		}
+	}
+
+	assert.NotNil(triggers)
+
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {

@@ -141,6 +141,12 @@ var TriggerScheduleBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeEnabled,
 		},
 	},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       schema.BlockTypeParam,
+			LabelNames: []string{schema.LabelName},
+		},
+	},
 }
 
 var TriggerIntervalBlockSchema = &hcl.BodySchema{
@@ -220,6 +226,10 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeCapture,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeParam,
+			LabelNames: []string{schema.LabelName},
+		},
 	},
 }
 
@@ -257,6 +267,10 @@ var TriggerHttpBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeMethod,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeParam,
 			LabelNames: []string{schema.LabelName},
 		},
 	},
