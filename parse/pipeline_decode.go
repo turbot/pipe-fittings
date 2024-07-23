@@ -330,6 +330,18 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return triggerHcl, res
 	}
 
+	var triggerParams []modconfig.PipelineParam
+	for _, block := range triggerOptions.Blocks {
+		if block.Type == schema.BlockTypeParam {
+			param, diags := decodePipelineParam(block, parseCtx)
+			if len(diags) > 0 {
+				res.handleDecodeDiags(diags)
+				return triggerHcl, res
+			}
+			triggerParams = append(triggerParams, *param)
+		}
+	}
+
 	body, ok := block.Body.(*hclsyntax.Body)
 	if ok {
 		triggerHcl.SetFileReference(block.DefRange.Filename, body.SrcRange.Start.Line, body.EndRange.Start.Line)
@@ -341,6 +353,8 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 
 	moreDiags := parseCtx.AddTrigger(triggerHcl)
 	res.addDiags(moreDiags)
+
+	triggerHcl.Params = triggerParams
 
 	return triggerHcl, res
 }
