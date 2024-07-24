@@ -147,19 +147,15 @@ func ValidateParams(p ResourceWithParam, params map[string]interface{}) []error 
 	return errors
 }
 
-func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
-	return ValidateParams(p, params)
-}
-
 // This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
 // and again we convert from Go -> Cty when we're executing the pipeline to build EvalContext when we're evaluating
 // data are not resolved during parse time.
-func (p *Pipeline) CoercePipelineParams(params map[string]string) (map[string]interface{}, []error) {
+func CoerceParams(p ResourceWithParam, params map[string]string) (map[string]interface{}, []error) {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
 	pipelineParamsWithNoDefaultValue := map[string]bool{}
-	for _, p := range p.Params {
+	for _, p := range p.GetParams() {
 		if p.Default.IsNull() && !p.Optional {
 			pipelineParamsWithNoDefaultValue[p.Name] = true
 		}
@@ -195,6 +191,14 @@ func (p *Pipeline) CoercePipelineParams(params map[string]string) (map[string]in
 	}
 
 	return res, errors
+}
+
+func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
+	return ValidateParams(p, params)
+}
+
+func (p *Pipeline) CoercePipelineParams(params map[string]string) (map[string]interface{}, []error) {
+	return CoerceParams(p, params)
 }
 
 func (p *Pipeline) GetMod() *Mod {

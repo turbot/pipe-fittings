@@ -67,6 +67,10 @@ func (t *Trigger) ValidateTriggerParam(params map[string]interface{}) []error {
 	return ValidateParams(t, params)
 }
 
+func (p *Trigger) CoerceTriggerParams(params map[string]string) (map[string]interface{}, []error) {
+	return CoerceParams(p, params)
+}
+
 func (t *Trigger) Equals(other *Trigger) bool {
 	if t == nil && other == nil {
 		return true
