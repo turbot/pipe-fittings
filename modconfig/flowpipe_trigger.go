@@ -59,6 +59,14 @@ func (t *Trigger) GetParam(paramName string) *PipelineParam {
 	return nil
 }
 
+func (t *Trigger) GetParams() []PipelineParam {
+	return t.Params
+}
+
+func (t *Trigger) ValidateTriggerParam(params map[string]interface{}) []error {
+	return ValidateParams(t, params)
+}
+
 func (t *Trigger) Equals(other *Trigger) bool {
 	if t == nil && other == nil {
 		return true

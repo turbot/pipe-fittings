@@ -49,6 +49,11 @@ func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
 	return pipeline
 }
 
+type ResourceWithParam interface {
+	GetParam(paramName string) *PipelineParam
+	GetParams() []PipelineParam
+}
+
 // Pipeline represents a "pipeline" block in an flowpipe HCL (*.fp) file
 //
 // Note that this Pipeline definition is different that the pipeline that is running. This definition
@@ -77,6 +82,10 @@ type Pipeline struct {
 	EndLineNumber   int              `json:"end_line_number"`
 }
 
+func (p *Pipeline) GetParams() []PipelineParam {
+	return p.Params
+}
+
 func (p *Pipeline) GetParam(paramName string) *PipelineParam {
 	for _, param := range p.Params {
 		if param.Name == paramName {
@@ -92,12 +101,12 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 	p.EndLineNumber = endLineNumber
 }
 
-func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
+func ValidateParams(p ResourceWithParam, params map[string]interface{}) []error {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
 	pipelineParamsWithNoDefaultValue := map[string]bool{}
-	for _, v := range p.Params {
+	for _, v := range p.GetParams() {
 		if v.Default.IsNull() && !v.Optional {
 			pipelineParamsWithNoDefaultValue[v.Name] = true
 		}
@@ -136,6 +145,10 @@ func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error 
 	}
 
 	return errors
+}
+
+func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
+	return ValidateParams(p, params)
 }
 
 // This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
