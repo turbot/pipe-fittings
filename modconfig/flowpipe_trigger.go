@@ -1,6 +1,7 @@
 package modconfig
 
 import (
+	"reflect"
 	"slices"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 
 	"github.com/robfig/cron/v3"
@@ -48,7 +50,74 @@ func (t *Trigger) SetFileReference(fileName string, startLineNumber int, endLine
 	t.EndLineNumber = endLineNumber
 }
 
+func (t *Trigger) GetParam(paramName string) *PipelineParam {
+	for _, param := range t.Params {
+		if param.Name == paramName {
+			return &param
+		}
+	}
+	return nil
+}
+
 func (t *Trigger) Equals(other *Trigger) bool {
+	if t == nil && other == nil {
+		return true
+	}
+
+	if t == nil && other != nil || t != nil && other == nil {
+		return false
+	}
+
+	baseEqual := t.HclResourceImpl.Equals(&t.HclResourceImpl)
+	if !baseEqual {
+		return false
+	}
+
+	// Order of params does not matter, but the value does
+	if len(t.Params) != len(other.Params) {
+		return false
+	}
+
+	// Compare param values
+	for _, v := range t.Params {
+		otherParam := other.GetParam(v.Name)
+		if otherParam == nil {
+			return false
+		}
+
+		if !v.Equals(otherParam) {
+			return false
+		}
+	}
+
+	// catch name change of the other param
+	for _, v := range other.Params {
+		pParam := t.GetParam(v.Name)
+		if pParam == nil {
+			return false
+		}
+	}
+
+	if !utils.BoolPtrEqual(t.Enabled, other.Enabled) {
+		return false
+	}
+
+	if t.Pipeline.Equals(other.Pipeline).False() {
+		return false
+	}
+
+	if !reflect.DeepEqual(t.ArgsRaw, other.ArgsRaw) {
+		return false
+	}
+
+	if t.Config == nil && !helpers.IsNil(other.Config) || t.Config != nil && helpers.IsNil(other.Config) {
+		return false
+	}
+
+	if !t.Config.Equals(other.Config) {
+		return false
+	}
+
 	return t.FullName == other.FullName &&
 		t.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
@@ -180,10 +249,28 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 type TriggerConfig interface {
 	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
+	Equals(other TriggerConfig) bool
 }
 
 type TriggerSchedule struct {
 	Schedule string `json:"schedule"`
+}
+
+func (t *TriggerSchedule) Equals(other TriggerConfig) bool {
+	otherTrigger, ok := other.(*TriggerSchedule)
+	if !ok {
+		return false
+	}
+
+	if t == nil && !helpers.IsNil(otherTrigger) || t != nil && helpers.IsNil(otherTrigger) {
+		return false
+	}
+
+	if t == nil && helpers.IsNil(otherTrigger) {
+		return true
+	}
+
+	return t.Schedule == otherTrigger.Schedule
 }
 
 func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -255,10 +342,82 @@ type TriggerQuery struct {
 	Captures   map[string]*TriggerQueryCapture `json:"captures"`
 }
 
+func (t *TriggerQuery) Equals(other TriggerConfig) bool {
+	otherTrigger, ok := other.(*TriggerQuery)
+	if !ok {
+		return false
+	}
+
+	if t == nil && !helpers.IsNil(otherTrigger) || t != nil && helpers.IsNil(otherTrigger) {
+		return false
+	}
+
+	if t == nil && helpers.IsNil(otherTrigger) {
+		return true
+	}
+
+	if t.Sql != otherTrigger.Sql {
+		return false
+	}
+
+	if t.Schedule != otherTrigger.Schedule {
+		return false
+	}
+
+	if t.Database != otherTrigger.Database {
+		return false
+	}
+
+	if t.PrimaryKey != otherTrigger.PrimaryKey {
+		return false
+	}
+
+	if len(t.Captures) != len(otherTrigger.Captures) {
+		return false
+	}
+
+	for key, value := range t.Captures {
+		otherValue, exists := otherTrigger.Captures[key]
+		if !exists {
+			return false
+		}
+
+		if !value.Equals(otherValue) {
+			return false
+		}
+	}
+
+	return true
+}
+
 type TriggerQueryCapture struct {
 	Type     string
 	Pipeline cty.Value
 	ArgsRaw  hcl.Expression
+}
+
+func (c *TriggerQueryCapture) Equals(other *TriggerQueryCapture) bool {
+	if c == nil && other == nil {
+		return true
+	}
+
+	if c == nil && other != nil || c != nil && other == nil {
+		return false
+	}
+
+	if c.Type != other.Type {
+		return false
+	}
+
+	if c.Pipeline.Equals(other.Pipeline).False() {
+		return false
+	}
+
+	if !reflect.DeepEqual(c.ArgsRaw, other.ArgsRaw) {
+		return false
+	}
+
+	return true
 }
 
 func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
@@ -449,11 +608,75 @@ type TriggerHttp struct {
 	Methods       map[string]*TriggerHTTPMethod `json:"methods"`
 }
 
+func (t *TriggerHttp) Equals(other TriggerConfig) bool {
+	otherTrigger, ok := other.(*TriggerHttp)
+	if !ok {
+		return false
+	}
+
+	if t == nil && !helpers.IsNil(otherTrigger) || t != nil && helpers.IsNil(otherTrigger) {
+		return false
+	}
+
+	if t == nil && helpers.IsNil(otherTrigger) {
+		return true
+	}
+
+	if t.Url != otherTrigger.Url {
+		return false
+	}
+
+	if t.ExecutionMode != otherTrigger.ExecutionMode {
+		return false
+	}
+
+	if len(t.Methods) != len(otherTrigger.Methods) {
+		return false
+	}
+
+	for key, value := range t.Methods {
+		otherValue, exists := otherTrigger.Methods[key]
+		if !exists {
+			return false
+		}
+
+		if !value.Equals(otherValue) {
+			return false
+		}
+	}
+
+	return true
+}
+
 type TriggerHTTPMethod struct {
 	Type          string
 	ExecutionMode string
 	Pipeline      cty.Value
 	ArgsRaw       hcl.Expression
+}
+
+func (c *TriggerHTTPMethod) Equals(other *TriggerHTTPMethod) bool {
+	if c == nil && other == nil {
+		return true
+	}
+
+	if c == nil && other != nil || c != nil && other == nil {
+		return false
+	}
+
+	if c.Type != other.Type || c.ExecutionMode != other.ExecutionMode {
+		return false
+	}
+
+	if c.Pipeline.Equals(other.Pipeline).False() {
+		return false
+	}
+
+	if !reflect.DeepEqual(c.ArgsRaw, other.ArgsRaw) {
+		return false
+	}
+
+	return true
 }
 
 var validExecutionMode = []string{"synchronous", "asynchronous"}

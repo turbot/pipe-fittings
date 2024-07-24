@@ -422,6 +422,159 @@ var modEqualityTestCases = []modEqualityTestCase{
 		compare: "./loop_http_b",
 		equal:   false,
 	},
+	{
+		title:   "trigger_a == trigger_a",
+		base:    "./trigger_a",
+		compare: "./trigger_a",
+		equal:   true,
+	},
+	// Because we're using hcl.Expression in the ArgsRaw attribute
+	// {
+	// 	title:   "trigger_a == trigger_a_line_change",
+	// 	base:    "./trigger_a",
+	// 	compare: "./trigger_a_line_change",
+	// 	equal:   true,
+	// },
+	{
+		title:   "trigger_a != trigger_b",
+		base:    "./trigger_a",
+		compare: "./trigger_b",
+		equal:   false,
+	},
+	{
+		title:   "trigger_c == trigger_c",
+		base:    "./trigger_c",
+		compare: "./trigger_c",
+		equal:   true,
+	},
+	{
+		// trigger_c: missing param_three compared to trigger_a
+		title:   "trigger_a != trigger_c",
+		base:    "./trigger_a",
+		compare: "./trigger_c",
+		equal:   false,
+	},
+	{
+		title:   "trigger_d == trigger_d",
+		base:    "./trigger_d",
+		compare: "./trigger_d",
+		equal:   true,
+	},
+	{
+		// trigger_d: one of the param has a different value 42 vs 43
+		title:   "trigger_a != trigger_d",
+		base:    "./trigger_a",
+		compare: "./trigger_d",
+		equal:   false,
+	},
+	{
+		title:   "trigger_e == trigger_e",
+		base:    "./trigger_e",
+		compare: "./trigger_e",
+		equal:   true,
+	},
+	{
+		// trigger_e: one of the param's default value is removed vs trigger_a
+		title:   "trigger_a != trigger_e",
+		base:    "./trigger_a",
+		compare: "./trigger_e",
+		equal:   false,
+	},
+	{
+		title: "trigger_a != trigger_f_config_change",
+		// trigger_f: config attribute has a different value
+		base:    "./trigger_a",
+		compare: "./trigger_f_config_change",
+		equal:   false,
+	},
+	{
+		title:   "trigger_http_a == trigger_http_a",
+		base:    "./trigger_http_a",
+		compare: "./trigger_http_a",
+		equal:   true,
+	},
+	{
+		title:   "trigger_http_a != trigger_http_b",
+		base:    "./trigger_http_a",
+		compare: "./trigger_http_b",
+		equal:   false,
+	},
+	{
+		title:   "trigger_http_b == trigger_http_b",
+		base:    "./trigger_http_b",
+		compare: "./trigger_http_b",
+		equal:   true,
+	},
+	{
+		title:   "trigger_http_c == trigger_http_c",
+		base:    "./trigger_http_c",
+		compare: "./trigger_http_c",
+		equal:   true,
+	},
+	{
+		title:   "trigger_http_a != trigger_http_c",
+		base:    "./trigger_http_a",
+		compare: "./trigger_http_c",
+		equal:   false,
+	},
+	{
+		title:   "trigger_http_d == trigger_http_d",
+		base:    "./trigger_http_d",
+		compare: "./trigger_http_d",
+		equal:   true,
+	},
+	{
+		title:   "trigger_http_a != trigger_http_d",
+		base:    "./trigger_http_a",
+		compare: "./trigger_http_d",
+		equal:   false,
+	},
+	{
+		title:   "trigger_query_a == trigger_query_a",
+		base:    "./trigger_query_a",
+		compare: "./trigger_query_a",
+		equal:   true,
+	},
+	{
+		title: "trigger_query_a != trigger_query_b",
+		// trigger_query_b: updated SQL
+		base:    "./trigger_query_a",
+		compare: "./trigger_query_b",
+		equal:   false,
+	},
+	{
+		title:   "trigger_query_b == trigger_query_b",
+		base:    "./trigger_query_b",
+		compare: "./trigger_query_b",
+		equal:   true,
+	},
+	{
+		title: "trigger_query_a != trigger_query_c",
+		// trigger_query_c: updated database attribute
+		base:    "./trigger_query_a",
+		compare: "./trigger_query_c",
+		equal:   false,
+	},
+	{
+		title: "trigger_query_a != trigger_query_d",
+		// trigger_query_d: removed on of the captures
+		base:    "./trigger_query_a",
+		compare: "./trigger_query_d",
+		equal:   false,
+	},
+	{
+		title:   "trigger_query_e == trigger_query_e",
+		base:    "./trigger_query_e",
+		compare: "./trigger_query_e",
+		equal:   true,
+	},
+	{
+		title: "trigger_query_a != trigger_query_e",
+		// change the pipeline in one of the captures
+		base:    "./trigger_query_a",
+		compare: "./trigger_query_e",
+		equal:   false,
+	},
 }
 
 const (
