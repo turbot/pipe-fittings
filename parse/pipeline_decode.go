@@ -455,7 +455,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		if block.Type == schema.BlockTypeParam {
 			param, diags := decodePipelineParam(block, parseCtx)
 			if len(diags) > 0 {
-				res.handleDecodeDiags(diags)
+				res.HandleDecodeDiags(diags)
 				return triggerHcl, res
 			}
 			triggerParams = append(triggerParams, *param)
