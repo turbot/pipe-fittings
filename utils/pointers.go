@@ -25,6 +25,14 @@ func IsPointer[T any](v T) bool {
 	return reflect.TypeOf(v).Kind() == reflect.Ptr
 }
 
+// Deref safely dereferences a pointer, returning a default value if the pointer is nil
+func Deref[T any](p *T, defaultVal T) T {
+	if p != nil {
+		return *p
+	}
+	return defaultVal
+}
+
 func PtrEqual[T constraints.Ordered](a, b *T) bool {
 	if a == nil && b == nil {
 		return true
