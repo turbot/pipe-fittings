@@ -262,10 +262,15 @@ type TriggerConfig interface {
 	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	Equals(other TriggerConfig) bool
+	GetType() string
 }
 
 type TriggerSchedule struct {
 	Schedule string `json:"schedule"`
+}
+
+func (t *TriggerSchedule) GetType() string {
+	return schema.TriggerTypeSchedule
 }
 
 func (t *TriggerSchedule) Equals(other TriggerConfig) bool {
@@ -352,6 +357,10 @@ type TriggerQuery struct {
 	Database   string                          `json:"database"`
 	PrimaryKey string                          `json:"primary_key"`
 	Captures   map[string]*TriggerQueryCapture `json:"captures"`
+}
+
+func (t *TriggerQuery) GetType() string {
+	return schema.TriggerTypeQuery
 }
 
 func (t *TriggerQuery) Equals(other TriggerConfig) bool {
@@ -618,6 +627,10 @@ type TriggerHttp struct {
 	Url           string                        `json:"url"`
 	ExecutionMode string                        `json:"execution_mode"`
 	Methods       map[string]*TriggerHTTPMethod `json:"methods"`
+}
+
+func (t *TriggerHttp) GetType() string {
+	return schema.TriggerTypeHttp
 }
 
 func (t *TriggerHttp) Equals(other TriggerConfig) bool {
