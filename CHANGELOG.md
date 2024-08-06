@@ -5,6 +5,8 @@ Shared Pipes Component
 ## v1.5.0 [tbd]
 
 * Added `param` to `Trigger` definition.
+* Added safe pointer dereference function.
+* Added JSONTime type to handle time.Time in JSON output.
 
 ## v1.4.3 [2024-07-12]
 
