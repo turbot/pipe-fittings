@@ -543,6 +543,7 @@ type PipelineParam struct {
 	Optional    bool      `json:"optional,omitempty"`
 	Default     cty.Value `json:"-"`
 	Type        cty.Type  `json:"-"`
+	TypeString  string    `json:"type"`
 }
 
 func (p *PipelineParam) Equals(other *PipelineParam) bool {

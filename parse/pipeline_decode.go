@@ -207,6 +207,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 		o.Description = ctyVal.AsString()
 	}
 
+	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
 	return o, diags
 }
 
