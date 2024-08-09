@@ -3,6 +3,7 @@ package hclhelpers
 import (
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -760,6 +761,62 @@ func CtyToGo(v cty.Value) (val interface{}, err error) {
 	return
 }
 
+func ctyTypeToHCLString(t cty.Type) string {
+	switch {
+	case t.IsPrimitiveType():
+		switch t {
+		case cty.String:
+			return "string"
+		case cty.Number:
+			return "number"
+		case cty.Bool:
+			return "bool"
+		}
+	case t.IsListType():
+		return fmt.Sprintf("list(%s)", ctyTypeToHCLString(t.ElementType()))
+	case t.IsSetType():
+		return fmt.Sprintf("set(%s)", ctyTypeToHCLString(t.ElementType()))
+	case t.IsMapType():
+		return fmt.Sprintf("map(%s)", ctyTypeToHCLString(t.ElementType()))
+	case t.IsTupleType():
+		types := t.TupleElementTypes()
+		hclTypes := make([]string, len(types))
+		for i, elemType := range types {
+			hclTypes[i] = ctyTypeToHCLString(elemType)
+		}
+		return fmt.Sprintf("tuple([%s])", strings.Join(hclTypes, ", "))
+	case t.IsObjectType():
+		return objectTypeToHCLString(t)
+	}
+	return t.FriendlyName()
+}
+
+func objectTypeToHCLString(t cty.Type) string {
+	if !t.IsObjectType() {
+		return "unknown"
+	}
+
+	attributes := t.AttributeTypes()
+
+	// need stable map otherwise testing is difficult
+	keys := make([]string, 0, len(attributes))
+	for key := range attributes {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	hclParts := make([]string, 0, len(attributes))
+
+	for _, name := range keys {
+		attrType := attributes[name]
+		hclPart := fmt.Sprintf("%s = %s", name, ctyTypeToHCLString(attrType))
+		hclParts = append(hclParts, hclPart)
+	}
+
+	return fmt.Sprintf("{\n  %s\n}", strings.Join(hclParts, "\n  "))
+}
+
 // CtyTypeToHclType converts a cty type to a hcl type
 // accept multiple types and use the first non null and non dynamic one
 func CtyTypeToHclType(types ...cty.Type) string {
@@ -769,39 +826,8 @@ func CtyTypeToHclType(types ...cty.Type) string {
 		return ""
 	}
 
-	friendlyName := t.FriendlyName()
-
-	// func to convert from ctyt aggregate syntax to hcl
-	convertAggregate := func(prefix string) (string, bool) {
-		if strings.HasPrefix(friendlyName, prefix) {
-			return fmt.Sprintf("%s(%s)", strings.TrimSuffix(prefix, " of "), strings.TrimPrefix(friendlyName, prefix)), true
-		}
-		return "", false
-	}
-
-	if convertedName, isList := convertAggregate("list of "); isList {
-		return convertedName
-	}
-	if convertedName, isMap := convertAggregate("map of "); isMap {
-		return convertedName
-	}
-	if convertedName, isSet := convertAggregate("set of "); isSet {
-		return convertedName
-	}
-	if friendlyName == "tuple" {
-		elementTypes := t.TupleElementTypes()
-		if len(elementTypes) == 0 {
-			// we cannot determine the eleemnt type
-			return "list"
-		}
-		// if there are element types, use the first one (assume homogeneous)
-		underlyingType := elementTypes[0]
-		return fmt.Sprintf("list(%s)", CtyTypeToHclType(underlyingType))
-	}
-	if friendlyName == "dynamic" {
-		return ""
-	}
-	return friendlyName
+	val := ctyTypeToHCLString(t)
+	return val
 }
 
 // from a list oif cty typoes, return the first which is non nil and not dynamic

@@ -268,3 +268,117 @@ func TestCoerceValue(tm *testing.T) {
 		})
 	}
 }
+
+type ctyTypeToHclTypeTest struct {
+	input    cty.Type
+	expected string
+}
+
+var ctyTypeToHclTypeTests = map[string]ctyTypeToHclTypeTest{
+	"dynamic pseudo type": {
+		input:    cty.DynamicPseudoType, // this comes as cty.NilType so the underlying type is unknown
+		expected: "",
+	},
+	"empty object": {
+		input: cty.EmptyObject,
+		// make sure there are 2 spaces after the open bracket
+		expected: `{
+  
+}`,
+	},
+	"empty tuple": {
+		input:    cty.EmptyTuple,
+		expected: "tuple([])",
+	},
+	"simple string": {
+		input:    cty.String,
+		expected: "string",
+	},
+	"simple bool": {
+		input:    cty.Bool,
+		expected: "bool",
+	},
+	"simple number": {
+		input:    cty.Number,
+		expected: "number",
+	},
+	"list of string": {
+		input:    cty.List(cty.String),
+		expected: "list(string)",
+	},
+	"list of number": {
+		input:    cty.List(cty.Number),
+		expected: "list(number)",
+	},
+	"list of bool": {
+		input:    cty.List(cty.Bool),
+		expected: "list(bool)",
+	},
+	"list of list of string": {
+		input:    cty.List(cty.List(cty.String)),
+		expected: "list(list(string))",
+	},
+	"map of string": {
+		input:    cty.Map(cty.String),
+		expected: "map(string)",
+	},
+	"map of number": {
+		input:    cty.Map(cty.Number),
+		expected: "map(number)",
+	},
+	"map of bool": {
+		input:    cty.Map(cty.Bool),
+		expected: "map(bool)",
+	},
+	"map of map of string": {
+		input:    cty.Map(cty.Map(cty.String)),
+		expected: "map(map(string))",
+	},
+	"map of a list of string": {
+		input:    cty.Map(cty.List(cty.String)),
+		expected: "map(list(string))",
+	},
+	"map of a list of number": {
+		input:    cty.Map(cty.List(cty.Number)),
+		expected: "map(list(number))",
+	},
+	"map of a list of bool": {
+		input:    cty.Map(cty.List(cty.Bool)),
+		expected: "map(list(bool))",
+	},
+	"map of a list of a map of a list of a bool": {
+		input:    cty.Map(cty.List(cty.Map(cty.List(cty.Bool)))),
+		expected: "map(list(map(list(bool))))",
+	},
+	"list of a list of a list of a map of a list of a number": {
+		input:    cty.List(cty.List(cty.List(cty.Map(cty.List(cty.Number))))),
+		expected: "list(list(list(map(list(number)))))",
+	},
+	"object": {
+		input: cty.Object(map[string]cty.Type{"foo": cty.String, "bar": cty.Number}),
+		expected: `{
+  bar = number
+  foo = string
+}`,
+	},
+	"object with list": {
+		input: cty.Object(map[string]cty.Type{"foo": cty.String, "bar": cty.List(cty.Number)}),
+		expected: `{
+  bar = list(number)
+  foo = string
+}`,
+	},
+}
+
+func TestCtyTypeToHclType(t *testing.T) {
+
+	for name, test := range ctyTypeToHclTypeTests {
+
+		t.Run(name, func(t *testing.T) {
+			res := CtyTypeToHclType(test.input)
+			if test.expected != res {
+				t.Errorf("Test: '%s'' FAILED : \nexpected:\n %v \ngot:\n %v\n", name, test.expected, res)
+			}
+		})
+	}
+}

@@ -8,6 +8,7 @@ Shared Pipes Component
 * Added safe pointer dereference function.
 * Added JSONTime type to handle time.Time in JSON output.
 * Added `GoToHCLString` function that converts a Go data structure to an HCL string.
+* Fixed `CtyTypeToHclType` function to handle complex types.
 
 ## v1.4.3 [2024-07-12]
 

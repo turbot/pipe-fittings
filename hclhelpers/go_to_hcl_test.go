@@ -72,7 +72,7 @@ func TestGoToHcl(t *testing.T) {
 				return
 			}
 			if test.expected != res {
-				t.Errorf("Test: '%s'' FAILED : \nexpected:\n %v, \ngot:\n %v\n", name, test.expected, res)
+				t.Errorf("Test: '%s'' FAILED : \nexpected:\n %v \ngot:\n %v\n", name, test.expected, res)
 			}
 		})
 	}

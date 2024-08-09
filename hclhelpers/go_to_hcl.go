@@ -59,13 +59,13 @@ func mapToHCLString(val cty.Value) (string, error) {
 	}
 
 	valMap := val.AsValueMap()
-	// stable map otherwise testing is difficult
+
+	// need stable map otherwise testing is difficult
 	keys := make([]string, 0, len(valMap))
 	for key := range valMap {
 		keys = append(keys, key)
 	}
 
-	// Step 2: Sort the slice of keys
 	sort.Strings(keys)
 
 	var hclElements []string
