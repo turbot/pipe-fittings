@@ -277,7 +277,23 @@ type ctyTypeToHclTypeTest struct {
 var ctyTypeToHclTypeTests = map[string]ctyTypeToHclTypeTest{
 	"dynamic pseudo type": {
 		input:    cty.DynamicPseudoType, // this comes as cty.NilType so the underlying type is unknown
-		expected: "",
+		expected: "any",
+	},
+	"list of any": {
+		input:    cty.List(cty.DynamicPseudoType),
+		expected: "list(any)",
+	},
+	"map of any": {
+		input:    cty.Map(cty.DynamicPseudoType),
+		expected: "map(any)",
+	},
+	"list of list of any": {
+		input:    cty.List(cty.List(cty.DynamicPseudoType)),
+		expected: "list(list(any))",
+	},
+	"map of list of any": {
+		input:    cty.Map(cty.List(cty.DynamicPseudoType)),
+		expected: "map(list(any))",
 	},
 	"empty object": {
 		input: cty.EmptyObject,
@@ -314,7 +330,7 @@ var ctyTypeToHclTypeTests = map[string]ctyTypeToHclTypeTest{
 		input:    cty.List(cty.Bool),
 		expected: "list(bool)",
 	},
-	"list of list of string": {
+	"list of list of string": { // ["list",["list","string"]]
 		input:    cty.List(cty.List(cty.String)),
 		expected: "list(list(string))",
 	},
@@ -322,7 +338,7 @@ var ctyTypeToHclTypeTests = map[string]ctyTypeToHclTypeTest{
 		input:    cty.Map(cty.String),
 		expected: "map(string)",
 	},
-	"map of number": {
+	"map of number": { // ["map","number"]
 		input:    cty.Map(cty.Number),
 		expected: "map(number)",
 	},
@@ -342,11 +358,11 @@ var ctyTypeToHclTypeTests = map[string]ctyTypeToHclTypeTest{
 		input:    cty.Map(cty.List(cty.Number)),
 		expected: "map(list(number))",
 	},
-	"map of a list of bool": {
+	"map of a list of bool": { // ["map",["list","bool"]]
 		input:    cty.Map(cty.List(cty.Bool)),
 		expected: "map(list(bool))",
 	},
-	"map of a list of a map of a list of a bool": {
+	"map of a list of a map of a list of a bool": { // ["map",["list",["map",["list","bool"]]]]
 		input:    cty.Map(cty.List(cty.Map(cty.List(cty.Bool)))),
 		expected: "map(list(map(list(bool))))",
 	},
@@ -354,14 +370,14 @@ var ctyTypeToHclTypeTests = map[string]ctyTypeToHclTypeTest{
 		input:    cty.List(cty.List(cty.List(cty.Map(cty.List(cty.Number))))),
 		expected: "list(list(list(map(list(number)))))",
 	},
-	"object": {
+	"object": { // ["object",{"bar":"number","foo":"string"}]
 		input: cty.Object(map[string]cty.Type{"foo": cty.String, "bar": cty.Number}),
 		expected: `{
   bar = number
   foo = string
 }`,
 	},
-	"object with list": {
+	"object with list": { //  ["object",{"bar":["list","number"],"foo":"string"}]
 		input: cty.Object(map[string]cty.Type{"foo": cty.String, "bar": cty.List(cty.Number)}),
 		expected: `{
   bar = list(number)
@@ -379,6 +395,12 @@ func TestCtyTypeToHclType(t *testing.T) {
 			if test.expected != res {
 				t.Errorf("Test: '%s'' FAILED : \nexpected:\n %v \ngot:\n %v\n", name, test.expected, res)
 			}
+			// b, err := json.Marshal(test.input)
+			// if err != nil {
+			// 	t.Error(err)
+			// }
+
+			// t.Log(string(b))
 		})
 	}
 }

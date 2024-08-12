@@ -788,6 +788,15 @@ func ctyTypeToHCLString(t cty.Type) string {
 	case t.IsObjectType():
 		return objectTypeToHCLString(t)
 	}
+
+	if t == cty.DynamicPseudoType {
+		return "any"
+	}
+
+	if t == cty.NilType {
+		return ""
+	}
+
 	return t.FriendlyName()
 }
 
@@ -822,18 +831,18 @@ func objectTypeToHCLString(t cty.Type) string {
 func CtyTypeToHclType(types ...cty.Type) string {
 	// find which if any of the types are non nil and not dynamic
 	t := getKnownType(types)
-	if t == cty.NilType {
-		return ""
-	}
+	// if t == cty.NilType {
+	// 	return ""
+	// }
 
 	val := ctyTypeToHCLString(t)
 	return val
 }
 
-// from a list oif cty typoes, return the first which is non nil and not dynamic
+// from a list of cty typoes, return the first which is non nil and not dynamic
 func getKnownType(types []cty.Type) cty.Type {
 	for _, t := range types {
-		if t != cty.NilType && !t.HasDynamicTypes() {
+		if t != cty.NilType {
 			return t
 		}
 	}

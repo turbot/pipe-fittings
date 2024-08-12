@@ -164,6 +164,8 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 	} else {
 		o.Type = cty.DynamicPseudoType
 	}
+	o.TypeHCLString = hclhelpers.CtyTypeToHclType(o.Type)
+	o.TypeString = o.TypeHCLString
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeOptional]; exists {
 		valDiags := gohcl.DecodeExpression(attr.Expr, nil, &o.Optional)
@@ -184,7 +186,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 			if !isCompatible {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("default value type mismatch - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
+					Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
 					Subject:  &attr.Range,
 				})
 			} else {

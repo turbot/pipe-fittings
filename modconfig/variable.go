@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+
 	typehelpers "github.com/turbot/go-kit/types"
 
 	"github.com/hashicorp/hcl/v2"
@@ -27,10 +28,19 @@ type Variable struct {
 	Default cty.Value `column:"default_value,jsonb" json:"-"`
 	Type    cty.Type  `column:"var_type,string" json:"-"`
 
+	// TypeString (json: type) is currently showing the HCL Type: string or list(string)
+	// current type = list(list(string))
+	//
+	// future type = ["list",["list","string"]]
 	TypeString string `json:"type"`
-	DefaultGo  any    `json:"value_default"`
-	ValueGo    any    `json:"value"`
-	ModName    string `json:"mod_name"`
+
+	// This is the strategic field, where the HCL string representation of cty.Type is stored
+	// for example: list(list(string))
+	TypeHclString string `json:"type_string"`
+
+	DefaultGo any    `json:"value_default"`
+	ValueGo   any    `json:"value"`
+	ModName   string `json:"mod_name"`
 
 	// set after value resolution `column:"value,jsonb"`
 	Value                      cty.Value                      `column:"value,jsonb" json:"-"`
@@ -70,8 +80,13 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 		Type:        v.Type,
 		ParsingMode: v.ParsingMode,
 		ModName:     mod.ShortName,
-		TypeString:  hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()),
+
+		TypeHclString: hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()), // strategic, this where the HCL string representation of cty.Type is stored
 	}
+
+	// deprecated, we will change this "type" to cty.Type's json serialisation later
+	res.TypeString = res.TypeHclString
+
 	// if no type is set and a default _is_ set, use default to set the type
 	if res.Type.Equals(cty.DynamicPseudoType) && !res.Default.IsNull() {
 		res.Type = res.Default.Type()
@@ -116,7 +131,8 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	v.ValueGo, _ = hclhelpers.CtyToGo(value)
 	// if type string is not set, derive from the type of value
 	if v.TypeString == "" {
-		v.TypeString = hclhelpers.CtyTypeToHclType(value.Type())
+		v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
+		v.TypeString = v.TypeHclString
 	}
 
 	return nil

@@ -216,12 +216,12 @@ var tests = []testSetup{
 	{
 		title:         "default param value does not match type",
 		file:          "./pipelines/param_default_mismatch.fp",
-		containsError: "default value type mismatch - expected list of string, got string",
+		containsError: "default value type mismatched - expected list of string, got string",
 	},
 	{
 		title:         "default param value does not match type (2)",
 		file:          "./pipelines/param_default_mismatch_2.fp",
-		containsError: "default value type mismatch - expected set of bool, got number",
+		containsError: "default value type mismatched - expected set of bool, got number",
 	},
 }
 
