@@ -26,10 +26,6 @@ func IsValueCompatibleWithType(ctyType cty.Type, value cty.Value) bool {
 				return false
 			}
 		}
-
-		// if valType.IsObjectType() {
-		// 	return true
-		// }
 	}
 
 	if ctyType.IsCollectionType() {
@@ -62,11 +58,9 @@ func IsValueCompatibleWithType(ctyType cty.Type, value cty.Value) bool {
 					if !IsValueCompatibleWithType(ctyType.ElementType(), nestedValue) {
 						return false
 					}
-				} else {
 					// must be primitive type
-					if !IsValueCompatibleWithType(ctyType.ElementType(), cty.UnknownVal(tupleElementType)) {
-						return false
-					}
+				} else if !IsValueCompatibleWithType(ctyType.ElementType(), cty.UnknownVal(tupleElementType)) {
+					return false
 				}
 			}
 			return true

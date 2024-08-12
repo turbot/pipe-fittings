@@ -23,27 +23,27 @@ func TestParamVarious(t *testing.T) {
 	for _, param := range pipeline.Params {
 
 		if param.Name == "foo" {
-			assert.Equal("any", param.TypeHCLString) // type not speficied we assume dynamic
+			assert.Equal("any", param.TypeString) // type not speficied we assume dynamic
 		} else if param.Name == "list_of_string" {
-			assert.Equal("list(string)", param.TypeHCLString)
+			assert.Equal("list(string)", param.TypeString)
 		} else if param.Name == "map_of_number" {
-			assert.Equal("map(number)", param.TypeHCLString)
+			assert.Equal("map(number)", param.TypeString)
 		} else if param.Name == "map_of_bool" {
-			assert.Equal("map(bool)", param.TypeHCLString)
+			assert.Equal("map(bool)", param.TypeString)
 		} else if param.Name == "map_of_list_of_number" {
-			assert.Equal("map(list(number))", param.TypeHCLString)
+			assert.Equal("map(list(number))", param.TypeString)
 		} else if param.Name == "map_of_a_map_of_a_bool" {
-			assert.Equal("map(map(bool))", param.TypeHCLString)
+			assert.Equal("map(map(bool))", param.TypeString)
 		} else if param.Name == "map_of_any" {
-			assert.Equal("map(any)", param.TypeHCLString)
+			assert.Equal("map(any)", param.TypeString)
 		} else if param.Name == "list_of_list_of_string" {
-			assert.Equal("list(list(string))", param.TypeHCLString)
+			assert.Equal("list(list(string))", param.TypeString)
 		} else if param.Name == "list_of_map_of_bool" {
-			assert.Equal("list(map(bool))", param.TypeHCLString)
+			assert.Equal("list(map(bool))", param.TypeString)
 		} else if param.Name == "list_of_map_of_list_of_number" {
-			assert.Equal("list(map(list(number)))", param.TypeHCLString)
+			assert.Equal("list(map(list(number)))", param.TypeString)
 		} else if param.Name == "list_of_map_of_list_of_string" {
-			assert.Equal("list(map(list(string)))", param.TypeHCLString)
+			assert.Equal("list(map(list(string)))", param.TypeString)
 		} else {
 			assert.Fail("Unknown param: ", param.Name)
 		}

@@ -164,8 +164,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 	} else {
 		o.Type = cty.DynamicPseudoType
 	}
-	o.TypeHCLString = hclhelpers.CtyTypeToHclType(o.Type)
-	o.TypeString = o.TypeHCLString
+	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeOptional]; exists {
 		valDiags := gohcl.DecodeExpression(attr.Expr, nil, &o.Optional)
