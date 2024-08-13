@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.5.1 [2024-08-13]
+
+_Bug fixes_
+
+* CLI notification messages should be printed to stderr to avoid interfering with stdout. ([#437](https://github.com/turbot/pipe-fittings/issues/437))
+
 ## v1.5.0 [2024-08-13]
 
 _What's new_
