@@ -15,10 +15,12 @@ import (
 type HclResourceImpl struct {
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
-
-	FullName        string            `cty:"name" json:"qualified_name,omitempty"`
-	Title           *string           `cty:"title" hcl:"title"  json:"title,omitempty"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"-"`
+	// FullName is: <modShortName>.<blockType>.<shortName> if there is a mod
+	// and <blockType>.<shortName> if there is no mod
+	FullName  string  `cty:"name" json:"qualified_name,omitempty"`
+	Title     *string `cty:"title" hcl:"title"  json:"title,omitempty"`
+	ShortName string  `cty:"short_name" hcl:"name,label" json:"-"`
+	// UnqualifiedName is the <blockType>.<shortName>
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
 	Description     *string           `cty:"description" hcl:"description" json:"description,omitempty"`
 	Documentation   *string           `cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
