@@ -2,13 +2,13 @@ package task
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"os"
-	// "github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -30,7 +30,7 @@ func (av *AvailableVersionCache) asTable() (*tablewriter.Table, error) {
 		return nil, nil
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(os.Stderr)  // notifications are written to stderr to avoid interfering with stdout
 	table.SetHeader([]string{})                // no headers please
 	table.SetAlignment(tablewriter.ALIGN_LEFT) // we align to the left
 	table.SetAutoWrapText(false)               // let's not wrap the text
