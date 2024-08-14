@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v1.5.2 [2024-08-14]
+
+* Flowpipe pipeline param default value compatibility test with the declared type may fail for complex types. ([#441](https://github.com/turbot/pipe-fittings/issues/441)) 
+
 ## v1.5.1 [2024-08-13]
 
 _Bug fixes_

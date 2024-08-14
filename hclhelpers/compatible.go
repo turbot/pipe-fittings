@@ -9,21 +9,36 @@ func IsValueCompatibleWithType(ctyType cty.Type, value cty.Value) bool {
 
 	valueType := value.Type()
 
-	if ctyType.IsMapType() {
+	if ctyType.IsMapType() || ctyType.IsObjectType() {
 		if valueType.IsMapType() || valueType.IsObjectType() {
-			mapElementType := ctyType.ElementType()
+			if ctyType.IsCollectionType() {
+				mapElementType := ctyType.ElementType()
 
-			// Ensure the value is known before iterating over it to avoid panic
-			if value.IsKnown() {
-				for it := value.ElementIterator(); it.Next(); {
-					_, mapValue := it.Element()
-					if !IsValueCompatibleWithType(mapElementType, mapValue) {
+				// Ensure the value is known before iterating over it to avoid panic
+				if value.IsKnown() {
+					for it := value.ElementIterator(); it.Next(); {
+						_, mapValue := it.Element()
+						if !IsValueCompatibleWithType(mapElementType, mapValue) {
+							return false
+						}
+					}
+					return true
+				} else {
+					return false
+				}
+			} else if ctyType.IsObjectType() {
+				typeMapTypes := ctyType.AttributeTypes()
+				for name, typeValue := range typeMapTypes {
+					if valueType.HasAttribute(name) {
+						innerValue := value.GetAttr(name)
+						if !IsValueCompatibleWithType(typeValue, innerValue) {
+							return false
+						}
+					} else {
 						return false
 					}
 				}
 				return true
-			} else {
-				return false
 			}
 		}
 	}
