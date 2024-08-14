@@ -224,6 +224,16 @@ var compatibleTests = map[string]compatibleTest{
 		value:    cty.ListVal([]cty.Value{cty.ListVal([]cty.Value{cty.ListVal([]cty.Value{cty.ListVal([]cty.Value{cty.NumberIntVal(23), cty.NumberIntVal(42)})})})}),
 		expected: false,
 	},
+	"map of an object": {
+		ctyType:  cty.Map(cty.Object(map[string]cty.Type{"foo": cty.String, "bar": cty.String})),
+		value:    cty.MapVal(map[string]cty.Value{"foo": cty.ObjectVal(map[string]cty.Value{"foo": cty.StringVal("foo"), "bar": cty.StringVal("bar")})}),
+		expected: true,
+	},
+	"map of an object 2": {
+		ctyType:  cty.Map(cty.Object(map[string]cty.Type{"foo": cty.String, "bar": cty.Number})),
+		value:    cty.ObjectVal(map[string]cty.Value{"foo": cty.ObjectVal(map[string]cty.Value{"foo": cty.StringVal("foo"), "bar": cty.NumberIntVal(42)})}),
+		expected: true,
+	},
 }
 
 func TestCompatible(t *testing.T) {
