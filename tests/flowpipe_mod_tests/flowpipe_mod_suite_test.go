@@ -132,6 +132,27 @@ func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 	assert.Equal("unused", trigger.Tags["class"])
 }
 
+func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_dependencies"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_dependencies", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	rootMod := w.Mod
+	if rootMod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	assert.Equal(4, len(rootMod.ResourceMaps.Triggers), "Expected 4 triggers. 3 in the root mod and 1 mod_depend_a. The trigger in mod_depend_a_1 should be here. Only list one level down")
+	assert.Equal(1, len(w.Mods["mod_depend_a"].ResourceMaps.Triggers), "Expected 1 trigger in mod_depend_a")
+	assert.Equal(0, len(w.Mods["mod_depend_b"].ResourceMaps.Triggers), "Expected 0 trigger in mod_depend_a")
+}
+
 func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
 	assert := assert.New(suite.T())
 
