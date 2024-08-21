@@ -2,7 +2,7 @@
 
 Shared Pipes Component
 
-## v1.5.3 [tbd]
+## v1.5.3 [2024-08-22]
 
 * Flowpipe triggers now appears as top level resources, allowing them to be listed from the root mod. ([#444](https://github.com/turbot/pipe-fittings/issues/444))
 
