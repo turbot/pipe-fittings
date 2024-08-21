@@ -201,6 +201,7 @@ func (p *Pipeline) CoercePipelineParams(params map[string]string) (map[string]in
 	return CoerceParams(p, params)
 }
 
+// Implements ModItem interface
 func (p *Pipeline) GetMod() *Mod {
 	return p.mod
 }

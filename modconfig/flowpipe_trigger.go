@@ -20,6 +20,8 @@ type Trigger struct {
 	HclResourceImpl
 	ResourceWithMetadataImpl
 
+	mod *Mod
+
 	FileName        string          `json:"file_name"`
 	StartLineNumber int             `json:"start_line_number"`
 	EndLineNumber   int             `json:"end_line_number"`
@@ -42,6 +44,11 @@ type Trigger struct {
 	RawBody  hcl.Body      `json:"-" hcl:",remain"`
 	Config   TriggerConfig `json:"-"`
 	Enabled  *bool         `json:"-"`
+}
+
+// Implements the ModTreeItem interface
+func (t *Trigger) GetMod() *Mod {
+	return t.mod
 }
 
 func (t *Trigger) SetFileReference(fileName string, startLineNumber int, endLineNumber int) {
@@ -952,6 +959,7 @@ func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Tr
 			DeclRange:       block.DefRange,
 			blockType:       block.Type,
 		},
+		mod: mod,
 	}
 
 	switch triggerType {
