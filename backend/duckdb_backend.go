@@ -3,9 +3,9 @@ package backend
 import (
 	"context"
 	"database/sql"
-	"github.com/turbot/pipe-fittings/constants"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
@@ -28,7 +28,7 @@ func NewDuckDBBackend(connString string) *DuckDBBackend {
 }
 
 // Connect implements Backend.
-func (b *DuckDBBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
+func (b *DuckDBBackend) Connect(ctx context.Context, options ...ConnectOption) (*sql.DB, error) {
 	config := NewConnectConfig(options)
 	db, err := sql.Open("duckdb", b.connectionString)
 	if err != nil {
@@ -37,6 +37,18 @@ func (b *DuckDBBackend) Connect(_ context.Context, options ...ConnectOption) (*s
 	db.SetConnMaxIdleTime(config.MaxConnIdleTime)
 	db.SetConnMaxLifetime(config.MaxConnLifeTime)
 	db.SetMaxOpenConns(config.MaxOpenConns)
+
+	// Install and load the JSON extension
+	_, err = db.ExecContext(ctx, "INSTALL 'json';")
+	if err != nil {
+		return nil, sperr.WrapWithMessage(err, "could not install json extension in duckdb")
+	}
+
+	_, err = db.ExecContext(ctx, "LOAD 'json';")
+	if err != nil {
+		return nil, sperr.WrapWithMessage(err, "could not load json extension in duckdb")
+	}
+
 	return db, nil
 }
 
