@@ -1,5 +1,14 @@
 mod "test_mod" {
   title = "my_mod"
+
+  require {
+        mod "mod_depend_a" {
+            version = "1.0.0"
+        }
+        mod "mod_depend_b" {
+            version = "1.0.0"
+        }
+  }
 }
 
 variable "schedule_default" {
@@ -151,6 +160,18 @@ pipeline "github_get_issue_with_number" {
             EOM
     })
   }
+}
+
+pipeline "description_from_var_two" {
+  description = "description from variable: ${var.var_two}"
+}
+
+pipeline "description_from_var_four" {
+  description = "description from variable: ${var.var_four}"
+}
+
+pipeline "foo-bar" {
+  description = "description from variable: ${var.var_four}"
 }
 
 locals {

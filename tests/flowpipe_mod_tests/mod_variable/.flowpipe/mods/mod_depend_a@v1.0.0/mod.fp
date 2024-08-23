@@ -12,19 +12,11 @@ pipeline "echo_one_depend_a" {
     }
 }
 
-// Important to leave this pipeline here. There was a bug that creds in the nested pipelines are not
-// resolved correctly
 pipeline "with_github_creds" {
   param "creds" {
     type = string
   }
-
-  step "transform" "merge_creds" {
-    value = merge(credential.github[param.creds], {cred_name = param.creds})
-  }
 }
-
-
 
 pipeline "http" {
     description = "Bad HTTP step, just one step in the pipeline."

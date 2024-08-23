@@ -1455,6 +1455,14 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	intervalSchedule := reportTriggersWithIntervalVarWithDefaultValue.Config.(*modconfig.TriggerSchedule)
 	assert.Equal("weekly", intervalSchedule.Schedule)
 
+	modDependBPipelineEchoB := pipelines["mod_depend_b.pipeline.echo_b"]
+	if modDependBPipelineEchoB == nil {
+		assert.Fail("echo_b pipeline not found")
+		return
+	}
+
+	// The default value is 300 but we override it in the parent's pvars file to 42
+	assert.Equal("description from variable 42", *modDependBPipelineEchoB.Description)
 }
 
 func (suite *FlowpipeModTestSuite) TestModMessageStep() {
