@@ -23,7 +23,7 @@ func DecodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider mod
 		}
 	}()
 
-	nestedStructs, moreDiags := getNestedStructValsRecursive(resource)
+	nestedStructs, moreDiags := GetNestedStructValsRecursive(resource)
 	diags = append(diags, moreDiags...)
 	// get the schema for this resource
 	schema := getResourceSchema(resource, nestedStructs)
@@ -252,12 +252,12 @@ func getHclAttributeTag(field reflect.StructField) string {
 	}
 }
 
-func getNestedStructValsRecursive(val any) ([]any, hcl.Diagnostics) {
+func GetNestedStructValsRecursive(val any) ([]any, hcl.Diagnostics) {
 	nested, diags := getNestedStructVals(val)
 	res := nested
 
 	for _, n := range nested {
-		nestedVals, moreDiags := getNestedStructValsRecursive(n)
+		nestedVals, moreDiags := GetNestedStructValsRecursive(n)
 		diags = append(diags, moreDiags...)
 		res = append(res, nestedVals...)
 	}
