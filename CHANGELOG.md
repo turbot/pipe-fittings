@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v1.6.0 [tbd]
+
+_What's new_
+
+_Bug fixes_
+
+
 ## v1.5.4 [2024-08-22]
 
 _What's new_
