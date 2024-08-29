@@ -6,48 +6,48 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/credential"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/zclconf/go-cty/cty"
 )
 
-func DecodeCredential(configPath string, block *hcl.Block) (credential.Credential, hcl.Diagnostics) {
-
+func DecodeFlowpipeConnection(configPath string, block *hcl.Block) (connection.PipelingConnection, hcl.Diagnostics) {
 	if len(block.Labels) != 2 {
 		diags := hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid credential block - expected 2 labels, found %d", len(block.Labels)),
+				Summary:  fmt.Sprintf("invalid Flowpipe connection block - expected 2 labels, found %d", len(block.Labels)),
 				Subject:  &block.DefRange,
 			},
 		}
 		return nil, diags
 	}
 
-	credentialType := block.Labels[0]
+	connectionType := block.Labels[0]
 
-	cred, err := credential.NewCredential(block)
+	conn, err := connection.NewConnection(block)
 	if err != nil {
 		diags := hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("error creating credential: %s", err),
+				Summary:  fmt.Sprintf("error creating connection: %s", err),
 				Subject:  &block.DefRange,
 			},
 		}
 		return nil, diags
 	}
 
-	if helpers.IsNil(cred) {
+	if helpers.IsNil(conn) {
 		diags := hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid credential type '%s'", credentialType),
+				Summary:  fmt.Sprintf("invalid connection type '%s'", connectionType),
 				Subject:  &block.DefRange,
 			},
 		}
 		return nil, diags
 	}
+
 	_, r, diags := block.Body.PartialContent(&hcl.BodySchema{})
 	if len(diags) > 0 {
 		return nil, diags
@@ -61,15 +61,15 @@ func DecodeCredential(configPath string, block *hcl.Block) (credential.Credentia
 		Variables: make(map[string]cty.Value),
 	}
 
-	diags = decodeHclBody(body, evalCtx, nil, cred)
+	diags = decodeHclBody(body, evalCtx, nil, conn)
 	if len(diags) > 0 {
 		return nil, diags
 	}
 
-	moreDiags := cred.Validate()
+	moreDiags := conn.Validate()
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}
 
-	return cred, diags
+	return conn, diags
 }

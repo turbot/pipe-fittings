@@ -16,6 +16,7 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -41,9 +42,10 @@ type Workspace struct {
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
-	Credentials  map[string]credential.Credential
-	Integrations map[string]modconfig.Integration
-	Notifiers    map[string]modconfig.Notifier
+	Credentials         map[string]credential.Credential
+	PipelingConnections map[string]connection.PipelingConnection
+	Integrations        map[string]modconfig.Integration
+	Notifiers           map[string]modconfig.Notifier
 
 	CloudMetadata *steampipeconfig.CloudMetadata
 
@@ -86,6 +88,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 	}
 
 	w.Credentials = cfg.credentials
+	w.PipelingConnections = cfg.pipelingConnections
 	w.Integrations = cfg.integrations
 	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
@@ -303,6 +306,7 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 		}))
 
 	parseCtx.Credentials = w.Credentials
+	parseCtx.PipelingConnections = w.PipelingConnections
 	parseCtx.Integrations = w.Integrations
 	parseCtx.Notifiers = w.Notifiers
 

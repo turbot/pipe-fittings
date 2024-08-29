@@ -251,7 +251,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 	}
 
 	// do a partial decode
-	content, diags := body.Content(parse.ConfigBlockSchema)
+	content, diags := body.Content(parse.FlowpipeConfigBlockSchema)
 	if diags.HasErrors() {
 		return diags
 	}
@@ -304,6 +304,16 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 			}
 
 			f.Notifiers[notifier.GetUnqualifiedName()] = notifier
+		case schema.BlockTypeConnection:
+
+			conn, moreDiags := parse.DecodeFlowpipeConnection(configPath, block)
+			if len(moreDiags) > 0 {
+				diags = append(diags, moreDiags...)
+				slog.Debug("failed to decode notifier block")
+				continue
+			}
+
+			f.PipelingConnections[conn.GetUnqualifiedName()] = conn
 		}
 	}
 

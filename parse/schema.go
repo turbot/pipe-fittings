@@ -8,17 +8,15 @@ import (
 // cache resource schemas
 var resourceSchemaCache = make(map[string]*hcl.BodySchema)
 
-// TODO: Flowpipe and Steampipe is sharing this config block schema .. but I don't think it should?
-var ConfigBlockSchema = &hcl.BodySchema{
+// Custom config schema for Flowpipe. The connection block setup is different, Steampipe only has one label
+// while Flowipe has 2 labels. Credential, CredentialImport, Integration and Notifer are also specific to Flowpipe
+var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
+			// Flowpipe connnections have 2 labels
 			Type:       schema.BlockTypeConnection,
-			LabelNames: []string{"name"},
-		},
-		{
-			Type:       schema.BlockTypePlugin,
-			LabelNames: []string{"name"},
+			LabelNames: []string{"type", "name"},
 		},
 		{
 			Type:       schema.BlockTypeOptions,
@@ -43,6 +41,28 @@ var ConfigBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypeNotifier,
 			LabelNames: []string{schema.LabelName},
+		},
+	},
+}
+
+var ConfigBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			Type:       schema.BlockTypeConnection,
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       schema.BlockTypePlugin,
+			LabelNames: []string{"name"},
+		},
+		{
+			Type:       schema.BlockTypeOptions,
+			LabelNames: []string{"type"},
+		},
+		{
+			Type:       schema.BlockTypeWorkspaceProfile,
+			LabelNames: []string{"name"},
 		},
 	},
 }

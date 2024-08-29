@@ -10,9 +10,14 @@ import (
 )
 
 var credentialTypeRegistry = make(map[string]struct{}, 0)
+var connectionTypeRegistry = make(map[string]struct{}, 0)
 
 func RegisterCredentialType(credentialType string) {
 	credentialTypeRegistry[credentialType] = struct{}{}
+}
+
+func RegisterConnectionType(connectionType string) {
+	connectionTypeRegistry[connectionType] = struct{}{}
 }
 
 // This is not the best guess, but it's sufficient for now. We can improve this later to add more context or

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -22,6 +23,7 @@ type LoadWorkspaceOption func(*LoadWorkspaceConfig)
 
 type LoadWorkspaceConfig struct {
 	credentials                 map[string]credential.Credential
+	pipelingConnections         map[string]connection.PipelingConnection
 	integrations                map[string]modconfig.Integration
 	notifiers                   map[string]modconfig.Notifier
 	blockTypeInclusions         []string
@@ -31,10 +33,17 @@ type LoadWorkspaceConfig struct {
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
 	return &LoadWorkspaceConfig{
-		credentials:       make(map[string]credential.Credential),
-		integrations:      make(map[string]modconfig.Integration),
-		notifiers:         make(map[string]modconfig.Notifier),
-		validateVariables: true,
+		credentials:         make(map[string]credential.Credential),
+		integrations:        make(map[string]modconfig.Integration),
+		notifiers:           make(map[string]modconfig.Notifier),
+		pipelingConnections: make(map[string]connection.PipelingConnection),
+		validateVariables:   true,
+	}
+}
+
+func WithPipelingConnections(pipelingConnections map[string]connection.PipelingConnection) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.pipelingConnections = pipelingConnections
 	}
 }
 

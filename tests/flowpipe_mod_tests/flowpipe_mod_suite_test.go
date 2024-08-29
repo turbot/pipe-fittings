@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/schema"
@@ -338,6 +339,57 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 	assert.NotNil(err.Error)
 }
 
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnction() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_connections"})
+	assert.Nil(err.Error)
+
+	pcon := flowpipeConfig.PipelingConnections["aws.prod_conn"]
+	if helpers.IsNil(pcon) {
+		assert.Fail("aws.prod_conn connection not found")
+		return
+	}
+
+	awsConn, ok := pcon.(*connection.AwsConnection)
+	if !ok {
+		assert.Fail("aws.prod_conn is not an AwsCredential")
+		return
+	}
+	assert.Equal("prod1", *awsConn.Profile)
+
+	pcon = flowpipeConfig.PipelingConnections["slack.slack_conn"]
+	if helpers.IsNil(pcon) {
+		assert.Fail("slack.slack_conn connection not found")
+		return
+	}
+
+	slackConn, ok := pcon.(*connection.SlackConnection)
+	if !ok {
+		assert.Fail("slack.slack_conn is not a SlackConnection")
+		return
+	}
+	assert.Equal("abc1", *slackConn.Token)
+
+	// Check that the connection is loaded in the workspace
+	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connection", workspace.WithCredentials(flowpipeConfig.Credentials))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pcon = w.PipelingConnections["aws.prod_conn"]
+	if helpers.IsNil(pcon) {
+		assert.Fail("aws.prod_conn connection not found")
+		return
+	}
+
+	awsConn, ok = pcon.(*connection.AwsConnection)
+	if !ok {
+		assert.Fail("aws.prod_conn is not an AwsCredential")
+		return
+	}
+	assert.Equal("prod1", *awsConn.Profile)
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
 	assert := assert.New(suite.T())
 
@@ -378,7 +430,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 

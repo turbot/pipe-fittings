@@ -8,6 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
@@ -15,10 +16,11 @@ import (
 type FlowpipeConfig struct {
 	ConfigPaths []string
 
-	CredentialImports map[string]credential.CredentialImport
-	Credentials       map[string]credential.Credential
-	Integrations      map[string]modconfig.Integration
-	Notifiers         map[string]modconfig.Notifier
+	CredentialImports   map[string]credential.CredentialImport
+	Credentials         map[string]credential.Credential
+	Integrations        map[string]modconfig.Integration
+	Notifiers           map[string]modconfig.Notifier
+	PipelingConnections map[string]connection.PipelingConnection
 
 	watcher                 *filewatcher.FileWatcher
 	fileWatcherErrorHandler func(context.Context, error)
@@ -38,6 +40,7 @@ func (f *FlowpipeConfig) updateResources(other *FlowpipeConfig) {
 	f.Credentials = other.Credentials
 	f.Integrations = other.Integrations
 	f.Notifiers = other.Notifiers
+	f.PipelingConnections = other.PipelingConnections
 
 }
 
@@ -95,6 +98,20 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 		}
 
 		if !other.CredentialImports[k].Equals(v) {
+			return false
+		}
+	}
+
+	if len(f.PipelingConnections) != len(other.PipelingConnections) {
+		return false
+	}
+
+	for k, v := range f.PipelingConnections {
+		if _, ok := other.PipelingConnections[k]; !ok {
+			return false
+		}
+
+		if !other.PipelingConnections[k].Equals(v) {
 			return false
 		}
 	}
@@ -177,13 +194,20 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		return nil
 	}
 
+	defaultPipelingConnections, err := connection.DefaultPipelingConnections()
+	if err != nil {
+		slog.Error("Unable to create default pipeling connections", "error", err)
+		return nil
+	}
+
 	fpConfig := FlowpipeConfig{
-		CredentialImports: make(map[string]credential.CredentialImport),
-		Credentials:       defaultCreds,
-		Integrations:      defaultIntegrations,
-		Notifiers:         defaultNotifiers,
-		ConfigPaths:       configPaths,
-		loadLock:          &sync.Mutex{},
+		CredentialImports:   make(map[string]credential.CredentialImport),
+		Credentials:         defaultCreds,
+		Integrations:        defaultIntegrations,
+		Notifiers:           defaultNotifiers,
+		ConfigPaths:         configPaths,
+		PipelingConnections: defaultPipelingConnections,
+		loadLock:            &sync.Mutex{},
 	}
 
 	return &fpConfig
