@@ -372,13 +372,13 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnction() {
 	assert.Equal("abc1", *slackConn.Token)
 
 	// Check that the connection is loaded in the workspace
-	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connection", workspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connection", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 
 	pcon = w.PipelingConnections["aws.prod_conn"]
 	if helpers.IsNil(pcon) {
-		assert.Fail("aws.prod_conn connection not found")
+		assert.Fail("aws.prod_conn connection not found in workspace")
 		return
 	}
 
