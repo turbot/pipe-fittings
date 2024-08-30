@@ -12,8 +12,9 @@ import (
 )
 
 var connectionTypRegistry = map[string]reflect.Type{
-	"aws":   reflect.TypeOf(AwsConnection{}),
-	"slack": reflect.TypeOf(SlackConnection{}),
+	"aws":    reflect.TypeOf(AwsConnection{}),
+	"github": reflect.TypeOf(GithubConnection{}),
+	"slack":  reflect.TypeOf(SlackConnection{}),
 }
 
 type PipelingConnection interface {
