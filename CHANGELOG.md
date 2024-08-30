@@ -6,6 +6,8 @@ Shared Pipes Component
 
 _What's new_
 
+* `Pipeling Connection` resource to replace `Credential`. ([#449](https://github.com/turbot/pipe-fittings/issues/449)).
+
 _Bug fixes_
 
 

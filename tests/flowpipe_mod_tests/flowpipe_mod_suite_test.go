@@ -414,7 +414,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 
@@ -425,6 +425,30 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 
 	credsMap := slackCredsCty.AsValueMap()
 	tokenVal := credsMap["token"].AsString()
+	assert.Equal("abcdefghi", tokenVal)
+
+	os.Unsetenv("TEST_SLACK_TOKEN")
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithConnWithContextFunction() {
+	assert := assert.New(suite.T())
+
+	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_using_context_function"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	connections := w.PipelingConnections
+	slackConn := connections["slack.slack_conn"]
+	slackConnCty, e := slackConn.CtyValue()
+	assert.Nil(e)
+
+	connMap := slackConnCty.AsValueMap()
+	tokenVal := connMap["token"].AsString()
 	assert.Equal("abcdefghi", tokenVal)
 
 	os.Unsetenv("TEST_SLACK_TOKEN")
@@ -1344,6 +1368,42 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	pipeline := pipelines["mod_with_dynamic_creds.pipeline.cred_aws"]
 
 	assert.Equal("aws.<dynamic>", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+}
+
+func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
+	assert := assert.New(suite.T())
+
+	connections := map[string]connection.PipelingConnection{
+		"aws.aws_static": &connection.AwsConnection{
+			ConnectionImpl: connection.ConnectionImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.static",
+					ShortName:       "static",
+					UnqualifiedName: "aws.static",
+				},
+				Type: "aws",
+			},
+		},
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_conn", workspace.WithPipelingConnections(connections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_dynamic_conn.pipeline.conn_aws"]
+
+	assert.Equal("aws.<dynamic>", pipeline.Steps[0].GetConnectionDependsOn()[0], "there's only 1 step in this pipeline and it should have a connection dependency")
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
