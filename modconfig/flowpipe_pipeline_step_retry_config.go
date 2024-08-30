@@ -78,6 +78,10 @@ func (r *RetryConfig) AppendCredentialDependsOn(...string) {
 	// not implemented
 }
 
+func (r *RetryConfig) AppendConnectionDependsOn(...string) {
+	// not implemented
+}
+
 func (r *RetryConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	r.UnresolvedAttributes[name] = expr
 }

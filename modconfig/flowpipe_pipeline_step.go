@@ -288,6 +288,7 @@ type PipelineStep interface {
 	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
 	GetDependsOn() []string
 	GetCredentialDependsOn() []string
+	GetConnectionDependsOn() []string
 	GetForEach() hcl.Expression
 	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	GetUnresolvedAttributes() map[string]hcl.Expression
@@ -309,6 +310,7 @@ type PipelineStep interface {
 type PipelineStepBaseInterface interface {
 	AppendDependsOn(...string)
 	AppendCredentialDependsOn(...string)
+	AppendConnectionDependsOn(...string)
 	AddUnresolvedAttribute(string, hcl.Expression)
 }
 
@@ -322,6 +324,7 @@ type PipelineStepBase struct {
 	Timeout             interface{}    `json:"timeout,omitempty"`
 	DependsOn           []string       `json:"depends_on,omitempty"`
 	CredentialDependsOn []string       `json:"credential_depends_on,omitempty"`
+	ConnectionDependsOn []string       `json:"connection_depends_on,omitempty"`
 	Resolved            bool           `json:"resolved,omitempty"`
 	ErrorConfig         *ErrorConfig   `json:"-"`
 	RetryConfig         *RetryConfig   `json:"retry,omitempty"`
@@ -703,6 +706,7 @@ func (p *PipelineStepBase) Equals(other *PipelineStepBase) bool {
 		reflect.DeepEqual(p.Timeout, other.Timeout) &&
 		helpers.StringSliceEqualIgnoreOrder(p.DependsOn, other.DependsOn) &&
 		helpers.StringSliceEqualIgnoreOrder(p.CredentialDependsOn, other.CredentialDependsOn) &&
+		helpers.StringSliceEqualIgnoreOrder(p.ConnectionDependsOn, other.ConnectionDependsOn) &&
 		p.Resolved == other.Resolved
 }
 
@@ -799,6 +803,10 @@ func (p *PipelineStepBase) GetCredentialDependsOn() []string {
 	return p.CredentialDependsOn
 }
 
+func (p *PipelineStepBase) GetConnectionDependsOn() []string {
+	return p.ConnectionDependsOn
+}
+
 func (p *PipelineStepBase) IsResolved() bool {
 	return len(p.UnresolvedAttributes) == 0
 }
@@ -838,6 +846,22 @@ func (p *PipelineStepBase) AppendCredentialDependsOn(credentialDependsOn ...stri
 	for _, dep := range credentialDependsOn {
 		if !existingDeps[dep] {
 			p.CredentialDependsOn = append(p.CredentialDependsOn, dep)
+			existingDeps[dep] = true
+		}
+	}
+}
+
+func (p *PipelineStepBase) AppendConnectionDependsOn(connectionDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
+	existingDeps := make(map[string]bool)
+	for _, dep := range p.ConnectionDependsOn {
+		existingDeps[dep] = true
+	}
+
+	for _, dep := range connectionDependsOn {
+		if !existingDeps[dep] {
+			p.ConnectionDependsOn = append(p.ConnectionDependsOn, dep)
 			existingDeps[dep] = true
 		}
 	}
@@ -1072,7 +1096,7 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 
 	for _, e := range diags {
 		if e.Severity == hcl.DiagError {
-			if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
+			if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` || e.Detail == `There is no variable named "connection".` {
 				traversals := e.Expression.Variables()
 				dependsOnAdded := false
 				for _, traversal := range traversals {
@@ -1103,6 +1127,24 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 							} else {
 								dependsOn := parts[1] + "." + parts[2]
 								p.AppendCredentialDependsOn(dependsOn)
+								dependsOnAdded = true
+							}
+						} else if parts[0] == schema.BlockTypeConnection {
+							if len(parts) < 2 {
+								return diags
+							}
+
+							if len(parts) == 2 {
+								// dynamic references:
+								// step "transform" "aws" {
+								// 	value   = connection.aws[param.conn].env
+								// }
+								dependsOn := parts[1] + ".<dynamic>"
+								p.AppendConnectionDependsOn(dependsOn)
+								dependsOnAdded = true
+							} else {
+								dependsOn := parts[1] + "." + parts[2]
+								p.AppendConnectionDependsOn(dependsOn)
 								dependsOnAdded = true
 							}
 						}
@@ -1606,9 +1648,10 @@ func findTryFunction(expr hcl.Expression) bool {
 	return false
 }
 
-func allDependsOnFromVariables(traversals []hcl.Traversal) ([]string, []string) {
+func allDependsOnFromVariables(traversals []hcl.Traversal) ([]string, []string, []string) {
 	var allDependsOn []string
 	var allCredentialDependsOn []string
+	var allConnectionDependsOn []string
 
 	for _, traversal := range traversals {
 		parts := hclhelpers.TraversalAsStringSlice(traversal)
@@ -1639,11 +1682,28 @@ func allDependsOnFromVariables(traversals []hcl.Traversal) ([]string, []string) 
 					dependsOn := parts[1] + "." + parts[2]
 					allCredentialDependsOn = append(allCredentialDependsOn, dependsOn)
 				}
+			} else if parts[0] == schema.BlockTypeConnection {
+				if len(parts) < 2 {
+					continue
+				}
+
+				if len(parts) == 2 {
+					// dynamic references:
+					// step "transform" "aws" {
+					// 	value   = connection.aws[param.conn].env
+					// }
+					dependsOn := parts[1] + ".<dynamic>"
+					allConnectionDependsOn = append(allConnectionDependsOn, dependsOn)
+
+				} else {
+					dependsOn := parts[1] + "." + parts[2]
+					allConnectionDependsOn = append(allConnectionDependsOn, dependsOn)
+				}
 			}
 		}
 	}
 
-	return allDependsOn, allCredentialDependsOn
+	return allDependsOn, allCredentialDependsOn, allConnectionDependsOn
 }
 
 func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, resultsReference bool) (cty.Value, hcl.Diagnostics) {
@@ -1687,9 +1747,10 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 	if isTryFunction {
 		p.AddUnresolvedAttribute(attr.Name, expr)
 
-		dependsOn, credsDependsOn := allDependsOnFromVariables(expr.Variables())
+		dependsOn, credsDependsOn, connDependsOn := allDependsOnFromVariables(expr.Variables())
 		p.AppendDependsOn(dependsOn...)
 		p.AppendCredentialDependsOn(credsDependsOn...)
+		p.AppendConnectionDependsOn(connDependsOn...)
 
 		// don't bother continuing, we should not resolve it if there's an "if" function
 		return cty.NilVal, hcl.Diagnostics{}
@@ -1702,13 +1763,14 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		resolvedDiags := 0
 		for _, e := range stepDiags {
 			if e.Severity == hcl.DiagError {
-				if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` {
+				if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` || e.Detail == `There is no variable named "connection".` {
 
-					dependsOn, credsDependsOn := allDependsOnFromVariables(expr.Variables())
+					dependsOn, credsDependsOn, connDependsOn := allDependsOnFromVariables(expr.Variables())
 					p.AppendDependsOn(dependsOn...)
 					p.AppendCredentialDependsOn(credsDependsOn...)
+					p.AppendConnectionDependsOn(connDependsOn...)
 
-					dependsOnAdded := len(dependsOn) > 0 || len(credsDependsOn) > 0
+					dependsOnAdded := len(dependsOn) > 0 || len(credsDependsOn) > 0 || len(connDependsOn) > 0
 
 					if dependsOnAdded {
 						resolvedDiags++
@@ -1735,9 +1797,10 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		// check if all diags have been resolved
 		if resolvedDiags == len(stepDiags) {
 			// mop up any other depends on that may be missed with the above logic
-			dependsOn, credsDependsOn := allDependsOnFromVariables(expr.Variables())
+			dependsOn, credsDependsOn, connDependsOn := allDependsOnFromVariables(expr.Variables())
 			p.AppendDependsOn(dependsOn...)
 			p.AppendCredentialDependsOn(credsDependsOn...)
+			p.AppendConnectionDependsOn(connDependsOn...)
 
 			// * Don't forget to add this, if you change the logic ensure that the code flow still
 			// * calls AddUnresolvedAttribute

@@ -35,6 +35,10 @@ func (t *ThrowConfig) AppendCredentialDependsOn(...string) {
 	// not implemented
 }
 
+func (t *ThrowConfig) AppendConnectionDependsOn(...string) {
+	// not implemented
+}
+
 func (t *ThrowConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	t.UnresolvedAttributes[name] = expr
 }

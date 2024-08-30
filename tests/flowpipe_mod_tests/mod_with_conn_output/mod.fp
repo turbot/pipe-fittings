@@ -1,11 +1,11 @@
 mod "test_mod" {
 }
 
-pipeline "cred_in_step_output" {
+pipeline "conn_in_step_output" {
 
     step "transform" "test" {
         output "val" {
-            value = credential.aws.example
+            value = connection.aws.example
         }
     }
 
@@ -14,8 +14,8 @@ pipeline "cred_in_step_output" {
     }
 }
 
-pipeline "cred_in_output" {
+pipeline "conn_in_output" {
     output "val" {
-        value = credential.aws.example
+        value = connection.aws.example
     }
 }

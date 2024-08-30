@@ -19,6 +19,7 @@ type LoopDefn interface {
 	Equals(LoopDefn) bool
 	AppendDependsOn(...string)
 	AppendCredentialDependsOn(...string)
+	AppendConnectionDependsOn(...string)
 	AddUnresolvedAttribute(string, hcl.Expression)
 	GetUnresolvedAttributes() map[string]hcl.Expression
 	ResolveUntil(evalContext *hcl.EvalContext) (bool, hcl.Diagnostics)
@@ -114,6 +115,10 @@ func (l *LoopStep) AppendDependsOn(dependsOn ...string) {
 }
 
 func (*LoopStep) AppendCredentialDependsOn(...string) {
+	// not implemented
+}
+
+func (*LoopStep) AppendConnectionDependsOn(...string) {
 	// not implemented
 }
 

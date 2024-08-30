@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -95,6 +96,12 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 								dependsOn := parts[1] + "." + parts[2]
 								step.AppendCredentialDependsOn(dependsOn)
 							}
+						} else if parts[0] == schema.BlockTypeConnection {
+							dependsOn := parts[1] + "." + parts[2]
+							step.AppendConnectionDependsOn(dependsOn)
+						} else {
+							dependsOn := parts[0]
+							step.AppendConnectionDependsOn(dependsOn)
 						}
 					}
 				}
@@ -253,6 +260,12 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 							dependsOn := parts[1] + "." + parts[2]
 							o.AppendCredentialDependsOn(dependsOn)
 						}
+					} else if parts[0] == schema.BlockTypeConnection {
+						dependsOn := parts[1] + "." + parts[2]
+						o.AppendConnectionDependsOn(dependsOn)
+					} else {
+						dependsOn := parts[0]
+						o.AppendConnectionDependsOn(dependsOn)
 					}
 				}
 			}
@@ -482,7 +495,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	}
 
 	handlePipelineDecodeResult(pipelineHcl, res, block, parseCtx)
-	diags = validatePipelineDependencies(pipelineHcl, parseCtx.Credentials)
+	diags = validatePipelineDependencies(pipelineHcl, parseCtx.Credentials, parseCtx.PipelingConnections)
 	if len(diags) > 0 {
 		res.handleDecodeDiags(diags)
 
@@ -531,7 +544,7 @@ func validatePipelineSteps(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
 	return diags
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential, connections map[string]connection.PipelingConnection) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string
@@ -557,6 +570,26 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 	var credentialTypes []string
 	for k := range availableCredentialTypes {
 		credentialTypes = append(credentialTypes, k)
+	}
+
+	var connectionRegisters []string
+	availableConnectionTypes := map[string]bool{}
+	for k := range connections {
+		parts := strings.Split(k, ".")
+		if len(parts) != 2 {
+			continue
+		}
+
+		// Add the connection to the register
+		connectionRegisters = append(connectionRegisters, k)
+
+		// List out the supported connection types
+		availableConnectionTypes[parts[0]] = true
+	}
+
+	var connectionTypes []string
+	for k := range availableConnectionTypes {
+		connectionTypes = append(connectionTypes, k)
 	}
 
 	for _, step := range pipelineHcl.Steps {
@@ -602,6 +635,36 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 				})
 			}
 		}
+
+		connectionDependsOn := step.GetConnectionDependsOn()
+		for _, dep := range connectionDependsOn {
+			// Check if the credential type is supported, if <dynamic>
+			parts := strings.Split(dep, ".")
+			if len(parts) != 2 {
+				continue
+			}
+
+			if parts[1] == "<dynamic>" {
+				if !availableConnectionTypes[parts[0]] {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("invalid depends_on '%s', connection type '%s' not supported in pipeline %s", dep, parts[0], pipelineHcl.Name()),
+						Detail:   fmt.Sprintf("valid connection types are: %s", strings.Join(connectionTypes, ", ")),
+						Subject:  step.GetRange(),
+					})
+				}
+				continue
+			}
+
+			if !helpers.StringSliceContains(connectionRegisters, dep) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("invalid depends_on '%s', connection does not exist in pipeline %s", dep, pipelineHcl.Name()),
+					Subject:  step.GetRange(),
+				})
+			}
+		}
+
 	}
 
 	for _, outputConfig := range pipelineHcl.OutputConfig {

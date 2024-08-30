@@ -289,48 +289,6 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert.NotNil(pipelines["pipeline_with_references.pipeline.foo_two"])
 }
 
-func (suite *FlowpipeModTestSuite) TestModWithCreds() {
-	assert := assert.New(suite.T())
-
-	credentials := map[string]credential.Credential{
-		"aws.default": &credential.AwsCredential{
-			CredentialImpl: credential.CredentialImpl{
-				HclResourceImpl: modconfig.HclResourceImpl{
-					FullName:        "aws.default",
-					ShortName:       "default",
-					UnqualifiedName: "aws.default",
-				},
-				Type: "aws",
-			},
-		},
-	}
-
-	os.Setenv("ACCESS_KEY", "foobarbaz")
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithCredentials(credentials))
-
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
-
-	mod := w.Mod
-	if mod == nil {
-		assert.Fail("mod is nil")
-		return
-	}
-
-	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
-	assert.NotNil(pipelines, "pipelines is nil")
-
-	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
-	assert.Equal("aws.default", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
-
-	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
-	assert.Nil(err)
-
-	assert.Equal("foobarbaz", stepInputs["value"], "token should be set to foobarbaz")
-	os.Unsetenv("ACCESS_KEY")
-}
-
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 	assert := assert.New(suite.T())
 
@@ -372,7 +330,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnction() {
 	assert.Equal("abc1", *slackConn.Token)
 
 	// Check that the connection is loaded in the workspace
-	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connection", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connections", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 
@@ -388,6 +346,32 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnction() {
 		return
 	}
 	assert.Equal("prod1", *awsConn.Profile)
+
+	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipeline := pipelines["mod_with_connections.pipeline.static_creds_test"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	assert.Equal("aws.prod_conn", pipeline.Steps[0].GetConnectionDependsOn()[0])
+
+	paramVal := cty.ObjectVal(map[string]cty.Value{
+		"aws": cty.ObjectVal(map[string]cty.Value{
+			"prod_conn": cty.ObjectVal(map[string]cty.Value{
+				"profile": cty.StringVal("sfhshfhslfh"),
+			}),
+		}),
+	})
+
+	evalContext := &hcl.EvalContext{}
+	evalContext.Variables = map[string]cty.Value{}
+	evalContext.Variables["connection"] = paramVal
+
+	stepInputs, err2 := pipeline.Steps[0].GetInputs(evalContext)
+	assert.Nil(err2)
+
+	assert.Equal("sfhshfhslfh", stepInputs["value"], "profile should be set to sfhshfhslfh")
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
@@ -477,6 +461,40 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 
 	assert.Equal(1, len(pipeline.OutputConfig))
 	assert.Equal("aws.example", pipeline.OutputConfig[0].CredentialDependsOn[0])
+
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithConnInOutput() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_output"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_output", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	connections := w.PipelingConnections
+	awsExampleCreds := connections["aws.example"]
+	slackCredsCty, e := awsExampleCreds.CtyValue()
+	assert.Nil(e)
+
+	credsMap := slackCredsCty.AsValueMap()
+	accessKeyVal := credsMap["access_key"].AsString()
+	assert.Equal("ASIAQGDFAKEKGUI5MCEU", accessKeyVal)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.conn_in_step_output"]
+	assert.NotNil(pipeline)
+
+	step := pipeline.Steps[0]
+	assert.Equal(1, len(step.GetConnectionDependsOn()))
+	assert.Equal("aws.example", step.GetConnectionDependsOn()[0])
+
+	pipeline = w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.conn_in_output"]
+	assert.NotNil(pipeline)
+
+	assert.Equal(1, len(pipeline.OutputConfig))
+	assert.Equal("aws.example", pipeline.OutputConfig[0].ConnectionDependsOn[0])
 
 }
 
@@ -1127,6 +1145,48 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.True(helpers.StringSliceEqualIgnoreOrder(step.Bcc, []string{"foo bb", "bar", "baz override"}))
 }
 
+func (suite *FlowpipeModTestSuite) TestModWithCreds() {
+	assert := assert.New(suite.T())
+
+	credentials := map[string]credential.Credential{
+		"aws.default": &credential.AwsCredential{
+			CredentialImpl: credential.CredentialImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
+			},
+		},
+	}
+
+	os.Setenv("ACCESS_KEY", "foobarbaz")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithCredentials(credentials))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
+	assert.Equal("aws.default", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+
+	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
+	assert.Nil(err)
+
+	assert.Equal("foobarbaz", stepInputs["value"], "token should be set to foobarbaz")
+	os.Unsetenv("ACCESS_KEY")
+}
+
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
@@ -1161,6 +1221,89 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 
 	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
 	assert.Equal("aws.default", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
+
+	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
+	assert.Nil(err)
+	assert.Equal("", stepInputs["value"])
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithConn() {
+	assert := assert.New(suite.T())
+
+	connections := map[string]connection.PipelingConnection{
+		"aws.default": &connection.AwsConnection{
+			ConnectionImpl: connection.ConnectionImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
+			},
+		},
+	}
+
+	os.Setenv("ACCESS_KEY", "foobarbaz")
+
+	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", workspace.WithPipelingConnections(connections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_conn.pipeline.with_conn"]
+	assert.Equal("aws.default", pipeline.Steps[0].GetConnectionDependsOn()[0], "there's only 1 step in this pipeline and it should have a connection dependency")
+
+	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
+	assert.Nil(err)
+	assert.Equal("foobarbaz", stepInputs["value"])
+	os.Unsetenv("ACCESS_KEY")
+}
+
+func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
+	assert := assert.New(suite.T())
+
+	connections := map[string]connection.PipelingConnection{
+		"aws.default": &connection.AwsConnection{
+			ConnectionImpl: connection.ConnectionImpl{
+				HclResourceImpl: modconfig.HclResourceImpl{
+					FullName:        "aws.default",
+					ShortName:       "default",
+					UnqualifiedName: "aws.default",
+				},
+				Type: "aws",
+			},
+		},
+	}
+
+	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", workspace.WithPipelingConnections(connections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	// check if all pipelines are there
+	pipelines := mod.ResourceMaps.Pipelines
+	assert.NotNil(pipelines, "pipelines is nil")
+
+	pipeline := pipelines["mod_with_conn.pipeline.with_conn"]
+	assert.Equal("aws.default", pipeline.Steps[0].GetConnectionDependsOn()[0], "there's only 1 step in this pipeline and it should have a connection dependency")
 
 	stepInputs, err := pipeline.Steps[1].GetInputs(nil)
 	assert.Nil(err)
@@ -1235,7 +1378,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 	pipelines := mod.ResourceMaps.Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
-	pipeline := pipelines["mod_with_creds_resolved.pipeline.staic_creds_test"]
+	pipeline := pipelines["mod_with_creds_resolved.pipeline.static_creds_test"]
 	assert.Equal("slack.slack_static", pipeline.Steps[0].GetCredentialDependsOn()[0], "there's only 1 step in this pipeline and it should have a credential dependency")
 
 	paramVal := cty.ObjectVal(map[string]cty.Value{

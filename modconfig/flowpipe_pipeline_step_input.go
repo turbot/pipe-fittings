@@ -449,6 +449,10 @@ func (p *PipelineStepInputOption) AppendCredentialDependsOn(...string) {
 	// not implemented
 }
 
+func (p *PipelineStepInputOption) AppendConnectionDependsOn(...string) {
+	// not implemented
+}
+
 func (p *PipelineStepInputOption) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	p.UnresolvedAttributes[name] = expr
 }

@@ -154,6 +154,7 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 		}
 	}
 	child.Credentials = parent.Credentials
+	child.PipelingConnections = parent.PipelingConnections
 	child.Integrations = parent.Integrations
 	child.CredentialImports = parent.CredentialImports
 	child.Notifiers = parent.Notifiers

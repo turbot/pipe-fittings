@@ -135,7 +135,7 @@ func ParseResourcePropertyPath(propertyPath string) (*ParsedPropertyPath, error)
 		res.ItemType = parts[1]
 		res.Name = parts[2]
 	default:
-		if parts[1] == "integration" || parts[1] == "trigger" || parts[1] == "credential" {
+		if parts[1] == "integration" || parts[1] == "trigger" || parts[1] == "credential" || parts[1] == "connection" {
 			res.Mod = parts[0]
 			res.ItemType = parts[1]
 			res.Name = parts[2] + "." + parts[3]

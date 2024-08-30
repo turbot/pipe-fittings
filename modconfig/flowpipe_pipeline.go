@@ -571,6 +571,7 @@ type PipelineOutput struct {
 	Description         string         `json:"description,omitempty"`
 	DependsOn           []string       `json:"depends_on,omitempty"`
 	CredentialDependsOn []string       `json:"credential_depends_on,omitempty"`
+	ConnectionDependsOn []string       `json:"connection_depends_on,omitempty"`
 	Resolved            bool           `json:"resolved,omitempty"`
 	Value               interface{}    `json:"value,omitempty"`
 	UnresolvedValue     hcl.Expression `json:"-"`
@@ -656,6 +657,22 @@ func (o *PipelineOutput) AppendCredentialDependsOn(credentialDependsOn ...string
 	for _, dep := range credentialDependsOn {
 		if !existingDeps[dep] {
 			o.CredentialDependsOn = append(o.CredentialDependsOn, dep)
+			existingDeps[dep] = true
+		}
+	}
+}
+
+func (o *PipelineOutput) AppendConnectionDependsOn(connectionDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
+	existingDeps := make(map[string]bool)
+	for _, dep := range o.ConnectionDependsOn {
+		existingDeps[dep] = true
+	}
+
+	for _, dep := range connectionDependsOn {
+		if !existingDeps[dep] {
+			o.ConnectionDependsOn = append(o.ConnectionDependsOn, dep)
 			existingDeps[dep] = true
 		}
 	}
