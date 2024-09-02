@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -294,6 +295,9 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	if res.Success() {
 		variable = modconfig.NewVariable(v, parseCtx.CurrentMod)
 	}
+
+	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)
+	res.handleDecodeDiags(diags)
 
 	return variable, res
 

@@ -61,6 +61,7 @@ const (
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
 
+	AttributeTypeSensitive = "sensitive"
 	// Pipeline param block
 	AttributeTypeOptional = "optional"
 
