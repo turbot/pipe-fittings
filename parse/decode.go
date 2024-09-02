@@ -303,6 +303,9 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)
 	res.handleDecodeDiags(diags)
 
+	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)
+	res.handleDecodeDiags(diags)
+
 	return variable, res
 
 }
