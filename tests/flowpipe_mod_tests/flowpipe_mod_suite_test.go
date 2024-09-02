@@ -1941,6 +1941,31 @@ func (suite *FlowpipeModTestSuite) TestModTriggers() {
 
 }
 
+func (suite *FlowpipeModTestSuite) TestTags() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./tags")
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	pipelines := mod.ResourceMaps.Pipelines
+	pipeline := pipelines["tags.pipeline.with_tags"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	assert.Equal("value1", pipeline.Tags["tag1"])
+
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {

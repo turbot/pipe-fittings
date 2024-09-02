@@ -25,8 +25,9 @@ type Variable struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Default cty.Value `column:"default_value,jsonb" json:"-"`
-	Type    cty.Type  `column:"var_type,string" json:"-"`
+	Default cty.Value         `column:"default_value,jsonb" json:"-"`
+	Type    cty.Type          `column:"var_type,string" json:"-"`
+	Tags    map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
 
 	// TypeString (json: type) is currently showing the HCL Type: string or list(string)
 	// current type = list(list(string))
@@ -49,8 +50,6 @@ type Variable struct {
 	ValueSourceStartLineNumber int                            `column:"value_source_start_line_number,integer" json:"-"`
 	ValueSourceEndLineNumber   int                            `column:"value_source_end_line_number,integer" json:"-"`
 	ParsingMode                var_config.VariableParsingMode `json:"-"`
-
-	metadata *ResourceMetadata //nolint:unused // TODO: check this is not used
 }
 
 func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
