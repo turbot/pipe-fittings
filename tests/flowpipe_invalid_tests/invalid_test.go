@@ -13,6 +13,7 @@ type testSetup struct {
 	title         string
 	file          string
 	containsError string
+	valid         bool
 }
 
 var tests = []testSetup{
@@ -223,6 +224,71 @@ var tests = []testSetup{
 		file:          "./pipelines/param_default_mismatch_2.fp",
 		containsError: "default value type mismatched - expected set of bool, got number",
 	},
+	{
+		title:         "invalid enum type, not a list",
+		file:          "./pipelines/enum_param_invalid_enum_type.fp",
+		containsError: "enum values must be a list",
+	},
+	{
+		title:         "param enum must be scalar or list of scalar",
+		file:          "./pipelines/enum_param_unsupported.fp",
+		containsError: "enum is only supported for string, bool, number, list of string, list of bool, list of number types",
+	},
+	{
+		title:         "enum does not match type - string vs list of number",
+		file:          "./pipelines/enum_param_mismatched.fp",
+		containsError: "enum values type mismatched",
+	},
+	{
+		title:         "enum does not match type (2) - number vs list of string",
+		file:          "./pipelines/enum_param_mismatched_2.fp",
+		containsError: "enum values type mismatched",
+	},
+	{
+		title:         "enum does not match type (3) - list of string vs list of number",
+		file:          "./pipelines/enum_param_mismatched_3.fp",
+		containsError: "enum values type mismatched",
+	},
+	{
+		title:         "enum does not match type (4) - bool vs list of number",
+		file:          "./pipelines/enum_param_mismatched_4.fp",
+		containsError: "enum values type mismatched",
+	},
+	{
+		title:         "enum param mismatched with default",
+		file:          "./pipelines/enum_param_default_mismatched.fp",
+		containsError: "enum is only supported for string, bool, number, list of string, list of bool",
+	},
+	{
+		title: "enum param valid string",
+		file:  "./pipelines/enum_param_valid_string.fp",
+		valid: true,
+	},
+	{
+		title: "enum param valid list of string",
+		file:  "./pipelines/enum_param_valid_list_of_string.fp",
+		valid: true,
+	},
+	{
+		title: "enum param valid bool",
+		file:  "./pipelines/enum_param_valid_bool.fp",
+		valid: true,
+	},
+	{
+		title: "enum param valid list of bool",
+		file:  "./pipelines/enum_param_valid_list_of_bool.fp",
+		valid: true,
+	},
+	{
+		title: "enum param valid number",
+		file:  "./pipelines/enum_param_valid_number.fp",
+		valid: true,
+	},
+	{
+		title: "enum param valid list of number",
+		file:  "./pipelines/enum_param_valid_list_of_number.fp",
+		valid: true,
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test
@@ -239,13 +305,17 @@ func TestSimpleInvalidResources(t *testing.T) {
 				assert.Fail("Test must contain a title")
 				return
 			}
-			if test.containsError == "" {
+			if !test.valid && test.containsError == "" {
 				assert.Fail("Test: " + test.title + " does not have containsError test")
 				return
 			}
 
 			_, _, err := load_mod.LoadPipelines(ctx, test.file)
-			if err == nil {
+			if test.valid && err == nil {
+				return
+			}
+
+			if !test.valid && err == nil {
 				assert.Fail("Test: " + test.title + " did not return an error")
 				return
 			}

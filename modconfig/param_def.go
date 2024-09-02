@@ -41,7 +41,7 @@ func (p *ParamDef) Equals(other *ParamDef) bool {
 		typehelpers.SafeString(p.Default) == typehelpers.SafeString(other.Default)
 }
 
-// SetDefault sets the default as a atring points, marshalling to json is the underlying value is NOT a string
+// SetDefault sets the default as a string points, marshalling to json is the underlying value is NOT a string
 func (p *ParamDef) SetDefault(value interface{}) error {
 	strVal, ok := value.(string)
 	if ok {

@@ -543,6 +543,7 @@ type PipelineParam struct {
 	Description string    `json:"description"`
 	Optional    bool      `json:"optional,omitempty"`
 	Default     cty.Value `json:"-"`
+	Enum        cty.Value `json:"-"`
 	Type        cty.Type  `json:"type"`
 	TypeString  string    `json:"type_string"`
 }

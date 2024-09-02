@@ -60,6 +60,7 @@ const (
 
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
+	AttributeTypeEnum    = "enum"
 
 	// Pipeline param block
 	AttributeTypeOptional = "optional"

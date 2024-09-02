@@ -1,6 +1,8 @@
 package hclhelpers
 
-import "github.com/zclconf/go-cty/cty"
+import (
+	"github.com/zclconf/go-cty/cty"
+)
 
 func IsValueCompatibleWithType(ctyType cty.Type, value cty.Value) bool {
 	if ctyType == cty.DynamicPseudoType {
@@ -83,4 +85,38 @@ func IsValueCompatibleWithType(ctyType cty.Type, value cty.Value) bool {
 	}
 
 	return ctyType.Equals(valueType)
+}
+
+func IsEnumValueCompatibleWithType(ctyType cty.Type, enumValues cty.Value) bool {
+	if ctyType == cty.DynamicPseudoType {
+		return true
+	}
+
+	innerCtyType := ctyType
+	// if ctyType is not a scalar type, then pull the element type
+	if ctyType.IsCollectionType() {
+		innerCtyType = ctyType.ElementType()
+	}
+
+	if innerCtyType == cty.DynamicPseudoType {
+		return false
+	}
+
+	valueType := enumValues.Type()
+	if !valueType.IsCollectionType() && !valueType.IsTupleType() {
+		return false
+	}
+
+	var mapElementType cty.Type
+	if valueType.IsCollectionType() {
+		mapElementType = valueType.ElementType()
+	} else {
+		mapElementType = valueType.TupleElementTypes()[0]
+	}
+
+	if mapElementType != innerCtyType {
+		return false
+	}
+
+	return true
 }

@@ -224,6 +224,52 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 		o.Description = ctyVal.AsString()
 	}
 
+	if attr, exists := paramOptions.Attributes[schema.AttributeTypeEnum]; exists {
+		if o.Type != cty.String && o.Type != cty.Bool && o.Type != cty.Number &&
+			o.Type != cty.List(cty.String) && o.Type != cty.List(cty.Bool) && o.Type != cty.List(cty.Number) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum is only supported for string, bool, number, list of string, list of bool, list of number types",
+				Subject:  &attr.Range,
+			})
+			return o, diags
+		}
+
+		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
+		if moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+			return o, diags
+		}
+
+		if !ctyVal.Type().IsCollectionType() && !ctyVal.Type().IsTupleType() {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum values must be a list",
+				Subject:  &attr.Range,
+			})
+			return o, diags
+		}
+
+		if !hclhelpers.IsEnumValueCompatibleWithType(o.Type, ctyVal) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum values type mismatched",
+				Subject:  &attr.Range,
+			})
+		}
+
+		// if there's a default, that needs to match the enum
+		if o.Default != cty.NilVal && !hclhelpers.IsEnumValueCompatibleWithType(o.Default.Type(), ctyVal) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "default value type mismatched with enum",
+				Subject:  &attr.Range,
+			})
+		}
+
+		o.Enum = ctyVal
+	}
+
 	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
 	return o, diags
 }
