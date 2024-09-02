@@ -1404,6 +1404,10 @@ func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 	pipeline := pipelines["mod_with_dynamic_conn.pipeline.conn_aws"]
 
 	assert.Equal("aws.<dynamic>", pipeline.Steps[0].GetConnectionDependsOn()[0], "there's only 1 step in this pipeline and it should have a connection dependency")
+
+	pipeline = pipelines["mod_with_dynamic_conn.pipeline.dynamic_conn_in_output"]
+
+	assert.Equal("aws.<dynamic>", pipeline.Steps[0].GetConnectionDependsOn()[0], "there's only 1 step in this pipeline and it should have a connection dependency")
 }
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {

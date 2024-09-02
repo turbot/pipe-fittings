@@ -34,3 +34,22 @@ pipeline "conn_aws" {
         value = step.transform.aws_access_key.value
     }
 }
+
+
+pipeline "dynamic_conn_in_output" {
+
+    param "conn" {
+        type = string
+        default = "example"
+    }
+
+    step "transform" "test" {
+        output "val" {
+            value = connection.aws[param.conn]
+        }
+    }
+
+    output "val" {
+        value = step.transform.test.output.val.access_key
+    }
+}

@@ -42,6 +42,14 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeNotifier,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeOptions,
+			LabelNames: []string{"type"},
+		},
+		{
+			Type:       schema.BlockTypeWorkspaceProfile,
+			LabelNames: []string{"name"},
+		},
 	},
 }
 

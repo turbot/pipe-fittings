@@ -2,8 +2,9 @@ package parse
 
 import (
 	"fmt"
-	error_helpers "github.com/turbot/pipe-fittings/error_helpers"
 	"log/slog"
+
+	error_helpers "github.com/turbot/pipe-fittings/error_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -47,10 +48,21 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
 	}
 
-	// do a partial decode
-	content, diags := body.Content(ConfigBlockSchema)
-	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+	var temp T
+	var content *hcl.BodyContent
+	switch any(temp).(type) {
+	case *modconfig.FlowpipeWorkspaceProfile:
+		// do a partial decode
+		content, diags = body.Content(FlowpipeConfigBlockSchema)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+		}
+	default:
+		// do a partial decode
+		content, diags = body.Content(ConfigBlockSchema)
+		if diags.HasErrors() {
+			return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+		}
 	}
 
 	parseCtx := NewWorkspaceProfileParseContext[T](workspaceProfilePath)
