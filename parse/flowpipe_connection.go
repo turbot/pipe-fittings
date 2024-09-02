@@ -61,7 +61,7 @@ func DecodeFlowpipeConnection(configPath string, block *hcl.Block) (connection.P
 		Variables: make(map[string]cty.Value),
 	}
 
-	diags = decodeHclBody(body, evalCtx, nil, conn)
+	diags = DecodeHclBody(body, evalCtx, nil, conn)
 	if len(diags) > 0 {
 		return nil, diags
 	}
