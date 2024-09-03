@@ -2212,6 +2212,20 @@ func (suite *FlowpipeModTestSuite) TestEnumParam() {
 	assert := assert.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./enum_param")
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	mod := w.Mod
+	if mod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+}
+
+func (suite *FlowpipeModTestSuite) TestTags() {
+	assert := assert.New(suite.T())
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./tags")
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -2221,6 +2235,56 @@ func (suite *FlowpipeModTestSuite) TestEnumParam() {
 		assert.Fail("mod is nil")
 		return
 	}
+
+	pipelines := mod.ResourceMaps.Pipelines
+	pipeline := pipelines["tags.pipeline.with_tags"]
+	if pipeline == nil {
+		assert.Fail("pipeline not found")
+		return
+	}
+
+	assert.Equal("value1", pipeline.Tags["tag1"])
+	assert.Equal("value2", pipeline.Tags["tag2"])
+
+	params := pipeline.Params
+	if params == nil {
+		assert.Fail("params is nil")
+		return
+	}
+
+	var tagParam modconfig.PipelineParam
+	found := false
+	for _, param := range params {
+		if param.Name == "tag_param" {
+			tagParam = param
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		assert.Fail("tag_param not found")
+		return
+	}
+
+	assert.Equal("value3", tagParam.Tags["tag3"])
+	assert.Equal("value4", tagParam.Tags["tag4"])
+
+	vars := mod.ResourceMaps.Variables
+	if vars == nil {
+		assert.Fail("vars is nil")
+		return
+	}
+
+	varNumber := vars["tags.var.var_number"]
+	if varNumber == nil {
+		assert.Fail("var_number not found")
+		return
+	}
+
+	assert.Equal("dev", varNumber.Tags["Environment"])
+	assert.Equal("me", varNumber.Tags["Owner"])
+
 }
 
 // In order for 'go test' to run this suite, we need to create

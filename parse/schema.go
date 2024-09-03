@@ -384,16 +384,19 @@ var ParamDefBlockSchema = &hcl.BodySchema{
 var VariableBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
-			Name: "description",
+			Name: schema.AttributeTypeDescription,
 		},
 		{
-			Name: "default",
+			Name: schema.AttributeTypeDefault,
 		},
 		{
-			Name: "type",
+			Name: schema.AttributeTypeType,
 		},
 		{
-			Name: "sensitive",
+			Name: schema.AttributeTypeSensitive,
+		},
+		{
+			Name: schema.AttributeTypeTags,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{

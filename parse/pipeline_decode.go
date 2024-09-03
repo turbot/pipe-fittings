@@ -256,6 +256,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 				Summary:  "enum values type mismatched",
 				Subject:  &attr.Range,
 			})
+			return o, diags
 		}
 
 		// if there's a default, that needs to match the enum
@@ -265,9 +266,15 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 				Summary:  "default value type mismatched with enum",
 				Subject:  &attr.Range,
 			})
+			return o, diags
 		}
 
 		o.Enum = ctyVal
+	}
+
+	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {
+		valDiags := decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
+		diags = append(diags, valDiags...)
 	}
 
 	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
