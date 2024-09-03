@@ -10,17 +10,17 @@ _What's new_
 
 _Bug fixes_
 
-## v1.5.5 [tbd]
+## v1.5.5 [2024-09-03]
 
 _What's new_
 
-* Added tags arguments to Flowpipe pipeline param and mod variable.
+* `tags` arguments to Flowpipe pipeline param and mod variable.
 
 ## v1.5.4 [2024-08-22]
 
 _What's new_
 
-* Add JSON extension support for duckdb backends. ([#442](https://github.com/turbot/pipe-fittings/issues/442))
+* JSON extension support for `duckdb` backends. ([#442](https://github.com/turbot/pipe-fittings/issues/442))
 
 ## v1.5.3 [2024-08-22]
 
