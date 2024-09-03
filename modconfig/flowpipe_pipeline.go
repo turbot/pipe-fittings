@@ -544,6 +544,8 @@ type PipelineParam struct {
 	Optional    bool              `json:"optional,omitempty"`
 	Default     cty.Value         `json:"-"`
 	Enum        cty.Value         `json:"-"`
+	Type        cty.Type          `json:"type"`
+	TypeString  string            `json:"type_string"`
 	Tags        map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
 }
 
