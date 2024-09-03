@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.5.5 [tbd]
+
+_What's new_
+
+* Added tags arguments to Flowpipe pipeline param and mod variable.
+
 ## v1.5.4 [2024-08-22]
 
 _What's new_

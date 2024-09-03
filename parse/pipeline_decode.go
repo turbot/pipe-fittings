@@ -208,6 +208,11 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 		o.Description = ctyVal.AsString()
 	}
 
+	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {
+		valDiags := decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
+		diags = append(diags, valDiags...)
+	}
+
 	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
 	return o, diags
 }

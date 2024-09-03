@@ -539,12 +539,13 @@ func (p *Pipeline) setBaseProperties() {
 // end Pipeline Hclresource interface functions
 
 type PipelineParam struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Optional    bool      `json:"optional,omitempty"`
-	Default     cty.Value `json:"-"`
-	Type        cty.Type  `json:"type"`
-	TypeString  string    `json:"type_string"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Optional    bool              `json:"optional,omitempty"`
+	Default     cty.Value         `json:"-"`
+	Type        cty.Type          `json:"type"`
+	TypeString  string            `json:"type_string"`
+	Tags        map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
 }
 
 func (p *PipelineParam) Equals(other *PipelineParam) bool {
