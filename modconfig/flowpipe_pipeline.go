@@ -568,6 +568,16 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		p.Type.Equals(other.Type)
 }
 
+func (p *PipelineParam) ValidateSettingWithEnum(setting cty.Value) (bool, error) {
+	if setting.IsNull() {
+		return true, nil
+	}
+
+	res, err := hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
+
+	return res, err
+}
+
 type PipelineOutput struct {
 	Name                string         `json:"name"`
 	Description         string         `json:"description,omitempty"`
@@ -579,19 +589,6 @@ type PipelineOutput struct {
 	UnresolvedValue     hcl.Expression `json:"-"`
 	Range               *hcl.Range     `json:"Range"`
 }
-
-// GetShowData implements the Showable interface
-//func (o PipelineOutput) GetShowData() *printers.RowData {
-//	return printers.NewRowData(
-//		printers.NewFieldValue("Name", o.Name, printers.WithListKeyRender(o.renderName)),
-//		printers.NewFieldValue("Description", o.Description),
-//		printers.NewFieldValue("Type", "any"))
-//}
-
-//func (o *PipelineOutput) renderName(opts sanitize.RenderOptions) string {
-//	au := aurora.NewAurora(opts.ColorEnabled)
-//	return fmt.Sprintf("%s:", au.Cyan(o.Name))
-//}
 
 func (o *PipelineOutput) Equals(other *PipelineOutput) bool {
 	// If both pointers are nil, they are considered equal
