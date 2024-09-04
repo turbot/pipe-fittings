@@ -2,7 +2,7 @@ package modconfig
 
 import "github.com/hashicorp/hcl/v2"
 
-// ResourceMetadata ius a struct containing additional data
+// ResourceMetadata is a struct containing additional data
 // about each resource, used to populate the introspection tables
 type ResourceMetadata struct {
 	// required to allow partial decoding

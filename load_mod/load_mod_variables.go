@@ -2,6 +2,8 @@ package load_mod
 
 import (
 	"context"
+	"sort"
+
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -14,7 +16,6 @@ import (
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"golang.org/x/exp/maps"
-	"sort"
 )
 
 func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error) {
@@ -32,7 +33,10 @@ func GetVariableValues(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 	inputValues, errorsAndWarnings := getInputVariables(parseCtx, variableMap, validate)
 	if errorsAndWarnings.Error == nil {
 		// now update the variables map with the input values
-		inputvars.SetVariableValues(inputValues, variableMap)
+		err := inputvars.SetVariableValues(inputValues, variableMap)
+		if err != nil {
+			errorsAndWarnings.Error = err
+		}
 	}
 
 	return variableMap, errorsAndWarnings

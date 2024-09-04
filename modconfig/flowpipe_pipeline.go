@@ -562,6 +562,10 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		return false
 	}
 
+	if p.Enum.Equals(other.Enum) == cty.False {
+		return false
+	}
+
 	return p.Name == other.Name &&
 		p.Description == other.Description &&
 		p.Optional == other.Optional &&

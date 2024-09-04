@@ -176,6 +176,41 @@ var tests = []testSetup{
 			"bad_step_reference_from_step_output/mod.fp:",
 		},
 	},
+	{
+		title:  "var default value does not exist in enum",
+		modDir: "./mods/mod_var_value_not_in_enum",
+		expectedContains: []string{
+			"Failed to decode mod: default value not in enum",
+		},
+	},
+	{
+		title:  "enum type does not match variable type",
+		modDir: "./mods/mod_var_bad_enum_type",
+		expectedContains: []string{
+			"Failed to decode mod: enum values type mismatched",
+		},
+	},
+	{
+		title:  "var default value does not exist in enum (number)",
+		modDir: "./mods/mod_var_value_not_in_enum_number",
+		expectedContains: []string{
+			"Failed to decode mod: default value not in enum",
+		},
+	},
+	{
+		title:  "var default value does not exist in enum (float)",
+		modDir: "./mods/mod_var_value_not_in_enum_float",
+		expectedContains: []string{
+			"Failed to decode mod: default value not in enum",
+		},
+	},
+	{
+		title:  "var value not in enum",
+		modDir: "./mods/mod_var_bad_enum_value",
+		expectedContains: []string{
+			"Bad Request: value bad_value not in enum",
+		},
+	},
 }
 
 func (suite *FlowpipeSimpleInvalidModTestSuite) TestSimpleInvalidMods() {

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/terraform-components/tfdiags"
@@ -28,6 +29,7 @@ type Variable struct {
 	Default cty.Value         `column:"default_value,jsonb" json:"-"`
 	Type    cty.Type          `column:"var_type,string" json:"-"`
 	Tags    map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
+	Enum    cty.Value         `json:"-"`
 
 	// TypeString (json: type) is currently showing the HCL Type: string or list(string)
 	// current type = list(list(string))
@@ -79,6 +81,7 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 		Type:        v.Type,
 		ParsingMode: v.ParsingMode,
 		ModName:     mod.ShortName,
+		Enum:        v.Enum,
 
 		TypeHclString: hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()), // strategic, this where the HCL string representation of cty.Type is stored
 	}
@@ -94,6 +97,11 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 }
 
 func (v *Variable) Equals(other *Variable) bool {
+
+	if v.Enum.Equals(other.Enum) == cty.False {
+		return false
+	}
+
 	return v.ShortName == other.ShortName &&
 		v.FullName == other.FullName &&
 		typehelpers.SafeString(v.Description) == typehelpers.SafeString(other.Description) &&
@@ -132,6 +140,17 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	if v.TypeString == "" {
 		v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
 		v.TypeString = v.TypeHclString
+	}
+
+	if v.Enum != cty.NilVal {
+		// check that the value is in the enum
+		valid, err := hclhelpers.ValidateSettingWithEnum(v.Value, v.Enum)
+		if err != nil {
+			return err
+		}
+		if !valid {
+			return perr.BadRequestWithMessage(fmt.Sprintf("value %s not in enum", v.ValueGo))
+		}
 	}
 
 	return nil

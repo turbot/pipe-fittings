@@ -3,8 +3,10 @@ package var_config
 // github.com/turbot/terraform-components/configs/parser_config.go
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"unicode"
+
+	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/ext/typeexpr"
@@ -24,6 +26,7 @@ type Variable struct {
 	Default     cty.Value
 	Type        cty.Type
 	ParsingMode VariableParsingMode
+	Enum        cty.Value
 	//Validations []*VariableValidation
 	//Sensitive   bool
 
@@ -95,6 +98,75 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 		}
 
 		v.Default = val
+	}
+
+	if attr, exists := content.Attributes[schema.AttributeTypeEnum]; exists {
+		if v.Type != cty.String && v.Type != cty.Bool && v.Type != cty.Number &&
+			v.Type != cty.List(cty.String) && v.Type != cty.List(cty.Bool) && v.Type != cty.List(cty.Number) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum is only supported for string, bool, number, list of string, list of bool, list of number types",
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+
+		ctyVal, moreDiags := attr.Expr.Value(nil)
+		if moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+			return v, diags
+		}
+
+		if !ctyVal.Type().IsCollectionType() && !ctyVal.Type().IsTupleType() {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum values must be a list",
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+
+		if !hclhelpers.IsEnumValueCompatibleWithType(v.Type, ctyVal) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum values type mismatched",
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+
+		// if there's a default, that needs to match the enum
+		if v.Default != cty.NilVal {
+			if !hclhelpers.IsEnumValueCompatibleWithType(v.Default.Type(), ctyVal) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "default value type mismatched with enum",
+					Subject:  &attr.Range,
+				})
+				return v, diags
+			}
+			valid, err := hclhelpers.ValidateSettingWithEnum(v.Default, ctyVal)
+
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "error validating default value with enum",
+					Subject:  &attr.Range,
+				})
+				return v, diags
+			}
+
+			if !valid {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "default value not in enum",
+					Subject:  &attr.Range,
+				})
+				return v, diags
+			}
+		}
+
+		v.Enum = ctyVal
 	}
 
 	for _, block := range content.Blocks {

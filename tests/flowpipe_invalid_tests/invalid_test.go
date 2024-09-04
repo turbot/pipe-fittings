@@ -289,6 +289,11 @@ var tests = []testSetup{
 		file:  "./pipelines/enum_param_valid_list_of_number.fp",
 		valid: true,
 	},
+	{
+		title:         "param default not in enum",
+		file:          "./pipelines/enum_param_default_not_in_enum.fp",
+		containsError: "default value not in enum",
+	},
 }
 
 // Simple invalid test. Only single file resources can be evaluated here. This test is unable to test

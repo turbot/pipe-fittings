@@ -658,8 +658,12 @@ func (m *ModParseContext) loadModRequireArgs() error {
 	if err := m.validateModRequireValues(depModVarValues); err != nil {
 		return err
 	}
+
 	// now update the variables map with the input values
-	inputvars.SetVariableValues(depModVarValues, m.Variables)
+	err = inputvars.SetVariableValues(depModVarValues, m.Variables)
+	if err != nil {
+		return err
+	}
 
 	// now add  overridden variables into eval context - in case the root mod references any dependency variable values
 	m.AddVariablesToEvalContext()

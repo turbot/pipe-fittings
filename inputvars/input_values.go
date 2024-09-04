@@ -2,6 +2,7 @@ package inputvars
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/app_specific"
@@ -12,7 +13,7 @@ import (
 )
 
 // SetVariableValues determines whether the given variable is a public variable and if so sets its value
-func SetVariableValues(vv terraform.InputValues, m *modconfig.ModVariableMap) {
+func SetVariableValues(vv terraform.InputValues, m *modconfig.ModVariableMap) error {
 	for name, inputValue := range vv {
 		variable, ok := m.PublicVariables[name]
 		// if this variable does not exist in public variables, skip
@@ -20,12 +21,17 @@ func SetVariableValues(vv terraform.InputValues, m *modconfig.ModVariableMap) {
 			// we should have already caught this
 			continue
 		}
-		//nolint:errcheck // TODO: fix this
-		variable.SetInputValue(
+
+		err := variable.SetInputValue(
 			inputValue.Value,
 			SourceTypeString(inputValue),
 			inputValue.SourceRange)
+		if err != nil {
+			slog.Error("Error setting variable value", "variable", name, "error", err)
+			return err
+		}
 	}
+	return nil
 }
 
 // CheckInputVariables ensures that variable values supplied at the UI conform

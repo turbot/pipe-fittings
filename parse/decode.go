@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -294,6 +295,9 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 
 	if res.Success() {
 		variable = modconfig.NewVariable(v, parseCtx.CurrentMod)
+	} else {
+		slog.Error("decodeVariable failed", "diags", res.Diags)
+		return nil, res
 	}
 
 	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)

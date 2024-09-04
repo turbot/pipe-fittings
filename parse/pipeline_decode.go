@@ -260,13 +260,34 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 		}
 
 		// if there's a default, that needs to match the enum
-		if o.Default != cty.NilVal && !hclhelpers.IsEnumValueCompatibleWithType(o.Default.Type(), ctyVal) {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "default value type mismatched with enum",
-				Subject:  &attr.Range,
-			})
-			return o, diags
+		if o.Default != cty.NilVal {
+			if !hclhelpers.IsEnumValueCompatibleWithType(o.Default.Type(), ctyVal) {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "default value type mismatched with enum",
+					Subject:  &attr.Range,
+				})
+				return o, diags
+			}
+			valid, err := hclhelpers.ValidateSettingWithEnum(o.Default, ctyVal)
+
+			if err != nil {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "error validating default value with enum",
+					Subject:  &attr.Range,
+				})
+				return o, diags
+			}
+
+			if !valid {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "default value not in enum",
+					Subject:  &attr.Range,
+				})
+				return o, diags
+			}
 		}
 
 		o.Enum = ctyVal

@@ -18,3 +18,15 @@ variable "var_map" {
         key2 = "value2"
     }
 }
+
+variable "string_with_enum" {
+    type = string
+    enum = ["enum1", "enum2"]
+    default = "enum1"
+}
+
+variable "number_with_enum" {
+  type = number
+  enum = [1, 2, 3]
+  default = 1
+}
