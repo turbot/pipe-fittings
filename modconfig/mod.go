@@ -11,6 +11,7 @@ import (
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -309,7 +310,7 @@ func (m *Mod) SetFilePath(modFilePath string) {
 }
 
 // ValidateRequirements validates that the current steampipe CLI and the installed plugins is compatible with the mod
-func (m *Mod) ValidateRequirements(pluginVersionMap *PluginVersionMap) []error {
+func (m *Mod) ValidateRequirements(pluginVersionMap *plugin.PluginVersionMap) []error {
 	var validationErrors []error
 	if err := m.validateAppVersion(); err != nil {
 		validationErrors = append(validationErrors, err)
@@ -333,7 +334,7 @@ func (m *Mod) validateAppVersion() error {
 	return m.Require.validateAppVersion(m.Name())
 }
 
-func (m *Mod) validatePluginVersions(availablePlugins PluginVersionMap) []error {
+func (m *Mod) validatePluginVersions(availablePlugins plugin.PluginVersionMap) []error {
 	if m.Require == nil {
 		return nil
 	}

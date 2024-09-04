@@ -20,7 +20,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/opencontainers/image-spec v1.1.0-rc5
+	github.com/opencontainers/image-spec v1.1.0
 	github.com/oras-project/oras-credentials-go v0.3.0
 	github.com/otiai10/copy v1.14.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -38,7 +38,7 @@ require (
 	github.com/zclconf/go-cty v1.14.3
 	github.com/zclconf/go-cty-yaml v1.0.3
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	oras.land/oras-go/v2 v2.3.0
+	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -168,7 +168,7 @@ require (
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/tools v0.14.0 // indirect

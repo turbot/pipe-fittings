@@ -8,6 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
+// TODO #steampipe kai check max parallel - do we need separate general options
 type General struct {
 	UpdateCheck *string `hcl:"update_check" cty:"update_check"`
 	MaxParallel *int    `hcl:"max_parallel" cty:"max_parallel"`

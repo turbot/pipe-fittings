@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/sperr"
 	"net"
 	"strings"
 )
@@ -85,9 +84,25 @@ func IsPortBindable(host string, port int) error {
 
 	if err != nil {
 		// Port is likely in use or unavailable.
-		return sperr.WrapWithMessage(err, "port %s:%d is already in use", host, port)
+		return fmt.Errorf("port %s:%d is already in use: %w", host, port, err)
 	}
 
 	// Close the listener and return the port as available.
-	return ln.Close()
+	ln.Close()
+	return nil
+}
+
+func GetNextFreePort() (int, error) {
+	LogTime("utils.GetNextFreePort start")
+	defer LogTime("utils.GetNextFreePort end")
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return -1, err
+	}
+	defer listener.Close()
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		return -1, fmt.Errorf("count not retrieve port")
+	}
+	return addr.Port, nil
 }

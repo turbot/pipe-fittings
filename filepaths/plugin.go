@@ -2,6 +2,7 @@ package filepaths
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -9,6 +10,36 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
 )
+
+const (
+	localPluginFolder = "local"
+)
+
+// EnsurePluginDir returns the path to the plugins directory (creates if missing)
+func EnsurePluginDir() string {
+	return ensureInstallSubDir("plugins")
+}
+func EnsurePluginInstallDir(pluginImageDisplayRef string) string {
+	installDir := PluginInstallDir(pluginImageDisplayRef)
+
+	if _, err := os.Stat(installDir); os.IsNotExist(err) {
+		err = os.MkdirAll(installDir, 0755)
+		error_helpers.FailOnErrorWithMessage(err, "could not create plugin install directory")
+	}
+
+	return installDir
+}
+
+func PluginInstallDir(pluginImageDisplayRef string) string {
+	osSafePath := filepath.FromSlash(pluginImageDisplayRef)
+
+	fullPath := filepath.Join(EnsurePluginDir(), osSafePath)
+	return fullPath
+}
+
+func PluginBinaryPath(pluginImageDisplayRef, pluginAlias string) string {
+	return filepath.Join(PluginInstallDir(pluginImageDisplayRef), PluginAliasToLongName(pluginAlias)+".plugin")
+}
 
 func GetPluginPath(pluginImageRef, pluginAlias string) (string, error) {
 	// the fully qualified name of the plugin is the relative path of the folder containing the plugin
@@ -71,4 +102,9 @@ func FindPluginFolder(remoteSchema string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// LocalPluginPath returns the path to locally installed plugins
+func LocalPluginPath() string {
+	return filepath.Join(EnsurePluginDir(), localPluginFolder)
 }

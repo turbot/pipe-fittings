@@ -48,11 +48,6 @@ func EnsureTemplateDir() string {
 	return ensureInstallSubDir(filepath.Join("check", "templates"))
 }
 
-// EnsurePluginDir returns the path to the plugins directory (creates if missing)
-func EnsurePluginDir() string {
-	return ensureInstallSubDir("plugins")
-}
-
 // EnsureConfigDir returns the path to the config directory (creates if missing)
 func EnsureConfigDir() string {
 	return ensureInstallSubDir("config")

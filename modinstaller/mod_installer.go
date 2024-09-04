@@ -21,6 +21,7 @@ import (
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
@@ -52,8 +53,9 @@ type ModInstaller struct {
 	dryRun bool
 	// do we force install even if there are require errors
 	force bool
+	// TODO KAI why does powerpipe care about plugins???
 	// optional map of installed plugin versions
-	pluginVersions *modconfig.PluginVersionMap
+	pluginVersions *plugin.PluginVersionMap
 
 	updateStrategy string
 }
@@ -68,11 +70,12 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		return nil, err
 	}
 	i := &ModInstaller{
-		workspacePath:  workspacePath,
-		workspaceMod:   opts.WorkspaceMod,
-		command:        opts.Command,
-		dryRun:         opts.DryRun,
-		force:          opts.Force,
+		workspacePath: workspacePath,
+		workspaceMod:  opts.WorkspaceMod,
+		command:       opts.Command,
+		dryRun:        opts.DryRun,
+		force:         opts.Force,
+		// TODO KAI why does powerpipe care about plugins???
 		pluginVersions: opts.PluginVersions,
 		updateStrategy: opts.UpdateStrategy,
 	}

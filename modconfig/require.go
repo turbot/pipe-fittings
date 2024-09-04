@@ -11,14 +11,15 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
+	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/sperr"
 )
 
 // Require is a struct representing mod dependencies
 type Require struct {
-	Plugins                          []*PluginVersion `hcl:"plugin,block"`
-	DeprecatedSteampipeVersionString string           `hcl:"steampipe,optional"`
+	Plugins                          []*plugin.PluginVersion `hcl:"plugin,block"`
+	DeprecatedSteampipeVersionString string                  `hcl:"steampipe,optional"`
 
 	// one of these may be set
 	Flowpipe  *AppRequire `hcl:"flowpipe,block"`
@@ -161,7 +162,7 @@ func (r *Require) validateAppVersion(modName string) error {
 }
 
 // validatePluginVersions validates that for every plugin requirement there's at least one plugin installed
-func (r *Require) validatePluginVersions(modName string, plugins PluginVersionMap) []error {
+func (r *Require) validatePluginVersions(modName string, plugins plugin.PluginVersionMap) []error {
 	if len(r.Plugins) == 0 {
 		return nil
 	}
@@ -182,9 +183,9 @@ func (r *Require) validatePluginVersions(modName string, plugins PluginVersionMa
 
 // searchInstalledPluginForRequirement returns plugin validation errors if no plugin is found which satisfies
 // the mod requirement. If plugin is found nil error is returned.
-func (r *Require) searchInstalledPluginForRequirement(modName string, requirement *PluginVersion, plugins PluginVersionMap) error {
+func (r *Require) searchInstalledPluginForRequirement(modName string, requirement *plugin.PluginVersion, plugins plugin.PluginVersionMap) error {
 	for installedName, installed := range plugins.AvailablePlugins {
-		org, name, _ := ociinstaller.NewSteampipeImageRef(installedName).GetOrgNameAndStream()
+		org, name, _ := ociinstaller.NewImageRef(installedName).GetOrgNameAndStream()
 		if org != requirement.Org || name != requirement.Name {
 			// no point checking - different plugin
 			continue

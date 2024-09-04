@@ -14,7 +14,7 @@ type Query struct {
 	Separator    *string `hcl:"separator" cty:"query_separator"`
 	Header       *bool   `hcl:"header" cty:"query_header"`
 	Multi        *bool   `hcl:"multi" cty:"query_multi"`
-	Timing       *bool   `hcl:"timing" cty:"query_timing"`
+	Timing       *string `cty:"query_timing"` // parsed manually
 	AutoComplete *bool   `hcl:"autocomplete" cty:"query_autocomplete"`
 }
 
@@ -61,7 +61,7 @@ func (t *Query) ConfigMap() map[string]interface{} {
 		res[constants.ArgMultiLine] = t.Multi
 	}
 	if t.Timing != nil {
-		res[constants.ArgTiming] = t.Timing
+		res[constants.ArgTiming] = *t.Timing
 	}
 	if t.AutoComplete != nil {
 		res[constants.ArgAutoComplete] = t.AutoComplete
@@ -72,9 +72,6 @@ func (t *Query) ConfigMap() map[string]interface{} {
 // Merge :: merge other options over the the top of this options object
 // i.e. if a property is set in otherOptions, it takes precedence
 func (t *Query) Merge(otherOptions Options) {
-	if _, ok := otherOptions.(*Query); !ok {
-		return
-	}
 	switch o := otherOptions.(type) {
 	case *Query:
 		if o.Output != nil {

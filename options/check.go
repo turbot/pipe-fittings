@@ -58,11 +58,8 @@ func (t *Check) ConfigMap() map[string]interface{} {
 // Merge :: merge other options over the the top of this options object
 // i.e. if a property is set in otherOptions, it takes precedence
 func (t *Check) Merge(otherOptions Options) {
-	if _, ok := otherOptions.(*Query); !ok {
-		return
-	}
 	switch o := otherOptions.(type) {
-	case *Query:
+	case *Check:
 		if o.Output != nil {
 			t.Output = o.Output
 		}
@@ -105,3 +102,21 @@ func (t *Check) String() string {
 	}
 	return strings.Join(str, "\n")
 }
+
+// TODO #steampipe check
+//
+//func (t *Check) SetTiming(flag string, r hcl.Range) hcl.Diagnostics {
+//	// check the value is valid
+//	if _, ok := constants.CheckTimingValueLookup[flag]; !ok {
+//		return hcl.Diagnostics{
+//			&hcl.Diagnostic{
+//				Severity: hcl.DiagError,
+//				Summary:  fmt.Sprintf("Invalid timing value '%s', check options support: %s", flag, strings.Join(maps.Keys(constants.CheckTimingValueLookup), ", ")),
+//				Subject:  &r,
+//			},
+//		}
+//	}
+//	t.Timing = &flag
+//
+//	return nil
+//}

@@ -11,12 +11,13 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
-func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
+func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = helpers.ToError(r)
@@ -73,7 +74,7 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 
 }
 
-func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, error) {
+func parseWorkspaceProfiles[T workspace_profile.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, error) {
 	// we may need to decode more than once as we gather dependencies as we go
 	// continue decoding as long as the number of unresolved blocks decreases
 	prevUnresolvedBlocks := 0
@@ -102,7 +103,7 @@ func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePro
 
 }
 
-func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, hcl.Diagnostics) {
+func decodeWorkspaceProfiles[T workspace_profile.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, hcl.Diagnostics) {
 	profileMap := make(map[string]T)
 
 	var diags hcl.Diagnostics
@@ -133,11 +134,11 @@ func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePr
 	return profileMap, diags
 }
 
-func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
+func decodeWorkspaceProfile[T workspace_profile.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
 	var emptyProfile T
 	res := NewDecodeResult()
 	// get shell resource
-	resource, diags := modconfig.NewWorkspaceProfile[T](block)
+	resource, diags := workspace_profile.NewWorkspaceProfile[T](block)
 	if diags.HasErrors() {
 		res.HandleDecodeDiags(diags)
 		return emptyProfile, res
@@ -194,7 +195,7 @@ func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, pars
 	return resource, res
 }
 
-func handleWorkspaceProfileDecodeResult[T modconfig.WorkspaceProfile](resource T, res *DecodeResult, block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) {
+func handleWorkspaceProfileDecodeResult[T workspace_profile.WorkspaceProfile](resource T, res *DecodeResult, block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) {
 	if res.Success() {
 		// call post decode hook
 		// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property

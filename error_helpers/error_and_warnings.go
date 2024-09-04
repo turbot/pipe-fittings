@@ -36,12 +36,12 @@ func NewErrorsAndWarning(err error, warnings ...string) ErrorAndWarnings {
 	}
 }
 
-func (r *ErrorAndWarnings) WrapErrorWithMessage(msg string) *ErrorAndWarnings {
+func (r *ErrorAndWarnings) WrapErrorWithMessage(msg string) ErrorAndWarnings {
 	if r.Error != nil {
 		// r.Error = sperr.WrapWithMessage(r.Error, msg)
 		r.Error = fmt.Errorf(r.Error.Error() + " " + msg)
 	}
-	return r
+	return *r
 }
 
 func (r *ErrorAndWarnings) AddWarning(warnings ...string) {

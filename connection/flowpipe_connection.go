@@ -1,39 +1,18 @@
 package connection
 
 import (
-	"context"
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
-	"github.com/zclconf/go-cty/cty"
 )
 
 var connectionTypRegistry = map[string]reflect.Type{
 	"aws":    reflect.TypeOf(AwsConnection{}),
 	"github": reflect.TypeOf(GithubConnection{}),
 	"slack":  reflect.TypeOf(SlackConnection{}),
-}
-
-type PipelingConnection interface {
-	modconfig.HclResource
-	modconfig.ResourceWithMetadata
-
-	SetHclResourceImpl(hclResourceImpl modconfig.HclResourceImpl)
-	GetConnectionType() string
-	SetConnectionType(string)
-	GetUnqualifiedName() string
-
-	CtyValue() (cty.Value, error)
-	Resolve(ctx context.Context) (PipelingConnection, error)
-	GetTtl() int // in seconds
-
-	Validate() hcl.Diagnostics
-	getEnv() map[string]cty.Value
-
-	Equals(PipelingConnection) bool
 }
 
 func NewConnection(block *hcl.Block) (PipelingConnection, error) {

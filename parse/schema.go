@@ -16,7 +16,7 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 		{
 			// Flowpipe connnections have 2 labels
 			Type:       schema.BlockTypeConnection,
-			LabelNames: []string{"type", "name"},
+			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeOptions,
@@ -24,7 +24,7 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type:       schema.BlockTypeWorkspaceProfile,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeCredential,
@@ -58,11 +58,11 @@ var ConfigBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeConnection,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypePlugin,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeOptions,
@@ -70,7 +70,11 @@ var ConfigBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Type:       schema.BlockTypeWorkspaceProfile,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypePartition,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
 	},
 }
@@ -80,7 +84,7 @@ var PluginBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeRateLimiter,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
@@ -95,108 +99,84 @@ var WorkspaceProfileBlockSchema = &hcl.BodySchema{
 	},
 }
 
-var ConnectionBlockSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{
-		{
-			Name:     "plugin",
-			Required: true,
-		},
-		{
-			Name: "type",
-		},
-		{
-			Name: "connections",
-		},
-		{
-			Name: "import_schema",
-		},
-	},
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       "options",
-			LabelNames: []string{"type"},
-		},
-	},
-}
-
 // WorkspaceBlockSchema is the top level schema for all workspace resources
 var WorkspaceBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       string(schema.BlockTypeMod),
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeVariable,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeQuery,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeControl,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeBenchmark,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeDashboard,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeCard,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeChart,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeFlow,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeGraph,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeHierarchy,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeImage,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeInput,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeTable,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeText,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeNode,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeEdge,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type: schema.BlockTypeLocals,
 		},
 		{
 			Type:       schema.BlockTypeCategory,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 
 		// Flowpipe
@@ -220,11 +200,11 @@ var DashboardBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeInput,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeParam,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type: schema.BlockTypeWith,
@@ -270,11 +250,11 @@ var DashboardContainerBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeInput,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypeParam,
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type: schema.BlockTypeContainer,
@@ -337,11 +317,11 @@ var QueryProviderBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       "param",
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       "with",
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
@@ -355,15 +335,15 @@ var NodeAndEdgeProviderSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       "param",
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       "category",
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       "with",
-			LabelNames: []string{"name"},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type: schema.BlockTypeNode,
