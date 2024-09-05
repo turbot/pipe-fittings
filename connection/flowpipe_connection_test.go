@@ -1140,7 +1140,7 @@ func TestGithubConnectionValidate(t *testing.T) {
 func TestGitLabDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	gitlabCred := GitLabConnection{
+	gitlabConnection := GitLabConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1149,19 +1149,19 @@ func TestGitLabDefaultConnection(t *testing.T) {
 	}
 
 	os.Unsetenv("GITLAB_TOKEN")
-	newCreds, err := gitlabCred.Resolve(context.TODO())
+	newConnection, err := gitlabConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newGitLabAccessTokenCreds := newCreds.(*GitLabConnection)
-	assert.Equal("", *newGitLabAccessTokenCreds.Token)
+	newGitLabAccessTokenConnection := newConnection.(*GitLabConnection)
+	assert.Equal("", *newGitLabAccessTokenConnection.Token)
 
 	os.Setenv("GITLAB_TOKEN", "glpat-ljgllghhegweroyuouo67u5476070owetylh")
 
-	newCreds, err = gitlabCred.Resolve(context.TODO())
+	newConnection, err = gitlabConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newGitLabAccessTokenCreds = newCreds.(*GitLabConnection)
-	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenCreds.Token)
+	newGitLabAccessTokenConnection = newConnection.(*GitLabConnection)
+	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenConnection.Token)
 }
 
 func TestGitLabConnectionEquals(t *testing.T) {
