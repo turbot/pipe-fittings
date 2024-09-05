@@ -934,7 +934,7 @@ func TestDiscordConnectionValidate(t *testing.T) {
 func TestFreshdeskDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	freshdeskCred := FreshdeskConnection{
+	freshdeskConnection := FreshdeskConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -945,22 +945,22 @@ func TestFreshdeskDefaultConnection(t *testing.T) {
 	os.Unsetenv("FRESHDESK_API_KEY")
 	os.Unsetenv("FRESHDESK_SUBDOMAIN")
 
-	newConnection, err := freshdeskCred.Resolve(context.TODO())
+	newConnection, err := freshdeskConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newFreshdeskCreds := newConnection.(*FreshdeskConnection)
-	assert.Equal("", *newFreshdeskCreds.APIKey)
-	assert.Equal("", *newFreshdeskCreds.Subdomain)
+	newFreshdeskConnections := newConnection.(*FreshdeskConnection)
+	assert.Equal("", *newFreshdeskConnections.APIKey)
+	assert.Equal("", *newFreshdeskConnections.Subdomain)
 
 	os.Setenv("FRESHDESK_API_KEY", "b1cf23432fwef23fg24grg31gr")
 	os.Setenv("FRESHDESK_SUBDOMAIN", "sub-domain")
 
-	newConnection, err = freshdeskCred.Resolve(context.TODO())
+	newConnection, err = freshdeskConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newFreshdeskCreds = newConnection.(*FreshdeskConnection)
-	assert.Equal("b1cf23432fwef23fg24grg31gr", *newFreshdeskCreds.APIKey)
-	assert.Equal("sub-domain", *newFreshdeskCreds.Subdomain)
+	newFreshdeskConnections = newConnection.(*FreshdeskConnection)
+	assert.Equal("b1cf23432fwef23fg24grg31gr", *newFreshdeskConnections.APIKey)
+	assert.Equal("sub-domain", *newFreshdeskConnections.Subdomain)
 }
 
 func TestFreshdeskConnectionEquals(t *testing.T) {
