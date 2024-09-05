@@ -103,20 +103,20 @@ func TestAwsConnection(t *testing.T) {
 
 	assert := assert.New(t)
 
-	awsCred := AwsConnection{}
+	awsConnecion := AwsConnection{}
 
 	os.Setenv("AWS_ACCESS_KEY_ID", "foo")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "bar")
 
-	newConnection, err := awsCred.Resolve(context.TODO())
+	newConnection, err := awsConnecion.Resolve(context.TODO())
 	assert.Nil(err)
 	assert.NotNil(newConnection)
 
-	newAwsCreds := newConnection.(*AwsConnection)
+	newAwsConnection := newConnection.(*AwsConnection)
 
-	assert.Equal("foo", *newAwsCreds.AccessKey)
-	assert.Equal("bar", *newAwsCreds.SecretKey)
-	assert.Nil(newAwsCreds.SessionToken)
+	assert.Equal("foo", *newAwsConnection.AccessKey)
+	assert.Equal("bar", *newAwsConnection.SecretKey)
+	assert.Nil(newAwsConnection.SessionToken)
 }
 
 // NOTE: We do not test for SessionToken as this is created in Resolve() and is not part of the connection configuration
