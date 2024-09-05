@@ -103,7 +103,7 @@ func TestAlicloudConnection(t *testing.T) {
 
 	assert := assert.New(t)
 
-	alicloudCred := AlicloudCredential{}
+	alicloudCred := AlicloudConnection{}
 
 	os.Setenv("ALIBABACLOUD_ACCESS_KEY_ID", "foo")
 	os.Setenv("ALIBABACLOUD_ACCESS_KEY_SECRET", "bar")
@@ -112,7 +112,7 @@ func TestAlicloudConnection(t *testing.T) {
 	assert.Nil(err)
 	assert.NotNil(newCreds)
 
-	newAlicloudCreds := newCreds.(*AlicloudCredential)
+	newAlicloudCreds := newCreds.(*AlicloudConnection)
 
 	assert.Equal("foo", *newAlicloudCreds.AccessKey)
 	assert.Equal("bar", *newAlicloudCreds.SecretKey)
@@ -255,23 +255,4 @@ func TestAwsConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are defined, validation should pass")
-}
-
-func TestAlicloudConnection(t *testing.T) {
-
-	assert := assert.New(t)
-
-	alicloudCred := AlicloudConnection{}
-
-	os.Setenv("ALIBABACLOUD_ACCESS_KEY_ID", "foo")
-	os.Setenv("ALIBABACLOUD_ACCESS_KEY_SECRET", "bar")
-
-	newCreds, err := alicloudCred.Resolve(context.TODO())
-	assert.Nil(err)
-	assert.NotNil(newCreds)
-
-	newAlicloudCreds := newCreds.(*AlicloudConnection)
-
-	assert.Equal("foo", *newAlicloudCreds.AccessKey)
-	assert.Equal("bar", *newAlicloudCreds.SecretKey)
 }
