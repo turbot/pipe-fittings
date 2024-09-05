@@ -15,6 +15,7 @@ _What's new_
 * Convert credential for datadog to connection, ([#459](https://github.com/turbot/pipe-fittings/issues/459)).
 * Convert credential for discord to connection. ([#460](https://github.com/turbot/pipe-fittings/issues/460)).
 * Convert credential for freshdesk to connection. ([#461](https://github.com/turbot/pipe-fittings/issues/461)).
+* Convert credential for github to connection. ([#467](https://github.com/turbot/pipe-fittings/issues/467)).
 
 _Bug fixes_
 
