@@ -488,3 +488,130 @@ func TestAzureConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated AzureConnection")
 }
+
+// ------------------------------------------------------------
+// BitBucket
+// ------------------------------------------------------------
+
+func TestBitbucketDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	bitbucketConnection := BitbucketConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("BITBUCKET_API_BASE_URL")
+	os.Unsetenv("BITBUCKET_USERNAME")
+	os.Unsetenv("BITBUCKET_PASSWORD")
+
+	newConnection, err := bitbucketConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newBitbucketConnections := newConnection.(*BitbucketConnection)
+	assert.Equal("", *newBitbucketConnections.BaseURL)
+	assert.Equal("", *newBitbucketConnections.Username)
+	assert.Equal("", *newBitbucketConnections.Password)
+
+	os.Setenv("BITBUCKET_API_BASE_URL", "https://api.bitbucket.org/2.0")
+	os.Setenv("BITBUCKET_USERNAME", "test@turbot.com")
+	os.Setenv("BITBUCKET_PASSWORD", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+
+	newConnection, err = bitbucketConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newBitbucketConnections = newConnection.(*BitbucketConnection)
+	assert.Equal("https://api.bitbucket.org/2.0", *newBitbucketConnections.BaseURL)
+	assert.Equal("test@turbot.com", *newBitbucketConnections.Username)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newBitbucketConnections.Password)
+}
+
+func TestBitbucketConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *BitbucketConnection
+	var conn2 *BitbucketConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &BitbucketConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same BaseURL, Username, and Password
+	baseURL := "https://bitbucket.org"
+	username := "user123"
+	password := "password123"
+
+	conn1 = &BitbucketConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		BaseURL:  &baseURL,
+		Username: &username,
+		Password: &password,
+	}
+
+	conn2 = &BitbucketConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		BaseURL:  &baseURL,
+		Username: &username,
+		Password: &password,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same values and should be equal")
+
+	// Case 4: Connections have different BaseURLs
+	differentBaseURL := "https://different.bitbucket.org"
+	conn2.BaseURL = &differentBaseURL
+	assert.False(conn1.Equals(conn2), "Connections have different BaseURLs, should return false")
+
+	// Case 5: Connections have different Usernames
+	conn2.BaseURL = &baseURL // Reset BaseURL to match conn1
+	differentUsername := "different_user"
+	conn2.Username = &differentUsername
+	assert.False(conn1.Equals(conn2), "Connections have different Usernames, should return false")
+
+	// Case 6: Connections have different Passwords
+	conn2.Username = &username // Reset Username to match conn1
+	differentPassword := "different_password"
+	conn2.Password = &differentPassword
+	assert.False(conn1.Equals(conn2), "Connections have different Passwords, should return false")
+}
+
+func TestBitbucketConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty BitbucketConnection, should pass with no diagnostics
+	conn := &BitbucketConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty BitbucketConnection")
+
+	// Case 2: Validate a populated BitbucketConnection, should pass with no diagnostics
+	baseURL := "https://bitbucket.org"
+	username := "user123"
+	password := "password123"
+
+	conn = &BitbucketConnection{
+		BaseURL:  &baseURL,
+		Username: &username,
+		Password: &password,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated BitbucketConnection")
+}
