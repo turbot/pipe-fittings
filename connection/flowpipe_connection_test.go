@@ -36,6 +36,43 @@ func TestAbuseIPDBDefaultCredential(t *testing.T) {
 	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBConnections.APIKey)
 }
 
+func TestAbuseIPDBConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *AbuseIPDBConnection
+	var conn2 *AbuseIPDBConnection
+	assert.True(conn1.Equals(conn2))
+
+	// Case 2: One connection is nil
+	conn1 = &AbuseIPDBConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil))
+
+	// Case 3: Both connections have the same API key
+	apiKey := "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d"
+	conn1.APIKey = &apiKey
+	conn2 = &AbuseIPDBConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+	assert.True(conn1.Equals(conn2))
+
+	// Case 4: Connections have different API keys
+	apiKey2 := "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de1d"
+	conn2.APIKey = &apiKey2
+	assert.False(conn1.Equals(conn2))
+}
+
 func TestAwsConnection(t *testing.T) {
 
 	assert := assert.New(t)
