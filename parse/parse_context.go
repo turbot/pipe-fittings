@@ -51,23 +51,23 @@ func NewParseContext(rootEvalPath string) ParseContext {
 	return c
 }
 
-func (r *ParseContext) SetDecodeContent(content *hcl.BodyContent, fileData map[string][]byte) {
-	r.blocks = content.Blocks
-	r.FileData = fileData
+func (p *ParseContext) SetDecodeContent(content *hcl.BodyContent, fileData map[string][]byte) {
+	p.blocks = content.Blocks
+	p.FileData = fileData
 }
 
-func (r *ParseContext) ClearDependencies() {
-	r.UnresolvedBlocks = make(map[string]*UnresolvedBlock)
-	r.DependencyGraph = r.newDependencyGraph()
+func (p *ParseContext) ClearDependencies() {
+	p.UnresolvedBlocks = make(map[string]*UnresolvedBlock)
+	p.DependencyGraph = p.newDependencyGraph()
 }
 
 // AddDependencies is called when a block could not be resolved as it has dependencies
 // 1) store block as unresolved
 // 2) add dependencies to our tree of dependencies
-func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) hcl.Diagnostics {
+func (p *ParseContext) AddDependencies(block *hcl.Block, name string, dependencies map[string]*modconfig.ResourceDependency) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
-	if r.UnresolvedBlocks[name] != nil {
+	if p.UnresolvedBlocks[name] != nil {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  fmt.Sprintf("duplicate unresolved block name '%s'", name),
@@ -78,14 +78,14 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 	}
 
 	// store unresolved block
-	r.UnresolvedBlocks[name] = NewUnresolvedBlock(block, name, dependencies)
+	p.UnresolvedBlocks[name] = NewUnresolvedBlock(block, name, dependencies)
 
 	// store dependency in tree - d
-	if !r.DependencyGraph.ContainsNode(name) {
-		r.DependencyGraph.AddNode(name)
+	if !p.DependencyGraph.ContainsNode(name) {
+		p.DependencyGraph.AddNode(name)
 	}
 	// add root dependency
-	if err := r.DependencyGraph.AddEdge(RootDependencyNode, name); err != nil {
+	if err := p.DependencyGraph.AddEdge(RootDependencyNode, name); err != nil {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "failed to add root dependency to graph",
@@ -97,7 +97,7 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 	for _, dep := range dependencies {
 		// each dependency object may have multiple traversals
 		for _, t := range dep.Traversals {
-			dependencyResourceName, err := r.ResourceNameFromDependencyFunc(hclhelpers.TraversalAsString(t))
+			dependencyResourceName, err := p.ResourceNameFromDependencyFunc(hclhelpers.TraversalAsString(t))
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
@@ -110,10 +110,10 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 			if dependencyResourceName == "" {
 				continue
 			}
-			if !r.DependencyGraph.ContainsNode(dependencyResourceName) {
-				r.DependencyGraph.AddNode(dependencyResourceName)
+			if !p.DependencyGraph.ContainsNode(dependencyResourceName) {
+				p.DependencyGraph.AddNode(dependencyResourceName)
 			}
-			if err := r.DependencyGraph.AddEdge(name, dependencyResourceName); err != nil {
+			if err := p.DependencyGraph.AddEdge(name, dependencyResourceName); err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "failed to add dependency to graph",
@@ -127,18 +127,18 @@ func (r *ParseContext) AddDependencies(block *hcl.Block, name string, dependenci
 }
 
 // BlocksToDecode builds a list of blocks to decode, the order of which is determined by the dependency order
-func (r *ParseContext) BlocksToDecode() (blocksToDecode hcl.Blocks, _ error) {
+func (p *ParseContext) BlocksToDecode() (blocksToDecode hcl.Blocks, _ error) {
 	defer func() {
 		// apply block inclusions and exclusions (if any)
-		blocksToDecode = r.filterBlocks(blocksToDecode)
+		blocksToDecode = p.filterBlocks(blocksToDecode)
 	}()
 
-	depOrder, err := r.getDependencyOrder()
+	depOrder, err := p.getDependencyOrder()
 	if err != nil {
 		return nil, err
 	}
 	if len(depOrder) == 0 {
-		return r.blocks, nil
+		return p.blocks, nil
 	}
 
 	// NOTE: a block may appear more than once in unresolved blocks
@@ -149,7 +149,7 @@ func (r *ParseContext) BlocksToDecode() (blocksToDecode hcl.Blocks, _ error) {
 	for _, name := range depOrder {
 		// depOrder is all the blocks required to resolve dependencies.
 		// if this one is unparsed, added to list
-		block, ok := r.UnresolvedBlocks[name]
+		block, ok := p.UnresolvedBlocks[name]
 		if ok && !blocksMap[block.DeclRange.String()] {
 			blocksToDecode = append(blocksToDecode, block.Block)
 			// add to map
@@ -159,27 +159,27 @@ func (r *ParseContext) BlocksToDecode() (blocksToDecode hcl.Blocks, _ error) {
 	return blocksToDecode, nil
 }
 
-func (r *ParseContext) filterBlocks(blocks hcl.Blocks) hcl.Blocks {
+func (p *ParseContext) filterBlocks(blocks hcl.Blocks) hcl.Blocks {
 	var res hcl.Blocks
 
 	for _, block := range blocks {
-		if r.shouldIncludeBlock(block) {
+		if p.shouldIncludeBlock(block) {
 			res = append(res, block)
 		}
 	}
 	return res
 }
 
-func (r *ParseContext) shouldIncludeBlock(block *hcl.Block) bool {
+func (p *ParseContext) shouldIncludeBlock(block *hcl.Block) bool {
 	// if inclusions are set, only include these block types
-	if len(r.blockTypes) > 0 {
-		if _, ok := r.blockTypes[block.Type]; !ok {
+	if len(p.blockTypes) > 0 {
+		if _, ok := p.blockTypes[block.Type]; !ok {
 			return false
 		}
 	}
 	// if exclusions are set, apply them
-	if len(r.blockTypeExclusions) > 0 {
-		if _, ok := r.blockTypeExclusions[block.Type]; ok {
+	if len(p.blockTypeExclusions) > 0 {
+		if _, ok := p.blockTypeExclusions[block.Type]; ok {
 			return false
 		}
 	}
@@ -187,13 +187,13 @@ func (r *ParseContext) shouldIncludeBlock(block *hcl.Block) bool {
 }
 
 // EvalComplete returns whether all elements in the dependency tree fully evaluated
-func (r *ParseContext) EvalComplete() bool {
-	return len(r.UnresolvedBlocks) == 0
+func (p *ParseContext) EvalComplete() bool {
+	return len(p.UnresolvedBlocks) == 0
 }
 
-func (r *ParseContext) FormatDependencies() string {
+func (p *ParseContext) FormatDependencies() string {
 	// first get the dependency order
-	dependencyOrder, err := r.getDependencyOrder()
+	dependencyOrder, err := p.getDependencyOrder()
 	if err != nil {
 		return err.Error()
 	}
@@ -204,7 +204,7 @@ func (r *ParseContext) FormatDependencies() string {
 		srcIdx := len(dependencyOrder) - i - 1
 		resourceName := dependencyOrder[srcIdx]
 		// find dependency
-		dep, ok := r.UnresolvedBlocks[resourceName]
+		dep, ok := p.UnresolvedBlocks[resourceName]
 
 		if ok {
 			depStrings[i] = dep.String()
@@ -217,7 +217,7 @@ func (r *ParseContext) FormatDependencies() string {
 	return helpers.Tabify(strings.Join(depStrings, "\n"), "   ")
 }
 
-func (r *ParseContext) newDependencyGraph() *topsort.Graph {
+func (p *ParseContext) newDependencyGraph() *topsort.Graph {
 	dependencyGraph := topsort.NewGraph()
 	// add root node - this will depend on all other nodes
 	dependencyGraph.AddNode(RootDependencyNode)
@@ -226,8 +226,8 @@ func (r *ParseContext) newDependencyGraph() *topsort.Graph {
 
 // return the optimal run order required to resolve dependencies
 
-func (r *ParseContext) getDependencyOrder() ([]string, error) {
-	rawDeps, err := r.DependencyGraph.TopSort(RootDependencyNode)
+func (p *ParseContext) getDependencyOrder() ([]string, error) {
+	rawDeps, err := p.DependencyGraph.TopSort(RootDependencyNode)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (r *ParseContext) getDependencyOrder() ([]string, error) {
 			continue
 		}
 
-		dep, err := r.ResourceNameFromDependencyFunc(d)
+		dep, err := p.ResourceNameFromDependencyFunc(d)
 		if err != nil {
 			return nil, err
 		}
@@ -251,12 +251,19 @@ func (r *ParseContext) getDependencyOrder() ([]string, error) {
 
 // eval functions
 
-func (r *ParseContext) BuildEvalContext(variables map[string]cty.Value) {
+func (p *ParseContext) BuildEvalContext(variables map[string]cty.Value) {
 	// create evaluation context
-	r.EvalCtx = &hcl.EvalContext{
+	p.EvalCtx = &hcl.EvalContext{
 		Variables: variables,
 		// use the RootEvalPath as the file root for functions
-		Functions: funcs.ContextFunctions(r.RootEvalPath),
+		Functions: funcs.ContextFunctions(p.RootEvalPath),
+	}
+}
+
+func (p *ParseContext) SetBlockTypes(blockTypes ...string) {
+	p.blockTypes = make(map[string]struct{}, len(blockTypes))
+	for _, t := range blockTypes {
+		p.blockTypes[t] = struct{}{}
 	}
 }
 

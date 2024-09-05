@@ -845,13 +845,6 @@ func (m *ModParseContext) LoadVariablesOnly() bool {
 	return ok
 }
 
-func (m *ModParseContext) SetBlockTypes(blockTypes ...string) {
-	m.blockTypes = make(map[string]struct{}, len(blockTypes))
-	for _, t := range blockTypes {
-		m.blockTypes[t] = struct{}{}
-	}
-}
-
 func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
 	m.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
 	for _, t := range blockTypes {
