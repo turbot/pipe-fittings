@@ -17,10 +17,6 @@ type AbuseIPDBConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *AbuseIPDBConnection) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
-}
-
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		abuseIPDBAPIKeyEnvVar := os.Getenv("ABUSEIPDB_API_KEY")
@@ -34,22 +30,6 @@ func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, 
 		return newConnection, nil
 	}
 	return c, nil
-}
-
-func (c *AbuseIPDBConnection) GetTtl() int {
-	return -1
-}
-
-func (c *AbuseIPDBConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *AbuseIPDBConnection) Equals(otherConnection PipelingConnection) bool {
@@ -72,6 +52,26 @@ func (c *AbuseIPDBConnection) Equals(otherConnection PipelingConnection) bool {
 	}
 
 	return true
+}
+
+func (c *AbuseIPDBConnection) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+func (c *AbuseIPDBConnection) GetTtl() int {
+	return -1
+}
+
+func (c *AbuseIPDBConnection) CtyValue() (cty.Value, error) {
+	ctyValue, err := modconfig.GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *AbuseIPDBConnection) getEnv() map[string]cty.Value {
