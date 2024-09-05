@@ -3321,3 +3321,91 @@ func TestZendeskConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated ZendeskConnection")
 }
+
+// ------------------------------------------------------------
+// GCP
+// ------------------------------------------------------------
+
+// NOTE: Need a test for resolve
+
+// NOTE: We do not test for AccessTokens as this is created in Resolve() and is not part of the connection configuration
+func TestGcpConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *GcpConnection
+	var conn2 *GcpConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &GcpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Credentials, Ttl, and AccessToken
+	credentials := "credentials_value"
+	ttl := 3600
+	accessToken := "access_token_value"
+
+	conn1 = &GcpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Credentials: &credentials,
+		Ttl:         &ttl,
+		AccessToken: &accessToken,
+	}
+
+	conn2 = &GcpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Credentials: &credentials,
+		Ttl:         &ttl,
+		AccessToken: &accessToken,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Credentials, Ttl, and AccessToken, and should be equal")
+
+	// Case 4: Connections have different Credentials
+	differentCredentials := "different_credentials_value"
+	conn2.Credentials = &differentCredentials
+	assert.False(conn1.Equals(conn2), "Connections have different Credentials, should return false")
+
+	// Case 5: Connections have different Ttl
+	conn2.Credentials = &credentials // Reset Credentials to match conn1
+	differentTtl := 7200
+	conn2.Ttl = &differentTtl
+	assert.False(conn1.Equals(conn2), "Connections have different Ttl, should return false")
+}
+
+func TestGcpConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty GcpConnection, should pass with no diagnostics
+	conn := &GcpConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty GcpConnection")
+
+	// Case 2: Validate a populated GcpConnection, should pass with no diagnostics
+	credentials := "credentials_value"
+	ttl := 3600
+	accessToken := "access_token_value"
+
+	conn = &GcpConnection{
+		Credentials: &credentials,
+		Ttl:         &ttl,
+		AccessToken: &accessToken,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GcpConnection")
+}
