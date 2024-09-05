@@ -346,3 +346,7 @@ func TestAwsConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are defined, validation should pass")
 }
+
+// ------------------------------------------------------------
+// Azure
+// ------------------------------------------------------------
