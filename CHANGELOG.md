@@ -11,6 +11,7 @@ _What's new_
 * Convert credential for alicloud to connection. ([#454](https://github.com/turbot/pipe-fittings/issues/454)).
 * Convert credential for azure to connection. ([#456](https://github.com/turbot/pipe-fittings/issues/456)).
 * Convert credential for bitbucket to connection. ([#457](https://github.com/turbot/pipe-fittings/issues/457)).
+* Convert credential for clickup to connection. ([#458](https://github.com/turbot/pipe-fittings/issues/458)).
 
 _Bug fixes_
 

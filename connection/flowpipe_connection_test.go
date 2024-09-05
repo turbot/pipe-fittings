@@ -615,3 +615,97 @@ func TestBitbucketConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated BitbucketConnection")
 }
+
+// ------------------------------------------------------------
+// ClickUp
+// ------------------------------------------------------------
+
+func TestClickUpDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	clickUpConnection := ClickUpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("CLICKUP_TOKEN")
+	newConnection, err := clickUpConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newClickUpConnections := newConnection.(*ClickUpConnection)
+	assert.Equal("", *newClickUpConnections.Token)
+
+	os.Setenv("CLICKUP_TOKEN", "pk_616_L5H36X3CXXXXXXXWEAZZF0NM5")
+
+	newConnection, err = clickUpConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newClickUpConnections = newConnection.(*ClickUpConnection)
+	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpConnections.Token)
+}
+
+func TestClickUpConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *ClickUpConnection
+	var conn2 *ClickUpConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &ClickUpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+	conn1 = &ClickUpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &ClickUpConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different tokens, should return false")
+}
+
+func TestClickUpConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty ClickUpConnection, should pass with no diagnostics
+	conn := &ClickUpConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty ClickUpConnection")
+
+	// Case 2: Validate a populated ClickUpConnection, should pass with no diagnostics
+	token := "token_value"
+	conn = &ClickUpConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated ClickUpConnection")
+}
