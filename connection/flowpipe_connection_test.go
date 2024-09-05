@@ -5,9 +5,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
+
+// ------------------------------------------------------------------------------------------------
+// AbuseIPDB
+// ------------------------------------------------------------------------------------------------
 
 func TestAbuseIPDBDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
@@ -72,6 +77,27 @@ func TestAbuseIPDBConnectionEquals(t *testing.T) {
 	conn2.APIKey = &apiKey2
 	assert.False(conn1.Equals(conn2))
 }
+
+func TestAbuseIPDBConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty AbuseIPDBConnection, should pass with no diagnostics
+	conn := &AbuseIPDBConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty AbuseIPDBConnection")
+
+	// Case 2: Validate a populated AbuseIPDBConnection, should pass with no diagnostics
+	apiKey := "some_api_key"
+	conn = &AbuseIPDBConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated AbuseIPDBConnection")
+}
+
+// ------------------------------------------------------------------------------------------------
+// AWS
+// ------------------------------------------------------------------------------------------------
 
 func TestAwsConnection(t *testing.T) {
 
@@ -169,4 +195,41 @@ func TestAwsConnectionEquals(t *testing.T) {
 	profile2 := "different_profile"
 	conn2.Profile = &profile2
 	assert.False(conn1.Equals(conn2), "Connections have different Profile values, should return false")
+}
+
+func TestAwsConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both AccessKey and SecretKey are nil, should pass validation
+	conn := &AwsConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are nil, validation should pass")
+
+	// Case 2: AccessKey is defined, SecretKey is nil, should fail validation
+	accessKey := "access_key_value"
+	conn = &AwsConnection{
+		AccessKey: &accessKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "AccessKey defined without SecretKey, should return an error")
+	assert.Equal(hcl.DiagError, diagnostics[0].Severity, "Severity should be DiagError")
+	assert.Equal("access_key defined without secret_key", diagnostics[0].Summary)
+
+	// Case 3: SecretKey is defined, AccessKey is nil, should fail validation
+	secretKey := "secret_key_value"
+	conn = &AwsConnection{
+		SecretKey: &secretKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "SecretKey defined without AccessKey, should return an error")
+	assert.Equal(hcl.DiagError, diagnostics[0].Severity, "Severity should be DiagError")
+	assert.Equal("secret_key defined without access_key", diagnostics[0].Summary)
+
+	// Case 4: Both AccessKey and SecretKey are defined, should pass validation
+	conn = &AwsConnection{
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are defined, validation should pass")
 }
