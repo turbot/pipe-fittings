@@ -765,7 +765,7 @@ func TestDatadogConnectionEquals(t *testing.T) {
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
 	// Case 3: Both connections have the same APIKey, AppKey, and APIUrl
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec G101
 	appKey := "app_key_value"
 	apiUrl := "api_url_value"
 
@@ -820,7 +820,7 @@ func TestDatadogConnectionValidate(t *testing.T) {
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty DatadogConnection")
 
 	// Case 2: Validate a populated DatadogConnection, should pass with no diagnostics
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec G101
 	appKey := "app_key_value"
 	apiUrl := "api_url_value"
 
