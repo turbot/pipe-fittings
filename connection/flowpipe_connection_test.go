@@ -1226,3 +1226,99 @@ func TestGitLabConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GitLabConnection")
 }
+
+// ------------------------------------------------------------
+// Ipstack
+// ------------------------------------------------------------
+
+func TestIPstackDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	ipstackConnection := IPstackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("IPSTACK_ACCESS_KEY")
+	os.Unsetenv("IPSTACK_TOKEN")
+	newConnection, err := ipstackConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIPstackConnection := newConnection.(*IPstackConnection)
+	assert.Equal("", *newIPstackConnection.AccessKey)
+
+	os.Setenv("IPSTACK_ACCESS_KEY", "1234801bfsffsdf123455e6cfaf2")
+	os.Setenv("IPSTACK_TOKEN", "1234801bfsffsdf123455e6cfaf2")
+
+	newConnection, err = ipstackConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIPstackConnection = newConnection.(*IPstackConnection)
+	assert.Equal("1234801bfsffsdf123455e6cfaf2", *newIPstackConnection.AccessKey)
+}
+
+func TestIPstackConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *IPstackConnection
+	var conn2 *IPstackConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &IPstackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same AccessKey
+	accessKey := "access_key_value"
+	conn1 = &IPstackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessKey: &accessKey,
+	}
+
+	conn2 = &IPstackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessKey: &accessKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same AccessKey and should be equal")
+
+	// Case 4: Connections have different AccessKeys
+	differentAccessKey := "different_access_key_value"
+	conn2.AccessKey = &differentAccessKey
+	assert.False(conn1.Equals(conn2), "Connections have different AccessKeys, should return false")
+}
+
+func TestIPstackConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty IPstackConnection, should pass with no diagnostics
+	conn := &IPstackConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty IPstackConnection")
+
+	// Case 2: Validate a populated IPstackConnection, should pass with no diagnostics
+	accessKey := "access_key_value"
+	conn = &IPstackConnection{
+		AccessKey: &accessKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated IPstackConnection")
+}

@@ -17,6 +17,7 @@ _What's new_
 * Convert credential for freshdesk to connection. ([#461](https://github.com/turbot/pipe-fittings/issues/461)).
 * Convert credential for github to connection. ([#467](https://github.com/turbot/pipe-fittings/issues/467)).
 * Convert credential for gitlab to connection. ([#468](https://github.com/turbot/pipe-fittings/issues/468)).
+* Convert credential for ipstack to connection. ([#468](https://github.com/turbot/pipe-fittings/issues/468)).
 
 _Bug fixes_
 
