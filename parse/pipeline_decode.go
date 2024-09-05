@@ -291,6 +291,28 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 		}
 
 		o.Enum = ctyVal
+
+		enumGo, err := hclhelpers.CtyToGo(o.Enum)
+		if err != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "error converting enum to go",
+				Subject:  &attr.Range,
+			})
+			return o, diags
+		}
+
+		enumGoSlice, ok := enumGo.([]any)
+		if !ok {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum is not a slice",
+				Subject:  &attr.Range,
+			})
+			return o, diags
+		}
+
+		o.EnumGo = enumGoSlice
 	}
 
 	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {

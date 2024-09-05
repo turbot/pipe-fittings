@@ -21,19 +21,15 @@ const badIdentifierDetail = "A name must start with a letter or underscore and m
 
 // Variable represents a "variable" block in a module or file.
 type Variable struct {
-	Name        string
-	Description string
-	Default     cty.Value
-	Type        cty.Type
-	ParsingMode VariableParsingMode
-	Enum        cty.Value
-	//Validations []*VariableValidation
-	//Sensitive   bool
-
+	Name           string
+	Description    string
+	Default        cty.Value
+	Type           cty.Type
+	ParsingMode    VariableParsingMode
+	Enum           cty.Value
+	EnumGo         []any
 	DescriptionSet bool
-	//SensitiveSet   bool
-
-	DeclRange hcl.Range
+	DeclRange      hcl.Range
 }
 
 func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bool) (*Variable, hcl.Diagnostics) {
@@ -167,6 +163,29 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 		}
 
 		v.Enum = ctyVal
+
+		enumGo, err := hclhelpers.CtyToGo(v.Enum)
+		if err != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "error converting enum to go",
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+
+		enumGoSlice, ok := enumGo.([]any)
+		if !ok {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "enum is not a slice",
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+
+		v.EnumGo = enumGoSlice
+
 	}
 
 	for _, block := range content.Blocks {

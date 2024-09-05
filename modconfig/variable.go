@@ -43,6 +43,7 @@ type Variable struct {
 
 	DefaultGo any    `json:"value_default"`
 	ValueGo   any    `json:"value"`
+	EnumGo    []any  `json:"enum"`
 	ModName   string `json:"mod_name"`
 
 	// set after value resolution `column:"value,jsonb"`
@@ -82,6 +83,7 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 		ParsingMode: v.ParsingMode,
 		ModName:     mod.ShortName,
 		Enum:        v.Enum,
+		EnumGo:      v.EnumGo,
 
 		TypeHclString: hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()), // strategic, this where the HCL string representation of cty.Type is stored
 	}

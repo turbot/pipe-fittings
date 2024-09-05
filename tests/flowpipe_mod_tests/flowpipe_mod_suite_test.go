@@ -1632,6 +1632,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert.Equal([]interface{}{"Environment", "Owner"}, mod.ResourceMaps.Variables["test_mod.var.mandatory_tag_keys"].ValueGo)
 	assert.Equal(map[string]interface{}{"key1": "value1", "key2": "value2"}, mod.ResourceMaps.Variables["test_mod.var.var_map"].ValueGo)
 	assert.Equal("enum2", mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].ValueGo)
+	assert.Equal(2, len(mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].EnumGo))
 	assert.Equal(3, mod.ResourceMaps.Variables["test_mod.var.number_with_enum"].ValueGo)
 
 	pipelines := mod.ResourceMaps.Pipelines
