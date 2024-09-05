@@ -60,7 +60,7 @@ func TestAbuseIPDBConnectionEquals(t *testing.T) {
 	assert.False(conn1.Equals(nil))
 
 	// Case 3: Both connections have the same API key
-	apiKey := "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d"
+	apiKey := "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d" // #nosec
 	conn1.APIKey = &apiKey
 	conn2 = &AbuseIPDBConnection{
 		ConnectionImpl: ConnectionImpl{
@@ -73,7 +73,7 @@ func TestAbuseIPDBConnectionEquals(t *testing.T) {
 	assert.True(conn1.Equals(conn2))
 
 	// Case 4: Connections have different API keys
-	apiKey2 := "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de1d"
+	apiKey2 := "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de1d" // #nosec
 	conn2.APIKey = &apiKey2
 	assert.False(conn1.Equals(conn2))
 }
