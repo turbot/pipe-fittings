@@ -103,19 +103,19 @@ func TestAlicloudConnection(t *testing.T) {
 
 	assert := assert.New(t)
 
-	alicloudCred := AlicloudConnection{}
+	alicloudConnection := AlicloudConnection{}
 
 	os.Setenv("ALIBABACLOUD_ACCESS_KEY_ID", "foo")
 	os.Setenv("ALIBABACLOUD_ACCESS_KEY_SECRET", "bar")
 
-	newCreds, err := alicloudCred.Resolve(context.TODO())
+	newConnection, err := alicloudConnection.Resolve(context.TODO())
 	assert.Nil(err)
-	assert.NotNil(newCreds)
+	assert.NotNil(newConnection)
 
-	newAlicloudCreds := newCreds.(*AlicloudConnection)
+	newAlicloudConnection := newConnection.(*AlicloudConnection)
 
-	assert.Equal("foo", *newAlicloudCreds.AccessKey)
-	assert.Equal("bar", *newAlicloudCreds.SecretKey)
+	assert.Equal("foo", *newAlicloudConnection.AccessKey)
+	assert.Equal("bar", *newAlicloudConnection.SecretKey)
 }
 
 func TestAlicloudConnectionEquals(t *testing.T) {
@@ -345,4 +345,146 @@ func TestAwsConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are defined, validation should pass")
+}
+
+// ------------------------------------------------------------
+// Azure
+// ------------------------------------------------------------
+
+func TestAzureDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	azureConnection := AzureConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("AZURE_CLIENT_ID")
+	os.Unsetenv("AZURE_CLIENT_SECRET")
+	os.Unsetenv("AZURE_TENANT_ID")
+	os.Unsetenv("AZURE_ENVIRONMENT")
+
+	newConnection, err := azureConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newAzureConnections := newConnection.(*AzureConnection)
+	assert.Equal("", *newAzureConnections.ClientID)
+	assert.Equal("", *newAzureConnections.ClientSecret)
+	assert.Equal("", *newAzureConnections.TenantID)
+	assert.Equal("", *newAzureConnections.Environment)
+
+	os.Setenv("AZURE_CLIENT_ID", "clienttoken")
+	os.Setenv("AZURE_CLIENT_SECRET", "clientsecret")
+	os.Setenv("AZURE_TENANT_ID", "tenantid")
+	os.Setenv("AZURE_ENVIRONMENT", "environmentvar")
+
+	newConnection, err = azureConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newAzureConnections = newConnection.(*AzureConnection)
+	assert.Equal("clienttoken", *newAzureConnections.ClientID)
+	assert.Equal("clientsecret", *newAzureConnections.ClientSecret)
+	assert.Equal("tenantid", *newAzureConnections.TenantID)
+	assert.Equal("environmentvar", *newAzureConnections.Environment)
+}
+
+func TestAzureConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *AzureConnection
+	var conn2 *AzureConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &AzureConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same ClientID, ClientSecret, TenantID, and Environment
+	clientID := "client_id_value"
+	clientSecret := "client_secret_value"
+	tenantID := "tenant_id_value"
+	environment := "environment_value"
+
+	conn1 = &AzureConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		ClientID:     &clientID,
+		ClientSecret: &clientSecret,
+		TenantID:     &tenantID,
+		Environment:  &environment,
+	}
+
+	conn2 = &AzureConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		ClientID:     &clientID,
+		ClientSecret: &clientSecret,
+		TenantID:     &tenantID,
+		Environment:  &environment,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same values and should be equal")
+
+	// Case 4: Connections have different ClientIDs
+	differentClientID := "different_client_id_value"
+	conn2.ClientID = &differentClientID
+	assert.False(conn1.Equals(conn2), "Connections have different ClientIDs, should return false")
+
+	// Case 5: Connections have different ClientSecrets
+	conn2.ClientID = &clientID // Reset ClientID to match conn1
+	differentClientSecret := "different_client_secret_value"
+	conn2.ClientSecret = &differentClientSecret
+	assert.False(conn1.Equals(conn2), "Connections have different ClientSecrets, should return false")
+
+	// Case 6: Connections have different TenantIDs
+	conn2.ClientSecret = &clientSecret // Reset ClientSecret to match conn1
+	differentTenantID := "different_tenant_id_value"
+	conn2.TenantID = &differentTenantID
+	assert.False(conn1.Equals(conn2), "Connections have different TenantIDs, should return false")
+
+	// Case 7: Connections have different Environments
+	conn2.TenantID = &tenantID // Reset TenantID to match conn1
+	differentEnvironment := "different_environment_value"
+	conn2.Environment = &differentEnvironment
+	assert.False(conn1.Equals(conn2), "Connections have different Environments, should return false")
+}
+
+func TestAzureConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty AzureConnection, should pass with no diagnostics
+	conn := &AzureConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty AzureConnection")
+
+	// Case 2: Validate a populated AzureConnection, should pass with no diagnostics
+	clientID := "client_id_value"
+	clientSecret := "client_secret_value"
+	tenantID := "tenant_id_value"
+	environment := "environment_value"
+
+	conn = &AzureConnection{
+		ClientID:     &clientID,
+		ClientSecret: &clientSecret,
+		TenantID:     &tenantID,
+		Environment:  &environment,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated AzureConnection")
 }
