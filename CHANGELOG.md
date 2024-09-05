@@ -7,7 +7,7 @@ Shared Pipes Component
 _What's new_
 
 * `Pipeling Connection` resource to replace `Credential`. ([#449](https://github.com/turbot/pipe-fittings/issues/449)).
-* Convert credential for abuseipdb to connection. ([#453]https://github.com/turbot/pipe-fittings/issues/453)
+* Convert credential for abuseipdb to connection. ([#453](https://github.com/turbot/pipe-fittings/issues/453)).
 
 _Bug fixes_
 
