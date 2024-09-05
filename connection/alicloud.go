@@ -69,24 +69,24 @@ func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, e
 		alicloudSecretKeyEnvVar = os.Getenv("ALIBABACLOUD_ACCESS_KEY_SECRET")
 	}
 
-	// Don't modify existing credential, resolve to a new one
-	newCreds := &AlicloudConnection{
+	// Don't modify existing connection, resolve to a new one
+	newConnection := &AlicloudConnection{
 		ConnectionImpl: c.ConnectionImpl,
 	}
 
 	if c.AccessKey == nil {
-		newCreds.AccessKey = &alicloudAccessKeyEnvVar
+		newConnection.AccessKey = &alicloudAccessKeyEnvVar
 	} else {
-		newCreds.AccessKey = c.AccessKey
+		newConnection.AccessKey = c.AccessKey
 	}
 
 	if c.SecretKey == nil {
-		newCreds.SecretKey = &alicloudSecretKeyEnvVar
+		newConnection.SecretKey = &alicloudSecretKeyEnvVar
 	} else {
-		newCreds.SecretKey = c.SecretKey
+		newConnection.SecretKey = c.SecretKey
 	}
 
-	return newCreds, nil
+	return newConnection, nil
 }
 
 // in seconds
