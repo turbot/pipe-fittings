@@ -74,6 +74,36 @@ var enumTests = map[string]enumTest{
 		enum:     cty.TupleVal([]cty.Value{cty.BoolVal(false), cty.BoolVal(false)}),
 		expected: false,
 	},
+	"list of string in list": {
+		setting:  cty.TupleVal([]cty.Value{cty.StringVal("foo"), cty.StringVal("bar")}),
+		enum:     cty.TupleVal([]cty.Value{cty.StringVal("foo"), cty.StringVal("bar"), cty.StringVal("baz")}),
+		expected: true,
+	},
+	"list of string not in list": {
+		setting:  cty.TupleVal([]cty.Value{cty.StringVal("foo"), cty.StringVal("bar")}),
+		enum:     cty.TupleVal([]cty.Value{cty.StringVal("baz"), cty.StringVal("qux")}),
+		expected: false,
+	},
+	"list of number in list": {
+		setting:  cty.TupleVal([]cty.Value{cty.NumberIntVal(1), cty.NumberIntVal(2)}),
+		enum:     cty.TupleVal([]cty.Value{cty.NumberIntVal(1), cty.NumberIntVal(2), cty.NumberIntVal(3)}),
+		expected: true,
+	},
+	"list of number not in list": {
+		setting:  cty.TupleVal([]cty.Value{cty.NumberIntVal(1), cty.NumberIntVal(2)}),
+		enum:     cty.TupleVal([]cty.Value{cty.NumberIntVal(3), cty.NumberIntVal(4)}),
+		expected: false,
+	},
+	"list of float in list": {
+		setting:  cty.TupleVal([]cty.Value{cty.NumberFloatVal(1.1), cty.NumberFloatVal(2.2)}),
+		enum:     cty.TupleVal([]cty.Value{cty.NumberFloatVal(1.1), cty.NumberFloatVal(2.2), cty.NumberFloatVal(3.3)}),
+		expected: true,
+	},
+	"list of float not in list": {
+		setting:  cty.TupleVal([]cty.Value{cty.NumberFloatVal(1.1), cty.NumberFloatVal(2.2)}),
+		enum:     cty.TupleVal([]cty.Value{cty.NumberFloatVal(3.3), cty.NumberFloatVal(4.4)}),
+		expected: false,
+	},
 }
 
 func TestEnum(t *testing.T) {

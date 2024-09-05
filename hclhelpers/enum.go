@@ -10,6 +10,10 @@ func ValidateSettingWithEnum(setting cty.Value, enum cty.Value) (bool, error) {
 		return true, nil
 	}
 
+	if enum.IsNull() {
+		return true, nil
+	}
+
 	settingGo, err := CtyToGo(setting)
 	if err != nil {
 		return false, err
@@ -20,9 +24,37 @@ func ValidateSettingWithEnum(setting cty.Value, enum cty.Value) (bool, error) {
 		return false, err
 	}
 
+	if setting.Type().IsCollectionType() || setting.Type().IsTupleType() {
+		settingsGo, ok := settingGo.([]interface{})
+		if !ok {
+			slog.Debug("setting is not a slice", "setting", settingGo, "enum", enumGo)
+			return false, nil
+		}
+
+		res, err := compareValuesSlice(settingsGo, enumGo)
+
+		return res, err
+	}
+
 	res, err := compareValues(settingGo, enumGo)
 
 	return res, err
+}
+
+func compareValuesSlice(settingGo []interface{}, enumGo interface{}) (bool, error) {
+
+	for _, settingValue := range settingGo {
+		res, err := compareValues(settingValue, enumGo)
+		if err != nil {
+			return false, err
+		}
+
+		if !res {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 func compareValues[T comparable](settingGo T, enumGo interface{}) (bool, error) {

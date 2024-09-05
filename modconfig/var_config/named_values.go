@@ -140,7 +140,7 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 			if !hclhelpers.IsEnumValueCompatibleWithType(v.Default.Type(), ctyVal) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "default value type mismatched with enum",
+					Summary:  "variable default value type mismatched with enum in",
 					Subject:  &attr.Range,
 				})
 				return v, diags

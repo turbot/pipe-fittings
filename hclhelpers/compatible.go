@@ -96,6 +96,8 @@ func IsEnumValueCompatibleWithType(ctyType cty.Type, enumValues cty.Value) bool 
 	// if ctyType is not a scalar type, then pull the element type
 	if ctyType.IsCollectionType() {
 		innerCtyType = ctyType.ElementType()
+	} else if ctyType.IsTupleType() {
+		innerCtyType = ctyType.TupleElementTypes()[0]
 	}
 
 	if innerCtyType == cty.DynamicPseudoType {

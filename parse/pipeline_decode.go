@@ -264,7 +264,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 			if !hclhelpers.IsEnumValueCompatibleWithType(o.Default.Type(), ctyVal) {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "default value type mismatched with enum",
+					Summary:  "param default value type mismatched with enum",
 					Subject:  &attr.Range,
 				})
 				return o, diags

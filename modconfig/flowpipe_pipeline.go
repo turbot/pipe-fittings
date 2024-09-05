@@ -13,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
+	"github.com/zclconf/go-cty/cty/gocty"
 )
 
 func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
@@ -101,7 +102,7 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 	p.EndLineNumber = endLineNumber
 }
 
-func ValidateParams(p ResourceWithParam, params map[string]interface{}) []error {
+func ValidateParams(p ResourceWithParam, inputParams map[string]interface{}) []error {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -112,26 +113,37 @@ func ValidateParams(p ResourceWithParam, params map[string]interface{}) []error 
 		}
 	}
 
-	for k, v := range params {
-
+	for k, v := range inputParams {
 		param := p.GetParam(k)
 		if param == nil {
 			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("unknown parameter specified '%s'", k)))
 			continue
 		}
 
+		errorExist := false
+
 		if !hclhelpers.GoTypeMatchesCtyType(v, param.Type) {
 			wanted := param.Type.FriendlyName()
 			typeOfInterface := reflect.TypeOf(v)
 			if typeOfInterface == nil {
+				errorExist = true
 				errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received null", k, wanted)))
 			} else {
 				received := typeOfInterface.String()
+				errorExist = true
 				errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, wanted, received)))
 			}
 		} else {
 			delete(pipelineParamsWithNoDefaultValue, k)
 		}
+
+		if !errorExist {
+			errValidation := validateParam(param, v)
+			if errValidation != nil {
+				errors = append(errors, errValidation)
+			}
+		}
+
 	}
 
 	var missingParams []string
@@ -150,7 +162,7 @@ func ValidateParams(p ResourceWithParam, params map[string]interface{}) []error 
 // This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
 // and again we convert from Go -> Cty when we're executing the pipeline to build EvalContext when we're evaluating
 // data are not resolved during parse time.
-func CoerceParams(p ResourceWithParam, params map[string]string) (map[string]interface{}, []error) {
+func CoerceParams(p ResourceWithParam, inputParams map[string]string) (map[string]interface{}, []error) {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -163,7 +175,7 @@ func CoerceParams(p ResourceWithParam, params map[string]string) (map[string]int
 
 	res := map[string]interface{}{}
 
-	for k, v := range params {
+	for k, v := range inputParams {
 		param := p.GetParam(k)
 		if param == nil {
 			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("unknown parameter specified '%s'", k)))
@@ -178,6 +190,11 @@ func CoerceParams(p ResourceWithParam, params map[string]string) (map[string]int
 		res[k] = val
 
 		delete(pipelineParamsWithNoDefaultValue, k)
+
+		errValidation := validateParam(param, val)
+		if errValidation != nil {
+			errors = append(errors, errValidation)
+		}
 	}
 
 	var missingParams []string
@@ -191,6 +208,30 @@ func CoerceParams(p ResourceWithParam, params map[string]string) (map[string]int
 	}
 
 	return res, errors
+}
+
+func validateParam(param *PipelineParam, inputParam interface{}) error {
+	var valToValidate cty.Value
+	var err error
+	if !param.Type.HasDynamicTypes() {
+		valToValidate, err = gocty.ToCtyValue(inputParam, param.Type)
+		if err != nil {
+			return err
+		}
+	} else {
+		// we'll do our best here
+		valToValidate, err = hclhelpers.ConvertInterfaceToCtyValue(inputParam)
+		if err != nil {
+			return err
+		}
+	}
+	validParam, err := param.ValidateSetting(valToValidate)
+	if err != nil {
+		return err
+	} else if !validParam {
+		return perr.BadRequestWithMessage("invalid value for param " + param.Name)
+	}
+	return nil
 }
 
 func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
@@ -572,7 +613,7 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		p.Type.Equals(other.Type)
 }
 
-func (p *PipelineParam) ValidateSettingWithEnum(setting cty.Value) (bool, error) {
+func (p *PipelineParam) ValidateSetting(setting cty.Value) (bool, error) {
 	if setting.IsNull() {
 		return true, nil
 	}
