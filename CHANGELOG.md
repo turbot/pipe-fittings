@@ -9,6 +9,7 @@ _What's new_
 * `Pipeling Connection` resource to replace `Credential`. ([#449](https://github.com/turbot/pipe-fittings/issues/449)).
 * Convert credential for abuseipdb to connection. ([#453](https://github.com/turbot/pipe-fittings/issues/453)).
 * Convert credential for alicloud to connection. ([#454](https://github.com/turbot/pipe-fittings/issues/454)).
+* Convert credential for azure to connection. ([#456](https://github.com/turbot/pipe-fittings/issues/456)).
 
 _Bug fixes_
 
