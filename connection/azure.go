@@ -28,8 +28,8 @@ func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, erro
 		tenantIDEnvVar := os.Getenv("AZURE_TENANT_ID")
 		environmentEnvVar := os.Getenv("AZURE_ENVIRONMENT")
 
-		// Don't modify existing credential, resolve to a new one
-		newCreds := &AzureConnection{
+		// Don't modify existing connection, resolve to a new one
+		newConnection := &AzureConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			ClientID:       &clientIDEnvVar,
 			ClientSecret:   &clientSecretEnvVar,
@@ -37,7 +37,7 @@ func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, erro
 			Environment:    &environmentEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 	}
 
 	return c, nil
