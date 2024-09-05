@@ -25,13 +25,13 @@ func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, 
 	if c.APIKey == nil {
 		abuseIPDBAPIKeyEnvVar := os.Getenv("ABUSEIPDB_API_KEY")
 
-		// Don't modify existing credential, resolve to a new one
-		newCreds := &AbuseIPDBConnection{
+		// Don't modify existing connection, resolve to a new one
+		newConnection := &AbuseIPDBConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			APIKey:         &abuseIPDBAPIKeyEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 	}
 	return c, nil
 }
