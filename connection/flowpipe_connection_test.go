@@ -118,6 +118,96 @@ func TestAlicloudConnection(t *testing.T) {
 	assert.Equal("bar", *newAlicloudCreds.SecretKey)
 }
 
+func TestAlicloudConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *AlicloudConnection
+	var conn2 *AlicloudConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &AlicloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same AccessKey and SecretKey
+	accessKey := "access_key_value"
+	secretKey := "secret_key_value"
+	conn1 = &AlicloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+	}
+	conn2 = &AlicloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+	}
+	assert.True(conn1.Equals(conn2), "Both connections have the same values and should be equal")
+
+	// Case 4: Connections have different AccessKeys
+	differentAccessKey := "different_access_key_value"
+	conn2.AccessKey = &differentAccessKey
+	assert.False(conn1.Equals(conn2), "Connections have different AccessKeys, should return false")
+
+	// Case 5: Connections have different SecretKeys
+	conn2.AccessKey = &accessKey // Reset AccessKey to match conn1
+	differentSecretKey := "different_secret_key_value"
+	conn2.SecretKey = &differentSecretKey
+	assert.False(conn1.Equals(conn2), "Connections have different SecretKeys, should return false")
+}
+
+func TestAlicloudConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both AccessKey and SecretKey are nil, should pass validation
+	conn := &AlicloudConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are nil, validation should pass")
+
+	// Case 2: AccessKey is defined, SecretKey is nil, should fail validation
+	accessKey := "access_key_value"
+	conn = &AlicloudConnection{
+		AccessKey: &accessKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "AccessKey defined without SecretKey, should return an error")
+	assert.Equal(hcl.DiagError, diagnostics[0].Severity, "Severity should be DiagError")
+	assert.Equal("access_key defined without secret_key", diagnostics[0].Summary)
+
+	// Case 3: SecretKey is defined, AccessKey is nil, should fail validation
+	secretKey := "secret_key_value"
+	conn = &AlicloudConnection{
+		SecretKey: &secretKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "SecretKey defined without AccessKey, should return an error")
+	assert.Equal(hcl.DiagError, diagnostics[0].Severity, "Severity should be DiagError")
+	assert.Equal("secret_key defined without access_key", diagnostics[0].Summary)
+
+	// Case 4: Both AccessKey and SecretKey are defined, should pass validation
+	conn = &AlicloudConnection{
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Both AccessKey and SecretKey are defined, validation should pass")
+}
+
 // ------------------------------------------------------------
 // AWS
 // ------------------------------------------------------------
