@@ -926,3 +926,115 @@ func TestDiscordConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated DiscordConnection")
 }
+
+// ------------------------------------------------------------
+// Freshdesk
+// ------------------------------------------------------------
+
+func TestFreshdeskDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	freshdeskCred := FreshdeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("FRESHDESK_API_KEY")
+	os.Unsetenv("FRESHDESK_SUBDOMAIN")
+
+	newConnection, err := freshdeskCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newFreshdeskCreds := newConnection.(*FreshdeskConnection)
+	assert.Equal("", *newFreshdeskCreds.APIKey)
+	assert.Equal("", *newFreshdeskCreds.Subdomain)
+
+	os.Setenv("FRESHDESK_API_KEY", "b1cf23432fwef23fg24grg31gr")
+	os.Setenv("FRESHDESK_SUBDOMAIN", "sub-domain")
+
+	newConnection, err = freshdeskCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newFreshdeskCreds = newConnection.(*FreshdeskConnection)
+	assert.Equal("b1cf23432fwef23fg24grg31gr", *newFreshdeskCreds.APIKey)
+	assert.Equal("sub-domain", *newFreshdeskCreds.Subdomain)
+}
+
+func TestFreshdeskConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *FreshdeskConnection
+	var conn2 *FreshdeskConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &FreshdeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey and Subdomain
+	apiKey := "api_key_value" // #nosec: G101
+	subdomain := "subdomain_value"
+
+	conn1 = &FreshdeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey:    &apiKey,
+		Subdomain: &subdomain,
+	}
+
+	conn2 = &FreshdeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey:    &apiKey,
+		Subdomain: &subdomain,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and Subdomain, and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+
+	// Case 5: Connections have different Subdomains
+	conn2.APIKey = &apiKey // Reset APIKey to match conn1
+	differentSubdomain := "different_subdomain_value"
+	conn2.Subdomain = &differentSubdomain
+	assert.False(conn1.Equals(conn2), "Connections have different Subdomains, should return false")
+}
+
+func TestFreshdeskConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty FreshdeskConnection, should pass with no diagnostics
+	conn := &FreshdeskConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty FreshdeskConnection")
+
+	// Case 2: Validate a populated FreshdeskConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+	subdomain := "subdomain_value"
+
+	conn = &FreshdeskConnection{
+		APIKey:    &apiKey,
+		Subdomain: &subdomain,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated FreshdeskConnection")
+}
