@@ -14,7 +14,7 @@ import (
 // AbuseIPDB
 // ------------------------------------------------------------
 
-func TestAbuseIPDBDefaultCredential(t *testing.T) {
+func TestAbuseIPDBDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
 	abuseIPDBConnection := AbuseIPDBConnection{
