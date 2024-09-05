@@ -18,31 +18,6 @@ type AlicloudConnection struct {
 	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 }
 
-func (c *AlicloudConnection) Validate() hcl.Diagnostics {
-
-	if c.AccessKey != nil && c.SecretKey == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "access_key defined without secret_key",
-				Subject:  &c.DeclRange,
-			},
-		}
-	}
-
-	if c.SecretKey != nil && c.AccessKey == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "secret_key defined without access_key",
-				Subject:  &c.DeclRange,
-			},
-		}
-	}
-
-	return hcl.Diagnostics{}
-}
-
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// The order of precedence for the environment variable
@@ -89,23 +64,6 @@ func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, e
 	return newConnection, nil
 }
 
-// in seconds
-func (c *AlicloudConnection) GetTtl() int {
-	return -1
-}
-
-func (c *AlicloudConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
-}
-
 func (c *AlicloudConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
@@ -130,6 +88,48 @@ func (c *AlicloudConnection) Equals(otherConnection PipelingConnection) bool {
 	}
 
 	return true
+}
+
+func (c *AlicloudConnection) Validate() hcl.Diagnostics {
+
+	if c.AccessKey != nil && c.SecretKey == nil {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "access_key defined without secret_key",
+				Subject:  &c.DeclRange,
+			},
+		}
+	}
+
+	if c.SecretKey != nil && c.AccessKey == nil {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "secret_key defined without access_key",
+				Subject:  &c.DeclRange,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
+// in seconds
+func (c *AlicloudConnection) GetTtl() int {
+	return -1
+}
+
+func (c *AlicloudConnection) CtyValue() (cty.Value, error) {
+	ctyValue, err := modconfig.GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *AlicloudConnection) getEnv() map[string]cty.Value {
