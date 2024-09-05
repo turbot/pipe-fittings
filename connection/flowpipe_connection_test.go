@@ -1046,7 +1046,7 @@ func TestFreshdeskConnectionValidate(t *testing.T) {
 func TestGitHubDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	githubCred := GithubConnection{
+	githubConnection := GithubConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1055,19 +1055,19 @@ func TestGitHubDefaultConnection(t *testing.T) {
 	}
 
 	os.Unsetenv("GITHUB_TOKEN")
-	newCreds, err := githubCred.Resolve(context.TODO())
+	newConnection, err := githubConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newGithubAccessTokenCreds := newCreds.(*GithubConnection)
-	assert.Equal("", *newGithubAccessTokenCreds.Token)
+	newGithubAccessTokenConnection := newConnection.(*GithubConnection)
+	assert.Equal("", *newGithubAccessTokenConnection.Token)
 
 	os.Setenv("GITHUB_TOKEN", "ghpat-ljgllghhegweroyuouo67u5476070owetylh")
 
-	newCreds, err = githubCred.Resolve(context.TODO())
+	newConnection, err = githubConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newGithubAccessTokenCreds = newCreds.(*GithubConnection)
-	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenCreds.Token)
+	newGithubAccessTokenConnection = newConnection.(*GithubConnection)
+	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenConnection.Token)
 }
 
 func TestGithubConnectionEquals(t *testing.T) {
