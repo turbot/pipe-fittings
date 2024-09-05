@@ -832,3 +832,97 @@ func TestDatadogConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated DatadogConnection")
 }
+
+// ------------------------------------------------------------
+// Discord
+// ------------------------------------------------------------
+
+func TestDiscordDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	discordConnection := DiscordConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("DISCORD_TOKEN")
+	newConnection, err := discordConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newDiscordConnections := newConnection.(*DiscordConnection)
+	assert.Equal("", *newDiscordConnections.Token)
+
+	os.Setenv("DISCORD_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+
+	newConnection, err = discordConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newDiscordConnections = newConnection.(*DiscordConnection)
+	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newDiscordConnections.Token)
+}
+
+func TestDiscordConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *DiscordConnection
+	var conn2 *DiscordConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &DiscordConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+	conn1 = &DiscordConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &DiscordConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different tokens, should return false")
+}
+
+func TestDiscordConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty DiscordConnection, should pass with no diagnostics
+	conn := &DiscordConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty DiscordConnection")
+
+	// Case 2: Validate a populated DiscordConnection, should pass with no diagnostics
+	token := "token_value"
+	conn = &DiscordConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated DiscordConnection")
+}
