@@ -620,7 +620,7 @@ func TestBitbucketConnectionValidate(t *testing.T) {
 // ClickUp
 // ------------------------------------------------------------
 
-func TestClickUpDefaultCredential(t *testing.T) {
+func TestClickUpDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
 	clickUpConnection := ClickUpConnection{
@@ -632,18 +632,18 @@ func TestClickUpDefaultCredential(t *testing.T) {
 	}
 
 	os.Unsetenv("CLICKUP_TOKEN")
-	newCreds, err := clickUpConnection.Resolve(context.TODO())
+	newConnection, err := clickUpConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newClickUpConnections := newCreds.(*ClickUpConnection)
+	newClickUpConnections := newConnection.(*ClickUpConnection)
 	assert.Equal("", *newClickUpConnections.Token)
 
 	os.Setenv("CLICKUP_TOKEN", "pk_616_L5H36X3CXXXXXXXWEAZZF0NM5")
 
-	newCreds, err = clickUpConnection.Resolve(context.TODO())
+	newConnection, err = clickUpConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newClickUpConnections = newCreds.(*ClickUpConnection)
+	newClickUpConnections = newConnection.(*ClickUpConnection)
 	assert.Equal("pk_616_L5H36X3CXXXXXXXWEAZZF0NM5", *newClickUpConnections.Token)
 }
 
