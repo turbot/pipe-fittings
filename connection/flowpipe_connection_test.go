@@ -103,19 +103,19 @@ func TestAlicloudConnection(t *testing.T) {
 
 	assert := assert.New(t)
 
-	alicloudCred := AlicloudConnection{}
+	alicloudConnection := AlicloudConnection{}
 
 	os.Setenv("ALIBABACLOUD_ACCESS_KEY_ID", "foo")
 	os.Setenv("ALIBABACLOUD_ACCESS_KEY_SECRET", "bar")
 
-	newCreds, err := alicloudCred.Resolve(context.TODO())
+	newConnection, err := alicloudConnection.Resolve(context.TODO())
 	assert.Nil(err)
-	assert.NotNil(newCreds)
+	assert.NotNil(newConnection)
 
-	newAlicloudCreds := newCreds.(*AlicloudConnection)
+	newAlicloudConnection := newConnection.(*AlicloudConnection)
 
-	assert.Equal("foo", *newAlicloudCreds.AccessKey)
-	assert.Equal("bar", *newAlicloudCreds.SecretKey)
+	assert.Equal("foo", *newAlicloudConnection.AccessKey)
+	assert.Equal("bar", *newAlicloudConnection.SecretKey)
 }
 
 func TestAlicloudConnectionEquals(t *testing.T) {
@@ -351,10 +351,10 @@ func TestAwsConnectionValidate(t *testing.T) {
 // Azure
 // ------------------------------------------------------------
 
-func TestAzureDefaultCredential(t *testing.T) {
+func TestAzureDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	azureCred := AzureConnection{
+	azureConnection := AzureConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -367,28 +367,28 @@ func TestAzureDefaultCredential(t *testing.T) {
 	os.Unsetenv("AZURE_TENANT_ID")
 	os.Unsetenv("AZURE_ENVIRONMENT")
 
-	newCreds, err := azureCred.Resolve(context.TODO())
+	newConnection, err := azureConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAzureCreds := newCreds.(*AzureConnection)
-	assert.Equal("", *newAzureCreds.ClientID)
-	assert.Equal("", *newAzureCreds.ClientSecret)
-	assert.Equal("", *newAzureCreds.TenantID)
-	assert.Equal("", *newAzureCreds.Environment)
+	newAzureConnections := newConnection.(*AzureConnection)
+	assert.Equal("", *newAzureConnections.ClientID)
+	assert.Equal("", *newAzureConnections.ClientSecret)
+	assert.Equal("", *newAzureConnections.TenantID)
+	assert.Equal("", *newAzureConnections.Environment)
 
 	os.Setenv("AZURE_CLIENT_ID", "clienttoken")
 	os.Setenv("AZURE_CLIENT_SECRET", "clientsecret")
 	os.Setenv("AZURE_TENANT_ID", "tenantid")
 	os.Setenv("AZURE_ENVIRONMENT", "environmentvar")
 
-	newCreds, err = azureCred.Resolve(context.TODO())
+	newConnection, err = azureConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAzureCreds = newCreds.(*AzureConnection)
-	assert.Equal("clienttoken", *newAzureCreds.ClientID)
-	assert.Equal("clientsecret", *newAzureCreds.ClientSecret)
-	assert.Equal("tenantid", *newAzureCreds.TenantID)
-	assert.Equal("environmentvar", *newAzureCreds.Environment)
+	newAzureConnections = newConnection.(*AzureConnection)
+	assert.Equal("clienttoken", *newAzureConnections.ClientID)
+	assert.Equal("clientsecret", *newAzureConnections.ClientSecret)
+	assert.Equal("tenantid", *newAzureConnections.TenantID)
+	assert.Equal("environmentvar", *newAzureConnections.Environment)
 }
 
 func TestAzureConnectionEquals(t *testing.T) {
