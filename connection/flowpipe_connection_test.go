@@ -12,7 +12,7 @@ import (
 func TestAbuseIPDBDefaultCredential(t *testing.T) {
 	assert := assert.New(t)
 
-	abuseIPDBCred := AbuseIPDBConnection{
+	abuseIPDBConnection := AbuseIPDBConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -21,19 +21,19 @@ func TestAbuseIPDBDefaultCredential(t *testing.T) {
 	}
 
 	os.Unsetenv("ABUSEIPDB_API_KEY")
-	newCreds, err := abuseIPDBCred.Resolve(context.TODO())
+	newCreds, err := abuseIPDBConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAbuseIPDBCreds := newCreds.(*AbuseIPDBConnection)
-	assert.Equal("", *newAbuseIPDBCreds.APIKey)
+	newAbuseIPDBConnections := newCreds.(*AbuseIPDBConnection)
+	assert.Equal("", *newAbuseIPDBConnections.APIKey)
 
 	os.Setenv("ABUSEIPDB_API_KEY", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
 
-	newCreds, err = abuseIPDBCred.Resolve(context.TODO())
+	newCreds, err = abuseIPDBConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAbuseIPDBCreds = newCreds.(*AbuseIPDBConnection)
-	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBCreds.APIKey)
+	newAbuseIPDBConnections = newCreds.(*AbuseIPDBConnection)
+	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBConnections.APIKey)
 }
 
 func TestAwsConnection(t *testing.T) {
