@@ -93,6 +93,7 @@ func TestAwsConnection(t *testing.T) {
 	assert.Nil(newAwsCreds.SessionToken)
 }
 
+// NOTE: We do not test for SessionToken as this is created in Resolve() and is not part of the connection configuration
 func TestAwsConnectionEquals(t *testing.T) {
 	assert := assert.New(t)
 
@@ -168,11 +169,4 @@ func TestAwsConnectionEquals(t *testing.T) {
 	profile2 := "different_profile"
 	conn2.Profile = &profile2
 	assert.False(conn1.Equals(conn2), "Connections have different Profile values, should return false")
-
-	// NOTE: Finding out why we are not comparing SessionToken
-	// // Case 8: Connections have different SessionToken
-	// conn2.SecretKey = &secretKey // Reset SecretKey to the same
-	// sessionToken2 := "different_session_token"
-	// conn2.SessionToken = &sessionToken2
-	// assert.False(conn1.Equals(conn2), "Connections have different SessionTokens, should return false")
 }
