@@ -2030,3 +2030,115 @@ func TestOpenAIConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated OpenAIConnection")
 }
+
+// ------------------------------------------------------------
+// OpsGenie
+// ------------------------------------------------------------
+
+func TestOpsgenieDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	opsgenieConnection := OpsgenieConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("OPSGENIE_ALERT_API_KEY")
+	os.Unsetenv("OPSGENIE_INCIDENT_API_KEY")
+
+	newConnection, err := opsgenieConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpsgenieConnection := newConnection.(*OpsgenieConnection)
+	assert.Equal("", *newOpsgenieConnection.AlertAPIKey)
+	assert.Equal("", *newOpsgenieConnection.IncidentAPIKey)
+
+	os.Setenv("OPSGENIE_ALERT_API_KEY", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("OPSGENIE_INCIDENT_API_KEY", "jkgdgjdgjldjgdjlgjdlgjlgjldjgldjlgjdl")
+
+	newConnection, err = opsgenieConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpsgenieConnection = newConnection.(*OpsgenieConnection)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newOpsgenieConnection.AlertAPIKey)
+	assert.Equal("jkgdgjdgjldjgdjlgjdlgjlgjldjgldjlgjdl", *newOpsgenieConnection.IncidentAPIKey)
+}
+
+func TestOpsgenieConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *OpsgenieConnection
+	var conn2 *OpsgenieConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &OpsgenieConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same AlertAPIKey and IncidentAPIKey
+	alertAPIKey := "alert_api_key_value" // #nosec: G101
+	incidentAPIKey := "incident_api_key_value"
+
+	conn1 = &OpsgenieConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AlertAPIKey:    &alertAPIKey,
+		IncidentAPIKey: &incidentAPIKey,
+	}
+
+	conn2 = &OpsgenieConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AlertAPIKey:    &alertAPIKey,
+		IncidentAPIKey: &incidentAPIKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same AlertAPIKey and IncidentAPIKey and should be equal")
+
+	// Case 4: Connections have different AlertAPIKeys
+	differentAlertAPIKey := "different_alert_api_key_value"
+	conn2.AlertAPIKey = &differentAlertAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different AlertAPIKeys, should return false")
+
+	// Case 5: Connections have different IncidentAPIKeys
+	conn2.AlertAPIKey = &alertAPIKey // Reset AlertAPIKey to match conn1
+	differentIncidentAPIKey := "different_incident_api_key_value"
+	conn2.IncidentAPIKey = &differentIncidentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different IncidentAPIKeys, should return false")
+}
+
+func TestOpsgenieConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty OpsgenieConnection, should pass with no diagnostics
+	conn := &OpsgenieConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty OpsgenieConnection")
+
+	// Case 2: Validate a populated OpsgenieConnection, should pass with no diagnostics
+	alertAPIKey := "alert_api_key_value" // #nosec: G101
+	incidentAPIKey := "incident_api_key_value"
+
+	conn = &OpsgenieConnection{
+		AlertAPIKey:    &alertAPIKey,
+		IncidentAPIKey: &incidentAPIKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated OpsgenieConnection")
+}
