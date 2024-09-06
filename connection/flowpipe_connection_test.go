@@ -1322,3 +1322,97 @@ func TestIPstackConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated IPstackConnection")
 }
+
+// ------------------------------------------------------------
+// IP2LocationIO
+// ------------------------------------------------------------
+
+func TestIP2LocationIODefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	ip2LocationConnection := IP2LocationIOConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("IP2LOCATIONIO_API_KEY")
+	newConnection, err := ip2LocationConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIP2LocationConnections := newConnection.(*IP2LocationIOConnection)
+	assert.Equal("", *newIP2LocationConnections.APIKey)
+
+	os.Setenv("IP2LOCATIONIO_API_KEY", "12345678901A23BC4D5E6FG78HI9J101")
+
+	newConnection, err = ip2LocationConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newIP2LocationConnections = newConnection.(*IP2LocationIOConnection)
+	assert.Equal("12345678901A23BC4D5E6FG78HI9J101", *newIP2LocationConnections.APIKey)
+}
+
+func TestIP2LocationIOConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *IP2LocationIOConnection
+	var conn2 *IP2LocationIOConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &IP2LocationIOConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value" // #nosec: G101
+	conn1 = &IP2LocationIOConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &IP2LocationIOConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestIP2LocationIOConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty IP2LocationIOConnection, should pass with no diagnostics
+	conn := &IP2LocationIOConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty IP2LocationIOConnection")
+
+	// Case 2: Validate a populated IP2LocationIOConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+	conn = &IP2LocationIOConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated IP2LocationIOConnection")
+}
