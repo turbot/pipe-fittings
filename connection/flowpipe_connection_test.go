@@ -2289,7 +2289,7 @@ func TestSendGridConnectionEquals(t *testing.T) {
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
 	// Case 3: Both connections have the same APIKey
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec
 
 	conn1 = &SendGridConnection{
 		ConnectionImpl: ConnectionImpl{
@@ -2326,7 +2326,7 @@ func TestSendGridConnectionValidate(t *testing.T) {
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty SendGridConnection")
 
 	// Case 2: Validate a populated SendGridConnection, should pass with no diagnostics
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec
 
 	conn = &SendGridConnection{
 		APIKey: &apiKey,
