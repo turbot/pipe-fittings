@@ -1373,7 +1373,7 @@ func TestIP2LocationIOConnectionEquals(t *testing.T) {
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
 	// Case 3: Both connections have the same APIKey
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec: G101
 	conn1 = &IP2LocationIOConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
@@ -1409,7 +1409,7 @@ func TestIP2LocationIOConnectionValidate(t *testing.T) {
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty IP2LocationIOConnection")
 
 	// Case 2: Validate a populated IP2LocationIOConnection, should pass with no diagnostics
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec: G101
 	conn = &IP2LocationIOConnection{
 		APIKey: &apiKey,
 	}
