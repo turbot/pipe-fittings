@@ -1577,3 +1577,66 @@ func TestJumpCloudDefaultConnection(t *testing.T) {
 	newJumpCloudConnection = newConnection.(*JumpCloudConnection)
 	assert.Equal("sk-jwgthNa...", *newJumpCloudConnection.APIKey)
 }
+
+func TestJumpCloudConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *JumpCloudConnection
+	var conn2 *JumpCloudConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value" // #nosec: G101
+	conn1 = &JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestJumpCloudConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty JumpCloudConnection, should pass with no diagnostics
+	conn := &JumpCloudConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty JumpCloudConnection")
+
+	// Case 2: Validate a populated JumpCloudConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+	conn = &JumpCloudConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated JumpCloudConnection")
+}
