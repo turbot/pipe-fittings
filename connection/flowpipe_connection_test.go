@@ -1640,3 +1640,108 @@ func TestJumpCloudConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated JumpCloudConnection")
 }
+
+//	------------------------------------------------------------
+//	Mastodon
+//	------------------------------------------------------------
+
+func TestMastodonDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	// Mastodon has no standard environment variable mentioned anywhere in the docs
+	accessToken := "FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU" //nolint:gosec // this is not a valid connection
+	server := "https://myserver.social"
+
+	mastodonConnection := MastodonConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessToken: &accessToken,
+		Server:      &server,
+	}
+
+	newConnection, err := mastodonConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newMastodonConnection := newConnection.(*MastodonConnection)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *newMastodonConnection.AccessToken)
+	assert.Equal("https://myserver.social", *newMastodonConnection.Server)
+}
+
+func TestMastodonConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *MastodonConnection
+	var conn2 *MastodonConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &MastodonConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same AccessToken and Server
+	accessToken := "access_token_value"
+	server := "server_value"
+
+	conn1 = &MastodonConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessToken: &accessToken,
+		Server:      &server,
+	}
+
+	conn2 = &MastodonConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessToken: &accessToken,
+		Server:      &server,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same AccessToken and Server and should be equal")
+
+	// Case 4: Connections have different AccessTokens
+	differentAccessToken := "different_access_token_value"
+	conn2.AccessToken = &differentAccessToken
+	assert.False(conn1.Equals(conn2), "Connections have different AccessTokens, should return false")
+
+	// Case 5: Connections have different Servers
+	conn2.AccessToken = &accessToken // Reset AccessToken to match conn1
+	differentServer := "different_server_value"
+	conn2.Server = &differentServer
+	assert.False(conn1.Equals(conn2), "Connections have different Servers, should return false")
+}
+
+func TestMastodonConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty MastodonConnection, should pass with no diagnostics
+	conn := &MastodonConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty MastodonConnection")
+
+	// Case 2: Validate a populated MastodonConnection, should pass with no diagnostics
+	accessToken := "access_token_value"
+	server := "server_value"
+
+	conn = &MastodonConnection{
+		AccessToken: &accessToken,
+		Server:      &server,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated MastodonConnection")
+}

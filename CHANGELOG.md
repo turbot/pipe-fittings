@@ -21,6 +21,7 @@ _What's new_
 * Convert credential for ip2locationio to connection. ([#469](https://github.com/turbot/pipe-fittings/issues/469)).
 * Convert credential for jira to connection. ([#471](https://github.com/turbot/pipe-fittings/issues/471)).
 * Convert credential for jumpcloud to connection. ([#472](https://github.com/turbot/pipe-fittings/issues/472)).
+* Convert credential for mastodon to connection. ([#473](https://github.com/turbot/pipe-fittings/issues/473)).
 
 _Bug fixes_
 
