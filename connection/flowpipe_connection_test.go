@@ -1437,10 +1437,10 @@ func TestJiraDefaultConnection(t *testing.T) {
 	os.Unsetenv("JIRA_URL")
 	os.Unsetenv("JIRA_USER")
 
-	newCreds, err := jiraCred.Resolve(context.TODO())
+	newConnection, err := jiraCred.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newJiraCreds := newCreds.(*JiraConnection)
+	newJiraCreds := newConnection.(*JiraConnection)
 	assert.Equal("", *newJiraCreds.APIToken)
 	assert.Equal("", *newJiraCreds.BaseURL)
 	assert.Equal("", *newJiraCreds.Username)
@@ -1450,10 +1450,10 @@ func TestJiraDefaultConnection(t *testing.T) {
 	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
 	os.Setenv("JIRA_USER", "test@turbot.com")
 
-	newCreds, err = jiraCred.Resolve(context.TODO())
+	newConnection, err = jiraCred.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newJiraCreds = newCreds.(*JiraConnection)
+	newJiraCreds = newConnection.(*JiraConnection)
 	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
 	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
 	assert.Equal("test@turbot.com", *newJiraCreds.Username)
@@ -1544,4 +1544,36 @@ func TestJiraConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated JiraConnection")
+}
+
+// ------------------------------------------------------------
+// JumpCloud
+// ------------------------------------------------------------
+
+func TestJumpCloudDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	jumpCloudConnection := JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("JUMPCLOUD_API_KEY")
+
+	newConnection, err := jumpCloudConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJumpCloudConnection := newConnection.(*JumpCloudConnection)
+	assert.Equal("", *newJumpCloudConnection.APIKey)
+
+	os.Setenv("JUMPCLOUD_API_KEY", "sk-jwgthNa...")
+
+	newConnection, err = jumpCloudConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJumpCloudConnection = newConnection.(*JumpCloudConnection)
+	assert.Equal("sk-jwgthNa...", *newJumpCloudConnection.APIKey)
 }

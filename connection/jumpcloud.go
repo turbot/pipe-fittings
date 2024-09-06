@@ -17,22 +17,22 @@ type JumpCloudConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *JumpCloudConnection) Resolve(ctx context.Context) (Connection, error) {
+func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		apiKeyEnvVar := os.Getenv("JUMPCLOUD_API_KEY")
 
 		// Don't modify existing connection, resolve to a new one
-		newCreds := &JumpCloudConnection{
+		newConnection := &JumpCloudConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			APIKey:         &apiKeyEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 	}
 	return c, nil
 }
 
-func (c *JumpCloudConnection) Equals(otherConnection Connection) bool {
+func (c *JumpCloudConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
