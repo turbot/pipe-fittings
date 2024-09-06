@@ -1841,3 +1841,115 @@ func TestMicrosoftTeamsConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated MicrosoftTeamsConnection")
 }
+
+// ------------------------------------------------------------
+// Okta
+// ------------------------------------------------------------
+
+func TestOktaDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	oktaCred := OktaConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("OKTA_CLIENT_TOKEN")
+	os.Unsetenv("OKTA_ORGURL")
+
+	newConnection, err := oktaCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOktaConnection := newConnection.(*OktaConnection)
+	assert.Equal("", *newOktaConnection.Token)
+	assert.Equal("", *newOktaConnection.Domain)
+
+	os.Setenv("OKTA_CLIENT_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+	os.Setenv("OKTA_ORGURL", "https://dev-50078045.okta.com")
+
+	newConnection, err = oktaCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOktaConnection = newConnection.(*OktaConnection)
+	assert.Equal("00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newOktaConnection.Token)
+	assert.Equal("https://dev-50078045.okta.com", *newOktaConnection.Domain)
+}
+
+func TestOktaConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *OktaConnection
+	var conn2 *OktaConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &OktaConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Domain and Token
+	domain := "example.okta.com"
+	token := "token_value"
+
+	conn1 = &OktaConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Domain: &domain,
+		Token:  &token,
+	}
+
+	conn2 = &OktaConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Domain: &domain,
+		Token:  &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Domain and Token and should be equal")
+
+	// Case 4: Connections have different Domains
+	differentDomain := "different.okta.com"
+	conn2.Domain = &differentDomain
+	assert.False(conn1.Equals(conn2), "Connections have different Domains, should return false")
+
+	// Case 5: Connections have different Tokens
+	conn2.Domain = &domain // Reset Domain to match conn1
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestOktaConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty OktaConnection, should pass with no diagnostics
+	conn := &OktaConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty OktaConnection")
+
+	// Case 2: Validate a populated OktaConnection, should pass with no diagnostics
+	domain := "example.okta.com"
+	token := "token_value"
+
+	conn = &OktaConnection{
+		Domain: &domain,
+		Token:  &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated OktaConnection")
+}
