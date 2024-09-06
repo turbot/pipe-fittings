@@ -29,16 +29,16 @@ func TestAbuseIPDBDefaultConnection(t *testing.T) {
 	newConnection, err := abuseIPDBConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAbuseIPDBConnections := newConnection.(*AbuseIPDBConnection)
-	assert.Equal("", *newAbuseIPDBConnections.APIKey)
+	newAbuseIPDBConnection := newConnection.(*AbuseIPDBConnection)
+	assert.Equal("", *newAbuseIPDBConnection.APIKey)
 
 	os.Setenv("ABUSEIPDB_API_KEY", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
 
 	newConnection, err = abuseIPDBConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAbuseIPDBConnections = newConnection.(*AbuseIPDBConnection)
-	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBConnections.APIKey)
+	newAbuseIPDBConnection = newConnection.(*AbuseIPDBConnection)
+	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBConnection.APIKey)
 }
 
 func TestAbuseIPDBConnectionEquals(t *testing.T) {
