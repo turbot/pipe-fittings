@@ -1038,3 +1038,97 @@ func TestFreshdeskConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated FreshdeskConnection")
 }
+
+// ------------------------------------------------------------
+// GitHub
+// ------------------------------------------------------------
+
+func TestGitHubDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	githubConnection := GithubConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("GITHUB_TOKEN")
+	newConnection, err := githubConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGithubAccessTokenConnection := newConnection.(*GithubConnection)
+	assert.Equal("", *newGithubAccessTokenConnection.Token)
+
+	os.Setenv("GITHUB_TOKEN", "ghpat-ljgllghhegweroyuouo67u5476070owetylh")
+
+	newConnection, err = githubConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGithubAccessTokenConnection = newConnection.(*GithubConnection)
+	assert.Equal("ghpat-ljgllghhegweroyuouo67u5476070owetylh", *newGithubAccessTokenConnection.Token)
+}
+
+func TestGithubConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *GithubConnection
+	var conn2 *GithubConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &GithubConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+	conn1 = &GithubConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &GithubConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different tokens, should return false")
+}
+
+func TestGithubConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty GithubConnection, should pass with no diagnostics
+	conn := &GithubConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty GithubConnection")
+
+	// Case 2: Validate a populated GithubConnection, should pass with no diagnostics
+	token := "token_value"
+	conn = &GithubConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GithubConnection")
+}
