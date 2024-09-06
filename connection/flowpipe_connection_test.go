@@ -2334,3 +2334,96 @@ func TestSendGridConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated SendGridConnection")
 }
+
+// ------------------------------------------------------------
+// ServiceNow
+// ------------------------------------------------------------
+
+// NOTE: Add test
+
+func TestServiceNowConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *ServiceNowConnection
+	var conn2 *ServiceNowConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &ServiceNowConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same InstanceURL, Username, and Password
+	instanceURL := "https://servicenow.example.com"
+	username := "user123"
+	password := "password123"
+
+	conn1 = &ServiceNowConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		InstanceURL: &instanceURL,
+		Username:    &username,
+		Password:    &password,
+	}
+
+	conn2 = &ServiceNowConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		InstanceURL: &instanceURL,
+		Username:    &username,
+		Password:    &password,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same InstanceURL, Username, and Password and should be equal")
+
+	// Case 4: Connections have different InstanceURLs
+	differentInstanceURL := "https://different.servicenow.com"
+	conn2.InstanceURL = &differentInstanceURL
+	assert.False(conn1.Equals(conn2), "Connections have different InstanceURLs, should return false")
+
+	// Case 5: Connections have different Usernames
+	conn2.InstanceURL = &instanceURL // Reset InstanceURL to match conn1
+	differentUsername := "different_user"
+	conn2.Username = &differentUsername
+	assert.False(conn1.Equals(conn2), "Connections have different Usernames, should return false")
+
+	// Case 6: Connections have different Passwords
+	conn2.Username = &username // Reset Username to match conn1
+	differentPassword := "different_password"
+	conn2.Password = &differentPassword
+	assert.False(conn1.Equals(conn2), "Connections have different Passwords, should return false")
+}
+
+func TestServiceNowConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty ServiceNowConnection, should pass with no diagnostics
+	conn := &ServiceNowConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty ServiceNowConnection")
+
+	// Case 2: Validate a populated ServiceNowConnection, should pass with no diagnostics
+	instanceURL := "https://servicenow.example.com"
+	username := "user123"
+	password := "password123"
+
+	conn = &ServiceNowConnection{
+		InstanceURL: &instanceURL,
+		Username:    &username,
+		Password:    &password,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated ServiceNowConnection")
+}
