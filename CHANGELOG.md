@@ -27,6 +27,7 @@ _What's new_
 * Convert credential for openai to connection. ([#476](https://github.com/turbot/pipe-fittings/issues/476)).
 * Convert credential for opsgenie to connection. ([#477](https://github.com/turbot/pipe-fittings/issues/477)).
 * Convert credential for pagerduty to connection. ([#478](https://github.com/turbot/pipe-fittings/issues/478)).
+* Convert credential for sendgrid to connection. ([#479](https://github.com/turbot/pipe-fittings/issues/479)).
 
 _Bug fixes_
 

@@ -2238,3 +2238,99 @@ func TestPagerDutyConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated PagerDutyConnection")
 }
+
+// ------------------------------------------------------------
+// SendGrid
+// ------------------------------------------------------------
+
+func TestSendGridDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	sendGridConnection := SendGridConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("SENDGRID_API_KEY")
+	newConnection, err := sendGridConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newSendGridConnection := newConnection.(*SendGridConnection)
+	assert.Equal("", *newSendGridConnection.APIKey)
+
+	os.Setenv("SENDGRID_API_KEY", "SGsomething")
+
+	newConnection, err = sendGridConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newSendGridConnection = newConnection.(*SendGridConnection)
+	assert.Equal("SGsomething", *newSendGridConnection.APIKey)
+}
+
+func TestSendGridConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *SendGridConnection
+	var conn2 *SendGridConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &SendGridConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value"
+
+	conn1 = &SendGridConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &SendGridConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestSendGridConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty SendGridConnection, should pass with no diagnostics
+	conn := &SendGridConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty SendGridConnection")
+
+	// Case 2: Validate a populated SendGridConnection, should pass with no diagnostics
+	apiKey := "api_key_value"
+
+	conn = &SendGridConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated SendGridConnection")
+}
