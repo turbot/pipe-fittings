@@ -64,12 +64,12 @@ func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, erro
 		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")
 
 		// Don't modify existing credential, resolve to a new one
-		newCreds := &SlackConnection{
+		newConnection := &SlackConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			Token:          &slackTokenEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 	}
 	return c, nil
 }

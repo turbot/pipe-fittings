@@ -22,12 +22,12 @@ func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnecti
 		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
 
 		// Don't modify existing connection, resolve to a new one
-		newCreds := &IP2LocationIOConnection{
+		newConnection := &IP2LocationIOConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			APIKey:         &ip2locationAPIKeyEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 	}
 	return c, nil
 }
