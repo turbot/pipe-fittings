@@ -12,6 +12,7 @@ _What's new_
 * Convert credential for azure to connection. ([#456](https://github.com/turbot/pipe-fittings/issues/456)).
 * Convert credential for bitbucket to connection. ([#457](https://github.com/turbot/pipe-fittings/issues/457)).
 * Convert credential for clickup to connection. ([#458](https://github.com/turbot/pipe-fittings/issues/458)).
+* Convert credential for datadog to connection, ([#459](https://github.com/turbot/pipe-fittings/issues/459)).
 
 _Bug fixes_
 

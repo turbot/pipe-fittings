@@ -29,16 +29,16 @@ func TestAbuseIPDBDefaultConnection(t *testing.T) {
 	newConnection, err := abuseIPDBConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAbuseIPDBConnections := newConnection.(*AbuseIPDBConnection)
-	assert.Equal("", *newAbuseIPDBConnections.APIKey)
+	newAbuseIPDBConnection := newConnection.(*AbuseIPDBConnection)
+	assert.Equal("", *newAbuseIPDBConnection.APIKey)
 
 	os.Setenv("ABUSEIPDB_API_KEY", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
 
 	newConnection, err = abuseIPDBConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newAbuseIPDBConnections = newConnection.(*AbuseIPDBConnection)
-	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBConnections.APIKey)
+	newAbuseIPDBConnection = newConnection.(*AbuseIPDBConnection)
+	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newAbuseIPDBConnection.APIKey)
 }
 
 func TestAbuseIPDBConnectionEquals(t *testing.T) {
@@ -708,4 +708,127 @@ func TestClickUpConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated ClickUpConnection")
+}
+
+// ------------------------------------------------------------
+// Datadog
+// ------------------------------------------------------------
+
+func TestDatadogDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	datadogConnection := DatadogConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("DD_CLIENT_API_KEY")
+	os.Unsetenv("DD_CLIENT_APP_KEY")
+
+	newConnection, err := datadogConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newDatadogConnection := newConnection.(*DatadogConnection)
+	assert.Equal("", *newDatadogConnection.APIKey)
+	assert.Equal("", *newDatadogConnection.AppKey)
+
+	os.Setenv("DD_CLIENT_API_KEY", "b1cf23432fwef23fg24grg31gr")
+	os.Setenv("DD_CLIENT_APP_KEY", "1a2345bc23fwefrg13g233f")
+
+	newConnection, err = datadogConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newDatadogConnection = newConnection.(*DatadogConnection)
+	assert.Equal("b1cf23432fwef23fg24grg31gr", *newDatadogConnection.APIKey)
+	assert.Equal("1a2345bc23fwefrg13g233f", *newDatadogConnection.AppKey)
+}
+
+func TestDatadogConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *DatadogConnection
+	var conn2 *DatadogConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &DatadogConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey, AppKey, and APIUrl
+	apiKey := "api_key_value" // #nosec G101
+	appKey := "app_key_value"
+	apiUrl := "api_url_value"
+
+	conn1 = &DatadogConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+		AppKey: &appKey,
+		APIUrl: &apiUrl,
+	}
+
+	conn2 = &DatadogConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+		AppKey: &appKey,
+		APIUrl: &apiUrl,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same values and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+
+	// Case 5: Connections have different AppKeys
+	conn2.APIKey = &apiKey // Reset APIKey to match conn1
+	differentAppKey := "different_app_key_value"
+	conn2.AppKey = &differentAppKey
+	assert.False(conn1.Equals(conn2), "Connections have different AppKeys, should return false")
+
+	// Case 6: Connections have different APIUrls
+	conn2.AppKey = &appKey // Reset AppKey to match conn1
+	differentAPIUrl := "different_api_url_value"
+	conn2.APIUrl = &differentAPIUrl
+	assert.False(conn1.Equals(conn2), "Connections have different APIUrls, should return false")
+}
+
+func TestDatadogConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty DatadogConnection, should pass with no diagnostics
+	conn := &DatadogConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty DatadogConnection")
+
+	// Case 2: Validate a populated DatadogConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec G101
+	appKey := "app_key_value"
+	apiUrl := "api_url_value"
+
+	conn = &DatadogConnection{
+		APIKey: &apiKey,
+		AppKey: &appKey,
+		APIUrl: &apiUrl,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated DatadogConnection")
 }
