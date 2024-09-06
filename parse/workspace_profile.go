@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	error_helpers "github.com/turbot/pipe-fittings/error_helpers"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
@@ -52,7 +50,7 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 	var temp T
 	var content *hcl.BodyContent
 	switch any(temp).(type) {
-	case *modconfig.FlowpipeWorkspaceProfile:
+	case *workspace_profile.FlowpipeWorkspaceProfile:
 		// do a partial decode
 		content, diags = body.Content(FlowpipeConfigBlockSchema)
 		if diags.HasErrors() {
