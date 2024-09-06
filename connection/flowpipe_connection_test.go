@@ -731,9 +731,9 @@ func TestDatadogDefaultConnection(t *testing.T) {
 	newConnection, err := datadogConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newDatadogConnections := newConnection.(*DatadogConnection)
-	assert.Equal("", *newDatadogConnections.APIKey)
-	assert.Equal("", *newDatadogConnections.AppKey)
+	newDatadogConnection := newConnection.(*DatadogConnection)
+	assert.Equal("", *newDatadogConnection.APIKey)
+	assert.Equal("", *newDatadogConnection.AppKey)
 
 	os.Setenv("DD_CLIENT_API_KEY", "b1cf23432fwef23fg24grg31gr")
 	os.Setenv("DD_CLIENT_APP_KEY", "1a2345bc23fwefrg13g233f")
@@ -741,9 +741,9 @@ func TestDatadogDefaultConnection(t *testing.T) {
 	newConnection, err = datadogConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newDatadogConnections = newConnection.(*DatadogConnection)
-	assert.Equal("b1cf23432fwef23fg24grg31gr", *newDatadogConnections.APIKey)
-	assert.Equal("1a2345bc23fwefrg13g233f", *newDatadogConnections.AppKey)
+	newDatadogConnection = newConnection.(*DatadogConnection)
+	assert.Equal("b1cf23432fwef23fg24grg31gr", *newDatadogConnection.APIKey)
+	assert.Equal("1a2345bc23fwefrg13g233f", *newDatadogConnection.AppKey)
 }
 
 func TestDatadogConnectionEquals(t *testing.T) {
