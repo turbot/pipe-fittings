@@ -2339,7 +2339,41 @@ func TestSendGridConnectionValidate(t *testing.T) {
 // ServiceNow
 // ------------------------------------------------------------
 
-// NOTE: Add test
+func TestServiceNowDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	guardrailsConnection := ServiceNowConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("SERVICENOW_INSTANCE_URL")
+	os.Unsetenv("SERVICENOW_USERNAME")
+	os.Unsetenv("SERVICENOW_PASSWORD")
+
+	newConnection, err := guardrailsConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newServiceNowConnection := newConnection.(*ServiceNowConnection)
+	assert.Equal("", *newServiceNowConnection.InstanceURL)
+	assert.Equal("", *newServiceNowConnection.Username)
+	assert.Equal("", *newServiceNowConnection.Password)
+
+	os.Setenv("SERVICENOW_INSTANCE_URL", "https://a1b2c3d4.service-now.com")
+	os.Setenv("SERVICENOW_USERNAME", "john.hill")
+	os.Setenv("SERVICENOW_PASSWORD", "j0t3-$j@H3")
+
+	newConnection, err = guardrailsConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newServiceNowConnection = newConnection.(*ServiceNowConnection)
+	assert.Equal("https://a1b2c3d4.service-now.com", *newServiceNowConnection.InstanceURL)
+	assert.Equal("john.hill", *newServiceNowConnection.Username)
+	assert.Equal("j0t3-$j@H3", *newServiceNowConnection.Password)
+}
 
 func TestServiceNowConnectionEquals(t *testing.T) {
 	assert := assert.New(t)
