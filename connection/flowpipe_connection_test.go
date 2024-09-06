@@ -1132,3 +1132,97 @@ func TestGithubConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GithubConnection")
 }
+
+// ------------------------------------------------------------
+// GitLab
+// ------------------------------------------------------------
+
+func TestGitLabDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	gitlabConnection := GitLabConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("GITLAB_TOKEN")
+	newConnection, err := gitlabConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGitLabAccessTokenConnection := newConnection.(*GitLabConnection)
+	assert.Equal("", *newGitLabAccessTokenConnection.Token)
+
+	os.Setenv("GITLAB_TOKEN", "glpat-ljgllghhegweroyuouo67u5476070owetylh")
+
+	newConnection, err = gitlabConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGitLabAccessTokenConnection = newConnection.(*GitLabConnection)
+	assert.Equal("glpat-ljgllghhegweroyuouo67u5476070owetylh", *newGitLabAccessTokenConnection.Token)
+}
+
+func TestGitLabConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *GitLabConnection
+	var conn2 *GitLabConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &GitLabConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+	conn1 = &GitLabConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &GitLabConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different tokens, should return false")
+}
+
+func TestGitLabConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty GitLabConnection, should pass with no diagnostics
+	conn := &GitLabConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty GitLabConnection")
+
+	// Case 2: Validate a populated GitLabConnection, should pass with no diagnostics
+	token := "token_value"
+	conn = &GitLabConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GitLabConnection")
+}
