@@ -2142,3 +2142,99 @@ func TestOpsgenieConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated OpsgenieConnection")
 }
+
+// ------------------------------------------------------------
+// PagerDuty
+// ------------------------------------------------------------
+
+func TestPagerDutyDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	pagerDutyConnection := PagerDutyConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("PAGERDUTY_TOKEN")
+	newConnection, err := pagerDutyConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPagerDutyConnection := newConnection.(*PagerDutyConnection)
+	assert.Equal("", *newPagerDutyConnection.Token)
+
+	os.Setenv("PAGERDUTY_TOKEN", "u+AtBdqvNtestTokeNcg")
+
+	newConnection, err = pagerDutyConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPagerDutyConnection = newConnection.(*PagerDutyConnection)
+	assert.Equal("u+AtBdqvNtestTokeNcg", *newPagerDutyConnection.Token)
+}
+
+func TestPagerDutyConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *PagerDutyConnection
+	var conn2 *PagerDutyConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &PagerDutyConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+
+	conn1 = &PagerDutyConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &PagerDutyConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestPagerDutyConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty PagerDutyConnection, should pass with no diagnostics
+	conn := &PagerDutyConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty PagerDutyConnection")
+
+	// Case 2: Validate a populated PagerDutyConnection, should pass with no diagnostics
+	token := "token_value"
+
+	conn = &PagerDutyConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated PagerDutyConnection")
+}
