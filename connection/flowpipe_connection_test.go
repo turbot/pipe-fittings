@@ -2150,7 +2150,7 @@ func TestOpsgenieConnectionValidate(t *testing.T) {
 func TestPagerDutyDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	pagerDutyCred := PagerDutyConnection{
+	pagerDutyConnection := PagerDutyConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -2159,7 +2159,7 @@ func TestPagerDutyDefaultConnection(t *testing.T) {
 	}
 
 	os.Unsetenv("PAGERDUTY_TOKEN")
-	newConnection, err := pagerDutyCred.Resolve(context.TODO())
+	newConnection, err := pagerDutyConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newPagerDutyConnection := newConnection.(*PagerDutyConnection)
@@ -2167,7 +2167,7 @@ func TestPagerDutyDefaultConnection(t *testing.T) {
 
 	os.Setenv("PAGERDUTY_TOKEN", "u+AtBdqvNtestTokeNcg")
 
-	newConnection, err = pagerDutyCred.Resolve(context.TODO())
+	newConnection, err = pagerDutyConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newPagerDutyConnection = newConnection.(*PagerDutyConnection)
