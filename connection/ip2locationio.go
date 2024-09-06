@@ -17,6 +17,21 @@ type IP2LocationIOConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	if c.APIKey == nil {
+		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
+
+		// Don't modify existing connection, resolve to a new one
+		newCreds := &IP2LocationIOConnection{
+			ConnectionImpl: c.ConnectionImpl,
+			APIKey:         &ip2locationAPIKeyEnvVar,
+		}
+
+		return newCreds, nil
+	}
+	return c, nil
+}
+
 func (c *IP2LocationIOConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
@@ -57,21 +72,6 @@ func (c *IP2LocationIOConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.getEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
-	if c.APIKey == nil {
-		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
-
-		// Don't modify existing connection, resolve to a new one
-		newCreds := &IP2LocationIOConnection{
-			ConnectionImpl: c.ConnectionImpl,
-			APIKey:         &ip2locationAPIKeyEnvVar,
-		}
-
-		return newCreds, nil
-	}
-	return c, nil
 }
 
 func (c *IP2LocationIOConnection) getEnv() map[string]cty.Value {
