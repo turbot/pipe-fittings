@@ -1849,7 +1849,7 @@ func TestMicrosoftTeamsConnectionValidate(t *testing.T) {
 func TestOktaDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	oktaCred := OktaConnection{
+	oktaConnection := OktaConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1860,7 +1860,7 @@ func TestOktaDefaultConnection(t *testing.T) {
 	os.Unsetenv("OKTA_CLIENT_TOKEN")
 	os.Unsetenv("OKTA_ORGURL")
 
-	newConnection, err := oktaCred.Resolve(context.TODO())
+	newConnection, err := oktaConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOktaConnection := newConnection.(*OktaConnection)
@@ -1870,7 +1870,7 @@ func TestOktaDefaultConnection(t *testing.T) {
 	os.Setenv("OKTA_CLIENT_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
 	os.Setenv("OKTA_ORGURL", "https://dev-50078045.okta.com")
 
-	newConnection, err = oktaCred.Resolve(context.TODO())
+	newConnection, err = oktaConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOktaConnection = newConnection.(*OktaConnection)
@@ -1952,4 +1952,81 @@ func TestOktaConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated OktaConnection")
+}
+
+// ------------------------------------------------------------
+// OpenAI
+// ------------------------------------------------------------
+
+func TestOpenAIDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	openAIConnection := OpenAIConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("OPENAI_API_KEY")
+
+	newConnnection, err := openAIConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpenAIConnection := newConnnection.(*OpenAIConnection)
+	assert.Equal("", *newOpenAIConnection.APIKey)
+
+	os.Setenv("OPENAI_API_KEY", "sk-jwgthNa...")
+
+	newConnnection, err = openAIConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newOpenAIConnection = newConnnection.(*OpenAIConnection)
+	assert.Equal("sk-jwgthNa...", *newOpenAIConnection.APIKey)
+}
+
+func TestOpenAIConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *OpenAIConnection
+	var conn2 *OpenAIConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &OpenAIConnection{}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value" // #nosec: G101
+	conn1 = &OpenAIConnection{
+		APIKey: &apiKey,
+	}
+	conn2 = &OpenAIConnection{
+		APIKey: &apiKey,
+	}
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestOpenAIConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty OpenAIConnection, should pass with no diagnostics
+	conn := &OpenAIConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty OpenAIConnection")
+
+	// Case 2: Validate a populated OpenAIConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+	conn = &OpenAIConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated OpenAIConnection")
 }
