@@ -1849,7 +1849,7 @@ func TestMicrosoftTeamsConnectionValidate(t *testing.T) {
 func TestOktaDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	oktaCred := OktaConnection{
+	oktaConnection := OktaConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1860,7 +1860,7 @@ func TestOktaDefaultConnection(t *testing.T) {
 	os.Unsetenv("OKTA_CLIENT_TOKEN")
 	os.Unsetenv("OKTA_ORGURL")
 
-	newConnection, err := oktaCred.Resolve(context.TODO())
+	newConnection, err := oktaConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOktaConnection := newConnection.(*OktaConnection)
@@ -1870,7 +1870,7 @@ func TestOktaDefaultConnection(t *testing.T) {
 	os.Setenv("OKTA_CLIENT_TOKEN", "00B630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
 	os.Setenv("OKTA_ORGURL", "https://dev-50078045.okta.com")
 
-	newConnection, err = oktaCred.Resolve(context.TODO())
+	newConnection, err = oktaConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOktaConnection = newConnection.(*OktaConnection)
@@ -1961,7 +1961,7 @@ func TestOktaConnectionValidate(t *testing.T) {
 func TestOpenAIDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	openAICred := OpenAIConnection{
+	openAIConnection := OpenAIConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1971,7 +1971,7 @@ func TestOpenAIDefaultConnection(t *testing.T) {
 
 	os.Unsetenv("OPENAI_API_KEY")
 
-	newConnnection, err := openAICred.Resolve(context.TODO())
+	newConnnection, err := openAIConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOpenAIConnection := newConnnection.(*OpenAIConnection)
@@ -1979,7 +1979,7 @@ func TestOpenAIDefaultConnection(t *testing.T) {
 
 	os.Setenv("OPENAI_API_KEY", "sk-jwgthNa...")
 
-	newConnnection, err = openAICred.Resolve(context.TODO())
+	newConnnection, err = openAIConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newOpenAIConnection = newConnnection.(*OpenAIConnection)
