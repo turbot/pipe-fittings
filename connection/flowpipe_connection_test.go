@@ -1416,3 +1416,132 @@ func TestIP2LocationIOConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated IP2LocationIOConnection")
 }
+
+// ------------------------------------------------------------
+// Jira
+// ------------------------------------------------------------
+
+func TestJiraDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	jiraCred := JiraConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("JIRA_API_TOKEN")
+	os.Unsetenv("JIRA_TOKEN")
+	os.Unsetenv("JIRA_URL")
+	os.Unsetenv("JIRA_USER")
+
+	newCreds, err := jiraCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJiraCreds := newCreds.(*JiraConnection)
+	assert.Equal("", *newJiraCreds.APIToken)
+	assert.Equal("", *newJiraCreds.BaseURL)
+	assert.Equal("", *newJiraCreds.Username)
+
+	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("JIRA_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
+	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
+	os.Setenv("JIRA_USER", "test@turbot.com")
+
+	newCreds, err = jiraCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJiraCreds = newCreds.(*JiraConnection)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
+	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
+	assert.Equal("test@turbot.com", *newJiraCreds.Username)
+}
+
+func TestJiraConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *JiraConnection
+	var conn2 *JiraConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &JiraConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIToken, BaseURL, and Username
+	apiToken := "api_token_value"
+	baseURL := "https://jira.example.com"
+	username := "user123"
+
+	conn1 = &JiraConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIToken: &apiToken,
+		BaseURL:  &baseURL,
+		Username: &username,
+	}
+
+	conn2 = &JiraConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIToken: &apiToken,
+		BaseURL:  &baseURL,
+		Username: &username,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIToken, BaseURL, and Username and should be equal")
+
+	// Case 4: Connections have different APITokens
+	differentAPIToken := "different_api_token_value"
+	conn2.APIToken = &differentAPIToken
+	assert.False(conn1.Equals(conn2), "Connections have different APITokens, should return false")
+
+	// Case 5: Connections have different BaseURLs
+	conn2.APIToken = &apiToken // Reset APIToken to match conn1
+	differentBaseURL := "https://jira.different.com"
+	conn2.BaseURL = &differentBaseURL
+	assert.False(conn1.Equals(conn2), "Connections have different BaseURLs, should return false")
+
+	// Case 6: Connections have different Usernames
+	conn2.BaseURL = &baseURL // Reset BaseURL to match conn1
+	differentUsername := "different_user"
+	conn2.Username = &differentUsername
+	assert.False(conn1.Equals(conn2), "Connections have different Usernames, should return false")
+}
+
+func TestJiraConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty JiraConnection, should pass with no diagnostics
+	conn := &JiraConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty JiraConnection")
+
+	// Case 2: Validate a populated JiraConnection, should pass with no diagnostics
+	apiToken := "api_token_value"
+	baseURL := "https://jira.example.com"
+	username := "user123"
+
+	conn = &JiraConnection{
+		APIToken: &apiToken,
+		BaseURL:  &baseURL,
+		Username: &username,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated JiraConnection")
+}

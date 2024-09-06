@@ -19,6 +19,7 @@ _What's new_
 * Convert credential for gitlab to connection. ([#468](https://github.com/turbot/pipe-fittings/issues/468)).
 * Convert credential for ipstack to connection. ([#470](https://github.com/turbot/pipe-fittings/issues/470)).
 * Convert credential for ip2locationio to connection. ([#469](https://github.com/turbot/pipe-fittings/issues/469)).
+* Convert credential for jira to connection. ([#471](https://github.com/turbot/pipe-fittings/issues/471)).
 
 _Bug fixes_
 
