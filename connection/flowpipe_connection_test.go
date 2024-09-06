@@ -1745,3 +1745,99 @@ func TestMastodonConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated MastodonConnection")
 }
+
+// ------------------------------------------------------------
+// Microsoft Teams
+// ------------------------------------------------------------
+
+func TestMicrosoftTeamsDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	msTeamsConnection := MicrosoftTeamsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("TEAMS_ACCESS_TOKEN")
+	newConnection, err := msTeamsConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newMSTeamsConnection := newConnection.(*MicrosoftTeamsConnection)
+	assert.Equal("", *newMSTeamsConnection.AccessToken)
+
+	os.Setenv("TEAMS_ACCESS_TOKEN", "bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d")
+
+	newConnection, err = msTeamsConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newMSTeamsConnection = newConnection.(*MicrosoftTeamsConnection)
+	assert.Equal("bfc6f1c42dsfsdfdxxxx26977977b2xxxsfsdda98f313c3d389126de0d", *newMSTeamsConnection.AccessToken)
+}
+
+func TestMicrosoftTeamsConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *MicrosoftTeamsConnection
+	var conn2 *MicrosoftTeamsConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &MicrosoftTeamsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same AccessToken
+	accessToken := "access_token_value"
+
+	conn1 = &MicrosoftTeamsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessToken: &accessToken,
+	}
+
+	conn2 = &MicrosoftTeamsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessToken: &accessToken,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same AccessToken and should be equal")
+
+	// Case 4: Connections have different AccessTokens
+	differentAccessToken := "different_access_token_value"
+	conn2.AccessToken = &differentAccessToken
+	assert.False(conn1.Equals(conn2), "Connections have different AccessTokens, should return false")
+}
+
+func TestMicrosoftTeamsConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty MicrosoftTeamsConnection, should pass with no diagnostics
+	conn := &MicrosoftTeamsConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty MicrosoftTeamsConnection")
+
+	// Case 2: Validate a populated MicrosoftTeamsConnection, should pass with no diagnostics
+	accessToken := "access_token_value"
+
+	conn = &MicrosoftTeamsConnection{
+		AccessToken: &accessToken,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated MicrosoftTeamsConnection")
+}
