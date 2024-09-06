@@ -14,6 +14,7 @@ _What's new_
 * Convert credential for clickup to connection. ([#458](https://github.com/turbot/pipe-fittings/issues/458)).
 * Convert credential for datadog to connection, ([#459](https://github.com/turbot/pipe-fittings/issues/459)).
 * Convert credential for discord to connection. ([#460](https://github.com/turbot/pipe-fittings/issues/460)).
+* Convert credential for freshdesk to connection. ([#461](https://github.com/turbot/pipe-fittings/issues/461)).
 
 _Bug fixes_
 
