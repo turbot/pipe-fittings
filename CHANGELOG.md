@@ -23,6 +23,7 @@ _What's new_
 * Convert credential for jumpcloud to connection. ([#472](https://github.com/turbot/pipe-fittings/issues/472)).
 * Convert credential for mastodon to connection. ([#473](https://github.com/turbot/pipe-fittings/issues/473)).
 * Convert credential for microsoft teams to connection. ([#474](https://github.com/turbot/pipe-fittings/issues/474)).
+* Convert credential for okta to connection. ([#475](https://github.com/turbot/pipe-fittings/issues/475)).
 
 _Bug fixes_
 
