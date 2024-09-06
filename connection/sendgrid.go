@@ -22,12 +22,12 @@ func (c *SendGridConnection) Resolve(ctx context.Context) (PipelingConnection, e
 		sendGridAPIKeyEnvVar := os.Getenv("SENDGRID_API_KEY")
 
 		// Don't modify existing connection, resolve to a new one
-		newCreds := &SendGridConnection{
+		newConnection := &SendGridConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			APIKey:         &sendGridAPIKeyEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 	}
 	return c, nil
 }
