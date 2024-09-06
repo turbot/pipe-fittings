@@ -17,18 +17,6 @@ type GithubConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *GithubConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
-}
-
 func (c *GithubConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		githubAccessTokenEnvVar := os.Getenv("GITHUB_TOKEN")
@@ -71,6 +59,18 @@ func (c *GithubConnection) Validate() hcl.Diagnostics {
 
 func (c *GithubConnection) GetTtl() int {
 	return -1
+}
+
+func (c *GithubConnection) CtyValue() (cty.Value, error) {
+	ctyValue, err := modconfig.GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *GithubConnection) getEnv() map[string]cty.Value {
