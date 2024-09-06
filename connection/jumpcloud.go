@@ -11,20 +11,20 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type IP2LocationIOConnection struct {
+type JumpCloudConnection struct {
 	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
-		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
+		apiKeyEnvVar := os.Getenv("JUMPCLOUD_API_KEY")
 
 		// Don't modify existing connection, resolve to a new one
-		newConnection := &IP2LocationIOConnection{
+		newConnection := &JumpCloudConnection{
 			ConnectionImpl: c.ConnectionImpl,
-			APIKey:         &ip2locationAPIKeyEnvVar,
+			APIKey:         &apiKeyEnvVar,
 		}
 
 		return newConnection, nil
@@ -32,11 +32,7 @@ func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnecti
 	return c, nil
 }
 
-func (c *IP2LocationIOConnection) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
-}
-
-func (c *IP2LocationIOConnection) Equals(otherConnection PipelingConnection) bool {
+func (c *JumpCloudConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -46,7 +42,7 @@ func (c *IP2LocationIOConnection) Equals(otherConnection PipelingConnection) boo
 		return false
 	}
 
-	other, ok := otherConnection.(*IP2LocationIOConnection)
+	other, ok := otherConnection.(*JumpCloudConnection)
 	if !ok {
 		return false
 	}
@@ -58,11 +54,15 @@ func (c *IP2LocationIOConnection) Equals(otherConnection PipelingConnection) boo
 	return true
 }
 
-func (c *IP2LocationIOConnection) GetTtl() int {
+func (c *JumpCloudConnection) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
+}
+
+func (c *JumpCloudConnection) GetTtl() int {
 	return -1
 }
 
-func (c *IP2LocationIOConnection) CtyValue() (cty.Value, error) {
+func (c *JumpCloudConnection) CtyValue() (cty.Value, error) {
 	ctyValue, err := modconfig.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
@@ -74,8 +74,6 @@ func (c *IP2LocationIOConnection) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (c *IP2LocationIOConnection) getEnv() map[string]cty.Value {
-	// There is no environment variable listed in the IP2LocationIO official API docs
-	// https://www.ip2location.io/ip2location-documentation
+func (c *JumpCloudConnection) getEnv() map[string]cty.Value {
 	return nil
 }

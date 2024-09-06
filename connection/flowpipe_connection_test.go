@@ -1424,7 +1424,7 @@ func TestIP2LocationIOConnectionValidate(t *testing.T) {
 func TestJiraDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	jiraCred := JiraConnection{
+	jiraConnection := JiraConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1437,26 +1437,26 @@ func TestJiraDefaultConnection(t *testing.T) {
 	os.Unsetenv("JIRA_URL")
 	os.Unsetenv("JIRA_USER")
 
-	newCreds, err := jiraCred.Resolve(context.TODO())
+	newConnection, err := jiraConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newJiraCreds := newCreds.(*JiraConnection)
-	assert.Equal("", *newJiraCreds.APIToken)
-	assert.Equal("", *newJiraCreds.BaseURL)
-	assert.Equal("", *newJiraCreds.Username)
+	newJiraConnection := newConnection.(*JiraConnection)
+	assert.Equal("", *newJiraConnection.APIToken)
+	assert.Equal("", *newJiraConnection.BaseURL)
+	assert.Equal("", *newJiraConnection.Username)
 
 	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
 	os.Setenv("JIRA_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
 	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
 	os.Setenv("JIRA_USER", "test@turbot.com")
 
-	newCreds, err = jiraCred.Resolve(context.TODO())
+	newConnection, err = jiraConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newJiraCreds = newCreds.(*JiraConnection)
-	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
-	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
-	assert.Equal("test@turbot.com", *newJiraCreds.Username)
+	newJiraConnection = newConnection.(*JiraConnection)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraConnection.APIToken)
+	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraConnection.BaseURL)
+	assert.Equal("test@turbot.com", *newJiraConnection.Username)
 }
 
 func TestJiraConnectionEquals(t *testing.T) {
@@ -1544,4 +1544,99 @@ func TestJiraConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated JiraConnection")
+}
+
+// ------------------------------------------------------------
+// JumpCloud
+// ------------------------------------------------------------
+
+func TestJumpCloudDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	jumpCloudConnection := JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("JUMPCLOUD_API_KEY")
+
+	newConnection, err := jumpCloudConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJumpCloudConnection := newConnection.(*JumpCloudConnection)
+	assert.Equal("", *newJumpCloudConnection.APIKey)
+
+	os.Setenv("JUMPCLOUD_API_KEY", "sk-jwgthNa...")
+
+	newConnection, err = jumpCloudConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newJumpCloudConnection = newConnection.(*JumpCloudConnection)
+	assert.Equal("sk-jwgthNa...", *newJumpCloudConnection.APIKey)
+}
+
+func TestJumpCloudConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *JumpCloudConnection
+	var conn2 *JumpCloudConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value" // #nosec: G101
+	conn1 = &JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &JumpCloudConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestJumpCloudConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty JumpCloudConnection, should pass with no diagnostics
+	conn := &JumpCloudConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty JumpCloudConnection")
+
+	// Case 2: Validate a populated JumpCloudConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+	conn = &JumpCloudConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated JumpCloudConnection")
 }

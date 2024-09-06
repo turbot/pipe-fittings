@@ -78,7 +78,7 @@ func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 	}
 
 	// Don't modify existing credential, resolve to a new one
-	newCreds := &AwsConnection{
+	newConnection := &AwsConnection{
 		ConnectionImpl: c.ConnectionImpl,
 		Ttl:            c.Ttl,
 		AccessKey:      &creds.AccessKeyID,
@@ -86,10 +86,10 @@ func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 	}
 
 	if creds.SessionToken != "" {
-		newCreds.SessionToken = &creds.SessionToken
+		newConnection.SessionToken = &creds.SessionToken
 	}
 
-	return newCreds, nil
+	return newConnection, nil
 }
 
 // in seconds
