@@ -1424,7 +1424,7 @@ func TestIP2LocationIOConnectionValidate(t *testing.T) {
 func TestJiraDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	jiraCred := JiraConnection{
+	jiraConnection := JiraConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -1437,26 +1437,26 @@ func TestJiraDefaultConnection(t *testing.T) {
 	os.Unsetenv("JIRA_URL")
 	os.Unsetenv("JIRA_USER")
 
-	newConnection, err := jiraCred.Resolve(context.TODO())
+	newConnection, err := jiraConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newJiraCreds := newConnection.(*JiraConnection)
-	assert.Equal("", *newJiraCreds.APIToken)
-	assert.Equal("", *newJiraCreds.BaseURL)
-	assert.Equal("", *newJiraCreds.Username)
+	newJiraConnection := newConnection.(*JiraConnection)
+	assert.Equal("", *newJiraConnection.APIToken)
+	assert.Equal("", *newJiraConnection.BaseURL)
+	assert.Equal("", *newJiraConnection.Username)
 
 	os.Setenv("JIRA_API_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
 	os.Setenv("JIRA_TOKEN", "ksfhashkfhakskashfghaskfagfgir327934gkegf")
 	os.Setenv("JIRA_URL", "https://flowpipe-testorg.atlassian.net/")
 	os.Setenv("JIRA_USER", "test@turbot.com")
 
-	newConnection, err = jiraCred.Resolve(context.TODO())
+	newConnection, err = jiraConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newJiraCreds = newConnection.(*JiraConnection)
-	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraCreds.APIToken)
-	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraCreds.BaseURL)
-	assert.Equal("test@turbot.com", *newJiraCreds.Username)
+	newJiraConnection = newConnection.(*JiraConnection)
+	assert.Equal("ksfhashkfhakskashfghaskfagfgir327934gkegf", *newJiraConnection.APIToken)
+	assert.Equal("https://flowpipe-testorg.atlassian.net/", *newJiraConnection.BaseURL)
+	assert.Equal("test@turbot.com", *newJiraConnection.Username)
 }
 
 func TestJiraConnectionEquals(t *testing.T) {
