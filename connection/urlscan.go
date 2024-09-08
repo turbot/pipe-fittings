@@ -22,11 +22,11 @@ func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, er
 		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")
 
 		// Don't modify existing connection, resolve to a new one
-		newCreds := &UrlscanConnection{
+		newConnection := &UrlscanConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			APIKey:         &urlscanAPIKeyEnvVar,
 		}
-		return newCreds, nil
+		return newConnection, nil
 	}
 
 	return c, nil
