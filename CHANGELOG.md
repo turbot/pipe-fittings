@@ -31,6 +31,7 @@ _What's new_
 * Convert credential for servicenow to connection. ([#480](https://github.com/turbot/pipe-fittings/issues/480)).
 * Convert credential for trello to connection. ([#482](https://github.com/turbot/pipe-fittings/issues/482)).
 * Convert credential for turbot guardrails to connection. ([#483](https://github.com/turbot/pipe-fittings/issues/483)).
+* Convert credential for turbot pipes to connection. ([#484](https://github.com/turbot/pipe-fittings/issues/484)).
 
 _Bug fixes_
 
