@@ -36,6 +36,7 @@ _What's new_
 * Convert credential for urlscan to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
 * Convert credential for vault to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
 * Convert credential for virus total to connection. ([#488](https://github.com/turbot/pipe-fittings/issues/488)).
+* Convert credential for zendesk to connection. ([#489](https://github.com/turbot/pipe-fittings/issues/489)).
 
 _Bug fixes_
 
