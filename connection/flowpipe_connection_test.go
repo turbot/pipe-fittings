@@ -2517,7 +2517,7 @@ func TestTrelloConnectionEquals(t *testing.T) {
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
 	// Case 3: Both connections have the same APIKey and Token
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec: G101
 	token := "token_value"
 
 	conn1 = &TrelloConnection{
@@ -2563,7 +2563,7 @@ func TestTrelloConnectionValidate(t *testing.T) {
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty TrelloConnection")
 
 	// Case 2: Validate a populated TrelloConnection, should pass with no diagnostics
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec: G101
 	token := "token_value"
 
 	conn = &TrelloConnection{
