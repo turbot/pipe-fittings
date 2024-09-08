@@ -3043,7 +3043,7 @@ func TestVaultConnectionEquals(t *testing.T) {
 
 	// Case 3: Both connections have the same Address and Token
 	address := "https://vault.example.com"
-	token := "vault_token_value"
+	token := "vault_token_value" // #nosec: G101
 
 	conn1 = &VaultConnection{
 		ConnectionImpl: ConnectionImpl{
@@ -3089,7 +3089,7 @@ func TestVaultConnectionValidate(t *testing.T) {
 
 	// Case 2: Validate a populated VaultConnection, should pass with no diagnostics
 	address := "https://vault.example.com"
-	token := "vault_token_value"
+	token := "vault_token_value" // #nosec: G101
 
 	conn = &VaultConnection{
 		Address: &address,
