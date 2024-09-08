@@ -3098,3 +3098,99 @@ func TestVaultConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated VaultConnection")
 }
+
+// ------------------------------------------------------------
+// VirusTotal
+// ------------------------------------------------------------
+
+func TestVirusTotalDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	virusTotalCred := VirusTotalConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("VTCLI_APIKEY")
+	newCreds, err := virusTotalCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVirusTotalCreds := newCreds.(*VirusTotalConnection)
+	assert.Equal("", *newVirusTotalCreds.APIKey)
+
+	os.Setenv("VTCLI_APIKEY", "w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c")
+
+	newCreds, err = virusTotalCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVirusTotalCreds = newCreds.(*VirusTotalConnection)
+	assert.Equal("w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c", *newVirusTotalCreds.APIKey)
+}
+
+func TestVirusTotalConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *VirusTotalConnection
+	var conn2 *VirusTotalConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &VirusTotalConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value"
+
+	conn1 = &VirusTotalConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &VirusTotalConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestVirusTotalConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty VirusTotalConnection, should pass with no diagnostics
+	conn := &VirusTotalConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty VirusTotalConnection")
+
+	// Case 2: Validate a populated VirusTotalConnection, should pass with no diagnostics
+	apiKey := "api_key_value"
+
+	conn = &VirusTotalConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated VirusTotalConnection")
+}
