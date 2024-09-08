@@ -2698,3 +2698,34 @@ func TestGuardrailsConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GuardrailsConnection")
 }
+
+// ------------------------------------------------------------
+// Turbot Pipes
+// ------------------------------------------------------------
+
+func TestPipesDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	pipesConnection := PipesConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("PIPES_TOKEN")
+	newConnection, err := pipesConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPipesConnection := newConnection.(*PipesConnection)
+	assert.Equal("", *newPipesConnection.Token)
+
+	os.Setenv("PIPES_TOKEN", "tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb")
+
+	newConnection, err = pipesConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newPipesConnection = newConnection.(*PipesConnection)
+	assert.Equal("tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newPipesConnection.Token)
+}
