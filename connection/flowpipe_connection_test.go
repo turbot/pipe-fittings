@@ -3194,3 +3194,130 @@ func TestVirusTotalConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated VirusTotalConnection")
 }
+
+// ------------------------------------------------------------
+// Zendesk
+// ------------------------------------------------------------
+
+func TestZendeskDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	zendeskConnection := ZendeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("ZENDESK_SUBDOMAIN")
+	os.Unsetenv("ZENDESK_EMAIL")
+	os.Unsetenv("ZENDESK_API_TOKEN")
+
+	newConnection, err := zendeskConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newZendeskConnection := newConnection.(*ZendeskConnection)
+	assert.Equal("", *newZendeskConnection.Subdomain)
+	assert.Equal("", *newZendeskConnection.Email)
+	assert.Equal("", *newZendeskConnection.Token)
+
+	os.Setenv("ZENDESK_SUBDOMAIN", "dmi")
+	os.Setenv("ZENDESK_EMAIL", "pam@dmi.com")
+	os.Setenv("ZENDESK_API_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
+
+	newConnection, err = zendeskConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newZendeskConnection = newConnection.(*ZendeskConnection)
+	assert.Equal("dmi", *newZendeskConnection.Subdomain)
+	assert.Equal("pam@dmi.com", *newZendeskConnection.Email)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newZendeskConnection.Token)
+}
+
+func TestZendeskConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *ZendeskConnection
+	var conn2 *ZendeskConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &ZendeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Email, Subdomain, and Token
+	email := "user@example.com"
+	subdomain := "mycompany"
+	token := "token_value"
+
+	conn1 = &ZendeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Email:     &email,
+		Subdomain: &subdomain,
+		Token:     &token,
+	}
+
+	conn2 = &ZendeskConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Email:     &email,
+		Subdomain: &subdomain,
+		Token:     &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Email, Subdomain, and Token and should be equal")
+
+	// Case 4: Connections have different Emails
+	differentEmail := "different@example.com"
+	conn2.Email = &differentEmail
+	assert.False(conn1.Equals(conn2), "Connections have different Emails, should return false")
+
+	// Case 5: Connections have different Subdomains
+	conn2.Email = &email // Reset Email to match conn1
+	differentSubdomain := "differentcompany"
+	conn2.Subdomain = &differentSubdomain
+	assert.False(conn1.Equals(conn2), "Connections have different Subdomains, should return false")
+
+	// Case 6: Connections have different Tokens
+	conn2.Subdomain = &subdomain // Reset Subdomain to match conn1
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestZendeskConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty ZendeskConnection, should pass with no diagnostics
+	conn := &ZendeskConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty ZendeskConnection")
+
+	// Case 2: Validate a populated ZendeskConnection, should pass with no diagnostics
+	email := "user@example.com"
+	subdomain := "mycompany"
+	token := "token_value"
+
+	conn = &ZendeskConnection{
+		Email:     &email,
+		Subdomain: &subdomain,
+		Token:     &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated ZendeskConnection")
+}
