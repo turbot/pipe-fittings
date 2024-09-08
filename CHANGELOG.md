@@ -32,6 +32,7 @@ _What's new_
 * Convert credential for trello to connection. ([#482](https://github.com/turbot/pipe-fittings/issues/482)).
 * Convert credential for turbot guardrails to connection. ([#483](https://github.com/turbot/pipe-fittings/issues/483)).
 * Convert credential for turbot pipes to connection. ([#484](https://github.com/turbot/pipe-fittings/issues/484)).
+* Convert credential for uptime robot to connection. ([#485](https://github.com/turbot/pipe-fittings/issues/485)).
 
 _Bug fixes_
 

@@ -2581,7 +2581,7 @@ func TestTrelloConnectionValidate(t *testing.T) {
 func TestGuardrailsDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	guardrailsCred := GuardrailsConnection{
+	guardrailsConnection := GuardrailsConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -2593,7 +2593,7 @@ func TestGuardrailsDefaultConnection(t *testing.T) {
 	os.Unsetenv("TURBOT_SECRET_KEY")
 	os.Unsetenv("TURBOT_WORKSPACE")
 
-	newConnection, err := guardrailsCred.Resolve(context.TODO())
+	newConnection, err := guardrailsConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newGuardrailsConnection := newConnection.(*GuardrailsConnection)
@@ -2604,7 +2604,7 @@ func TestGuardrailsDefaultConnection(t *testing.T) {
 	os.Setenv("TURBOT_SECRET_KEY", "a3d8385d-47f7-40c5-a90c-123")
 	os.Setenv("TURBOT_WORKSPACE", "https://my_workspace.saas.turbot.com")
 
-	newConnection, err = guardrailsCred.Resolve(context.TODO())
+	newConnection, err = guardrailsConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
 	newGuardrailsConnection = newConnection.(*GuardrailsConnection)
@@ -2793,4 +2793,100 @@ func TestPipesConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated PipesConnection")
+}
+
+// ------------------------------------------------------------
+// UptimeRobot
+// ------------------------------------------------------------
+
+func TestUptimeRobotDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	uptimeRobotConnection := UptimeRobotConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("UPTIMEROBOT_API_KEY")
+	newConnection, err := uptimeRobotConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUptimeRobotConnection := newConnection.(*UptimeRobotConnection)
+	assert.Equal("", *newUptimeRobotConnection.APIKey)
+
+	os.Setenv("UPTIMEROBOT_API_KEY", "u1123455-ecaf32fwer633fdf4f33dd3c445")
+
+	newConnection, err = uptimeRobotConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUptimeRobotConnection = newConnection.(*UptimeRobotConnection)
+	assert.Equal("u1123455-ecaf32fwer633fdf4f33dd3c445", *newUptimeRobotConnection.APIKey)
+}
+
+func TestUptimeRobotConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *UptimeRobotConnection
+	var conn2 *UptimeRobotConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &UptimeRobotConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value" // #nosec: G101
+
+	conn1 = &UptimeRobotConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &UptimeRobotConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestUptimeRobotConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty UptimeRobotConnection, should pass with no diagnostics
+	conn := &UptimeRobotConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty UptimeRobotConnection")
+
+	// Case 2: Validate a populated UptimeRobotConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+
+	conn = &UptimeRobotConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated UptimeRobotConnection")
 }
