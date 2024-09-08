@@ -2941,7 +2941,7 @@ func TestUrlscanConnectionEquals(t *testing.T) {
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
 	// Case 3: Both connections have the same APIKey
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec: G101
 
 	conn1 = &UrlscanConnection{
 		ConnectionImpl: ConnectionImpl{
@@ -2978,7 +2978,7 @@ func TestUrlscanConnectionValidate(t *testing.T) {
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty UrlscanConnection")
 
 	// Case 2: Validate a populated UrlscanConnection, should pass with no diagnostics
-	apiKey := "api_key_value"
+	apiKey := "api_key_value" // #nosec: G101
 
 	conn = &UrlscanConnection{
 		APIKey: &apiKey,
