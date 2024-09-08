@@ -2890,3 +2890,99 @@ func TestUptimeRobotConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated UptimeRobotConnection")
 }
+
+// ------------------------------------------------------------
+// URLScan
+// ------------------------------------------------------------
+
+func TestUrlscanDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	urlscanConnection := UrlscanConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("URLSCAN_API_KEY")
+	newConnection, err := urlscanConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUrlscanConnection := newConnection.(*UrlscanConnection)
+	assert.Equal("", *newUrlscanConnection.APIKey)
+
+	os.Setenv("URLSCAN_API_KEY", "4d7e9123-e127-56c1-8d6a-59cad2f12abc")
+
+	newConnection, err = urlscanConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newUrlscanConnection = newConnection.(*UrlscanConnection)
+	assert.Equal("4d7e9123-e127-56c1-8d6a-59cad2f12abc", *newUrlscanConnection.APIKey)
+}
+
+func TestUrlscanConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *UrlscanConnection
+	var conn2 *UrlscanConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &UrlscanConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey
+	apiKey := "api_key_value" // #nosec: G101
+
+	conn1 = &UrlscanConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	conn2 = &UrlscanConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+}
+
+func TestUrlscanConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty UrlscanConnection, should pass with no diagnostics
+	conn := &UrlscanConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty UrlscanConnection")
+
+	// Case 2: Validate a populated UrlscanConnection, should pass with no diagnostics
+	apiKey := "api_key_value" // #nosec: G101
+
+	conn = &UrlscanConnection{
+		APIKey: &apiKey,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated UrlscanConnection")
+}
