@@ -3106,7 +3106,7 @@ func TestVaultConnectionValidate(t *testing.T) {
 func TestVirusTotalDefaultConnection(t *testing.T) {
 	assert := assert.New(t)
 
-	virusTotalCred := VirusTotalConnection{
+	virusTotalConnection := VirusTotalConnection{
 		ConnectionImpl: ConnectionImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{
 				ShortName: "default",
@@ -3115,19 +3115,19 @@ func TestVirusTotalDefaultConnection(t *testing.T) {
 	}
 
 	os.Unsetenv("VTCLI_APIKEY")
-	newCreds, err := virusTotalCred.Resolve(context.TODO())
+	newCollection, err := virusTotalConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newVirusTotalCreds := newCreds.(*VirusTotalConnection)
-	assert.Equal("", *newVirusTotalCreds.APIKey)
+	newVirusTotalCollection := newCollection.(*VirusTotalConnection)
+	assert.Equal("", *newVirusTotalCollection.APIKey)
 
 	os.Setenv("VTCLI_APIKEY", "w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c")
 
-	newCreds, err = virusTotalCred.Resolve(context.TODO())
+	newCollection, err = virusTotalConnection.Resolve(context.TODO())
 	assert.Nil(err)
 
-	newVirusTotalCreds = newCreds.(*VirusTotalConnection)
-	assert.Equal("w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c", *newVirusTotalCreds.APIKey)
+	newVirusTotalCollection = newCollection.(*VirusTotalConnection)
+	assert.Equal("w5kukcma7yfj8m8p5rkjx5chg3nno9z7h7wr4o8uq1n0pmr5dfejox4oz4xr7g3c", *newVirusTotalCollection.APIKey)
 }
 
 func TestVirusTotalConnectionEquals(t *testing.T) {

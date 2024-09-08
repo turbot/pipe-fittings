@@ -22,12 +22,12 @@ func (c *VirusTotalConnection) Resolve(ctx context.Context) (PipelingConnection,
 		virusTotalAPIKeyEnvVar := os.Getenv("VTCLI_APIKEY")
 
 		// Don't modify existing connection, resolve to a new one
-		newCreds := &VirusTotalConnection{
+		newConnection := &VirusTotalConnection{
 			ConnectionImpl: c.ConnectionImpl,
 			APIKey:         &virusTotalAPIKeyEnvVar,
 		}
 
-		return newCreds, nil
+		return newConnection, nil
 
 	}
 	return c, nil
