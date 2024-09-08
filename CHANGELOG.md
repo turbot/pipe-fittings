@@ -29,6 +29,7 @@ _What's new_
 * Convert credential for pagerduty to connection. ([#478](https://github.com/turbot/pipe-fittings/issues/478)).
 * Convert credential for sendgrid to connection. ([#479](https://github.com/turbot/pipe-fittings/issues/479)).
 * Convert credential for servicenow to connection. ([#480](https://github.com/turbot/pipe-fittings/issues/480)).
+* Convert credential for trello to connection. ([#482](https://github.com/turbot/pipe-fittings/issues/482)).
 
 _Bug fixes_
 

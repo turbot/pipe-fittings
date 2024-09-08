@@ -2461,3 +2461,115 @@ func TestServiceNowConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated ServiceNowConnection")
 }
+
+// ------------------------------------------------------------
+// Trello
+// ------------------------------------------------------------
+
+func TestTrelloDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	trelloConnection := TrelloConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("TRELLO_API_KEY")
+	os.Unsetenv("TRELLO_TOKEN")
+
+	newConnection, err := trelloConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newTrelloConnection := newConnection.(*TrelloConnection)
+	assert.Equal("", *newTrelloConnection.APIKey)
+	assert.Equal("", *newTrelloConnection.Token)
+
+	os.Setenv("TRELLO_API_KEY", "dmgdhdfhfhfhi")
+	os.Setenv("TRELLO_TOKEN", "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4")
+
+	newConnection, err = trelloConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newTrelloConnection = newConnection.(*TrelloConnection)
+	assert.Equal("dmgdhdfhfhfhi", *newTrelloConnection.APIKey)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *newTrelloConnection.Token)
+}
+
+func TestTrelloConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *TrelloConnection
+	var conn2 *TrelloConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &TrelloConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same APIKey and Token
+	apiKey := "api_key_value"
+	token := "token_value"
+
+	conn1 = &TrelloConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+		Token:  &token,
+	}
+
+	conn2 = &TrelloConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		APIKey: &apiKey,
+		Token:  &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same APIKey and Token and should be equal")
+
+	// Case 4: Connections have different APIKeys
+	differentAPIKey := "different_api_key_value"
+	conn2.APIKey = &differentAPIKey
+	assert.False(conn1.Equals(conn2), "Connections have different APIKeys, should return false")
+
+	// Case 5: Connections have different Tokens
+	conn2.APIKey = &apiKey // Reset APIKey to match conn1
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestTrelloConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty TrelloConnection, should pass with no diagnostics
+	conn := &TrelloConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty TrelloConnection")
+
+	// Case 2: Validate a populated TrelloConnection, should pass with no diagnostics
+	apiKey := "api_key_value"
+	token := "token_value"
+
+	conn = &TrelloConnection{
+		APIKey: &apiKey,
+		Token:  &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated TrelloConnection")
+}
