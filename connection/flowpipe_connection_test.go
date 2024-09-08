@@ -2729,3 +2729,68 @@ func TestPipesDefaultConnection(t *testing.T) {
 	newPipesConnection = newConnection.(*PipesConnection)
 	assert.Equal("tpt_cld630jSCGU4jV4o5Yh4KQMAdqizwE2OgVcS7N9UHb", *newPipesConnection.Token)
 }
+
+func TestPipesConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *PipesConnection
+	var conn2 *PipesConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &PipesConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+
+	conn1 = &PipesConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &PipesConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestPipesConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty PipesConnection, should pass with no diagnostics
+	conn := &PipesConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty PipesConnection")
+
+	// Case 2: Validate a populated PipesConnection, should pass with no diagnostics
+	token := "token_value"
+
+	conn = &PipesConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated PipesConnection")
+}
