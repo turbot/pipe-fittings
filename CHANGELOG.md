@@ -35,6 +35,7 @@ _What's new_
 * Convert credential for uptime robot to connection. ([#485](https://github.com/turbot/pipe-fittings/issues/485)).
 * Convert credential for urlscan to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
 * Convert credential for vault to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
+* Convert credential for virus total to connection. ([#488](https://github.com/turbot/pipe-fittings/issues/488)).
 
 _Bug fixes_
 
