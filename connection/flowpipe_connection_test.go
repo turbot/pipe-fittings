@@ -2986,3 +2986,115 @@ func TestUrlscanConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated UrlscanConnection")
 }
+
+// ------------------------------------------------------------
+// Vault
+// ------------------------------------------------------------
+
+func TestVaultDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	vaultConnection := VaultConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("VAULT_TOKEN")
+	os.Unsetenv("VAULT_ADDR")
+
+	newConnection, err := vaultConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultConnection := newConnection.(*VaultConnection)
+	assert.Equal("", *newVaultConnection.Token)
+	assert.Equal("", *newVaultConnection.Address)
+
+	os.Setenv("VAULT_TOKEN", "hsv-fhhwskfkwh")
+	os.Setenv("VAULT_ADDR", "http://127.0.0.1:8200")
+
+	newConnection, err = vaultConnection.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newVaultConnection = newConnection.(*VaultConnection)
+	assert.Equal("hsv-fhhwskfkwh", *newVaultConnection.Token)
+	assert.Equal("http://127.0.0.1:8200", *newVaultConnection.Address)
+}
+
+func TestVaultConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *VaultConnection
+	var conn2 *VaultConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &VaultConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Address and Token
+	address := "https://vault.example.com"
+	token := "vault_token_value"
+
+	conn1 = &VaultConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Address: &address,
+		Token:   &token,
+	}
+
+	conn2 = &VaultConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Address: &address,
+		Token:   &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Address and Token and should be equal")
+
+	// Case 4: Connections have different Addresses
+	differentAddress := "https://different-vault.example.com"
+	conn2.Address = &differentAddress
+	assert.False(conn1.Equals(conn2), "Connections have different Addresses, should return false")
+
+	// Case 5: Connections have different Tokens
+	conn2.Address = &address // Reset Address to match conn1
+	differentToken := "different_vault_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestVaultConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty VaultConnection, should pass with no diagnostics
+	conn := &VaultConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty VaultConnection")
+
+	// Case 2: Validate a populated VaultConnection, should pass with no diagnostics
+	address := "https://vault.example.com"
+	token := "vault_token_value"
+
+	conn = &VaultConnection{
+		Address: &address,
+		Token:   &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated VaultConnection")
+}
