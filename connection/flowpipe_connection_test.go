@@ -2573,3 +2573,128 @@ func TestTrelloConnectionValidate(t *testing.T) {
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated TrelloConnection")
 }
+
+// ------------------------------------------------------------
+// Turbot Guardrails
+// ------------------------------------------------------------
+
+func TestGuardrailsDefaultConnection(t *testing.T) {
+	assert := assert.New(t)
+
+	guardrailsCred := GuardrailsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+
+	os.Unsetenv("TURBOT_ACCESS_KEY")
+	os.Unsetenv("TURBOT_SECRET_KEY")
+	os.Unsetenv("TURBOT_WORKSPACE")
+
+	newConnection, err := guardrailsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGuardrailsConnection := newConnection.(*GuardrailsConnection)
+	assert.Equal("", *newGuardrailsConnection.AccessKey)
+	assert.Equal("", *newGuardrailsConnection.SecretKey)
+
+	os.Setenv("TURBOT_ACCESS_KEY", "c8e2c2ed-1ca8-429b-b369-123")
+	os.Setenv("TURBOT_SECRET_KEY", "a3d8385d-47f7-40c5-a90c-123")
+	os.Setenv("TURBOT_WORKSPACE", "https://my_workspace.saas.turbot.com")
+
+	newConnection, err = guardrailsCred.Resolve(context.TODO())
+	assert.Nil(err)
+
+	newGuardrailsConnection = newConnection.(*GuardrailsConnection)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-123", *newGuardrailsConnection.AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-123", *newGuardrailsConnection.SecretKey)
+}
+
+func TestGuardrailsConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *GuardrailsConnection
+	var conn2 *GuardrailsConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &GuardrailsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same AccessKey, SecretKey, and Workspace
+	accessKey := "access_key_value"
+	secretKey := "secret_key_value"
+	workspace := "workspace_value"
+
+	conn1 = &GuardrailsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+		Workspace: &workspace,
+	}
+
+	conn2 = &GuardrailsConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+		Workspace: &workspace,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same AccessKey, SecretKey, and Workspace and should be equal")
+
+	// Case 4: Connections have different AccessKeys
+	differentAccessKey := "different_access_key_value"
+	conn2.AccessKey = &differentAccessKey
+	assert.False(conn1.Equals(conn2), "Connections have different AccessKeys, should return false")
+
+	// Case 5: Connections have different SecretKeys
+	conn2.AccessKey = &accessKey // Reset AccessKey to match conn1
+	differentSecretKey := "different_secret_key_value"
+	conn2.SecretKey = &differentSecretKey
+	assert.False(conn1.Equals(conn2), "Connections have different SecretKeys, should return false")
+
+	// Case 6: Connections have different Workspaces
+	conn2.SecretKey = &secretKey // Reset SecretKey to match conn1
+	differentWorkspace := "different_workspace_value"
+	conn2.Workspace = &differentWorkspace
+	assert.False(conn1.Equals(conn2), "Connections have different Workspaces, should return false")
+}
+
+func TestGuardrailsConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty GuardrailsConnection, should pass with no diagnostics
+	conn := &GuardrailsConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty GuardrailsConnection")
+
+	// Case 2: Validate a populated GuardrailsConnection, should pass with no diagnostics
+	accessKey := "access_key_value"
+	secretKey := "secret_key_value"
+	workspace := "workspace_value"
+
+	conn = &GuardrailsConnection{
+		AccessKey: &accessKey,
+		SecretKey: &secretKey,
+		Workspace: &workspace,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated GuardrailsConnection")
+}
