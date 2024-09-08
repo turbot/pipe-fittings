@@ -34,6 +34,7 @@ _What's new_
 * Convert credential for turbot pipes to connection. ([#484](https://github.com/turbot/pipe-fittings/issues/484)).
 * Convert credential for uptime robot to connection. ([#485](https://github.com/turbot/pipe-fittings/issues/485)).
 * Convert credential for urlscan to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
+* Convert credential for vault to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
 
 _Bug fixes_
 
