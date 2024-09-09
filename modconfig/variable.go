@@ -46,6 +46,9 @@ type Variable struct {
 	EnumGo    []any  `json:"enum"`
 	ModName   string `json:"mod_name"`
 
+	Subtype       hcl.Expression `json:"-"`
+	SubtypeString string         `json:"subtype_string,omitempty"`
+
 	// set after value resolution `column:"value,jsonb"`
 	Value                      cty.Value                      `column:"value,jsonb" json:"-"`
 	ValueSourceType            string                         `column:"value_source,string" json:"-"`

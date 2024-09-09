@@ -600,7 +600,7 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		return true
 	}
 
-	if p == nil && p != nil || p != nil && p == nil {
+	if p == nil && other != nil || p != nil && other == nil {
 		return false
 	}
 

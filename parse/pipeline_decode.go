@@ -327,7 +327,7 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		diags = append(diags, valDiags...)
 	}
 
-	if attr, exists := paramOptions.Attributes[schema.AttributeTypeSubType]; exists {
+	if attr, exists := paramOptions.Attributes[schema.AttributeTypeSubtype]; exists {
 		o.Subtype = attr.Expr
 
 		rng := attr.Expr.Range()
