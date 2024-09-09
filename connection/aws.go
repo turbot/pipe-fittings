@@ -22,31 +22,6 @@ type AwsConnection struct {
 	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
 }
 
-func (c *AwsConnection) Validate() hcl.Diagnostics {
-
-	if c.AccessKey != nil && c.SecretKey == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "access_key defined without secret_key",
-				Subject:  &c.DeclRange,
-			},
-		}
-	}
-
-	if c.SecretKey != nil && c.AccessKey == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "secret_key defined without access_key",
-				Subject:  &c.DeclRange,
-			},
-		}
-	}
-
-	return hcl.Diagnostics{}
-}
-
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// if access key and secret key are provided, just return it
@@ -92,40 +67,6 @@ func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 	return newConnection, nil
 }
 
-// in seconds
-func (c *AwsConnection) GetTtl() int {
-	if c.Ttl == nil {
-		return 5 * 60
-	}
-	return *c.Ttl
-}
-
-func (c *AwsConnection) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.AccessKey != nil {
-		env["AWS_ACCESS_KEY_ID"] = cty.StringVal(*c.AccessKey)
-	}
-	if c.SecretKey != nil {
-		env["AWS_SECRET_ACCESS_KEY"] = cty.StringVal(*c.SecretKey)
-	}
-	if c.SessionToken != nil {
-		env["AWS_SESSION_TOKEN"] = cty.StringVal(*c.SessionToken)
-	}
-	return env
-}
-
-func (c *AwsConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
-}
-
 func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
@@ -158,4 +99,63 @@ func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 	}
 
 	return true
+}
+
+func (c *AwsConnection) Validate() hcl.Diagnostics {
+
+	if c.AccessKey != nil && c.SecretKey == nil {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "access_key defined without secret_key",
+				Subject:  &c.DeclRange,
+			},
+		}
+	}
+
+	if c.SecretKey != nil && c.AccessKey == nil {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "secret_key defined without access_key",
+				Subject:  &c.DeclRange,
+			},
+		}
+	}
+
+	return hcl.Diagnostics{}
+}
+
+// in seconds
+func (c *AwsConnection) GetTtl() int {
+	if c.Ttl == nil {
+		return 5 * 60
+	}
+	return *c.Ttl
+}
+
+func (c *AwsConnection) CtyValue() (cty.Value, error) {
+	ctyValue, err := modconfig.GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *AwsConnection) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.AccessKey != nil {
+		env["AWS_ACCESS_KEY_ID"] = cty.StringVal(*c.AccessKey)
+	}
+	if c.SecretKey != nil {
+		env["AWS_SECRET_ACCESS_KEY"] = cty.StringVal(*c.SecretKey)
+	}
+	if c.SessionToken != nil {
+		env["AWS_SESSION_TOKEN"] = cty.StringVal(*c.SessionToken)
+	}
+	return env
 }
