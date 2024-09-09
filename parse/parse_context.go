@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"golang.org/x/exp/maps"
+	"log/slog"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -52,6 +53,7 @@ func NewParseContext(rootEvalPath string) ParseContext {
 }
 
 func (p *ParseContext) SetDecodeContent(content *hcl.BodyContent, fileData map[string][]byte) {
+	slog.Debug(fmt.Sprintf("SetDecodeContent %p", p), "fileData", fileData)
 	p.blocks = content.Blocks
 	p.FileData = fileData
 }
