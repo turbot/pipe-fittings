@@ -14,6 +14,8 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
+	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
@@ -2287,6 +2289,156 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 
 	assert.Equal("dev", varNumber.Tags["Environment"])
 	assert.Equal("me", varNumber.Tags["Owner"])
+}
+
+func (suite *FlowpipeModTestSuite) TestSubtype() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./subtype"})
+	assert.Nil(errAndWarning.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./subtype", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	notifierMap, err := parse.BuildNotifierMapForEvalContext(flowpipeConfig.Notifiers)
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	connMap, err := parse.BuildTemporaryConnectionMapForEvalContext(context.TODO(), flowpipeConfig.PipelingConnections)
+	if err != nil {
+		assert.Fail("error building connection map")
+		return
+	}
+
+	variables := make(map[string]cty.Value)
+	variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
+	variables[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
+
+	evalContext := &hcl.EvalContext{
+		Variables: variables,
+		// use the mod path as the file root for functions
+		Functions: funcs.ContextFunctions("./"),
+	}
+
+	subtypePipeline := w.Mod.ResourceMaps.Pipelines["subtype.pipeline.subtype"]
+
+	if subtypePipeline == nil {
+		assert.Fail("subtype pipeline not found")
+		return
+	}
+
+	// go through param and test them
+	params := subtypePipeline.Params
+	if params == nil {
+		assert.Fail("params is nil")
+		return
+	}
+
+	for _, param := range params {
+		if param.Name == "conn" {
+			// example is in the valid aws connection that we have
+			valid, err := param.ValidateSetting(cty.StringVal("example"), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.StringVal("default"), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.StringVal("not_valid"), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(false, valid, "not_valid connection does not exist")
+		} else if param.Name == "list_of_conns" {
+			valid, err := param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("example"), cty.StringVal("default")}), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default")}), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default"), cty.StringVal("exampless")}), evalContext)
+			if err != nil {
+				assert.Fail("error validating param", err)
+				return
+			}
+
+			assert.Equal(false, valid)
+		} else if param.Name == "conn_generic" {
+			// example is in the valid aws connection that we have
+			valid, err := param.ValidateSetting(cty.StringVal("example"), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.StringVal("default"), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.StringVal("not_there"), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(false, valid)
+		} else if param.Name == "list_of_conns_generic" {
+			valid, err := param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("example"), cty.StringVal("default")}), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default")}), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(true, valid)
+
+			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default"), cty.StringVal("exampless")}), evalContext)
+			if err != nil {
+				assert.Fail("error validating param")
+				return
+			}
+
+			assert.Equal(false, valid)
+		}
+	}
 
 }
 

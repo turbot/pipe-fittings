@@ -61,6 +61,7 @@ const (
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
 	AttributeTypeEnum    = "enum"
+	AttributeTypeSubType = "subtype"
 
 	AttributeTypeSensitive = "sensitive"
 	// Pipeline param block

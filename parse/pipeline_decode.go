@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -143,7 +144,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	return step, diags
 }
 
-func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
+func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
 
 	o := &modconfig.PipelineParam{
 		Name: block.Labels[0],
@@ -177,10 +178,16 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 
 			o.Type = ty
 		}
+
+		rng := expr.Range()
+
+		// Extract the part of the source code that corresponds to the expression
+		exprString := src[rng.Start.Byte:rng.End.Byte]
+		o.TypeString = exprString
 	} else {
 		o.Type = cty.DynamicPseudoType
+		o.TypeString = "any"
 	}
-	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeOptional]; exists {
 		valDiags := gohcl.DecodeExpression(attr.Expr, nil, &o.Optional)
@@ -320,7 +327,15 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 		diags = append(diags, valDiags...)
 	}
 
-	o.TypeString = hclhelpers.CtyTypeToHclType(o.Type)
+	if attr, exists := paramOptions.Attributes[schema.AttributeTypeSubType]; exists {
+		o.Subtype = attr.Expr
+
+		rng := attr.Expr.Range()
+
+		exprString := src[rng.Start.Byte:rng.End.Byte]
+		o.SubtypeString = exprString
+	}
+
 	return o, diags
 }
 
@@ -450,10 +465,23 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return triggerHcl, res
 	}
 
+	// Read the entire file content as bytes
+	content, err := os.ReadFile(block.DefRange.Filename)
+	if err != nil {
+		diag := &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("error reading file %s", block.DefRange.Filename),
+			Subject:  &block.DefRange,
+		}
+		res.handleDecodeDiags(hcl.Diagnostics{diag})
+		return triggerHcl, res
+	}
+	src := string(content)
+
 	var triggerParams []modconfig.PipelineParam
 	for _, block := range triggerOptions.Blocks {
 		if block.Type == schema.BlockTypeParam {
-			param, diags := decodePipelineParam(block, parseCtx)
+			param, diags := decodePipelineParam(src, block, parseCtx)
 			if len(diags) > 0 {
 				res.handleDecodeDiags(diags)
 				return triggerHcl, res
@@ -498,6 +526,19 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		res.handleDecodeDiags(diags)
 		return pipelineHcl, res
 	}
+
+	// Read the entire file content as bytes
+	content, err := os.ReadFile(block.DefRange.Filename)
+	if err != nil {
+		diag := &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("error reading file %s", block.DefRange.Filename),
+			Subject:  &block.DefRange,
+		}
+		res.handleDecodeDiags(hcl.Diagnostics{diag})
+		return pipelineHcl, res
+	}
+	src := string(content)
 
 	// use a map keyed by a string for fast lookup
 	// we use an empty struct as the value type, so that
@@ -555,7 +596,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 			}
 
 		case schema.BlockTypeParam:
-			pipelineParam, moreDiags := decodePipelineParam(block, parseCtx)
+			pipelineParam, moreDiags := decodePipelineParam(src, block, parseCtx)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				res.handleDecodeDiags(diags)

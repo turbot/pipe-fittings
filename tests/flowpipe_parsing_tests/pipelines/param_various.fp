@@ -48,11 +48,19 @@ pipeline "param_various" {
   }
 
   param "map_of_any" {
-    type = map
+    type = map(any)
     default = {
       "foo": "bar"
       "baz": 42
       "qux": true
+    }
+  }
+
+  param "just_map" {
+    type = map
+    default = {
+      "foo": "bar"
+      "baz": "qux"
     }
   }
 
