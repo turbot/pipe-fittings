@@ -2551,6 +2551,108 @@ func TestServiceNowConnectionValidate(t *testing.T) {
 }
 
 // ------------------------------------------------------------
+// Slack
+// ------------------------------------------------------------
+
+func TestSlackConnectionResolve(t *testing.T) {
+	assert := assert.New(t)
+
+	// Simulate a Slack connection with no token initially
+	slackConnection := SlackConnection{}
+
+	// Test case 1: No SLACK_TOKEN environment variable, should return connection with empty token
+	os.Unsetenv("SLACK_TOKEN")
+	newConnection, err := slackConnection.Resolve(context.TODO())
+	assert.Nil(err)
+	assert.NotNil(newConnection)
+
+	newSlackConnection, ok := newConnection.(*SlackConnection)
+	assert.True(ok)
+	assert.NotNil(newSlackConnection.Token)
+	assert.Equal("", *newSlackConnection.Token)
+
+	// Test case 2: SLACK_TOKEN environment variable is set
+	os.Setenv("SLACK_TOKEN", "xoxb-12345-mock-slack-token")
+
+	newConnection, err = slackConnection.Resolve(context.TODO())
+	assert.Nil(err)
+	assert.NotNil(newConnection)
+
+	newSlackConnection, ok = newConnection.(*SlackConnection)
+	assert.True(ok)
+	assert.NotNil(newSlackConnection.Token)                                // The Token field should not be nil
+	assert.Equal("xoxb-12345-mock-slack-token", *newSlackConnection.Token) // The Token should match the environment variable
+
+	// Cleanup
+	os.Unsetenv("SLACK_TOKEN")
+}
+
+func TestSlackConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *SlackConnection
+	var conn2 *SlackConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &SlackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same Token
+	token := "token_value"
+
+	conn1 = &SlackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	conn2 = &SlackConnection{
+		ConnectionImpl: ConnectionImpl{
+			HclResourceImpl: modconfig.HclResourceImpl{
+				ShortName: "default",
+			},
+		},
+		Token: &token,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same Token and should be equal")
+
+	// Case 4: Connections have different Tokens
+	differentToken := "different_token_value"
+	conn2.Token = &differentToken
+	assert.False(conn1.Equals(conn2), "Connections have different Tokens, should return false")
+}
+
+func TestSlackConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty SlackConnection, should pass with no diagnostics
+	conn := &SlackConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty SlackConnection")
+
+	// Case 2: Validate a populated SlackConnection, should pass with no diagnostics
+	token := "token_value"
+
+	conn = &SlackConnection{
+		Token: &token,
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated SlackConnection")
+}
+
+// ------------------------------------------------------------
 // Trello
 // ------------------------------------------------------------
 

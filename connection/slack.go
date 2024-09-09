@@ -17,24 +17,19 @@ type SlackConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *SlackConnection) getEnv() map[string]cty.Value {
-	env := map[string]cty.Value{}
-	if c.Token != nil {
-		env["SLACK_TOKEN"] = cty.StringVal(*c.Token)
+func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	if c.Token == nil {
+		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")
+
+		// Don't modify existing credential, resolve to a new one
+		newConnection := &SlackConnection{
+			ConnectionImpl: c.ConnectionImpl,
+			Token:          &slackTokenEnvVar,
+		}
+
+		return newConnection, nil
 	}
-	return env
-}
-
-func (c *SlackConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
+	return c, nil
 }
 
 func (c *SlackConnection) Equals(otherConnection PipelingConnection) bool {
@@ -59,47 +54,30 @@ func (c *SlackConnection) Equals(otherConnection PipelingConnection) bool {
 	return true
 }
 
-func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
-	if c.Token == nil {
-		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")
-
-		// Don't modify existing credential, resolve to a new one
-		newConnection := &SlackConnection{
-			ConnectionImpl: c.ConnectionImpl,
-			Token:          &slackTokenEnvVar,
-		}
-
-		return newConnection, nil
-	}
-	return c, nil
+func (c *SlackConnection) Validate() hcl.Diagnostics {
+	return hcl.Diagnostics{}
 }
 
 func (c *SlackConnection) GetTtl() int {
 	return -1
 }
 
-func (c *SlackConnection) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
-}
-
-type SlackConnectionConfig struct {
-	Token *string `cty:"token" hcl:"token"`
-}
-
-func (c *SlackConnectionConfig) GetConnection(name string, shortName string) PipelingConnection {
-
-	slackCred := &SlackConnection{
-		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				FullName:        name,
-				ShortName:       shortName,
-				UnqualifiedName: name,
-			},
-			Type: "slack",
-		},
-
-		Token: c.Token,
+func (c *SlackConnection) CtyValue() (cty.Value, error) {
+	ctyValue, err := modconfig.GetCtyValue(c)
+	if err != nil {
+		return cty.NilVal, err
 	}
 
-	return slackCred
+	valueMap := ctyValue.AsValueMap()
+	valueMap["env"] = cty.ObjectVal(c.getEnv())
+
+	return cty.ObjectVal(valueMap), nil
+}
+
+func (c *SlackConnection) getEnv() map[string]cty.Value {
+	env := map[string]cty.Value{}
+	if c.Token != nil {
+		env["SLACK_TOKEN"] = cty.StringVal(*c.Token)
+	}
+	return env
 }
