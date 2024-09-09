@@ -16,6 +16,7 @@ _What's new_
 * Convert credential for discord to connection. ([#460](https://github.com/turbot/pipe-fittings/issues/460)).
 * Convert credential for freshdesk to connection. ([#461](https://github.com/turbot/pipe-fittings/issues/461)).
 * Convert credential for github to connection. ([#467](https://github.com/turbot/pipe-fittings/issues/467)).
+* Convert credential for gcp to connection. ([#466](https://github.com/turbot/pipe-fittings/issues/466)).
 * Convert credential for gitlab to connection. ([#468](https://github.com/turbot/pipe-fittings/issues/468)).
 * Convert credential for ipstack to connection. ([#470](https://github.com/turbot/pipe-fittings/issues/470)).
 * Convert credential for ip2locationio to connection. ([#469](https://github.com/turbot/pipe-fittings/issues/469)).
