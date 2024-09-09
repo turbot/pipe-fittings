@@ -36,6 +36,8 @@ func TestParamVarious(t *testing.T) {
 			assert.Equal("map(map(bool))", param.TypeString)
 		} else if param.Name == "map_of_any" {
 			assert.Equal("map(any)", param.TypeString)
+		} else if param.Name == "just_map" {
+			assert.Equal("map", param.TypeString)
 		} else if param.Name == "list_of_list_of_string" {
 			assert.Equal("list(list(string))", param.TypeString)
 		} else if param.Name == "list_of_map_of_bool" {

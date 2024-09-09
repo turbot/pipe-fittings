@@ -22,5 +22,5 @@ func TestParamOptional(t *testing.T) {
 
 	stringValid := map[string]interface{}{}
 
-	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid)))
+	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid, nil)))
 }

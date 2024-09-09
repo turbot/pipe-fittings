@@ -24,13 +24,13 @@ func TestParamEnum(t *testing.T) {
 		"city": "New York",
 	}
 
-	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid)))
+	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid, nil)))
 
 	stringInvalid := map[string]interface{}{
 		"city": "Sydney",
 	}
 
-	errs := validateMyParam.ValidatePipelineParam(stringInvalid)
+	errs := validateMyParam.ValidatePipelineParam(stringInvalid, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: invalid value for param city", errs[0].Error())
 
@@ -38,7 +38,7 @@ func TestParamEnum(t *testing.T) {
 		"number": "345",
 	}
 
-	res, errs := validateMyParam.CoercePipelineParams(numValid)
+	res, errs := validateMyParam.CoercePipelineParams(numValid, nil)
 	if len(errs) > 0 {
 		assert.Fail("Error found", errs)
 		return

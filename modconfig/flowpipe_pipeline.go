@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
@@ -102,7 +104,7 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 	p.EndLineNumber = endLineNumber
 }
 
-func ValidateParams(p ResourceWithParam, inputParams map[string]interface{}) []error {
+func ValidateParams(p ResourceWithParam, inputParams map[string]interface{}, evalCtx *hcl.EvalContext) []error {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -138,7 +140,7 @@ func ValidateParams(p ResourceWithParam, inputParams map[string]interface{}) []e
 		}
 
 		if !errorExist {
-			errValidation := validateParam(param, v)
+			errValidation := validateParam(param, v, evalCtx)
 			if errValidation != nil {
 				errors = append(errors, errValidation)
 			}
@@ -162,7 +164,7 @@ func ValidateParams(p ResourceWithParam, inputParams map[string]interface{}) []e
 // This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
 // and again we convert from Go -> Cty when we're executing the pipeline to build EvalContext when we're evaluating
 // data are not resolved during parse time.
-func CoerceParams(p ResourceWithParam, inputParams map[string]string) (map[string]interface{}, []error) {
+func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -191,7 +193,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string) (map[strin
 
 		delete(pipelineParamsWithNoDefaultValue, k)
 
-		errValidation := validateParam(param, val)
+		errValidation := validateParam(param, val, evalCtx)
 		if errValidation != nil {
 			errors = append(errors, errValidation)
 		}
@@ -210,7 +212,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string) (map[strin
 	return res, errors
 }
 
-func validateParam(param *PipelineParam, inputParam interface{}) error {
+func validateParam(param *PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
 	if !param.Type.HasDynamicTypes() {
@@ -225,7 +227,7 @@ func validateParam(param *PipelineParam, inputParam interface{}) error {
 			return err
 		}
 	}
-	validParam, err := param.ValidateSetting(valToValidate)
+	validParam, err := param.ValidateSetting(valToValidate, evalCtx)
 	if err != nil {
 		return err
 	} else if !validParam {
@@ -234,12 +236,12 @@ func validateParam(param *PipelineParam, inputParam interface{}) error {
 	return nil
 }
 
-func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}) []error {
-	return ValidateParams(p, params)
+func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
+	return ValidateParams(p, params, evalCtx)
 }
 
-func (p *Pipeline) CoercePipelineParams(params map[string]string) (map[string]interface{}, []error) {
-	return CoerceParams(p, params)
+func (p *Pipeline) CoercePipelineParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
+	return CoerceParams(p, params, evalCtx)
 }
 
 // Implements ModItem interface
@@ -580,15 +582,17 @@ func (p *Pipeline) setBaseProperties() {
 // end Pipeline Hclresource interface functions
 
 type PipelineParam struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Optional    bool              `json:"optional,omitempty"`
-	Default     cty.Value         `json:"-"`
-	Enum        cty.Value         `json:"-"`
-	EnumGo      []any             `json:"enum"`
-	Type        cty.Type          `json:"type"`
-	TypeString  string            `json:"type_string"`
-	Tags        map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
+	Name          string            `json:"name"`
+	Description   string            `json:"description"`
+	Optional      bool              `json:"optional,omitempty"`
+	Default       cty.Value         `json:"-"`
+	Enum          cty.Value         `json:"-"`
+	EnumGo        []any             `json:"enum"`
+	Type          cty.Type          `json:"type"`
+	TypeString    string            `json:"type_string"`
+	Tags          map[string]string `json:"tags,omitempty"`
+	Subtype       hcl.Expression    `json:"-"`
+	SubtypeString string            `json:"subtype_string,omitempty"`
 }
 
 func (p *PipelineParam) Equals(other *PipelineParam) bool {
@@ -614,14 +618,110 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		p.Type.Equals(other.Type)
 }
 
-func (p *PipelineParam) ValidateSetting(setting cty.Value) (bool, error) {
+func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalContext) (bool, error) {
 	if setting.IsNull() {
 		return true, nil
+	}
+
+	if !helpers.IsNil(p.Subtype) && evalCtx != nil {
+
+		var subtype cty.Value
+		var diags hcl.Diagnostics
+
+		fCallExpr, ok := p.Subtype.(*hclsyntax.FunctionCallExpr)
+		if ok {
+			if len(fCallExpr.Args) != 1 {
+				return false, perr.BadRequestWithMessage("invalid subtype definition")
+			}
+
+			subtype, diags = fCallExpr.Args[0].Value(evalCtx)
+			if len(diags) > 0 {
+				return false, error_helpers.HclDiagsToError("output", diags)
+			}
+		} else {
+			// If the subtype is set, we need to validate the setting against the subtype
+			subtype, diags = p.Subtype.Value(evalCtx)
+			if len(diags) > 0 {
+				return false, error_helpers.HclDiagsToError("output", diags)
+			}
+		}
+
+		if subtype.IsNull() {
+			return false, perr.BadRequestWithMessage("unsupported subtype: " + p.SubtypeString)
+		}
+
+		// check if the setting is in the subtype, there are only 2 types of subtype:
+		// 1. notifier
+		// 2. connection
+		//
+		// but what we can do is:
+		// list(connection)
+
+		settingGo, serr := hclhelpers.CtyToGo(setting)
+		if serr != nil {
+			return false, diags
+		}
+
+		subTypeMap := subtype.AsValueMap()
+
+		if setting.Type().IsListType() || setting.Type().IsTupleType() || setting.Type().IsSetType() {
+			settingGoSlice, ok := settingGo.([]interface{})
+			if !ok {
+				return false, nil
+			}
+
+			for _, v := range settingGoSlice {
+				settingGoString, ok := v.(string)
+				if !ok {
+					return false, perr.BadRequestWithMessage("invalid value for param " + p.Name + " it must be a string")
+				}
+
+				found := validateSettingInSubtypeMap(settingGoString, subTypeMap)
+				if !found {
+					return false, nil
+				}
+
+			}
+		} else if setting.Type() == cty.String {
+			settingGoString, ok := settingGo.(string)
+			if !ok {
+				return false, perr.BadRequestWithMessage("invalid value for param " + p.Name + " it must be a string")
+			}
+
+			found := validateSettingInSubtypeMap(settingGoString, subTypeMap)
+			if !found {
+				return false, nil
+			}
+		} else {
+			return false, nil
+		}
 	}
 
 	res, err := hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
 
 	return res, err
+}
+
+func validateSettingInSubtypeMap(settingGoString string, subtypeMap map[string]cty.Value) bool {
+	found := false
+	for k, v := range subtypeMap {
+		if settingGoString == k {
+			found = true
+			break
+		}
+
+		if v.Type().IsMapType() || v.Type().IsObjectType() {
+			// for subtype such as `subtype=connection` we need to go one level below
+			subTypeMap := v.AsValueMap()
+			for k := range subTypeMap {
+				if settingGoString == k {
+					found = true
+					break
+				}
+			}
+		}
+	}
+	return found
 }
 
 type PipelineOutput struct {
