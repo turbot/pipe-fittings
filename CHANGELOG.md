@@ -7,38 +7,7 @@ Shared Pipes Component
 _What's new_
 
 * `Pipeling Connection` resource to replace `Credential`. ([#449](https://github.com/turbot/pipe-fittings/issues/449)).
-* Convert credential for abuseipdb to connection. ([#453](https://github.com/turbot/pipe-fittings/issues/453)).
-* Convert credential for alicloud to connection. ([#454](https://github.com/turbot/pipe-fittings/issues/454)).
-* Convert credential for azure to connection. ([#456](https://github.com/turbot/pipe-fittings/issues/456)).
-* Convert credential for bitbucket to connection. ([#457](https://github.com/turbot/pipe-fittings/issues/457)).
-* Convert credential for clickup to connection. ([#458](https://github.com/turbot/pipe-fittings/issues/458)).
-* Convert credential for datadog to connection, ([#459](https://github.com/turbot/pipe-fittings/issues/459)).
-* Convert credential for discord to connection. ([#460](https://github.com/turbot/pipe-fittings/issues/460)).
-* Convert credential for freshdesk to connection. ([#461](https://github.com/turbot/pipe-fittings/issues/461)).
-* Convert credential for github to connection. ([#467](https://github.com/turbot/pipe-fittings/issues/467)).
-* Convert credential for gcp to connection. ([#466](https://github.com/turbot/pipe-fittings/issues/466)).
-* Convert credential for gitlab to connection. ([#468](https://github.com/turbot/pipe-fittings/issues/468)).
-* Convert credential for ipstack to connection. ([#470](https://github.com/turbot/pipe-fittings/issues/470)).
-* Convert credential for ip2locationio to connection. ([#469](https://github.com/turbot/pipe-fittings/issues/469)).
-* Convert credential for jira to connection. ([#471](https://github.com/turbot/pipe-fittings/issues/471)).
-* Convert credential for jumpcloud to connection. ([#472](https://github.com/turbot/pipe-fittings/issues/472)).
-* Convert credential for mastodon to connection. ([#473](https://github.com/turbot/pipe-fittings/issues/473)).
-* Convert credential for microsoft teams to connection. ([#474](https://github.com/turbot/pipe-fittings/issues/474)).
-* Convert credential for okta to connection. ([#475](https://github.com/turbot/pipe-fittings/issues/475)).
-* Convert credential for openai to connection. ([#476](https://github.com/turbot/pipe-fittings/issues/476)).
-* Convert credential for opsgenie to connection. ([#477](https://github.com/turbot/pipe-fittings/issues/477)).
-* Convert credential for pagerduty to connection. ([#478](https://github.com/turbot/pipe-fittings/issues/478)).
-* Convert credential for sendgrid to connection. ([#479](https://github.com/turbot/pipe-fittings/issues/479)).
-* Convert credential for servicenow to connection. ([#480](https://github.com/turbot/pipe-fittings/issues/480)).
-* Convert credential for slack to connection. ([#481](https://github.com/turbot/pipe-fittings/issues/481)).
-* Convert credential for trello to connection. ([#482](https://github.com/turbot/pipe-fittings/issues/482)).
-* Convert credential for turbot guardrails to connection. ([#483](https://github.com/turbot/pipe-fittings/issues/483)).
-* Convert credential for turbot pipes to connection. ([#484](https://github.com/turbot/pipe-fittings/issues/484)).
-* Convert credential for uptime robot to connection. ([#485](https://github.com/turbot/pipe-fittings/issues/485)).
-* Convert credential for urlscan to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
-* Convert credential for vault to connection. ([#486](https://github.com/turbot/pipe-fittings/issues/486)).
-* Convert credential for virus total to connection. ([#488](https://github.com/turbot/pipe-fittings/issues/488)).
-* Convert credential for zendesk to connection. ([#489](https://github.com/turbot/pipe-fittings/issues/489)).
+* `subtype` argument to pipeline param. ([#523](https://github.com/turbot/pipe-fittings/issues/523)).
 
 _Bug fixes_
 
