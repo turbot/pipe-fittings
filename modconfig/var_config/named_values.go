@@ -199,7 +199,6 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 
 	if attr, exists := content.Attributes[schema.AttributeTypeSubtype]; exists {
 		v.Subtype = attr.Expr
-		v.SubtypeString = attr.Expr.Range().String()
 	}
 
 	for _, block := range content.Blocks {
