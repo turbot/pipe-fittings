@@ -1631,6 +1631,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	// Check variable definition
 	assert.Equal(42, mod.ResourceMaps.Variables["test_mod.var.var_number"].ValueGo)
+	assert.Equal("variable with number default 42", *mod.ResourceMaps.Variables["test_mod.var.var_number"].Title)
 	assert.Equal([]interface{}{"Environment", "Owner"}, mod.ResourceMaps.Variables["test_mod.var.mandatory_tag_keys"].ValueGo)
 	assert.Equal(map[string]interface{}{"key1": "value1", "key2": "value2"}, mod.ResourceMaps.Variables["test_mod.var.var_map"].ValueGo)
 	assert.Equal("enum2", mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].ValueGo)

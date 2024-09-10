@@ -384,6 +384,9 @@ var ParamDefBlockSchema = &hcl.BodySchema{
 var VariableBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{
+			Name: schema.AttributeTypeTitle,
+		},
+		{
 			Name: schema.AttributeTypeDescription,
 		},
 		{
@@ -402,7 +405,7 @@ var VariableBlockSchema = &hcl.BodySchema{
 			Name: schema.AttributeTypeEnum,
 		},
 		{
-			Name: schema.AttributeTypeSubType,
+			Name: schema.AttributeTypeSubtype,
 		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{

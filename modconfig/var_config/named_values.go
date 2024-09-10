@@ -22,6 +22,7 @@ const badIdentifierDetail = "A name must start with a letter or underscore and m
 // Variable represents a "variable" block in a module or file.
 type Variable struct {
 	Name           string
+	Title          string
 	Description    string
 	Default        cty.Value
 	Type           cty.Type
@@ -30,6 +31,8 @@ type Variable struct {
 	EnumGo         []any
 	DescriptionSet bool
 	DeclRange      hcl.Range
+	Subtype        hcl.Expression
+	SubtypeString  string
 }
 
 func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bool) (*Variable, hcl.Diagnostics) {
@@ -57,19 +60,25 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 		})
 	}
 
-	if attr, exists := content.Attributes["description"]; exists {
+	if attr, exists := content.Attributes[schema.AttributeTypeTitle]; exists {
+		valDiags := gohcl.DecodeExpression(attr.Expr, nil, &v.Title)
+		diags = append(diags, valDiags...)
+	}
+
+	if attr, exists := content.Attributes[schema.AttributeTypeDescription]; exists {
 		valDiags := gohcl.DecodeExpression(attr.Expr, nil, &v.Description)
 		diags = append(diags, valDiags...)
 		v.DescriptionSet = true
 	}
 
-	if attr, exists := content.Attributes["type"]; exists {
+	if attr, exists := content.Attributes[schema.AttributeTypeType]; exists {
 		ty, parseMode, tyDiags := decodeVariableType(attr.Expr)
 		diags = append(diags, tyDiags...)
 		v.Type = ty
 		v.ParsingMode = parseMode
 	}
-	if attr, exists := content.Attributes["default"]; exists {
+
+	if attr, exists := content.Attributes[schema.AttributeTypeDefault]; exists {
 		val, valDiags := attr.Expr.Value(nil)
 		diags = append(diags, valDiags...)
 
@@ -186,6 +195,10 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 
 		v.EnumGo = enumGoSlice
 
+	}
+
+	if attr, exists := content.Attributes[schema.AttributeTypeSubtype]; exists {
+		v.Subtype = attr.Expr
 	}
 
 	for _, block := range content.Blocks {

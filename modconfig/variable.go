@@ -46,6 +46,9 @@ type Variable struct {
 	EnumGo    []any  `json:"enum"`
 	ModName   string `json:"mod_name"`
 
+	Subtype       hcl.Expression `json:"-"`
+	SubtypeString string         `json:"subtype_string,omitempty"`
+
 	// set after value resolution `column:"value,jsonb"`
 	Value                      cty.Value                      `column:"value,jsonb" json:"-"`
 	ValueSourceType            string                         `column:"value_source,string" json:"-"`
@@ -86,6 +89,10 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 		EnumGo:      v.EnumGo,
 
 		TypeHclString: hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()), // strategic, this where the HCL string representation of cty.Type is stored
+	}
+
+	if v.Title != "" {
+		res.Title = &v.Title
 	}
 
 	// deprecated, we will change this "type" to cty.Type's json serialisation later
