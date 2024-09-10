@@ -35,6 +35,8 @@ func NewWorkspaceProfile[T WorkspaceProfile](block *hcl.Block) (T, hcl.Diagnosti
 	profileName := block.Labels[0]
 	declRange := hclhelpers.BlockRange(block)
 	switch any(empty).(type) {
+	case *SteampipeWorkspaceProfile:
+		res = &SteampipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	case *FlowpipeWorkspaceProfile:
 		res = &FlowpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	case *PowerpipeWorkspaceProfile:
