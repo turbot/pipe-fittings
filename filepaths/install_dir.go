@@ -53,6 +53,11 @@ func EnsureConfigDir() string {
 	return ensureInstallSubDir("config")
 }
 
+// GetInternalDir returns the path to the internal directory
+func GetInternalDir() string {
+	return installSubDir("internal")
+}
+
 // EnsureInternalDir returns the path to the internal directory (creates if missing)
 func EnsureInternalDir() string {
 	return ensureInstallSubDir("internal")
@@ -136,6 +141,11 @@ func DashboardServiceStateFilePath() string {
 
 func StateFileName() string {
 	return stateFileName
+}
+
+// GetDataDir returns the path to the data directory
+func GetDataDir() string {
+	return installSubDir("data")
 }
 
 // EnsureDataDir returns the path to the data directory (creates if missing)

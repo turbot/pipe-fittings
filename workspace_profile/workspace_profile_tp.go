@@ -100,20 +100,20 @@ func (p *TpWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Optio
 	}}
 }
 
-// EnsureDataDir resolves the local data dir, creating if necessary
-// if it was specified, use that, other construct the location from the profile name and the data dir
-func (p *TpWorkspaceProfile) EnsureDataDir() (string, error) {
-	var dataDir string
-	dataDir = p.GetDataDir()
+// EnsureWorkspaceDirs creates all necessary workspace directories
+func (p *TpWorkspaceProfile) EnsureWorkspaceDirs() error {
+	workspaceDirs := []string{p.GetDataDir(), p.GetInternalDir()}
+
 	// create if necessary
-	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
-		err := os.MkdirAll(dataDir, 0755)
-		if err != nil {
-			return "", err
+	for _, dir := range workspaceDirs {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			err := os.MkdirAll(dir, 0755)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return dataDir, nil
-
+	return nil
 }
 
 func (p *TpWorkspaceProfile) GetDataDir() string {
@@ -121,7 +121,17 @@ func (p *TpWorkspaceProfile) GetDataDir() string {
 	if p.Local != nil {
 		dataDir = *p.Local
 	} else {
-		dataDir = filepath.Join(filepaths.EnsureDataDir(), p.ProfileName)
+		dataDir = filepath.Join(filepaths.GetDataDir(), p.ProfileName)
+	}
+	return dataDir
+}
+
+func (p *TpWorkspaceProfile) GetInternalDir() string {
+	var dataDir string
+	if p.Local != nil {
+		dataDir = *p.Local
+	} else {
+		dataDir = filepath.Join(filepaths.GetInternalDir(), p.ProfileName)
 	}
 	return dataDir
 }
