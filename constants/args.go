@@ -61,6 +61,7 @@ const (
 	ArgPipesHost               = "pipes-host"
 	ArgPipesInstallDir         = "pipes-install-dir"
 	ArgPipesToken              = "pipes-token"
+	ArgPluginStartTimeout      = "plugin-start-timeout"
 	ArgPort                    = "port"
 	ArgProgress                = "progress"
 	ArgPrune                   = "prune"
