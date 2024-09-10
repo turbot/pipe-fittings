@@ -91,6 +91,10 @@ func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
 		TypeHclString: hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()), // strategic, this where the HCL string representation of cty.Type is stored
 	}
 
+	if v.Title != "" {
+		res.Title = &v.Title
+	}
+
 	// deprecated, we will change this "type" to cty.Type's json serialisation later
 	res.TypeString = res.TypeHclString
 

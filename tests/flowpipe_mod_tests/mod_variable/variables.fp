@@ -7,6 +7,7 @@ variable "mandatory_tag_keys" {
 
 
 variable "var_number" {
+  title = "variable with number default 42"
   type        = number
   default = 42
 }
