@@ -2,10 +2,13 @@ package workspace_profile
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/options"
@@ -95,4 +98,30 @@ func (p *TpWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Optio
 		Summary:  "Powerpipe workspaces do not support options",
 		Subject:  hclhelpers.BlockRangePointer(block),
 	}}
+}
+
+// EnsureDataDir resolves the local data dir, creating if necessary
+// if it was specified, use that, other construct the location from the profile name and the data dir
+func (p *TpWorkspaceProfile) EnsureDataDir() (string, error) {
+	var dataDir string
+	dataDir = p.GetDataDir()
+	// create if necessary
+	if _, err := os.Stat(dataDir); os.IsNotExist(err) {
+		err := os.MkdirAll(dataDir, 0755)
+		if err != nil {
+			return "", err
+		}
+	}
+	return dataDir, nil
+
+}
+
+func (p *TpWorkspaceProfile) GetDataDir() string {
+	var dataDir string
+	if p.Local != nil {
+		dataDir = *p.Local
+	} else {
+		dataDir = filepath.Join(filepaths.EnsureDataDir(), p.ProfileName)
+	}
+	return dataDir
 }

@@ -137,3 +137,8 @@ func DashboardServiceStateFilePath() string {
 func StateFileName() string {
 	return stateFileName
 }
+
+// EnsureDataDir returns the path to the data directory (creates if missing)
+func EnsureDataDir() string {
+	return ensureInstallSubDir("data")
+}

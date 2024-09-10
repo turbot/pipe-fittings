@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/utils"
 	"io"
 	"log"
 	"net/url"
@@ -12,7 +11,8 @@ import (
 	"time"
 
 	"github.com/turbot/pipe-fittings/ociinstaller"
-	"github.com/turbot/pipe-fittings/ociinstaller/versionfile"
+	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/versionfile"
 )
 
 const (

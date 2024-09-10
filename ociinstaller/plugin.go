@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	versionfile2 "github.com/turbot/pipe-fittings/versionfile"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/turbot/pipe-fittings/filepaths"
-	"github.com/turbot/pipe-fittings/ociinstaller/versionfile"
 	"github.com/turbot/pipe-fittings/utils"
 	putils "github.com/turbot/pipe-fittings/utils"
 )
@@ -76,7 +76,7 @@ func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage,
 	defer versionFileUpdateLock.Unlock()
 
 	timeNow := putils.FormatTime(time.Now())
-	v, err := versionfile.LoadPluginVersionFile(ctx)
+	v, err := versionfile2.LoadPluginVersionFile(ctx)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage,
 
 	installedVersion, ok := v.Plugins[pluginFullName]
 	if !ok {
-		installedVersion = versionfile.EmptyInstalledVersion()
+		installedVersion = versionfile2.EmptyInstalledVersion()
 	}
 
 	installedVersion.Name = pluginFullName

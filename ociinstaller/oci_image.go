@@ -6,10 +6,6 @@ import (
 	"log"
 )
 
-type OciImageData interface {
-	Type() ImageType
-}
-
 type OciImage[I OciImageData, C OciImageConfig] struct {
 	OCIDescriptor *ocispec.Descriptor
 	ImageRef      *ImageRef
@@ -18,12 +14,6 @@ type OciImage[I OciImageData, C OciImageConfig] struct {
 
 	resolver *remotes.Resolver
 }
-
-type ImageType string
-
-const (
-	ImageTypePlugin ImageType = "plugin"
-)
 
 func FindLayersForMediaType(layers []ocispec.Descriptor, mediaType string) []ocispec.Descriptor {
 	log.Println("[TRACE] looking for", mediaType)

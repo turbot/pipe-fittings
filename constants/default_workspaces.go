@@ -120,6 +120,7 @@ const DefaultFlowpipeWorkspaceContent = `
 # }
 `
 
+// TODO #workspaceprofile - finalize
 const DefaultTpWorkspaceContent = `
 # workspace "all_options" {
 #   local             = "~/.tp/data/default"
