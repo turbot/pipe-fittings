@@ -31,8 +31,6 @@ type Variable struct {
 	EnumGo         []any
 	DescriptionSet bool
 	DeclRange      hcl.Range
-	Subtype        hcl.Expression
-	SubtypeString  string
 }
 
 func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bool) (*Variable, hcl.Diagnostics) {
@@ -195,10 +193,6 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, override bo
 
 		v.EnumGo = enumGoSlice
 
-	}
-
-	if attr, exists := content.Attributes[schema.AttributeTypeSubtype]; exists {
-		v.Subtype = attr.Expr
 	}
 
 	for _, block := range content.Blocks {
