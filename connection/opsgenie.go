@@ -18,6 +18,10 @@ type OpsgenieConnection struct {
 	IncidentAPIKey *string `json:"incident_api_key,omitempty" cty:"incident_api_key" hcl:"incident_api_key,optional"`
 }
 
+func (c *OpsgenieConnection) GetConnectionType() string {
+	return "opsgenie"
+}
+
 func (c *OpsgenieConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.AlertAPIKey == nil && c.IncidentAPIKey == nil {
 		alertAPIKeyEnvVar := os.Getenv("OPSGENIE_ALERT_API_KEY")

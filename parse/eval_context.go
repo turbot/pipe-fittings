@@ -38,15 +38,19 @@ func BuildTemporaryConnectionMapForEvalContext(ctx context.Context, allConnectio
 			return nil, perr.BadRequestWithMessage("invalid credential name: " + c.Name())
 		}
 
-		pCty, err := c.CtyValue()
-		if err != nil {
-			return nil, err
+		tempMap := map[string]cty.Value{
+			"name":          cty.StringVal(c.Name()),
+			"type":          cty.StringVal(parts[0]),
+			"resource_type": cty.StringVal("connection"),
+			"temporary":     cty.BoolVal(true),
 		}
+
+		pCty := cty.ObjectVal(tempMap)
 
 		connectionType := parts[0]
 
 		if pCty != cty.NilVal {
-			// Check if the credential type already exists in the map
+			// Check if the connection type already exists in the map
 			if existing, ok := connectionMap[connectionType]; ok {
 				// If it exists, merge the new object with the existing one
 				existingMap := existing.AsValueMap()

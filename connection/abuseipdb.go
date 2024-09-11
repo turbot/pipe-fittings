@@ -17,6 +17,10 @@ type AbuseIPDBConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *AbuseIPDBConnection) GetConnectionType() string {
+	return "abuseipdb"
+}
+
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		abuseIPDBAPIKeyEnvVar := os.Getenv("ABUSEIPDB_API_KEY")

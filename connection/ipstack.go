@@ -17,6 +17,10 @@ type IPstackConnection struct {
 	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 }
 
+func (c *IPstackConnection) GetConnectionType() string {
+	return "ipstack"
+}
+
 func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.AccessKey == nil {
 		// The order of precedence for the IPstack access key environment variable

@@ -19,6 +19,10 @@ type ZendeskConnection struct {
 	Token     *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *ZendeskConnection) GetConnectionType() string {
+	return "zendesk"
+}
+
 func (c *ZendeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.Subdomain == nil && c.Email == nil && c.Token == nil {

@@ -22,6 +22,10 @@ type AwsConnection struct {
 	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
 }
 
+func (c *AwsConnection) GetConnectionType() string {
+	return "aws"
+}
+
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// if access key and secret key are provided, just return it

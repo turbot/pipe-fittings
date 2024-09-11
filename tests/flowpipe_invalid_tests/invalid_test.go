@@ -20,7 +20,12 @@ var tests = []testSetup{
 	{
 		title:         "invalid param definition",
 		file:          "./pipelines/invalid_param_definition.fp",
-		containsError: `A type specification is either a primitive type keyword (bool, number, string) or a complex type constructor call`,
+		containsError: `A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)`,
+	},
+	{
+		title:         "invalid param definition 2",
+		file:          "./pipelines/invalid_param_definition_2.fp",
+		containsError: `A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)`,
 	},
 	{
 		title:         "bad output reference",

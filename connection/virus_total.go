@@ -17,6 +17,10 @@ type VirusTotalConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *VirusTotalConnection) GetConnectionType() string {
+	return "virustotal"
+}
+
 func (c *VirusTotalConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		virusTotalAPIKeyEnvVar := os.Getenv("VTCLI_APIKEY")

@@ -17,6 +17,10 @@ type UptimeRobotConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *UptimeRobotConnection) GetConnectionType() string {
+	return "uptimerobot"
+}
+
 func (c *UptimeRobotConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		uptimeRobotAPIKeyEnvVar := os.Getenv("UPTIMEROBOT_API_KEY")

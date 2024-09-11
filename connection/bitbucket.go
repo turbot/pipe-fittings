@@ -19,6 +19,10 @@ type BitbucketConnection struct {
 	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
+func (c *BitbucketConnection) GetConnectionType() string {
+	return "bitbucket"
+}
+
 func (c *BitbucketConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Password == nil && c.BaseURL == nil && c.Username == nil {
 		bitbucketURLEnvVar := os.Getenv("BITBUCKET_API_BASE_URL")

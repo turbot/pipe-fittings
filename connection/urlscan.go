@@ -17,6 +17,10 @@ type UrlscanConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *UrlscanConnection) GetConnectionType() string {
+	return "urlscan"
+}
+
 func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")

@@ -24,6 +24,10 @@ type GcpConnection struct {
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
+func (c *GcpConnection) GetConnectionType() string {
+	return "gcp"
+}
+
 func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// First check if the credential file is supplied

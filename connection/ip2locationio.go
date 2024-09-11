@@ -17,6 +17,10 @@ type IP2LocationIOConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *IP2LocationIOConnection) GetConnectionType() string {
+	return "ip2locationio"
+}
+
 func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")

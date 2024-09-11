@@ -17,6 +17,10 @@ type JumpCloudConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *JumpCloudConnection) GetConnectionType() string {
+	return "jumpcloud"
+}
+
 func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		apiKeyEnvVar := os.Getenv("JUMPCLOUD_API_KEY")

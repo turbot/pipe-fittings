@@ -299,7 +299,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 	assert.NotNil(err.Error)
 }
 
-func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnction() {
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert := assert.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_connections"})
@@ -313,7 +313,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnction() {
 
 	awsConn, ok := pcon.(*connection.AwsConnection)
 	if !ok {
-		assert.Fail("aws.prod_conn is not an AwsCredential")
+		assert.Fail("aws.prod_conn is not an AwsConnection")
 		return
 	}
 	assert.Equal("prod1", *awsConn.Profile)
@@ -2441,6 +2441,17 @@ func (suite *FlowpipeModTestSuite) TestSubtype() {
 		}
 	}
 
+}
+
+func (suite *FlowpipeModTestSuite) TestCustomType() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type"})
+	assert.Nil(errAndWarning.Error)
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
 }
 
 // In order for 'go test' to run this suite, we need to create

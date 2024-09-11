@@ -17,6 +17,10 @@ type PagerDutyConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *PagerDutyConnection) GetConnectionType() string {
+	return "pagerduty"
+}
+
 func (c *PagerDutyConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		pagerDutyTokenEnvVar := os.Getenv("PAGERDUTY_TOKEN")

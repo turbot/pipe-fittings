@@ -226,6 +226,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	if len(w.BlockTypeInclusions) > 0 {
 		parseCtx.SetBlockTypes(w.BlockTypeInclusions...)
 	}
+
 	// load the workspace mod
 	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
 	errorsAndWarnings.Merge(otherErrorAndWarning)

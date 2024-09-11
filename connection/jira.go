@@ -19,6 +19,10 @@ type JiraConnection struct {
 	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 }
 
+func (c *JiraConnection) GetConnectionType() string {
+	return "jira"
+}
+
 func (c *JiraConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIToken == nil && c.BaseURL == nil && c.Username == nil {
 		// The order of precedence for the Jira API token environment variable

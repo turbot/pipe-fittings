@@ -7,7 +7,7 @@ Shared Pipes Component
 _What's new_
 
 * `Pipeling Connection` resource to replace `Credential`. ([#449](https://github.com/turbot/pipe-fittings/issues/449)).
-* `subtype` argument to pipeline param. ([#523](https://github.com/turbot/pipe-fittings/issues/523)).
+* Custom type (`connection` and `notifier` ) for pipeline param and mod variable. ([#523](https://github.com/turbot/pipe-fittings/issues/523)).
 
 _Bug fixes_
 

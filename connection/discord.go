@@ -17,6 +17,10 @@ type DiscordConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *DiscordConnection) GetConnectionType() string {
+	return "discord"
+}
+
 func (c *DiscordConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		discordTokenEnvVar := os.Getenv("DISCORD_TOKEN")

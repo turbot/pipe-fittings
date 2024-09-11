@@ -19,6 +19,10 @@ type DatadogConnection struct {
 	APIUrl *string `json:"api_url,omitempty" cty:"api_url" hcl:"api_url,optional"`
 }
 
+func (c *DatadogConnection) GetConnectionType() string {
+	return "datadog"
+}
+
 func (c *DatadogConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
 	datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")

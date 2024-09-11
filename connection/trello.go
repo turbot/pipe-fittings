@@ -18,6 +18,10 @@ type TrelloConnection struct {
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *TrelloConnection) GetConnectionType() string {
+	return "trello"
+}
+
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.APIKey == nil && c.Token == nil {

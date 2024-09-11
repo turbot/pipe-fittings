@@ -12,39 +12,39 @@ import (
 )
 
 var connectionTypRegistry = map[string]reflect.Type{
-	"abuseipdb":         reflect.TypeOf(AbuseIPDBConnection{}),
-	"alicloud":          reflect.TypeOf(AlicloudConnection{}),
-	"aws":               reflect.TypeOf(AwsConnection{}),
-	"azure":             reflect.TypeOf(AzureConnection{}),
-	"bitbucket":         reflect.TypeOf(BitbucketConnection{}),
-	"clickup":           reflect.TypeOf(ClickUpConnection{}),
-	"datadog":           reflect.TypeOf(DatadogConnection{}),
-	"discord":           reflect.TypeOf(DiscordConnection{}),
-	"freshdesk":         reflect.TypeOf(FreshdeskConnection{}),
-	"gcp":               reflect.TypeOf(GcpConnection{}),
-	"github":            reflect.TypeOf(GithubConnection{}),
-	"gitlab":            reflect.TypeOf(GitLabConnection{}),
-	"ip2locationio":     reflect.TypeOf(IP2LocationIOConnection{}),
-	"ipstack":           reflect.TypeOf(IPstackConnection{}),
-	"jira":              reflect.TypeOf(JiraConnection{}),
-	"jumpcloud":         reflect.TypeOf(JumpCloudConnection{}),
-	"mastodon":          reflect.TypeOf(MastodonConnection{}),
-	"microsoft_teams":   reflect.TypeOf(MicrosoftTeamsConnection{}),
-	"okta":              reflect.TypeOf(OktaConnection{}),
-	"openai":            reflect.TypeOf(OpenAIConnection{}),
-	"opsgenie":          reflect.TypeOf(OpsgenieConnection{}),
-	"pagerduty":         reflect.TypeOf(PagerDutyConnection{}),
-	"sendgrid":          reflect.TypeOf(SendGridConnection{}),
-	"servicenow":        reflect.TypeOf(ServiceNowConnection{}),
-	"slack":             reflect.TypeOf(SlackConnection{}),
-	"trello":            reflect.TypeOf(TrelloConnection{}),
-	"turbot_guardrails": reflect.TypeOf(GuardrailsConnection{}),
-	"turbot_pipes":      reflect.TypeOf(PipesConnection{}),
-	"uptime_robot":      reflect.TypeOf(UptimeRobotConnection{}),
-	"urlscan":           reflect.TypeOf(UrlscanConnection{}),
-	"vault":             reflect.TypeOf(VaultConnection{}),
-	"virus_total":       reflect.TypeOf(VirusTotalConnection{}),
-	"zendesk":           reflect.TypeOf(ZendeskConnection{}),
+	(&AbuseIPDBConnection{}).GetConnectionType(): reflect.TypeOf(AbuseIPDBConnection{}),
+	(&AlicloudConnection{}).GetConnectionType():  reflect.TypeOf(AlicloudConnection{}),
+	(&AwsConnection{}).GetConnectionType():       reflect.TypeOf(AwsConnection{}),
+	"azure":                                      reflect.TypeOf(AzureConnection{}),
+	"bitbucket":                                  reflect.TypeOf(BitbucketConnection{}),
+	"clickup":                                    reflect.TypeOf(ClickUpConnection{}),
+	"datadog":                                    reflect.TypeOf(DatadogConnection{}),
+	"discord":                                    reflect.TypeOf(DiscordConnection{}),
+	"freshdesk":                                  reflect.TypeOf(FreshdeskConnection{}),
+	"gcp":                                        reflect.TypeOf(GcpConnection{}),
+	"github":                                     reflect.TypeOf(GithubConnection{}),
+	"gitlab":                                     reflect.TypeOf(GitLabConnection{}),
+	"ip2locationio":                              reflect.TypeOf(IP2LocationIOConnection{}),
+	"ipstack":                                    reflect.TypeOf(IPstackConnection{}),
+	"jira":                                       reflect.TypeOf(JiraConnection{}),
+	"jumpcloud":                                  reflect.TypeOf(JumpCloudConnection{}),
+	"mastodon":                                   reflect.TypeOf(MastodonConnection{}),
+	"microsoft_teams":                            reflect.TypeOf(MicrosoftTeamsConnection{}),
+	"okta":                                       reflect.TypeOf(OktaConnection{}),
+	"openai":                                     reflect.TypeOf(OpenAIConnection{}),
+	"opsgenie":                                   reflect.TypeOf(OpsgenieConnection{}),
+	"pagerduty":                                  reflect.TypeOf(PagerDutyConnection{}),
+	"sendgrid":                                   reflect.TypeOf(SendGridConnection{}),
+	"servicenow":                                 reflect.TypeOf(ServiceNowConnection{}),
+	"slack":                                      reflect.TypeOf(SlackConnection{}),
+	"trello":                                     reflect.TypeOf(TrelloConnection{}),
+	"turbot_guardrails":                          reflect.TypeOf(GuardrailsConnection{}),
+	"turbot_pipes":                               reflect.TypeOf(PipesConnection{}),
+	"uptime_robot":                               reflect.TypeOf(UptimeRobotConnection{}),
+	"urlscan":                                    reflect.TypeOf(UrlscanConnection{}),
+	"vault":                                      reflect.TypeOf(VaultConnection{}),
+	"virus_total":                                reflect.TypeOf(VirusTotalConnection{}),
+	"zendesk":                                    reflect.TypeOf(ZendeskConnection{}),
 }
 
 type PipelingConnection interface {
@@ -53,7 +53,6 @@ type PipelingConnection interface {
 
 	SetHclResourceImpl(hclResourceImpl modconfig.HclResourceImpl)
 	GetConnectionType() string
-	SetConnectionType(string)
 	GetUnqualifiedName() string
 
 	CtyValue() (cty.Value, error)
@@ -64,6 +63,15 @@ type PipelingConnection interface {
 	getEnv() map[string]cty.Value
 
 	Equals(PipelingConnection) bool
+}
+
+func ConnectionCtyType(connectionType string) cty.Type {
+	goType := connectionTypRegistry[connectionType]
+	if goType == nil {
+		return cty.NilType
+	}
+
+	return cty.Capsule(connectionType, goType)
 }
 
 func NewConnection(block *hcl.Block) (PipelingConnection, error) {
@@ -91,7 +99,6 @@ func instantiateConnection(key string, hclResourceImpl modconfig.HclResourceImpl
 		return nil, perr.InternalWithMessage("Failed to create connection")
 	}
 	cred.SetHclResourceImpl(hclResourceImpl)
-	cred.SetConnectionType(key)
 
 	return cred, nil
 }
@@ -112,14 +119,6 @@ func (c *ConnectionImpl) GetUnqualifiedName() string {
 
 func (c *ConnectionImpl) SetHclResourceImpl(hclResourceImpl modconfig.HclResourceImpl) {
 	c.HclResourceImpl = hclResourceImpl
-}
-
-func (c *ConnectionImpl) GetConnectionType() string {
-	return c.Type
-}
-
-func (c *ConnectionImpl) SetConnectionType(credType string) {
-	c.Type = credType
 }
 
 func DefaultPipelingConnections() (map[string]PipelingConnection, error) {

@@ -17,6 +17,10 @@ type OpenAIConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *OpenAIConnection) GetConnectionType() string {
+	return "openai"
+}
+
 func (c *OpenAIConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		apiKeyEnvVar := os.Getenv("OPENAI_API_KEY")

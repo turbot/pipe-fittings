@@ -17,6 +17,10 @@ type PipesConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *PipesConnection) GetConnectionType() string {
+	return "pipes"
+}
+
 func (c *PipesConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		pipesTokenEnvVar := os.Getenv("PIPES_TOKEN")

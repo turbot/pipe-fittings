@@ -17,6 +17,10 @@ type SendGridConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
+func (c *SendGridConnection) GetConnectionType() string {
+	return "sendgrid"
+}
+
 func (c *SendGridConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		sendGridAPIKeyEnvVar := os.Getenv("SENDGRID_API_KEY")

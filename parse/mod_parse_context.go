@@ -398,14 +398,14 @@ func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) 
 // build the eval context from the cached reference values
 func (m *ModParseContext) buildEvalContext() {
 	// convert reference values to cty objects
-	referenceValues := make(map[string]cty.Value)
+	variables := make(map[string]cty.Value)
 
 	// now for each mod add all the values
 	for mod, modMap := range m.referenceValues {
 		// TODO: this code is from steampipe, looks like there's a special treatment if the mod is named "local"?
 		if mod == "local" {
 			for k, v := range modMap {
-				referenceValues[k] = cty.ObjectVal(v)
+				variables[k] = cty.ObjectVal(v)
 			}
 			continue
 		}
@@ -416,7 +416,7 @@ func (m *ModParseContext) buildEvalContext() {
 		// TODO: this code is from steampipe, looks like there's a special treatment if the mod is named "local"?
 		if mod == "local" {
 			for k, v := range modMap {
-				referenceValues[k] = cty.ObjectVal(v)
+				variables[k] = cty.ObjectVal(v)
 			}
 		} else {
 			for refType, typeValueMap := range modMap {
@@ -424,7 +424,7 @@ func (m *ModParseContext) buildEvalContext() {
 			}
 		}
 		// now convert the referenceValues itself to a cty object
-		referenceValues[mod] = cty.ObjectVal(refTypeMap)
+		variables[mod] = cty.ObjectVal(refTypeMap)
 	}
 
 	varValueNotifierMap := make(map[string]cty.Value)
@@ -437,10 +437,10 @@ func (m *ModParseContext) buildEvalContext() {
 		}
 	}
 
-	referenceValues[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
+	variables[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
 
 	// rebuild the eval context
-	m.ParseContext.BuildEvalContext(referenceValues)
+	m.ParseContext.BuildEvalContext(variables)
 }
 
 // store the resource as a cty value in the reference valuemap

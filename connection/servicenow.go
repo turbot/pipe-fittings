@@ -19,6 +19,10 @@ type ServiceNowConnection struct {
 	Password    *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
+func (c *ServiceNowConnection) GetConnectionType() string {
+	return "servicenow"
+}
+
 func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	servicenowInstanceURLEnvVar := os.Getenv("SERVICENOW_INSTANCE_URL")
 	servicenowUsernameEnvVar := os.Getenv("SERVICENOW_USERNAME")

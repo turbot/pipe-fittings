@@ -18,6 +18,10 @@ type AlicloudConnection struct {
 	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 }
 
+func (c *AlicloudConnection) GetConnectionType() string {
+	return "alicloud"
+}
+
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// The order of precedence for the environment variable

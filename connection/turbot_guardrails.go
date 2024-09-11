@@ -19,6 +19,10 @@ type GuardrailsConnection struct {
 	Workspace *string `json:"workspace,omitempty" cty:"workspace" hcl:"workspace,optional"`
 }
 
+func (c *GuardrailsConnection) GetConnectionType() string {
+	return "guardrails"
+}
+
 func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	guardrailsAccessKeyEnvVar := os.Getenv("TURBOT_ACCESS_KEY")
 	guardrailsSecretKeyEnvVar := os.Getenv("TURBOT_SECRET_KEY")

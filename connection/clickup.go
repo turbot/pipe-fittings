@@ -17,6 +17,10 @@ type ClickUpConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *ClickUpConnection) GetConnectionType() string {
+	return "clickup"
+}
+
 func (c *ClickUpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		clickUpAPITokenEnvVar := os.Getenv("CLICKUP_TOKEN")

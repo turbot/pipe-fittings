@@ -17,6 +17,10 @@ type GitLabConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *GitLabConnection) GetConnectionType() string {
+	return "gitlab"
+}
+
 func (c *GitLabConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		gitlabAccessTokenEnvVar := os.Getenv("GITLAB_TOKEN")

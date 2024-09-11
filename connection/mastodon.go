@@ -17,6 +17,10 @@ type MastodonConnection struct {
 	Server      *string `json:"server,omitempty" cty:"server" hcl:"server,optional"`
 }
 
+func (c *MastodonConnection) GetConnectionType() string {
+	return "mastodon"
+}
+
 func (c *MastodonConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	return c, nil
 }

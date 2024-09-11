@@ -17,6 +17,10 @@ type SlackConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *SlackConnection) GetConnectionType() string {
+	return "slack"
+}
+
 func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		slackTokenEnvVar := os.Getenv("SLACK_TOKEN")

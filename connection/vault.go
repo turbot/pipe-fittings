@@ -18,6 +18,10 @@ type VaultConnection struct {
 	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *VaultConnection) GetConnectionType() string {
+	return "vault"
+}
+
 func (c *VaultConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.Token == nil && c.Address == nil {

@@ -17,6 +17,10 @@ type MicrosoftTeamsConnection struct {
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
+func (c *MicrosoftTeamsConnection) GetConnectionType() string {
+	return "microsoft_teams"
+}
+
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.AccessToken == nil {
 		msTeamsAccessTokenEnvVar := os.Getenv("TEAMS_ACCESS_TOKEN")

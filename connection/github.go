@@ -32,6 +32,10 @@ func (c *GithubConnection) Resolve(ctx context.Context) (PipelingConnection, err
 	return c, nil
 }
 
+func (c *GithubConnection) GetConnectionType() string {
+	return "github"
+}
+
 func (c *GithubConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {

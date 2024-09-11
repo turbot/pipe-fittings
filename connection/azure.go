@@ -20,6 +20,10 @@ type AzureConnection struct {
 	Environment  *string `json:"environment,omitempty" cty:"environment" hcl:"environment,optional"`
 }
 
+func (c *AzureConnection) GetConnectionType() string {
+	return "azure"
+}
+
 func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.ClientID == nil && c.ClientSecret == nil && c.TenantID == nil && c.Environment == nil {

@@ -18,6 +18,10 @@ type OktaConnection struct {
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
+func (c *OktaConnection) GetConnectionType() string {
+	return "okta"
+}
+
 func (c *OktaConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.Token == nil && c.Domain == nil {

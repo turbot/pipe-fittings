@@ -1,8 +1,11 @@
 package parse
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -144,10 +147,92 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	return step, diags
 }
 
+var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
+var NotifierCtyType = cty.Capsule("NotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
+
+func customTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Type) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	// It must be a capsule type
+	if !ctyType.IsCapsuleType() {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Type must be a capsule",
+			Subject:  &attr.Range,
+		})
+		return diags
+	}
+
+	var valueMap map[string]cty.Value
+	if ctyVal.Type().IsMapType() || ctyVal.Type().IsObjectType() {
+		valueMap = ctyVal.AsValueMap()
+	}
+
+	// TODO: does not work with list(connection)
+	if valueMap == nil {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "default value must be a map if the type is a capsule",
+			Subject:  &attr.Range,
+		})
+		return diags
+	}
+
+	encapsulatedType := ctyType.EncapsulatedType()
+	encapulatedInstanceNew := reflect.New(encapsulatedType)
+	if connInterface, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
+		if valueMap["type"] == cty.NilVal {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "missing type in default value",
+				Subject:  &attr.Range,
+			})
+			return diags
+		}
+
+		if connInterface.GetConnectionType() == valueMap["type"].AsString() {
+			return diags
+		}
+	} else if ctyType.EncapsulatedType().String() == "*connection.ConnectionImpl" {
+		if valueMap["resource_type"].AsString() == "connection" {
+			return diags
+		}
+	}
+
+	diags = append(diags, &hcl.Diagnostic{
+		Severity: hcl.DiagError,
+		Summary:  "default value type mismatched with the capsule type",
+		Subject:  &attr.Range,
+	})
+
+	return diags
+}
+
 func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
 
 	o := &modconfig.PipelineParam{
 		Name: block.Labels[0],
+	}
+
+	evalCtx := parseCtx.EvalCtx
+
+	// because we want to use late binding for temp creds *and* the ability for pipeline param to define custom type,
+	// we do the validation where with a list of temporary connections
+	if len(parseCtx.PipelingConnections) > 0 {
+		connMap, err := BuildTemporaryConnectionMapForEvalContext(context.TODO(), parseCtx.PipelingConnections)
+		if err != nil {
+			slog.Warn("failed to build temporary connection map for eval context", "error", err)
+		}
+
+		vars := evalCtx.Variables
+		vars[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
+		evalCtx.Variables = vars
+
+		defer func() {
+			vars := evalCtx.Variables
+			delete(vars, schema.BlockTypeConnection)
+			evalCtx.Variables = vars
+		}()
 	}
 
 	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
@@ -157,27 +242,66 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeType]; exists {
-		expr := attr.Expr
-		// First we'll deal with some shorthand forms that the HCL-level type
-		// expression parser doesn't include. These both emulate pre-0.12 behavior
-		// of allowing a list or map of any element type as long as all of the
-		// elements are consistent. This is the same as list(any) or map(any).
-		switch hcl.ExprAsKeyword(expr) {
-		case "list":
-			o.Type = cty.List(cty.DynamicPseudoType)
-		case "map":
-			o.Type = cty.Map(cty.DynamicPseudoType)
-		case "set":
-			o.Type = cty.Set(cty.DynamicPseudoType)
-		default:
-			ty, moreDiags := typeexpr.TypeConstraint(expr)
-			if moreDiags.HasErrors() {
-				diags = append(diags, moreDiags...)
-				return o, diags
-			}
 
-			o.Type = ty
+		expr := attr.Expr
+		ty, moreDiags := typeexpr.TypeConstraint(expr)
+
+		typeErr := false
+		if moreDiags.HasErrors() {
+			typeErr = true
+
+			// First we'll deal with some shorthand forms that the HCL-level type
+			// expression parser doesn't include. These both emulate pre-0.12 behavior
+			// of allowing a list or map of any element type as long as all of the
+			// elements are consistent. This is the same as list(any) or map(any).
+			switch hcl.ExprAsKeyword(expr) {
+			case "list":
+				ty = cty.List(cty.DynamicPseudoType)
+				typeErr = false
+			case "map":
+				ty = cty.Map(cty.DynamicPseudoType)
+				typeErr = false
+			case "set":
+				ty = cty.Set(cty.DynamicPseudoType)
+				typeErr = false
+			default:
+				scopeTraversalExpr, ok := expr.(*hclsyntax.ScopeTraversalExpr)
+				if ok {
+					dottedString := hclhelpers.TraversalAsString(scopeTraversalExpr.Traversal)
+
+					parts := strings.Split(dottedString, ".")
+					if len(parts) == 2 {
+						if parts[0] == "connection" {
+							ty = connection.ConnectionCtyType(parts[1])
+							typeErr = false
+						} else if parts[0] == "notifier" {
+							// TODO
+							ty = NotifierCtyType
+							typeErr = false
+						}
+					} else if len(parts) == 1 {
+						if parts[0] == "connection" {
+							ty = ConnectionCtyType
+							typeErr = false
+						} else if parts[0] == "notifier" {
+							ty = NotifierCtyType
+							typeErr = false
+						}
+					}
+				}
+			}
 		}
+
+		if typeErr {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)",
+				Subject:  &attr.Range,
+			})
+			return o, diags
+		}
+
+		o.Type = ty
 
 		rng := expr.Range()
 
@@ -204,15 +328,27 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		// Does the default value matches the specified type?
 		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
 
-			isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
-			if !isCompatible {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
-					Subject:  &attr.Range,
-				})
-			} else {
+			if o.Type.IsCapsuleType() {
+				ctdiags := customTypeValidation(attr, ctyVal, o.Type)
+				if len(ctdiags) > 0 {
+					diags = append(diags, ctdiags...)
+					return o, diags
+				}
+
 				o.Default = ctyVal
+
+			} else {
+
+				isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
+				if !isCompatible {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
+						Subject:  &attr.Range,
+					})
+				} else {
+					o.Default = ctyVal
+				}
 			}
 		} else {
 			o.Default = ctyVal
