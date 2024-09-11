@@ -3,7 +3,6 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/connection"
 	"os"
 	"path"
 	"slices"
@@ -15,6 +14,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/modconfig"

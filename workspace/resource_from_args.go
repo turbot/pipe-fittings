@@ -2,15 +2,15 @@ package workspace
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
-	"strings"
-
-	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 // ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a resource of type T and (optionally) query args

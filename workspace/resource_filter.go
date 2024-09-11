@@ -2,15 +2,16 @@ package workspace
 
 import (
 	"fmt"
+	"log"
+	"net/url"
+	"strings"
+
 	"github.com/danwakefield/fnmatch"
 	"github.com/turbot/pipe-fittings/filter"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/sperr"
 	"golang.org/x/exp/maps"
-	"log"
-	"net/url"
-	"strings"
 )
 
 type ResourceFilter struct {
