@@ -43,7 +43,6 @@ func NewWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](workspacePr
 	// if a config paths location was NOT passed, write the workspaces.spc.sample file to the lowest precedence location
 	// (assumed to be the global config folder)
 	if !viper.IsSet(constants.ArgConfigPath) {
-
 		if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths); err != nil {
 			return nil,
 				sperr.WrapWithMessage(
@@ -115,12 +114,10 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 
 func (l *WorkspaceProfileLoader[T]) load() error {
 	// load workspaces from all locations
-
 	var workspacesPrecedenceList = make([]map[string]T, 0, len(l.workspaceProfilePaths))
 
 	// load from the config paths in reverse order (i.e. lowest precedence first)
 	for _, configPath := range l.workspaceProfilePaths {
-
 		// load all workspaces in the global config location
 		workspaces, err := LoadWorkspaceProfiles[T](configPath)
 		if err != nil {

@@ -127,11 +127,5 @@ func (p *TpWorkspaceProfile) GetDataDir() string {
 }
 
 func (p *TpWorkspaceProfile) GetInternalDir() string {
-	var dataDir string
-	if p.Local != nil {
-		dataDir = *p.Local
-	} else {
-		dataDir = filepath.Join(filepaths.GetInternalDir(), p.ProfileName)
-	}
-	return dataDir
+	return filepath.Join(filepaths.GetInternalDir(), p.ProfileName)
 }
