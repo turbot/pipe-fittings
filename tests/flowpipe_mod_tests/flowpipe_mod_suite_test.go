@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/funcs"
@@ -311,7 +310,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		return
 	}
 
-	awsConn, ok := pcon.(*connection.AwsConnection)
+	awsConn, ok := pcon.(*modconfig.AwsConnection)
 	if !ok {
 		assert.Fail("aws.prod_conn is not an AwsConnection")
 		return
@@ -324,7 +323,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		return
 	}
 
-	slackConn, ok := pcon.(*connection.SlackConnection)
+	slackConn, ok := pcon.(*modconfig.SlackConnection)
 	if !ok {
 		assert.Fail("slack.slack_conn is not a SlackConnection")
 		return
@@ -342,7 +341,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		return
 	}
 
-	awsConn, ok = pcon.(*connection.AwsConnection)
+	awsConn, ok = pcon.(*modconfig.AwsConnection)
 	if !ok {
 		assert.Fail("aws.prod_conn is not an AwsCredential")
 		return
@@ -1256,9 +1255,9 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	assert := assert.New(suite.T())
 
-	connections := map[string]connection.PipelingConnection{
-		"aws.default": &connection.AwsConnection{
-			ConnectionImpl: connection.ConnectionImpl{
+	connections := map[string]modconfig.PipelingConnection{
+		"aws.default": &modconfig.AwsConnection{
+			ConnectionImpl: modconfig.ConnectionImpl{
 				HclResourceImpl: modconfig.HclResourceImpl{
 					FullName:        "aws.default",
 					ShortName:       "default",
@@ -1299,9 +1298,9 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
-	connections := map[string]connection.PipelingConnection{
-		"aws.default": &connection.AwsConnection{
-			ConnectionImpl: connection.ConnectionImpl{
+	connections := map[string]modconfig.PipelingConnection{
+		"aws.default": &modconfig.AwsConnection{
+			ConnectionImpl: modconfig.ConnectionImpl{
 				HclResourceImpl: modconfig.HclResourceImpl{
 					FullName:        "aws.default",
 					ShortName:       "default",
@@ -1375,9 +1374,9 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 	assert := assert.New(suite.T())
 
-	connections := map[string]connection.PipelingConnection{
-		"aws.aws_static": &connection.AwsConnection{
-			ConnectionImpl: connection.ConnectionImpl{
+	connections := map[string]modconfig.PipelingConnection{
+		"aws.aws_static": &modconfig.AwsConnection{
+			ConnectionImpl: modconfig.ConnectionImpl{
 				HclResourceImpl: modconfig.HclResourceImpl{
 					FullName:        "aws.static",
 					ShortName:       "static",
@@ -2292,13 +2291,302 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 	assert.Equal("me", varNumber.Tags["Owner"])
 }
 
-func (suite *FlowpipeModTestSuite) TestSubtype() {
-	assert := assert.New(suite.T())
+type testCustomTypeTwoTestData struct {
+	Name     string
+	Setting  cty.Value
+	Expected bool
+}
 
-	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./subtype"})
+var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
+	"conn": []testCustomTypeTwoTestData{
+		{
+			Name: "example",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"type":          cty.StringVal("aws"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "default",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("default"),
+				"type":          cty.StringVal("aws"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "not_valid",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("not_valid"),
+				"type":          cty.StringVal("aws"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "wrong_type",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"type":          cty.StringVal("wrong_type"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: false,
+		},
+		{
+			Name:     "invalid type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+	},
+	"list_of_conns": []testCustomTypeTwoTestData{
+		{
+			Name: "example",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "default",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "not_valid",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("defaultsssss"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "one_with_wrong_type",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("slack"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+	},
+	"conn_generic": []testCustomTypeTwoTestData{
+		{
+			Name: "example",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"type":          cty.StringVal("aws"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "example_slack",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"type":          cty.StringVal("slack"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "default",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("default"),
+				"type":          cty.StringVal("aws"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "not_valid",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("not_valid"),
+				"type":          cty.StringVal("aws"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "wrong_type",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"type":          cty.StringVal("wrong_type"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+	},
+	"list_of_conns_generic": []testCustomTypeTwoTestData{
+		{
+			Name: "example",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "mixed_type",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("slack"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "default",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "default_slack",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("slack"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "not_valid",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("defaultsssss"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "one_with_wrong_type",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("example"),
+					"type":          cty.StringVal("aws"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"type":          cty.StringVal("slack_invalid"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+	},
+}
+
+func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
+	t := suite.T()
+	assert := assert.New(t)
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_two"})
 	assert.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./subtype", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -2325,119 +2613,31 @@ func (suite *FlowpipeModTestSuite) TestSubtype() {
 		Functions: funcs.ContextFunctions("./"),
 	}
 
-	subtypePipeline := w.Mod.ResourceMaps.Pipelines["subtype.pipeline.subtype"]
+	customTypePipeline := w.Mod.ResourceMaps.Pipelines["custom_type_two.pipeline.custom_type_two"]
 
-	if subtypePipeline == nil {
-		assert.Fail("subtype pipeline not found")
+	if customTypePipeline == nil {
+		assert.Fail("custom_type_two pipeline not found")
 		return
 	}
 
 	// go through param and test them
-	params := subtypePipeline.Params
+	params := customTypePipeline.Params
 	if params == nil {
 		assert.Fail("params is nil")
 		return
 	}
 
 	for _, param := range params {
-		if param.Name == "conn" {
-			// example is in the valid aws connection that we have
-			valid, err := param.ValidateSetting(cty.StringVal("example"), evalContext)
+		testLists := testCustomTypeTwoData[param.Name]
+		t.Log("testing param: ", param.Name)
+		for _, testData := range testLists {
+			t.Log("testing: ", testData.Name)
+			valid, err := param.ValidateSetting(testData.Setting, evalContext)
 			if err != nil {
 				assert.Fail("error validating param")
 				return
 			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.StringVal("default"), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.StringVal("not_valid"), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(false, valid, "not_valid connection does not exist")
-		} else if param.Name == "list_of_conns" {
-			valid, err := param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("example"), cty.StringVal("default")}), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default")}), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default"), cty.StringVal("exampless")}), evalContext)
-			if err != nil {
-				assert.Fail("error validating param", err)
-				return
-			}
-
-			assert.Equal(false, valid)
-		} else if param.Name == "conn_generic" {
-			// example is in the valid aws connection that we have
-			valid, err := param.ValidateSetting(cty.StringVal("example"), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.StringVal("default"), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.StringVal("not_there"), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(false, valid)
-		} else if param.Name == "list_of_conns_generic" {
-			valid, err := param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("example"), cty.StringVal("default")}), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default")}), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(true, valid)
-
-			valid, err = param.ValidateSetting(cty.ListVal([]cty.Value{cty.StringVal("default"), cty.StringVal("exampless")}), evalContext)
-			if err != nil {
-				assert.Fail("error validating param")
-				return
-			}
-
-			assert.Equal(false, valid)
+			assert.Equal(testData.Expected, valid, testData.Name)
 		}
 	}
 

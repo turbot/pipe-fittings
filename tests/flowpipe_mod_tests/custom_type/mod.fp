@@ -13,17 +13,20 @@ pipeline "subtype" {
         default = connection.aws.example
     }
 
-    // param "list_of_conns" {
-    //     type = list(connection.aws)
-    //     default = [
-    //         connection.aws.example,
-    //         connection.aws.example_2,
-    //         connection.aws.example_3
-    //     ]
-    // }
+    param "list_of_conns" {
+        type = list(connection.aws)
+        default = [
+            connection.aws.default,
+            connection.aws.example
+        ]
+    }
 
-    // param "list_of_generic_conns" {
-    //     type = list(connection)
-    // }
+    param "list_of_generic_conns" {
+        type = list(connection)
+        default = [
+            connection.aws.default,
+            connection.aws.example
+        ]
+    }
 }
 

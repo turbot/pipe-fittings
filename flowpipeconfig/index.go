@@ -8,7 +8,6 @@ import (
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
@@ -20,7 +19,7 @@ type FlowpipeConfig struct {
 	Credentials         map[string]credential.Credential
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
-	PipelingConnections map[string]connection.PipelingConnection
+	PipelingConnections map[string]modconfig.PipelingConnection
 
 	watcher                 *filewatcher.FileWatcher
 	fileWatcherErrorHandler func(context.Context, error)
@@ -194,7 +193,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		return nil
 	}
 
-	defaultPipelingConnections, err := connection.DefaultPipelingConnections()
+	defaultPipelingConnections, err := modconfig.DefaultPipelingConnections()
 	if err != nil {
 		slog.Error("Unable to create default pipeling connections", "error", err)
 		return nil

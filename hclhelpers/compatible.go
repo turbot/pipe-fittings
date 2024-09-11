@@ -122,3 +122,8 @@ func IsEnumValueCompatibleWithType(ctyType cty.Type, enumValues cty.Value) bool 
 
 	return true
 }
+
+// Checks if the given type is a collection or a tuple
+func IsCollectionOrTuple(typ cty.Type) bool {
+	return typ.IsCollectionType() || typ.IsTupleType() || typ.IsListType()
+}

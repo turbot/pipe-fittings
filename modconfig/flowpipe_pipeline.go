@@ -7,9 +7,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
@@ -582,17 +580,15 @@ func (p *Pipeline) setBaseProperties() {
 // end Pipeline Hclresource interface functions
 
 type PipelineParam struct {
-	Name          string            `json:"name"`
-	Description   string            `json:"description"`
-	Optional      bool              `json:"optional,omitempty"`
-	Default       cty.Value         `json:"-"`
-	Enum          cty.Value         `json:"-"`
-	EnumGo        []any             `json:"enum"`
-	Type          cty.Type          `json:"type"`
-	TypeString    string            `json:"type_string"`
-	Tags          map[string]string `json:"tags,omitempty"`
-	Subtype       hcl.Expression    `json:"-"`
-	SubtypeString string            `json:"subtype_string,omitempty"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Optional    bool              `json:"optional,omitempty"`
+	Default     cty.Value         `json:"-"`
+	Enum        cty.Value         `json:"-"`
+	EnumGo      []any             `json:"enum"`
+	Type        cty.Type          `json:"type"`
+	TypeString  string            `json:"type_string"`
+	Tags        map[string]string `json:"tags,omitempty"`
 }
 
 func (p *PipelineParam) Equals(other *PipelineParam) bool {
@@ -623,105 +619,133 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 		return true, nil
 	}
 
-	if !helpers.IsNil(p.Subtype) && evalCtx != nil {
-
-		var subtype cty.Value
-		var diags hcl.Diagnostics
-
-		fCallExpr, ok := p.Subtype.(*hclsyntax.FunctionCallExpr)
-		if ok {
-			if len(fCallExpr.Args) != 1 {
-				return false, perr.BadRequestWithMessage("invalid subtype definition")
-			}
-
-			subtype, diags = fCallExpr.Args[0].Value(evalCtx)
-			if len(diags) > 0 {
-				return false, error_helpers.HclDiagsToError("output", diags)
-			}
-		} else {
-			// If the subtype is set, we need to validate the setting against the subtype
-			subtype, diags = p.Subtype.Value(evalCtx)
-			if len(diags) > 0 {
-				return false, error_helpers.HclDiagsToError("output", diags)
-			}
+	// Helper function to perform capsule type and list type validations
+	validateCustomType := func() bool {
+		ctdiags := CustomTypeValidation(nil, setting, p.Type)
+		if len(ctdiags) > 0 {
+			return false
 		}
 
-		if subtype.IsNull() {
-			return false, perr.BadRequestWithMessage("unsupported subtype: " + p.SubtypeString)
+		ctdiags = p.PipelineParamCustomValueValidation(setting, evalCtx)
+		return len(ctdiags) == 0
+	}
+
+	// Check for capsule type or list of capsule types
+	if p.Type.IsCapsuleType() || (p.Type.IsListType() && p.Type.ListElementType().IsCapsuleType()) {
+		if !validateCustomType() {
+			return false, nil
 		}
-
-		// check if the setting is in the subtype, there are only 2 types of subtype:
-		// 1. notifier
-		// 2. connection
-		//
-		// but what we can do is:
-		// list(connection)
-
-		settingGo, serr := hclhelpers.CtyToGo(setting)
-		if serr != nil {
-			return false, diags
-		}
-
-		subTypeMap := subtype.AsValueMap()
-
-		if setting.Type().IsListType() || setting.Type().IsTupleType() || setting.Type().IsSetType() {
-			settingGoSlice, ok := settingGo.([]interface{})
-			if !ok {
-				return false, nil
-			}
-
-			for _, v := range settingGoSlice {
-				settingGoString, ok := v.(string)
-				if !ok {
-					return false, perr.BadRequestWithMessage("invalid value for param " + p.Name + " it must be a string")
-				}
-
-				found := validateSettingInSubtypeMap(settingGoString, subTypeMap)
-				if !found {
-					return false, nil
-				}
-
-			}
-		} else if setting.Type() == cty.String {
-			settingGoString, ok := settingGo.(string)
-			if !ok {
-				return false, perr.BadRequestWithMessage("invalid value for param " + p.Name + " it must be a string")
-			}
-
-			found := validateSettingInSubtypeMap(settingGoString, subTypeMap)
-			if !found {
-				return false, nil
-			}
-		} else {
+	} else {
+		// For non-capsule types, ensure compatibility
+		if !hclhelpers.IsValueCompatibleWithType(p.Type, setting) {
 			return false, nil
 		}
 	}
 
-	res, err := hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
-
-	return res, err
+	// Enum-based validation
+	return hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
 }
 
-func validateSettingInSubtypeMap(settingGoString string, subtypeMap map[string]cty.Value) bool {
-	found := false
-	for k, v := range subtypeMap {
-		if settingGoString == k {
-			found = true
-			break
+func (p *PipelineParam) PipelineParamCustomValueListValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+
+	if !hclhelpers.IsCollectionOrTuple(setting.Type()) {
+		diag := &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Invalid value for param " + p.Name,
+			Detail:   "The value for param must be a list",
+		}
+		return hcl.Diagnostics{diag}
+	}
+
+	var diags hcl.Diagnostics
+	for it := setting.ElementIterator(); it.Next(); {
+		_, element := it.Element()
+		diags = append(diags, p.PipelineParamCustomValueValidation(element, evalCtx)...)
+	}
+
+	return diags
+}
+
+func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+	// this time we check if the given setting, i.e.
+	// name = "example
+	// type = "aws"
+
+	// for connection actually exists in the eval context
+
+	if hclhelpers.IsCollectionOrTuple(setting.Type()) {
+		return p.PipelineParamCustomValueListValidation(setting, evalCtx)
+	}
+
+	if !setting.Type().IsObjectType() && !setting.Type().IsMapType() {
+		diag := &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Invalid value for param " + p.Name,
+			Detail:   "The value for param must be an object",
+		}
+		return hcl.Diagnostics{diag}
+	}
+
+	settingValueMap := setting.AsValueMap()
+
+	if settingValueMap["resource_type"].IsNull() || settingValueMap["type"].IsNull() || settingValueMap["name"].IsNull() {
+		diag := &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Invalid value for param " + p.Name,
+			Detail:   "The value for param must have a 'resource_type', 'type' and 'name' key",
+		}
+		return hcl.Diagnostics{diag}
+	}
+
+	resourceType := settingValueMap["resource_type"].AsString()
+	if resourceType == "connection" {
+		// check if the connection actually exists in the eval context
+		allConnections := evalCtx.Variables["connection"]
+		if allConnections == cty.NilVal {
+			diag := &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid value for param " + p.Name,
+				Detail:   "No connections found in the eval context",
+			}
+			return hcl.Diagnostics{diag}
 		}
 
-		if v.Type().IsMapType() || v.Type().IsObjectType() {
-			// for subtype such as `subtype=connection` we need to go one level below
-			subTypeMap := v.AsValueMap()
-			for k := range subTypeMap {
-				if settingGoString == k {
-					found = true
-					break
+		connectionType := settingValueMap["type"].AsString()
+		connectionName := settingValueMap["name"].AsString()
+
+		if allConnections.Type().IsMapType() || allConnections.Type().IsObjectType() {
+			allConnectionsMap := allConnections.AsValueMap()
+			if allConnectionsMap[connectionType].IsNull() {
+				diag := &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid value for param " + p.Name,
+					Detail:   "No connection found for the given connection type",
 				}
+				return hcl.Diagnostics{diag}
+			}
+
+			connectionTypeMap := allConnectionsMap[connectionType].AsValueMap()
+			if connectionTypeMap[connectionName].IsNull() {
+				diag := &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Invalid value for param " + p.Name,
+					Detail:   "No connection found for the given connection name",
+				}
+				return hcl.Diagnostics{diag}
+			} else {
+				// TRUE
+				return hcl.Diagnostics{}
 			}
 		}
 	}
-	return found
+
+	diag := &hcl.Diagnostic{
+		Severity: hcl.DiagError,
+		Summary:  "Invalid value for param " + p.Name,
+		Detail:   "Invalid value for param " + p.Name,
+	}
+	return hcl.Diagnostics{diag}
+
 }
 
 type PipelineOutput struct {

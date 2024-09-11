@@ -5,7 +5,6 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
@@ -29,7 +28,7 @@ func BuildNotifierMapForEvalContext(notifiers map[string]modconfig.Notifier) (ma
 // **WARNING** this function has a specific use case do not use
 //
 // The key word is "temporary"
-func BuildTemporaryConnectionMapForEvalContext(ctx context.Context, allConnections map[string]connection.PipelingConnection) (map[string]cty.Value, error) {
+func BuildTemporaryConnectionMapForEvalContext(ctx context.Context, allConnections map[string]modconfig.PipelingConnection) (map[string]cty.Value, error) {
 	connectionMap := map[string]cty.Value{}
 
 	for _, c := range allConnections {

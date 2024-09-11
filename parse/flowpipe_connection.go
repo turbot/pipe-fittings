@@ -6,12 +6,12 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
 
-func DecodeFlowpipeConnection(configPath string, block *hcl.Block) (connection.PipelingConnection, hcl.Diagnostics) {
+func DecodeFlowpipeConnection(configPath string, block *hcl.Block) (modconfig.PipelingConnection, hcl.Diagnostics) {
 	if len(block.Labels) != 2 {
 		diags := hcl.Diagnostics{
 			{
@@ -25,7 +25,7 @@ func DecodeFlowpipeConnection(configPath string, block *hcl.Block) (connection.P
 
 	connectionType := block.Labels[0]
 
-	conn, err := connection.NewConnection(block)
+	conn, err := modconfig.NewPipelingConnection(block)
 	if err != nil {
 		diags := hcl.Diagnostics{
 			{

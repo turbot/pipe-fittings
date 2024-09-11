@@ -404,9 +404,6 @@ var VariableBlockSchema = &hcl.BodySchema{
 		{
 			Name: schema.AttributeTypeEnum,
 		},
-		{
-			Name: schema.AttributeTypeSubtype,
-		},
 	},
 	Blocks: []hcl.BlockHeaderSchema{
 		{

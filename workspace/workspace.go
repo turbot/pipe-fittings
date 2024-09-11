@@ -16,7 +16,6 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -43,7 +42,7 @@ type Workspace struct {
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
 	Credentials         map[string]credential.Credential
-	PipelingConnections map[string]connection.PipelingConnection
+	PipelingConnections map[string]modconfig.PipelingConnection
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 

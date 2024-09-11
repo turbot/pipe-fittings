@@ -11,7 +11,6 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
@@ -69,7 +68,7 @@ type ModParseContext struct {
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
 	Credentials         map[string]credential.Credential
 	CredentialImports   map[string]credential.CredentialImport
-	PipelingConnections map[string]connection.PipelingConnection
+	PipelingConnections map[string]modconfig.PipelingConnection
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 

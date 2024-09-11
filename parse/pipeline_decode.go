@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -147,65 +146,77 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	return step, diags
 }
 
-var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
+var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&modconfig.ConnectionImpl{}))
 var NotifierCtyType = cty.Capsule("NotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
 
-func customTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Type) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
-
-	// It must be a capsule type
-	if !ctyType.IsCapsuleType() {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Type must be a capsule",
-			Subject:  &attr.Range,
-		})
-		return diags
-	}
-
-	var valueMap map[string]cty.Value
-	if ctyVal.Type().IsMapType() || ctyVal.Type().IsObjectType() {
-		valueMap = ctyVal.AsValueMap()
-	}
-
-	// TODO: does not work with list(connection)
-	if valueMap == nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "default value must be a map if the type is a capsule",
-			Subject:  &attr.Range,
-		})
-		return diags
-	}
-
-	encapsulatedType := ctyType.EncapsulatedType()
-	encapulatedInstanceNew := reflect.New(encapsulatedType)
-	if connInterface, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
-		if valueMap["type"] == cty.NilVal {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "missing type in default value",
-				Subject:  &attr.Range,
-			})
-			return diags
+func handleScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.Type, bool) {
+	dottedString := hclhelpers.TraversalAsString(expr.Traversal)
+	parts := strings.Split(dottedString, ".")
+	if len(parts) == 2 {
+		switch parts[0] {
+		case schema.BlockTypeConnection:
+			ty := modconfig.ConnectionCtyType(parts[1])
+			return ty, ty == cty.NilType
+		case schema.BlockTypeNotifier:
+			return NotifierCtyType, false
 		}
-
-		if connInterface.GetConnectionType() == valueMap["type"].AsString() {
-			return diags
-		}
-	} else if ctyType.EncapsulatedType().String() == "*connection.ConnectionImpl" {
-		if valueMap["resource_type"].AsString() == "connection" {
-			return diags
+	} else if len(parts) == 1 {
+		switch parts[0] {
+		case schema.BlockTypeConnection:
+			return ConnectionCtyType, false
+		case schema.BlockTypeNotifier:
+			return NotifierCtyType, false
 		}
 	}
+	return cty.NilType, true
+}
 
-	diags = append(diags, &hcl.Diagnostic{
+func handleFunctionCallExpr(fCallExpr *hclsyntax.FunctionCallExpr) (cty.Type, bool) {
+	if fCallExpr.Name == "list" && len(fCallExpr.Args) == 1 {
+		dottedString := hclhelpers.TraversalAsString(fCallExpr.Args[0].Variables()[0])
+		parts := strings.Split(dottedString, ".")
+		if len(parts) == 2 {
+			switch parts[0] {
+			case schema.BlockTypeConnection:
+				innerTy := modconfig.ConnectionCtyType(parts[1])
+				return cty.List(innerTy), innerTy == cty.NilType
+			case schema.BlockTypeNotifier:
+				return cty.List(NotifierCtyType), false
+			}
+		} else if len(parts) == 1 {
+			switch parts[0] {
+			case schema.BlockTypeConnection:
+				return cty.List(ConnectionCtyType), false
+			case schema.BlockTypeNotifier:
+				return cty.List(NotifierCtyType), false
+			}
+		}
+	}
+	return cty.NilType, true
+}
+
+func extractExpressionString(expr hcl.Expression, src string) string {
+	rng := expr.Range()
+	return src[rng.Start.Byte:rng.End.Byte]
+}
+
+// Checks if the given type is in the allowed list
+func containsType(allowedTypes []cty.Type, typ cty.Type) bool {
+	for _, t := range allowedTypes {
+		if t == typ {
+			return true
+		}
+	}
+	return false
+}
+
+// Creates an HCL error diagnostic
+func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
+	return &hcl.Diagnostic{
 		Severity: hcl.DiagError,
-		Summary:  "default value type mismatched with the capsule type",
-		Subject:  &attr.Range,
-	})
-
-	return diags
+		Summary:  summary,
+		Subject:  subject,
+	}
 }
 
 func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
@@ -242,18 +253,14 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeType]; exists {
-
 		expr := attr.Expr
 		ty, moreDiags := typeexpr.TypeConstraint(expr)
 
-		typeErr := false
-		if moreDiags.HasErrors() {
-			typeErr = true
+		typeErr := moreDiags.HasErrors()
 
-			// First we'll deal with some shorthand forms that the HCL-level type
-			// expression parser doesn't include. These both emulate pre-0.12 behavior
-			// of allowing a list or map of any element type as long as all of the
-			// elements are consistent. This is the same as list(any) or map(any).
+		if typeErr {
+			// Handle shorthand forms for list, map, and set
+
 			switch hcl.ExprAsKeyword(expr) {
 			case "list":
 				ty = cty.List(cty.DynamicPseudoType)
@@ -265,49 +272,25 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 				ty = cty.Set(cty.DynamicPseudoType)
 				typeErr = false
 			default:
-				scopeTraversalExpr, ok := expr.(*hclsyntax.ScopeTraversalExpr)
-				if ok {
-					dottedString := hclhelpers.TraversalAsString(scopeTraversalExpr.Traversal)
-
-					parts := strings.Split(dottedString, ".")
-					if len(parts) == 2 {
-						if parts[0] == "connection" {
-							ty = connection.ConnectionCtyType(parts[1])
-							typeErr = false
-						} else if parts[0] == "notifier" {
-							// TODO
-							ty = NotifierCtyType
-							typeErr = false
-						}
-					} else if len(parts) == 1 {
-						if parts[0] == "connection" {
-							ty = ConnectionCtyType
-							typeErr = false
-						} else if parts[0] == "notifier" {
-							ty = NotifierCtyType
-							typeErr = false
-						}
-					}
+				if scopeTraversalExpr, ok := expr.(*hclsyntax.ScopeTraversalExpr); ok {
+					ty, typeErr = handleScopeTraversalExpr(scopeTraversalExpr)
+				} else if fCallExpr, ok := expr.(*hclsyntax.FunctionCallExpr); ok {
+					ty, typeErr = handleFunctionCallExpr(fCallExpr)
 				}
+			}
+
+			if typeErr {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)",
+					Subject:  &attr.Range,
+				})
+				return o, diags
 			}
 		}
 
-		if typeErr {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)",
-				Subject:  &attr.Range,
-			})
-			return o, diags
-		}
-
 		o.Type = ty
-
-		rng := expr.Range()
-
-		// Extract the part of the source code that corresponds to the expression
-		exprString := src[rng.Start.Byte:rng.End.Byte]
-		o.TypeString = exprString
+		o.TypeString = extractExpressionString(expr, src)
 	} else {
 		o.Type = cty.DynamicPseudoType
 		o.TypeString = "any"
@@ -327,18 +310,22 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 		// Does the default value matches the specified type?
 		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
-
 			if o.Type.IsCapsuleType() {
-				ctdiags := customTypeValidation(attr, ctyVal, o.Type)
+				ctdiags := modconfig.CustomTypeValidation(attr, ctyVal, o.Type)
 				if len(ctdiags) > 0 {
 					diags = append(diags, ctdiags...)
 					return o, diags
 				}
-
 				o.Default = ctyVal
-
+			} else if hclhelpers.IsCollectionOrTuple(o.Type) && o.Type.ElementType().IsCapsuleType() {
+				// this is the list(connection.aws) / list(notifier) case
+				ctdiags := modconfig.CustomTypeValidation(attr, ctyVal, o.Type)
+				if len(ctdiags) > 0 {
+					diags = append(diags, ctdiags...)
+					return o, diags
+				}
+				o.Default = ctyVal
 			} else {
-
 				isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
 				if !isCompatible {
 					diags = append(diags, &hcl.Diagnostic{
@@ -368,68 +355,34 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeEnum]; exists {
-		if o.Type != cty.String && o.Type != cty.Bool && o.Type != cty.Number &&
-			o.Type != cty.List(cty.String) && o.Type != cty.List(cty.Bool) && o.Type != cty.List(cty.Number) {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "enum is only supported for string, bool, number, list of string, list of bool, list of number types",
-				Subject:  &attr.Range,
-			})
-			return o, diags
+		allowedTypes := []cty.Type{
+			cty.String, cty.Bool, cty.Number,
+			cty.List(cty.String), cty.List(cty.Bool), cty.List(cty.Number),
+		}
+
+		if !containsType(allowedTypes, o.Type) {
+			return o, append(diags, createErrorDiagnostic("enum is only supported for string, bool, number, list of string, list of bool, list of number types", &attr.Range))
 		}
 
 		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
-		if moreDiags.HasErrors() {
-			diags = append(diags, moreDiags...)
-			return o, diags
+		if len(moreDiags) > 0 {
+			return o, append(diags, moreDiags...)
 		}
 
-		if !ctyVal.Type().IsCollectionType() && !ctyVal.Type().IsTupleType() {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "enum values must be a list",
-				Subject:  &attr.Range,
-			})
-			return o, diags
+		if !hclhelpers.IsCollectionOrTuple(ctyVal.Type()) {
+			return o, append(diags, createErrorDiagnostic("enum values must be a list", &attr.Range))
 		}
 
 		if !hclhelpers.IsEnumValueCompatibleWithType(o.Type, ctyVal) {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "enum values type mismatched",
-				Subject:  &attr.Range,
-			})
-			return o, diags
+			return o, append(diags, createErrorDiagnostic("enum values type mismatched", &attr.Range))
 		}
 
-		// if there's a default, that needs to match the enum
 		if o.Default != cty.NilVal {
 			if !hclhelpers.IsEnumValueCompatibleWithType(o.Default.Type(), ctyVal) {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "param default value type mismatched with enum",
-					Subject:  &attr.Range,
-				})
-				return o, diags
+				return o, append(diags, createErrorDiagnostic("param default value type mismatched with enum", &attr.Range))
 			}
-			valid, err := hclhelpers.ValidateSettingWithEnum(o.Default, ctyVal)
-
-			if err != nil {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "error validating default value with enum",
-					Subject:  &attr.Range,
-				})
-				return o, diags
-			}
-
-			if !valid {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "default value not in enum",
-					Subject:  &attr.Range,
-				})
-				return o, diags
+			if valid, err := hclhelpers.ValidateSettingWithEnum(o.Default, ctyVal); err != nil || !valid {
+				return o, append(diags, createErrorDiagnostic("default value not in enum or error validating", &attr.Range))
 			}
 		}
 
@@ -437,22 +390,12 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 		enumGo, err := hclhelpers.CtyToGo(o.Enum)
 		if err != nil {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "error converting enum to go",
-				Subject:  &attr.Range,
-			})
-			return o, diags
+			return o, append(diags, createErrorDiagnostic("error converting enum to go", &attr.Range))
 		}
 
 		enumGoSlice, ok := enumGo.([]any)
 		if !ok {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "enum is not a slice",
-				Subject:  &attr.Range,
-			})
-			return o, diags
+			return o, append(diags, createErrorDiagnostic("enum is not a slice", &attr.Range))
 		}
 
 		o.EnumGo = enumGoSlice
@@ -461,15 +404,6 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {
 		valDiags := decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
 		diags = append(diags, valDiags...)
-	}
-
-	if attr, exists := paramOptions.Attributes[schema.AttributeTypeSubtype]; exists {
-		o.Subtype = attr.Expr
-
-		rng := attr.Expr.Range()
-
-		exprString := src[rng.Start.Byte:rng.End.Byte]
-		o.SubtypeString = exprString
 	}
 
 	return o, diags
@@ -826,7 +760,7 @@ func validatePipelineSteps(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
 	return diags
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential, connections map[string]connection.PipelingConnection) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential, connections map[string]modconfig.PipelingConnection) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string
