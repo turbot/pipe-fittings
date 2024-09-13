@@ -25,7 +25,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
 
-	step := modconfig.NewPipelineStep(stepType, stepName)
+	step := modconfig.NewPipelineStep(stepType, stepName, pipelineHcl)
 	if step == nil {
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -310,15 +310,7 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 		// Does the default value matches the specified type?
 		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
-			if o.Type.IsCapsuleType() {
-				ctdiags := modconfig.CustomTypeValidation(attr, ctyVal, o.Type)
-				if len(ctdiags) > 0 {
-					diags = append(diags, ctdiags...)
-					return o, diags
-				}
-				o.Default = ctyVal
-			} else if hclhelpers.IsCollectionOrTuple(o.Type) && o.Type.ElementType().IsCapsuleType() {
-				// this is the list(connection.aws) / list(notifier) case
+			if o.IsConnectionType() {
 				ctdiags := modconfig.CustomTypeValidation(attr, ctyVal, o.Type)
 				if len(ctdiags) > 0 {
 					diags = append(diags, ctdiags...)

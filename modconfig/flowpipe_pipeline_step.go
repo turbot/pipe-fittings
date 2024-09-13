@@ -237,7 +237,7 @@ type NextStep struct {
 	Input       Input          `json:"input"`
 }
 
-func NewPipelineStep(stepType, stepName string) PipelineStep {
+func NewPipelineStep(stepType, stepName string, pipeline *Pipeline) PipelineStep {
 	var step PipelineStep
 	switch stepType {
 	case schema.BlockTypePipelineStepHttp:
@@ -267,6 +267,7 @@ func NewPipelineStep(stepType, stepName string) PipelineStep {
 	step.Initialize()
 	step.SetName(stepName)
 	step.SetType(stepType)
+	step.SetPipeline(pipeline)
 
 	return step
 }
@@ -282,6 +283,7 @@ type PipelineStep interface {
 	GetType() string
 	SetType(string)
 	SetPipelineName(string)
+	SetPipeline(*Pipeline)
 	GetPipelineName() string
 	IsResolved() bool
 	AddUnresolvedBody(string, hcl.Body)
@@ -312,6 +314,7 @@ type PipelineStepBaseInterface interface {
 	AppendCredentialDependsOn(...string)
 	AppendConnectionDependsOn(...string)
 	AddUnresolvedAttribute(string, hcl.Expression)
+	GetPipeline() *Pipeline
 }
 
 // A common base struct that all pipeline steps must embed
@@ -321,6 +324,7 @@ type PipelineStepBase struct {
 	Name                string         `json:"name"`
 	Type                string         `json:"step_type"`
 	PipelineName        string         `json:"pipeline_name,omitempty"`
+	Pipeline            *Pipeline      `json:"-"`
 	Timeout             interface{}    `json:"timeout,omitempty"`
 	DependsOn           []string       `json:"depends_on,omitempty"`
 	CredentialDependsOn []string       `json:"credential_depends_on,omitempty"`
@@ -787,6 +791,14 @@ func (p *PipelineStepBase) GetName() string {
 	return p.Name
 }
 
+func (p *PipelineStepBase) SetPipeline(pipeline *Pipeline) {
+	p.Pipeline = pipeline
+}
+
+func (p *PipelineStepBase) GetPipeline() *Pipeline {
+	return p.Pipeline
+}
+
 func (p *PipelineStepBase) SetType(stepType string) {
 	p.Type = stepType
 }
@@ -1157,10 +1169,12 @@ func (p *PipelineStepBase) HandleDecodeBodyDiags(diags hcl.Diagnostics, attribut
 				// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
 				resolvedDiags++
 			} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == "Unsuitable value: value must be known" || e.Detail == `There is no variable named "loop".` || e.Detail == `There is no variable named "retry".` {
+
 				// hcl.decodeBody returns 2 error messages:
 				// 1. There's no variable named "param", AND
 				// 2. Unsuitable value: value must be known
 				resolvedDiags++
+
 			} else {
 				unresolvedDiags = append(unresolvedDiags, e)
 			}

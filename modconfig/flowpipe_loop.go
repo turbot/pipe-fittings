@@ -122,6 +122,10 @@ func (*LoopStep) AppendConnectionDependsOn(...string) {
 	// not implemented
 }
 
+func (l *LoopStep) GetPipeline() *Pipeline {
+	return l.PipelineStepBase.GetPipeline()
+}
+
 func (l *LoopStep) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	l.UnresolvedAttributes[name] = expr
 }

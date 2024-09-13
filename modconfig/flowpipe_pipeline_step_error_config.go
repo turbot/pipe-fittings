@@ -64,6 +64,10 @@ func (e *ErrorConfig) AppendConnectionDependsOn(...string) {
 	// not implemented
 }
 
+func (e *ErrorConfig) GetPipeline() *Pipeline {
+	return e.PipelineStepBase.GetPipeline()
+}
+
 func (e *ErrorConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	e.UnresolvedAttributes[name] = expr
 }

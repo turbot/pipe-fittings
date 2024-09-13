@@ -38,7 +38,7 @@ func BuildTemporaryConnectionMapForEvalContext(ctx context.Context, allConnectio
 		}
 
 		tempMap := map[string]cty.Value{
-			"name":          cty.StringVal(c.Name()),
+			"name":          cty.StringVal(c.GetHclResourceImpl().ShortName),
 			"type":          cty.StringVal(parts[0]),
 			"resource_type": cty.StringVal("connection"),
 			"temporary":     cty.BoolVal(true),

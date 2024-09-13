@@ -86,6 +86,10 @@ func (r *RetryConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	r.UnresolvedAttributes[name] = expr
 }
 
+func (r *RetryConfig) GetPipeline() *Pipeline {
+	return r.PipelineStepBase.GetPipeline()
+}
+
 func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 

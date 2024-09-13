@@ -2265,6 +2265,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 			found = true
 			break
 		}
+		assert.Equal(false, param.IsConnectionType())
 	}
 
 	if !found {
@@ -2298,7 +2299,7 @@ type testCustomTypeTwoTestData struct {
 }
 
 var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
-	"conn": []testCustomTypeTwoTestData{
+	"conn": {
 		{
 			Name: "example",
 			Setting: cty.ObjectVal(map[string]cty.Value{
@@ -2346,7 +2347,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Expected: false,
 		},
 	},
-	"list_of_conns": []testCustomTypeTwoTestData{
+	"list_of_conns": {
 		{
 			Name: "example",
 			Setting: cty.ListVal([]cty.Value{
@@ -2417,7 +2418,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Expected: false,
 		},
 	},
-	"conn_generic": []testCustomTypeTwoTestData{
+	"conn_generic": {
 		{
 			Name: "example",
 			Setting: cty.ObjectVal(map[string]cty.Value{
@@ -2474,7 +2475,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Expected: false,
 		},
 	},
-	"list_of_conns_generic": []testCustomTypeTwoTestData{
+	"list_of_conns_generic": {
 		{
 			Name: "example",
 			Setting: cty.ListVal([]cty.Value{
@@ -2630,9 +2631,11 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	for _, param := range params {
 		testLists := testCustomTypeTwoData[param.Name]
 		t.Log("testing param: ", param.Name)
+
+		assert.Equal(true, param.IsConnectionType())
 		for _, testData := range testLists {
 			t.Log("testing: ", testData.Name)
-			valid, err := param.ValidateSetting(testData.Setting, evalContext)
+			valid, _, err := param.ValidateSetting(testData.Setting, evalContext)
 			if err != nil {
 				assert.Fail("error validating param")
 				return
@@ -2641,6 +2644,19 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		}
 	}
 
+}
+
+func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
+	t := suite.T()
+	assert := assert.New(t)
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_three"})
+	assert.Nil(errAndWarning.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_three", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
 }
 
 func (suite *FlowpipeModTestSuite) TestCustomType() {

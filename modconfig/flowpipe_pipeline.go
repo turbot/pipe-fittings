@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
@@ -182,10 +183,30 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *h
 			continue
 		}
 
-		val, moreErr := hclhelpers.CoerceStringToGoBasedOnCtyType(v, param.Type)
-		if moreErr != nil {
-			errors = append(errors, moreErr)
-			continue
+		var val interface{}
+		if param.IsConnectionType() {
+			dottedStringParts := strings.Split(v, ".")
+			if len(dottedStringParts) != 3 {
+				errors = append(errors, perr.BadRequestWithMessage("invalid connection string format"))
+				continue
+			}
+
+			val = map[string]interface{}{
+				"name":          dottedStringParts[2],
+				"type":          dottedStringParts[1],
+				"resource_type": "connection",
+				"temporary":     true,
+			}
+
+		} else if param.IsNotifierType() {
+			return nil, []error{perr.BadRequestWithMessage("notifier type is not supported")}
+		} else {
+			var moreErr error
+			val, moreErr = hclhelpers.CoerceStringToGoBasedOnCtyType(v, param.Type)
+			if moreErr != nil {
+				errors = append(errors, moreErr)
+				continue
+			}
 		}
 		res[k] = val
 
@@ -213,7 +234,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *h
 func validateParam(param *PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
-	if !param.Type.HasDynamicTypes() {
+	if !param.Type.HasDynamicTypes() && !param.IsConnectionType() && !param.IsNotifierType() {
 		valToValidate, err = gocty.ToCtyValue(inputParam, param.Type)
 		if err != nil {
 			return err
@@ -225,10 +246,13 @@ func validateParam(param *PipelineParam, inputParam interface{}, evalCtx *hcl.Ev
 			return err
 		}
 	}
-	validParam, err := param.ValidateSetting(valToValidate, evalCtx)
+	validParam, diags, err := param.ValidateSetting(valToValidate, evalCtx)
 	if err != nil {
 		return err
 	} else if !validParam {
+		if len(diags) > 0 {
+			return error_helpers.BetterHclDiagsToError(param.Name, diags)
+		}
 		return perr.BadRequestWithMessage("invalid value for param " + param.Name)
 	}
 	return nil
@@ -586,9 +610,36 @@ type PipelineParam struct {
 	Default     cty.Value         `json:"-"`
 	Enum        cty.Value         `json:"-"`
 	EnumGo      []any             `json:"enum"`
-	Type        cty.Type          `json:"type"`
+	Type        cty.Type          `json:"-"`
 	TypeString  string            `json:"type_string"`
 	Tags        map[string]string `json:"tags,omitempty"`
+}
+
+func (p *PipelineParam) IsConnectionType() bool {
+	if !p.Type.IsCapsuleType() && !(p.Type.IsListType() && p.Type.ElementType().IsCapsuleType()) {
+		return false
+	}
+
+	var encapsulatedGoType reflect.Type
+	if p.Type.IsListType() {
+		encapsulatedGoType = p.Type.ElementType().EncapsulatedType()
+	} else {
+		encapsulatedGoType = p.Type.EncapsulatedType()
+	}
+
+	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
+	if _, ok := encapulatedInstanceNew.Interface().(PipelingConnection); ok {
+		return true
+	}
+
+	if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
+		return true
+	}
+	return false
+}
+
+func (p *PipelineParam) IsNotifierType() bool {
+	return false
 }
 
 func (p *PipelineParam) Equals(other *PipelineParam) bool {
@@ -614,36 +665,38 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		p.Type.Equals(other.Type)
 }
 
-func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalContext) (bool, error) {
+func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalContext) (bool, hcl.Diagnostics, error) {
 	if setting.IsNull() {
-		return true, nil
+		return true, hcl.Diagnostics{}, nil
 	}
 
 	// Helper function to perform capsule type and list type validations
-	validateCustomType := func() bool {
+	validateCustomType := func() (bool, hcl.Diagnostics) {
 		ctdiags := CustomTypeValidation(nil, setting, p.Type)
 		if len(ctdiags) > 0 {
-			return false
+			return false, hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Invalid type for param " + p.Name,
+				Detail:   "The param type is not compatible with the given value",
+			}}
 		}
 
 		ctdiags = p.PipelineParamCustomValueValidation(setting, evalCtx)
-		return len(ctdiags) == 0
+		return len(ctdiags) == 0, ctdiags
 	}
 
 	// Check for capsule type or list of capsule types
 	if p.Type.IsCapsuleType() || (p.Type.IsListType() && p.Type.ListElementType().IsCapsuleType()) {
-		if !validateCustomType() {
-			return false, nil
-		}
-	} else {
-		// For non-capsule types, ensure compatibility
-		if !hclhelpers.IsValueCompatibleWithType(p.Type, setting) {
-			return false, nil
-		}
+		valid, diags := validateCustomType()
+		return valid, diags, nil
+	} else if !hclhelpers.IsValueCompatibleWithType(p.Type, setting) {
+		// This is non-capsule type compatibility check
+		return false, hcl.Diagnostics{}, nil
 	}
 
 	// Enum-based validation
-	return hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
+	valid, err := hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
+	return valid, hcl.Diagnostics{}, err
 }
 
 func (p *PipelineParam) PipelineParamCustomValueListValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
@@ -680,8 +733,7 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 	if !setting.Type().IsObjectType() && !setting.Type().IsMapType() {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Invalid value for param " + p.Name,
-			Detail:   "The value for param must be an object",
+			Summary:  "The value for param must be an object",
 		}
 		return hcl.Diagnostics{diag}
 	}
@@ -691,8 +743,7 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 	if settingValueMap["resource_type"].IsNull() || settingValueMap["type"].IsNull() || settingValueMap["name"].IsNull() {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Invalid value for param " + p.Name,
-			Detail:   "The value for param must have a 'resource_type', 'type' and 'name' key",
+			Summary:  "The value for param must have a 'resource_type', 'type' and 'name' key",
 		}
 		return hcl.Diagnostics{diag}
 	}
@@ -704,8 +755,7 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 		if allConnections == cty.NilVal {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "Invalid value for param " + p.Name,
-				Detail:   "No connections found in the eval context",
+				Summary:  "No connection found",
 			}
 			return hcl.Diagnostics{diag}
 		}
@@ -718,8 +768,7 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 			if allConnectionsMap[connectionType].IsNull() {
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Invalid value for param " + p.Name,
-					Detail:   "No connection found for the given connection type",
+					Summary:  "No connection found for the given connection type",
 				}
 				return hcl.Diagnostics{diag}
 			}
@@ -728,8 +777,7 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 			if connectionTypeMap[connectionName].IsNull() {
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Invalid value for param " + p.Name,
-					Detail:   "No connection found for the given connection name",
+					Summary:  "No connection found for the given connection name",
 				}
 				return hcl.Diagnostics{diag}
 			} else {
