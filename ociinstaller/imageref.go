@@ -7,10 +7,7 @@ import (
 )
 
 const (
-	DefaultImageTag            = "latest"
-	DefaultImageRepoActualURL  = "ghcr.io/turbot/steampipe"
-	DefaultImageRepoDisplayURL = "hub.steampipe.io"
-
+	DefaultImageTag  = "latest"
 	DefaultImageOrg  = "turbot"
 	DefaultImageType = "plugins"
 )
@@ -39,8 +36,8 @@ func (r *ImageRef) ActualImageRef() string {
 
 	fullRef := getFullImageRef(ref)
 
-	if strings.HasPrefix(fullRef, DefaultImageRepoDisplayURL) {
-		fullRef = strings.ReplaceAll(fullRef, DefaultImageRepoDisplayURL, DefaultImageRepoActualURL)
+	if strings.HasPrefix(fullRef, app_specific.DefaultImageRepoDisplayURL) {
+		fullRef = strings.ReplaceAll(fullRef, app_specific.DefaultImageRepoDisplayURL, app_specific.DefaultImageRepoActualURL)
 	}
 
 	return fullRef
@@ -55,8 +52,8 @@ func (r *ImageRef) DisplayImageRef() string {
 	}
 	fullRef = strings.ReplaceAll(fullRef, ":", "@")
 
-	if strings.HasPrefix(fullRef, DefaultImageRepoActualURL) {
-		fullRef = strings.ReplaceAll(fullRef, DefaultImageRepoActualURL, DefaultImageRepoDisplayURL)
+	if strings.HasPrefix(fullRef, app_specific.DefaultImageRepoActualURL) {
+		fullRef = strings.ReplaceAll(fullRef, app_specific.DefaultImageRepoActualURL, app_specific.DefaultImageRepoDisplayURL)
 	}
 
 	return fullRef
@@ -106,13 +103,13 @@ func (r *ImageRef) GetFriendlyName() string {
 func getCondensedImageRef(imageRef string) string {
 	// if this is not from the default steampipe registry - DO NOT CONDENSE - return as is
 	// (we are not aware of any conventions in the registry)
-	if !strings.HasPrefix(imageRef, DefaultImageRepoDisplayURL) {
+	if !strings.HasPrefix(imageRef, app_specific.DefaultImageRepoDisplayURL) {
 		return imageRef
 	}
 
 	// So this is an image reference from the Steampipe HUB registry
 	// remove the registry URL
-	ref := strings.TrimPrefix(imageRef, DefaultImageRepoDisplayURL)
+	ref := strings.TrimPrefix(imageRef, app_specific.DefaultImageRepoDisplayURL)
 	// remove the 'plugins' namespace where steampipe hub keeps the images
 	ref = strings.TrimPrefix(ref, "/plugins/")
 	// remove the default organization - "turbot"
@@ -155,13 +152,13 @@ func getFullImageRef(imagePath string) string {
 	parts := strings.Split(items[0], "/")
 	switch len(parts) {
 	case 1: //ex:  aws
-		return fmt.Sprintf("%s/%s/%s/%s:%s", DefaultImageRepoActualURL, DefaultImageType, DefaultImageOrg, parts[len(parts)-1], tag)
+		return fmt.Sprintf("%s/%s/%s/%s:%s", app_specific.DefaultImageRepoActualURL, DefaultImageType, DefaultImageOrg, parts[len(parts)-1], tag)
 	case 2: //ex:   turbot/aws OR dockerhub.com/my-image
 		org := parts[len(parts)-2]
 		if strings.Contains(org, ".") {
 			return fmt.Sprintf("%s:%s", items[0], tag)
 		}
-		return fmt.Sprintf("%s/%s/%s/%s:%s", DefaultImageRepoActualURL, DefaultImageType, org, parts[len(parts)-1], tag)
+		return fmt.Sprintf("%s/%s/%s/%s:%s", app_specific.DefaultImageRepoActualURL, DefaultImageType, org, parts[len(parts)-1], tag)
 	default: //ex: ghcr.io/turbot/steampipe/plugins/turbot/aws
 		return fmt.Sprintf("%s:%s", items[0], tag)
 	}
