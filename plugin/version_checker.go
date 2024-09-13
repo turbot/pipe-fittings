@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"log"
 	"net/url"
@@ -52,7 +53,7 @@ func GetUpdateReport(ctx context.Context, installationID string, check []*versio
 	versionChecker.signature = installationID
 
 	for _, c := range check {
-		if strings.HasPrefix(c.Name, ociinstaller.DefaultImageRepoDisplayURL) {
+		if strings.HasPrefix(c.Name, app_specific.DefaultImageRepoDisplayURL) {
 			versionChecker.pluginsToCheck = append(versionChecker.pluginsToCheck, c)
 		}
 	}
@@ -67,7 +68,7 @@ func GetAllUpdateReport(ctx context.Context, installationID string, pluginVersio
 	versionChecker.pluginsToCheck = []*versionfile.InstalledVersion{}
 
 	for _, p := range pluginVersions {
-		if strings.HasPrefix(p.Name, ociinstaller.DefaultImageRepoDisplayURL) {
+		if strings.HasPrefix(p.Name, app_specific.DefaultImageRepoDisplayURL) {
 			versionChecker.pluginsToCheck = append(versionChecker.pluginsToCheck, p)
 		}
 	}
