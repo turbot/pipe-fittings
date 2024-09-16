@@ -222,6 +222,7 @@ func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	encoder.SetIndent("", " ")
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(jsonOutput); err != nil {
+		//nolint:forbidigo // acceptable
 		fmt.Print("Error displaying result as JSON", err)
 		return 0, 0
 	}
@@ -292,21 +293,26 @@ func displayLine[T any](ctx context.Context, result *queryresult.Result[T]) (row
 		for idx, column := range recordAsString {
 			lines := strings.Split(column, "\n")
 			if len(lines) == 1 {
+				//nolint:forbidigo // acceptable
 				fmt.Printf(lineFormat, columnNames[idx], lines[0])
 			} else {
 				for lineIdx, line := range lines {
 					if lineIdx == 0 {
 						// the first line
+						//nolint:forbidigo // acceptable
 						fmt.Printf(multiLineFormat, columnNames[idx], line)
 					} else {
 						// next lines
+						//nolint:forbidigo // acceptable
 						fmt.Printf(multiLineFormat, "", line)
 					}
 
 					// is this not the last line of value?
 					if lineIdx < len(lines)-1 {
+						//nolint:forbidigo // acceptable
 						fmt.Printf(" +\n")
 					} else {
+						//nolint:forbidigo // acceptable
 						fmt.Printf("\n")
 					}
 
@@ -380,9 +386,11 @@ func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (ro
 	count, err := iterateResults(result, rowFunc)
 	if err != nil {
 		// display the error
+		//nolint:forbidigo // acceptable
 		fmt.Println()
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
+		//nolint:forbidigo // acceptable
 		fmt.Println()
 	}
 	// write out the table to the buffer
@@ -391,7 +399,7 @@ func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (ro
 	// page out the table
 	ShowPaged(ctx, outbuf.String())
 
-	return count, 0
+	return count, rowErrors
 }
 
 type displayResultsFunc[T any] func(row []interface{}, result *queryresult.Result[T])
@@ -427,5 +435,6 @@ func DisplayErrorTiming(t time.Time) {
 	} else {
 		sb.WriteString(p.Sprintf("\nTime: %.1fs.", seconds))
 	}
+	//nolint:forbidigo // acceptable
 	fmt.Println(sb.String())
 }

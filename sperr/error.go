@@ -158,6 +158,7 @@ func (e *Error) Format(s fmt.State, verb rune) {
 		io.WriteString(s, e.Error())
 	case 'q':
 		// fallback to the standard %q for consistent escaping
+		//nolint:forbidigo // acceptable
 		fmt.Fprintf(s, "%q", e.Error())
 	}
 }

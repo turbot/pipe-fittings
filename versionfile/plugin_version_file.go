@@ -68,6 +68,7 @@ func (p *PluginVersionFile) EnsurePluginVersionFile(installData *InstalledVersio
 	if err != nil {
 		return err
 	}
+	//nolint:gosec // TODO: check file permission
 	return os.WriteFile(versionFile, theBytes, 0644)
 }
 
@@ -89,6 +90,7 @@ func (p *PluginVersionFile) write(path string) error {
 		log.Println("[ERROR]", "Cannot write 0 bytes to file")
 		return fmt.Errorf("cannot write versions file: %w", ErrNoContent)
 	}
+	//nolint:gosec // TODO: check file permission
 	return os.WriteFile(path, versionFileJSON, 0644)
 }
 

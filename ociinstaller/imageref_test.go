@@ -136,7 +136,7 @@ func TestGetOrgNameAndStream(t *testing.T) {
 	for testCase, want := range cases {
 		t.Run(testCase, func(t *testing.T) {
 			r := NewImageRef(testCase)
-			org, name, constraint := r.GetOrgNameAndStream("hub.steampipe.io/")
+			org, name, constraint := r.GetOrgNameAndStream()
 			got := [3]string{org, name, constraint}
 			if got != want {
 				t.Errorf("TestGetOrgNameAndSuffix failed for case '%s': expected %s, got %s", testCase, want, got)

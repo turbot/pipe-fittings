@@ -3,13 +3,11 @@ package parse
 import (
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/var_config"
@@ -182,18 +180,6 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	res.HandleDecodeDiags(diags)
 
 	return mod, res
-}
-
-// because the app require block may have the block type powerpipe|steampipe|flowpipe (depending on the app),
-// we manually parse just that block - so ignore any errors from the implicit parse relating to this block
-func ignoreAppRequireErrors(diags hcl.Diagnostics) hcl.Diagnostics {
-	var newDiags hcl.Diagnostics
-	for _, diag := range diags {
-		if !strings.HasPrefix(diag.Detail, fmt.Sprintf(`Blocks of type "%s" are not expected here`, app_specific.AppName)) {
-			newDiags = append(newDiags, diag)
-		}
-	}
-	return newDiags
 }
 
 func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Require, hcl.Diagnostics) {

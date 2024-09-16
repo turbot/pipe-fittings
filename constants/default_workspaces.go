@@ -119,16 +119,3 @@ const DefaultFlowpipeWorkspaceContent = `
 #  }
 # }
 `
-
-// TODO #workspaceprofile - finalize
-const DefaultTpWorkspaceContent = `
-# workspace "all_options" {
-#   local             = "~/.tp/data/default"
-#   remote            = "s3://myorg-tp-data/tp/prod"
-#   remote_connection = connection.aws.default
-#   update_check	  = "false"
-#   log_level     = "info" # trace, debug, info, warn, error
-#   memory_max_mb = "1024" # the maximum memory to allow the CLI process in MB
-#  }
-# }
-`

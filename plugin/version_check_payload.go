@@ -2,10 +2,6 @@ package plugin
 
 import "fmt"
 
-type versionCheckPayload interface {
-	getMapKey() string
-}
-
 // the payload that travels to-and-fro between steampipe and the server
 type versionCheckCorePayload struct {
 	Org        string `json:"org"`

@@ -99,11 +99,13 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 	sort.Stable(notFound)
 
 	if len(installedOrUpdated) > 0 {
+		//nolint:forbidigo // acceptable
 		fmt.Println()
 		asString := []string{}
 		for _, report := range installedOrUpdated {
 			asString = append(asString, report.installString())
 		}
+		//nolint:forbidigo // acceptable
 		fmt.Println(strings.Join(asString, "\n\n"))
 	}
 
@@ -121,6 +123,7 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 
 		skipCount := len(installSkipReports)
 		if (len(installSkipReports)) > 0 {
+			//nolint:forbidigo // acceptable
 			fmt.Printf(
 				"\nSkipped the following %s:\n\n%s\n",
 				utils.Pluralize("plugin", skipCount),
@@ -133,7 +136,9 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 			for _, r := range canBeInstalled {
 				pluginList = append(pluginList, r.Plugin)
 			}
+			//nolint:forbidigo // acceptable
 			fmt.Println()
+			//nolint:forbidigo // acceptable
 			fmt.Printf(
 				"To install %s which %s not installed, please run %s\n",
 				utils.Pluralize("plugin", len(canBeInstalled)),
@@ -150,7 +155,9 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 			for _, r := range canBeUpdated {
 				pluginList = append(pluginList, r.Plugin)
 			}
+			//nolint:forbidigo // acceptable
 			fmt.Println()
+			//nolint:forbidigo // acceptable
 			fmt.Printf(
 				"To update %s %s: %s\nTo update all plugins: %s",
 				utils.Pluralize("this", len(pluginList)),

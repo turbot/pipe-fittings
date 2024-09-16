@@ -37,9 +37,9 @@ func FindProcess(targetPid int) (*psutils.Process, error) {
 	}
 	for _, pid := range pids {
 		if targetPid == int(pid) {
+			//nolint: gosec	// target pdi will be 32 bit
 			process, err := psutils.NewProcess(int32(targetPid))
 			if err != nil {
-				//nolint: nilerr // if we fail to create a process for the pid, treat it as if we can't find the process
 				return nil, nil
 			}
 

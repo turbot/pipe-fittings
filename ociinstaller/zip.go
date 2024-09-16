@@ -8,6 +8,9 @@ import (
 	"path/filepath"
 )
 
+// TODO KAI verify size
+const maxDecompressedSize = 100 << 20 // 100 MB size limit for decompressed data
+
 func Ungzip(sourceFile string, destDir string) (string, error) {
 	r, err := os.Open(sourceFile)
 	if err != nil {
@@ -20,13 +23,16 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 		return "", err
 	}
 
+	// Limit the amount of data being written to prevent decompression bombs
+	limitedReader := io.LimitReader(uncompressedStream, maxDecompressedSize)
+
 	destFile := filepath.Join(destDir, uncompressedStream.Name)
 	outFile, err := os.OpenFile(destFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	if _, err := io.Copy(outFile, uncompressedStream); err != nil {
+	if _, err := io.Copy(outFile, limitedReader); err != nil {
 		return "", err
 	}
 
