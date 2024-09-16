@@ -2,51 +2,15 @@ package modconfig
 
 import (
 	"context"
-	"reflect"
-
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
+	"reflect"
 )
-
-var connectionTypRegistry = map[string]reflect.Type{
-	(&AbuseIPDBConnection{}).GetConnectionType(): reflect.TypeOf(AbuseIPDBConnection{}),
-	(&AlicloudConnection{}).GetConnectionType():  reflect.TypeOf(AlicloudConnection{}),
-	(&AwsConnection{}).GetConnectionType():       reflect.TypeOf(AwsConnection{}),
-	"azure":                                      reflect.TypeOf(AzureConnection{}),
-	"bitbucket":                                  reflect.TypeOf(BitbucketConnection{}),
-	"clickup":                                    reflect.TypeOf(ClickUpConnection{}),
-	"datadog":                                    reflect.TypeOf(DatadogConnection{}),
-	"discord":                                    reflect.TypeOf(DiscordConnection{}),
-	"freshdesk":                                  reflect.TypeOf(FreshdeskConnection{}),
-	"gcp":                                        reflect.TypeOf(GcpConnection{}),
-	"github":                                     reflect.TypeOf(GithubConnection{}),
-	"gitlab":                                     reflect.TypeOf(GitLabConnection{}),
-	"ip2locationio":                              reflect.TypeOf(IP2LocationIOConnection{}),
-	"ipstack":                                    reflect.TypeOf(IPstackConnection{}),
-	"jira":                                       reflect.TypeOf(JiraConnection{}),
-	"jumpcloud":                                  reflect.TypeOf(JumpCloudConnection{}),
-	"mastodon":                                   reflect.TypeOf(MastodonConnection{}),
-	"microsoft_teams":                            reflect.TypeOf(MicrosoftTeamsConnection{}),
-	"okta":                                       reflect.TypeOf(OktaConnection{}),
-	"openai":                                     reflect.TypeOf(OpenAIConnection{}),
-	"opsgenie":                                   reflect.TypeOf(OpsgenieConnection{}),
-	"pagerduty":                                  reflect.TypeOf(PagerDutyConnection{}),
-	"sendgrid":                                   reflect.TypeOf(SendGridConnection{}),
-	"servicenow":                                 reflect.TypeOf(ServiceNowConnection{}),
-	"slack":                                      reflect.TypeOf(SlackConnection{}),
-	"trello":                                     reflect.TypeOf(TrelloConnection{}),
-	"turbot_guardrails":                          reflect.TypeOf(GuardrailsConnection{}),
-	"turbot_pipes":                               reflect.TypeOf(PipesConnection{}),
-	"uptime_robot":                               reflect.TypeOf(UptimeRobotConnection{}),
-	"urlscan":                                    reflect.TypeOf(UrlscanConnection{}),
-	"vault":                                      reflect.TypeOf(VaultConnection{}),
-	"virus_total":                                reflect.TypeOf(VirusTotalConnection{}),
-	"zendesk":                                    reflect.TypeOf(ZendeskConnection{}),
-}
 
 type PipelingConnection interface {
 	HclResource
@@ -61,18 +25,9 @@ type PipelingConnection interface {
 	GetTtl() int // in seconds
 
 	Validate() hcl.Diagnostics
-	getEnv() map[string]cty.Value
+	GetEnv() map[string]cty.Value
 
 	Equals(PipelingConnection) bool
-}
-
-func ConnectionCtyType(connectionType string) cty.Type {
-	goType := connectionTypRegistry[connectionType]
-	if goType == nil {
-		return cty.NilType
-	}
-
-	return cty.Capsule(connectionType, goType)
 }
 
 func NewPipelingConnection(block *hcl.Block) (PipelingConnection, error) {
@@ -90,7 +45,7 @@ func NewPipelingConnection(block *hcl.Block) (PipelingConnection, error) {
 }
 
 func instantiateConnection(key string, hclResourceImpl HclResourceImpl) (PipelingConnection, error) {
-	t, exists := connectionTypRegistry[key]
+	t, exists := app_specific.ConnectionTypRegistry[key]
 	if !exists {
 		return nil, perr.BadRequestWithMessage("Invalid connection type " + key)
 	}
@@ -104,28 +59,19 @@ func instantiateConnection(key string, hclResourceImpl HclResourceImpl) (Pipelin
 	return cred, nil
 }
 
-type ConnectionImpl struct {
-	HclResourceImpl
-	ResourceWithMetadataImpl
+func ConnectionCtyType(connectionType string) cty.Type {
+	goType := app_specific.ConnectionTypRegistry[connectionType]
+	if goType == nil {
+		return cty.NilType
+	}
 
-	// required to allow partial decoding
-	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
-
-	Type string `json:"type" cty:"type" hcl:"type,label"`
-}
-
-func (c *ConnectionImpl) GetUnqualifiedName() string {
-	return c.HclResourceImpl.UnqualifiedName
-}
-
-func (c *ConnectionImpl) SetHclResourceImpl(hclResourceImpl HclResourceImpl) {
-	c.HclResourceImpl = hclResourceImpl
+	return cty.Capsule(connectionType, goType)
 }
 
 func DefaultPipelingConnections() (map[string]PipelingConnection, error) {
 	conns := make(map[string]PipelingConnection)
 
-	for k := range connectionTypRegistry {
+	for k := range app_specific.ConnectionTypRegistry {
 		hclResourceImpl := HclResourceImpl{
 			FullName:        k + ".default",
 			ShortName:       "default",
