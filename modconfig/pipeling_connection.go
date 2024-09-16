@@ -14,7 +14,6 @@ import (
 
 type PipelingConnection interface {
 	HclResource
-	ResourceWithMetadata
 
 	SetHclResourceImpl(hclResourceImpl HclResourceImpl)
 	GetConnectionType() string

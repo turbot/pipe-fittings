@@ -4,7 +4,6 @@ import "github.com/hashicorp/hcl/v2"
 
 type ConnectionImpl struct {
 	HclResourceImpl
-	ResourceWithMetadataImpl
 
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
