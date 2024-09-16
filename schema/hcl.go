@@ -45,19 +45,19 @@ const (
 	BlockTypeTrigger           = "trigger"
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
+	BlockTypeLoop              = "loop"
 	BlockTypeCredential        = "credential"
 	BlockTypeCredentialImport  = "credential_import" //nolint:gosec // this is not a password
 	BlockTypeNotify            = "notify"
 	BlockTypeNotifier          = "notifier"
-	BlockTypeLoop              = "loop"
+	BlockTypePartition         = "partition"
 	BlockTypeRetry             = "retry"
 	BlockTypeThrow             = "throw"
 	BlockTypeOption            = "option"
 	BlockTypeCapture           = "capture"
 	BlockTypeMethod            = "method"
 
-	AttributeTypeValue = "value"
-
+	AttributeTypeValue   = "value"
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
 	AttributeTypeEnum    = "enum"
@@ -324,6 +324,7 @@ var ValidResourceItemTypes = []string{
 	"var",
 }
 
+// TODO #app_specific this should use an app_specific set of blocks
 func IsValidResourceItemType(blockType string) bool {
 	return helpers.StringSliceContains(ValidResourceItemTypes, blockType)
 }

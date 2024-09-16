@@ -63,8 +63,8 @@ type Connection struct {
 	Error error
 
 	// options
-	Options   *options.Connection `json:"options,omitempty"`
-	DeclRange Range               `json:"decl_range"`
+	//Options   *options.Connection `json:"options,omitempty"`
+	DeclRange Range `json:"decl_range"`
 }
 
 // Range represents a span of characters between two positions in a source file.
@@ -133,15 +133,15 @@ func (c *Connection) ImportDisabled() bool {
 }
 
 func (c *Connection) Equals(other *Connection) bool {
-	connectionOptionsEqual := (c.Options == nil) == (other.Options == nil)
-	if c.Options != nil {
-		connectionOptionsEqual = c.Options.Equals(other.Options)
-	}
+	//connectionOptionsEqual := (c.Options == nil) == (other.Options == nil)
+	//if c.Options != nil {
+	//	connectionOptionsEqual = c.Options.Equals(other.Options)
+	//}
 	return c.Name == other.Name &&
 		c.Plugin == other.Plugin &&
 		c.Type == other.Type &&
 		strings.Join(c.ConnectionNames, ",") == strings.Join(other.ConnectionNames, ",") &&
-		connectionOptionsEqual &&
+		//connectionOptionsEqual &&
 		c.Config == other.Config &&
 		c.ImportSchema == other.ImportSchema
 
@@ -152,8 +152,8 @@ func (c *Connection) Equals(other *Connection) bool {
 func (c *Connection) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	switch o := opts.(type) {
-	case *options.Connection:
-		c.Options = o
+	//case *options.Connection:
+	//	c.Options = o
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -165,7 +165,7 @@ func (c *Connection) SetOptions(opts options.Options, block *hcl.Block) hcl.Diag
 }
 
 func (c *Connection) String() string {
-	return fmt.Sprintf("\n----\nName: %s\nPlugin: %s\nConfig:\n%s\nOptions:\n%s\n", c.Name, c.Plugin, c.Config, c.Options.String())
+	return fmt.Sprintf("\n----\nName: %s\nPlugin: %s\nConfig:\n%s\n", c.Name, c.Plugin, c.Config)
 }
 
 // Validate verifies the Type property is valid,

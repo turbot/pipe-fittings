@@ -47,9 +47,6 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 	default:
 		err = perr.BadRequestWithMessage(fmt.Sprintf("invalid name passed to ParseResourceName '%s'", fullName))
 	}
-	if !schema.IsValidResourceItemType(res.ItemType) {
-		err = perr.BadRequestWithMessage("not a valid resource type passed to ParseResourceName '" + fullName + "' (" + res.ItemType + ")")
-	}
 	return
 }
 

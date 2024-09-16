@@ -4,19 +4,18 @@ import (
 	"fmt"
 	"log/slog"
 
-	error_helpers "github.com/turbot/pipe-fittings/error_helpers"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
-func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
+func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = helpers.ToError(r)
@@ -51,7 +50,7 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 	var temp T
 	var content *hcl.BodyContent
 	switch any(temp).(type) {
-	case *modconfig.FlowpipeWorkspaceProfile:
+	case *workspace_profile.FlowpipeWorkspaceProfile:
 		// do a partial decode
 		content, diags = body.Content(FlowpipeConfigBlockSchema)
 		if diags.HasErrors() {
@@ -73,7 +72,7 @@ func LoadWorkspaceProfiles[T modconfig.WorkspaceProfile](workspaceProfilePath st
 
 }
 
-func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, error) {
+func parseWorkspaceProfiles[T workspace_profile.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, error) {
 	// we may need to decode more than once as we gather dependencies as we go
 	// continue decoding as long as the number of unresolved blocks decreases
 	prevUnresolvedBlocks := 0
@@ -102,7 +101,7 @@ func parseWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePro
 
 }
 
-func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, hcl.Diagnostics) {
+func decodeWorkspaceProfiles[T workspace_profile.WorkspaceProfile](parseCtx *WorkspaceProfileParseContext[T]) (map[string]T, hcl.Diagnostics) {
 	profileMap := make(map[string]T)
 
 	var diags hcl.Diagnostics
@@ -133,26 +132,26 @@ func decodeWorkspaceProfiles[T modconfig.WorkspaceProfile](parseCtx *WorkspacePr
 	return profileMap, diags
 }
 
-func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
+func decodeWorkspaceProfile[T workspace_profile.WorkspaceProfile](block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) (T, *DecodeResult) {
 	var emptyProfile T
-	res := newDecodeResult()
+	res := NewDecodeResult()
 	// get shell resource
-	resource, diags := modconfig.NewWorkspaceProfile[T](block)
+	resource, diags := workspace_profile.NewWorkspaceProfile[T](block)
 	if diags.HasErrors() {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return emptyProfile, res
 	}
 
 	// do a partial decode to get options blocks into workspaceProfileOptions, with all other attributes in rest
 	workspaceProfileOptions, rest, diags := block.Body.PartialContent(WorkspaceProfileBlockSchema)
 	if diags.HasErrors() {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 		return emptyProfile, res
 	}
 
 	diags = gohcl.DecodeBody(rest, parseCtx.EvalCtx, resource)
 	if len(diags) > 0 {
-		res.handleDecodeDiags(diags)
+		res.HandleDecodeDiags(diags)
 	}
 	// lookup of options blocks
 	foundOptions := map[string]struct{}{}
@@ -188,27 +187,27 @@ func decodeWorkspaceProfile[T modconfig.WorkspaceProfile](block *hcl.Block, pars
 		}
 	}
 
-	res.addDiags(diags)
+	res.AddDiags(diags)
 
 	handleWorkspaceProfileDecodeResult(resource, res, block, parseCtx)
 	return resource, res
 }
 
-func handleWorkspaceProfileDecodeResult[T modconfig.WorkspaceProfile](resource T, res *DecodeResult, block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) {
+func handleWorkspaceProfileDecodeResult[T workspace_profile.WorkspaceProfile](resource T, res *DecodeResult, block *hcl.Block, parseCtx *WorkspaceProfileParseContext[T]) {
 	if res.Success() {
 		// call post decode hook
 		// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property
 		moreDiags := resource.OnDecoded()
-		res.addDiags(moreDiags)
+		res.AddDiags(moreDiags)
 
 		moreDiags = parseCtx.AddResource(resource)
-		res.addDiags(moreDiags)
+		res.AddDiags(moreDiags)
 		return
 	}
 
 	// failure :(
 	if len(res.Depends) > 0 {
 		moreDiags := parseCtx.AddDependencies(block, resource.Name(), res.Depends)
-		res.addDiags(moreDiags)
+		res.AddDiags(moreDiags)
 	}
 }

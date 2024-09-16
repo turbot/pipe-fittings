@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
 // Viper fetches the global viper instance
@@ -19,14 +19,14 @@ func Viper() *viper.Viper {
 }
 
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
-func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.WorkspaceProfileLoader[T], cmd *cobra.Command, opts ...bootstrapOption) {
-	config := newBootstrapConfig()
+func BootstrapViper[T workspace_profile.WorkspaceProfile](loader *parse.WorkspaceProfileLoader[T], cmd *cobra.Command, opts ...BootstrapOption) {
+	config := NewBootstrapConfig()
 	for _, opt := range opts {
 		opt(config)
 	}
 
 	// set defaults  for keys which do not have a corresponding command flag
-	setBaseDefaults(config.configDefaults)
+	SetBaseDefaults(config.ConfigDefaults)
 
 	// set defaults from defaultWorkspaceProfile
 	SetDefaultsFromConfig(loader.DefaultProfile.ConfigMap(cmd))
@@ -34,7 +34,7 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 	// set defaults for install dir and mod location from env vars
 	// this needs to be done since the workspace profile definitions exist in the
 	// default install dir
-	SetDefaultsFromEnv(config.directoryEnvMappings)
+	SetDefaultsFromEnv(config.DirectoryEnvMappings)
 
 	// NOTE: if an explicit workspace profile was set, default the install dir _now_
 	// All other workspace profile values are defaults _after defaulting to the connection config options
@@ -51,7 +51,7 @@ func BootstrapViper[T modconfig.WorkspaceProfile](loader *steampipeconfig.Worksp
 // for keys which do not have a corresponding command flag, we need a separate defaulting mechanism
 // any option setting, workspace profile property or env var which does not have a command line
 // MUST have a default (unless we want the zero value to take effect)
-func setBaseDefaults(configDefaults map[string]any) {
+func SetBaseDefaults(configDefaults map[string]any) {
 	for k, v := range configDefaults {
 		viper.SetDefault(k, v)
 	}

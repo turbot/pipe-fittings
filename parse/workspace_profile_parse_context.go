@@ -4,17 +4,17 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/workspace_profile"
 	"github.com/zclconf/go-cty/cty"
 )
 
-type WorkspaceProfileParseContext[T modconfig.WorkspaceProfile] struct {
+type WorkspaceProfileParseContext[T workspace_profile.WorkspaceProfile] struct {
 	ParseContext
 	workspaceProfiles map[string]T
 	valueMap          map[string]cty.Value
 }
 
-func NewWorkspaceProfileParseContext[T modconfig.WorkspaceProfile](rootEvalPath string) *WorkspaceProfileParseContext[T] {
+func NewWorkspaceProfileParseContext[T workspace_profile.WorkspaceProfile](rootEvalPath string) *WorkspaceProfileParseContext[T] {
 	parseContext := NewParseContext(rootEvalPath)
 	// TODO uncomment once https://github.com/turbot/steampipe/issues/2640 is done
 	//parseContext.BlockTypes = []string{schema.BlockTypeWorkspaceProfile}

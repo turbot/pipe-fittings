@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 const (

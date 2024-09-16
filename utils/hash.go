@@ -1,28 +1,21 @@
 package utils
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"strconv"
 
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/go-kit/helpers"
 )
 
 func Base36Hash(input string, length int) (string, error) {
-	// Get a hash of it.
-	h := sha256.New()
-	_, err := h.Write([]byte(input))
-	if err != nil {
-		return "", sperr.New("Unable to create hash.")
-	}
 	// Get hex of the hash
-	bs := fmt.Sprintf("%x", h.Sum(nil))
+	bs := helpers.GetMD5Hash(input)
 
 	// Convert the first 16 chars of the hash from hex to base 36
 	u1Hex := bs[0:16]
 	u1, err := strconv.ParseUint(u1Hex, 16, 64)
 	if err != nil {
-		return "", sperr.New("Unable to create hash.")
+		return "", fmt.Errorf("unable to create hash: %w", err)
 	}
 	u1Base36 := strconv.FormatUint(u1, 36)
 

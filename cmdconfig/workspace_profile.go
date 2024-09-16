@@ -9,12 +9,12 @@ import (
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/steampipeconfig"
+	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
-func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig.WorkspaceProfileLoader[T], error) {
+func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile]() (*parse.WorkspaceProfileLoader[T], error) {
 	// NOTE: we need to setup some viper defaults to enable workspace profile loading
 	// the rest are set up in BootstrapViper
 
@@ -28,7 +28,7 @@ func GetWorkspaceProfileLoader[T modconfig.WorkspaceProfile]() (*steampipeconfig
 	if err != nil {
 		return nil, err
 	}
-	loader, err := steampipeconfig.NewWorkspaceProfileLoader[T](configPaths...)
+	loader, err := parse.NewWorkspaceProfileLoader[T](configPaths...)
 	if err != nil {
 		return nil, err
 	}

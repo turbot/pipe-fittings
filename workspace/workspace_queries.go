@@ -2,9 +2,10 @@ package workspace
 
 import (
 	"fmt"
+	"log/slog"
+
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"log/slog"
 )
 
 func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider, bool) {

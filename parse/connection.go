@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
@@ -58,26 +57,26 @@ func DecodeConnection(block *hcl.Block) (*modconfig.Connection, hcl.Diagnostics)
 	// check for nested options
 	for _, connectionBlock := range connectionContent.Blocks {
 		switch connectionBlock.Type {
-		case "options":
-			// if we already found settings, fail
-			opts, moreDiags := DecodeOptions(connectionBlock, modconfig.SteampipeOptionsBlockMapping)
-			if moreDiags.HasErrors() {
-				diags = append(diags, moreDiags...)
-				break
-			}
-			moreDiags = connection.SetOptions(opts, connectionBlock)
-			if moreDiags.HasErrors() {
-				diags = append(diags, moreDiags...)
-			}
-
-			// TODO: remove in 0.22 [https://github.com/turbot/steampipe/issues/3251]
-			if connection.Options != nil {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagWarning,
-					Summary:  fmt.Sprintf("%s in %s have been deprecated and will be removed in subsequent versions of steampipe", constants.Bold("'connection' options"), constants.Bold("'connection' blocks")),
-					Subject:  hclhelpers.BlockRangePointer(connectionBlock),
-				})
-			}
+		//case "options":
+		//	// if we already found settings, fail
+		//	opts, moreDiags := DecodeOptions(connectionBlock, modconfig.SteampipeOptionsBlockMapping)
+		//	if moreDiags.HasErrors() {
+		//		diags = append(diags, moreDiags...)
+		//		break
+		//	}
+		//	moreDiags = connection.SetOptions(opts, connectionBlock)
+		//	if moreDiags.HasErrors() {
+		//		diags = append(diags, moreDiags...)
+		//	}
+		//
+		//	// TODO: remove in 0.22 [https://github.com/turbot/steampipe/issues/3251]
+		//	if connection.Options != nil {
+		//		diags = append(diags, &hcl.Diagnostic{
+		//			Severity: hcl.DiagWarning,
+		//			Summary:  fmt.Sprintf("%s in %s have been deprecated and will be removed in subsequent versions of steampipe", constants.Bold("'connection' options"), constants.Bold("'connection' blocks")),
+		//			Subject:  hclhelpers.BlockRangePointer(connectionBlock),
+		//		})
+		//	}
 
 		default:
 			// this can never happen
@@ -121,8 +120,8 @@ func decodeConnectionPluginProperty(connectionContent *hcl.BodyContent, connecti
 	evalCtx := &hcl.EvalContext{Variables: make(map[string]cty.Value)}
 
 	diags := gohcl.DecodeExpression(connectionContent.Attributes["plugin"].Expr, evalCtx, &pluginName)
-	res := newDecodeResult()
-	res.handleDecodeDiags(diags)
+	res := NewDecodeResult()
+	res.HandleDecodeDiags(diags)
 	if res.Diags.HasErrors() {
 		return res.Diags
 	}

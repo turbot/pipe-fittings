@@ -23,7 +23,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const rootDependencyNode = "rootDependencyNode"
+const RootDependencyNode = "RootDependencyNode"
 
 type ParseModFlag uint32
 
@@ -125,7 +125,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 		opt(c)
 	}
 	// add root node - this will depend on all other nodes
-	c.dependencyGraph = c.newDependencyGraph()
+	c.DependencyGraph = c.newDependencyGraph()
 	c.buildEvalContext()
 
 	return c
@@ -842,13 +842,6 @@ func (m *ModParseContext) LoadVariablesOnly() bool {
 	}
 	_, ok := m.blockTypes[schema.BlockTypeVariable]
 	return ok
-}
-
-func (m *ModParseContext) SetBlockTypes(blockTypes ...string) {
-	m.blockTypes = make(map[string]struct{}, len(blockTypes))
-	for _, t := range blockTypes {
-		m.blockTypes[t] = struct{}{}
-	}
 }
 
 func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {

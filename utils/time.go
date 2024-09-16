@@ -19,22 +19,29 @@ func TimeNow() *time.Time {
 	return TimePtr(time.Now().UTC())
 }
 
+// FormatTime formats time as RFC3339 in UTC
+func FormatTime(localTime time.Time) string {
+	loc, _ := time.LoadLocation("UTC")
+	utcTime := localTime.In(loc)
+	return (utcTime.Format(time.RFC3339))
+}
+
 // JSONTime is a timestamp that can be serialized into JSON format
 type JSONTime struct {
 	time.Time
 }
 
 // MarshalJSON converts a JSONTime struct into a JSON byte buf
-func (t *JSONTime) MarshalJSON() ([]byte, error) {
-	if t.IsZero() {
+func (j *JSONTime) MarshalJSON() ([]byte, error) {
+	if j.IsZero() {
 		return []byte("null"), nil
 	}
-	ts := fmt.Sprintf("\"%s\"", t.Format(RFC3339WithMS))
+	ts := fmt.Sprintf("\"%s\"", j.Format(RFC3339WithMS))
 	return []byte(ts), nil
 }
 
 // UnmarshalJSON converts buf into a JSONTime struct
-func (t *JSONTime) UnmarshalJSON(buf []byte) error {
+func (j *JSONTime) UnmarshalJSON(buf []byte) error {
 	s := string(buf)
 	// If it's set to null, then return nil for empty / null
 	if s == "null" {
@@ -47,7 +54,7 @@ func (t *JSONTime) UnmarshalJSON(buf []byte) error {
 		// oops ... couldn't parse the time
 		return err
 	}
-	t.Time = bt
+	j.Time = bt
 	return nil
 }
 
@@ -59,6 +66,6 @@ func (j *JSONTime) Scan(src interface{}) error {
 	return nil
 }
 
-func (j JSONTime) Value() (driver.Value, error) {
+func (j *JSONTime) Value() (driver.Value, error) {
 	return j.Time, nil
 }

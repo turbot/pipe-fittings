@@ -4,18 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/plugin"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 type SteampipeBackend struct {
 	PostgresBackend
 	// map of plugin versions, keyed by image ref
-	PluginVersions map[string]*modconfig.PluginVersionString
+	PluginVersions map[string]*plugin.PluginVersionString
 }
 
 func NewSteampipeBackend(ctx context.Context, postgresBackend PostgresBackend) (*SteampipeBackend, error) {
@@ -65,7 +65,7 @@ func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 	defer rows.Close()
 
 	// create the plugin version map
-	b.PluginVersions = make(map[string]*modconfig.PluginVersionString)
+	b.PluginVersions = make(map[string]*plugin.PluginVersionString)
 	// Iterate over the results
 	for rows.Next() {
 		var name, version string
@@ -73,7 +73,7 @@ func (b *SteampipeBackend) loadPluginInstances(db *sql.DB) error {
 			return sperr.WrapWithMessage(err, "failed to read installed plugin from steampipe backend")
 		}
 		// add the plugin
-		pluginVersion, err := modconfig.NewPluginVersionString(version)
+		pluginVersion, err := plugin.NewPluginVersionString(version)
 		if err != nil {
 			// ignore this plugin
 			log.Printf("[WARN] failed to parse version for plugin '%s': %v", name, err)

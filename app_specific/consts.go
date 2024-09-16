@@ -73,3 +73,9 @@ var EnvInputVarPrefix string
 // Update check
 var VersionCheckHost string
 var VersionCheckPath string
+
+var PluginHub string
+
+// OciInstaller
+var DefaultImageRepoActualURL string
+var DefaultImageRepoDisplayURL string

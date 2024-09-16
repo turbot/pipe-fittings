@@ -19,7 +19,7 @@ type CLIVersionCheckResponse struct {
 	ChangelogURL string `json:"html,omitempty"`
 }
 
-// VersionChecker :: the version checker struct composition container.
+// VersionChecker - version checker struct composition container.
 // versionChecker MUST not be instantiated manually. Use `CreateVersionChecker` instead
 type versionChecker struct {
 	checkResult *CLIVersionCheckResponse // a channel to store the HTTP response

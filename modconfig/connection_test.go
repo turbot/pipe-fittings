@@ -8,17 +8,17 @@ type connectionEquality struct {
 	expectation bool
 }
 
-var conn1 *Connection = &Connection{
+var conn1 = &Connection{
 	Name:   "connection",
 	Config: "hclhelpers",
 }
 
-var conn1_duplicate *Connection = &Connection{
+var conn1_duplicate = &Connection{
 	Name:   "connection",
 	Config: "hclhelpers",
 }
 
-var other_conn *Connection = &Connection{
+var other_conn = &Connection{
 	Name:   "connection2",
 	Config: "connection_config2",
 }

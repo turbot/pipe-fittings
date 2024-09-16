@@ -10,6 +10,8 @@ type ResolvedQuery struct {
 	ExecuteSQL string
 	RawSQL     string
 	Args       []any
+
+	IsMetaQuery bool
 }
 
 // QueryArgs converts the ResolvedQuery into  QueryArgs

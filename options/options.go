@@ -9,7 +9,6 @@ const (
 	DashboardBlock  = "dashboard"
 	DatabaseBlock   = "database"
 	GeneralBlock    = "general"
-	TerminalBlock   = "terminal"
 	PluginBlock     = "plugin"
 )
 

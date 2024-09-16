@@ -2,14 +2,14 @@ package error_helpers
 
 import (
 	"context"
-
-	sdkerrorhelpers "github.com/turbot/steampipe-plugin-sdk/v5/error_helpers"
+	"errors"
+	"strings"
 )
 
 func IsContextCanceled(ctx context.Context) bool {
-	return sdkerrorhelpers.IsContextCancelledError(ctx.Err())
+	return IsContextCancelledError(ctx.Err())
 }
 
 func IsContextCancelledError(err error) bool {
-	return sdkerrorhelpers.IsContextCancelledError(err)
+	return err != nil && (errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "context canceled"))
 }

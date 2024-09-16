@@ -52,7 +52,7 @@ func DecodeCredentialImport(configPath string, block *hcl.Block) (*credential.Cr
 		Variables: make(map[string]cty.Value),
 	}
 
-	diags = decodeHclBody(body, evalCtx, nil, credentialImport)
+	diags = DecodeHclBody(body, evalCtx, nil, credentialImport)
 	if len(diags) > 0 {
 		return nil, diags
 	}

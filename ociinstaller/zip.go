@@ -13,6 +13,7 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer r.Close()
 
 	uncompressedStream, err := gzip.NewReader(r)
 	if err != nil {
@@ -25,7 +26,7 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 		return "", err
 	}
 
-	if _, err := io.Copy(outFile, uncompressedStream); err != nil { //nolint:gosec // TODO G110: Potential DoS vulnerability via decompression bomb
+	if _, err := io.Copy(outFile, uncompressedStream); err != nil {
 		return "", err
 	}
 
@@ -37,7 +38,14 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 	return destFile, nil
 }
 
-// moves a file within an fs partition. panics if movement is attempted between partitions
+func FileExists(filePath string) bool {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+// MoveFileWithinPartition moves a file within an fs partition. panics if movement is attempted between partitions
 // this is done separately to achieve performance benefits of os.Rename over reading and writing content
 func MoveFileWithinPartition(sourcePath, destPath string) error {
 	if err := os.Rename(sourcePath, destPath); err != nil {
@@ -46,7 +54,7 @@ func MoveFileWithinPartition(sourcePath, destPath string) error {
 	return nil
 }
 
-// moves a folder within an fs partition. panics if movement is attempted between partitions
+// MoveFolderWithinPartition moves a folder within an fs partition. panics if movement is attempted between partitions
 // this is done separately to achieve performance benefits of os.Rename over reading and writing content
 func MoveFolderWithinPartition(sourcePath, destPath string) error {
 	sourceinfo, err := os.Stat(sourcePath)

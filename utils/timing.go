@@ -2,13 +2,14 @@ package utils
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
+	"io"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora"
 	"github.com/olekukonko/tablewriter"
+	"github.com/turbot/pipe-fittings/app_specific"
 )
 
 type timeLog struct {
@@ -39,9 +40,9 @@ func LogTime(operation string) {
 	Timing = append(Timing, timeLog{time.Now(), elapsed, cumulative, operation})
 }
 
-func DisplayProfileData() {
+func DisplayProfileData(op io.Writer) {
 	if shouldProfile() {
-		fmt.Println("Timing") //nolint:forbidigo // TODO: better way to print out? Or maybe this is acceptable
+		fmt.Fprint(op, "Timing\n") //nolint:forbidigo // TODO: better way to print out? Or maybe this is acceptable
 
 		var data [][]string
 		for _, logEntry := range Timing {
@@ -55,7 +56,7 @@ func DisplayProfileData() {
 			itemData = append(itemData, logEntry.Cumulative.String())
 			data = append(data, itemData)
 		}
-		table := tablewriter.NewWriter(os.Stdout)
+		table := tablewriter.NewWriter(op)
 		table.SetHeader([]string{"Operation", "Elapsed", "Cumulative"})
 		table.SetBorder(true)
 		table.SetReflowDuringAutoWrap(false)

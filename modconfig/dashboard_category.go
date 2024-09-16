@@ -16,13 +16,14 @@ type DashboardCategory struct {
 	// TACTICAL: include a title property (with a different name to the property in HclResourceImpl  for clarity)
 	// This is purely to ensure the title is included in the panel properties of snapshots
 	// Note: this will be parsed from HCL, but we must set this explicitly in setBaseProperties if there is a base
-	CategoryTitle *string                               `cty:"title" hcl:"title" snapshot:"title" json:"title,omitempty"`
+	CategoryTitle *string                               `cty:"title" hcl:"title" snapshot:"title" json:"-"`
+	CategoryName  string                                `snapshot:"name" json:"-"`
 	Color         *string                               `cty:"color" hcl:"color" snapshot:"color" json:"color,omitempty"`
 	Depth         *int                                  `cty:"depth" hcl:"depth" snapshot:"depth" json:"depth,omitempty"`
 	Icon          *string                               `cty:"icon" hcl:"icon" snapshot:"icon" json:"icon,omitempty"`
 	HREF          *string                               `cty:"href" hcl:"href" snapshot:"href" json:"href,omitempty"`
 	Fold          *DashboardCategoryFold                `cty:"fold" hcl:"fold,block" snapshot:"fold" json:"fold,omitempty"`
-	PropertyList  DashboardCategoryPropertyList         `cty:"property_list" hcl:"property,block" column:"properties,jsonb" json:"-"`
+	PropertyList  DashboardCategoryPropertyList         `cty:"property_list" hcl:"property,block" json:"-"`
 	Properties    map[string]*DashboardCategoryProperty `cty:"properties" snapshot:"properties" json:"properties,omitempty"`
 	PropertyOrder []string                              `cty:"property_order" hcl:"property_order,optional" snapshot:"property_order" json:"property_order,omitempty"`
 	Base          *DashboardCategory                    `hcl:"base" json:"base,omitempty"`
@@ -46,6 +47,7 @@ func (c *DashboardCategory) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) 
 			c.Properties[p.ShortName] = p
 		}
 	}
+	c.CategoryName = c.ResourceMetadata.ResourceName
 	return nil
 }
 
@@ -67,6 +69,7 @@ func (c *DashboardCategory) setBaseProperties() {
 
 	// TACTICAL: DashboardCategory overrides the title property to ensure is included in the snapshot
 	c.CategoryTitle = c.Title
+	c.CategoryName = c.Name()
 
 	if c.Color == nil {
 		c.Color = c.Base.Color

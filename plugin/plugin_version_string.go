@@ -1,8 +1,8 @@
-package modconfig
+package plugin
 
 import (
+	"fmt"
 	"github.com/Masterminds/semver/v3"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 type PluginVersionMap struct {
@@ -35,7 +35,7 @@ func NewPluginVersionString(version string) (*PluginVersionString, error) {
 	if version == "local" {
 		return LocalPluginVersionString(), nil
 	}
-	return nil, sperr.New("version must be a valid semver or 'local'; got: %s", version)
+	return nil, fmt.Errorf("version must be a valid semver or 'local'; got: %s", version)
 }
 
 func LocalPluginVersionString() *PluginVersionString {
