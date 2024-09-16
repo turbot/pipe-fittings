@@ -112,6 +112,7 @@ type ResourceMapsProvider interface {
 	GetResourceMaps() *ResourceMaps
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }
+
 type ResourceProvider interface {
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }

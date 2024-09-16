@@ -53,7 +53,7 @@ type ModInstaller struct {
 	dryRun bool
 	// do we force install even if there are require errors
 	force bool
-	// TODO KAI why does powerpipe care about plugins???
+	// TODO why does powerpipe care about plugins???
 	// optional map of installed plugin versions
 	pluginVersions *plugin.PluginVersionMap
 
@@ -75,7 +75,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		command:       opts.Command,
 		dryRun:        opts.DryRun,
 		force:         opts.Force,
-		// TODO KAI why does powerpipe care about plugins???
+		// TODO why does powerpipe care about plugins???
 		pluginVersions: opts.PluginVersions,
 		updateStrategy: opts.UpdateStrategy,
 	}

@@ -2,12 +2,12 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 

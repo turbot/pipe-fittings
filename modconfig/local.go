@@ -16,8 +16,7 @@ type Local struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Value    cty.Value
-	metadata *ResourceMetadata //nolint:unused // TODO check this unused variable
+	Value cty.Value
 }
 
 func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local {

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-// TODO KAI verify size
+// TODO verify size
 const maxDecompressedSize = 100 << 20 // 100 MB size limit for decompressed data
 
 func Ungzip(sourceFile string, destDir string) (string, error) {

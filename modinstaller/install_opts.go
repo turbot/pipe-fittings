@@ -9,8 +9,6 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-// TODO KAI why does powerpipe care about plugins???
-
 type InstallOpts struct {
 	WorkspaceMod   *modconfig.Mod
 	Command        string

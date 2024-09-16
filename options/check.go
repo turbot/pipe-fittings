@@ -102,21 +102,3 @@ func (t *Check) String() string {
 	}
 	return strings.Join(str, "\n")
 }
-
-// TODO #steampipe check
-//
-//func (t *Check) SetTiming(flag string, r hcl.Range) hcl.Diagnostics {
-//	// check the value is valid
-//	if _, ok := constants.CheckTimingValueLookup[flag]; !ok {
-//		return hcl.Diagnostics{
-//			&hcl.Diagnostic{
-//				Severity: hcl.DiagError,
-//				Summary:  fmt.Sprintf("Invalid timing value '%s', check options support: %s", flag, strings.Join(maps.Keys(constants.CheckTimingValueLookup), ", ")),
-//				Subject:  &r,
-//			},
-//		}
-//	}
-//	t.Timing = &flag
-//
-//	return nil
-//}

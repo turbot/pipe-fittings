@@ -57,27 +57,6 @@ func DecodeConnection(block *hcl.Block) (*modconfig.Connection, hcl.Diagnostics)
 	// check for nested options
 	for _, connectionBlock := range connectionContent.Blocks {
 		switch connectionBlock.Type {
-		//case "options":
-		//	// if we already found settings, fail
-		//	opts, moreDiags := DecodeOptions(connectionBlock, modconfig.SteampipeOptionsBlockMapping)
-		//	if moreDiags.HasErrors() {
-		//		diags = append(diags, moreDiags...)
-		//		break
-		//	}
-		//	moreDiags = connection.SetOptions(opts, connectionBlock)
-		//	if moreDiags.HasErrors() {
-		//		diags = append(diags, moreDiags...)
-		//	}
-		//
-		//	// TODO: remove in 0.22 [https://github.com/turbot/steampipe/issues/3251]
-		//	if connection.Options != nil {
-		//		diags = append(diags, &hcl.Diagnostic{
-		//			Severity: hcl.DiagWarning,
-		//			Summary:  fmt.Sprintf("%s in %s have been deprecated and will be removed in subsequent versions of steampipe", constants.Bold("'connection' options"), constants.Bold("'connection' blocks")),
-		//			Subject:  hclhelpers.BlockRangePointer(connectionBlock),
-		//		})
-		//	}
-
 		default:
 			// this can never happen
 			diags = append(diags, &hcl.Diagnostic{

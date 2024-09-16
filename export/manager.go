@@ -3,12 +3,12 @@ package export
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/statushooks"
 	"path"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/sperr"
+	"github.com/turbot/pipe-fittings/statushooks"
 	"github.com/turbot/pipe-fittings/utils"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"

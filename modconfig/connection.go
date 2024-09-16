@@ -2,9 +2,7 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"log/slog"
-
 	"path"
 	"reflect"
 	"strings"
@@ -12,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/utils"
 	"golang.org/x/exp/maps"
@@ -62,8 +61,6 @@ type Connection struct {
 
 	Error error
 
-	// options
-	//Options   *options.Connection `json:"options,omitempty"`
 	DeclRange Range `json:"decl_range"`
 }
 
@@ -133,15 +130,10 @@ func (c *Connection) ImportDisabled() bool {
 }
 
 func (c *Connection) Equals(other *Connection) bool {
-	//connectionOptionsEqual := (c.Options == nil) == (other.Options == nil)
-	//if c.Options != nil {
-	//	connectionOptionsEqual = c.Options.Equals(other.Options)
-	//}
 	return c.Name == other.Name &&
 		c.Plugin == other.Plugin &&
 		c.Type == other.Type &&
 		strings.Join(c.ConnectionNames, ",") == strings.Join(other.ConnectionNames, ",") &&
-		//connectionOptionsEqual &&
 		c.Config == other.Config &&
 		c.ImportSchema == other.ImportSchema
 
@@ -152,8 +144,6 @@ func (c *Connection) Equals(other *Connection) bool {
 func (c *Connection) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	switch o := opts.(type) {
-	//case *options.Connection:
-	//	c.Options = o
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,

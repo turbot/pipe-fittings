@@ -8,7 +8,6 @@ type ResourceMetadata struct {
 	// required to allow partial decoding
 	ResourceMetadataRemain hcl.Body `hcl:",remain" json:"-"`
 
-	// TODO #tp JSON tag swas renamed from was renamed from resource_name - is this correct?
 	ResourceName string `json:"name"`
 	// mod short name
 	ModName          string `json:"mod_name"`
