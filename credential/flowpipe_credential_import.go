@@ -4,10 +4,9 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
+	gokit "github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
-
-	gokit "github.com/turbot/go-kit/helpers"
 )
 
 // The definition of a single Flowpipe CredentialImport

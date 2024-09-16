@@ -1,9 +1,8 @@
 package error_helpers
 
 import (
-	"fmt"
-
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/sperr"
 	"golang.org/x/exp/slog"
 )
 
@@ -36,12 +35,12 @@ func NewErrorsAndWarning(err error, warnings ...string) ErrorAndWarnings {
 	}
 }
 
-func (r *ErrorAndWarnings) WrapErrorWithMessage(msg string) *ErrorAndWarnings {
+func (r *ErrorAndWarnings) WrapErrorWithMessage(msg string) ErrorAndWarnings {
 	if r.Error != nil {
-		// r.Error = sperr.WrapWithMessage(r.Error, msg)
-		r.Error = fmt.Errorf(r.Error.Error() + " " + msg)
+		//nolint: govet // we are wrapping the error
+		r.Error = sperr.WrapWithMessage(r.Error, msg)
 	}
-	return r
+	return *r
 }
 
 func (r *ErrorAndWarnings) AddWarning(warnings ...string) {

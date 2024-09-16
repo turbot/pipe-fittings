@@ -43,22 +43,22 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 //
 // This function only parse the "mod" block, and does not parse any resources in the mod file
 func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
-	res := newDecodeResult()
+	res := NewDecodeResult()
 
 	fileData, diags := LoadFileData(modFilePath)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
 	}
 
 	body, diags := ParseHclFiles(fileData)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
 	}
 
 	workspaceContent, diags := body.Content(WorkspaceBlockSchema)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 	if diags.HasErrors() {
 		return nil, res
 	}
@@ -85,7 +85,7 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfi
 
 	// call decode callback
 	diags = mod.OnDecoded(block, nil)
-	res.addDiags(diags)
+	res.AddDiags(diags)
 
 	return mod, res
 }

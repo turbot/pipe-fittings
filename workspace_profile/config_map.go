@@ -1,4 +1,4 @@
-package modconfig
+package workspace_profile
 
 import (
 	"fmt"

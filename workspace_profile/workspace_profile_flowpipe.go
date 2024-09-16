@@ -1,4 +1,4 @@
-package modconfig
+package workspace_profile
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -56,7 +57,7 @@ func (p *FlowpipeWorkspaceProfile) ShortName() string {
 }
 
 func (p *FlowpipeWorkspaceProfile) CtyValue() (cty.Value, error) {
-	return GetCtyValue(p)
+	return modconfig.GetCtyValue(p)
 }
 
 func (p *FlowpipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {

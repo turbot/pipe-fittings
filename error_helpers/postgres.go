@@ -2,14 +2,13 @@ package error_helpers
 
 import (
 	"errors"
-	"fmt"
 	"github.com/jackc/pgconn"
 )
 
 func DecodePgError(err error) error {
 	var pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
-		return fmt.Errorf(pgError.Message)
+		return errors.New(pgError.Message)
 	}
 	return err
 }

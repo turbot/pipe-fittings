@@ -1,26 +1,26 @@
 package cmdconfig
 
-type bootstrapConfig struct {
-	configDefaults       map[string]any
-	directoryEnvMappings map[string]EnvMapping
+type BootstrapConfig struct {
+	ConfigDefaults       map[string]any
+	DirectoryEnvMappings map[string]EnvMapping
 }
 
-func newBootstrapConfig() *bootstrapConfig {
-	return &bootstrapConfig{
-		configDefaults:       make(map[string]any),
-		directoryEnvMappings: make(map[string]EnvMapping),
+func NewBootstrapConfig() *BootstrapConfig {
+	return &BootstrapConfig{
+		ConfigDefaults:       make(map[string]any),
+		DirectoryEnvMappings: make(map[string]EnvMapping),
 	}
 }
 
-type bootstrapOption func(*bootstrapConfig)
+type BootstrapOption func(*BootstrapConfig)
 
-func WithConfigDefaults(configDefaults map[string]any) bootstrapOption {
-	return func(c *bootstrapConfig) {
-		c.configDefaults = configDefaults
+func WithConfigDefaults(configDefaults map[string]any) BootstrapOption {
+	return func(c *BootstrapConfig) {
+		c.ConfigDefaults = configDefaults
 	}
 }
-func WithDirectoryEnvMappings(directoryEnvMappings map[string]EnvMapping) bootstrapOption {
-	return func(c *bootstrapConfig) {
-		c.directoryEnvMappings = directoryEnvMappings
+func WithDirectoryEnvMappings(directoryEnvMappings map[string]EnvMapping) BootstrapOption {
+	return func(c *BootstrapConfig) {
+		c.DirectoryEnvMappings = directoryEnvMappings
 	}
 }

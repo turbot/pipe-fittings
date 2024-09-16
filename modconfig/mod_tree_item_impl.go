@@ -1,6 +1,8 @@
 package modconfig
 
 import (
+	"fmt"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
@@ -17,7 +19,7 @@ type ModTreeItemImpl struct {
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
 
-	Paths []NodePath `column:"path,jsonb" json:"path,omitempty"`
+	Paths []NodePath `json:"path,omitempty"`
 
 	// node may have multiple parents
 	// use a map to avoid dupes
@@ -26,8 +28,10 @@ type ModTreeItemImpl struct {
 }
 
 func NewModTreeItemImpl(block *hcl.Block, mod *Mod, shortName string) ModTreeItemImpl {
+	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
+
 	return ModTreeItemImpl{
-		HclResourceImpl: NewHclResourceImpl(block, mod, shortName),
+		HclResourceImpl: NewHclResourceImpl(block, fullName),
 		Mod:             mod,
 		parents:         make(map[string]ModTreeItem),
 	}
@@ -56,6 +60,7 @@ func (b *ModTreeItemImpl) GetParents() []ModTreeItem {
 func (b *ModTreeItemImpl) GetChildren() []ModTreeItem {
 	return b.children
 }
+
 func (b *ModTreeItemImpl) GetPaths() []NodePath {
 	// lazy load
 	if len(b.Paths) == 0 {

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -14,16 +15,19 @@ import (
 type HclResourceImpl struct {
 	// required to allow partial decoding
 	HclResourceRemain hcl.Body `hcl:",remain" json:"-"`
-
-	FullName        string            `cty:"name" column:"qualified_name,text" json:"qualified_name,omitempty"`
-	Title           *string           `cty:"title" hcl:"title" column:"title,string"  json:"title,omitempty"`
-	ShortName       string            `cty:"short_name" hcl:"name,label" json:"-"`
+	// FullName is: <modShortName>.<blockType>.<shortName> if there is a mod
+	// and <blockType>.<shortName> if there is no mod
+	FullName  string  `cty:"name" json:"qualified_name,omitempty"`
+	Title     *string `cty:"title" hcl:"title"  json:"title,omitempty"`
+	ShortName string  `cty:"short_name" hcl:"name,label" json:"-"`
+	// UnqualifiedName is the <blockType>.<shortName>
 	UnqualifiedName string            `cty:"unqualified_name" json:"-"`
-	Description     *string           `column:"description,string" cty:"description" hcl:"description" json:"description,omitempty"`
-	Documentation   *string           `column:"documentation,string" cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
+	Description     *string           `cty:"description" hcl:"description" json:"description,omitempty"`
+	Documentation   *string           `cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
 	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
-	Tags            map[string]string `column:"tags,jsonb" cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
-	MaxConcurrency  *int              `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
+	Tags            map[string]string `cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
+	// TODO can we move this out of here?
+	MaxConcurrency *int `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource
 	blockType           string
@@ -31,8 +35,12 @@ type HclResourceImpl struct {
 	isTopLevel          bool
 }
 
-func NewHclResourceImpl(block *hcl.Block, mod *Mod, shortName string) HclResourceImpl {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
+func NewHclResourceImpl(block *hcl.Block, fullName string) HclResourceImpl {
+	// full name has been constructed with the correct short name - which may be a synthetic anonymous block name
+	// extract short name from final section of full name
+	parts := strings.Split(fullName, ".")
+	shortName := parts[len(parts)-1]
+
 	return HclResourceImpl{
 		ShortName:       shortName,
 		FullName:        fullName,

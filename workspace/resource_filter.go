@@ -2,15 +2,16 @@ package workspace
 
 import (
 	"fmt"
-	"github.com/danwakefield/fnmatch"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/printers"
-	filter2 "github.com/turbot/steampipe-plugin-sdk/v5/filter"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
-	"golang.org/x/exp/maps"
 	"log"
 	"net/url"
 	"strings"
+
+	"github.com/danwakefield/fnmatch"
+	"github.com/turbot/pipe-fittings/filter"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/printers"
+	"github.com/turbot/pipe-fittings/sperr"
+	"golang.org/x/exp/maps"
 )
 
 type ResourceFilter struct {
@@ -88,7 +89,7 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 			return true
 		}, nil
 	}
-	parsed, err := filter2.Parse("", []byte(f.Where))
+	parsed, err := filter.Parse("", []byte(f.Where))
 	if err != nil {
 		log.Printf("err %v", err)
 		return nil, sperr.New("failed to parse 'where' property: %s", err.Error())
@@ -96,7 +97,7 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 
 	// convert table schema into a column map
 
-	columnFilter, err := newColumnFilter(parsed.(filter2.ComparisonNode))
+	columnFilter, err := newColumnFilter(parsed.(filter.ComparisonNode))
 	if err != nil {
 		return nil, err
 	}
@@ -120,13 +121,13 @@ type columnFilter struct {
 	values   []string
 }
 
-func newColumnFilter(cn filter2.ComparisonNode) (columnFilter, error) {
+func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 	var res columnFilter
 
 	switch cn.Type {
 
 	case "compare", "like":
-		codeNodes, ok := cn.Values.([]filter2.CodeNode)
+		codeNodes, ok := cn.Values.([]filter.CodeNode)
 		if !ok {
 			return res, fmt.Errorf("failed to parse cn")
 		}
@@ -141,7 +142,7 @@ func newColumnFilter(cn filter2.ComparisonNode) (columnFilter, error) {
 	case "in":
 		res.operator = cn.Operator.Value
 
-		codeNodes, ok := cn.Values.([]filter2.CodeNode)
+		codeNodes, ok := cn.Values.([]filter.CodeNode)
 		if !ok || len(codeNodes) < 2 {
 			return res, fmt.Errorf("failed to parse cn")
 		}

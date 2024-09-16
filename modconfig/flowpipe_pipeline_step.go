@@ -99,7 +99,7 @@ func (o *Output) HasErrors() bool {
 		return false
 	}
 
-	return o.Errors != nil && len(o.Errors) > 0
+	return len(o.Errors) > 0
 }
 
 func (o *Output) flowpipeMetadataCtyMap() (map[string]cty.Value, error) {

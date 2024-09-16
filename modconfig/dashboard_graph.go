@@ -19,17 +19,17 @@ type DashboardGraph struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
 
-	Nodes     DashboardNodeList `cty:"node_list" column:"nodes,jsonb" json:"nodes,omitempty"`
-	Edges     DashboardEdgeList `cty:"edge_list" column:"edges,jsonb" json:"edges,omitempty"`
+	Nodes     DashboardNodeList `cty:"node_list" json:"nodes,omitempty"`
+	Edges     DashboardEdgeList `cty:"edge_list" json:"edges,omitempty"`
 	NodeNames []string          `snapshot:"nodes"`
 	EdgeNames []string          `snapshot:"edges"`
 
 	Categories map[string]*DashboardCategory `cty:"categories" json:"categories,omitempty" snapshot:"categories"`
-	Direction  *string                       `cty:"direction" hcl:"direction" column:"direction,string" json:"direction,omitempty" snapshot:"direction"`
+	Direction  *string                       `cty:"direction" hcl:"direction" json:"direction,omitempty" snapshot:"direction"`
 
 	// these properties are JSON serialised by the parent LeafRun
-	Width   *int    `cty:"width" hcl:"width" column:"width,string"  json:"width,omitempty"`
-	Type    *string `cty:"type" hcl:"type" column:"type,string"  json:"type,omitempty"`
+	Width   *int    `cty:"width" hcl:"width"  json:"width,omitempty"`
+	Type    *string `cty:"type" hcl:"type"  json:"type,omitempty"`
 	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardGraph `hcl:"base" json:"-"`

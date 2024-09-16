@@ -1,4 +1,4 @@
-package steampipeconfig
+package parse
 
 import (
 	"fmt"
@@ -12,17 +12,17 @@ import (
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/parse"
+	"github.com/turbot/pipe-fittings/sperr"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
-func defaultWorkspaceSampleFileName() string {
+func DefaultWorkspaceSampleFileName() string {
 	return fmt.Sprintf("workspaces%s.sample", app_specific.ConfigExtension)
 }
 
-type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
+type WorkspaceProfileLoader[T workspace_profile.WorkspaceProfile] struct {
 	workspaceProfiles map[string]T
 	// list of config locations, in order or DECREASING precedence
 	workspaceProfilePaths []string
@@ -30,7 +30,7 @@ type WorkspaceProfileLoader[T modconfig.WorkspaceProfile] struct {
 	ConfiguredProfile     T
 }
 
-func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePaths ...string) (*WorkspaceProfileLoader[T], error) {
+func NewWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](workspaceProfilePaths ...string) (*WorkspaceProfileLoader[T], error) {
 	loader := &WorkspaceProfileLoader[T]{
 		workspaceProfilePaths: workspaceProfilePaths,
 	}
@@ -43,7 +43,6 @@ func NewWorkspaceProfileLoader[T modconfig.WorkspaceProfile](workspaceProfilePat
 	// if a config paths location was NOT passed, write the workspaces.spc.sample file to the lowest precedence location
 	// (assumed to be the global config folder)
 	if !viper.IsSet(constants.ArgConfigPath) {
-
 		if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths); err != nil {
 			return nil,
 				sperr.WrapWithMessage(
@@ -68,9 +67,11 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfileP
 
 	var sampleContent string
 	switch any(empty).(type) {
-	case *modconfig.FlowpipeWorkspaceProfile:
+	case *workspace_profile.SteampipeWorkspaceProfile:
+		sampleContent = constants.DefaultSteampipeWorkspaceContent
+	case *workspace_profile.FlowpipeWorkspaceProfile:
 		sampleContent = constants.DefaultFlowpipeWorkspaceContent
-	case *modconfig.PowerpipeWorkspaceProfile:
+	case *workspace_profile.PowerpipeWorkspaceProfile:
 		sampleContent = constants.DefaultPowerpipeWorkspaceContent
 	}
 	// always write the workspaces sample file; i.e. workspaces.spc.sample
@@ -79,7 +80,7 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfileP
 		return err
 	}
 
-	defaultWorkspaceSampleFile := filepath.Join(globalConfigPath, defaultWorkspaceSampleFileName())
+	defaultWorkspaceSampleFile := filepath.Join(globalConfigPath, DefaultWorkspaceSampleFileName())
 	//nolint: gosec // this file is safe to be read by all users
 	err = os.WriteFile(defaultWorkspaceSampleFile, []byte(sampleContent), 0755)
 	if err != nil {
@@ -111,14 +112,12 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 
 func (l *WorkspaceProfileLoader[T]) load() error {
 	// load workspaces from all locations
-
 	var workspacesPrecedenceList = make([]map[string]T, 0, len(l.workspaceProfilePaths))
 
 	// load from the config paths in reverse order (i.e. lowest precedence first)
 	for _, configPath := range l.workspaceProfilePaths {
-
 		// load all workspaces in the global config location
-		workspaces, err := parse.LoadWorkspaceProfiles[T](configPath)
+		workspaces, err := LoadWorkspaceProfiles[T](configPath)
 		if err != nil {
 			return err
 		}
@@ -155,7 +154,7 @@ func (l *WorkspaceProfileLoader[T]) setDefault(workspacesPrecedenceList []map[st
 
 	// create an empty default
 	var diags hcl.Diagnostics
-	defaultWorkspace, diags := modconfig.NewDefaultWorkspaceProfile[T]()
+	defaultWorkspace, diags := workspace_profile.NewDefaultWorkspaceProfile[T]()
 	if diags.HasErrors() {
 		return error_helpers.HclDiagsToError("failed to create default workspace", diags)
 	}
@@ -194,11 +193,11 @@ Essentially, --workspace acme/dev is equivalent to:
 */
 func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	var empty T
-	if IsCloudWorkspaceIdentifier(name) {
+	if steampipeconfig.IsCloudWorkspaceIdentifier(name) {
 		switch any(empty).(type) {
-		case *modconfig.PowerpipeWorkspaceProfile:
+		case *workspace_profile.PowerpipeWorkspaceProfile:
 			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)
-			var res modconfig.WorkspaceProfile = &modconfig.PowerpipeWorkspaceProfile{
+			var res workspace_profile.WorkspaceProfile = &workspace_profile.PowerpipeWorkspaceProfile{
 				SnapshotLocation: utils.ToStringPointer(name),
 				Database:         utils.ToStringPointer(name),
 			}

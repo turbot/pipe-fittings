@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -14,7 +15,7 @@ type InstallOpts struct {
 	ModArgs        []string
 	DryRun         bool
 	Force          bool
-	PluginVersions *modconfig.PluginVersionMap
+	PluginVersions *plugin.PluginVersionMap
 	UpdateStrategy string
 }
 

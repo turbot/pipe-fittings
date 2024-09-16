@@ -3,10 +3,10 @@ package backend
 import (
 	"context"
 	"database/sql"
-	"github.com/turbot/pipe-fittings/constants"
 	"strings"
 
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/sperr"
 )
 
 const (

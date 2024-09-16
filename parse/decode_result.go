@@ -12,7 +12,7 @@ type DecodeResult struct {
 	Depends map[string]*modconfig.ResourceDependency
 }
 
-func newDecodeResult() *DecodeResult {
+func NewDecodeResult() *DecodeResult {
 	return &DecodeResult{Depends: make(map[string]*modconfig.ResourceDependency)}
 }
 
@@ -31,9 +31,9 @@ func (p *DecodeResult) Success() bool {
 	return !p.Diags.HasErrors() && len(p.Depends) == 0
 }
 
-// if the diags contains dependency errors, add dependencies to the result
-// otherwise add diags to the result
-func (p *DecodeResult) handleDecodeDiags(diags hcl.Diagnostics) {
+// HandleDecodeDiags adds dependencies to the result if the diags contains dependency errors,
+// otherwise adds diags to the result
+func (p *DecodeResult) HandleDecodeDiags(diags hcl.Diagnostics) {
 	for _, diag := range diags {
 		if dependency := diagsToDependency(diag); dependency != nil {
 			p.Depends[dependency.String()] = dependency
@@ -41,7 +41,7 @@ func (p *DecodeResult) handleDecodeDiags(diags hcl.Diagnostics) {
 	}
 	// only register errors if there are NOT any missing variables
 	if len(p.Depends) == 0 {
-		p.addDiags(diags)
+		p.AddDiags(diags)
 	}
 }
 
@@ -53,6 +53,6 @@ func diagsToDependency(diag *hcl.Diagnostic) *modconfig.ResourceDependency {
 	return nil
 }
 
-func (p *DecodeResult) addDiags(diags hcl.Diagnostics) {
+func (p *DecodeResult) AddDiags(diags hcl.Diagnostics) {
 	p.Diags = append(p.Diags, diags...)
 }

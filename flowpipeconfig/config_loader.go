@@ -133,7 +133,7 @@ func (f *FlowpipeConfig) importCredentials() error {
 				}
 				connectionName := block.Labels[0]
 
-				if credentialImport.Connections != nil && len(credentialImport.Connections) > 0 {
+				if len(credentialImport.Connections) > 0 {
 					if !isRequiredConnection(connectionName, credentialImport.Connections) {
 						continue
 					}

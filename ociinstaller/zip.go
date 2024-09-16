@@ -8,16 +8,23 @@ import (
 	"path/filepath"
 )
 
+// TODO verify size
+const maxDecompressedSize = 100 << 20 // 100 MB size limit for decompressed data
+
 func Ungzip(sourceFile string, destDir string) (string, error) {
 	r, err := os.Open(sourceFile)
 	if err != nil {
 		return "", err
 	}
+	defer r.Close()
 
 	uncompressedStream, err := gzip.NewReader(r)
 	if err != nil {
 		return "", err
 	}
+
+	// Limit the amount of data being written to prevent decompression bombs
+	limitedReader := io.LimitReader(uncompressedStream, maxDecompressedSize)
 
 	destFile := filepath.Join(destDir, uncompressedStream.Name)
 	outFile, err := os.OpenFile(destFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
@@ -25,7 +32,7 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 		return "", err
 	}
 
-	if _, err := io.Copy(outFile, uncompressedStream); err != nil { //nolint:gosec // TODO G110: Potential DoS vulnerability via decompression bomb
+	if _, err := io.Copy(outFile, limitedReader); err != nil {
 		return "", err
 	}
 
@@ -37,7 +44,14 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 	return destFile, nil
 }
 
-// moves a file within an fs partition. panics if movement is attempted between partitions
+func FileExists(filePath string) bool {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+// MoveFileWithinPartition moves a file within an fs partition. panics if movement is attempted between partitions
 // this is done separately to achieve performance benefits of os.Rename over reading and writing content
 func MoveFileWithinPartition(sourcePath, destPath string) error {
 	if err := os.Rename(sourcePath, destPath); err != nil {
@@ -46,7 +60,7 @@ func MoveFileWithinPartition(sourcePath, destPath string) error {
 	return nil
 }
 
-// moves a folder within an fs partition. panics if movement is attempted between partitions
+// MoveFolderWithinPartition moves a folder within an fs partition. panics if movement is attempted between partitions
 // this is done separately to achieve performance benefits of os.Rename over reading and writing content
 func MoveFolderWithinPartition(sourcePath, destPath string) error {
 	sourceinfo, err := os.Stat(sourcePath)

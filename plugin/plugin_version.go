@@ -1,13 +1,12 @@
-package modconfig
+package plugin
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/hclhelpers"
-
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 )
 
@@ -56,7 +55,7 @@ func (p *PluginVersion) Initialise(block *hcl.Block) hcl.Diagnostics {
 		})
 	}
 	// parse plugin name
-	p.Org, p.Name, _ = ociinstaller.NewSteampipeImageRef(p.RawName).GetOrgNameAndStream()
+	p.Org, p.Name, _ = ociinstaller.NewImageRef(p.RawName).GetOrgNameAndStream()
 
 	return diags
 }

@@ -61,7 +61,7 @@ func DecodeCredential(configPath string, block *hcl.Block) (credential.Credentia
 		Variables: make(map[string]cty.Value),
 	}
 
-	diags = decodeHclBody(body, evalCtx, nil, cred)
+	diags = DecodeHclBody(body, evalCtx, nil, cred)
 	if len(diags) > 0 {
 		return nil, diags
 	}

@@ -1,10 +1,11 @@
 package modinstaller
 
 import (
+	"testing"
+
 	"github.com/Masterminds/semver/v3"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/versionmap"
-	"testing"
 )
 
 // some predefined update checkers

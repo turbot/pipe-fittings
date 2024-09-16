@@ -63,7 +63,7 @@ func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integrati
 		Variables: make(map[string]cty.Value),
 	}
 
-	diags = decodeHclBody(body, evalCtx, nil, integration)
+	diags = DecodeHclBody(body, evalCtx, nil, integration)
 	if len(diags) > 0 {
 		return nil, diags
 	}

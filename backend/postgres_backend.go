@@ -6,7 +6,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/constants"
 	"net/netip"
 	"strings"
 	"time"
@@ -14,9 +13,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/queryresult"
+	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
 )
 
 var postgresConnectionStringPrefixes = []string{"postgresql://", "postgres://"}

@@ -86,7 +86,7 @@ func TransformErrorToSteampipe(err error) error {
 			errString = strings.TrimPrefix(errString, "rpc error: code = Unknown desc =")
 		}
 	}
-	return fmt.Errorf(strings.TrimSpace(errString))
+	return errors.New(strings.TrimSpace(errString))
 }
 
 // HandleCancelError modifies a context.Canceled error into a readable error that can

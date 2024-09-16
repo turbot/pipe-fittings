@@ -6,6 +6,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+// TODO no longer needed - included on go maps
 // MergeMaps merges 'new' onto 'old'.
 // Values existing in old already have precedence
 // Any value existing in new but not old is added to old

@@ -113,6 +113,10 @@ type ResourceMapsProvider interface {
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }
 
+type ResourceProvider interface {
+	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
+}
+
 // NodeAndEdgeProvider must be implemented by any dashboard leaf node which supports edges and nodes
 // (DashboardGraph, DashboardFlow, DashboardHierarchy)
 // TODO [node_reuse] add NodeAndEdgeProviderImpl https://github.com/turbot/steampipe/issues/2918

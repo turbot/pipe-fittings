@@ -1,10 +1,11 @@
 package versionmap
 
 import (
+	"sort"
+
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/maps"
-	"sort"
 )
 
 // InstalledDependencyVersionsMap is a map of parent names to a map of dependencies for that parent, keyed by dependency name
