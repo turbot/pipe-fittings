@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/plugin"
 	"log/slog"
 	"path"
 	"strings"
@@ -23,12 +24,12 @@ const (
 
 var ValidImportSchemaValues = []string{ImportSchemaEnabled, ImportSchemaDisabled}
 
-// Connection is a struct representing the partially parsed connection
+// SteampipeConnection is a struct representing the partially parsed connection
 //
 // (Partial as the connection config, which is plugin specific, is stored as raw HCL.
 // This will be parsed by the plugin)
 // json tags needed as this is stored in the connection state file
-type Connection struct {
+type SteampipeConnection struct {
 	// connection name
 	Name string `json:"name"`
 	// name of plugin as mentioned in config - this may be an alias to a plugin image ref
@@ -50,7 +51,7 @@ type Connection struct {
 	ConnectionNames []string `json:"connections,omitempty"`
 	// a map of the resolved child connections
 	// (only valid for "aggregator" type)
-	Connections map[string]*Connection `json:"-"`
+	Connections map[string]*SteampipeConnection `json:"-"`
 	// a list of the names resolved child connections
 	// (only valid for "aggregator" type)
 	ResolvedConnectionNames []string `json:"resolved_connections,omitempty"`
@@ -59,75 +60,24 @@ type Connection struct {
 
 	Error error
 
-	DeclRange Range `json:"decl_range"`
+	DeclRange plugin.Range `json:"decl_range"`
 }
 
-// Range represents a span of characters between two positions in a source file.
-// This is a direct re-implementation of hcl.Range, allowing us to control JSON serialization
-type Range struct {
-	// Filename is the name of the file into which this range's positions point.
-	Filename string `json:"filename,omitempty"`
-
-	// Start and End represent the bounds of this range. Start is inclusive and End is exclusive.
-	Start Pos `json:"start,omitempty"`
-	End   Pos `json:"end,omitempty"`
-}
-
-func (r Range) GetLegacy() hcl.Range {
-	return hcl.Range{
-		Filename: r.Filename,
-		Start:    r.Start.GetLegacy(),
-		End:      r.End.GetLegacy(),
-	}
-}
-
-func NewRange(sourceRange hcl.Range) Range {
-	return Range{
-		Filename: sourceRange.Filename,
-		Start:    NewPos(sourceRange.Start),
-		End:      NewPos(sourceRange.End),
-	}
-}
-
-// Pos represents a single position in a source file
-// This is a direct re-implementation of hcl.Pos, allowing us to control JSON serialization
-type Pos struct {
-	Line   int `json:"line"`
-	Column int `json:"column"`
-	Byte   int `json:"byte"`
-}
-
-func (r Pos) GetLegacy() hcl.Pos {
-	return hcl.Pos{
-		Line:   r.Line,
-		Column: r.Column,
-		Byte:   r.Byte,
-	}
-}
-
-func NewPos(sourcePos hcl.Pos) Pos {
-	return Pos{
-		Line:   sourcePos.Line,
-		Column: sourcePos.Column,
-		Byte:   sourcePos.Byte,
-	}
-}
-
-func NewConnection(block *hcl.Block) *Connection {
-	return &Connection{
+func NewConnection(block *hcl.Block) *SteampipeConnection {
+	return &SteampipeConnection{
 		Name:         block.Labels[0],
-		DeclRange:    NewRange(hclhelpers.BlockRange(block)),
+		DeclRange:    plugin.NewRange(hclhelpers.BlockRange(block)),
 		ImportSchema: ImportSchemaEnabled,
 		// default to plugin
 		Type: ConnectionTypePlugin,
 	}
 }
 
-func (c *Connection) ImportDisabled() bool {
+func (c *SteampipeConnection) ImportDisabled() bool {
 	return c.ImportSchema == constants.ConnectionStateDisabled
 }
 
-func (c *Connection) Equals(other *Connection) bool {
+func (c *SteampipeConnection) Equals(other *SteampipeConnection) bool {
 	return c.Name == other.Name &&
 		c.Plugin == other.Plugin &&
 		c.Type == other.Type &&
@@ -137,14 +87,14 @@ func (c *Connection) Equals(other *Connection) bool {
 
 }
 
-func (c *Connection) String() string {
+func (c *SteampipeConnection) String() string {
 	return fmt.Sprintf("\n----\nName: %s\nPlugin: %s\nConfig:\n%s\n", c.Name, c.Plugin, c.Config)
 }
 
 // Validate verifies the Type property is valid,
 // if this is an aggregator connection, there must be at least one child, and no duplicates
 // if this is NOT an aggregator, there must be no children
-func (c *Connection) Validate(map[string]*Connection) (warnings []string, errors []string) {
+func (c *SteampipeConnection) Validate(map[string]*SteampipeConnection) (warnings []string, errors []string) {
 	validConnectionTypes := []string{ConnectionTypePlugin, ConnectionTypeAggregator}
 	if !helpers.StringSliceContains(validConnectionTypes, c.Type) {
 		return nil, []string{fmt.Sprintf("connection '%s' has invalid connection type '%s'", c.Name, c.Type)}
@@ -169,7 +119,7 @@ func (c *Connection) Validate(map[string]*Connection) (warnings []string, errors
 
 }
 
-func (c *Connection) ValidateAggregatorConnection() (warnings, errors []string) {
+func (c *SteampipeConnection) ValidateAggregatorConnection() (warnings, errors []string) {
 	if len(c.Connections) == 0 {
 		/// there should be at least one connection - raise as warning
 		return []string{c.GetEmptyAggregatorError()}, nil
@@ -193,7 +143,7 @@ func (c *Connection) ValidateAggregatorConnection() (warnings, errors []string) 
 	return nil, validationErrors
 }
 
-func (c *Connection) GetEmptyAggregatorError() string {
+func (c *SteampipeConnection) GetEmptyAggregatorError() string {
 	patterns := c.ConnectionNames
 	if len(patterns) == 0 {
 		return fmt.Sprintf("aggregator '%s' defines no child connections", c.Name)
@@ -208,9 +158,9 @@ func (c *Connection) GetEmptyAggregatorError() string {
 		strings.Join(patterns, "','"))
 }
 
-func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []string {
-	slog.Debug("Connection.PopulateChildren for aggregator connection", "connection", c.Name)
-	c.Connections = make(map[string]*Connection)
+func (c *SteampipeConnection) PopulateChildren(connectionMap map[string]*SteampipeConnection) []string {
+	slog.Debug("SteampipeConnection.PopulateChildren for aggregator connection", "connection", c.Name)
+	c.Connections = make(map[string]*SteampipeConnection)
 	var failures []string
 	for _, childPattern := range c.ConnectionNames {
 		// if this resolves as an existing connection, populate it
@@ -222,13 +172,13 @@ func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []st
 				slog.Warn(msg)
 				failures = append(failures, msg)
 			} else {
-				slog.Debug("Connection.PopulateChildren found matching connection", "childPattern", childPattern)
+				slog.Debug("SteampipeConnection.PopulateChildren found matching connection", "childPattern", childPattern)
 				c.Connections[childPattern] = childConnection
 			}
 			continue
 		}
 
-		slog.Debug("Connection.PopulateChildren no connection matches pattern - treating as a wildcard", "childPattern", childPattern)
+		slog.Debug("SteampipeConnection.PopulateChildren no connection matches pattern - treating as a wildcard", "childPattern", childPattern)
 		// otherwise treat the connection name as a wildcard and see what matches
 		for name, connection := range connectionMap {
 			// if this is an aggregator connection, skip (this will also avoid us adding ourselves)
@@ -254,7 +204,7 @@ func (c *Connection) PopulateChildren(connectionMap map[string]*Connection) []st
 
 // GetResolveConnectionNames return the names of all child connections
 // (will only be non-empty for aggregator connections)
-func (c *Connection) GetResolveConnectionNames() []string {
+func (c *SteampipeConnection) GetResolveConnectionNames() []string {
 	res := make([]string, len(c.Connections))
 	idx := 0
 	for k := range c.Connections {
@@ -262,4 +212,19 @@ func (c *Connection) GetResolveConnectionNames() []string {
 		idx++
 	}
 	return res
+}
+
+func (c *SteampipeConnection) GetDeclRange() plugin.Range {
+	return c.DeclRange
+}
+
+func (c *SteampipeConnection) GetDisplayName() string {
+	if c.ImportDisabled() {
+		return fmt.Sprintf("%s (disabled)", c.Name)
+	}
+	return c.Name
+}
+
+func (c *SteampipeConnection) GetName() string {
+	return c.Name
 }
