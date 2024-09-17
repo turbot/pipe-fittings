@@ -8,7 +8,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
-// General
 type Check struct {
 	Output    *string `hcl:"output" cty:"check_output"`
 	Separator *string `hcl:"separator" cty:"check_separator"`

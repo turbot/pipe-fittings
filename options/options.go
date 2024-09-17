@@ -2,14 +2,12 @@ package options
 
 // hcl options block types
 const (
-	ServerBlock     = "server"
-	ConnectionBlock = "connection"
-	QueryBlock      = "query"
-	CheckBlock      = "check"
-	DashboardBlock  = "dashboard"
-	DatabaseBlock   = "database"
-	GeneralBlock    = "general"
-	PluginBlock     = "plugin"
+	QueryBlock     = "query"
+	CheckBlock     = "check"
+	DashboardBlock = "dashboard"
+	DatabaseBlock  = "database"
+	GeneralBlock   = "general"
+	PluginBlock    = "plugin"
 )
 
 type Options interface {

@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"log/slog"
 	"path"
-	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/utils"
 	"golang.org/x/exp/maps"
 )
@@ -137,21 +135,6 @@ func (c *Connection) Equals(other *Connection) bool {
 		c.Config == other.Config &&
 		c.ImportSchema == other.ImportSchema
 
-}
-
-// SetOptions sets the options on the connection
-// verify the options object is a valid options type (only options.Connection currently supported)
-func (c *Connection) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
-	var diags hcl.Diagnostics
-	switch o := opts.(type) {
-	default:
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("invalid nested option type %s - only 'connection' options blocks are supported for Connections", reflect.TypeOf(o).Name()),
-			Subject:  hclhelpers.BlockRangePointer(block),
-		})
-	}
-	return diags
 }
 
 func (c *Connection) String() string {

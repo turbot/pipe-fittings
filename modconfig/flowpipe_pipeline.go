@@ -297,23 +297,16 @@ func (p *Pipeline) CtyValue() (cty.Value, error) {
 	return cty.ObjectVal(pipelineVars), nil
 }
 
-// SetOptions sets the options on the connection
-// verify the options object is a valid options type (only options.Connection currently supported)
-func (p *Pipeline) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
-
-	var diags hcl.Diagnostics
-	switch o := opts.(type) {
-	default:
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("invalid nested option type %s - only 'connection' options blocks are supported for Connections", reflect.TypeOf(o).Name()),
-			Subject:  &block.DefRange,
-		})
-	}
-	return diags
+// SetOptions sets the options on the pipeline (not supported)
+func (p *Pipeline) SetOptions(_ options.Options, block *hcl.Block) hcl.Diagnostics {
+	return hcl.Diagnostics{&hcl.Diagnostic{
+		Severity: hcl.DiagError,
+		Summary:  "options are not supported on pipelines",
+		Subject:  &block.DefRange,
+	}}
 }
 
-func (ph *Pipeline) UnmarshalJSON(data []byte) error {
+func (p *Pipeline) UnmarshalJSON(data []byte) error {
 	// Define an auxiliary type to decode the JSON and capture the value of the 'ISteps' field
 	type Aux struct {
 		PipelineName string          `json:"pipeline_name"`
@@ -330,10 +323,10 @@ func (ph *Pipeline) UnmarshalJSON(data []byte) error {
 
 	// Assign values to the fields of the main struct
 
-	ph.FullName = aux.PipelineName
-	ph.PipelineName = aux.PipelineName
-	ph.Description = aux.Description
-	ph.StepsRawJson = []byte(aux.Raw)
+	p.FullName = aux.PipelineName
+	p.PipelineName = aux.PipelineName
+	p.Description = aux.Description
+	p.StepsRawJson = []byte(aux.Raw)
 
 	// Determine the concrete type of 'ISteps' based on the data present in the JSON
 	if aux.ISteps != nil && string(aux.ISteps) != "null" {
@@ -360,42 +353,42 @@ func (ph *Pipeline) UnmarshalJSON(data []byte) error {
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
-				ph.Steps = append(ph.Steps, &step)
+				p.Steps = append(p.Steps, &step)
 
 			case schema.BlockTypePipelineStepSleep:
 				var step PipelineStepSleep
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
-				ph.Steps = append(ph.Steps, &step)
+				p.Steps = append(p.Steps, &step)
 
 			case schema.BlockTypePipelineStepEmail:
 				var step PipelineStepEmail
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
-				ph.Steps = append(ph.Steps, &step)
+				p.Steps = append(p.Steps, &step)
 
 			case schema.BlockTypePipelineStepTransform:
 				var step PipelineStepTransform
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
-				ph.Steps = append(ph.Steps, &step)
+				p.Steps = append(p.Steps, &step)
 
 			case schema.BlockTypePipelineStepQuery:
 				var step PipelineStepQuery
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
-				ph.Steps = append(ph.Steps, &step)
+				p.Steps = append(p.Steps, &step)
 
 			case schema.BlockTypePipelineStepPipeline:
 				var step PipelineStepPipeline
 				if err := json.Unmarshal(stepData, &step); err != nil {
 					return err
 				}
-				ph.Steps = append(ph.Steps, &step)
+				p.Steps = append(p.Steps, &step)
 
 			case schema.BlockTypePipelineStepFunction:
 				var step PipelineStepFunction
