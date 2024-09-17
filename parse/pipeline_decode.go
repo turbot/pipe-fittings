@@ -269,12 +269,6 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		vars := evalCtx.Variables
 		vars[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
 		evalCtx.Variables = vars
-
-		defer func() {
-			vars := evalCtx.Variables
-			delete(vars, schema.BlockTypeNotifier)
-			evalCtx.Variables = vars
-		}()
 	}
 
 	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
