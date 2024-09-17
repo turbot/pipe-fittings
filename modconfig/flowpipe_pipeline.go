@@ -184,7 +184,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *h
 		}
 
 		var val interface{}
-		if param.IsConnectionType() {
+		if param.IsCustomType() {
 			dottedStringParts := strings.Split(v, ".")
 			if len(dottedStringParts) != 3 {
 				errors = append(errors, perr.BadRequestWithMessage("invalid connection string format"))
@@ -234,7 +234,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *h
 func validateParam(param *PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
-	if !param.Type.HasDynamicTypes() && !param.IsConnectionType() && !param.IsNotifierType() {
+	if !param.Type.HasDynamicTypes() && !param.IsCustomType() && !param.IsNotifierType() {
 		valToValidate, err = gocty.ToCtyValue(inputParam, param.Type)
 		if err != nil {
 			return err
@@ -608,7 +608,7 @@ type PipelineParam struct {
 	Tags        map[string]string `json:"tags,omitempty"`
 }
 
-func (p *PipelineParam) IsConnectionType() bool {
+func (p *PipelineParam) IsCustomType() bool {
 	if !p.Type.IsCapsuleType() && !(p.Type.IsListType() && p.Type.ElementType().IsCapsuleType()) {
 		return false
 	}
@@ -627,7 +627,10 @@ func (p *PipelineParam) IsConnectionType() bool {
 
 	if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
 		return true
+	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
+		return true
 	}
+
 	return false
 }
 

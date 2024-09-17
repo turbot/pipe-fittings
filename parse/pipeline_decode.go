@@ -233,6 +233,13 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		connMap, err := BuildTemporaryConnectionMapForEvalContext(context.TODO(), parseCtx.PipelingConnections)
 		if err != nil {
 			slog.Warn("failed to build temporary connection map for eval context", "error", err)
+			return o, hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "failed to build temporary connection map for eval context",
+					Subject:  &block.DefRange,
+				},
+			}
 		}
 
 		vars := evalCtx.Variables
@@ -242,6 +249,30 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		defer func() {
 			vars := evalCtx.Variables
 			delete(vars, schema.BlockTypeConnection)
+			evalCtx.Variables = vars
+		}()
+	}
+
+	if len(parseCtx.Notifiers) > 0 {
+		notifierMap, err := BuildNotifierMapForEvalContext(parseCtx.Notifiers)
+		if err != nil {
+			slog.Warn("failed to build notifier map for eval context", "error", err)
+			return o, hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "failed to build notifier map for eval context",
+					Subject:  &block.DefRange,
+				},
+			}
+		}
+
+		vars := evalCtx.Variables
+		vars[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
+		evalCtx.Variables = vars
+
+		defer func() {
+			vars := evalCtx.Variables
+			delete(vars, schema.BlockTypeNotifier)
 			evalCtx.Variables = vars
 		}()
 	}
@@ -310,7 +341,7 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 		// Does the default value matches the specified type?
 		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
-			if o.IsConnectionType() {
+			if o.IsCustomType() {
 				ctdiags := modconfig.CustomTypeValidation(attr, ctyVal, o.Type)
 				if len(ctdiags) > 0 {
 					diags = append(diags, ctdiags...)

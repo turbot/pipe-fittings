@@ -122,6 +122,7 @@ func (c *NotifierImpl) CtyValue() (cty.Value, error) {
 	if c.Description != nil {
 		notifierMap["description"] = *c.Description
 	}
+	notifierMap["resource_type"] = "notifier"
 
 	notifierCtyVal, err := hclhelpers.ConvertInterfaceToCtyValue(notifierMap)
 	return notifierCtyVal, err
