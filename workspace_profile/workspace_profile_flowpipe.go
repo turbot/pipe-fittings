@@ -38,16 +38,6 @@ type FlowpipeWorkspaceProfile struct {
 	DeclRange hcl.Range
 }
 
-// SetOptions sets the options on the connection
-// verify the options object is a valid options type (only options.Connection currently supported)
-func (p *FlowpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
-	return hcl.Diagnostics{&hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  "Flowpipe workspaces do not support options",
-		Subject:  hclhelpers.BlockRangePointer(block),
-	}}
-}
-
 func (p *FlowpipeWorkspaceProfile) Name() string {
 	return fmt.Sprintf("workspace.%s", p.ProfileName)
 }
@@ -163,6 +153,16 @@ func (p *FlowpipeWorkspaceProfile) GetInstallDir() *string {
 
 func (p *FlowpipeWorkspaceProfile) IsNil() bool {
 	return p == nil
+}
+
+// SetOptions sets the options on the Workspace
+// FlowpipeWorkspaceProfile does not support options
+func (p *FlowpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
+	return hcl.Diagnostics{&hcl.Diagnostic{
+		Severity: hcl.DiagError,
+		Summary:  "Flowpipe workspaces do not support options",
+		Subject:  hclhelpers.BlockRangePointer(block),
+	}}
 }
 
 func (p *FlowpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {

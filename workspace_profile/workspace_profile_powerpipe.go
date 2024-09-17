@@ -61,16 +61,6 @@ type PowerpipeWorkspaceProfile struct {
 	DeclRange hcl.Range
 }
 
-// SetOptions sets the options on the connection
-// verify the options object is a valid options type (only options.Connection currently supported)
-func (p *PowerpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
-	return hcl.Diagnostics{&hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  "options blocks are supported",
-		Subject:  hclhelpers.BlockRangePointer(block),
-	}}
-}
-
 func (p *PowerpipeWorkspaceProfile) Name() string {
 	return fmt.Sprintf("workspace.%s", p.ProfileName)
 }
@@ -233,6 +223,16 @@ func (p *PowerpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (option
 	return nil, hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  fmt.Sprintf("Unexpected options type '%s'", block.Type),
+		Subject:  hclhelpers.BlockRangePointer(block),
+	}}
+}
+
+// SetOptions sets the options on the connection
+// PowerpipeWorkspaceProfile does not support options
+func (p *PowerpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
+	return hcl.Diagnostics{&hcl.Diagnostic{
+		Severity: hcl.DiagError,
+		Summary:  "options blocks are supported",
 		Subject:  hclhelpers.BlockRangePointer(block),
 	}}
 }

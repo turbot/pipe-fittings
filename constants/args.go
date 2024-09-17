@@ -4,6 +4,7 @@ package constants
 const (
 	ArgVersion             = "version"
 	ArgAll                 = "all"
+	ArgBrowser             = "browser"
 	ArgClear               = "clear"
 	ArgServicePassword     = "database-password"
 	ArgServiceShowPassword = "show-password"
