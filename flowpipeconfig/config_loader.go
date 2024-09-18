@@ -309,7 +309,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 			conn, moreDiags := parse.DecodePipelingConnection(configPath, block)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
-				slog.Debug("failed to decode notifier block")
+				slog.Debug("failed to decode connection block")
 				continue
 			}
 
