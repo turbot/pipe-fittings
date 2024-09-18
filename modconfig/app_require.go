@@ -2,11 +2,11 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 )
 

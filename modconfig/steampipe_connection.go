@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/plugin"
 	"log/slog"
 	"path"
 	"strings"
@@ -60,13 +59,13 @@ type SteampipeConnection struct {
 
 	Error error
 
-	DeclRange plugin.Range `json:"decl_range"`
+	DeclRange hclhelpers.Range `json:"decl_range"`
 }
 
 func NewConnection(block *hcl.Block) *SteampipeConnection {
 	return &SteampipeConnection{
 		Name:         block.Labels[0],
-		DeclRange:    plugin.NewRange(hclhelpers.BlockRange(block)),
+		DeclRange:    hclhelpers.NewRange(hclhelpers.BlockRange(block)),
 		ImportSchema: ImportSchemaEnabled,
 		// default to plugin
 		Type: ConnectionTypePlugin,
@@ -214,7 +213,7 @@ func (c *SteampipeConnection) GetResolveConnectionNames() []string {
 	return res
 }
 
-func (c *SteampipeConnection) GetDeclRange() plugin.Range {
+func (c *SteampipeConnection) GetDeclRange() hclhelpers.Range {
 	return c.DeclRange
 }
 
