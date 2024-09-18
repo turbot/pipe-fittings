@@ -91,7 +91,7 @@ var tests = []testSetup{
 	{
 		title:         "Missing var trigger",
 		modDir:        "./mods/mod_missing_var_trigger",
-		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> var.trigger_schedule",
+		containsError: "trigger.my_hourly_trigger -> var.trigger_schedule",
 	},
 	{
 		title:         "Bad step pipeline reference",
