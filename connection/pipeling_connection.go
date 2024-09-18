@@ -25,6 +25,7 @@ type PipelingConnection interface {
 	GetEnv() map[string]cty.Value
 
 	Equals(PipelingConnection) bool
+	GetConnectionImpl() ConnectionImpl
 }
 
 FIND ME A HOME!!!
