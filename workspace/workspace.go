@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -196,6 +197,7 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 
 	inputVariables, errorsAndWarnings := w.getInputVariables(ctx, w.validateVariables)
 	if errorsAndWarnings.Error != nil {
+		slog.Error("Error loading input variables", "error", errorsAndWarnings.Error)
 		return errorsAndWarnings
 	}
 

@@ -736,18 +736,26 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 
 	settingValueMap := setting.AsValueMap()
 
-	if settingValueMap["resource_type"].IsNull() || settingValueMap["type"].IsNull() || settingValueMap["name"].IsNull() {
+	if settingValueMap["resource_type"].IsNull() || settingValueMap["name"].IsNull() {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "The value for param must have a 'resource_type', 'type' and 'name' key",
+			Summary:  "The value for param must have a 'resource_type', and 'name' key",
 		}
 		return hcl.Diagnostics{diag}
 	}
 
 	resourceType := settingValueMap["resource_type"].AsString()
-	if resourceType == "connection" {
+	if resourceType == schema.BlockTypeConnection {
+		if settingValueMap["type"].IsNull() {
+			diag := &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "The value for param must have a 'type' key",
+			}
+			return hcl.Diagnostics{diag}
+		}
+
 		// check if the connection actually exists in the eval context
-		allConnections := evalCtx.Variables["connection"]
+		allConnections := evalCtx.Variables[schema.BlockTypeConnection]
 		if allConnections == cty.NilVal {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -774,6 +782,33 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "No connection found for the given connection name",
+				}
+				return hcl.Diagnostics{diag}
+			} else {
+				// TRUE
+				return hcl.Diagnostics{}
+			}
+		}
+	} else if resourceType == schema.BlockTypeNotifier {
+		// check if the connection actually exists in the eval context
+		allNotifiers := evalCtx.Variables[schema.BlockTypeNotifier]
+		if allNotifiers == cty.NilVal {
+			diag := &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "No notifier found",
+			}
+			return hcl.Diagnostics{diag}
+		}
+
+		notifierName := settingValueMap["name"].AsString()
+
+		if allNotifiers.Type().IsMapType() || allNotifiers.Type().IsObjectType() {
+			allNotifiersMap := allNotifiers.AsValueMap()
+
+			if allNotifiersMap[notifierName].IsNull() {
+				diag := &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "No noitifier found for the given notifier name",
 				}
 				return hcl.Diagnostics{diag}
 			} else {

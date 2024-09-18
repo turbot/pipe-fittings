@@ -25,4 +25,12 @@ pipeline "custom_type_two" {
     param "list_of_conns_generic" {
         type = list(connection)
     }
+
+    param "notifier" {
+        type = notifier
+    }
+
+    param "list_of_notifier" {
+        type = list(notifier)        
+    }
 }

@@ -2578,6 +2578,114 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Expected: false,
 		},
 	},
+	"notifier": {
+		{
+			Name: "simple",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("frontend"),
+				"resource_type": cty.StringVal("notifier"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "invalid_name",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("not_valid"),
+				"resource_type": cty.StringVal("notifier"),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "default",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("default"),
+				"resource_type": cty.StringVal("notifier"),
+			}),
+			Expected: true,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+		{
+			Name: "invalid_type_3",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: false,
+		},
+	},
+	"list_of_notifier": {
+		{
+			Name: "simple",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "just_one",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "invalid_name",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("not_valid"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "one_with_wrong_type",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+	},
 }
 
 func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
@@ -2587,7 +2695,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_two"})
 	assert.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
