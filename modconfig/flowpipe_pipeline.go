@@ -184,7 +184,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *h
 		}
 
 		var val interface{}
-		if param.IsConnectionType() {
+		if param.IsCustomType() {
 			dottedStringParts := strings.Split(v, ".")
 			if len(dottedStringParts) != 3 {
 				errors = append(errors, perr.BadRequestWithMessage("invalid connection string format"))
@@ -234,7 +234,7 @@ func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *h
 func validateParam(param *PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
-	if !param.Type.HasDynamicTypes() && !param.IsConnectionType() && !param.IsNotifierType() {
+	if !param.Type.HasDynamicTypes() && !param.IsCustomType() && !param.IsNotifierType() {
 		valToValidate, err = gocty.ToCtyValue(inputParam, param.Type)
 		if err != nil {
 			return err
@@ -608,7 +608,7 @@ type PipelineParam struct {
 	Tags        map[string]string `json:"tags,omitempty"`
 }
 
-func (p *PipelineParam) IsConnectionType() bool {
+func (p *PipelineParam) IsCustomType() bool {
 	if !p.Type.IsCapsuleType() && !(p.Type.IsListType() && p.Type.ElementType().IsCapsuleType()) {
 		return false
 	}
@@ -627,7 +627,10 @@ func (p *PipelineParam) IsConnectionType() bool {
 
 	if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
 		return true
+	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
+		return true
 	}
+
 	return false
 }
 
@@ -733,18 +736,26 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 
 	settingValueMap := setting.AsValueMap()
 
-	if settingValueMap["resource_type"].IsNull() || settingValueMap["type"].IsNull() || settingValueMap["name"].IsNull() {
+	if settingValueMap["resource_type"].IsNull() || settingValueMap["name"].IsNull() {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "The value for param must have a 'resource_type', 'type' and 'name' key",
+			Summary:  "The value for param must have a 'resource_type', and 'name' key",
 		}
 		return hcl.Diagnostics{diag}
 	}
 
 	resourceType := settingValueMap["resource_type"].AsString()
-	if resourceType == "connection" {
+	if resourceType == schema.BlockTypeConnection {
+		if settingValueMap["type"].IsNull() {
+			diag := &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "The value for param must have a 'type' key",
+			}
+			return hcl.Diagnostics{diag}
+		}
+
 		// check if the connection actually exists in the eval context
-		allConnections := evalCtx.Variables["connection"]
+		allConnections := evalCtx.Variables[schema.BlockTypeConnection]
 		if allConnections == cty.NilVal {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -771,6 +782,33 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "No connection found for the given connection name",
+				}
+				return hcl.Diagnostics{diag}
+			} else {
+				// TRUE
+				return hcl.Diagnostics{}
+			}
+		}
+	} else if resourceType == schema.BlockTypeNotifier {
+		// check if the connection actually exists in the eval context
+		allNotifiers := evalCtx.Variables[schema.BlockTypeNotifier]
+		if allNotifiers == cty.NilVal {
+			diag := &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "No notifier found",
+			}
+			return hcl.Diagnostics{diag}
+		}
+
+		notifierName := settingValueMap["name"].AsString()
+
+		if allNotifiers.Type().IsMapType() || allNotifiers.Type().IsObjectType() {
+			allNotifiersMap := allNotifiers.AsValueMap()
+
+			if allNotifiersMap[notifierName].IsNull() {
+				diag := &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "No noitifier found for the given notifier name",
 				}
 				return hcl.Diagnostics{diag}
 			} else {

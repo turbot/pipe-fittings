@@ -16,7 +16,7 @@ linters:
     - depguard
     - durationcheck
     # - exhaustive
-    - exportloopref
+    - copyloopvar
     - forbidigo
     - gocritic
     - gocheckcompilerdirectives

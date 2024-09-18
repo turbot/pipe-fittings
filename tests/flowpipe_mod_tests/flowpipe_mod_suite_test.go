@@ -2265,7 +2265,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 			found = true
 			break
 		}
-		assert.Equal(false, param.IsConnectionType())
+		assert.Equal(false, param.IsCustomType())
 	}
 
 	if !found {
@@ -2578,6 +2578,114 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Expected: false,
 		},
 	},
+	"notifier": {
+		{
+			Name: "simple",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("frontend"),
+				"resource_type": cty.StringVal("notifier"),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "invalid_name",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("not_valid"),
+				"resource_type": cty.StringVal("notifier"),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "default",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("default"),
+				"resource_type": cty.StringVal("notifier"),
+			}),
+			Expected: true,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+		{
+			Name: "invalid_type_3",
+			Setting: cty.ObjectVal(map[string]cty.Value{
+				"name":          cty.StringVal("example"),
+				"resource_type": cty.StringVal("connection"),
+			}),
+			Expected: false,
+		},
+	},
+	"list_of_notifier": {
+		{
+			Name: "simple",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "just_one",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+			}),
+			Expected: true,
+		},
+		{
+			Name: "invalid_name",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("not_valid"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name: "one_with_wrong_type",
+			Setting: cty.ListVal([]cty.Value{
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("frontend"),
+					"resource_type": cty.StringVal("notifier"),
+				}),
+				cty.ObjectVal(map[string]cty.Value{
+					"name":          cty.StringVal("default"),
+					"resource_type": cty.StringVal("connection"),
+				}),
+			}),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type",
+			Setting:  cty.StringVal("invalid type"),
+			Expected: false,
+		},
+		{
+			Name:     "invalid_type_2",
+			Setting:  cty.ListVal([]cty.Value{cty.StringVal("invalid type"), cty.StringVal("invalid type 2")}),
+			Expected: false,
+		},
+	},
 }
 
 func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
@@ -2587,7 +2695,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_two"})
 	assert.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
@@ -2632,7 +2740,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		testLists := testCustomTypeTwoData[param.Name]
 		t.Log("testing param: ", param.Name)
 
-		assert.Equal(true, param.IsConnectionType())
+		assert.Equal(true, param.IsCustomType())
 		for _, testData := range testLists {
 			t.Log("testing: ", testData.Name)
 			valid, _, err := param.ValidateSetting(testData.Setting, evalContext)
@@ -2657,6 +2765,24 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["custom_type_three.pipeline.custom_type_three"]
+
+	for _, p := range pipeline.Params {
+		if p.Name == "conn" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("modconfig.AwsConnection", p.Type.EncapsulatedType().String())
+		} else if p.Name == "list_of_conns" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("modconfig.AwsConnection", p.Type.ListElementType().EncapsulatedType().String())
+		} else if p.Name == "conn_generic" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("*modconfig.ConnectionImpl", p.Type.EncapsulatedType().String())
+		} else if p.Name == "list_of_conns_generic" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("*modconfig.ConnectionImpl", p.Type.ListElementType().EncapsulatedType().String())
+		}
+	}
 }
 
 func (suite *FlowpipeModTestSuite) TestCustomType() {
@@ -2668,6 +2794,38 @@ func (suite *FlowpipeModTestSuite) TestCustomType() {
 
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
+}
+
+func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
+	t := suite.T()
+	assert := assert.New(t)
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_notifier"})
+	assert.Nil(errAndWarning.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_notifier", workspace.WithNotifiers(flowpipeConfig.Notifiers), workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	pipeline := w.Mod.ResourceMaps.Pipelines["custom_type_notifier.pipeline.notifier"]
+
+	assert.NotNil(pipeline)
+
+	for _, p := range pipeline.Params {
+		if p.Name == "notifier" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("*modconfig.NotifierImpl", p.Type.EncapsulatedType().String())
+		} else if p.Name == "list_of_notifiers" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
+		} else if p.Name == "list_of_notifiers_more" {
+			assert.Equal(true, p.IsCustomType())
+			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
+		} else {
+			assert.Fail("unexpected param")
+		}
+	}
 }
 
 // In order for 'go test' to run this suite, we need to create
