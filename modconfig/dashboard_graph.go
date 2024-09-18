@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -191,7 +192,7 @@ func (g *DashboardGraph) AddChild(child HclResource) hcl.Diagnostics {
 
 // CtyValue implements CtyValueProvider
 func (g *DashboardGraph) CtyValue() (cty.Value, error) {
-	return GetCtyValue(g)
+	return cty_helpers.GetCtyValue(g)
 }
 
 func (g *DashboardGraph) setBaseProperties() {

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -202,7 +203,7 @@ func (c *Control) Diff(other *Control) *DashboardTreeItemDiffs {
 
 // CtyValue implements CtyValueProvider
 func (c *Control) CtyValue() (cty.Value, error) {
-	return GetCtyValue(c)
+	return cty_helpers.GetCtyValue(c)
 }
 
 func (c *Control) setBaseProperties() {

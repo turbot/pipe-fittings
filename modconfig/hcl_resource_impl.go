@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -197,7 +198,7 @@ func (b *HclResourceImpl) CtyValue() (cty.Value, error) {
 	if b.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return GetCtyValue(b)
+	return cty_helpers.GetCtyValue(b)
 }
 
 // GetBase implements HclResource

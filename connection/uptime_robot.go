@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type UptimeRobotConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
@@ -21,7 +21,7 @@ func (c *UptimeRobotConnection) GetConnectionType() string {
 	return "uptimerobot"
 }
 
-func (c *UptimeRobotConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *UptimeRobotConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		uptimeRobotAPIKeyEnvVar := os.Getenv("UPTIMEROBOT_API_KEY")
 
@@ -37,7 +37,7 @@ func (c *UptimeRobotConnection) Resolve(ctx context.Context) (modconfig.Pipeling
 	return c, nil
 }
 
-func (c *UptimeRobotConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *UptimeRobotConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -68,7 +68,7 @@ func (c *UptimeRobotConnection) GetTtl() int {
 }
 
 func (c *UptimeRobotConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

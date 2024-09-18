@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type OktaConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Domain *string `json:"domain,omitempty" cty:"domain" hcl:"domain,optional"`
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
@@ -22,7 +22,7 @@ func (c *OktaConnection) GetConnectionType() string {
 	return "okta"
 }
 
-func (c *OktaConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *OktaConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.Token == nil && c.Domain == nil {
 		apiTokenEnvVar := os.Getenv("OKTA_CLIENT_TOKEN")
@@ -41,7 +41,7 @@ func (c *OktaConnection) Resolve(ctx context.Context) (modconfig.PipelingConnect
 	return c, nil
 }
 
-func (c *OktaConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *OktaConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -76,7 +76,7 @@ func (c *OktaConnection) GetTtl() int {
 }
 
 func (c *OktaConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

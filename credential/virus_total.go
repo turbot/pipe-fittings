@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -22,7 +23,7 @@ func (c *VirusTotalCredential) getEnv() map[string]cty.Value {
 }
 
 func (c *VirusTotalCredential) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

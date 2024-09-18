@@ -1,4 +1,4 @@
-package modconfig
+package connection
 
 import (
 	"context"
@@ -13,11 +13,9 @@ import (
 )
 
 type PipelingConnection interface {
-	HclResource
-
-	SetHclResourceImpl(hclResourceImpl HclResourceImpl)
 	GetConnectionType() string
-	GetUnqualifiedName() string
+	GetShortName() string
+	Name() string
 
 	CtyValue() (cty.Value, error)
 	Resolve(ctx context.Context) (PipelingConnection, error)
@@ -29,67 +27,7 @@ type PipelingConnection interface {
 	Equals(PipelingConnection) bool
 }
 
-func NewPipelingConnection(block *hcl.Block) (PipelingConnection, error) {
-	connectionType := block.Labels[0]
-	connectionName := block.Labels[1]
-
-	hclResourceImpl := NewHclResourceImplNoMod(block, connectionType, connectionName)
-
-	conn, err := instantiateConnection(connectionType, hclResourceImpl)
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, err
-}
-
-func instantiateConnection(key string, hclResourceImpl HclResourceImpl) (PipelingConnection, error) {
-	t, exists := app_specific.ConnectionTypRegistry[key]
-	if !exists {
-		return nil, perr.BadRequestWithMessage("Invalid connection type " + key)
-	}
-	credInterface := reflect.New(t).Interface()
-	cred, ok := credInterface.(PipelingConnection)
-	if !ok {
-		return nil, perr.InternalWithMessage("Failed to create connection")
-	}
-	cred.SetHclResourceImpl(hclResourceImpl)
-
-	return cred, nil
-}
-
-func ConnectionCtyType(connectionType string) cty.Type {
-	goType := app_specific.ConnectionTypRegistry[connectionType]
-	if goType == nil {
-		return cty.NilType
-	}
-
-	return cty.Capsule(connectionType, goType)
-}
-
-func DefaultPipelingConnections() (map[string]PipelingConnection, error) {
-	conns := make(map[string]PipelingConnection)
-
-	for k := range app_specific.ConnectionTypRegistry {
-		hclResourceImpl := HclResourceImpl{
-			FullName:        k + ".default",
-			ShortName:       "default",
-			UnqualifiedName: k + ".default",
-		}
-
-		defaultCred, err := instantiateConnection(k, hclResourceImpl)
-		if err != nil {
-			return nil, err
-		}
-
-		conns[k+".default"] = defaultCred
-
-		error_helpers.RegisterConnectionType(k)
-	}
-
-	return conns, nil
-}
-
+FIND ME A HOME!!!
 func validateMapAttribute(attr *hcl.Attribute, valueMap map[string]cty.Value, key, errMsg string) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	if valueMap[key] == cty.NilVal {

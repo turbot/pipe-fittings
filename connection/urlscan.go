@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type UrlscanConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
@@ -21,7 +21,7 @@ func (c *UrlscanConnection) GetConnectionType() string {
 	return "urlscan"
 }
 
-func (c *UrlscanConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")
 
@@ -36,7 +36,7 @@ func (c *UrlscanConnection) Resolve(ctx context.Context) (modconfig.PipelingConn
 	return c, nil
 }
 
-func (c *UrlscanConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *UrlscanConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -67,7 +67,7 @@ func (c *UrlscanConnection) GetTtl() int {
 }
 
 func (c *UrlscanConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

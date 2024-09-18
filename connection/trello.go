@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type TrelloConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
@@ -22,7 +22,7 @@ func (c *TrelloConnection) GetConnectionType() string {
 	return "trello"
 }
 
-func (c *TrelloConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.APIKey == nil && c.Token == nil {
 		apiKeyEnvVar := os.Getenv("TRELLO_API_KEY")
@@ -40,7 +40,7 @@ func (c *TrelloConnection) Resolve(ctx context.Context) (modconfig.PipelingConne
 	return c, nil
 }
 
-func (c *TrelloConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *TrelloConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -75,7 +75,7 @@ func (c *TrelloConnection) GetTtl() int {
 }
 
 func (c *TrelloConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

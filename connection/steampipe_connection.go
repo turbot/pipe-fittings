@@ -1,9 +1,7 @@
 package connection
 
-import "github.com/turbot/pipe-fittings/modconfig"
-
 type SteampipePgConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 	UserName   *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 	Host       *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
 	Port       *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`

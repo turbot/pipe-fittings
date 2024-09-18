@@ -3,6 +3,7 @@ package test_init
 import (
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
 	"reflect"
 )
@@ -31,7 +32,7 @@ func SetAppSpecificConstants() {
 	//app_specific.ServiceConnectionAppNamePrefix
 	app_specific.WorkspaceIgnoreFile = ".flowpipeignore"
 	app_specific.WorkspaceDataDir = ".flowpipe"
-	app_specific.ConnectionTypRegistry = map[string]reflect.Type{
+	app_specific_connection.ConnectionTypRegistry = map[string]reflect.Type{
 		(&connection.AbuseIPDBConnection{}).GetConnectionType(): reflect.TypeOf(connection.AbuseIPDBConnection{}),
 		(&connection.AlicloudConnection{}).GetConnectionType():  reflect.TypeOf(connection.AlicloudConnection{}),
 		(&connection.AwsConnection{}).GetConnectionType():       reflect.TypeOf(connection.AwsConnection{}),

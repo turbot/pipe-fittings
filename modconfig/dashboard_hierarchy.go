@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -190,7 +191,7 @@ func (h *DashboardHierarchy) AddChild(child HclResource) hcl.Diagnostics {
 
 // CtyValue implements CtyValueProvider
 func (h *DashboardHierarchy) CtyValue() (cty.Value, error) {
-	return GetCtyValue(h)
+	return cty_helpers.GetCtyValue(h)
 }
 
 func (h *DashboardHierarchy) setBaseProperties() {

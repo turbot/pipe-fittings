@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type OpsgenieConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AlertAPIKey    *string `json:"alert_api_key,omitempty" cty:"alert_api_key" hcl:"alert_api_key,optional"`
 	IncidentAPIKey *string `json:"incident_api_key,omitempty" cty:"incident_api_key" hcl:"incident_api_key,optional"`
@@ -22,7 +22,7 @@ func (c *OpsgenieConnection) GetConnectionType() string {
 	return "opsgenie"
 }
 
-func (c *OpsgenieConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *OpsgenieConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.AlertAPIKey == nil && c.IncidentAPIKey == nil {
 		alertAPIKeyEnvVar := os.Getenv("OPSGENIE_ALERT_API_KEY")
 		incidentAPIKeyEnvVar := os.Getenv("OPSGENIE_INCIDENT_API_KEY")
@@ -39,7 +39,7 @@ func (c *OpsgenieConnection) Resolve(ctx context.Context) (modconfig.PipelingCon
 	return c, nil
 }
 
-func (c *OpsgenieConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *OpsgenieConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -74,7 +74,7 @@ func (c *OpsgenieConnection) GetTtl() int {
 }
 
 func (c *OpsgenieConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

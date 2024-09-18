@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -115,7 +116,7 @@ func (c *AwsCredential) getEnv() map[string]cty.Value {
 }
 
 func (c *AwsCredential) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

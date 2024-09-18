@@ -2,6 +2,8 @@ package flowpipeconfig
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"log/slog"
 	"sync"
 
@@ -19,7 +21,7 @@ type FlowpipeConfig struct {
 	Credentials         map[string]credential.Credential
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
-	PipelingConnections map[string]modconfig.PipelingConnection
+	PipelingConnections map[string]connection.PipelingConnection
 
 	watcher                 *filewatcher.FileWatcher
 	fileWatcherErrorHandler func(context.Context, error)
@@ -193,7 +195,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		return nil
 	}
 
-	defaultPipelingConnections, err := modconfig.DefaultPipelingConnections()
+	defaultPipelingConnections, err := app_specific_connection.DefaultPipelingConnections()
 	if err != nil {
 		slog.Error("Unable to create default pipeling connections", "error", err)
 		return nil

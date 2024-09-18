@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type OpenAIConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
@@ -21,7 +21,7 @@ func (c *OpenAIConnection) GetConnectionType() string {
 	return "openai"
 }
 
-func (c *OpenAIConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *OpenAIConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		apiKeyEnvVar := os.Getenv("OPENAI_API_KEY")
 
@@ -36,7 +36,7 @@ func (c *OpenAIConnection) Resolve(ctx context.Context) (modconfig.PipelingConne
 	return c, nil
 }
 
-func (c *OpenAIConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *OpenAIConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -67,7 +67,7 @@ func (c *OpenAIConnection) GetTtl() int {
 }
 
 func (c *OpenAIConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

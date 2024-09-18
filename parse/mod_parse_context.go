@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/connection"
 	"log/slog"
 	"strings"
 	"sync"
@@ -68,7 +69,7 @@ type ModParseContext struct {
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
 	Credentials         map[string]credential.Credential
 	CredentialImports   map[string]credential.CredentialImport
-	PipelingConnections map[string]modconfig.PipelingConnection
+	PipelingConnections map[string]connection.PipelingConnection
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 

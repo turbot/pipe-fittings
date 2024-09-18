@@ -1,6 +1,8 @@
 package modconfig
 
 import (
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -17,9 +19,10 @@ import (
 
 type PipelineStepQuery struct {
 	PipelineStepBase
-	Database *string       `json:"database"`
-	Sql      *string       `json:"sql"`
-	Args     []interface{} `json:"args"`
+	Database         *string
+	ConnectionString *string       `json:"database"`
+	Sql              *string       `json:"sql"`
+	Args             []interface{} `json:"args"`
 }
 
 func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
@@ -182,7 +185,7 @@ func (p *PipelineStepQuery) Validate() hcl.Diagnostics {
 	return diags
 }
 
-func CtyValueToConnection(value cty.Value) (_ PipelingConnection, err error) {
+func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = perr.BadRequestWithMessage("unable to decode connection: " + r.(string))
@@ -196,9 +199,11 @@ func CtyValueToConnection(value cty.Value) (_ PipelingConnection, err error) {
 		return nil, perr.BadRequestWithMessage("connection name must be in the format <type>.<name>")
 	}
 	connectionType := parts[0]
+	shortName := parts[1]
 
 	// now instantiate an empty connection of the correct type
-	conn, err := instantiateConnection(connectionType, HclResourceImpl{})
+	// TODO KAI can we get range from cty
+	conn, err := app_specific_connection.InstantiateConnection(connectionType, shortName, hcl.Range{})
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}

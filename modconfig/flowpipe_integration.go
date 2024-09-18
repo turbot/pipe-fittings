@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
@@ -118,7 +119,7 @@ func (i *SlackIntegration) Equals(other Integration) bool {
 }
 
 func (i *SlackIntegration) CtyValue() (cty.Value, error) {
-	iCty, err := GetCtyValue(i)
+	iCty, err := cty_helpers.GetCtyValue(i)
 	if err != nil {
 		return cty.NilVal, err
 	}
@@ -373,7 +374,7 @@ func (i *EmailIntegration) GetIntegrationType() string {
 }
 
 func (i *EmailIntegration) CtyValue() (cty.Value, error) {
-	iCty, err := GetCtyValue(i)
+	iCty, err := cty_helpers.GetCtyValue(i)
 	if err != nil {
 		return cty.NilVal, err
 	}
@@ -930,7 +931,7 @@ func (i *HttpIntegration) Equals(other Integration) bool {
 }
 
 func (i *HttpIntegration) CtyValue() (cty.Value, error) {
-	iCty, err := GetCtyValue(i)
+	iCty, err := cty_helpers.GetCtyValue(i)
 	if err != nil {
 		return cty.NilVal, err
 	}
@@ -995,7 +996,7 @@ type MsTeamsIntegration struct {
 }
 
 func (i *MsTeamsIntegration) CtyValue() (cty.Value, error) {
-	iCty, err := GetCtyValue(i)
+	iCty, err := cty_helpers.GetCtyValue(i)
 	if err != nil {
 		return cty.NilVal, err
 	}

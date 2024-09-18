@@ -4,13 +4,13 @@ import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type MastodonConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 	Server      *string `json:"server,omitempty" cty:"server" hcl:"server,optional"`
@@ -20,11 +20,11 @@ func (c *MastodonConnection) GetConnectionType() string {
 	return "mastodon"
 }
 
-func (c *MastodonConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *MastodonConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	return c, nil
 }
 
-func (c *MastodonConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *MastodonConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -59,7 +59,7 @@ func (c *MastodonConnection) GetTtl() int {
 }
 
 func (c *MastodonConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

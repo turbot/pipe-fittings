@@ -4,13 +4,12 @@ import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type PostgresConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 	UserName         *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 	Host             *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
 	Port             *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
@@ -19,11 +18,18 @@ type PostgresConnection struct {
 	SearchPath       *string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 }
 
-func (p *PostgresConnection) GetConnectionType() string {
-	return "postgres"
+func NewPostgresConnection(name string, declRange hcl.Range) PipelingConnection {
+	return &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: name,
+			Type:      "postgres",
+			DeclRange: declRange,
+		},
+	}
+
 }
 
-func (p *PostgresConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if we have a connection string, return it as is
 	if p.ConnectionString != nil {
 		return p, nil
@@ -47,7 +53,7 @@ func (p *PostgresConnection) GetEnv() map[string]cty.Value {
 	return map[string]cty.Value{}
 }
 
-func (p *PostgresConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (p *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if p == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -69,4 +75,8 @@ func (p *PostgresConnection) Equals(otherConnection modconfig.PipelingConnection
 		utils.PtrEqual(p.Password, other.Password) &&
 		utils.PtrEqual(p.SearchPath, other.SearchPath)
 
+}
+
+func (p *PostgresConnection) CtyValue() (cty.Value, error) {
+	return ctyValueForConnection(p)
 }

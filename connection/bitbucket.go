@@ -2,17 +2,17 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type BitbucketConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	BaseURL  *string `json:"base_url,omitempty" cty:"base_url" hcl:"base_url,optional"`
 	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
@@ -23,7 +23,7 @@ func (c *BitbucketConnection) GetConnectionType() string {
 	return "bitbucket"
 }
 
-func (c *BitbucketConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *BitbucketConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Password == nil && c.BaseURL == nil && c.Username == nil {
 		bitbucketURLEnvVar := os.Getenv("BITBUCKET_API_BASE_URL")
 		bitbucketUsernameEnvVar := os.Getenv("BITBUCKET_USERNAME")
@@ -42,7 +42,7 @@ func (c *BitbucketConnection) Resolve(ctx context.Context) (modconfig.PipelingCo
 	return c, nil
 }
 
-func (c *BitbucketConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *BitbucketConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -77,7 +77,7 @@ func (c *BitbucketConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *BitbucketConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

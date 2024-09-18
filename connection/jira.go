@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type JiraConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIToken *string `json:"api_token,omitempty" cty:"api_token" hcl:"api_token,optional"`
 	BaseURL  *string `json:"base_url,omitempty" cty:"base_url" hcl:"base_url,optional"`
@@ -23,7 +23,7 @@ func (c *JiraConnection) GetConnectionType() string {
 	return "jira"
 }
 
-func (c *JiraConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *JiraConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIToken == nil && c.BaseURL == nil && c.Username == nil {
 		// The order of precedence for the Jira API token environment variable
 		// 1. JIRA_API_TOKEN
@@ -49,7 +49,7 @@ func (c *JiraConnection) Resolve(ctx context.Context) (modconfig.PipelingConnect
 	return c, nil
 }
 
-func (c *JiraConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -88,7 +88,7 @@ func (c *JiraConnection) GetTtl() int {
 }
 
 func (c *JiraConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

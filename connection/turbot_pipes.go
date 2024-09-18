@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type PipesConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
@@ -21,7 +21,7 @@ func (c *PipesConnection) GetConnectionType() string {
 	return "pipes"
 }
 
-func (c *PipesConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *PipesConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		pipesTokenEnvVar := os.Getenv("PIPES_TOKEN")
 
@@ -36,7 +36,7 @@ func (c *PipesConnection) Resolve(ctx context.Context) (modconfig.PipelingConnec
 	return c, nil
 }
 
-func (c *PipesConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *PipesConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -67,7 +67,7 @@ func (c *PipesConnection) GetTtl() int {
 }
 
 func (c *PipesConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

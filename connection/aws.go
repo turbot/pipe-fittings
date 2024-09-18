@@ -6,13 +6,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type AwsConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AccessKey    *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 	SecretKey    *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
@@ -25,7 +25,7 @@ func (c *AwsConnection) GetConnectionType() string {
 	return "aws"
 }
 
-func (c *AwsConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// if access key and secret key are provided, just return it
 	if c.AccessKey != nil && c.SecretKey != nil {
@@ -70,7 +70,7 @@ func (c *AwsConnection) Resolve(ctx context.Context) (modconfig.PipelingConnecti
 	return newConnection, nil
 }
 
-func (c *AwsConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -138,7 +138,7 @@ func (c *AwsConnection) GetTtl() int {
 }
 
 func (c *AwsConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type PagerDutyConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
@@ -21,7 +21,7 @@ func (c *PagerDutyConnection) GetConnectionType() string {
 	return "pagerduty"
 }
 
-func (c *PagerDutyConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *PagerDutyConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		pagerDutyTokenEnvVar := os.Getenv("PAGERDUTY_TOKEN")
 
@@ -36,7 +36,7 @@ func (c *PagerDutyConnection) Resolve(ctx context.Context) (modconfig.PipelingCo
 	return c, nil
 }
 
-func (c *PagerDutyConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *PagerDutyConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -67,7 +67,7 @@ func (c *PagerDutyConnection) GetTtl() int {
 }
 
 func (c *PagerDutyConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
@@ -23,7 +24,7 @@ func (c *MastodonCredential) getEnv() map[string]cty.Value {
 }
 
 func (c *MastodonCredential) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

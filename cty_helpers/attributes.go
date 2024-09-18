@@ -1,4 +1,4 @@
-package modconfig
+package cty_helpers
 
 import (
 	"log/slog"

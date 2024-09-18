@@ -306,14 +306,14 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 			f.Notifiers[notifier.GetUnqualifiedName()] = notifier
 		case schema.BlockTypeConnection:
 
-			conn, moreDiags := parse.DecodeFlowpipeConnection(configPath, block)
+			conn, moreDiags := parse.DecodePipelingConnection(configPath, block)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				slog.Debug("failed to decode notifier block")
 				continue
 			}
 
-			f.PipelingConnections[conn.GetUnqualifiedName()] = conn
+			f.PipelingConnections[conn.Name()] = conn
 		}
 	}
 

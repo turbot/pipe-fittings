@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type FreshdeskConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey    *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
@@ -22,7 +22,7 @@ func (c *FreshdeskConnection) GetConnectionType() string {
 	return "freshdesk"
 }
 
-func (c *FreshdeskConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *FreshdeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	freshdeskAPIKeyEnvVar := os.Getenv("FRESHDESK_API_KEY")
 	freshdeskSubdomainEnvVar := os.Getenv("FRESHDESK_SUBDOMAIN")
 
@@ -46,7 +46,7 @@ func (c *FreshdeskConnection) Resolve(ctx context.Context) (modconfig.PipelingCo
 	return newConnection, nil
 }
 
-func (c *FreshdeskConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *FreshdeskConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -77,7 +77,7 @@ func (c *FreshdeskConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *FreshdeskConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

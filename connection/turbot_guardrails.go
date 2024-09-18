@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type GuardrailsConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
@@ -23,7 +23,7 @@ func (c *GuardrailsConnection) GetConnectionType() string {
 	return "guardrails"
 }
 
-func (c *GuardrailsConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	guardrailsAccessKeyEnvVar := os.Getenv("TURBOT_ACCESS_KEY")
 	guardrailsSecretKeyEnvVar := os.Getenv("TURBOT_SECRET_KEY")
 	guardrailsWorkspaceEnvVar := os.Getenv("TURBOT_WORKSPACE")
@@ -55,7 +55,7 @@ func (c *GuardrailsConnection) Resolve(ctx context.Context) (modconfig.PipelingC
 	return newConnection, nil
 }
 
-func (c *GuardrailsConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *GuardrailsConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -94,7 +94,7 @@ func (c *GuardrailsConnection) GetTtl() int {
 }
 
 func (c *GuardrailsConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

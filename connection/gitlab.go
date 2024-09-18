@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type GitLabConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
@@ -21,7 +21,7 @@ func (c *GitLabConnection) GetConnectionType() string {
 	return "gitlab"
 }
 
-func (c *GitLabConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *GitLabConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		gitlabAccessTokenEnvVar := os.Getenv("GITLAB_TOKEN")
 
@@ -36,7 +36,7 @@ func (c *GitLabConnection) Resolve(ctx context.Context) (modconfig.PipelingConne
 	return c, nil
 }
 
-func (c *GitLabConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *GitLabConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -63,7 +63,7 @@ func (c *GitLabConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *GitLabConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

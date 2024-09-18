@@ -3,6 +3,7 @@ package credential
 import (
 	"context"
 	"encoding/json"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 	"path/filepath"
 
@@ -30,7 +31,7 @@ func (c *GcpCredential) getEnv() map[string]cty.Value {
 }
 
 func (c *GcpCredential) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

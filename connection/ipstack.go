@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type IPstackConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 }
@@ -21,7 +21,7 @@ func (c *IPstackConnection) GetConnectionType() string {
 	return "ipstack"
 }
 
-func (c *IPstackConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.AccessKey == nil {
 		// The order of precedence for the IPstack access key environment variable
 		// 1. IPSTACK_ACCESS_KEY
@@ -43,7 +43,7 @@ func (c *IPstackConnection) Resolve(ctx context.Context) (modconfig.PipelingConn
 	return c, nil
 }
 
-func (c *IPstackConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *IPstackConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -70,7 +70,7 @@ func (c *IPstackConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *IPstackConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

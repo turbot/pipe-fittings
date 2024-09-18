@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
@@ -43,7 +44,7 @@ type Workspace struct {
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
 	Credentials         map[string]credential.Credential
-	PipelingConnections map[string]modconfig.PipelingConnection
+	PipelingConnections map[string]connection.PipelingConnection
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/schema"
@@ -400,7 +401,7 @@ func (d *Dashboard) setInputMap() []string {
 
 // CtyValue implements CtyValueProvider
 func (d *Dashboard) CtyValue() (cty.Value, error) {
-	return GetCtyValue(d)
+	return cty_helpers.GetCtyValue(d)
 }
 
 func (d *Dashboard) setBaseProperties() hcl.Diagnostics {

@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"sort"
 	"strings"
@@ -206,7 +207,7 @@ func (b *Benchmark) SetChildren(children []ModTreeItem) {
 
 // CtyValue implements CtyValueProvider
 func (b *Benchmark) CtyValue() (cty.Value, error) {
-	return GetCtyValue(b)
+	return cty_helpers.GetCtyValue(b)
 }
 
 func (b *Benchmark) setBaseProperties() {

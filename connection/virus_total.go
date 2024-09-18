@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type VirusTotalConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
@@ -21,7 +21,7 @@ func (c *VirusTotalConnection) GetConnectionType() string {
 	return "virustotal"
 }
 
-func (c *VirusTotalConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *VirusTotalConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		virusTotalAPIKeyEnvVar := os.Getenv("VTCLI_APIKEY")
 
@@ -37,7 +37,7 @@ func (c *VirusTotalConnection) Resolve(ctx context.Context) (modconfig.PipelingC
 	return c, nil
 }
 
-func (c *VirusTotalConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *VirusTotalConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -68,7 +68,7 @@ func (c *VirusTotalConnection) GetTtl() int {
 }
 
 func (c *VirusTotalConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type ServiceNowConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	InstanceURL *string `json:"instance_url,omitempty" cty:"instance_url" hcl:"instance_url,optional"`
 	Username    *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
@@ -23,7 +23,7 @@ func (c *ServiceNowConnection) GetConnectionType() string {
 	return "servicenow"
 }
 
-func (c *ServiceNowConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	servicenowInstanceURLEnvVar := os.Getenv("SERVICENOW_INSTANCE_URL")
 	servicenowUsernameEnvVar := os.Getenv("SERVICENOW_USERNAME")
 	servicenowPasswordEnvVar := os.Getenv("SERVICENOW_PASSWORD")
@@ -54,7 +54,7 @@ func (c *ServiceNowConnection) Resolve(ctx context.Context) (modconfig.PipelingC
 	return newConnection, nil
 }
 
-func (c *ServiceNowConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *ServiceNowConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -93,7 +93,7 @@ func (c *ServiceNowConnection) GetTtl() int {
 }
 
 func (c *ServiceNowConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

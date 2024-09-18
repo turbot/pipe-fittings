@@ -3,7 +3,7 @@ package connection
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 	"path/filepath"
 
@@ -16,7 +16,7 @@ import (
 )
 
 type GcpConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Credentials *string `json:"credentials,omitempty" cty:"credentials" hcl:"credentials,optional"`
 	Ttl         *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
@@ -28,7 +28,7 @@ func (c *GcpConnection) GetConnectionType() string {
 	return "gcp"
 }
 
-func (c *GcpConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// First check if the credential file is supplied
 	var credentialFile string
@@ -108,7 +108,7 @@ func (c *GcpConnection) Resolve(ctx context.Context) (modconfig.PipelingConnecti
 	return newConnection, nil
 }
 
-func (c *GcpConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *GcpConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -139,7 +139,7 @@ func (c *GcpConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *GcpConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

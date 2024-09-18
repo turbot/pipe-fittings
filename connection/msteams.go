@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type MicrosoftTeamsConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
@@ -21,7 +21,7 @@ func (c *MicrosoftTeamsConnection) GetConnectionType() string {
 	return "microsoft_teams"
 }
 
-func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.AccessToken == nil {
 		msTeamsAccessTokenEnvVar := os.Getenv("TEAMS_ACCESS_TOKEN")
 
@@ -36,7 +36,7 @@ func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (modconfig.Pipel
 	return c, nil
 }
 
-func (c *MicrosoftTeamsConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *MicrosoftTeamsConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -67,7 +67,7 @@ func (c *MicrosoftTeamsConnection) GetTtl() int {
 }
 
 func (c *MicrosoftTeamsConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

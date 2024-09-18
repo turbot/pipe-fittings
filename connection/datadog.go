@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type DatadogConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 	AppKey *string `json:"app_key,omitempty" cty:"app_key" hcl:"app_key,optional"`
@@ -23,7 +23,7 @@ func (c *DatadogConnection) GetConnectionType() string {
 	return "datadog"
 }
 
-func (c *DatadogConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *DatadogConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
 	datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")
 
@@ -48,7 +48,7 @@ func (c *DatadogConnection) Resolve(ctx context.Context) (modconfig.PipelingConn
 	return newConnection, nil
 }
 
-func (c *DatadogConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *DatadogConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -83,7 +83,7 @@ func (c *DatadogConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *DatadogConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

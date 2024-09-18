@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stevenle/topsort"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -125,7 +126,7 @@ func (c *DashboardContainer) WalkResources(resourceFunc func(resource HclResourc
 
 // CtyValue implements CtyValueProvider
 func (c *DashboardContainer) CtyValue() (cty.Value, error) {
-	return GetCtyValue(c)
+	return cty_helpers.GetCtyValue(c)
 }
 
 // GetShowData implements printers.Showable

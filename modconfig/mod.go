@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 	"path/filepath"
 
@@ -344,7 +345,7 @@ func (m *Mod) validatePluginVersions(availablePlugins plugin.PluginVersionMap) [
 
 // CtyValue implements CtyValueProvider
 func (m *Mod) CtyValue() (cty.Value, error) {
-	return GetCtyValue(m)
+	return cty_helpers.GetCtyValue(m)
 }
 
 // GetInstallCacheKey returns the key used to find this mod in a workspace lock InstallCache

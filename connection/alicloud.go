@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type AlicloudConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
@@ -22,7 +22,7 @@ func (c *AlicloudConnection) GetConnectionType() string {
 	return "alicloud"
 }
 
-func (c *AlicloudConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	// The order of precedence for the environment variable
 	// 1. ALIBABACLOUD_ACCESS_KEY_ID
@@ -68,7 +68,7 @@ func (c *AlicloudConnection) Resolve(ctx context.Context) (modconfig.PipelingCon
 	return newConnection, nil
 }
 
-func (c *AlicloudConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *AlicloudConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -125,7 +125,7 @@ func (c *AlicloudConnection) GetTtl() int {
 }
 
 func (c *AlicloudConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

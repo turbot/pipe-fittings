@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
@@ -160,7 +161,7 @@ func (q *QueryProviderImpl) CtyValue() (cty.Value, error) {
 	if q.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return GetCtyValue(q)
+	return cty_helpers.GetCtyValue(q)
 }
 
 func (q *QueryProviderImpl) setBaseProperties() {

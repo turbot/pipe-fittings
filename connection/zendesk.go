@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type ZendeskConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Email     *string `json:"email,omitempty" cty:"email" hcl:"email,optional"`
 	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
@@ -23,7 +23,7 @@ func (c *ZendeskConnection) GetConnectionType() string {
 	return "zendesk"
 }
 
-func (c *ZendeskConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *ZendeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.Subdomain == nil && c.Email == nil && c.Token == nil {
 		subdomainEnvVar := os.Getenv("ZENDESK_SUBDOMAIN")
@@ -44,7 +44,7 @@ func (c *ZendeskConnection) Resolve(ctx context.Context) (modconfig.PipelingConn
 	return c, nil
 }
 
-func (c *ZendeskConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *ZendeskConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -83,7 +83,7 @@ func (c *ZendeskConnection) GetTtl() int {
 }
 
 func (c *ZendeskConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

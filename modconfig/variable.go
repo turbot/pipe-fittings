@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -183,5 +184,5 @@ func (v *Variable) Diff(other *Variable) *DashboardTreeItemDiffs {
 
 // CtyValue implements CtyValueProvider
 func (v *Variable) CtyValue() (cty.Value, error) {
-	return GetCtyValue(v)
+	return cty_helpers.GetCtyValue(v)
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -146,7 +148,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	return step, diags
 }
 
-var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&modconfig.ConnectionImpl{}))
+var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
 var NotifierCtyType = cty.Capsule("NotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
 
 func handleScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.Type, bool) {
@@ -155,7 +157,7 @@ func handleScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.Type, boo
 	if len(parts) == 2 {
 		switch parts[0] {
 		case schema.BlockTypeConnection:
-			ty := modconfig.ConnectionCtyType(parts[1])
+			ty := app_specific_connection.ConnectionCtyType(parts[1])
 			return ty, ty == cty.NilType
 		case schema.BlockTypeNotifier:
 			return NotifierCtyType, false
@@ -178,7 +180,7 @@ func handleFunctionCallExpr(fCallExpr *hclsyntax.FunctionCallExpr) (cty.Type, bo
 		if len(parts) == 2 {
 			switch parts[0] {
 			case schema.BlockTypeConnection:
-				innerTy := modconfig.ConnectionCtyType(parts[1])
+				innerTy := app_specific_connection.ConnectionCtyType(parts[1])
 				return cty.List(innerTy), innerTy == cty.NilType
 			case schema.BlockTypeNotifier:
 				return cty.List(NotifierCtyType), false
@@ -336,7 +338,7 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		// Does the default value matches the specified type?
 		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
 			if o.IsCustomType() {
-				ctdiags := modconfig.CustomTypeValidation(attr, ctyVal, o.Type)
+				ctdiags := connection.CustomTypeValidation(attr, ctyVal, o.Type)
 				if len(ctdiags) > 0 {
 					diags = append(diags, ctdiags...)
 					return o, diags
@@ -777,7 +779,7 @@ func validatePipelineSteps(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
 	return diags
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential, connections map[string]modconfig.PipelingConnection) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential, connections map[string]connection.PipelingConnection) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string

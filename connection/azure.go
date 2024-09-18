@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +12,7 @@ import (
 )
 
 type AzureConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	ClientID     *string `json:"client_id,omitempty" cty:"client_id" hcl:"client_id,optional"`
 	ClientSecret *string `json:"client_secret,omitempty" cty:"client_secret" hcl:"client_secret,optional"`
@@ -24,7 +24,7 @@ func (c *AzureConnection) GetConnectionType() string {
 	return "azure"
 }
 
-func (c *AzureConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 
 	if c.ClientID == nil && c.ClientSecret == nil && c.TenantID == nil && c.Environment == nil {
 		clientIDEnvVar := os.Getenv("AZURE_CLIENT_ID")
@@ -47,7 +47,7 @@ func (c *AzureConnection) Resolve(ctx context.Context) (modconfig.PipelingConnec
 	return c, nil
 }
 
-func (c *AzureConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *AzureConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -90,7 +90,7 @@ func (c *AzureConnection) GetTtl() int {
 }
 
 func (c *AzureConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}

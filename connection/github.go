@@ -2,7 +2,7 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,12 +12,12 @@ import (
 )
 
 type GithubConnection struct {
-	modconfig.ConnectionImpl
+	ConnectionImpl
 
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *GithubConnection) Resolve(ctx context.Context) (modconfig.PipelingConnection, error) {
+func (c *GithubConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		githubAccessTokenEnvVar := os.Getenv("GITHUB_TOKEN")
 
@@ -36,7 +36,7 @@ func (c *GithubConnection) GetConnectionType() string {
 	return "github"
 }
 
-func (c *GithubConnection) Equals(otherConnection modconfig.PipelingConnection) bool {
+func (c *GithubConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
 		return true
@@ -67,7 +67,7 @@ func (c *GithubConnection) GetTtl() int {
 }
 
 func (c *GithubConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := modconfig.GetCtyValue(c)
+	ctyValue, err := cty_helpers.GetCtyValue(c)
 	if err != nil {
 		return cty.NilVal, err
 	}
