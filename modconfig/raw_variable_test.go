@@ -1,4 +1,4 @@
-package var_config
+package modconfig
 
 import (
 	"testing"
