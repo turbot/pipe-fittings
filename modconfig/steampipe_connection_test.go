@@ -3,22 +3,22 @@ package modconfig
 import "testing"
 
 type connectionEquality struct {
-	connection1 *Connection
-	connection2 *Connection
+	connection1 *SteampipeConnection
+	connection2 *SteampipeConnection
 	expectation bool
 }
 
-var conn1 = &Connection{
+var conn1 = &SteampipeConnection{
 	Name:   "connection",
 	Config: "hclhelpers",
 }
 
-var conn1_duplicate = &Connection{
+var conn1_duplicate = &SteampipeConnection{
 	Name:   "connection",
 	Config: "hclhelpers",
 }
 
-var other_conn = &Connection{
+var other_conn = &SteampipeConnection{
 	Name:   "connection2",
 	Config: "connection_config2",
 }

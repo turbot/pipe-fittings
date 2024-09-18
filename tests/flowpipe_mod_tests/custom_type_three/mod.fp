@@ -2,7 +2,7 @@ mod "custom_type_three" {
 
 }
 
-pipeline "custom_type_two" {
+pipeline "custom_type_three" {
     param "conn" {
         default = connection.aws.example
         type = connection.aws

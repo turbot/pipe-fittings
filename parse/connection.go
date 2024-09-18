@@ -2,19 +2,19 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"log/slog"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
 )
 
-func DecodeConnection(block *hcl.Block) (*modconfig.Connection, hcl.Diagnostics) {
+func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Diagnostics) {
 	connectionContent, rest, diags := block.Body.PartialContent(ConnectionBlockSchema)
 	if diags.HasErrors() {
 		return nil, diags
@@ -56,30 +56,20 @@ func DecodeConnection(block *hcl.Block) (*modconfig.Connection, hcl.Diagnostics)
 
 	// check for nested options
 	for _, connectionBlock := range connectionContent.Blocks {
-		switch connectionBlock.Type {
-		default:
-			// this can never happen
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("connections do not support '%s' blocks", block.Type),
-				Subject:  hclhelpers.BlockRangePointer(connectionBlock),
-			})
-		}
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("connections do not support '%s' blocks", block.Type),
+			Subject:  hclhelpers.BlockRangePointer(connectionBlock),
+		})
 	}
 
-	// tactical - update when support for options blocks is removed
-	// this needs updating to use a single block check
-	// at present we do not support blocks for plugin specific connection config
-	// so any blocks present in 'rest' are an error
 	if hclBody, ok := rest.(*hclsyntax.Body); ok {
 		for _, b := range hclBody.Blocks {
-			if b.Type != "options" {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("connections do not support '%s' blocks", b.Type),
-					Subject:  hclhelpers.HclSyntaxBlockRangePointer(b),
-				})
-			}
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("connections do not support '%s' blocks", b.Type),
+				Subject:  hclhelpers.HclSyntaxBlockRangePointer(b),
+			})
 		}
 	}
 
@@ -94,7 +84,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.Connection, hcl.Diagnostics)
 	return connection, diags
 }
 
-func decodeConnectionPluginProperty(connectionContent *hcl.BodyContent, connection *modconfig.Connection) hcl.Diagnostics {
+func decodeConnectionPluginProperty(connectionContent *hcl.BodyContent, connection *modconfig.SteampipeConnection) hcl.Diagnostics {
 	var pluginName string
 	evalCtx := &hcl.EvalContext{Variables: make(map[string]cty.Value)}
 

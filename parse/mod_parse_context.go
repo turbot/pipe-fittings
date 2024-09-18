@@ -426,14 +426,9 @@ func (m *ModParseContext) buildEvalContext() {
 		variables[mod] = cty.ObjectVal(refTypeMap)
 	}
 
-	varValueNotifierMap := make(map[string]cty.Value)
-
-	for k, i := range m.Notifiers {
-		var err error
-		varValueNotifierMap[k], err = i.CtyValue()
-		if err != nil {
-			slog.Warn("failed to convert notifier to cty value", "notifier", i.Name(), "error", err)
-		}
+	varValueNotifierMap, err := BuildNotifierMapForEvalContext(m.Notifiers)
+	if err != nil {
+		slog.Warn("failed to build notifier map for eval context", "error", err)
 	}
 
 	variables[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)

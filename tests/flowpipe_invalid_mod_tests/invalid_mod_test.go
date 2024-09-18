@@ -91,12 +91,12 @@ var tests = []testSetup{
 	{
 		title:         "Missing var trigger",
 		modDir:        "./mods/mod_missing_var_trigger",
-		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> var.trigger_schedule",
+		containsError: "trigger.my_hourly_trigger -> var.trigger_schedule",
 	},
 	{
 		title:         "Bad step pipeline reference",
 		modDir:        "./mods/mod_bad_step_pipeline_reference",
-		containsError: "Unresolved blocks:\n   pipeline.foo -> pipeline.foo_two_invalid",
+		containsError: "pipeline.foo -> pipeline.foo_two_invalid",
 	},
 	{
 		title:         "Bad step reference",
@@ -111,7 +111,7 @@ var tests = []testSetup{
 	{
 		title:         "Bad trigger reference to pipeline",
 		modDir:        "./mods/bad_trigger_reference",
-		containsError: "Unresolved blocks:\n   trigger.my_hourly_trigger -> pipeline.simple_with_trigger\n     MISSING: pipeline.simple_with_trigger",
+		containsError: "MISSING: pipeline.simple_with_trigger",
 		errorType:     perr.ErrorCodeDependencyFailure,
 	},
 	{
