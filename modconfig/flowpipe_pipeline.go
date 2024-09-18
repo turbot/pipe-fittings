@@ -453,26 +453,7 @@ type PipelineParam struct {
 }
 
 func (p *PipelineParam) IsCustomType() bool {
-	return p.IsConnectionType() || p.IsNotifierType()
-}
-
-func (p *PipelineParam) IsNotifierType() bool {
-	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
-	if !nestedCapsule {
-		return false
-	}
-
-	if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
-		return true
-	}
-
-	return false
-}
-
-func (p *PipelineParam) IsConnectionType() bool {
-
-	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
-	if !nestedCapsule {
+	if !p.Type.IsCapsuleType() && !(p.Type.IsListType() && p.Type.ElementType().IsCapsuleType()) {
 		return false
 	}
 
@@ -483,8 +464,14 @@ func (p *PipelineParam) IsConnectionType() bool {
 
 	if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
 		return true
+	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
+		return true
 	}
 
+	return false
+}
+
+func (p *PipelineParam) IsNotifierType() bool {
 	return false
 }
 
@@ -632,6 +619,33 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "No connection found for the given connection name",
+				}
+				return hcl.Diagnostics{diag}
+			} else {
+				// TRUE
+				return hcl.Diagnostics{}
+			}
+		}
+	} else if resourceType == schema.BlockTypeNotifier {
+		// check if the connection actually exists in the eval context
+		allNotifiers := evalCtx.Variables[schema.BlockTypeNotifier]
+		if allNotifiers == cty.NilVal {
+			diag := &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "No notifier found",
+			}
+			return hcl.Diagnostics{diag}
+		}
+
+		notifierName := settingValueMap["name"].AsString()
+
+		if allNotifiers.Type().IsMapType() || allNotifiers.Type().IsObjectType() {
+			allNotifiersMap := allNotifiers.AsValueMap()
+
+			if allNotifiersMap[notifierName].IsNull() {
+				diag := &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "No noitifier found for the given notifier name",
 				}
 				return hcl.Diagnostics{diag}
 			} else {
