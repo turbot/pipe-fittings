@@ -1,13 +1,11 @@
 package modconfig
 
 import (
-	"github.com/turbot/pipe-fittings/app_specific_connection"
-	"github.com/turbot/pipe-fittings/connection"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -15,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
+	"log/slog"
 )
 
 type PipelineStepQuery struct {
@@ -137,14 +136,33 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 
 	for name, attr := range hclAttributes {
 		switch name {
-		case schema.AttributeTypeSql, schema.AttributeTypeDatabase:
+		case schema.AttributeTypeSql:
 			structFieldName := utils.CapitalizeFirst(name)
 			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
+		case schema.AttributeTypeDatabase:
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
+				continue
+			}
 
+			if val != cty.NilVal {
+				goVals, err2 := hclhelpers.CtyToGoInterfaceSlice(val)
+				if err2 != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse '" + schema.AttributeTypeArgs + "' attribute to Go values",
+						Subject:  &attr.Range,
+					})
+					continue
+				}
+				slog.Warn("db", "db", goVals)
+				//p.Database = goVals
+			}
 		case schema.AttributeTypeArgs:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -192,14 +210,8 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 		}
 	}()
 	// get the name and extract the block type
-	name := value.GetAttr("name")
-
-	parts := strings.Split(name.AsString(), ".")
-	if len(parts) != 2 {
-		return nil, perr.BadRequestWithMessage("connection name must be in the format <type>.<name>")
-	}
-	connectionType := parts[0]
-	shortName := parts[1]
+	shortName := value.GetAttr("short_name").AsString()
+	connectionType := value.GetAttr("type").AsString()
 
 	// now instantiate an empty connection of the correct type
 	// TODO KAI can we get range from cty
