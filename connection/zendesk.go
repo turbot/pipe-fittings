@@ -11,6 +11,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const ZendeskConnectionType = "zendesk"
+
 type ZendeskConnection struct {
 	ConnectionImpl
 
@@ -19,8 +21,10 @@ type ZendeskConnection struct {
 	Token     *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *ZendeskConnection) GetConnectionType() string {
-	return "zendesk"
+func NewZendeskConnection(block *hcl.Block) PipelingConnection {
+	return &ZendeskConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *ZendeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

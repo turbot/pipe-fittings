@@ -11,14 +11,18 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const SlackConnectionType = "slack"
+
 type SlackConnection struct {
 	ConnectionImpl
 
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *SlackConnection) GetConnectionType() string {
-	return "slack"
+func NewSlackConnection(block *hcl.Block) PipelingConnection {
+	return &SlackConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

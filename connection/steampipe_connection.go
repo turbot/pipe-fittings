@@ -1,5 +1,7 @@
 package connection
 
+const SteampipePgConnectionType = "steampipe_pg"
+
 type SteampipePgConnection struct {
 	ConnectionImpl
 	UserName   *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`

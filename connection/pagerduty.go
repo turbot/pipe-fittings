@@ -11,14 +11,18 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const PagerDutyConnectionType = "pagerduty"
+
 type PagerDutyConnection struct {
 	ConnectionImpl
 
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *PagerDutyConnection) GetConnectionType() string {
-	return "pagerduty"
+func NewPagerDutyConnection(block *hcl.Block) PipelingConnection {
+	return &PagerDutyConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *PagerDutyConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

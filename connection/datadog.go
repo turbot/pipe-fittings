@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const DatadogConnectionType = "datadog"
 
 type DatadogConnection struct {
 	ConnectionImpl
@@ -19,8 +21,10 @@ type DatadogConnection struct {
 	APIUrl *string `json:"api_url,omitempty" cty:"api_url" hcl:"api_url,optional"`
 }
 
-func (c *DatadogConnection) GetConnectionType() string {
-	return "datadog"
+func NewDatadogConnection(block *hcl.Block) PipelingConnection {
+	return &DatadogConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *DatadogConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

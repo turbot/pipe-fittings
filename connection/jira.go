@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const JiraConnectionType = "jira"
 
 type JiraConnection struct {
 	ConnectionImpl
@@ -19,8 +21,10 @@ type JiraConnection struct {
 	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 }
 
-func (c *JiraConnection) GetConnectionType() string {
-	return "jira"
+func NewJiraConnection(block *hcl.Block) PipelingConnection {
+	return &JiraConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *JiraConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

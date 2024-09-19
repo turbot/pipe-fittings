@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const AbuseIPDBConnectionType = "abuseipdb"
 
 type AbuseIPDBConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type AbuseIPDBConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *AbuseIPDBConnection) GetConnectionType() string {
-	return "abuseipdb"
+func NewAbuseIPDBConnection(block *hcl.Block) PipelingConnection {
+	return &AbuseIPDBConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

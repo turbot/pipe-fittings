@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const MicrosoftTeamsConnectionType = "microsoft_teams"
 
 type MicrosoftTeamsConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type MicrosoftTeamsConnection struct {
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
-func (c *MicrosoftTeamsConnection) GetConnectionType() string {
-	return "microsoft_teams"
+func NewMicrosoftTeamsConnection(block *hcl.Block) PipelingConnection {
+	return &MicrosoftTeamsConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

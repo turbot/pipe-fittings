@@ -11,6 +11,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const BitbucketConnectionType = "bitbucket"
+
 type BitbucketConnection struct {
 	ConnectionImpl
 
@@ -19,8 +21,10 @@ type BitbucketConnection struct {
 	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
-func (c *BitbucketConnection) GetConnectionType() string {
-	return "bitbucket"
+func NewBitbucketConnection(block *hcl.Block) PipelingConnection {
+	return &BitbucketConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *BitbucketConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

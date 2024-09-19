@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const UrlscanConnectionType = "urlscan"
 
 type UrlscanConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type UrlscanConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *UrlscanConnection) GetConnectionType() string {
-	return "urlscan"
+func NewUrlscanConnection(block *hcl.Block) PipelingConnection {
+	return &UrlscanConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

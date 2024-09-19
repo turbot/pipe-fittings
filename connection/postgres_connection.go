@@ -2,11 +2,14 @@ package connection
 
 import (
 	"context"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const PostgresConnectionType = "postgres"
 
 type PostgresConnection struct {
 	ConnectionImpl

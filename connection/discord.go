@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const DiscordConnectionType = "discord"
 
 type DiscordConnection struct {
 	ConnectionImpl
@@ -17,10 +19,11 @@ type DiscordConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *DiscordConnection) GetConnectionType() string {
-	return "discord"
+func NewDiscordConnection(block *hcl.Block) PipelingConnection {
+	return &DiscordConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
-
 func (c *DiscordConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {
 		discordTokenEnvVar := os.Getenv("DISCORD_TOKEN")

@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const IP2LocationIOConnectionType = "ip2locationio"
 
 type IP2LocationIOConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type IP2LocationIOConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *IP2LocationIOConnection) GetConnectionType() string {
-	return "ip2locationio"
+func NewIP2LocationIOConnection(block *hcl.Block) PipelingConnection {
+	return &IP2LocationIOConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

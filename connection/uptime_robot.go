@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const UptimeRobotConnectionType = "uptime_robot"
 
 type UptimeRobotConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type UptimeRobotConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *UptimeRobotConnection) GetConnectionType() string {
-	return "uptimerobot"
+func NewUptimeRobotConnection(block *hcl.Block) PipelingConnection {
+	return &UptimeRobotConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *UptimeRobotConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

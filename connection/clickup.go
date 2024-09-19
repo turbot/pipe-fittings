@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const ClickUpConnectionType = "clickup"
 
 type ClickUpConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type ClickUpConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *ClickUpConnection) GetConnectionType() string {
-	return "clickup"
+func NewClickUpConnection(block *hcl.Block) PipelingConnection {
+	return &ClickUpConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *ClickUpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

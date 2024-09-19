@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const IPstackConnectionType = "ipstack"
 
 type IPstackConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type IPstackConnection struct {
 	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 }
 
-func (c *IPstackConnection) GetConnectionType() string {
-	return "ipstack"
+func NewIPstackConnection(block *hcl.Block) PipelingConnection {
+	return &IPstackConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const TrelloConnectionType = "trello"
 
 type TrelloConnection struct {
 	ConnectionImpl
@@ -18,8 +20,10 @@ type TrelloConnection struct {
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *TrelloConnection) GetConnectionType() string {
-	return "trello"
+func NewTrelloConnection(block *hcl.Block) PipelingConnection {
+	return &TrelloConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

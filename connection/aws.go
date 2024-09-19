@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/hcl/v2"
@@ -10,6 +11,8 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const AwsConnectionType = "aws"
 
 type AwsConnection struct {
 	ConnectionImpl
@@ -21,8 +24,10 @@ type AwsConnection struct {
 	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
 }
 
-func (c *AwsConnection) GetConnectionType() string {
-	return "aws"
+func NewAwsConnection(block *hcl.Block) PipelingConnection {
+	return &AwsConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

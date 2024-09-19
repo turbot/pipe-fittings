@@ -2,11 +2,12 @@ package connection
 
 import (
 	"fmt"
+	"maps"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
-	"maps"
 )
 
 // no hcl tags needed - this is a manually populated

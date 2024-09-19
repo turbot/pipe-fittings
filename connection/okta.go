@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const OktaConnectionType = "okta"
 
 type OktaConnection struct {
 	ConnectionImpl
@@ -18,8 +20,10 @@ type OktaConnection struct {
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *OktaConnection) GetConnectionType() string {
-	return "okta"
+func NewOktaConnection(block *hcl.Block) PipelingConnection {
+	return &OktaConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *OktaConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

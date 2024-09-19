@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const GitLabConnectionType = "gitlab"
 
 type GitLabConnection struct {
 	ConnectionImpl
@@ -17,8 +19,10 @@ type GitLabConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *GitLabConnection) GetConnectionType() string {
-	return "gitlab"
+func NewGitLabConnection(block *hcl.Block) PipelingConnection {
+	return &GitLabConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *GitLabConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

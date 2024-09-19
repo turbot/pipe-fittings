@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const AzureConnectionType = "azure"
 
 type AzureConnection struct {
 	ConnectionImpl
@@ -20,8 +22,10 @@ type AzureConnection struct {
 	Environment  *string `json:"environment,omitempty" cty:"environment" hcl:"environment,optional"`
 }
 
-func (c *AzureConnection) GetConnectionType() string {
-	return "azure"
+func NewAzureConnection(block *hcl.Block) PipelingConnection {
+	return &AzureConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

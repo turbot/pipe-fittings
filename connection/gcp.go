@@ -3,17 +3,19 @@ package connection
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/oauth2/google"
 )
+
+const GcpConnectionType = "gcp"
 
 type GcpConnection struct {
 	ConnectionImpl
@@ -24,8 +26,10 @@ type GcpConnection struct {
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
-func (c *GcpConnection) GetConnectionType() string {
-	return "gcp"
+func NewGcpConnection(block *hcl.Block) PipelingConnection {
+	return &GcpConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

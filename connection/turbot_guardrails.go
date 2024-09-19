@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const GuardrailsConnectionType = "turbot_guardrails"
 
 type GuardrailsConnection struct {
 	ConnectionImpl
@@ -19,8 +21,10 @@ type GuardrailsConnection struct {
 	Workspace *string `json:"workspace,omitempty" cty:"workspace" hcl:"workspace,optional"`
 }
 
-func (c *GuardrailsConnection) GetConnectionType() string {
-	return "guardrails"
+func NewGuardrailsConnection(block *hcl.Block) PipelingConnection {
+	return &GuardrailsConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

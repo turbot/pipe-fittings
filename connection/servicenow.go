@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const ServiceNowConnectionType = "servicenow"
 
 type ServiceNowConnection struct {
 	ConnectionImpl
@@ -19,8 +21,10 @@ type ServiceNowConnection struct {
 	Password    *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
-func (c *ServiceNowConnection) GetConnectionType() string {
-	return "servicenow"
+func NewServiceNowConnection(block *hcl.Block) PipelingConnection {
+	return &ServiceNowConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

@@ -11,6 +11,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const FreshdeskConnectionType = "freshdesk"
+
 type FreshdeskConnection struct {
 	ConnectionImpl
 
@@ -18,8 +20,10 @@ type FreshdeskConnection struct {
 	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
 }
 
-func (c *FreshdeskConnection) GetConnectionType() string {
-	return "freshdesk"
+func NewFreshdeskConnection(block *hcl.Block) PipelingConnection {
+	return &FreshdeskConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *FreshdeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

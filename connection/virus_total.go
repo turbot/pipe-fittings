@@ -11,14 +11,18 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const VirusTotalConnectionType = "virus_total"
+
 type VirusTotalConnection struct {
 	ConnectionImpl
 
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func (c *VirusTotalConnection) GetConnectionType() string {
-	return "virustotal"
+func NewVirusTotalConnection(block *hcl.Block) PipelingConnection {
+	return &VirusTotalConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *VirusTotalConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

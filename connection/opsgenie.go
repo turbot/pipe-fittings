@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const OpsgenieConnectionType = "opsgenie"
 
 type OpsgenieConnection struct {
 	ConnectionImpl
@@ -18,8 +20,10 @@ type OpsgenieConnection struct {
 	IncidentAPIKey *string `json:"incident_api_key,omitempty" cty:"incident_api_key" hcl:"incident_api_key,optional"`
 }
 
-func (c *OpsgenieConnection) GetConnectionType() string {
-	return "opsgenie"
+func NewOpsgenieConnection(block *hcl.Block) PipelingConnection {
+	return &OpsgenieConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *OpsgenieConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

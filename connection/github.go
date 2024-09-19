@@ -11,6 +11,8 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+const GithubConnectionType = "github"
+
 type GithubConnection struct {
 	ConnectionImpl
 
@@ -32,8 +34,10 @@ func (c *GithubConnection) Resolve(ctx context.Context) (PipelingConnection, err
 	return c, nil
 }
 
-func (c *GithubConnection) GetConnectionType() string {
-	return "github"
+func NewGithubConnection(block *hcl.Block) PipelingConnection {
+	return &GithubConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *GithubConnection) Equals(otherConnection PipelingConnection) bool {

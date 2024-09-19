@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const VaultConnectionType = "vault"
 
 type VaultConnection struct {
 	ConnectionImpl
@@ -18,8 +20,10 @@ type VaultConnection struct {
 	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func (c *VaultConnection) GetConnectionType() string {
-	return "vault"
+func NewVaultConnection(block *hcl.Block) PipelingConnection {
+	return &VaultConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *VaultConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

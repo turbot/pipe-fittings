@@ -2,14 +2,16 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
+
+const AlicloudConnectionType = "alicloud"
 
 type AlicloudConnection struct {
 	ConnectionImpl
@@ -18,8 +20,10 @@ type AlicloudConnection struct {
 	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 }
 
-func (c *AlicloudConnection) GetConnectionType() string {
-	return "alicloud"
+func NewAlicloudConnection(block *hcl.Block) PipelingConnection {
+	return &AlicloudConnection{
+		ConnectionImpl: NewConnectionImpl(block),
+	}
 }
 
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
