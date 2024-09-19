@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 	"path/filepath"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/schema"

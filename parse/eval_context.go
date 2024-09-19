@@ -2,10 +2,10 @@ package parse
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/connection"
 	"log/slog"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"

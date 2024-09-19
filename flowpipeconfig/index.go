@@ -2,14 +2,14 @@ package flowpipeconfig
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/app_specific_connection"
-	"github.com/turbot/pipe-fittings/connection"
 	"log/slog"
 	"sync"
 
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/modconfig"
 )

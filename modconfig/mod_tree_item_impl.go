@@ -2,9 +2,9 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"

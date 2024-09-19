@@ -2,9 +2,9 @@ package parse
 
 import (
 	"fmt"
-	"github.com/hashicorp/hcl/v2/gohcl"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"

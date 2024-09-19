@@ -3,12 +3,12 @@ package credential
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/utils"

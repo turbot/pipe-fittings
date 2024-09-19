@@ -1,6 +1,8 @@
 package modconfig
 
 import (
+	"log/slog"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
@@ -13,7 +15,6 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
-	"log/slog"
 )
 
 type PipelineStepQuery struct {

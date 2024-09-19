@@ -3,12 +3,12 @@ package modconfig
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/connection"
 	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"

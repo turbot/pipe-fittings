@@ -1,11 +1,12 @@
 package test_init
 
 import (
+	"reflect"
+
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
-	"reflect"
 )
 
 func SetAppSpecificConstants() {

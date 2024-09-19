@@ -2,7 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/connection"
 	"log/slog"
 	"strings"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"

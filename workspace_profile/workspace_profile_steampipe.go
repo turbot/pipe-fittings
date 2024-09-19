@@ -2,11 +2,11 @@ package workspace_profile
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
