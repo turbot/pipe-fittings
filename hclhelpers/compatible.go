@@ -1,6 +1,8 @@
 package hclhelpers
 
 import (
+	"reflect"
+
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -125,5 +127,32 @@ func IsEnumValueCompatibleWithType(ctyType cty.Type, enumValues cty.Value) bool 
 
 // Checks if the given type is a collection or a tuple
 func IsCollectionOrTuple(typ cty.Type) bool {
-	return typ.IsCollectionType() || typ.IsTupleType() || typ.IsListType()
+	return typ.IsCollectionType() || typ.IsTupleType() || typ.IsListType() || typ.IsSetType()
+}
+
+func IsListLike(typ cty.Type) bool {
+	return typ.IsListType() || typ.IsTupleType() || typ.IsSetType()
+}
+
+func IsComplexType(typ cty.Type) bool {
+	return typ.IsMapType() || typ.IsObjectType() || IsCollectionOrTuple(typ) || typ.IsCapsuleType()
+}
+
+func IsNestedCapsuleType(t cty.Type) (reflect.Type, bool) {
+	if IsListLike(t) {
+		// Recursively check the element type if it's a list
+		elementType := t.ElementType()
+		encapsulatedGoType, ok := IsNestedCapsuleType(elementType)
+		return encapsulatedGoType, ok
+	} else if t.IsMapType() {
+		// Recursively check the element type if it's a map
+		elementType := t.ElementType()
+		encapsulatedGoType, ok := IsNestedCapsuleType(elementType)
+		return encapsulatedGoType, ok
+	} else if t.IsCapsuleType() {
+		// If it's a capsule type, return the encapsulated Go type
+		return t.EncapsulatedType(), true
+	}
+	// Return false if no capsule type is found
+	return nil, false
 }

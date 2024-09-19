@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/parse"
 )
 
 func TestParamEnum(t *testing.T) {
@@ -24,13 +25,13 @@ func TestParamEnum(t *testing.T) {
 		"city": "New York",
 	}
 
-	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid, nil)))
+	assert.Equal(0, len(parse.ValidateParams(validateMyParam, stringValid, nil)))
 
 	stringInvalid := map[string]interface{}{
 		"city": "Sydney",
 	}
 
-	errs := validateMyParam.ValidatePipelineParam(stringInvalid, nil)
+	errs := parse.ValidateParams(validateMyParam, stringInvalid, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: invalid value for param city", errs[0].Error())
 
@@ -38,7 +39,7 @@ func TestParamEnum(t *testing.T) {
 		"number": "345",
 	}
 
-	res, errs := validateMyParam.CoercePipelineParams(numValid, nil)
+	res, errs := parse.CoerceParams(validateMyParam, numValid, nil)
 	if len(errs) > 0 {
 		assert.Fail("Error found", errs)
 		return

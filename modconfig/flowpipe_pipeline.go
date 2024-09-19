@@ -8,13 +8,11 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
-	"github.com/zclconf/go-cty/cty/gocty"
 )
 
 func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
@@ -103,168 +101,13 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 	p.EndLineNumber = endLineNumber
 }
 
-func ValidateParams(p ResourceWithParam, inputParams map[string]interface{}, evalCtx *hcl.EvalContext) []error {
-	errors := []error{}
+// func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
+// 	return ValidateParams(p, params, evalCtx)
+// }
 
-	// Lists out all the pipeline params that don't have a default value
-	pipelineParamsWithNoDefaultValue := map[string]bool{}
-	for _, v := range p.GetParams() {
-		if v.Default.IsNull() && !v.Optional {
-			pipelineParamsWithNoDefaultValue[v.Name] = true
-		}
-	}
-
-	for k, v := range inputParams {
-		param := p.GetParam(k)
-		if param == nil {
-			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("unknown parameter specified '%s'", k)))
-			continue
-		}
-
-		errorExist := false
-
-		if !hclhelpers.GoTypeMatchesCtyType(v, param.Type) {
-			wanted := param.Type.FriendlyName()
-			typeOfInterface := reflect.TypeOf(v)
-			if typeOfInterface == nil {
-				errorExist = true
-				errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received null", k, wanted)))
-			} else {
-				received := typeOfInterface.String()
-				errorExist = true
-				errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, wanted, received)))
-			}
-		} else {
-			delete(pipelineParamsWithNoDefaultValue, k)
-		}
-
-		if !errorExist {
-			errValidation := validateParam(param, v, evalCtx)
-			if errValidation != nil {
-				errors = append(errors, errValidation)
-			}
-		}
-
-	}
-
-	var missingParams []string
-	for k := range pipelineParamsWithNoDefaultValue {
-		missingParams = append(missingParams, k)
-	}
-
-	// Return error if there is no arguments provided for the pipeline params that don't have a default value
-	if len(missingParams) > 0 {
-		errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("missing parameter: %s", strings.Join(missingParams, ", "))))
-	}
-
-	return errors
-}
-
-// This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
-// and again we convert from Go -> Cty when we're executing the pipeline to build EvalContext when we're evaluating
-// data are not resolved during parse time.
-func CoerceParams(p ResourceWithParam, inputParams map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
-	errors := []error{}
-
-	// Lists out all the pipeline params that don't have a default value
-	pipelineParamsWithNoDefaultValue := map[string]bool{}
-	for _, p := range p.GetParams() {
-		if p.Default.IsNull() && !p.Optional {
-			pipelineParamsWithNoDefaultValue[p.Name] = true
-		}
-	}
-
-	res := map[string]interface{}{}
-
-	for k, v := range inputParams {
-		param := p.GetParam(k)
-		if param == nil {
-			errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("unknown parameter specified '%s'", k)))
-			continue
-		}
-
-		var val interface{}
-		if param.IsCustomType() {
-			dottedStringParts := strings.Split(v, ".")
-			if len(dottedStringParts) != 3 {
-				errors = append(errors, perr.BadRequestWithMessage("invalid connection string format"))
-				continue
-			}
-
-			val = map[string]interface{}{
-				"name":          dottedStringParts[2],
-				"type":          dottedStringParts[1],
-				"resource_type": "connection",
-				"temporary":     true,
-			}
-
-		} else if param.IsNotifierType() {
-			return nil, []error{perr.BadRequestWithMessage("notifier type is not supported")}
-		} else {
-			var moreErr error
-			val, moreErr = hclhelpers.CoerceStringToGoBasedOnCtyType(v, param.Type)
-			if moreErr != nil {
-				errors = append(errors, moreErr)
-				continue
-			}
-		}
-		res[k] = val
-
-		delete(pipelineParamsWithNoDefaultValue, k)
-
-		errValidation := validateParam(param, val, evalCtx)
-		if errValidation != nil {
-			errors = append(errors, errValidation)
-		}
-	}
-
-	var missingParams []string
-	for k := range pipelineParamsWithNoDefaultValue {
-		missingParams = append(missingParams, k)
-	}
-
-	// Return error if there is no arguments provided for the pipeline params that don't have a default value
-	if len(missingParams) > 0 {
-		errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("missing parameter: %s", strings.Join(missingParams, ", "))))
-	}
-
-	return res, errors
-}
-
-func validateParam(param *PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
-	var valToValidate cty.Value
-	var err error
-	if !param.Type.HasDynamicTypes() && !param.IsCustomType() && !param.IsNotifierType() {
-		valToValidate, err = gocty.ToCtyValue(inputParam, param.Type)
-		if err != nil {
-			return err
-		}
-	} else {
-		// we'll do our best here
-		valToValidate, err = hclhelpers.ConvertInterfaceToCtyValue(inputParam)
-		if err != nil {
-			return err
-		}
-	}
-	validParam, diags, err := param.ValidateSetting(valToValidate, evalCtx)
-	if err != nil {
-		return err
-	} else if !validParam {
-		if len(diags) > 0 {
-			return error_helpers.BetterHclDiagsToError(param.Name, diags)
-		}
-		return perr.BadRequestWithMessage("invalid value for param " + param.Name)
-	}
-	return nil
-}
-
-func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
-	return ValidateParams(p, params, evalCtx)
-}
-
-func (p *Pipeline) CoercePipelineParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
-	return CoerceParams(p, params, evalCtx)
-}
+// func (p *Pipeline) CoercePipelineParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
+// 	return CoerceParams(p, params, evalCtx)
+// }
 
 // Implements ModItem interface
 func (p *Pipeline) GetMod() *Mod {
@@ -609,15 +452,27 @@ type PipelineParam struct {
 }
 
 func (p *PipelineParam) IsCustomType() bool {
-	if !p.Type.IsCapsuleType() && !(p.Type.IsListType() && p.Type.ElementType().IsCapsuleType()) {
+	return p.IsConnectionType() || p.IsNotifierType()
+}
+
+func (p *PipelineParam) IsNotifierType() bool {
+	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
+	if !nestedCapsule {
 		return false
 	}
 
-	var encapsulatedGoType reflect.Type
-	if p.Type.IsListType() {
-		encapsulatedGoType = p.Type.ElementType().EncapsulatedType()
-	} else {
-		encapsulatedGoType = p.Type.EncapsulatedType()
+	if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
+		return true
+	}
+
+	return false
+}
+
+func (p *PipelineParam) IsConnectionType() bool {
+
+	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
+	if !nestedCapsule {
+		return false
 	}
 
 	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
@@ -627,14 +482,8 @@ func (p *PipelineParam) IsCustomType() bool {
 
 	if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
 		return true
-	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
-		return true
 	}
 
-	return false
-}
-
-func (p *PipelineParam) IsNotifierType() bool {
 	return false
 }
 
@@ -682,7 +531,7 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 	}
 
 	// Check for capsule type or list of capsule types
-	if p.Type.IsCapsuleType() || (p.Type.IsListType() && p.Type.ListElementType().IsCapsuleType()) {
+	if p.IsCustomType() {
 		valid, diags := validateCustomType()
 		return valid, diags, nil
 	} else if !hclhelpers.IsValueCompatibleWithType(p.Type, setting) {

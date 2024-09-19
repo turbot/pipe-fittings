@@ -70,13 +70,13 @@ func (t *Trigger) GetParams() []PipelineParam {
 	return t.Params
 }
 
-func (t *Trigger) ValidateTriggerParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
-	return ValidateParams(t, params, evalCtx)
-}
+// func (t *Trigger) ValidateTriggerParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
+// 	return ValidateParams(t, params, evalCtx)
+// }
 
-func (p *Trigger) CoerceTriggerParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
-	return CoerceParams(p, params, evalCtx)
-}
+// func (p *Trigger) CoerceTriggerParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
+// 	return CoerceParams(p, params, evalCtx)
+// }
 
 func (t *Trigger) Equals(other *Trigger) bool {
 	if t == nil && other == nil {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
@@ -159,7 +160,7 @@ func validateMapAttribute(attr *hcl.Attribute, valueMap map[string]cty.Value, ke
 	return diags
 }
 
-func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Type) hcl.Diagnostics {
+func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	var valueMap map[string]cty.Value
@@ -179,8 +180,7 @@ func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, ctyType c
 		return append(diags, diag)
 	}
 
-	encapsulatedType := ctyType.EncapsulatedType()
-	encapulatedInstanceNew := reflect.New(encapsulatedType)
+	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
 	if connInterface, ok := encapulatedInstanceNew.Interface().(PipelingConnection); ok {
 		diags := validateMapAttribute(attr, valueMap, "type", "missing type in value")
 		if len(diags) > 0 {
@@ -190,7 +190,7 @@ func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, ctyType c
 		if connInterface.GetConnectionType() == valueMap["type"].AsString() {
 			return diags
 		}
-	} else if ctyType.EncapsulatedType().String() == "*modconfig.ConnectionImpl" {
+	} else if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
 		diags := validateMapAttribute(attr, valueMap, "resource_type", "missing resource_type in value")
 		if len(diags) > 0 {
 			return diags
@@ -199,7 +199,7 @@ func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, ctyType c
 		if valueMap["resource_type"].AsString() == schema.BlockTypeConnection {
 			return diags
 		}
-	} else if ctyType.EncapsulatedType().String() == "*modconfig.NotifierImpl" {
+	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
 		diags := validateMapAttribute(attr, valueMap, "resource_type", "missing resource_type in value")
 		if len(diags) > 0 {
 			return diags
@@ -221,7 +221,7 @@ func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, ctyType c
 	return append(diags, diag)
 }
 
-func checkInternalResourceType(attr *hcl.Attribute, val cty.Value, resourceType string) hcl.Diagnostics {
+func customTypeCheckResourceTypeCorrect(attr *hcl.Attribute, val cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	if val.Type().IsMapType() || val.Type().IsObjectType() {
 		valueMap := val.AsValueMap()
@@ -231,7 +231,19 @@ func checkInternalResourceType(attr *hcl.Attribute, val cty.Value, resourceType 
 			return diags
 		}
 
-		if valueMap["resource_type"].AsString() != resourceType {
+		encapsulatedInstanceNew := reflect.New(encapsulatedGoType)
+		valid := false
+		if pc, ok := encapsulatedInstanceNew.Interface().(PipelingConnection); ok {
+			// Validate list of capsule type
+			valid = valueMap["resource_type"].AsString() == schema.BlockTypeConnection && valueMap["type"].AsString() == pc.GetConnectionType()
+		} else if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
+			valid = valueMap["resource_type"].AsString() == schema.BlockTypeConnection
+		} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
+			// Validate internal notifier resource
+			valid = valueMap["resource_type"].AsString() == schema.BlockTypeNotifier
+		}
+
+		if !valid {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "value type mismatched with the capsule type",
@@ -256,66 +268,73 @@ func checkInternalResourceType(attr *hcl.Attribute, val cty.Value, resourceType 
 
 }
 
-func customTypeValidationList(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Type) hcl.Diagnostics {
+func customTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
-	if !ctyVal.Type().IsTupleType() && !ctyVal.Type().IsCollectionType() && !ctyVal.Type().IsListType() {
-		diag := &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "default value must be a list if the type is a list of capsules",
-		}
-		if attr != nil {
-			diag.Subject = &attr.Range
-		}
-
-		return append(diags, diag)
+	if ctyVal.Type().IsMapType() || ctyVal.Type().IsObjectType() {
+		// Validate map or object type
+		diags = customTypeValidateMapOrObject(attr, ctyVal, encapsulatedGoType)
+	} else if hclhelpers.IsListLike(ctyVal.Type()) {
+		// Validate list type, including nested lists or maps/objects
+		diags = customTypeValidateList(attr, ctyVal, encapsulatedGoType)
 	}
 
-	encapsulatedType := ctyType.ListElementType().EncapsulatedType()
-	encapulatedInstanceNew := reflect.New(encapsulatedType)
-	if connInterface, ok := encapulatedInstanceNew.Interface().(PipelingConnection); ok {
-		for _, val := range ctyVal.AsValueSlice() {
-			if val.Type().IsMapType() || val.Type().IsObjectType() {
-				valueMap := val.AsValueMap()
+	return diags
+}
 
-				diags := validateMapAttribute(attr, valueMap, "type", "missing type in value")
+func customTypeValidateMapOrObject(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+	valueMap := ctyVal.AsValueMap()
 
-				if connInterface.GetConnectionType() != valueMap["type"].AsString() {
-					diag := &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "default value type mismatched with the capsule type",
-					}
-					if attr != nil {
-						diag.Subject = &attr.Range
-					}
-
-					return append(diags, diag)
-				}
-			} else {
-				diag := &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "default value must be a map if the type is a list of capsules",
-				}
-				if attr != nil {
-					diag.Subject = &attr.Range
-				}
-
-				return append(diags, diag)
+	for _, val := range valueMap {
+		if val.Type().IsMapType() || val.Type().IsObjectType() {
+			// Recursive validation for nested map/object types
+			// does it have a resource type?
+			innerValMap := val.AsValueMap()
+			if innerValMap["resource_type"] != cty.NilVal {
+				nestedDiags := customTypeCheckResourceTypeCorrect(attr, val, encapsulatedGoType)
+				diags = append(diags, nestedDiags...)
+				continue
 			}
+
+			nestedDiags := customTypeValidateMapOrObject(attr, val, encapsulatedGoType)
+			diags = append(diags, nestedDiags...)
+		} else if hclhelpers.IsListLike(val.Type()) {
+			// Recursive validation for nested list types
+			nestedDiags := customTypeValidateList(attr, val, encapsulatedGoType)
+			diags = append(diags, nestedDiags...)
+		} else {
+			nestedDiags := customTypeCheckResourceTypeCorrect(attr, val, encapsulatedGoType)
+			diags = append(diags, nestedDiags...)
 		}
-	} else if ctyType.ListElementType().EncapsulatedType().String() == "*modconfig.ConnectionImpl" {
-		for _, val := range ctyVal.AsValueSlice() {
-			diags := checkInternalResourceType(attr, val, schema.BlockTypeConnection)
-			if len(diags) > 0 {
-				return diags
+	}
+
+	return diags
+}
+
+func customTypeValidateList(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
+	diags := hcl.Diagnostics{}
+
+	for _, val := range ctyVal.AsValueSlice() {
+		if hclhelpers.IsListLike(val.Type()) {
+			// Recursive validation for nested list
+			nestedDiags := customTypeValidateList(attr, val, encapsulatedGoType)
+			diags = append(diags, nestedDiags...)
+		} else if val.Type().IsMapType() || val.Type().IsObjectType() {
+			// Recursive validation for nested map/object inside list
+			// does it have a resource type?
+			innerValMap := val.AsValueMap()
+			if innerValMap["resource_type"] != cty.NilVal {
+				nestedDiags := customTypeCheckResourceTypeCorrect(attr, val, encapsulatedGoType)
+				diags = append(diags, nestedDiags...)
+				continue
 			}
-		}
-	} else if ctyType.ListElementType().EncapsulatedType().String() == "*modconfig.NotifierImpl" {
-		for _, val := range ctyVal.AsValueSlice() {
-			diags := checkInternalResourceType(attr, val, schema.BlockTypeNotifier)
-			if len(diags) > 0 {
-				return diags
-			}
+
+			nestedDiags := customTypeValidateMapOrObject(attr, val, encapsulatedGoType)
+			diags = append(diags, nestedDiags...)
+		} else {
+			nestedDiags := customTypeCheckResourceTypeCorrect(attr, val, encapsulatedGoType)
+			diags = append(diags, nestedDiags...)
 		}
 	}
 
@@ -326,7 +345,8 @@ func CustomTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Typ
 	diags := hcl.Diagnostics{}
 
 	// It must be a capsule type OR a list where the element type is a capsule
-	if !ctyType.IsCapsuleType() && !(ctyType.IsListType() && ctyType.ListElementType().IsCapsuleType()) {
+	encapsulatedGoType, ok := hclhelpers.IsNestedCapsuleType(ctyType)
+	if !ok {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Type must be a capsule",
@@ -339,9 +359,8 @@ func CustomTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Typ
 	}
 
 	if ctyType.IsCapsuleType() {
-		return customTypeValidationSingle(attr, ctyVal, ctyType)
+		return customTypeValidationSingle(attr, ctyVal, encapsulatedGoType)
 	}
 
-	// must be a list then
-	return customTypeValidationList(attr, ctyVal, ctyType)
+	return customTypeValidation(attr, ctyVal, encapsulatedGoType)
 }

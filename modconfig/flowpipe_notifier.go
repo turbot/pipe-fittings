@@ -116,8 +116,10 @@ func (c *NotifierImpl) CtyValue() (cty.Value, error) {
 
 	notifierMap := make(map[string]interface{}, 1)
 	notifierMap["notifies"] = notifies
+	notifierMap["title"] = c.Title
 	notifierMap["full_name"] = c.FullName
 	notifierMap["short_name"] = c.ShortName
+	notifierMap["name"] = c.ShortName
 	notifierMap["unqualified_name"] = c.UnqualifiedName
 	if c.Description != nil {
 		notifierMap["description"] = *c.Description
