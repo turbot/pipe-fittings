@@ -20,10 +20,13 @@ type OktaConnection struct {
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewOktaConnection(block *hcl.Block) PipelingConnection {
+func NewOktaConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &OktaConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(OktaConnectionType, shortName, declRange),
 	}
+}
+func (c *OktaConnection) GetConnectionType() string {
+	return OktaConnectionType
 }
 
 func (c *OktaConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

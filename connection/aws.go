@@ -24,10 +24,13 @@ type AwsConnection struct {
 	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
 }
 
-func NewAwsConnection(block *hcl.Block) PipelingConnection {
+func NewAwsConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &AwsConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(AwsConnectionType, shortName, declRange),
 	}
+}
+func (c *AwsConnection) GetConnectionType() string {
+	return AwsConnectionType
 }
 
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

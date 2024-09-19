@@ -8,26 +8,22 @@ import (
 	"reflect"
 )
 
-func NewPipelingConnection(block *hcl.Block) (connection.PipelingConnection, error) {
-	if len(block.Labels) == 0 {
-		return nil, perr.InternalWithMessage("block must include at least type label")
-	}
-	connectionType := block.Labels[0]
-
+func NewPipelingConnection(connectionType, shortName string, declRange hcl.Range) (connection.PipelingConnection, error) {
 	ctor, exists := ConnectionTypeRegistry[connectionType]
 	if !exists {
 		return nil, perr.BadRequestWithMessage("Invalid connection type " + connectionType)
 	}
 
-	return ctor(block), nil
+	return ctor(shortName, declRange), nil
 }
+
 func ConnectionCtyType(connectionType string) cty.Type {
 	ctor, exists := ConnectionTypeRegistry[connectionType]
 	if !exists {
 		return cty.NilType
 	}
 	// instantiate connection
-	inst := ctor(&hcl.Block{})
+	inst := ctor("", hcl.Range{})
 	goType := reflect.TypeOf(inst)
 	// dereference pointer
 	if goType.Kind() == reflect.Ptr {
@@ -41,7 +37,7 @@ func DefaultPipelingConnections() (map[string]connection.PipelingConnection, err
 	conns := make(map[string]connection.PipelingConnection)
 
 	for k := range ConnectionTypeRegistry {
-		defaultCred, err := NewPipelingConnection(ConnectionBlockForType(k))
+		defaultCred, err := NewPipelingConnection(k, "default", hcl.Range{})
 		if err != nil {
 			return nil, err
 		}

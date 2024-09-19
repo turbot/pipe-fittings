@@ -19,10 +19,13 @@ type PipesConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewPipesConnection(block *hcl.Block) PipelingConnection {
+func NewPipesConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &PipesConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(PipesConnectionType, shortName, declRange),
 	}
+}
+func (c *PipesConnection) GetConnectionType() string {
+	return PipesConnectionType
 }
 
 func (c *PipesConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

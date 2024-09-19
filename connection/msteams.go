@@ -19,10 +19,13 @@ type MicrosoftTeamsConnection struct {
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
-func NewMicrosoftTeamsConnection(block *hcl.Block) PipelingConnection {
+func NewMicrosoftTeamsConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &MicrosoftTeamsConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(MicrosoftTeamsConnectionType, shortName, declRange),
 	}
+}
+func (c *MicrosoftTeamsConnection) GetConnectionType() string {
+	return MicrosoftTeamsConnectionType
 }
 
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

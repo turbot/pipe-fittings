@@ -26,10 +26,13 @@ type GcpConnection struct {
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
-func NewGcpConnection(block *hcl.Block) PipelingConnection {
+func NewGcpConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &GcpConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(GcpConnectionType, shortName, declRange),
 	}
+}
+func (c *GcpConnection) GetConnectionType() string {
+	return GcpConnectionType
 }
 
 func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

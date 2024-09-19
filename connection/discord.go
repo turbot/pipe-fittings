@@ -19,10 +19,13 @@ type DiscordConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewDiscordConnection(block *hcl.Block) PipelingConnection {
+func NewDiscordConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &DiscordConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(DiscordConnectionType, shortName, declRange),
 	}
+}
+func (c *DiscordConnection) GetConnectionType() string {
+	return DiscordConnectionType
 }
 func (c *DiscordConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.Token == nil {

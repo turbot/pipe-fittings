@@ -19,10 +19,13 @@ type VirusTotalConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewVirusTotalConnection(block *hcl.Block) PipelingConnection {
+func NewVirusTotalConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &VirusTotalConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(VirusTotalConnectionType, shortName, declRange),
 	}
+}
+func (c *VirusTotalConnection) GetConnectionType() string {
+	return VirusTotalConnectionType
 }
 
 func (c *VirusTotalConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

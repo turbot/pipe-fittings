@@ -16,10 +16,13 @@ type DuckDbConnection struct {
 	ConnectionString *string `json:"database,omitempty" cty:"database" hcl:"database,optional"`
 }
 
-func NewDuckDbConnection(block *hcl.Block) PipelingConnection {
+func NewDuckDbConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &DuckDbConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(DuckDbConnectionType, shortName, declRange),
 	}
+}
+func (c *DuckDbConnection) GetConnectionType() string {
+	return DuckDbConnectionType
 }
 
 func (p *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

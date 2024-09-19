@@ -18,19 +18,11 @@ type ConnectionImpl struct {
 	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
 }
 
-func NewConnectionImpl(block *hcl.Block) ConnectionImpl {
-	var blockType, shortName string
-	// handle the case where there are no labels - this is expected as an mepty connection object may be created
-	if len(block.Labels) > 0 {
-		blockType = block.Labels[0]
-	}
-	if len(block.Labels) > 1 {
-		shortName = block.Labels[1]
-	}
+func NewConnectionImpl(connectionType, shortName string, declRange hcl.Range) ConnectionImpl {
 	return ConnectionImpl{
-		Type:      blockType,
+		Type:      connectionType,
 		ShortName: shortName,
-		DeclRange: hclhelpers.NewRange(block.DefRange),
+		DeclRange: hclhelpers.NewRange(declRange),
 	}
 }
 

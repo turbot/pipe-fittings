@@ -20,10 +20,13 @@ type VaultConnection struct {
 	Token   *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewVaultConnection(block *hcl.Block) PipelingConnection {
+func NewVaultConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &VaultConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(VaultConnectionType, shortName, declRange),
 	}
+}
+func (c *VaultConnection) GetConnectionType() string {
+	return VaultConnectionType
 }
 
 func (c *VaultConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

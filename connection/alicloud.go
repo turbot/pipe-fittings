@@ -20,10 +20,13 @@ type AlicloudConnection struct {
 	SecretKey *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 }
 
-func NewAlicloudConnection(block *hcl.Block) PipelingConnection {
+func NewAlicloudConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &AlicloudConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(AlicloudConnectionType, shortName, declRange),
 	}
+}
+func (c *AlicloudConnection) GetConnectionType() string {
+	return AlicloudConnectionType
 }
 
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

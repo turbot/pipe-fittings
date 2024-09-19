@@ -19,10 +19,13 @@ type UrlscanConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewUrlscanConnection(block *hcl.Block) PipelingConnection {
+func NewUrlscanConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &UrlscanConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(UrlscanConnectionType, shortName, declRange),
 	}
+}
+func (c *UrlscanConnection) GetConnectionType() string {
+	return UrlscanConnectionType
 }
 
 func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

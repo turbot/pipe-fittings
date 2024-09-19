@@ -19,10 +19,13 @@ type IPstackConnection struct {
 	AccessKey *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 }
 
-func NewIPstackConnection(block *hcl.Block) PipelingConnection {
+func NewIPstackConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &IPstackConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(IPstackConnectionType, shortName, declRange),
 	}
+}
+func (c *IPstackConnection) GetConnectionType() string {
+	return IPstackConnectionType
 }
 
 func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

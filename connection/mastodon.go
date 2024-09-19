@@ -19,10 +19,13 @@ type MastodonConnection struct {
 	Server      *string `json:"server,omitempty" cty:"server" hcl:"server,optional"`
 }
 
-func NewMastodonConnection(block *hcl.Block) PipelingConnection {
+func NewMastodonConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &MastodonConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(MastodonConnectionType, shortName, declRange),
 	}
+}
+func (c *MastodonConnection) GetConnectionType() string {
+	return MastodonConnectionType
 }
 
 func (c *MastodonConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

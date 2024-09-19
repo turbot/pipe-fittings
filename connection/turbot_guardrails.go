@@ -21,10 +21,13 @@ type GuardrailsConnection struct {
 	Workspace *string `json:"workspace,omitempty" cty:"workspace" hcl:"workspace,optional"`
 }
 
-func NewGuardrailsConnection(block *hcl.Block) PipelingConnection {
+func NewGuardrailsConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &GuardrailsConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(GuardrailsConnectionType, shortName, declRange),
 	}
+}
+func (c *GuardrailsConnection) GetConnectionType() string {
+	return GuardrailsConnectionType
 }
 
 func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

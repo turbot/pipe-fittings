@@ -19,10 +19,13 @@ type PagerDutyConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewPagerDutyConnection(block *hcl.Block) PipelingConnection {
+func NewPagerDutyConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &PagerDutyConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(PagerDutyConnectionType, shortName, declRange),
 	}
+}
+func (c *PagerDutyConnection) GetConnectionType() string {
+	return PagerDutyConnectionType
 }
 
 func (c *PagerDutyConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

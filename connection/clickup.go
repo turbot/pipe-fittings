@@ -19,10 +19,13 @@ type ClickUpConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewClickUpConnection(block *hcl.Block) PipelingConnection {
+func NewClickUpConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &ClickUpConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(ClickUpConnectionType, shortName, declRange),
 	}
+}
+func (c *ClickUpConnection) GetConnectionType() string {
+	return ClickUpConnectionType
 }
 
 func (c *ClickUpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

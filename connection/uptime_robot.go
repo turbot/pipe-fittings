@@ -19,10 +19,13 @@ type UptimeRobotConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewUptimeRobotConnection(block *hcl.Block) PipelingConnection {
+func NewUptimeRobotConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &UptimeRobotConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(UptimeRobotConnectionType, shortName, declRange),
 	}
+}
+func (c *UptimeRobotConnection) GetConnectionType() string {
+	return UptimeRobotConnectionType
 }
 
 func (c *UptimeRobotConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

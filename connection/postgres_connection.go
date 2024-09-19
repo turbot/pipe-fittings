@@ -16,15 +16,18 @@ type PostgresConnection struct {
 	UserName         *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 	Host             *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
 	Port             *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
-	ConnectionString *string `json:"database,omitempty" cty:"database" hcl:"database,optional"`
+	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
 	Password         *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 	SearchPath       *string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 }
 
-func NewPostgresConnection(block *hcl.Block) PipelingConnection {
+func NewPostgresConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &PostgresConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(PostgresConnectionType, shortName, declRange),
 	}
+}
+func (c *PostgresConnection) GetConnectionType() string {
+	return PostgresConnectionType
 }
 
 func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

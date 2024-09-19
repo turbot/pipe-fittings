@@ -21,10 +21,13 @@ type JiraConnection struct {
 	Username *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 }
 
-func NewJiraConnection(block *hcl.Block) PipelingConnection {
+func NewJiraConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &JiraConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(JiraConnectionType, shortName, declRange),
 	}
+}
+func (c *JiraConnection) GetConnectionType() string {
+	return JiraConnectionType
 }
 
 func (c *JiraConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

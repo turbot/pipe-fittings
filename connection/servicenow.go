@@ -21,10 +21,13 @@ type ServiceNowConnection struct {
 	Password    *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
-func NewServiceNowConnection(block *hcl.Block) PipelingConnection {
+func NewServiceNowConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &ServiceNowConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(ServiceNowConnectionType, shortName, declRange),
 	}
+}
+func (c *ServiceNowConnection) GetConnectionType() string {
+	return ServiceNowConnectionType
 }
 
 func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

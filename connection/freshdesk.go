@@ -20,10 +20,13 @@ type FreshdeskConnection struct {
 	Subdomain *string `json:"subdomain,omitempty" cty:"subdomain" hcl:"subdomain,optional"`
 }
 
-func NewFreshdeskConnection(block *hcl.Block) PipelingConnection {
+func NewFreshdeskConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &FreshdeskConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(FreshdeskConnectionType, shortName, declRange),
 	}
+}
+func (c *FreshdeskConnection) GetConnectionType() string {
+	return FreshdeskConnectionType
 }
 
 func (c *FreshdeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

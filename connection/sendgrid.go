@@ -19,10 +19,13 @@ type SendGridConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewSendGridConnection(block *hcl.Block) PipelingConnection {
+func NewSendGridConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &SendGridConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(SendGridConnectionType, shortName, declRange),
 	}
+}
+func (c *SendGridConnection) GetConnectionType() string {
+	return SendGridConnectionType
 }
 
 func (c *SendGridConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

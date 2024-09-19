@@ -20,10 +20,13 @@ type TrelloConnection struct {
 	Token  *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewTrelloConnection(block *hcl.Block) PipelingConnection {
+func NewTrelloConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &TrelloConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(TrelloConnectionType, shortName, declRange),
 	}
+}
+func (c *TrelloConnection) GetConnectionType() string {
+	return TrelloConnectionType
 }
 
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

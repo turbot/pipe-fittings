@@ -21,10 +21,13 @@ type ZendeskConnection struct {
 	Token     *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewZendeskConnection(block *hcl.Block) PipelingConnection {
+func NewZendeskConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &ZendeskConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(ZendeskConnectionType, shortName, declRange),
 	}
+}
+func (c *ZendeskConnection) GetConnectionType() string {
+	return ZendeskConnectionType
 }
 
 func (c *ZendeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

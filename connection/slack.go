@@ -19,10 +19,13 @@ type SlackConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewSlackConnection(block *hcl.Block) PipelingConnection {
+func NewSlackConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &SlackConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(SlackConnectionType, shortName, declRange),
 	}
+}
+func (c *SlackConnection) GetConnectionType() string {
+	return SlackConnectionType
 }
 
 func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

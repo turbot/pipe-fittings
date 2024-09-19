@@ -19,10 +19,13 @@ type OpenAIConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewOpenAIConnection(block *hcl.Block) PipelingConnection {
+func NewOpenAIConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &OpenAIConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(OpenAIConnectionType, shortName, declRange),
 	}
+}
+func (c *OpenAIConnection) GetConnectionType() string {
+	return OpenAIConnectionType
 }
 
 func (c *OpenAIConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

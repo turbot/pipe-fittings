@@ -19,9 +19,9 @@ type IP2LocationIOConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewIP2LocationIOConnection(block *hcl.Block) PipelingConnection {
+func NewIP2LocationIOConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &IP2LocationIOConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(IP2LocationIOConnectionType, shortName, declRange),
 	}
 }
 

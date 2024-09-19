@@ -20,10 +20,13 @@ type OpsgenieConnection struct {
 	IncidentAPIKey *string `json:"incident_api_key,omitempty" cty:"incident_api_key" hcl:"incident_api_key,optional"`
 }
 
-func NewOpsgenieConnection(block *hcl.Block) PipelingConnection {
+func NewOpsgenieConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &OpsgenieConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(OpsgenieConnectionType, shortName, declRange),
 	}
+}
+func (c *OpsgenieConnection) GetConnectionType() string {
+	return OpsgenieConnectionType
 }
 
 func (c *OpsgenieConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

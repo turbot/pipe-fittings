@@ -196,21 +196,14 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	}
 
 	// now instantiate an empty connection of the correct type
-	conn, err := app_specific_connection.NewPipelingConnection(&hcl.Block{
-		Type:        "connection",
-		Labels:      []string{connectionType, shortName},
-		DefRange:    declRange.HclRange(),
-		TypeRange:   hcl.Range{},
-		LabelRanges: nil,
-	})
+	conn, err := app_specific_connection.NewPipelingConnection(connectionType, shortName, declRange.HclRange())
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}
 
 	// now decode the cty value into the connection
 
-	// TODO why is env in cty?
-	// we already decoded the bvase fields, so remove from the value
+	// we already decoded the base fields, so remove from the value
 	baseFields := []string{"type", "short_name", "decl_range", "env"}
 	originalMap := value.AsValueMap()
 	// Remove the base fields that belong to the nested struct (ConnectionImpl)

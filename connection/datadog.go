@@ -21,10 +21,13 @@ type DatadogConnection struct {
 	APIUrl *string `json:"api_url,omitempty" cty:"api_url" hcl:"api_url,optional"`
 }
 
-func NewDatadogConnection(block *hcl.Block) PipelingConnection {
+func NewDatadogConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &DatadogConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(DatadogConnectionType, shortName, declRange),
 	}
+}
+func (c *DatadogConnection) GetConnectionType() string {
+	return DatadogConnectionType
 }
 
 func (c *DatadogConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

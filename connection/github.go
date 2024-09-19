@@ -34,10 +34,13 @@ func (c *GithubConnection) Resolve(ctx context.Context) (PipelingConnection, err
 	return c, nil
 }
 
-func NewGithubConnection(block *hcl.Block) PipelingConnection {
+func NewGithubConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &GithubConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(GithubConnectionType, shortName, declRange),
 	}
+}
+func (c *GithubConnection) GetConnectionType() string {
+	return GithubConnectionType
 }
 
 func (c *GithubConnection) Equals(otherConnection PipelingConnection) bool {

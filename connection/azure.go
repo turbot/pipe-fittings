@@ -22,10 +22,13 @@ type AzureConnection struct {
 	Environment  *string `json:"environment,omitempty" cty:"environment" hcl:"environment,optional"`
 }
 
-func NewAzureConnection(block *hcl.Block) PipelingConnection {
+func NewAzureConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &AzureConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(AzureConnectionType, shortName, declRange),
 	}
+}
+func (c *AzureConnection) GetConnectionType() string {
+	return AzureConnectionType
 }
 
 func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

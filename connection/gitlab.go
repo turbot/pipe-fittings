@@ -19,10 +19,13 @@ type GitLabConnection struct {
 	Token *string `json:"token,omitempty" cty:"token" hcl:"token,optional"`
 }
 
-func NewGitLabConnection(block *hcl.Block) PipelingConnection {
+func NewGitLabConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &GitLabConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(GitLabConnectionType, shortName, declRange),
 	}
+}
+func (c *GitLabConnection) GetConnectionType() string {
+	return GitLabConnectionType
 }
 
 func (c *GitLabConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

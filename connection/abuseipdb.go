@@ -19,10 +19,13 @@ type AbuseIPDBConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewAbuseIPDBConnection(block *hcl.Block) PipelingConnection {
+func NewAbuseIPDBConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &AbuseIPDBConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(AbuseIPDBConnectionType, shortName, declRange),
 	}
+}
+func (c *AbuseIPDBConnection) GetConnectionType() string {
+	return AbuseIPDBConnectionType
 }
 
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

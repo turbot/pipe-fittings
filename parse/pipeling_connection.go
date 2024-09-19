@@ -24,7 +24,7 @@ func DecodePipelingConnection(configPath string, block *hcl.Block) (connection.P
 		return nil, diags
 	}
 
-	conn, err := app_specific_connection.NewPipelingConnection(block)
+	conn, err := app_specific_connection.NewPipelingConnection(block.Labels[0], block.Labels[1], block.DefRange)
 	if err != nil {
 		diags := hcl.Diagnostics{
 			{

@@ -21,10 +21,13 @@ type BitbucketConnection struct {
 	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
-func NewBitbucketConnection(block *hcl.Block) PipelingConnection {
+func NewBitbucketConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &BitbucketConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(BitbucketConnectionType, shortName, declRange),
 	}
+}
+func (c *BitbucketConnection) GetConnectionType() string {
+	return BitbucketConnectionType
 }
 
 func (c *BitbucketConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

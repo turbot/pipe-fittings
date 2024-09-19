@@ -19,10 +19,13 @@ type JumpCloudConnection struct {
 	APIKey *string `json:"api_key,omitempty" cty:"api_key" hcl:"api_key,optional"`
 }
 
-func NewJumpCloudConnection(block *hcl.Block) PipelingConnection {
+func NewJumpCloudConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &JumpCloudConnection{
-		ConnectionImpl: NewConnectionImpl(block),
+		ConnectionImpl: NewConnectionImpl(JumpCloudConnectionType, shortName, declRange),
 	}
+}
+func (c *JumpCloudConnection) GetConnectionType() string {
+	return JumpCloudConnectionType
 }
 
 func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
