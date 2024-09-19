@@ -544,12 +544,12 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 	return valid, hcl.Diagnostics{}, err
 }
 
-func (p *PipelineParam) PipelineParamCustomValueListValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+func PipelineParamCustomValueListValidation(name string, setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
 
-	if !hclhelpers.IsCollectionOrTuple(setting.Type()) {
+	if !hclhelpers.IsListLike(setting.Type()) {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "Invalid value for param " + p.Name,
+			Summary:  "Invalid value for param " + name,
 			Detail:   "The value for param must be a list",
 		}
 		return hcl.Diagnostics{diag}
@@ -558,24 +558,28 @@ func (p *PipelineParam) PipelineParamCustomValueListValidation(setting cty.Value
 	var diags hcl.Diagnostics
 	for it := setting.ElementIterator(); it.Next(); {
 		_, element := it.Element()
-		diags = append(diags, p.PipelineParamCustomValueValidation(element, evalCtx)...)
+		diags = append(diags, CustomValueValidation(name, element, evalCtx)...)
 	}
 
 	return diags
 }
 
 func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+	return CustomValueValidation(p.Name, setting, evalCtx)
+}
+
+func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
 	// this time we check if the given setting, i.e.
 	// name = "example
 	// type = "aws"
 
 	// for connection actually exists in the eval context
 
-	if hclhelpers.IsCollectionOrTuple(setting.Type()) {
-		return p.PipelineParamCustomValueListValidation(setting, evalCtx)
+	if hclhelpers.IsListLike(setting.Type()) {
+		return PipelineParamCustomValueListValidation(name, setting, evalCtx)
 	}
 
-	if !setting.Type().IsObjectType() && !setting.Type().IsMapType() {
+	if !hclhelpers.IsMapLike(setting.Type()) {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "The value for param must be an object",
@@ -585,15 +589,11 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 
 	settingValueMap := setting.AsValueMap()
 
-	if settingValueMap["resource_type"].IsNull() || settingValueMap["name"].IsNull() {
-		diag := &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "The value for param must have a 'resource_type', and 'name' key",
-		}
-		return hcl.Diagnostics{diag}
+	resourceType := ""
+	if !settingValueMap["resource_type"].IsNull() {
+		resourceType = settingValueMap["resource_type"].AsString()
 	}
 
-	resourceType := settingValueMap["resource_type"].AsString()
 	if resourceType == schema.BlockTypeConnection {
 		if settingValueMap["type"].IsNull() {
 			diag := &hcl.Diagnostic{
@@ -665,15 +665,36 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 				return hcl.Diagnostics{}
 			}
 		}
+	} else if len(settingValueMap) > 0 {
+		diags := hcl.Diagnostics{}
+		for _, v := range settingValueMap {
+			if v.IsNull() {
+				diag := &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The value for param must not have a null value",
+				}
+				return hcl.Diagnostics{diag}
+			}
+
+			if !hclhelpers.IsComplexType(v.Type()) {
+				// this test is meant for custom value validation, there's no need to test if it's not these type, i.e. connection or notifier
+				continue
+			}
+
+			// this test is meant for custom value validation, there's no need to test if it's not these type, i.e. connection or notifier
+			nestedDiags := CustomValueValidation(name, v, evalCtx)
+			diags = append(diags, nestedDiags...)
+		}
+
+		return diags
 	}
 
 	diag := &hcl.Diagnostic{
 		Severity: hcl.DiagError,
-		Summary:  "Invalid value for param " + p.Name,
-		Detail:   "Invalid value for param " + p.Name,
+		Summary:  "Invalid value for param " + name,
+		Detail:   "Invalid value for param " + name,
 	}
 	return hcl.Diagnostics{diag}
-
 }
 
 type PipelineOutput struct {

@@ -11,10 +11,11 @@ import (
 )
 
 type coerceValueTest struct {
-	title    string
-	resource modconfig.ResourceWithParam
-	input    map[string]string
-	expected map[string]interface{}
+	title         string
+	resource      modconfig.ResourceWithParam
+	input         map[string]string
+	expected      map[string]interface{}
+	errorExpected bool
 }
 
 type resourceWithParams struct {
@@ -85,6 +86,21 @@ var coerceValueTests = []coerceValueTest{
 		expected: map[string]interface{}{
 			"param_bool": true,
 		},
+	},
+	{
+		title: "Coerce bool value - invalid",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_bool",
+					Type: cty.Bool,
+				},
+			},
+		},
+		input: map[string]string{
+			"param_bool": "hello",
+		},
+		errorExpected: true,
 	},
 	{
 		title: "Coerce connection",
@@ -159,6 +175,36 @@ var coerceValueTests = []coerceValueTest{
 		},
 	},
 	{
+		title: "list of connections - invalid name",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_connection",
+					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+				},
+			},
+		},
+		input: map[string]string{
+			"param_connection": "[connection.aws.default,connection.aws.does_not_exist]",
+		},
+		errorExpected: true,
+	},
+	{
+		title: "list of connections - invalid type",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_connection",
+					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+				},
+			},
+		},
+		input: map[string]string{
+			"param_connection": "[connection.aws.default,connection.foo.default]",
+		},
+		errorExpected: true,
+	},
+	{
 		title: "list of connection but just one",
 		resource: &resourceWithParams{
 			Params: []modconfig.PipelineParam{
@@ -182,36 +228,96 @@ var coerceValueTests = []coerceValueTest{
 			},
 		},
 	},
-	// {
-	// 	title: "map of connections",
-	// 	resource: &resourceWithParams{
-	// 		Params: []modconfig.PipelineParam{
-	// 			{
-	// 				Name: "param_connection",
-	// 				Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
-	// 			},
-	// 		},
-	// 	},
-	// 	input: map[string]string{
-	// 		"param_connection": "{default=connection.aws.default,example=connection.aws.example}",
-	// 	},
-	// 	expected: map[string]interface{}{
-	// 		"param_connection": map[string]interface{}{
-	// 			"default": map[string]interface{}{
-	// 				"name":          "default",
-	// 				"type":          "aws",
-	// 				"resource_type": "connection",
-	// 				"temporary":     true,
-	// 			},
-	// 			"example": map[string]interface{}{
-	// 				"name":          "example",
-	// 				"type":          "aws",
-	// 				"resource_type": "connection",
-	// 				"temporary":     true,
-	// 			},
-	// 		},
-	// 	},
-	// },
+	{
+		title: "map of connections",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_connection",
+					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+				},
+			},
+		},
+		input: map[string]string{
+			"param_connection": "{default=connection.aws.default,example=connection.aws.example}",
+		},
+		expected: map[string]interface{}{
+			"param_connection": map[string]interface{}{
+				"default": map[string]interface{}{
+					"name":          "default",
+					"type":          "aws",
+					"resource_type": "connection",
+					"temporary":     true,
+				},
+				"example": map[string]interface{}{
+					"name":          "example",
+					"type":          "aws",
+					"resource_type": "connection",
+					"temporary":     true,
+				},
+			},
+		},
+	},
+	{
+		title: "map of connections - invalid name",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_connection",
+					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+				},
+			},
+		},
+		input: map[string]string{
+			"param_connection": "{default=connection.aws.default,example=connection.aws.does_not_exist}",
+		},
+		errorExpected: true,
+	},
+	{
+		title: "map of connections - invalid type",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_connection",
+					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+				},
+			},
+		},
+		input: map[string]string{
+			"param_connection": "{default=connection.aws.default,example=connection.foo.default}",
+		},
+		errorExpected: true,
+	},
+	{
+		title: "object of different types",
+		resource: &resourceWithParams{
+			Params: []modconfig.PipelineParam{
+				{
+					Name: "param_connection",
+					Type: cty.Object(map[string]cty.Type{
+						"aws": cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{})),
+						"foo": cty.String,
+						"bar": cty.Bool,
+					}),
+				},
+			},
+		},
+		input: map[string]string{
+			"param_connection": `{aws=connection.aws.default,foo="hello",bar=true}`,
+		},
+		expected: map[string]interface{}{
+			"param_connection": map[string]interface{}{
+				"aws": map[string]interface{}{
+					"name":          "default",
+					"type":          "aws",
+					"resource_type": "connection",
+					"temporary":     true,
+				},
+				"foo": "hello",
+				"bar": true,
+			},
+		},
+	},
 }
 
 func TestCoerceCustomValue(tm *testing.T) {
@@ -255,6 +361,16 @@ func TestCoerceCustomValue(tm *testing.T) {
 			// pass nil evalCtx so it will not validate the actual connection/notifier against the
 			// config
 			result, err := CoerceParams(tc.resource, tc.input, evalCtx)
+
+			if tc.errorExpected && len(err) == 0 {
+				assert.Fail("Expected error but got none")
+				return
+			}
+
+			if tc.errorExpected && len(err) > 0 {
+				return
+			}
+
 			if len(err) > 0 {
 				assert.Fail("Error while coercing value", "error", err)
 				return

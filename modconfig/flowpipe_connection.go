@@ -268,21 +268,28 @@ func customTypeCheckResourceTypeCorrect(attr *hcl.Attribute, val cty.Value, enca
 
 }
 
-func customTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
+func customTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, settingType cty.Type, encapsulatedGoType reflect.Type) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
+
+	// short circuit .. if it's object type we can't validate .. it's too complicated right now
+	//
+	// i.e. object(string, connection.aws, bool)
+	if settingType.IsObjectType() {
+		return diags
+	}
 
 	if ctyVal.Type().IsMapType() || ctyVal.Type().IsObjectType() {
 		// Validate map or object type
-		diags = customTypeValidateMapOrObject(attr, ctyVal, encapsulatedGoType)
+		diags = customTypeValidateMapOrObject(attr, ctyVal, settingType, encapsulatedGoType)
 	} else if hclhelpers.IsListLike(ctyVal.Type()) {
 		// Validate list type, including nested lists or maps/objects
-		diags = customTypeValidateList(attr, ctyVal, encapsulatedGoType)
+		diags = customTypeValidateList(attr, ctyVal, settingType, encapsulatedGoType)
 	}
 
 	return diags
 }
 
-func customTypeValidateMapOrObject(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
+func customTypeValidateMapOrObject(attr *hcl.Attribute, ctyVal cty.Value, settingType cty.Type, encapsulatedGoType reflect.Type) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	valueMap := ctyVal.AsValueMap()
 
@@ -297,11 +304,11 @@ func customTypeValidateMapOrObject(attr *hcl.Attribute, ctyVal cty.Value, encaps
 				continue
 			}
 
-			nestedDiags := customTypeValidateMapOrObject(attr, val, encapsulatedGoType)
+			nestedDiags := customTypeValidateMapOrObject(attr, val, settingType, encapsulatedGoType)
 			diags = append(diags, nestedDiags...)
 		} else if hclhelpers.IsListLike(val.Type()) {
 			// Recursive validation for nested list types
-			nestedDiags := customTypeValidateList(attr, val, encapsulatedGoType)
+			nestedDiags := customTypeValidateList(attr, val, settingType, encapsulatedGoType)
 			diags = append(diags, nestedDiags...)
 		} else {
 			nestedDiags := customTypeCheckResourceTypeCorrect(attr, val, encapsulatedGoType)
@@ -312,13 +319,13 @@ func customTypeValidateMapOrObject(attr *hcl.Attribute, ctyVal cty.Value, encaps
 	return diags
 }
 
-func customTypeValidateList(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedGoType reflect.Type) hcl.Diagnostics {
+func customTypeValidateList(attr *hcl.Attribute, ctyVal cty.Value, settingType cty.Type, encapsulatedGoType reflect.Type) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	for _, val := range ctyVal.AsValueSlice() {
 		if hclhelpers.IsListLike(val.Type()) {
 			// Recursive validation for nested list
-			nestedDiags := customTypeValidateList(attr, val, encapsulatedGoType)
+			nestedDiags := customTypeValidateList(attr, val, settingType, encapsulatedGoType)
 			diags = append(diags, nestedDiags...)
 		} else if val.Type().IsMapType() || val.Type().IsObjectType() {
 			// Recursive validation for nested map/object inside list
@@ -330,7 +337,7 @@ func customTypeValidateList(attr *hcl.Attribute, ctyVal cty.Value, encapsulatedG
 				continue
 			}
 
-			nestedDiags := customTypeValidateMapOrObject(attr, val, encapsulatedGoType)
+			nestedDiags := customTypeValidateMapOrObject(attr, val, settingType, encapsulatedGoType)
 			diags = append(diags, nestedDiags...)
 		} else {
 			nestedDiags := customTypeCheckResourceTypeCorrect(attr, val, encapsulatedGoType)
@@ -362,5 +369,5 @@ func CustomTypeValidation(attr *hcl.Attribute, ctyVal cty.Value, ctyType cty.Typ
 		return customTypeValidationSingle(attr, ctyVal, encapsulatedGoType)
 	}
 
-	return customTypeValidation(attr, ctyVal, encapsulatedGoType)
+	return customTypeValidation(attr, ctyVal, ctyType, encapsulatedGoType)
 }
