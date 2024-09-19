@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -23,7 +24,7 @@ func NewPostgresConnection(name string, declRange hcl.Range) PipelingConnection 
 		ConnectionImpl: ConnectionImpl{
 			ShortName: name,
 			Type:      "postgres",
-			DeclRange: declRange,
+			DeclRange: hclhelpers.NewRange(declRange),
 		},
 	}
 
@@ -35,7 +36,7 @@ func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, e
 		return p, nil
 	}
 
-	// TODO build a connection string from the other fields
+	// TODO KAI build a connection string from the other fields
 	panic("implement me")
 
 }
@@ -79,4 +80,11 @@ func (p *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (p *PostgresConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(p)
+}
+
+func (p *PostgresConnection) GetConnectionString() string {
+	if p.ConnectionString != nil {
+		return *p.ConnectionString
+	}
+	return ""
 }

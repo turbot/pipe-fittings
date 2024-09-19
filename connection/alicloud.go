@@ -101,7 +101,7 @@ func (c *AlicloudConnection) Validate() hcl.Diagnostics {
 			{
 				Severity: hcl.DiagError,
 				Summary:  "access_key defined without secret_key",
-				Subject:  &c.DeclRange,
+				Subject:  c.DeclRange.HclRangePointer(),
 			},
 		}
 	}
@@ -111,7 +111,7 @@ func (c *AlicloudConnection) Validate() hcl.Diagnostics {
 			{
 				Severity: hcl.DiagError,
 				Summary:  "secret_key defined without access_key",
-				Subject:  &c.DeclRange,
+				Subject:  c.DeclRange.HclRangePointer(),
 			},
 		}
 	}

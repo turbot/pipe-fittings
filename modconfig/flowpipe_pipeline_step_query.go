@@ -82,7 +82,15 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		if err != nil {
 			return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 		}
-		results[schema.AttributeTypeDatabase] = c
+		// does this support a connection string
+		type connectionStringProvider interface {
+			GetConnectionString() string
+		}
+		if conn, ok := c.(connectionStringProvider); ok {
+			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
+		} else {
+			slog.Warn("connection does not support connection string", "db", c)
+		}
 
 	} else {
 		// database
@@ -209,70 +217,39 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 			err = perr.BadRequestWithMessage("unable to decode connection: " + r.(string))
 		}
 	}()
+
 	// get the name and extract the block type
 	shortName := value.GetAttr("short_name").AsString()
 	connectionType := value.GetAttr("type").AsString()
+	var declRange hclhelpers.Range
+	err = gocty.FromCtyValue(value.GetAttr("decl_range"), &declRange)
+	if err != nil {
+		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
+	}
 
 	// now instantiate an empty connection of the correct type
-	// TODO KAI can we get range from cty
-	conn, err := app_specific_connection.InstantiateConnection(connectionType, shortName, hcl.Range{})
+	conn, err := app_specific_connection.InstantiateConnection(connectionType, shortName, declRange.HclRange())
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}
+
 	// now decode the cty value into the connection
-	err = gocty.FromCtyValue(value, &conn)
+
+	// TODO why is env in cty?
+	// we already decoded the bvase fields, so remove from the value
+	baseFields := []string{"type", "short_name", "decl_range", "env"}
+	originalMap := value.AsValueMap()
+	// Remove the base fields that belong to the nested struct (ConnectionImpl)
+	// create new cty values, one for the base
+	for _, field := range baseFields {
+		delete(originalMap, field)
+	}
+	connectionValue := cty.ObjectVal(originalMap)
+
+	err = gocty.FromCtyValue(connectionValue, &conn)
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}
+
 	return conn, nil
 }
-
-//	var output []PipelineStepInputOption
-//
-//	opts := value.AsValueSlice()
-//
-//	for _, opt := range opts {
-//		valueMap := opt.AsValueMap()
-//
-//		isValid := false
-//		option := PipelineStepInputOption{
-//			UnresolvedAttributes: make(map[string]hcl.Expression),
-//		}
-//
-//		for k, v := range valueMap {
-//			switch k {
-//			case schema.AttributeTypeValue:
-//				if !v.IsNull() {
-//					isValid = true
-//					val := v.AsString()
-//					option.Value = &val
-//				}
-//			case schema.AttributeTypeLabel:
-//				if !v.IsNull() {
-//					label := v.AsString()
-//					option.Label = &label
-//				}
-//			case schema.AttributeTypeSelected:
-//				if !v.IsNull() && v.Type() == cty.Bool {
-//					isSelected := v.True()
-//					option.Selected = &isSelected
-//				}
-//			case schema.AttributeTypeStyle:
-//				if !v.IsNull() {
-//					s := v.AsString()
-//					option.Style = &s
-//				}
-//			default:
-//				return nil, perr.BadRequestWithMessage(k + " is not a valid attribute for input options")
-//			}
-//		}
-//
-//		if isValid {
-//			output = append(output, option)
-//		} else {
-//			return nil, perr.BadRequestWithMessage("input options must declare a value")
-//		}
-//	}
-//
-//	return output, nil
-//}

@@ -2,16 +2,18 @@ package connection
 
 import (
 	"fmt"
-	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
 	"maps"
 )
 
+// no hcl tags needed - this is a manually populated
 type ConnectionImpl struct {
-	Type      string    `json:"type" cty:"type" hcl:"type,label"`
-	ShortName string    `json:"short_name" cty:"short_name" hcl:"short_name,label"`
-	DeclRange hcl.Range `json:"decl_range,omitempty" hcl:"-"`
+	Type      string `json:"type" cty:"type"`
+	ShortName string `json:"short_name" cty:"short_name"`
+	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
+	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
 }
 
 func (c *ConnectionImpl) Name() string {
@@ -42,13 +44,12 @@ func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 	}
 
 	valueMap := ctyValue.AsValueMap()
-	baseValueMap := baseCtyValue.AsValueMap()
+	mergedValueMap := baseCtyValue.AsValueMap()
 
-	// copy into base, overriding base properties with derived properties if where there are clashes
-	maps.Copy(baseValueMap, valueMap)
+	// copy into mergedValueMap, overriding base properties with derived properties if where there are clashes
+	// we will return mergedValueMap
+	maps.Copy(mergedValueMap, valueMap)
 
-	// we will return base
-	baseValueMap["env"] = cty.ObjectVal(connection.GetEnv())
-
-	return cty.ObjectVal(baseValueMap), nil
+	mergedValueMap["env"] = cty.ObjectVal(connection.GetEnv())
+	return cty.ObjectVal(mergedValueMap), nil
 }

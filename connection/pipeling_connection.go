@@ -28,7 +28,6 @@ type PipelingConnection interface {
 	GetConnectionImpl() ConnectionImpl
 }
 
-FIND ME A HOME!!!
 func validateMapAttribute(attr *hcl.Attribute, valueMap map[string]cty.Value, key, errMsg string) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	if valueMap[key] == cty.NilVal {
