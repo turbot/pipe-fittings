@@ -83,7 +83,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		if err != nil {
 			return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 		}
-		// does this support a connection string
+		// does this connection support a connection string
 		type connectionStringProvider interface {
 			GetConnectionString() string
 		}
@@ -91,6 +91,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 		} else {
 			slog.Warn("connection does not support connection string", "db", c)
+			return nil, perr.BadRequestWithMessage(p.Name + ": unable invalid connection reference - only connections which implement GetConnectionString() are supported")
 		}
 
 	} else {
