@@ -26,8 +26,13 @@ func ConnectionCtyType(connectionType string) cty.Type {
 	if !exists {
 		return cty.NilType
 	}
-
-	goType := reflect.TypeOf(ctor(ConnectionBlockForType(connectionType)))
+	// instantiate connection
+	inst := ctor(&hcl.Block{})
+	goType := reflect.TypeOf(inst)
+	// dereference pointer
+	if goType.Kind() == reflect.Ptr {
+		goType = goType.Elem()
+	}
 
 	return cty.Capsule(connectionType, goType)
 }
