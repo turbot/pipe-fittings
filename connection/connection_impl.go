@@ -35,7 +35,9 @@ func (c *ConnectionImpl) GetShortName() string {
 }
 
 func (c *ConnectionImpl) GetConnectionType() string {
-	return c.Type
+	// even though we have a connection type property, we rely on the concrete connection type to implement this
+	// this is because the connection type may be instatiated by reflection so Type may not be set
+	panic("method GetConnectionType must be implemented be concrete connection type")
 }
 
 func (c *ConnectionImpl) GetConnectionImpl() ConnectionImpl {
