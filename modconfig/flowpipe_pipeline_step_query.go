@@ -100,21 +100,6 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		}
 	}
 
-	//// attribute needs resolving, this case may happen if we specify the entire option as an attribute
-	//var opts cty.Value
-	//diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
-	//if diags.HasErrors() {
-	//	return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-	//}
-	//resolvedOpts, err = CtyValueToPipelineStepInputOptionList(opts)
-	//if err != nil {
-	//	return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse options attribute: " + err.Error())
-	//}
-	//results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeDatabase, p.Database)
-	//if diags.HasErrors() {
-	//	return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-	//}
-
 	if _, ok := results[schema.AttributeTypeDatabase]; !ok {
 		return nil, perr.BadRequestWithMessage(p.Name + ": database must be supplied")
 	}
@@ -144,33 +129,14 @@ func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalCont
 
 	for name, attr := range hclAttributes {
 		switch name {
-		case schema.AttributeTypeSql:
+		case schema.AttributeTypeSql, schema.AttributeTypeDatabase:
 			structFieldName := utils.CapitalizeFirst(name)
 			stepDiags := setStringAttribute(attr, evalContext, p, structFieldName, true)
 			if stepDiags.HasErrors() {
 				diags = append(diags, stepDiags...)
 				continue
 			}
-		case schema.AttributeTypeDatabase:
-			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
-			if stepDiags.HasErrors() {
-				diags = append(diags, stepDiags...)
-				continue
-			}
 
-			if val != cty.NilVal {
-				goVals, err2 := hclhelpers.CtyToGoInterfaceSlice(val)
-				if err2 != nil {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "Unable to parse '" + schema.AttributeTypeArgs + "' attribute to Go values",
-						Subject:  &attr.Range,
-					})
-					continue
-				}
-				slog.Warn("db", "db", goVals)
-				//p.Database = goVals
-			}
 		case schema.AttributeTypeArgs:
 			val, stepDiags := dependsOnFromExpressions(attr, evalContext, p)
 			if stepDiags.HasErrors() {
@@ -228,7 +194,13 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	}
 
 	// now instantiate an empty connection of the correct type
-	conn, err := app_specific_connection.InstantiateConnection(connectionType, shortName, declRange.HclRange())
+	conn, err := app_specific_connection.NewPipelingConnection(&hcl.Block{
+		Type:        "connection",
+		Labels:      []string{connectionType, shortName},
+		DefRange:    declRange.HclRange(),
+		TypeRange:   hcl.Range{},
+		LabelRanges: nil,
+	})
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}

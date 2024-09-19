@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -19,15 +18,10 @@ type PostgresConnection struct {
 	SearchPath       *string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 }
 
-func NewPostgresConnection(name string, declRange hcl.Range) PipelingConnection {
+func NewPostgresConnection(block *hcl.Block) PipelingConnection {
 	return &PostgresConnection{
-		ConnectionImpl: ConnectionImpl{
-			ShortName: name,
-			Type:      "postgres",
-			DeclRange: hclhelpers.NewRange(declRange),
-		},
+		ConnectionImpl: NewConnectionImpl(block),
 	}
-
 }
 
 func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, error) {

@@ -2,6 +2,7 @@ package connection
 
 import (
 	"fmt"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
@@ -14,6 +15,22 @@ type ConnectionImpl struct {
 	ShortName string `json:"short_name" cty:"short_name"`
 	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
 	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
+}
+
+func NewConnectionImpl(block *hcl.Block) ConnectionImpl {
+	var blockType, shortName string
+	// handle the case where there are no labels - this is expected as an mepty connection object may be created
+	if len(block.Labels) > 0 {
+		blockType = block.Labels[0]
+	}
+	if len(block.Labels) > 1 {
+		shortName = block.Labels[1]
+	}
+	return ConnectionImpl{
+		Type:      blockType,
+		ShortName: shortName,
+		DeclRange: hclhelpers.NewRange(block.DefRange),
+	}
 }
 
 func (c *ConnectionImpl) Name() string {
