@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/parse"
 )
 
 func TestParamValidation(t *testing.T) {
@@ -26,20 +27,20 @@ func TestParamValidation(t *testing.T) {
 		"my_token": "abc",
 	}
 
-	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid, nil)))
+	assert.Equal(0, len(parse.ValidateParams(validateMyParam, stringValid, nil)))
 
 	stringInvalid := map[string]interface{}{
 		"my_token": 123,
 	}
 
-	errs := validateMyParam.ValidatePipelineParam(stringInvalid, nil)
+	errs := parse.ValidateParams(validateMyParam, stringInvalid, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: invalid data type for parameter 'my_token' wanted string but received int", errs[0].Error())
 
 	invalidParam := map[string]interface{}{
 		"invalid": "foo",
 	}
-	errs = validateMyParam.ValidatePipelineParam(invalidParam, nil)
+	errs = parse.ValidateParams(validateMyParam, invalidParam, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: unknown parameter specified 'invalid'", errs[0].Error())
 
@@ -50,7 +51,7 @@ func TestParamValidation(t *testing.T) {
 		"my_bool":       true,
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(allValid, nil)
+	errs = parse.ValidateParams(validateMyParam, allValid, nil)
 	assert.Equal(0, len(errs))
 
 	invalidNum := map[string]interface{}{
@@ -59,7 +60,7 @@ func TestParamValidation(t *testing.T) {
 		"my_number_two": "123.45",
 		"my_bool":       true,
 	}
-	errs = validateMyParam.ValidatePipelineParam(invalidNum, nil)
+	errs = parse.ValidateParams(validateMyParam, invalidNum, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: invalid data type for parameter 'my_number_two' wanted number but received string", errs[0].Error())
 
@@ -69,7 +70,7 @@ func TestParamValidation(t *testing.T) {
 		"my_number_two": "123.45",
 		"my_bool":       "true",
 	}
-	errs = validateMyParam.ValidatePipelineParam(moreThanOneInvalids, nil)
+	errs = parse.ValidateParams(validateMyParam, moreThanOneInvalids, nil)
 	assert.Equal(3, len(errs))
 
 	expectedErrors := []string{
@@ -94,7 +95,7 @@ func TestParamValidation(t *testing.T) {
 		"list_number_three": []int64{1, 4},
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(paramList, nil)
+	errs = parse.ValidateParams(validateMyParam, paramList, nil)
 	assert.Equal(0, len(errs))
 
 	paramListMoreNumberType := map[string]interface{}{
@@ -104,7 +105,7 @@ func TestParamValidation(t *testing.T) {
 		"list_number_three": []int16{1, 4},
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(paramListMoreNumberType, nil)
+	errs = parse.ValidateParams(validateMyParam, paramListMoreNumberType, nil)
 	assert.Equal(0, len(errs))
 
 	paramListAsInterface := map[string]interface{}{
@@ -114,7 +115,7 @@ func TestParamValidation(t *testing.T) {
 		"list_number_three": []interface{}{1, 4},
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(paramListAsInterface, nil)
+	errs = parse.ValidateParams(validateMyParam, paramListAsInterface, nil)
 	assert.Equal(0, len(errs))
 
 	paramNotList := map[string]interface{}{
@@ -123,7 +124,7 @@ func TestParamValidation(t *testing.T) {
 		"list_number_two": 1.23,
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(paramNotList, nil)
+	errs = parse.ValidateParams(validateMyParam, paramNotList, nil)
 	assert.Equal(3, len(errs))
 
 	expectedErrors = []string{
@@ -143,7 +144,7 @@ func TestParamValidation(t *testing.T) {
 	listStringInvalid := map[string]interface{}{
 		"list_string": []interface{}{"foo", 1, "two"},
 	}
-	errs = validateMyParam.ValidatePipelineParam(listStringInvalid, nil)
+	errs = parse.ValidateParams(validateMyParam, listStringInvalid, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: invalid data type for parameter 'list_string' wanted list of string but received []interface {}", errs[0].Error())
 
@@ -153,25 +154,25 @@ func TestParamValidation(t *testing.T) {
 		"list_any_three": []interface{}{1, 2, 3},
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(listAny, nil)
+	errs = parse.ValidateParams(validateMyParam, listAny, nil)
 	assert.Equal(0, len(errs))
 
 	setString := map[string]interface{}{
 		"set_string": []string{"foo", "bar", "baz"},
 	}
-	errs = validateMyParam.ValidatePipelineParam(setString, nil)
+	errs = parse.ValidateParams(validateMyParam, setString, nil)
 	assert.Equal(0, len(errs))
 
 	setNumber := map[string]interface{}{
 		"set_number": []int{1, 2, 3},
 	}
-	errs = validateMyParam.ValidatePipelineParam(setNumber, nil)
+	errs = parse.ValidateParams(validateMyParam, setNumber, nil)
 	assert.Equal(0, len(errs))
 
 	setBool := map[string]interface{}{
 		"set_bool": []bool{false, true, true},
 	}
-	errs = validateMyParam.ValidatePipelineParam(setBool, nil)
+	errs = parse.ValidateParams(validateMyParam, setBool, nil)
 	assert.Equal(0, len(errs))
 
 	stringMap := map[string]interface{}{
@@ -181,7 +182,7 @@ func TestParamValidation(t *testing.T) {
 		},
 	}
 
-	errs = validateMyParam.ValidatePipelineParam(stringMap, nil)
+	errs = parse.ValidateParams(validateMyParam, stringMap, nil)
 	assert.Equal(0, len(errs))
 
 	stringMapGeneric := map[string]interface{}{
@@ -190,7 +191,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": "qux",
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(stringMapGeneric, nil)
+	errs = parse.ValidateParams(validateMyParam, stringMapGeneric, nil)
 	assert.Equal(0, len(errs))
 
 	stringMapGenericInvalid := map[string]interface{}{
@@ -199,7 +200,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": 123,
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(stringMapGenericInvalid, nil)
+	errs = parse.ValidateParams(validateMyParam, stringMapGenericInvalid, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: invalid data type for parameter 'map_of_string' wanted map of string but received map[string]interface {}", errs[0].Error())
 
@@ -209,7 +210,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": 4.56,
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(numberMap, nil)
+	errs = parse.ValidateParams(validateMyParam, numberMap, nil)
 	assert.Equal(0, len(errs))
 
 	numberMapInvalid := map[string]interface{}{
@@ -218,7 +219,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": "4.56",
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(numberMapInvalid, nil)
+	errs = parse.ValidateParams(validateMyParam, numberMapInvalid, nil)
 	assert.Equal(1, len(errs))
 
 	numberMapInvalid = map[string]interface{}{
@@ -228,7 +229,7 @@ func TestParamValidation(t *testing.T) {
 		},
 		"map_of_number_two": 4,
 	}
-	errs = validateMyParam.ValidatePipelineParam(numberMapInvalid, nil)
+	errs = parse.ValidateParams(validateMyParam, numberMapInvalid, nil)
 	assert.Equal(2, len(errs))
 
 	numberMap = map[string]interface{}{
@@ -241,7 +242,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": 4,
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(numberMap, nil)
+	errs = parse.ValidateParams(validateMyParam, numberMap, nil)
 	assert.Equal(0, len(errs))
 
 	numberMap = map[string]interface{}{
@@ -254,7 +255,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": 4,
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(numberMap, nil)
+	errs = parse.ValidateParams(validateMyParam, numberMap, nil)
 	assert.Equal(0, len(errs))
 
 	anyMap := map[string]interface{}{
@@ -275,7 +276,7 @@ func TestParamValidation(t *testing.T) {
 			"baz": "4",
 		},
 	}
-	errs = validateMyParam.ValidatePipelineParam(anyMap, nil)
+	errs = parse.ValidateParams(validateMyParam, anyMap, nil)
 	assert.Equal(0, len(errs))
 
 	anyMapInvalid := map[string]interface{}{
@@ -283,7 +284,7 @@ func TestParamValidation(t *testing.T) {
 		"map_of_any_two":   []interface{}{"foo", 2, 3},
 		"map_of_any_three": 23,
 	}
-	errs = validateMyParam.ValidatePipelineParam(anyMapInvalid, nil)
+	errs = parse.ValidateParams(validateMyParam, anyMapInvalid, nil)
 	assert.Equal(3, len(errs))
 
 }
@@ -303,7 +304,8 @@ func TestParamCoerce(t *testing.T) {
 	stringParam := map[string]string{
 		"my_token": "abc",
 	}
-	res, errs := validateMyParam.CoercePipelineParams(stringParam, nil)
+
+	res, errs := parse.CoerceParams(validateMyParam, stringParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -313,14 +315,14 @@ func TestParamCoerce(t *testing.T) {
 	stringParamNotFound := map[string]string{
 		"my_token_s": "abc",
 	}
-	_, errs = validateMyParam.CoercePipelineParams(stringParamNotFound, nil)
+	_, errs = parse.CoerceParams(validateMyParam, stringParamNotFound, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: unknown parameter specified 'my_token_s'", errs[0].Error())
 
 	stringParamNumberButValid := map[string]string{
 		"my_token": "23",
 	}
-	res, errs = validateMyParam.CoercePipelineParams(stringParamNumberButValid, nil)
+	res, errs = parse.CoerceParams(validateMyParam, stringParamNumberButValid, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -331,7 +333,7 @@ func TestParamCoerce(t *testing.T) {
 	numParam := map[string]string{
 		"my_number": "23",
 	}
-	res, errs = validateMyParam.CoercePipelineParams(numParam, nil)
+	res, errs = parse.CoerceParams(validateMyParam, numParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -343,7 +345,7 @@ func TestParamCoerce(t *testing.T) {
 	numParamInvalid := map[string]string{
 		"my_number": "foo",
 	}
-	_, errs = validateMyParam.CoercePipelineParams(numParamInvalid, nil)
+	_, errs = parse.CoerceParams(validateMyParam, numParamInvalid, nil)
 	assert.Equal(1, len(errs))
 
 	assert.Equal("Bad Request: unable to convert 'foo' to a number", errs[0].Error())
@@ -351,7 +353,7 @@ func TestParamCoerce(t *testing.T) {
 	boolParam := map[string]string{
 		"my_bool": "true",
 	}
-	res, errs = validateMyParam.CoercePipelineParams(boolParam, nil)
+	res, errs = parse.CoerceParams(validateMyParam, boolParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -365,7 +367,7 @@ func TestParamCoerce(t *testing.T) {
 		"list_number":     `[1, 2, 3]`,
 		"list_number_two": `[1.1, 2.2, 3.4]`,
 	}
-	res, errs = validateMyParam.CoercePipelineParams(listSameTypes, nil)
+	res, errs = parse.CoerceParams(validateMyParam, listSameTypes, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -390,7 +392,7 @@ func TestParamCoerce(t *testing.T) {
 	listStringInvalid := map[string]string{
 		"list_string": `["foo", "bar", 3]`,
 	}
-	_, errs = validateMyParam.CoercePipelineParams(listStringInvalid, nil)
+	_, errs = parse.CoerceParams(validateMyParam, listStringInvalid, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: expected string type, but got number", errs[0].Error())
 
@@ -398,7 +400,7 @@ func TestParamCoerce(t *testing.T) {
 		"list_string": `["foo", "bar", 3]`,
 		"list_number": `[1, "bar", 3]`,
 	}
-	_, errs = validateMyParam.CoercePipelineParams(moreInvalidList, nil)
+	_, errs = parse.CoerceParams(validateMyParam, moreInvalidList, nil)
 	assert.Equal(2, len(errs))
 
 	expectedErrors := []string{
@@ -420,7 +422,7 @@ func TestParamCoerce(t *testing.T) {
 		"list_any_two":   `["foo", "bar", "baz"]`,
 		"list_any_three": `[1, 2.3, 4]`,
 	}
-	res, errs = validateMyParam.CoercePipelineParams(listAny, nil)
+	res, errs = parse.CoerceParams(validateMyParam, listAny, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -447,7 +449,7 @@ func TestParamCoerce(t *testing.T) {
 		"set_string": `["foo", "bar", "3"]`,
 		"set_number": `[1, 2, 3]`,
 	}
-	res, errs = validateMyParam.CoercePipelineParams(setSameTypes, nil)
+	res, errs = parse.CoerceParams(validateMyParam, setSameTypes, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -468,7 +470,7 @@ func TestParamCoerce(t *testing.T) {
 	setFailures := map[string]string{
 		"set_string": `["foo", "bar", "bar"]`,
 	}
-	_, errs = validateMyParam.CoercePipelineParams(setFailures, nil)
+	_, errs = parse.CoerceParams(validateMyParam, setFailures, nil)
 	expectedErrors = []string{
 		"Bad Request: duplicate value found in set",
 	}
@@ -489,7 +491,7 @@ func TestParamCoerce(t *testing.T) {
 		"map_of_bool":       `{"foo": true, "bar": false}`,
 	}
 
-	res, errs = validateMyParam.CoercePipelineParams(validMap, nil)
+	res, errs = parse.CoerceParams(validateMyParam, validMap, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -521,14 +523,14 @@ func TestParamCoerce(t *testing.T) {
 		"map_of_string": `{"foo": 1, "baz": "qux"}`,
 	}
 
-	_, errs = validateMyParam.CoercePipelineParams(invalidStringMap, nil)
+	_, errs = parse.CoerceParams(validateMyParam, invalidStringMap, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: expected string type, but got number", errs[0].Error())
 
 	invalidNumberMap := map[string]string{
 		"map_of_number": `{"foo": 1, "baz": "qux"}`,
 	}
-	_, errs = validateMyParam.CoercePipelineParams(invalidNumberMap, nil)
+	_, errs = parse.CoerceParams(validateMyParam, invalidNumberMap, nil)
 	assert.Equal(1, len(errs))
 	assert.Equal("Bad Request: expected number type, but got string", errs[0].Error())
 }
@@ -548,7 +550,7 @@ func TestParamCoerceWithAnyType(t *testing.T) {
 	stringParam := map[string]string{
 		"param_any": "abc",
 	}
-	res, errs := validateMyParam.CoercePipelineParams(stringParam, nil)
+	res, errs := parse.CoerceParams(validateMyParam, stringParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -561,7 +563,7 @@ func TestParamCoerceWithAnyType(t *testing.T) {
 		"param_any": "23",
 	}
 
-	res, errs = validateMyParam.CoercePipelineParams(intParam, nil)
+	res, errs = parse.CoerceParams(validateMyParam, intParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -574,7 +576,7 @@ func TestParamCoerceWithAnyType(t *testing.T) {
 		"param_any": `["foo", "bar", "baz"]`,
 	}
 
-	res, errs = validateMyParam.CoercePipelineParams(complexParam, nil)
+	res, errs = parse.CoerceParams(validateMyParam, complexParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -590,7 +592,7 @@ func TestParamCoerceWithAnyType(t *testing.T) {
 		"param_any": `["foo", 42, "baz"]`,
 	}
 
-	res, errs = validateMyParam.CoercePipelineParams(complexParam, nil)
+	res, errs = parse.CoerceParams(validateMyParam, complexParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return
@@ -606,7 +608,7 @@ func TestParamCoerceWithAnyType(t *testing.T) {
 		"param_any": `[{"foo": "bar"}, {"baz": "qux"}]`,
 	}
 
-	res, errs = validateMyParam.CoercePipelineParams(complexParam, nil)
+	res, errs = parse.CoerceParams(validateMyParam, complexParam, nil)
 	if len(errs) > 0 {
 		assert.Fail("error found")
 		return

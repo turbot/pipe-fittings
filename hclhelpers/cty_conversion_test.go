@@ -251,6 +251,166 @@ var coerceValueTests = []coerceValueTest{
 		expected: 3.14,
 		ctyType:  cty.Number,
 	},
+	{
+		title: "list of strings",
+		input: "[\"foo\", \"bar\", \"baz\"]",
+		expected: []string{
+			"foo",
+			"bar",
+			"baz",
+		},
+		ctyType: cty.List(cty.String),
+	},
+	{
+		title: "list of numbers",
+		input: "[1, 2, 3]",
+		expected: []float64{
+			1,
+			2,
+			3,
+		},
+		ctyType: cty.List(cty.Number),
+	},
+	{
+		title: "list of bools",
+		input: "[true, false, true]",
+		expected: []bool{
+			true,
+			false,
+			true,
+		},
+		ctyType: cty.List(cty.Bool),
+	},
+	{
+		title: "list of lists of strings",
+		input: "[[\"foo\", \"bar\"], [\"baz\", \"qux\"]]",
+		expected: []any{
+			[]any{"foo", "bar"},
+			[]any{"baz", "qux"},
+		},
+		ctyType: cty.List(cty.List(cty.String)),
+	},
+	{
+		title: "list of lists of numbers",
+		input: "[[1, 2], [3, 4]]",
+		expected: []any{
+			[]any{1, 2},
+			[]any{3, 4},
+		},
+		ctyType: cty.List(cty.List(cty.Number)),
+	},
+	{
+		title: "list of lists of bools",
+		input: "[[true, false], [false, true]]",
+		expected: []any{
+			[]any{true, false},
+			[]any{false, true},
+		},
+		ctyType: cty.List(cty.List(cty.Bool)),
+	},
+	{
+		title: "map of strings",
+		input: "{\"foo\": \"bar\", \"baz\": \"qux\"}",
+		expected: map[string]string{
+			"foo": "bar",
+			"baz": "qux",
+		},
+		ctyType: cty.Map(cty.String),
+	},
+	{
+		title: "map of numbers",
+		input: "{\"foo\": 1, \"baz\": 2}",
+		expected: map[string]float64{
+			"foo": 1,
+			"baz": 2,
+		},
+		ctyType: cty.Map(cty.Number),
+	},
+	{
+		title: "map of bools",
+		input: "{\"foo\": true, \"baz\": false}",
+		expected: map[string]bool{
+			"foo": true,
+			"baz": false,
+		},
+		ctyType: cty.Map(cty.Bool),
+	},
+	{
+		title: "map of lists of strings",
+		input: "{\"foo\": [\"bar\", \"baz\"], \"baz\": [\"qux\", \"quux\"]}",
+		expected: map[string]any{
+			"foo": []any{"bar", "baz"},
+			"baz": []any{"qux", "quux"},
+		},
+		ctyType: cty.Map(cty.List(cty.String)),
+	},
+	{
+		title: "map of lists of numbers",
+		input: "{\"foo\": [1, 2], \"baz\": [3, 4]}",
+		expected: map[string]any{
+			"foo": []any{1, 2},
+			"baz": []any{3, 4},
+		},
+		ctyType: cty.Map(cty.List(cty.Number)),
+	},
+	{
+		title: "map of lists of bools",
+		input: "{\"foo\": [true, false], \"baz\": [false, true]}",
+		expected: map[string]any{
+			"foo": []any{true, false},
+			"baz": []any{false, true},
+		},
+		ctyType: cty.Map(cty.List(cty.Bool)),
+	},
+	{
+		title: "map of any",
+		input: "{\"foo\": \"bar\", \"baz\": [\"qux\", \"quux\"]}",
+		expected: map[string]any{
+			"foo": "bar",
+			"baz": []any{"qux", "quux"},
+		},
+		ctyType: cty.Map(cty.DynamicPseudoType),
+	},
+	{
+		title: "list of any",
+		input: "[\"foo\", 3, true]",
+		expected: []any{
+			"foo",
+			3,
+			true,
+		},
+		ctyType: cty.List(cty.DynamicPseudoType),
+	},
+	{
+		title: "list of any 2",
+		input: "[\"foo\", 3, true, [\"bar\", 4]]",
+		expected: []any{
+			"foo",
+			3,
+			true,
+			[]any{"bar", 4},
+		},
+		ctyType: cty.List(cty.DynamicPseudoType),
+	},
+	{
+		title:    "list of any 3",
+		input:    "[\"foo\", 3, true, [\"bar\", 4], {\"baz\": \"qux\"}]",
+		expected: []any{"foo", 3, true, []any{"bar", 4}, map[string]any{"baz": "qux"}},
+		ctyType:  cty.List(cty.DynamicPseudoType),
+	},
+	{
+		title: "map of map of any",
+		input: "{\"foo\": {\"bar\": \"baz\"}, \"baz\": {\"qux\": \"quux\"}}",
+		expected: map[string]any{
+			"foo": map[string]any{
+				"bar": "baz",
+			},
+			"baz": map[string]any{
+				"qux": "quux",
+			},
+		},
+		ctyType: cty.Map(cty.Map(cty.DynamicPseudoType)),
+	},
 }
 
 func TestCoerceValue(tm *testing.T) {
