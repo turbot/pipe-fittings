@@ -76,7 +76,7 @@ func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interf
 func validateParam(param *modconfig.PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
-	if !hclhelpers.IsComplexType(param.Type) {
+	if !hclhelpers.IsComplexType(param.Type) && !param.Type.HasDynamicTypes() {
 		valToValidate, err = gocty.ToCtyValue(inputParam, param.Type)
 		if err != nil {
 			return err
