@@ -481,7 +481,7 @@ func (p *PipelineParam) IsConnectionType() bool {
 		return true
 	}
 
-	if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
+	if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
 		return true
 	}
 

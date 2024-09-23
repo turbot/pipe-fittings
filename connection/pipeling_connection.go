@@ -70,7 +70,7 @@ func customTypeValidationSingle(attr *hcl.Attribute, ctyVal cty.Value, encapsula
 		if connInterface.GetConnectionType() == valueMap["type"].AsString() {
 			return diags
 		}
-	} else if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
+	} else if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
 		diags := validateMapAttribute(attr, valueMap, "resource_type", "missing resource_type in value")
 		if len(diags) > 0 {
 			return diags
@@ -116,7 +116,7 @@ func customTypeCheckResourceTypeCorrect(attr *hcl.Attribute, val cty.Value, enca
 		if pc, ok := encapsulatedInstanceNew.Interface().(PipelingConnection); ok {
 			// Validate list of capsule type
 			valid = valueMap["resource_type"].AsString() == schema.BlockTypeConnection && valueMap["type"].AsString() == pc.GetConnectionType()
-		} else if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
+		} else if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
 			valid = valueMap["resource_type"].AsString() == schema.BlockTypeConnection
 		} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
 			// Validate internal notifier resource
