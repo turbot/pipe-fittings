@@ -1,4 +1,4 @@
-package plugin
+package hclhelpers
 
 import "github.com/hashicorp/hcl/v2"
 
@@ -6,11 +6,11 @@ import "github.com/hashicorp/hcl/v2"
 // This is a direct re-implementation of hcl.Range, allowing us to control JSON serialization
 type Range struct {
 	// Filename is the name of the file into which this range's positions point.
-	Filename string `json:"filename,omitempty"`
+	Filename string `json:"filename,omitempty" cty:"filename"`
 
 	// Start and End represent the bounds of this range. Start is inclusive and End is exclusive.
-	Start Pos `json:"start,omitempty"`
-	End   Pos `json:"end,omitempty"`
+	Start Pos `json:"start,omitempty" cty:"start"`
+	End   Pos `json:"end,omitempty" cty:"end"`
 }
 
 func (r Range) HclRange() hcl.Range {
@@ -32,9 +32,9 @@ func NewRange(sourceRange hcl.Range) Range {
 // Pos represents a single position in a source file
 // This is a direct re-implementation of hcl.Pos, allowing us to control JSON serialization
 type Pos struct {
-	Line   int `json:"line"`
-	Column int `json:"column"`
-	Byte   int `json:"byte"`
+	Line   int `json:"line" cty:"line"`
+	Column int `json:"column" cty:"column"`
+	Byte   int `json:"byte" cty:"byte"`
 }
 
 func (r Pos) HclPos() hcl.Pos {

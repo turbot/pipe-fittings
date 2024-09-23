@@ -216,7 +216,6 @@ func stripQuotes(s string) string {
 }
 
 func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, error) {
-
 	wanted := typ.FriendlyName()
 
 	// Check if the provided type is one of the supported types
@@ -267,7 +266,6 @@ func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, er
 			return res, nil
 		}
 	} else {
-
 		fakeFilename := fmt.Sprintf("<value for var.%s>", input)
 		expr, diags := hclsyntax.ParseExpression([]byte(input), fakeFilename, hcl.Pos{Line: 1, Column: 1})
 		if diags.HasErrors() {
@@ -283,7 +281,7 @@ func CoerceStringToGoBasedOnCtyType(input string, typ cty.Type) (interface{}, er
 			return nil, perr.BadRequestWithMessage(errMsg)
 		}
 
-		if typ.IsListType() || typ.IsTupleType() || typ.IsSetType() {
+		if IsListLike(typ) {
 
 			if typ == cty.List(cty.String) || typ == cty.Set(cty.String) {
 				res, err := CtyToGoStringSlice(val, typ)
@@ -448,7 +446,7 @@ func CtyToGoInterfaceSlice(v cty.Value) (val []interface{}, err error) {
 		return nil, nil
 	}
 	ty := v.Type()
-	if !ty.IsListType() && !ty.IsTupleType() {
+	if !IsListLike(ty) {
 		return nil, fmt.Errorf("expected list type")
 	}
 
@@ -484,7 +482,16 @@ func CtyToGoInterfaceSlice(v cty.Value) (val []interface{}, err error) {
 				}
 			}
 		default:
-			return nil, fmt.Errorf("unsupported type %s", v.Type().FriendlyName())
+			if IsListLike(v.Type()) {
+				moreRes, err := CtyToGoInterfaceSlice(v)
+				if err != nil {
+					return nil, err
+				}
+				//nolint:asasalint // this is actually correct, sometime we want to append a slice to a slice
+				res = append(res, moreRes)
+			} else {
+				return nil, fmt.Errorf("unsupported type %s", v.Type().FriendlyName())
+			}
 		}
 	}
 	return res, nil

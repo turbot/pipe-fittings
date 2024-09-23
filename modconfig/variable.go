@@ -3,11 +3,9 @@ package modconfig
 import (
 	"fmt"
 
-	typehelpers "github.com/turbot/go-kit/types"
-
 	"github.com/hashicorp/hcl/v2"
+	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig/var_config"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -50,15 +48,15 @@ type Variable struct {
 	SubtypeString string         `json:"subtype_string,omitempty"`
 
 	// set after value resolution `column:"value,jsonb"`
-	Value                      cty.Value                      `json:"-"`
-	ValueSourceType            string                         `json:"-"`
-	ValueSourceFileName        string                         `json:"-"`
-	ValueSourceStartLineNumber int                            `json:"-"`
-	ValueSourceEndLineNumber   int                            `json:"-"`
-	ParsingMode                var_config.VariableParsingMode `json:"-"`
+	Value                      cty.Value           `json:"-"`
+	ValueSourceType            string              `json:"-"`
+	ValueSourceFileName        string              `json:"-"`
+	ValueSourceStartLineNumber int                 `json:"-"`
+	ValueSourceEndLineNumber   int                 `json:"-"`
+	ParsingMode                VariableParsingMode `json:"-"`
 }
 
-func NewVariable(v *var_config.Variable, mod *Mod) *Variable {
+func NewVariable(v *RawVariable, mod *Mod) *Variable {
 	var defaultGo interface{} = nil
 	if !v.Default.IsNull() {
 		defaultGo, _ = hclhelpers.CtyToGo(v.Default)

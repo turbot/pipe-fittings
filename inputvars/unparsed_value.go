@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/modconfig/var_config"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"github.com/zclconf/go-cty/cty"
@@ -25,7 +24,7 @@ type UnparsedVariableValue interface {
 	//
 	// If error diagnostics are returned, the resulting value may be invalid
 	// or incomplete.
-	ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics)
+	ParseVariableValue(mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics)
 }
 
 // ParseVariableValues processes a map of unparsed variable values by
@@ -55,12 +54,12 @@ func ParseVariableValues(inputValueUnparsed map[string]UnparsedVariableValue, re
 	seenUndeclaredInFile := 0
 
 	for name, unparsedVal := range inputValueUnparsed {
-		var mode var_config.VariableParsingMode
+		var mode modconfig.VariableParsingMode
 		config, declared := publicVariables[name]
 		if declared {
 			mode = config.ParsingMode
 		} else {
-			mode = var_config.VariableParseLiteral
+			mode = modconfig.VariableParseLiteral
 		}
 
 		val, valDiags := unparsedVal.ParseVariableValue(mode)
@@ -189,7 +188,7 @@ type UnparsedInteractiveVariableValue struct {
 	Name, RawValue string
 }
 
-func (v UnparsedInteractiveVariableValue) ParseVariableValue(mode var_config.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v UnparsedInteractiveVariableValue) ParseVariableValue(mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 	val, valDiags := mode.Parse(v.Name, v.RawValue)
 	diags = diags.Append(valDiags)

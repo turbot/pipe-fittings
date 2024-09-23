@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/parse"
 )
 
 func TestParamOptional(t *testing.T) {
@@ -22,5 +23,5 @@ func TestParamOptional(t *testing.T) {
 
 	stringValid := map[string]interface{}{}
 
-	assert.Equal(0, len(validateMyParam.ValidatePipelineParam(stringValid, nil)))
+	assert.Equal(0, len(parse.ValidateParams(validateMyParam, stringValid, nil)))
 }

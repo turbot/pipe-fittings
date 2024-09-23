@@ -10,7 +10,6 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/modconfig/var_config"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 )
@@ -290,7 +289,7 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	content, diags := block.Body.Content(VariableBlockSchema)
 	res.HandleDecodeDiags(diags)
 
-	v, diags := var_config.DecodeVariableBlock(block, content, false)
+	v, diags := DecodeVariableBlock(block, content)
 	res.HandleDecodeDiags(diags)
 
 	if res.Success() {

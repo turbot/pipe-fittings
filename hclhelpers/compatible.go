@@ -1,6 +1,8 @@
 package hclhelpers
 
 import (
+	"reflect"
+
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -125,5 +127,42 @@ func IsEnumValueCompatibleWithType(ctyType cty.Type, enumValues cty.Value) bool 
 
 // Checks if the given type is a collection or a tuple
 func IsCollectionOrTuple(typ cty.Type) bool {
-	return typ.IsCollectionType() || typ.IsTupleType() || typ.IsListType()
+	return typ.IsCollectionType() || typ.IsTupleType() || typ.IsListType() || typ.IsSetType()
+}
+
+func IsListLike(typ cty.Type) bool {
+	return typ.IsListType() || typ.IsTupleType() || typ.IsSetType()
+}
+
+func IsComplexType(typ cty.Type) bool {
+	return typ.IsMapType() || typ.IsObjectType() || IsCollectionOrTuple(typ) || typ.IsCapsuleType()
+}
+
+func IsMapLike(typ cty.Type) bool {
+	return typ.IsMapType() || typ.IsObjectType()
+}
+
+func IsNestedCapsuleType(t cty.Type) (reflect.Type, bool) {
+	if t.IsCollectionType() {
+		// Recursively check the element type if it's a list
+		elementType := t.ElementType()
+		encapsulatedGoType, ok := IsNestedCapsuleType(elementType)
+		return encapsulatedGoType, ok
+	} else if t.IsObjectType() {
+		// If there's at least one encapsulated type, we say it is a nested capsule type
+		attributeTypes := t.AttributeTypes()
+		for _, attributeType := range attributeTypes {
+			encapsulatedGoType, ok := IsNestedCapsuleType(attributeType)
+			if ok {
+				return encapsulatedGoType, ok
+			}
+		}
+		return nil, false
+
+	} else if t.IsCapsuleType() {
+		// If it's a capsule type, return the encapsulated Go type
+		return t.EncapsulatedType(), true
+	}
+	// Return false if no capsule type is found
+	return nil, false
 }
