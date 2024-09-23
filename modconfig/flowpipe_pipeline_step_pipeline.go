@@ -108,7 +108,7 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
-		if !p.Pipeline.Type().IsMapType() && !p.Pipeline.Type().IsObjectType() {
+		if !pipelineCty.Type().IsMapType() && !pipelineCty.Type().IsObjectType() {
 			return nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
 		}
 

@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.5.7 [2024-09-23]
+
+_Bug fixes_
+
+* Flowpipe pipeline will no longer crash if user provided a non-map type reference (another case).
+
 ## v1.5.6 [2024-09-23]
 
 _Bug fixes_
