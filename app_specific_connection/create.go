@@ -18,6 +18,11 @@ func NewPipelingConnection(connectionType, shortName string, declRange hcl.Range
 }
 
 func ConnectionCtyType(connectionType string) cty.Type {
+	// NOTE: if not type is provided, just return the type of ConnectionImpl
+	if connectionType == "" {
+		return cty.Capsule(connectionType, reflect.TypeOf(connection.ConnectionImpl{}))
+	}
+
 	ctor, exists := ConnectionTypeRegistry[connectionType]
 	if !exists {
 		return cty.NilType

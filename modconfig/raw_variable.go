@@ -20,6 +20,7 @@ type RawVariable struct {
 	Description    string
 	Default        cty.Value
 	Type           cty.Type
+	TypeString     string
 	ParsingMode    VariableParsingMode
 	Enum           cty.Value
 	EnumGo         []any

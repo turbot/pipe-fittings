@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -13,7 +12,6 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -148,55 +146,6 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	return step, diags
 }
 
-var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
-var NotifierCtyType = cty.Capsule("NotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
-
-func handleScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.Type, bool) {
-	dottedString := hclhelpers.TraversalAsString(expr.Traversal)
-	parts := strings.Split(dottedString, ".")
-	if len(parts) == 2 {
-		switch parts[0] {
-		case schema.BlockTypeConnection:
-			ty := app_specific_connection.ConnectionCtyType(parts[1])
-			return ty, ty == cty.NilType
-		case schema.BlockTypeNotifier:
-			return NotifierCtyType, false
-		}
-	} else if len(parts) == 1 {
-		switch parts[0] {
-		case schema.BlockTypeConnection:
-			return ConnectionCtyType, false
-		case schema.BlockTypeNotifier:
-			return NotifierCtyType, false
-		}
-	}
-	return cty.NilType, true
-}
-
-func handleFunctionCallExpr(fCallExpr *hclsyntax.FunctionCallExpr) (cty.Type, bool) {
-	if fCallExpr.Name == "list" && len(fCallExpr.Args) == 1 {
-		dottedString := hclhelpers.TraversalAsString(fCallExpr.Args[0].Variables()[0])
-		parts := strings.Split(dottedString, ".")
-		if len(parts) == 2 {
-			switch parts[0] {
-			case schema.BlockTypeConnection:
-				innerTy := app_specific_connection.ConnectionCtyType(parts[1])
-				return cty.List(innerTy), innerTy == cty.NilType
-			case schema.BlockTypeNotifier:
-				return cty.List(NotifierCtyType), false
-			}
-		} else if len(parts) == 1 {
-			switch parts[0] {
-			case schema.BlockTypeConnection:
-				return cty.List(ConnectionCtyType), false
-			case schema.BlockTypeNotifier:
-				return cty.List(NotifierCtyType), false
-			}
-		}
-	}
-	return cty.NilType, true
-}
-
 func extractExpressionString(expr hcl.Expression, src string) string {
 	rng := expr.Range()
 	return src[rng.Start.Byte:rng.End.Byte]
@@ -317,11 +266,7 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 				ty = cty.Set(cty.DynamicPseudoType)
 				typeErr = false
 			default:
-				if scopeTraversalExpr, ok := expr.(*hclsyntax.ScopeTraversalExpr); ok {
-					ty, typeErr = handleScopeTraversalExpr(scopeTraversalExpr)
-				} else if fCallExpr, ok := expr.(*hclsyntax.FunctionCallExpr); ok {
-					ty, typeErr = handleFunctionCallExpr(fCallExpr)
-				}
+				ty, typeErr = customTypeFromExpr(expr)
 			}
 
 			if typeErr {
