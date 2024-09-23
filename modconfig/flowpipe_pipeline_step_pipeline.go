@@ -92,6 +92,11 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 		if p.Pipeline == cty.NilVal {
 			return nil, perr.InternalWithMessage(p.Name + ": pipeline must be supplied")
 		}
+
+		if !p.Pipeline.Type().IsMapType() && !p.Pipeline.Type().IsObjectType() {
+			return nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
+		}
+
 		valueMap := p.Pipeline.AsValueMap()
 		pipelineNameCty := valueMap[schema.LabelName]
 		pipeline = pipelineNameCty.AsString()
@@ -102,6 +107,11 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
+
+		if !p.Pipeline.Type().IsMapType() && !p.Pipeline.Type().IsObjectType() {
+			return nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
+		}
+
 		valueMap := pipelineCty.AsValueMap()
 		pipelineNameCty := valueMap[schema.LabelName]
 		pipeline = pipelineNameCty.AsString()
