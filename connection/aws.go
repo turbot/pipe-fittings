@@ -113,6 +113,15 @@ func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *AwsConnection) Validate() hcl.Diagnostics {
+	if c.Profile != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Profile != nil || c.SessionToken != nil || c.Ttl != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 
 	if c.AccessKey != nil && c.SecretKey == nil {
 		return hcl.Diagnostics{

@@ -23,6 +23,7 @@ type PipelingConnection interface {
 
 	Equals(PipelingConnection) bool
 	GetConnectionImpl() ConnectionImpl
+	SetPipesMetadata(pipes *PipesConnectionMetadata)
 }
 
 func validateMapAttribute(attr *hcl.Attribute, valueMap map[string]cty.Value, key, errMsg string) hcl.Diagnostics {

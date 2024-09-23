@@ -12,8 +12,10 @@ import (
 
 // no hcl tags needed - this is a manually populated
 type ConnectionImpl struct {
+	Pipes *PipesConnectionMetadata `json:"pipes,omitempty" cty:"pipes" hcl:"pipes,block"`
+
 	ShortName string `json:"short_name" cty:"short_name"`
-	FullName  string `json:"full_name,omitempty"`
+	FullName  string `json:"full_name,omitempty" hcl:"other"`
 	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
 	DeclRange hclhelpers.Range `json:"decl_range,omitempty"`
 }
@@ -40,6 +42,10 @@ func (c *ConnectionImpl) GetConnectionType() string {
 
 func (c *ConnectionImpl) GetConnectionImpl() ConnectionImpl {
 	return *c
+}
+
+func (c *ConnectionImpl) SetPipesMetadata(pipes *PipesConnectionMetadata) {
+	c.Pipes = pipes
 }
 
 func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
