@@ -12,22 +12,22 @@ import (
 
 // no hcl tags needed - this is a manually populated
 type ConnectionImpl struct {
-	Type      string `json:"type" cty:"type"`
 	ShortName string `json:"short_name" cty:"short_name"`
+	FullName  string `json:"full_name,omitempty"`
 	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
-	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
+	DeclRange hclhelpers.Range `json:"decl_range,omitempty"`
 }
 
 func NewConnectionImpl(connectionType, shortName string, declRange hcl.Range) ConnectionImpl {
 	return ConnectionImpl{
-		Type:      connectionType,
 		ShortName: shortName,
+		FullName:  fmt.Sprintf("%s.%s", connectionType, shortName),
 		DeclRange: hclhelpers.NewRange(declRange),
 	}
 }
 
 func (c *ConnectionImpl) Name() string {
-	return fmt.Sprintf("%s.%s", c.Type, c.ShortName)
+	return c.FullName
 }
 
 func (c *ConnectionImpl) GetShortName() string {
@@ -35,9 +35,7 @@ func (c *ConnectionImpl) GetShortName() string {
 }
 
 func (c *ConnectionImpl) GetConnectionType() string {
-	// even though we have a connection type property, we rely on the concrete connection type to implement this
-	// this is because the connection type may be instatiated by reflection so Type may not be set
-	panic("method GetConnectionType must be implemented be concrete connection type")
+	panic("method GetConnectionType must be implemented by concrete connection type")
 }
 
 func (c *ConnectionImpl) GetConnectionImpl() ConnectionImpl {
@@ -63,5 +61,6 @@ func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 	maps.Copy(mergedValueMap, valueMap)
 
 	mergedValueMap["env"] = cty.ObjectVal(connection.GetEnv())
+	mergedValueMap["type"] = cty.StringVal(connection.GetConnectionType())
 	return cty.ObjectVal(mergedValueMap), nil
 }

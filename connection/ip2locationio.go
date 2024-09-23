@@ -25,6 +25,10 @@ func NewIP2LocationIOConnection(shortName string, declRange hcl.Range) PipelingC
 	}
 }
 
+func (c *IP2LocationIOConnection) GetConnectionType() string {
+	return IP2LocationIOConnectionType
+}
+
 func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	if c.APIKey == nil {
 		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")

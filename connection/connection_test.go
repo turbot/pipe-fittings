@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"os"
 	"testing"
 
@@ -19,9 +18,7 @@ func TestAbuseIPDBDefaultConnection(t *testing.T) {
 
 	abuseIPDBConnection := AbuseIPDBConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -52,9 +49,7 @@ func TestAbuseIPDBConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &AbuseIPDBConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil))
@@ -64,9 +59,7 @@ func TestAbuseIPDBConnectionEquals(t *testing.T) {
 	conn1.APIKey = &apiKey
 	conn2 = &AbuseIPDBConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -129,9 +122,7 @@ func TestAlicloudConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &AlicloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -141,18 +132,14 @@ func TestAlicloudConnectionEquals(t *testing.T) {
 	secretKey := "secret_key_value"
 	conn1 = &AlicloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey: &accessKey,
 		SecretKey: &secretKey,
 	}
 	conn2 = &AlicloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey: &accessKey,
 		SecretKey: &secretKey,
@@ -244,9 +231,7 @@ func TestAwsConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &AwsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -260,9 +245,7 @@ func TestAwsConnectionEquals(t *testing.T) {
 
 	conn1 = &AwsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey:    &accessKey,
 		SecretKey:    &secretKey,
@@ -273,9 +256,7 @@ func TestAwsConnectionEquals(t *testing.T) {
 
 	conn2 = &AwsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey:    &accessKey,
 		SecretKey:    &secretKey,
@@ -356,9 +337,7 @@ func TestAzureDefaultConnection(t *testing.T) {
 
 	azureConnection := AzureConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -402,9 +381,7 @@ func TestAzureConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &AzureConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -417,9 +394,7 @@ func TestAzureConnectionEquals(t *testing.T) {
 
 	conn1 = &AzureConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
@@ -429,9 +404,7 @@ func TestAzureConnectionEquals(t *testing.T) {
 
 	conn2 = &AzureConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		ClientID:     &clientID,
 		ClientSecret: &clientSecret,
@@ -498,9 +471,7 @@ func TestBitbucketDefaultConnection(t *testing.T) {
 
 	bitbucketConnection := BitbucketConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -540,9 +511,7 @@ func TestBitbucketConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &BitbucketConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -554,9 +523,7 @@ func TestBitbucketConnectionEquals(t *testing.T) {
 
 	conn1 = &BitbucketConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		BaseURL:  &baseURL,
 		Username: &username,
@@ -565,9 +532,7 @@ func TestBitbucketConnectionEquals(t *testing.T) {
 
 	conn2 = &BitbucketConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		BaseURL:  &baseURL,
 		Username: &username,
@@ -625,9 +590,7 @@ func TestClickUpDefaultConnection(t *testing.T) {
 
 	clickUpConnection := ClickUpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -658,9 +621,7 @@ func TestClickUpConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &ClickUpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -669,18 +630,14 @@ func TestClickUpConnectionEquals(t *testing.T) {
 	token := "token_value"
 	conn1 = &ClickUpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &ClickUpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -719,9 +676,7 @@ func TestDatadogDefaultConnection(t *testing.T) {
 
 	datadogConnection := DatadogConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -757,9 +712,7 @@ func TestDatadogConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &DatadogConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -771,9 +724,7 @@ func TestDatadogConnectionEquals(t *testing.T) {
 
 	conn1 = &DatadogConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 		AppKey: &appKey,
@@ -782,9 +733,7 @@ func TestDatadogConnectionEquals(t *testing.T) {
 
 	conn2 = &DatadogConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 		AppKey: &appKey,
@@ -842,9 +791,7 @@ func TestDiscordDefaultConnection(t *testing.T) {
 
 	discordConnection := DiscordConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -875,9 +822,7 @@ func TestDiscordConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &DiscordConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -886,18 +831,14 @@ func TestDiscordConnectionEquals(t *testing.T) {
 	token := "token_value"
 	conn1 = &DiscordConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &DiscordConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -936,9 +877,7 @@ func TestFreshdeskDefaultConnection(t *testing.T) {
 
 	freshdeskConnection := FreshdeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -974,9 +913,7 @@ func TestFreshdeskConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &FreshdeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -987,9 +924,7 @@ func TestFreshdeskConnectionEquals(t *testing.T) {
 
 	conn1 = &FreshdeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey:    &apiKey,
 		Subdomain: &subdomain,
@@ -997,9 +932,7 @@ func TestFreshdeskConnectionEquals(t *testing.T) {
 
 	conn2 = &FreshdeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey:    &apiKey,
 		Subdomain: &subdomain,
@@ -1048,9 +981,7 @@ func TestGitHubDefaultConnection(t *testing.T) {
 
 	githubConnection := GithubConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1081,9 +1012,7 @@ func TestGithubConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &GithubConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1092,18 +1021,14 @@ func TestGithubConnectionEquals(t *testing.T) {
 	token := "token_value"
 	conn1 = &GithubConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &GithubConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -1151,9 +1076,7 @@ func TestGcpConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &GcpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1165,9 +1088,7 @@ func TestGcpConnectionEquals(t *testing.T) {
 
 	conn1 = &GcpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Credentials: &credentials,
 		Ttl:         &ttl,
@@ -1176,9 +1097,7 @@ func TestGcpConnectionEquals(t *testing.T) {
 
 	conn2 = &GcpConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Credentials: &credentials,
 		Ttl:         &ttl,
@@ -1230,9 +1149,7 @@ func TestGitLabDefaultConnection(t *testing.T) {
 
 	gitlabConnection := GitLabConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1263,9 +1180,7 @@ func TestGitLabConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &GitLabConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1274,18 +1189,14 @@ func TestGitLabConnectionEquals(t *testing.T) {
 	token := "token_value"
 	conn1 = &GitLabConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &GitLabConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -1324,9 +1235,7 @@ func TestIPstackDefaultConnection(t *testing.T) {
 
 	ipstackConnection := IPstackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1359,9 +1268,7 @@ func TestIPstackConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &IPstackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1370,18 +1277,14 @@ func TestIPstackConnectionEquals(t *testing.T) {
 	accessKey := "access_key_value"
 	conn1 = &IPstackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey: &accessKey,
 	}
 
 	conn2 = &IPstackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey: &accessKey,
 	}
@@ -1420,9 +1323,7 @@ func TestIP2LocationIODefaultConnection(t *testing.T) {
 
 	ip2LocationConnection := IP2LocationIOConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1453,9 +1354,7 @@ func TestIP2LocationIOConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &IP2LocationIOConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1464,18 +1363,14 @@ func TestIP2LocationIOConnectionEquals(t *testing.T) {
 	apiKey := "api_key_value" // #nosec: G101
 	conn1 = &IP2LocationIOConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
 
 	conn2 = &IP2LocationIOConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -1514,9 +1409,7 @@ func TestJiraDefaultConnection(t *testing.T) {
 
 	jiraConnection := JiraConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1558,9 +1451,7 @@ func TestJiraConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &JiraConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1572,9 +1463,7 @@ func TestJiraConnectionEquals(t *testing.T) {
 
 	conn1 = &JiraConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIToken: &apiToken,
 		BaseURL:  &baseURL,
@@ -1583,9 +1472,7 @@ func TestJiraConnectionEquals(t *testing.T) {
 
 	conn2 = &JiraConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIToken: &apiToken,
 		BaseURL:  &baseURL,
@@ -1643,9 +1530,7 @@ func TestJumpCloudDefaultConnection(t *testing.T) {
 
 	jumpCloudConnection := JumpCloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1677,9 +1562,7 @@ func TestJumpCloudConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &JumpCloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1688,18 +1571,14 @@ func TestJumpCloudConnectionEquals(t *testing.T) {
 	apiKey := "api_key_value" // #nosec: G101
 	conn1 = &JumpCloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
 
 	conn2 = &JumpCloudConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -1742,9 +1621,7 @@ func TestMastodonDefaultConnection(t *testing.T) {
 
 	mastodonConnection := MastodonConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessToken: &accessToken,
 		Server:      &server,
@@ -1769,9 +1646,7 @@ func TestMastodonConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &MastodonConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1782,9 +1657,7 @@ func TestMastodonConnectionEquals(t *testing.T) {
 
 	conn1 = &MastodonConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessToken: &accessToken,
 		Server:      &server,
@@ -1792,9 +1665,7 @@ func TestMastodonConnectionEquals(t *testing.T) {
 
 	conn2 = &MastodonConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessToken: &accessToken,
 		Server:      &server,
@@ -1843,9 +1714,7 @@ func TestMicrosoftTeamsDefaultConnection(t *testing.T) {
 
 	msTeamsConnection := MicrosoftTeamsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1876,9 +1745,7 @@ func TestMicrosoftTeamsConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &MicrosoftTeamsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1888,18 +1755,14 @@ func TestMicrosoftTeamsConnectionEquals(t *testing.T) {
 
 	conn1 = &MicrosoftTeamsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessToken: &accessToken,
 	}
 
 	conn2 = &MicrosoftTeamsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessToken: &accessToken,
 	}
@@ -1939,9 +1802,7 @@ func TestOktaDefaultConnection(t *testing.T) {
 
 	oktaConnection := OktaConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -1977,9 +1838,7 @@ func TestOktaConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &OktaConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -1990,9 +1849,7 @@ func TestOktaConnectionEquals(t *testing.T) {
 
 	conn1 = &OktaConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Domain: &domain,
 		Token:  &token,
@@ -2000,9 +1857,7 @@ func TestOktaConnectionEquals(t *testing.T) {
 
 	conn2 = &OktaConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Domain: &domain,
 		Token:  &token,
@@ -2051,9 +1906,7 @@ func TestOpenAIDefaultConnection(t *testing.T) {
 
 	openAIConnection := OpenAIConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2128,9 +1981,7 @@ func TestOpsgenieDefaultConnection(t *testing.T) {
 
 	opsgenieConnection := OpsgenieConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2166,9 +2017,7 @@ func TestOpsgenieConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &OpsgenieConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2179,9 +2028,7 @@ func TestOpsgenieConnectionEquals(t *testing.T) {
 
 	conn1 = &OpsgenieConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AlertAPIKey:    &alertAPIKey,
 		IncidentAPIKey: &incidentAPIKey,
@@ -2189,9 +2036,7 @@ func TestOpsgenieConnectionEquals(t *testing.T) {
 
 	conn2 = &OpsgenieConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AlertAPIKey:    &alertAPIKey,
 		IncidentAPIKey: &incidentAPIKey,
@@ -2240,9 +2085,7 @@ func TestPagerDutyDefaultConnection(t *testing.T) {
 
 	pagerDutyConnection := PagerDutyConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2273,9 +2116,7 @@ func TestPagerDutyConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &PagerDutyConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2285,18 +2126,14 @@ func TestPagerDutyConnectionEquals(t *testing.T) {
 
 	conn1 = &PagerDutyConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &PagerDutyConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -2336,9 +2173,7 @@ func TestSendGridDefaultConnection(t *testing.T) {
 
 	sendGridConnection := SendGridConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2369,9 +2204,7 @@ func TestSendGridConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &SendGridConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2381,18 +2214,14 @@ func TestSendGridConnectionEquals(t *testing.T) {
 
 	conn1 = &SendGridConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
 
 	conn2 = &SendGridConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -2432,9 +2261,7 @@ func TestServiceNowDefaultConnection(t *testing.T) {
 
 	guardrailsConnection := ServiceNowConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2474,9 +2301,7 @@ func TestServiceNowConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &ServiceNowConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2488,9 +2313,7 @@ func TestServiceNowConnectionEquals(t *testing.T) {
 
 	conn1 = &ServiceNowConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		InstanceURL: &instanceURL,
 		Username:    &username,
@@ -2499,9 +2322,7 @@ func TestServiceNowConnectionEquals(t *testing.T) {
 
 	conn2 = &ServiceNowConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		InstanceURL: &instanceURL,
 		Username:    &username,
@@ -2598,9 +2419,7 @@ func TestSlackConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &SlackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2610,18 +2429,14 @@ func TestSlackConnectionEquals(t *testing.T) {
 
 	conn1 = &SlackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &SlackConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -2661,9 +2476,7 @@ func TestTrelloDefaultConnection(t *testing.T) {
 
 	trelloConnection := TrelloConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2699,9 +2512,7 @@ func TestTrelloConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &TrelloConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2712,9 +2523,7 @@ func TestTrelloConnectionEquals(t *testing.T) {
 
 	conn1 = &TrelloConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 		Token:  &token,
@@ -2722,9 +2531,7 @@ func TestTrelloConnectionEquals(t *testing.T) {
 
 	conn2 = &TrelloConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 		Token:  &token,
@@ -2773,9 +2580,7 @@ func TestGuardrailsDefaultConnection(t *testing.T) {
 
 	guardrailsConnection := GuardrailsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2813,9 +2618,7 @@ func TestGuardrailsConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &GuardrailsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2827,9 +2630,7 @@ func TestGuardrailsConnectionEquals(t *testing.T) {
 
 	conn1 = &GuardrailsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey: &accessKey,
 		SecretKey: &secretKey,
@@ -2838,9 +2639,7 @@ func TestGuardrailsConnectionEquals(t *testing.T) {
 
 	conn2 = &GuardrailsConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		AccessKey: &accessKey,
 		SecretKey: &secretKey,
@@ -2898,9 +2697,7 @@ func TestPipesDefaultConnection(t *testing.T) {
 
 	pipesConnection := PipesConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -2931,9 +2728,7 @@ func TestPipesConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &PipesConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -2943,18 +2738,14 @@ func TestPipesConnectionEquals(t *testing.T) {
 
 	conn1 = &PipesConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
 
 	conn2 = &PipesConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Token: &token,
 	}
@@ -2994,9 +2785,7 @@ func TestUptimeRobotDefaultConnection(t *testing.T) {
 
 	uptimeRobotConnection := UptimeRobotConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -3027,9 +2816,7 @@ func TestUptimeRobotConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &UptimeRobotConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -3039,18 +2826,14 @@ func TestUptimeRobotConnectionEquals(t *testing.T) {
 
 	conn1 = &UptimeRobotConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
 
 	conn2 = &UptimeRobotConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -3090,9 +2873,7 @@ func TestUrlscanDefaultConnection(t *testing.T) {
 
 	urlscanConnection := UrlscanConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -3123,9 +2904,7 @@ func TestUrlscanConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &UrlscanConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -3135,18 +2914,14 @@ func TestUrlscanConnectionEquals(t *testing.T) {
 
 	conn1 = &UrlscanConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
 
 	conn2 = &UrlscanConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -3186,9 +2961,7 @@ func TestVaultDefaultConnection(t *testing.T) {
 
 	vaultConnection := VaultConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -3224,9 +2997,7 @@ func TestVaultConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &VaultConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -3237,9 +3008,7 @@ func TestVaultConnectionEquals(t *testing.T) {
 
 	conn1 = &VaultConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Address: &address,
 		Token:   &token,
@@ -3247,9 +3016,7 @@ func TestVaultConnectionEquals(t *testing.T) {
 
 	conn2 = &VaultConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Address: &address,
 		Token:   &token,
@@ -3298,9 +3065,7 @@ func TestVirusTotalDefaultConnection(t *testing.T) {
 
 	virusTotalConnection := VirusTotalConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -3331,9 +3096,7 @@ func TestVirusTotalConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &VirusTotalConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -3343,18 +3106,14 @@ func TestVirusTotalConnectionEquals(t *testing.T) {
 
 	conn1 = &VirusTotalConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
 
 	conn2 = &VirusTotalConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		APIKey: &apiKey,
 	}
@@ -3394,9 +3153,7 @@ func TestZendeskDefaultConnection(t *testing.T) {
 
 	zendeskConnection := ZendeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 
@@ -3436,9 +3193,7 @@ func TestZendeskConnectionEquals(t *testing.T) {
 	// Case 2: One connection is nil
 	conn1 = &ZendeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
@@ -3450,9 +3205,7 @@ func TestZendeskConnectionEquals(t *testing.T) {
 
 	conn1 = &ZendeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Email:     &email,
 		Subdomain: &subdomain,
@@ -3461,9 +3214,7 @@ func TestZendeskConnectionEquals(t *testing.T) {
 
 	conn2 = &ZendeskConnection{
 		ConnectionImpl: ConnectionImpl{
-			HclResourceImpl: modconfig.HclResourceImpl{
-				ShortName: "default",
-			},
+			ShortName: "default",
 		},
 		Email:     &email,
 		Subdomain: &subdomain,

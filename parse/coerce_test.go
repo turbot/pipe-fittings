@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -108,7 +109,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{})),
+					Type: cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{})),
 				},
 			},
 		},
@@ -150,7 +151,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -180,7 +181,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -195,7 +196,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -210,7 +211,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -234,7 +235,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -264,7 +265,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -279,7 +280,7 @@ var coerceValueTests = []coerceValueTest{
 			Params: []modconfig.PipelineParam{
 				{
 					Name: "param_connection",
-					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{}))),
+					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
 				},
 			},
 		},
@@ -295,7 +296,7 @@ var coerceValueTests = []coerceValueTest{
 				{
 					Name: "param_connection",
 					Type: cty.Object(map[string]cty.Type{
-						"aws": cty.Capsule("aws", reflect.TypeOf(modconfig.AwsConnection{})),
+						"aws": cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{})),
 						"foo": cty.String,
 						"bar": cty.Bool,
 					}),

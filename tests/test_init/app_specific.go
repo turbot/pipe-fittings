@@ -1,8 +1,6 @@
 package test_init
 
 import (
-	"reflect"
-
 	"github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
@@ -33,39 +31,39 @@ func SetAppSpecificConstants() {
 	//app_specific.ServiceConnectionAppNamePrefix
 	app_specific.WorkspaceIgnoreFile = ".flowpipeignore"
 	app_specific.WorkspaceDataDir = ".flowpipe"
-	app_specific_connection.ConnectionTypRegistry = map[string]reflect.Type{
-		(&connection.AbuseIPDBConnection{}).GetConnectionType(): reflect.TypeOf(connection.AbuseIPDBConnection{}),
-		(&connection.AlicloudConnection{}).GetConnectionType():  reflect.TypeOf(connection.AlicloudConnection{}),
-		(&connection.AwsConnection{}).GetConnectionType():       reflect.TypeOf(connection.AwsConnection{}),
-		"azure":             reflect.TypeOf(connection.AzureConnection{}),
-		"bitbucket":         reflect.TypeOf(connection.BitbucketConnection{}),
-		"clickup":           reflect.TypeOf(connection.ClickUpConnection{}),
-		"datadog":           reflect.TypeOf(connection.DatadogConnection{}),
-		"discord":           reflect.TypeOf(connection.DiscordConnection{}),
-		"freshdesk":         reflect.TypeOf(connection.FreshdeskConnection{}),
-		"gcp":               reflect.TypeOf(connection.GcpConnection{}),
-		"github":            reflect.TypeOf(connection.GithubConnection{}),
-		"gitlab":            reflect.TypeOf(connection.GitLabConnection{}),
-		"ip2locationio":     reflect.TypeOf(connection.IP2LocationIOConnection{}),
-		"ipstack":           reflect.TypeOf(connection.IPstackConnection{}),
-		"jira":              reflect.TypeOf(connection.JiraConnection{}),
-		"jumpcloud":         reflect.TypeOf(connection.JumpCloudConnection{}),
-		"mastodon":          reflect.TypeOf(connection.MastodonConnection{}),
-		"microsoft_teams":   reflect.TypeOf(connection.MicrosoftTeamsConnection{}),
-		"okta":              reflect.TypeOf(connection.OktaConnection{}),
-		"openai":            reflect.TypeOf(connection.OpenAIConnection{}),
-		"opsgenie":          reflect.TypeOf(connection.OpsgenieConnection{}),
-		"pagerduty":         reflect.TypeOf(connection.PagerDutyConnection{}),
-		"sendgrid":          reflect.TypeOf(connection.SendGridConnection{}),
-		"servicenow":        reflect.TypeOf(connection.ServiceNowConnection{}),
-		"slack":             reflect.TypeOf(connection.SlackConnection{}),
-		"trello":            reflect.TypeOf(connection.TrelloConnection{}),
-		"turbot_guardrails": reflect.TypeOf(connection.GuardrailsConnection{}),
-		"turbot_pipes":      reflect.TypeOf(connection.PipesConnection{}),
-		"uptime_robot":      reflect.TypeOf(connection.UptimeRobotConnection{}),
-		"urlscan":           reflect.TypeOf(connection.UrlscanConnection{}),
-		"vault":             reflect.TypeOf(connection.VaultConnection{}),
-		"virus_total":       reflect.TypeOf(connection.VirusTotalConnection{}),
-		"zendesk":           reflect.TypeOf(connection.ZendeskConnection{}),
-	}
+	app_specific_connection.RegisterConnections(
+		connection.NewAbuseIPDBConnection,
+		connection.NewAlicloudConnection,
+		connection.NewAwsConnection,
+		connection.NewAzureConnection,
+		connection.NewBitbucketConnection,
+		connection.NewClickUpConnection,
+		connection.NewDatadogConnection,
+		connection.NewDiscordConnection,
+		connection.NewFreshdeskConnection,
+		connection.NewGcpConnection,
+		connection.NewGithubConnection,
+		connection.NewGitLabConnection,
+		connection.NewIP2LocationIOConnection,
+		connection.NewIPstackConnection,
+		connection.NewJiraConnection,
+		connection.NewJumpCloudConnection,
+		connection.NewMastodonConnection,
+		connection.NewMicrosoftTeamsConnection,
+		connection.NewOktaConnection,
+		connection.NewOpenAIConnection,
+		connection.NewOpsgenieConnection,
+		connection.NewPagerDutyConnection,
+		connection.NewPostgresConnection,
+		connection.NewSendGridConnection,
+		connection.NewServiceNowConnection,
+		connection.NewSlackConnection,
+		connection.NewTrelloConnection,
+		connection.NewGuardrailsConnection,
+		connection.NewPipesConnection,
+		connection.NewUptimeRobotConnection,
+		connection.NewUrlscanConnection,
+		connection.NewVaultConnection,
+		connection.NewVirusTotalConnection,
+		connection.NewZendeskConnection)
 }
