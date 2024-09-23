@@ -52,6 +52,11 @@ func (c *DiscordConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*DiscordConnection)
 	if !ok {
 		return false
@@ -78,10 +83,6 @@ func (c *DiscordConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *DiscordConnection) GetTtl() int {
-	return -1
 }
 
 func (c *DiscordConnection) GetEnv() map[string]cty.Value {

@@ -53,6 +53,11 @@ func (c *SendGridConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*SendGridConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *SendGridConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *SendGridConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *SendGridConnection) GetTtl() int {
-	return -1
 }
 
 func (c *SendGridConnection) CtyValue() (cty.Value, error) {

@@ -53,6 +53,11 @@ func (c *JumpCloudConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*JumpCloudConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *JumpCloudConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *JumpCloudConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *JumpCloudConnection) GetTtl() int {
-	return -1
 }
 
 func (c *JumpCloudConnection) CtyValue() (cty.Value, error) {

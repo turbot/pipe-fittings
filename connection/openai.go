@@ -53,6 +53,11 @@ func (c *OpenAIConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*OpenAIConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *OpenAIConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *OpenAIConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *OpenAIConnection) GetTtl() int {
-	return -1
 }
 
 func (c *OpenAIConnection) CtyValue() (cty.Value, error) {

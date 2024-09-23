@@ -36,10 +36,6 @@ func (p *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, err
 
 }
 
-func (p *DuckDbConnection) GetTtl() int {
-	return -1
-}
-
 func (p *DuckDbConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }

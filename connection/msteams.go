@@ -53,6 +53,11 @@ func (c *MicrosoftTeamsConnection) Equals(otherConnection PipelingConnection) bo
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*MicrosoftTeamsConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *MicrosoftTeamsConnection) Equals(otherConnection PipelingConnection) bo
 
 func (c *MicrosoftTeamsConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *MicrosoftTeamsConnection) GetTtl() int {
-	return -1
 }
 
 func (c *MicrosoftTeamsConnection) CtyValue() (cty.Value, error) {

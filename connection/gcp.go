@@ -15,7 +15,10 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const GcpConnectionType = "gcp"
+const (
+	GcpConnectionType = "gcp"
+	defaultGcpTtl     = 5 * 60
+)
 
 type GcpConnection struct {
 	ConnectionImpl
@@ -27,9 +30,11 @@ type GcpConnection struct {
 }
 
 func NewGcpConnection(shortName string, declRange hcl.Range) PipelingConnection {
-	return &GcpConnection{
+	res := &GcpConnection{
 		ConnectionImpl: NewConnectionImpl(GcpConnectionType, shortName, declRange),
 	}
+	res.SetTtl(defaultGcpTtl)
+	return res
 }
 func (c *GcpConnection) GetConnectionType() string {
 	return GcpConnectionType
@@ -125,6 +130,11 @@ func (c *GcpConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*GcpConnection)
 	if !ok {
 		return false
@@ -158,10 +168,16 @@ func (c *GcpConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *GcpConnection) GetTtl() int {
-	if c.Ttl == nil {
-		return 5 * 60 // in seconds
+	if c.Pipes != nil {
+		return c.ConnectionImpl.GetTtl()
 	}
-	return *c.Ttl
+	// if a ttl was set in the conneciton config, return it
+	if c.Ttl != nil {
+		return *c.Ttl
+	}
+
+	// otherwise return the base ttl, which will contain the default
+	return c.ConnectionImpl.GetTtl()
 }
 
 func (c *GcpConnection) GetEnv() map[string]cty.Value {

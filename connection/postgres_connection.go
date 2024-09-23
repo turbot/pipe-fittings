@@ -41,10 +41,6 @@ func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, e
 
 }
 
-func (p *PostgresConnection) GetTtl() int {
-	return -1
-}
-
 func (p *PostgresConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }

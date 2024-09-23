@@ -85,6 +85,11 @@ func (c *AlicloudConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*AlicloudConnection)
 	if !ok {
 		return false
@@ -124,11 +129,6 @@ func (c *AlicloudConnection) Validate() hcl.Diagnostics {
 	}
 
 	return hcl.Diagnostics{}
-}
-
-// in seconds
-func (c *AlicloudConnection) GetTtl() int {
-	return -1
 }
 
 func (c *AlicloudConnection) CtyValue() (cty.Value, error) {

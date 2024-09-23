@@ -53,6 +53,11 @@ func (c *GitLabConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*GitLabConnection)
 	if !ok {
 		return false
@@ -79,10 +84,6 @@ func (c *GitLabConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *GitLabConnection) GetTtl() int {
-	return -1
 }
 
 func (c *GitLabConnection) GetEnv() map[string]cty.Value {

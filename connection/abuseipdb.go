@@ -53,6 +53,11 @@ func (c *AbuseIPDBConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*AbuseIPDBConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *AbuseIPDBConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *AbuseIPDBConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *AbuseIPDBConnection) GetTtl() int {
-	return -1
 }
 
 func (c *AbuseIPDBConnection) CtyValue() (cty.Value, error) {

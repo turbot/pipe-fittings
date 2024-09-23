@@ -53,6 +53,11 @@ func (c *GithubConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*GithubConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *GithubConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *GithubConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *GithubConnection) GetTtl() int {
-	return -1
 }
 
 func (c *GithubConnection) CtyValue() (cty.Value, error) {

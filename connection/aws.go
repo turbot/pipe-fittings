@@ -12,7 +12,10 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const AwsConnectionType = "aws"
+const (
+	AwsConnectionType = "aws"
+	defaultAwsTtl     = 5 * 60
+)
 
 type AwsConnection struct {
 	ConnectionImpl
@@ -25,15 +28,22 @@ type AwsConnection struct {
 }
 
 func NewAwsConnection(shortName string, declRange hcl.Range) PipelingConnection {
-	return &AwsConnection{
+	res := &AwsConnection{
 		ConnectionImpl: NewConnectionImpl(AwsConnectionType, shortName, declRange),
 	}
+	res.SetTtl(defaultAwsTtl)
+	return res
 }
+
 func (c *AwsConnection) GetConnectionType() string {
 	return AwsConnectionType
 }
 
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 
 	// if access key and secret key are provided, just return it
 	if c.AccessKey != nil && c.SecretKey != nil {
@@ -85,6 +95,11 @@ func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 	}
 
 	if (c == nil && !helpers.IsNil(otherConnection)) || (c != nil && helpers.IsNil(otherConnection)) {
+		return false
+	}
+
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
 		return false
 	}
 
@@ -146,12 +161,17 @@ func (c *AwsConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-// in seconds
 func (c *AwsConnection) GetTtl() int {
-	if c.Ttl == nil {
-		return 5 * 60
+	if c.Pipes != nil {
+		return c.ConnectionImpl.GetTtl()
 	}
-	return *c.Ttl
+	// if a ttl was set in the conneciton config, return it
+	if c.Ttl != nil {
+		return *c.Ttl
+	}
+
+	// otherwise return the base ttl, which will contain the default
+	return c.ConnectionImpl.GetTtl()
 }
 
 func (c *AwsConnection) CtyValue() (cty.Value, error) {

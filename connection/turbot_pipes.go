@@ -53,6 +53,11 @@ func (c *PipesConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*PipesConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *PipesConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *PipesConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *PipesConnection) GetTtl() int {
-	return -1
 }
 
 func (c *PipesConnection) CtyValue() (cty.Value, error) {

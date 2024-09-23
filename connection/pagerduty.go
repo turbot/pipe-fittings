@@ -53,6 +53,11 @@ func (c *PagerDutyConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*PagerDutyConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *PagerDutyConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *PagerDutyConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *PagerDutyConnection) GetTtl() int {
-	return -1
 }
 
 func (c *PagerDutyConnection) CtyValue() (cty.Value, error) {

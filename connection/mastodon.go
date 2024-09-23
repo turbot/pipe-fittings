@@ -42,6 +42,11 @@ func (c *MastodonConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*MastodonConnection)
 	if !ok {
 		return false
@@ -60,10 +65,6 @@ func (c *MastodonConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *MastodonConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *MastodonConnection) GetTtl() int {
-	return -1
 }
 
 func (c *MastodonConnection) CtyValue() (cty.Value, error) {

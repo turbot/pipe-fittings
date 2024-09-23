@@ -65,6 +65,11 @@ func (c *DatadogConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*DatadogConnection)
 	if !ok {
 		return false
@@ -99,10 +104,6 @@ func (c *DatadogConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *DatadogConnection) GetTtl() int {
-	return -1
 }
 
 func (c *DatadogConnection) GetEnv() map[string]cty.Value {

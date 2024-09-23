@@ -53,6 +53,11 @@ func (c *UrlscanConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*UrlscanConnection)
 	if !ok {
 		return false
@@ -67,10 +72,6 @@ func (c *UrlscanConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *UrlscanConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *UrlscanConnection) GetTtl() int {
-	return -1
 }
 
 func (c *UrlscanConnection) CtyValue() (cty.Value, error) {

@@ -71,6 +71,11 @@ func (c *ServiceNowConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*ServiceNowConnection)
 	if !ok {
 		return false
@@ -93,10 +98,6 @@ func (c *ServiceNowConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *ServiceNowConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *ServiceNowConnection) GetTtl() int {
-	return -1
 }
 
 func (c *ServiceNowConnection) CtyValue() (cty.Value, error) {

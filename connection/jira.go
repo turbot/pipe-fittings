@@ -66,6 +66,11 @@ func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	impl := c.GetConnectionImpl()
+	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
+		return false
+	}
+
 	other, ok := otherConnection.(*JiraConnection)
 	if !ok {
 		return false
@@ -88,10 +93,6 @@ func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *JiraConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
-}
-
-func (c *JiraConnection) GetTtl() int {
-	return -1
 }
 
 func (c *JiraConnection) CtyValue() (cty.Value, error) {
