@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/schema"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/stevenle/topsort"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -400,7 +400,7 @@ func (d *Dashboard) setInputMap() []string {
 
 // CtyValue implements CtyValueProvider
 func (d *Dashboard) CtyValue() (cty.Value, error) {
-	return GetCtyValue(d)
+	return cty_helpers.GetCtyValue(d)
 }
 
 func (d *Dashboard) setBaseProperties() hcl.Diagnostics {

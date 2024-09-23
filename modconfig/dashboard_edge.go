@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -90,7 +91,7 @@ func (e *DashboardEdge) GetType() string {
 
 // CtyValue implements CtyValueProvider
 func (e *DashboardEdge) CtyValue() (cty.Value, error) {
-	return GetCtyValue(e)
+	return cty_helpers.GetCtyValue(e)
 }
 
 func (e *DashboardEdge) setBaseProperties() {

@@ -1490,6 +1490,7 @@ func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext
 
 	return hcl.Diagnostics{}
 }
+
 func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	return setStringSliceAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }

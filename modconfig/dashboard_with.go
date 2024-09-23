@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -59,5 +60,5 @@ func (*DashboardWith) GetType() string {
 
 // CtyValue implements CtyValueProvider
 func (w *DashboardWith) CtyValue() (cty.Value, error) {
-	return GetCtyValue(w)
+	return cty_helpers.GetCtyValue(w)
 }

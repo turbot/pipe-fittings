@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -202,7 +203,7 @@ func (c *Control) Diff(other *Control) *DashboardTreeItemDiffs {
 
 // CtyValue implements CtyValueProvider
 func (c *Control) CtyValue() (cty.Value, error) {
-	return GetCtyValue(c)
+	return cty_helpers.GetCtyValue(c)
 }
 
 func (c *Control) setBaseProperties() {
