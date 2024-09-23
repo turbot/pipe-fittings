@@ -144,11 +144,12 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	v.ValueSourceStartLineNumber = sourceRange.Start.Line
 	v.ValueSourceEndLineNumber = sourceRange.End.Line
 	v.ValueGo, _ = hclhelpers.CtyToGo(value)
-	// if type string is not set, derive from the type of value
-	if v.TypeString == "" {
-		v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
-		v.TypeString = v.TypeHclString
-	}
+	// TODO KAI VERIFY is this still needed
+	//// if type string is not set, derive from the type of value
+	//if v.TypeString == "" {
+	//	v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
+	//	v.TypeString = v.TypeHclString
+	//}
 
 	if v.Enum != cty.NilVal {
 		// check that the value is in the enum
