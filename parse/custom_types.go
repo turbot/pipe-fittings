@@ -12,20 +12,18 @@ import (
 	"strings"
 )
 
+var BaseNotifierCtyType = cty.Capsule("BaseNotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
+
 type customTypeFunc func(string) cty.Type
 
 var customTypeMappings = map[string]customTypeFunc{
 	schema.BlockTypeConnection: app_specific_connection.ConnectionCtyType,
 	schema.BlockTypeNotifier: func(string) cty.Type {
-		return cty.Capsule("NotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
+		return BaseNotifierCtyType
 	},
 }
 
-//}
-//
-//var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
-//var NotifierCtyType =
-
+// customTypeFromExpr returns the custom cty.Type for the given hcl.Expression, if one is registered
 func customTypeFromExpr(expr hcl.Expression) (cty.Type, bool) {
 	switch e := expr.(type) {
 	case *hclsyntax.ScopeTraversalExpr:
@@ -39,6 +37,8 @@ func customTypeFromExpr(expr hcl.Expression) (cty.Type, bool) {
 	}
 }
 
+// customTypeFromScopeTraversalExpr returns the custom cty.Type for the given hclsyntax.ScopeTraversalExpr,
+// if one is registered
 func customTypeFromScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.Type, bool) {
 	dottedString := hclhelpers.TraversalAsString(expr.Traversal)
 	parts := strings.Split(dottedString, ".")
@@ -58,6 +58,8 @@ func customTypeFromScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.T
 	return customTypeFunc(subtype), false
 }
 
+// customTypeFromFunctionCallExpr returns the custom cty.Type for the given hclsyntax.FunctionCallExpr,
+// if one is registered
 func customTypeFromFunctionCallExpr(fCallExpr *hclsyntax.FunctionCallExpr) (cty.Type, bool) {
 	// curently only handling list function with single args
 	if fCallExpr.Name != "list" || len(fCallExpr.Args) != 1 {

@@ -8,6 +8,8 @@ import (
 	"reflect"
 )
 
+var BaseConnectionCtyType = cty.Capsule("BaseConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
+
 func NewPipelingConnection(connectionType, shortName string, declRange hcl.Range) (connection.PipelingConnection, error) {
 	ctor, exists := ConnectionTypeRegistry[connectionType]
 	if !exists {
@@ -20,7 +22,7 @@ func NewPipelingConnection(connectionType, shortName string, declRange hcl.Range
 func ConnectionCtyType(connectionType string) cty.Type {
 	// NOTE: if not type is provided, just return the type of ConnectionImpl
 	if connectionType == "" {
-		return cty.Capsule(connectionType, reflect.TypeOf(connection.ConnectionImpl{}))
+		return BaseConnectionCtyType
 	}
 
 	ctor, exists := ConnectionTypeRegistry[connectionType]

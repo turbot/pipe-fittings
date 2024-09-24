@@ -3,7 +3,6 @@ package parse
 import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/ext/typeexpr"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -45,7 +44,14 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent) (*modconfig
 	}
 
 	if attr, exists := content.Attributes[schema.AttributeTypeType]; exists {
-		ty, parseMode, tyDiags := decodeVariableType(attr.Expr)
+		ty, tyDiags := decodeTypeExpression(attr)
+
+		// determine the parse mode - everything but primitive types use HCL parsing
+		parseMode := modconfig.VariableParseHCL
+		if ty.IsPrimitiveType() {
+			parseMode = modconfig.VariableParseLiteral
+		}
+
 		diags = append(diags, tyDiags...)
 		v.Type = ty
 		v.ParsingMode = parseMode
@@ -181,68 +187,4 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent) (*modconfig
 	}
 
 	return v, diags
-}
-
-func decodeVariableType(expr hcl.Expression) (cty.Type, modconfig.VariableParsingMode, hcl.Diagnostics) {
-	if hclhelpers.ExprIsNativeQuotedString(expr) {
-		val, diags := expr.Value(nil)
-		if diags.HasErrors() {
-			return cty.DynamicPseudoType, modconfig.VariableParseHCL, diags
-		}
-		str := val.AsString()
-		switch str {
-		case "string":
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Invalid quoted type constraints",
-				Subject:  expr.Range().Ptr(),
-			})
-			return cty.DynamicPseudoType, modconfig.VariableParseLiteral, diags
-		case "list":
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Invalid quoted type constraints",
-				Subject:  expr.Range().Ptr(),
-			})
-			return cty.DynamicPseudoType, modconfig.VariableParseHCL, diags
-		case "map":
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Invalid quoted type constraints",
-				Subject:  expr.Range().Ptr(),
-			})
-			return cty.DynamicPseudoType, modconfig.VariableParseHCL, diags
-		default:
-			return cty.DynamicPseudoType, modconfig.VariableParseHCL, hcl.Diagnostics{{
-				Severity: hcl.DiagError,
-				Summary:  "Invalid legacy variable type hint",
-				Subject:  expr.Range().Ptr(),
-			}}
-		}
-	}
-
-	// First we'll deal with some shorthand forms that the HCL-level type
-	// expression parser doesn't include. These both emulate pre-0.12 behavior
-	// of allowing a list or map of any element type as long as all of the
-	// elements are consistent. This is the same as list(any) or map(any).
-	switch hcl.ExprAsKeyword(expr) {
-	case "list":
-		return cty.List(cty.DynamicPseudoType), modconfig.VariableParseHCL, nil
-	case "map":
-		return cty.Map(cty.DynamicPseudoType), modconfig.VariableParseHCL, nil
-	}
-
-	ty, diags := typeexpr.TypeConstraint(expr)
-	if diags.HasErrors() {
-		return cty.DynamicPseudoType, modconfig.VariableParseHCL, diags
-	}
-
-	switch {
-	case ty.IsPrimitiveType():
-		// Primitive types use literal parsing.
-		return ty, modconfig.VariableParseLiteral, diags
-	default:
-		// Everything else uses HCL parsing
-		return ty, modconfig.VariableParseHCL, diags
-	}
 }

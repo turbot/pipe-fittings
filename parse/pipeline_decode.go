@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/ext/typeexpr"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
@@ -229,40 +228,13 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeType]; exists {
-		expr := attr.Expr
-		ty, moreDiags := typeexpr.TypeConstraint(expr)
-
-		typeErr := moreDiags.HasErrors()
-
-		if typeErr {
-			// Handle shorthand forms for list, map, and set
-
-			switch hcl.ExprAsKeyword(expr) {
-			case "list":
-				ty = cty.List(cty.DynamicPseudoType)
-				typeErr = false
-			case "map":
-				ty = cty.Map(cty.DynamicPseudoType)
-				typeErr = false
-			case "set":
-				ty = cty.Set(cty.DynamicPseudoType)
-				typeErr = false
-			default:
-				ty, typeErr = customTypeFromExpr(expr)
-			}
-
-			if typeErr {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)",
-					Subject:  &attr.Range,
-				})
-				return o, diags
-			}
+		ty, diags := decodeTypeExpression(attr)
+		if diags.HasErrors() {
+			return o, diags
 		}
 
 		o.Type = ty
-		o.TypeString = extractExpressionString(expr, src)
+		o.TypeString = extractExpressionString(attr.Expr, src)
 	} else {
 		o.Type = cty.DynamicPseudoType
 		o.TypeString = "any"
