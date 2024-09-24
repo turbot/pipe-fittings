@@ -29,6 +29,11 @@ func (c *GitLabConnection) GetConnectionType() string {
 }
 
 func (c *GitLabConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	if c.Token == nil {
 		gitlabAccessTokenEnvVar := os.Getenv("GITLAB_TOKEN")
 

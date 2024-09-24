@@ -31,6 +31,11 @@ func (c *JiraConnection) GetConnectionType() string {
 }
 
 func (c *JiraConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	if c.APIToken == nil && c.BaseURL == nil && c.Username == nil {
 		// The order of precedence for the Jira API token environment variable
 		// 1. JIRA_API_TOKEN

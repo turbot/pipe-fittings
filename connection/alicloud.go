@@ -30,6 +30,10 @@ func (c *AlicloudConnection) GetConnectionType() string {
 }
 
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 
 	// The order of precedence for the environment variable
 	// 1. ALIBABACLOUD_ACCESS_KEY_ID

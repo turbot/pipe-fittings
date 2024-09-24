@@ -33,6 +33,7 @@ func NewGcpConnection(shortName string, declRange hcl.Range) PipelingConnection 
 	res := &GcpConnection{
 		ConnectionImpl: NewConnectionImpl(GcpConnectionType, shortName, declRange),
 	}
+	// set the default ttl
 	res.SetTtl(defaultGcpTtl)
 	return res
 }
@@ -41,6 +42,10 @@ func (c *GcpConnection) GetConnectionType() string {
 }
 
 func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 
 	// First check if the credential file is supplied
 	var credentialFile string
@@ -152,6 +157,16 @@ func (c *GcpConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *GcpConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Credentials != nil || c.Ttl != nil || c.AccessToken != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
+
 	return hcl.Diagnostics{}
 }
 
@@ -168,15 +183,17 @@ func (c *GcpConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *GcpConnection) GetTtl() int {
-	if c.Pipes != nil {
-		return c.ConnectionImpl.GetTtl()
-	}
-	// if a ttl was set in the conneciton config, return it
+	// NOTE: if pipes metadata was set we should return the ttl which it returns,
+	// rather than any manually configured ttl
+	// however - if the HCL contains both a ttl AND pipe metadata
+	// this is a validation error so we don't need to check for that here
+
+	// if a ttl was set in the connection config, return it
 	if c.Ttl != nil {
 		return *c.Ttl
 	}
 
-	// otherwise return the base ttl, which will contain the default
+	// otherwise return the base ttl, which will contain either the default, or the value returned by pipes
 	return c.ConnectionImpl.GetTtl()
 }
 

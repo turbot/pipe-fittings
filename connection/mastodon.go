@@ -29,6 +29,10 @@ func (c *MastodonConnection) GetConnectionType() string {
 }
 
 func (c *MastodonConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 	return c, nil
 }
 

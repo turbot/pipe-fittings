@@ -29,6 +29,11 @@ func (c *UrlscanConnection) GetConnectionType() string {
 }
 
 func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	if c.APIKey == nil {
 		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")
 

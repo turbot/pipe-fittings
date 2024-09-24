@@ -30,6 +30,10 @@ func (c *TrelloConnection) GetConnectionType() string {
 }
 
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 
 	if c.APIKey == nil && c.Token == nil {
 		apiKeyEnvVar := os.Getenv("TRELLO_API_KEY")

@@ -29,6 +29,11 @@ func (c *IPstackConnection) GetConnectionType() string {
 }
 
 func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	if c.AccessKey == nil {
 		// The order of precedence for the IPstack access key environment variable
 		// 1. IPSTACK_ACCESS_KEY

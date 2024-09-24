@@ -31,6 +31,7 @@ func NewAwsConnection(shortName string, declRange hcl.Range) PipelingConnection 
 	res := &AwsConnection{
 		ConnectionImpl: NewConnectionImpl(AwsConnectionType, shortName, declRange),
 	}
+	// set the default ttl
 	res.SetTtl(defaultAwsTtl)
 	return res
 }
@@ -128,7 +129,7 @@ func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *AwsConnection) Validate() hcl.Diagnostics {
-	if c.Profile != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Profile != nil || c.SessionToken != nil || c.Ttl != nil) {
+	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Profile != nil || c.SessionToken != nil || c.Ttl != nil) {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -162,15 +163,17 @@ func (c *AwsConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *AwsConnection) GetTtl() int {
-	if c.Pipes != nil {
-		return c.ConnectionImpl.GetTtl()
-	}
-	// if a ttl was set in the conneciton config, return it
+	// NOTE: if pipes metadata was set we should return the ttl which it returns,
+	// rather than any manually configured ttl
+	// however - if the HCL contains both a ttl AND pipe metadata
+	// this is a validation error so we don't need to check for that here
+
+	// if a ttl was set in the connection config, return it
 	if c.Ttl != nil {
 		return *c.Ttl
 	}
 
-	// otherwise return the base ttl, which will contain the default
+	// otherwise return the base ttl, which will contain either the default, or the value returned by pipes
 	return c.ConnectionImpl.GetTtl()
 }
 

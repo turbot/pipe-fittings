@@ -31,6 +31,11 @@ func (c *DatadogConnection) GetConnectionType() string {
 }
 
 func (c *DatadogConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
 	datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")
 

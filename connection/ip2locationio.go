@@ -30,6 +30,11 @@ func (c *IP2LocationIOConnection) GetConnectionType() string {
 }
 
 func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	if c.APIKey == nil {
 		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
 

@@ -31,6 +31,11 @@ func (c *GuardrailsConnection) GetConnectionType() string {
 }
 
 func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	guardrailsAccessKeyEnvVar := os.Getenv("TURBOT_ACCESS_KEY")
 	guardrailsSecretKeyEnvVar := os.Getenv("TURBOT_SECRET_KEY")
 	guardrailsWorkspaceEnvVar := os.Getenv("TURBOT_WORKSPACE")

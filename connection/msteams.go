@@ -29,6 +29,11 @@ func (c *MicrosoftTeamsConnection) GetConnectionType() string {
 }
 
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
+
 	if c.AccessToken == nil {
 		msTeamsAccessTokenEnvVar := os.Getenv("TEAMS_ACCESS_TOKEN")
 
