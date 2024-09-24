@@ -22,6 +22,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	pconstants "github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
 	pqueryresult "github.com/turbot/pipe-fittings/queryresult"
 	"golang.org/x/text/language"
@@ -29,10 +30,12 @@ import (
 )
 
 // ShowOutput displays the output using the proper formatter as applicable
-func ShowOutput[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func ShowOutput[T any](ctx context.Context, startTime time.Time, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string) (rowCount, rowErrors int) {
 
 	outputFormat := viper.GetString(pconstants.ArgOutput)
 	switch outputFormat {
+	case constants.OutputFormatPowerpipeSnapshotShort, constants.OutputFormatSteampipeSnapshotShort, constants.OutputFormatSnapshot:
+		rowCount, rowErrors = displaySnapshot(ctx, result, resolvedQuery, searchPath, startTime)
 	case constants.OutputFormatJSON:
 		rowCount, rowErrors = displayJSON(ctx, result)
 	case constants.OutputFormatCSV:
@@ -163,6 +166,29 @@ func getTerminalColumnsRequiredForString(str string) int {
 		}
 	}
 	return colsRequired
+}
+
+// displaySnapshot function using Go templating
+func displaySnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (int, int) {
+	// generate the snapshot
+	snapshot, err := generateSnapshot(ctx, result, resolvedQuery, searchPath, startTime)
+	if err != nil {
+		error_helpers.ShowError(ctx, err)
+		return 0, 0
+	}
+	// Output the result
+	fmt.Println(snapshot.String()) //nolint:forbidigo // acceptable
+	// Call iterateResults to process rows and return rowErrors
+	rowErrors := 0
+	count, err := iterateResults(result, func(row []interface{}, result *queryresult.Result[T]) {
+		// Logic to handle row processing if needed
+		// (This will depend on how you want to process individual rows)
+	})
+	if err != nil {
+		error_helpers.ShowError(ctx, err)
+		rowErrors++
+	}
+	return count, rowErrors
 }
 
 type jsonOutput[T any] struct {
