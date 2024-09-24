@@ -41,6 +41,16 @@ func (c *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, err
 }
 
 func (c *DuckDbConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.ConnectionString != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
+
 	return hcl.Diagnostics{}
 }
 

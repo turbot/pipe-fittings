@@ -77,6 +77,15 @@ func (c *ClickUpConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *ClickUpConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 

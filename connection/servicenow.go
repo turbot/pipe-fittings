@@ -102,6 +102,15 @@ func (c *ServiceNowConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *ServiceNowConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.InstanceURL != nil || c.Username != nil || c.Password != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 

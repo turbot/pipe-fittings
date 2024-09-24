@@ -96,6 +96,15 @@ func (c *DatadogConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *DatadogConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil || c.AppKey != nil || c.APIUrl != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 

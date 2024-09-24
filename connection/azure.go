@@ -98,6 +98,16 @@ func (c *AzureConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *AzureConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.ClientID != nil || c.ClientSecret != nil || c.TenantID != nil || c.Environment != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
+
 	return hcl.Diagnostics{}
 }
 

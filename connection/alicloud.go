@@ -111,7 +111,15 @@ func (c *AlicloudConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *AlicloudConnection) Validate() hcl.Diagnostics {
-
+	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	if c.AccessKey != nil && c.SecretKey == nil {
 		return hcl.Diagnostics{
 			{

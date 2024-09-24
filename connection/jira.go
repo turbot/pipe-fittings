@@ -97,6 +97,15 @@ func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *JiraConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIToken != nil || c.BaseURL != nil || c.Username != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 

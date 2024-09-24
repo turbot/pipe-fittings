@@ -83,6 +83,15 @@ func (c *IPstackConnection) Equals(otherConnection PipelingConnection) bool {
 }
 
 func (c *IPstackConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 

@@ -76,6 +76,15 @@ func (c *MicrosoftTeamsConnection) Equals(otherConnection PipelingConnection) bo
 }
 
 func (c *MicrosoftTeamsConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessToken != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 

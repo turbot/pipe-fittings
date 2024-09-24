@@ -50,6 +50,15 @@ func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnecti
 }
 
 func (c *IP2LocationIOConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
