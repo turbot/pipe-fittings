@@ -289,7 +289,7 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	content, diags := block.Body.Content(VariableBlockSchema)
 	res.HandleDecodeDiags(diags)
 
-	v, diags := DecodeVariableBlock(block, content)
+	v, diags := DecodeVariableBlock(block, content, parseCtx)
 	res.HandleDecodeDiags(diags)
 
 	if res.Success() {

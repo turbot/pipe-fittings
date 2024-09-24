@@ -12,7 +12,7 @@ import (
 	"github.com/zclconf/go-cty/cty/convert"
 )
 
-func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent) (*modconfig.RawVariable, hcl.Diagnostics) {
+func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *ModParseContext) (*modconfig.RawVariable, hcl.Diagnostics) {
 	v := &modconfig.RawVariable{
 		Name:      block.Labels[0],
 		DeclRange: hclhelpers.BlockRange(block),
@@ -58,7 +58,7 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent) (*modconfig
 	}
 
 	if attr, exists := content.Attributes[schema.AttributeTypeDefault]; exists {
-		val, valDiags := attr.Expr.Value(nil)
+		val, valDiags := attr.Expr.Value(parseCtx.EvalCtx)
 		diags = append(diags, valDiags...)
 
 		// Convert the default to the expected type so we can catch invalid
