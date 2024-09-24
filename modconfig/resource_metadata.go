@@ -8,7 +8,7 @@ type ResourceMetadata struct {
 	// required to allow partial decoding
 	ResourceMetadataRemain hcl.Body `hcl:",remain" json:"-"`
 
-	ResourceName string `json:"name"`
+	ResourceName string `json:"resource_name"`
 	// mod short name
 	ModName          string `json:"mod_name"`
 	FileName         string `json:"file_name"`
