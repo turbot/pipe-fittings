@@ -32,7 +32,7 @@ func (c *OktaConnection) GetConnectionType() string {
 func (c *OktaConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &OktaConnection{})
 	}
 
 	if c.Token == nil && c.Domain == nil {

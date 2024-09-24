@@ -33,7 +33,7 @@ func (c *ServiceNowConnection) GetConnectionType() string {
 func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &ServiceNowConnection{})
 	}
 
 	servicenowInstanceURLEnvVar := os.Getenv("SERVICENOW_INSTANCE_URL")

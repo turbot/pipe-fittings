@@ -31,7 +31,7 @@ func (c *ClickUpConnection) GetConnectionType() string {
 func (c *ClickUpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &ClickUpConnection{})
 	}
 
 	if c.Token == nil {

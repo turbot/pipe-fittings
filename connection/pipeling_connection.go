@@ -22,8 +22,8 @@ type PipelingConnection interface {
 	GetEnv() map[string]cty.Value
 
 	Equals(PipelingConnection) bool
-	GetConnectionImpl() ConnectionImpl
-	SetPipesMetadata(*PipesConnectionMetadata)
+	GetConnectionImpl() *ConnectionImpl
+
 	SetTtl(int)
 }
 

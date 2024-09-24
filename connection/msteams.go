@@ -31,7 +31,7 @@ func (c *MicrosoftTeamsConnection) GetConnectionType() string {
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &MicrosoftTeamsConnection{})
 	}
 
 	if c.AccessToken == nil {

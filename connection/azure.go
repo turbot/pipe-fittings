@@ -34,7 +34,7 @@ func (c *AzureConnection) GetConnectionType() string {
 func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &AzureConnection{})
 	}
 
 	if c.ClientID == nil && c.ClientSecret == nil && c.TenantID == nil && c.Environment == nil {

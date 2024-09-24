@@ -23,7 +23,6 @@ type AwsConnection struct {
 	AccessKey    *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 	SecretKey    *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 	SessionToken *string `json:"session_token,omitempty" cty:"session_token" hcl:"session_token,optional"`
-	Ttl          *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
 	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
 }
 
@@ -77,7 +76,6 @@ func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 	// Don't modify existing credential, resolve to a new one
 	newConnection := &AwsConnection{
 		ConnectionImpl: c.ConnectionImpl,
-		Ttl:            c.Ttl,
 		AccessKey:      &creds.AccessKeyID,
 		SecretKey:      &creds.SecretAccessKey,
 	}
@@ -121,15 +119,11 @@ func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
-		return false
-	}
-
 	return true
 }
 
 func (c *AwsConnection) Validate() hcl.Diagnostics {
-	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Profile != nil || c.SessionToken != nil || c.Ttl != nil) {
+	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Profile != nil || c.SessionToken != nil) {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -160,21 +154,6 @@ func (c *AwsConnection) Validate() hcl.Diagnostics {
 	}
 
 	return hcl.Diagnostics{}
-}
-
-func (c *AwsConnection) GetTtl() int {
-	// NOTE: if pipes metadata was set we should return the ttl which it returns,
-	// rather than any manually configured ttl
-	// however - if the HCL contains both a ttl AND pipe metadata
-	// this is a validation error so we don't need to check for that here
-
-	// if a ttl was set in the connection config, return it
-	if c.Ttl != nil {
-		return *c.Ttl
-	}
-
-	// otherwise return the base ttl, which will contain either the default, or the value returned by pipes
-	return c.ConnectionImpl.GetTtl()
 }
 
 func (c *AwsConnection) CtyValue() (cty.Value, error) {

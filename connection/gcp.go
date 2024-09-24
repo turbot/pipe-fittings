@@ -24,8 +24,6 @@ type GcpConnection struct {
 	ConnectionImpl
 
 	Credentials *string `json:"credentials,omitempty" cty:"credentials" hcl:"credentials,optional"`
-	Ttl         *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
-
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
@@ -44,7 +42,7 @@ func (c *GcpConnection) GetConnectionType() string {
 func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &GcpConnection{})
 	}
 
 	// First check if the credential file is supplied
@@ -101,8 +99,9 @@ func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 		}
 
 		newConnection := &GcpConnection{
-			AccessToken: &token.AccessToken,
-			Credentials: &credentialFile,
+			ConnectionImpl: c.ConnectionImpl,
+			AccessToken:    &token.AccessToken,
+			Credentials:    &credentialFile,
 		}
 		return newConnection, nil
 	}
@@ -149,15 +148,11 @@ func (c *GcpConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
-		return false
-	}
-
 	return true
 }
 
 func (c *GcpConnection) Validate() hcl.Diagnostics {
-	if c.Pipes != nil && (c.Credentials != nil || c.Ttl != nil || c.AccessToken != nil) {
+	if c.Pipes != nil && (c.Credentials != nil || c.AccessToken != nil) {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -180,21 +175,6 @@ func (c *GcpConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *GcpConnection) GetTtl() int {
-	// NOTE: if pipes metadata was set we should return the ttl which it returns,
-	// rather than any manually configured ttl
-	// however - if the HCL contains both a ttl AND pipe metadata
-	// this is a validation error so we don't need to check for that here
-
-	// if a ttl was set in the connection config, return it
-	if c.Ttl != nil {
-		return *c.Ttl
-	}
-
-	// otherwise return the base ttl, which will contain either the default, or the value returned by pipes
-	return c.ConnectionImpl.GetTtl()
 }
 
 func (c *GcpConnection) GetEnv() map[string]cty.Value {
