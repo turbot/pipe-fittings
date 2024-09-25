@@ -71,11 +71,6 @@ func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*JiraConnection)
 	if !ok {
 		return false
@@ -93,7 +88,7 @@ func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *JiraConnection) Validate() hcl.Diagnostics {

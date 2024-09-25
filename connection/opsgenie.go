@@ -61,11 +61,6 @@ func (c *OpsgenieConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*OpsgenieConnection)
 	if !ok {
 		return false
@@ -79,7 +74,7 @@ func (c *OpsgenieConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *OpsgenieConnection) Validate() hcl.Diagnostics {

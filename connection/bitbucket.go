@@ -64,11 +64,6 @@ func (c *BitbucketConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*BitbucketConnection)
 	if !ok {
 		return false
@@ -86,7 +81,7 @@ func (c *BitbucketConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *BitbucketConnection) Validate() hcl.Diagnostics {

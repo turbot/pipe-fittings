@@ -65,11 +65,6 @@ func (c *ZendeskConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*ZendeskConnection)
 	if !ok {
 		return false
@@ -87,7 +82,7 @@ func (c *ZendeskConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *ZendeskConnection) Validate() hcl.Diagnostics {

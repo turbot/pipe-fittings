@@ -62,11 +62,6 @@ func (c *OktaConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*OktaConnection)
 	if !ok {
 		return false
@@ -80,7 +75,7 @@ func (c *OktaConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *OktaConnection) Validate() hcl.Diagnostics {

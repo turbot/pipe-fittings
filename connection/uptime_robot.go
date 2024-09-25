@@ -59,11 +59,6 @@ func (c *UptimeRobotConnection) Equals(otherConnection PipelingConnection) bool 
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*UptimeRobotConnection)
 	if !ok {
 		return false
@@ -73,7 +68,7 @@ func (c *UptimeRobotConnection) Equals(otherConnection PipelingConnection) bool 
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *UptimeRobotConnection) Validate() hcl.Diagnostics {

@@ -58,11 +58,6 @@ func (c *GitLabConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*GitLabConnection)
 	if !ok {
 		return false
@@ -72,7 +67,7 @@ func (c *GitLabConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *GitLabConnection) Validate() hcl.Diagnostics {

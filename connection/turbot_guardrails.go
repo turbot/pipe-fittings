@@ -77,11 +77,6 @@ func (c *GuardrailsConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*GuardrailsConnection)
 	if !ok {
 		return false
@@ -99,7 +94,7 @@ func (c *GuardrailsConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *GuardrailsConnection) Validate() hcl.Diagnostics {

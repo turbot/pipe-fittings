@@ -66,7 +66,6 @@ func DecodePipelingConnection(configPath string, block *hcl.Block) (connection.P
 
 // decodeConnectionImpl decodes the given block into a connection.ConnectionImpl and returns the remaining body.
 func decodeConnectionImpl(block *hcl.Block, evalCtx *hcl.EvalContext, connectionImpl *connection.ConnectionImpl) (hcl.Body, hcl.Diagnostics) {
-
 	schema, err := hclhelpers.HclSchemaForStruct(connectionImpl)
 	if err != nil {
 		return nil, hcl.Diagnostics{

@@ -84,7 +84,8 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 		utils.PtrEqual(c.Port, other.Port) &&
 		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		utils.PtrEqual(c.Password, other.Password) &&
-		utils.PtrEqual(c.SearchPath, other.SearchPath)
+		utils.PtrEqual(c.SearchPath, other.SearchPath) &&
+		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 
 }
 

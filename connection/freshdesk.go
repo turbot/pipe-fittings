@@ -68,11 +68,6 @@ func (c *FreshdeskConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*FreshdeskConnection)
 	if !ok {
 		return false
@@ -86,7 +81,7 @@ func (c *FreshdeskConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *FreshdeskConnection) Validate() hcl.Diagnostics {

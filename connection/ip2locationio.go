@@ -72,11 +72,6 @@ func (c *IP2LocationIOConnection) Equals(otherConnection PipelingConnection) boo
 		return false
 	}
 
-	impl := c.GetConnectionImpl()
-	if impl.Equals(otherConnection.GetConnectionImpl()) == false {
-		return false
-	}
-
 	other, ok := otherConnection.(*IP2LocationIOConnection)
 	if !ok {
 		return false
@@ -86,14 +81,7 @@ func (c *IP2LocationIOConnection) Equals(otherConnection PipelingConnection) boo
 		return false
 	}
 
-	return true
-}
-
-func (c *IP2LocationIOConnection) GetTtl() int {
-	if c.Pipes != nil {
-		return c.ConnectionImpl.GetTtl()
-	}
-	return -1
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *IP2LocationIOConnection) CtyValue() (cty.Value, error) {
