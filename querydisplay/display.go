@@ -168,16 +168,15 @@ func getTerminalColumnsRequiredForString(str string) int {
 	return colsRequired
 }
 
-// displaySnapshot function using Go templating
+// displaySnapshot function to generate, serialize, and display the snapshot as valid JSON
 func displaySnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (int, int) {
-	// generate the snapshot
+	// Generate the snapshot
 	snapshot, err := generateSnapshot(ctx, result, resolvedQuery, searchPath, startTime)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		return 0, 0
 	}
-	// Output the result
-	fmt.Println(snapshot.String()) //nolint:forbidigo // acceptable
+
 	// Call iterateResults to process rows and return rowErrors
 	rowErrors := 0
 	count, err := iterateResults(result, func(row []interface{}, result *queryresult.Result[T]) {
@@ -188,6 +187,17 @@ func displaySnapshot[T any](ctx context.Context, result *queryresult.Result[T], 
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
 	}
+
+	// display the snapshot as JSON
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", " ")
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(snapshot); err != nil {
+		//nolint:forbidigo // acceptable
+		fmt.Print("Error displaying result as snapshot", err)
+		return 0, 0
+	}
+
 	return count, rowErrors
 }
 

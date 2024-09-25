@@ -3,6 +3,7 @@ package querydisplay
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"strings"
@@ -14,6 +15,8 @@ import (
 	pqueryresult "github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/utils"
 )
+
+const schemaVersion = "20221222"
 
 const snapshotTemplate = `
 {
@@ -88,9 +91,21 @@ const snapshotTemplate = `
 }
 `
 
+// SteampipeSnapshot struct definition
+type SteampipeSnapshot struct {
+	SchemaVersion string                 `json:"schema_version"`
+	Panels        map[string]PanelData   `json:"panels"`
+	SearchPath    []string               `json:"search_path"`
+	StartTime     string                 `json:"start_time"`
+	EndTime       string                 `json:"end_time"`
+	Layout        map[string]interface{} `json:"layout"`
+	Inputs        map[string]interface{} `json:"inputs"`
+	Variables     map[string]interface{} `json:"variables"`
+}
+
 // a snapshot in steampipe is generated using templating since we do not have a snapshot data type
 // generateSnapshot function using Go templating
-func generateSnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (bytes.Buffer, error) {
+func generateSnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (*SteampipeSnapshot, error) {
 	var out bytes.Buffer
 	endTime := time.Now()
 	// Initialize the template
@@ -99,11 +114,11 @@ func generateSnapshot[T any](ctx context.Context, result *queryresult.Result[T],
 	}).Parse(snapshotTemplate)
 	if err != nil {
 		error_helpers.ShowError(ctx, fmt.Errorf("unable to parse snapshot template: %w", err))
-		return out, err
+		return nil, err
 	}
 	// Build the snapshot data (use the new getData function to retrieve data)
 	snapshotData := map[string]any{
-		"SchemaVersion": "20221222",
+		"SchemaVersion": schemaVersion,
 		"Panels":        getPanels[T](ctx, result, resolvedQuery),
 		"SearchPath":    searchPath,
 		"StartTime":     startTime.Format(time.RFC3339),
@@ -113,20 +128,28 @@ func generateSnapshot[T any](ctx context.Context, result *queryresult.Result[T],
 	// Render the template
 	if err := tmpl.Execute(&out, snapshotData); err != nil {
 		error_helpers.ShowError(ctx, fmt.Errorf("unable to execute snapshot template: %w", err))
-		return out, err
+		return nil, err
 	}
-	return out, nil
+
+	// Unmarshal the bytes.Buffer (JSON data) into SteampipeSnapshot struct
+	var snapshot SteampipeSnapshot
+	if err := json.Unmarshal(out.Bytes(), &snapshot); err != nil {
+		error_helpers.ShowError(ctx, fmt.Errorf("unable to unmarshal JSON: %w", err))
+		return nil, err
+	}
+	return &snapshot, nil
 }
 
 type PanelData struct {
-	Dashboard        string
-	Name             string
-	PanelType        string
-	SourceDefinition string
-	Title            string
-	Status           string
-	SQL              string
-	Data             map[string]interface{}
+	Dashboard        string                 `json:"dashboard"`
+	Name             string                 `json:"name"`
+	PanelType        string                 `json:"panel_type"`
+	SourceDefinition string                 `json:"source_definition"`
+	Title            string                 `json:"title,omitempty"`
+	Status           string                 `json:"status,omitempty"`
+	SQL              string                 `json:"sql,omitempty"`
+	Data             map[string]interface{} `json:"data,omitempty"`
+	Properties       map[string]interface{} `json:"properties,omitempty"`
 }
 
 func getPanels[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery) map[string]PanelData {
