@@ -31,7 +31,6 @@ func customTypeFromExpr(expr hcl.Expression) (cty.Type, bool) {
 	case *hclsyntax.FunctionCallExpr:
 		return customTypeFromFunctionCallExpr(e)
 	default:
-		// TODO KAI verify - this is new error behaviour - add test?
 		return cty.NilType, true
 
 	}
