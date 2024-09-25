@@ -6,7 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/utils"
+	"io"
 	"math"
+	"strings"
 	"testing"
 	"time"
 )
@@ -81,7 +83,10 @@ func TestPipesConnectionMetadata_handlePipesCredApiResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := PipesConnectionMetadata{}
-			got, err := m.handlePipesCredApiResponse(tt.args.jsonResponse, tt.args.target)
+			// Convert string to an io.ReadCloser
+			reader := io.NopCloser(strings.NewReader(string(tt.args.jsonResponse)))
+
+			err := m.handlePipesCredApiResponse(reader, tt.args.target)
 			if !tt.wantErr(t, err, fmt.Sprintf("handlePipesCredApiResponse(%v, %v)", tt.args.jsonResponse, tt.args.target)) {
 				return
 			}
@@ -90,8 +95,177 @@ func TestPipesConnectionMetadata_handlePipesCredApiResponse(t *testing.T) {
 				setTo := tt.want.GetTtl() - int(math.Ceil(time.Since(startTime).Seconds()))
 				tt.want.SetTtl(setTo)
 			}
+			got := tt.args.target
+			assert.True(t, got.Equals(tt.want), fmt.Sprintf("handlePipesCredApiResponse(%v, %v) = %v, want %v", string(tt.args.jsonResponse), tt.args.target, got, tt.want))
+		})
+	}
+}
 
-			assert.True(t, got.Equals(tt.want), fmt.Sprintf("handlePipesCredApiResponse(%v, %v) = %v, want %v", tt.args.jsonResponse, tt.args.target, got, tt.want))
+func TestPipesConnectionMetadata_validate(t *testing.T) {
+	type fields struct {
+		CloudHost  *string
+		User       *string
+		Org        *string
+		Workspace  *string
+		Connection *string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "Valid - user provided",
+			fields: fields{
+				User:       utils.ToStringPointer("user"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Valid - org provided",
+			fields: fields{
+				Org:        utils.ToStringPointer("org"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Invalid - no connection",
+			fields: fields{
+				User:      utils.ToStringPointer("user"),
+				Workspace: utils.ToStringPointer("workspace"),
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "Invalid - no workspace",
+			fields: fields{
+				User:       utils.ToStringPointer("user"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "Invalid - no user or org",
+			fields: fields{
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			wantErr: assert.Error,
+		},
+
+		{
+			name: "Invalid - both user and org",
+			fields: fields{
+				User:       utils.ToStringPointer("user"),
+				Org:        utils.ToStringPointer("org"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			wantErr: assert.Error,
+		},
+
+		{
+			name: "Valid - cloud host",
+			fields: fields{
+				User:       utils.ToStringPointer("user"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+				CloudHost:  utils.ToStringPointer("foo.pipes.turbot.com"),
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Invalid - cloud host",
+			fields: fields{
+				User:       utils.ToStringPointer("user"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+				CloudHost:  utils.ToStringPointer("foo"),
+			},
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := PipesConnectionMetadata{
+				CloudHost:  tt.fields.CloudHost,
+				User:       tt.fields.User,
+				Org:        tt.fields.Org,
+				Workspace:  tt.fields.Workspace,
+				Connection: tt.fields.Connection,
+			}
+			tt.wantErr(t, m.validate(), "validate()")
+		})
+	}
+}
+
+func TestPipesConnectionMetadata_endpoint(t *testing.T) {
+	type fields struct {
+		CloudHost  *string
+		User       *string
+		Org        *string
+		Workspace  *string
+		Connection *string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "User",
+			fields: fields{
+				User:       utils.ToStringPointer("user1"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			want: "https://pipes.turbot.com/api/v0/user/user1/workspace/workspace/connection/connection/private",
+		},
+		{
+			name: "Org",
+			fields: fields{
+				Org:        utils.ToStringPointer("org1"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+			},
+			want: "https://pipes.turbot.com/api/v0/org/org1/workspace/workspace/connection/connection/private",
+		},
+
+		{
+			name: "CloudHost and user",
+			fields: fields{
+				User:       utils.ToStringPointer("user1"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+				CloudHost:  utils.ToStringPointer("foo.pipes.turbot.com"),
+			},
+			want: "https://foo.pipes.turbot.com/api/v0/user/user1/workspace/workspace/connection/connection/private",
+		},
+		{
+			name: "CloudHost and org",
+			fields: fields{
+				Org:        utils.ToStringPointer("org1"),
+				Workspace:  utils.ToStringPointer("workspace"),
+				Connection: utils.ToStringPointer("connection"),
+				CloudHost:  utils.ToStringPointer("foo.pipes.turbot.com"),
+			},
+			want: "https://foo.pipes.turbot.com/api/v0/org/org1/workspace/workspace/connection/connection/private",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := PipesConnectionMetadata{
+				CloudHost:  tt.fields.CloudHost,
+				User:       tt.fields.User,
+				Org:        tt.fields.Org,
+				Workspace:  tt.fields.Workspace,
+				Connection: tt.fields.Connection,
+			}
+			assert.Equalf(t, tt.want, m.endpoint(), "endpoint()")
 		})
 	}
 }
