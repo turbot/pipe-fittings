@@ -175,7 +175,6 @@ func newJSONOutput[T any]() *jsonOutput[T] {
 	return &jsonOutput[T]{
 		Rows: make([]map[string]interface{}, 0),
 	}
-
 }
 
 func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
