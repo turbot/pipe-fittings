@@ -222,7 +222,7 @@ const (
 	// Q: So why would step failure does not mean pipeline fail straight away?
 	// A: We can't raise the pipeline fail command if there's "ignore error" directive on the step.
 	//    If there are steps that depend on the failed step, these steps becomes "inaccessible", they can't start
-	//    because the dependend step has failed.
+	//    because the prerequisites have failed.
 	//
 	NextStepActionInaccessible NextStepAction = "inaccessible"
 
