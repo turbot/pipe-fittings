@@ -42,7 +42,7 @@ type Variable struct {
 
 	DefaultGo any    `json:"value_default"`
 	ValueGo   any    `json:"value"`
-	EnumGo    []any  `json:"enum"`
+	EnumGo    []any  `json:"enum,omitempty"`
 	ModName   string `json:"mod_name"`
 
 	Subtype       hcl.Expression `json:"-"`
