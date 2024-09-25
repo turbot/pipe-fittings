@@ -30,6 +30,10 @@ func (c *AlicloudConnection) GetConnectionType() string {
 }
 
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AlicloudConnection{})
+	}
 
 	// The order of precedence for the environment variable
 	// 1. ALIBABACLOUD_ACCESS_KEY_ID
@@ -98,11 +102,19 @@ func (c *AlicloudConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *AlicloudConnection) Validate() hcl.Diagnostics {
-
+	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	if c.AccessKey != nil && c.SecretKey == nil {
 		return hcl.Diagnostics{
 			{
@@ -124,11 +136,6 @@ func (c *AlicloudConnection) Validate() hcl.Diagnostics {
 	}
 
 	return hcl.Diagnostics{}
-}
-
-// in seconds
-func (c *AlicloudConnection) GetTtl() int {
-	return -1
 }
 
 func (c *AlicloudConnection) CtyValue() (cty.Value, error) {

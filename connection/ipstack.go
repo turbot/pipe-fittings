@@ -29,6 +29,11 @@ func (c *IPstackConnection) GetConnectionType() string {
 }
 
 func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &IPstackConnection{})
+	}
+
 	if c.AccessKey == nil {
 		// The order of precedence for the IPstack access key environment variable
 		// 1. IPSTACK_ACCESS_KEY
@@ -69,10 +74,19 @@ func (c *IPstackConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *IPstackConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
@@ -86,10 +100,6 @@ func (c *IPstackConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *IPstackConnection) GetTtl() int {
-	return -1
 }
 
 func (c *IPstackConnection) GetEnv() map[string]cty.Value {

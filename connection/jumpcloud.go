@@ -29,6 +29,11 @@ func (c *JumpCloudConnection) GetConnectionType() string {
 }
 
 func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &JumpCloudConnection{})
+	}
+
 	if c.APIKey == nil {
 		apiKeyEnvVar := os.Getenv("JUMPCLOUD_API_KEY")
 
@@ -62,15 +67,20 @@ func (c *JumpCloudConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *JumpCloudConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *JumpCloudConnection) GetTtl() int {
-	return -1
 }
 
 func (c *JumpCloudConnection) CtyValue() (cty.Value, error) {

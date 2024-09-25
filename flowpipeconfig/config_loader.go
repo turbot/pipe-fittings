@@ -217,7 +217,6 @@ func isRequiredConnection(str string, patterns []string) bool {
 }
 
 func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadConfigOptions) hcl.Diagnostics {
-
 	configPaths, err := filehelpers.ListFiles(configPath, &filehelpers.ListOptions{
 		Flags:   filehelpers.FilesFlat,
 		Include: opts.include,

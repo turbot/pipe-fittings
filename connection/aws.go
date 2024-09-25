@@ -12,7 +12,10 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const AwsConnectionType = "aws"
+const (
+	AwsConnectionType = "aws"
+	defaultAwsTtl     = 5 * 60
+)
 
 type AwsConnection struct {
 	ConnectionImpl
@@ -20,20 +23,27 @@ type AwsConnection struct {
 	AccessKey    *string `json:"access_key,omitempty" cty:"access_key" hcl:"access_key,optional"`
 	SecretKey    *string `json:"secret_key,omitempty" cty:"secret_key" hcl:"secret_key,optional"`
 	SessionToken *string `json:"session_token,omitempty" cty:"session_token" hcl:"session_token,optional"`
-	Ttl          *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
 	Profile      *string `json:"profile,omitempty" cty:"profile" hcl:"profile,optional"`
 }
 
 func NewAwsConnection(shortName string, declRange hcl.Range) PipelingConnection {
-	return &AwsConnection{
+	res := &AwsConnection{
 		ConnectionImpl: NewConnectionImpl(AwsConnectionType, shortName, declRange),
 	}
+	// set the default ttl
+	res.SetTtl(defaultAwsTtl)
+	return res
 }
+
 func (c *AwsConnection) GetConnectionType() string {
 	return AwsConnectionType
 }
 
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 
 	// if access key and secret key are provided, just return it
 	if c.AccessKey != nil && c.SecretKey != nil {
@@ -66,7 +76,6 @@ func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 	// Don't modify existing credential, resolve to a new one
 	newConnection := &AwsConnection{
 		ConnectionImpl: c.ConnectionImpl,
-		Ttl:            c.Ttl,
 		AccessKey:      &creds.AccessKeyID,
 		SecretKey:      &creds.SecretAccessKey,
 	}
@@ -105,14 +114,19 @@ func (c *AwsConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
-		return false
-	}
-
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *AwsConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Profile != nil || c.SessionToken != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 
 	if c.AccessKey != nil && c.SecretKey == nil {
 		return hcl.Diagnostics{
@@ -135,14 +149,6 @@ func (c *AwsConnection) Validate() hcl.Diagnostics {
 	}
 
 	return hcl.Diagnostics{}
-}
-
-// in seconds
-func (c *AwsConnection) GetTtl() int {
-	if c.Ttl == nil {
-		return 5 * 60
-	}
-	return *c.Ttl
 }
 
 func (c *AwsConnection) CtyValue() (cty.Value, error) {

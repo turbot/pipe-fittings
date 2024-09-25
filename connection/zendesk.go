@@ -31,6 +31,10 @@ func (c *ZendeskConnection) GetConnectionType() string {
 }
 
 func (c *ZendeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &ZendeskConnection{})
+	}
 
 	if c.Subdomain == nil && c.Email == nil && c.Token == nil {
 		subdomainEnvVar := os.Getenv("ZENDESK_SUBDOMAIN")
@@ -78,15 +82,20 @@ func (c *ZendeskConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *ZendeskConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Email != nil || c.Subdomain != nil || c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *ZendeskConnection) GetTtl() int {
-	return -1
 }
 
 func (c *ZendeskConnection) CtyValue() (cty.Value, error) {

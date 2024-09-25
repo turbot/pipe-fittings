@@ -32,6 +32,10 @@ func (c *AzureConnection) GetConnectionType() string {
 }
 
 func (c *AzureConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AzureConnection{})
+	}
 
 	if c.ClientID == nil && c.ClientSecret == nil && c.TenantID == nil && c.Environment == nil {
 		clientIDEnvVar := os.Getenv("AZURE_CLIENT_ID")
@@ -85,15 +89,21 @@ func (c *AzureConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *AzureConnection) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
-}
+	if c.Pipes != nil && (c.ClientID != nil || c.ClientSecret != nil || c.TenantID != nil || c.Environment != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 
-func (c *AzureConnection) GetTtl() int {
-	return -1
+	return hcl.Diagnostics{}
 }
 
 func (c *AzureConnection) CtyValue() (cty.Value, error) {

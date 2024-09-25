@@ -29,6 +29,11 @@ func (c *PagerDutyConnection) GetConnectionType() string {
 }
 
 func (c *PagerDutyConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &PagerDutyConnection{})
+	}
+
 	if c.Token == nil {
 		pagerDutyTokenEnvVar := os.Getenv("PAGERDUTY_TOKEN")
 
@@ -62,15 +67,20 @@ func (c *PagerDutyConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *PagerDutyConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *PagerDutyConnection) GetTtl() int {
-	return -1
 }
 
 func (c *PagerDutyConnection) CtyValue() (cty.Value, error) {

@@ -31,6 +31,11 @@ func (c *ServiceNowConnection) GetConnectionType() string {
 }
 
 func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &ServiceNowConnection{})
+	}
+
 	servicenowInstanceURLEnvVar := os.Getenv("SERVICENOW_INSTANCE_URL")
 	servicenowUsernameEnvVar := os.Getenv("SERVICENOW_USERNAME")
 	servicenowPasswordEnvVar := os.Getenv("SERVICENOW_PASSWORD")
@@ -88,15 +93,20 @@ func (c *ServiceNowConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *ServiceNowConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.InstanceURL != nil || c.Username != nil || c.Password != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *ServiceNowConnection) GetTtl() int {
-	return -1
 }
 
 func (c *ServiceNowConnection) CtyValue() (cty.Value, error) {

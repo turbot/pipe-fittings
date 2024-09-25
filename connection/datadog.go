@@ -31,6 +31,11 @@ func (c *DatadogConnection) GetConnectionType() string {
 }
 
 func (c *DatadogConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &DatadogConnection{})
+	}
+
 	datadogAPIKeyEnvVar := os.Getenv("DD_CLIENT_API_KEY")
 	datadogAppKeyEnvVar := os.Getenv("DD_CLIENT_APP_KEY")
 
@@ -82,10 +87,19 @@ func (c *DatadogConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *DatadogConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil || c.AppKey != nil || c.APIUrl != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
@@ -99,10 +113,6 @@ func (c *DatadogConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *DatadogConnection) GetTtl() int {
-	return -1
 }
 
 func (c *DatadogConnection) GetEnv() map[string]cty.Value {

@@ -31,6 +31,11 @@ func (c *BitbucketConnection) GetConnectionType() string {
 }
 
 func (c *BitbucketConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &BitbucketConnection{})
+	}
+
 	if c.Password == nil && c.BaseURL == nil && c.Username == nil {
 		bitbucketURLEnvVar := os.Getenv("BITBUCKET_API_BASE_URL")
 		bitbucketUsernameEnvVar := os.Getenv("BITBUCKET_USERNAME")
@@ -76,10 +81,19 @@ func (c *BitbucketConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *BitbucketConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.BaseURL != nil || c.Username != nil || c.Password != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
@@ -93,10 +107,6 @@ func (c *BitbucketConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *BitbucketConnection) GetTtl() int {
-	return -1
 }
 
 func (c *BitbucketConnection) GetEnv() map[string]cty.Value {

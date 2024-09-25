@@ -29,6 +29,11 @@ func (c *UptimeRobotConnection) GetConnectionType() string {
 }
 
 func (c *UptimeRobotConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &UptimeRobotConnection{})
+	}
+
 	if c.APIKey == nil {
 		uptimeRobotAPIKeyEnvVar := os.Getenv("UPTIMEROBOT_API_KEY")
 
@@ -63,15 +68,20 @@ func (c *UptimeRobotConnection) Equals(otherConnection PipelingConnection) bool 
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *UptimeRobotConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *UptimeRobotConnection) GetTtl() int {
-	return -1
 }
 
 func (c *UptimeRobotConnection) CtyValue() (cty.Value, error) {

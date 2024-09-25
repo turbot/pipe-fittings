@@ -30,6 +30,10 @@ func (c *VaultConnection) GetConnectionType() string {
 }
 
 func (c *VaultConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &VaultConnection{})
+	}
 
 	if c.Token == nil && c.Address == nil {
 		tokenEnvVar := os.Getenv("VAULT_TOKEN")
@@ -71,15 +75,20 @@ func (c *VaultConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *VaultConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Address != nil || c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *VaultConnection) GetTtl() int {
-	return -1
 }
 
 func (c *VaultConnection) CtyValue() (cty.Value, error) {

@@ -29,6 +29,11 @@ func (c *UrlscanConnection) GetConnectionType() string {
 }
 
 func (c *UrlscanConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &UrlscanConnection{})
+	}
+
 	if c.APIKey == nil {
 		urlscanAPIKeyEnvVar := os.Getenv("URLSCAN_API_KEY")
 
@@ -62,15 +67,20 @@ func (c *UrlscanConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *UrlscanConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *UrlscanConnection) GetTtl() int {
-	return -1
 }
 
 func (c *UrlscanConnection) CtyValue() (cty.Value, error) {

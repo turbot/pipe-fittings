@@ -29,6 +29,11 @@ func (c *MicrosoftTeamsConnection) GetConnectionType() string {
 }
 
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &MicrosoftTeamsConnection{})
+	}
+
 	if c.AccessToken == nil {
 		msTeamsAccessTokenEnvVar := os.Getenv("TEAMS_ACCESS_TOKEN")
 
@@ -62,15 +67,20 @@ func (c *MicrosoftTeamsConnection) Equals(otherConnection PipelingConnection) bo
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *MicrosoftTeamsConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessToken != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *MicrosoftTeamsConnection) GetTtl() int {
-	return -1
 }
 
 func (c *MicrosoftTeamsConnection) CtyValue() (cty.Value, error) {

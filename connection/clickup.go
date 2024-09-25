@@ -29,6 +29,11 @@ func (c *ClickUpConnection) GetConnectionType() string {
 }
 
 func (c *ClickUpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &ClickUpConnection{})
+	}
+
 	if c.Token == nil {
 		clickUpAPITokenEnvVar := os.Getenv("CLICKUP_TOKEN")
 
@@ -63,15 +68,20 @@ func (c *ClickUpConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *ClickUpConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *ClickUpConnection) GetTtl() int {
-	return -1
 }
 
 func (c *ClickUpConnection) CtyValue() (cty.Value, error) {

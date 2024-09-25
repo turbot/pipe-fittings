@@ -28,6 +28,11 @@ func (c *DiscordConnection) GetConnectionType() string {
 	return DiscordConnectionType
 }
 func (c *DiscordConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &DiscordConnection{})
+	}
+
 	if c.Token == nil {
 		discordTokenEnvVar := os.Getenv("DISCORD_TOKEN")
 
@@ -61,10 +66,19 @@ func (c *DiscordConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *DiscordConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
@@ -78,10 +92,6 @@ func (c *DiscordConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *DiscordConnection) GetTtl() int {
-	return -1
 }
 
 func (c *DiscordConnection) GetEnv() map[string]cty.Value {

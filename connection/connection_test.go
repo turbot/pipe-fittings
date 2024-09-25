@@ -246,23 +246,24 @@ func TestAwsConnectionEquals(t *testing.T) {
 	conn1 = &AwsConnection{
 		ConnectionImpl: ConnectionImpl{
 			ShortName: "default",
+			Ttl:       ttl,
 		},
 		AccessKey:    &accessKey,
 		SecretKey:    &secretKey,
 		SessionToken: &sessionToken,
-		Ttl:          &ttl,
 		Profile:      &profile,
 	}
 
 	conn2 = &AwsConnection{
 		ConnectionImpl: ConnectionImpl{
 			ShortName: "default",
+			Ttl:       ttl,
 		},
 		AccessKey:    &accessKey,
 		SecretKey:    &secretKey,
 		SessionToken: &sessionToken,
-		Ttl:          &ttl,
-		Profile:      &profile,
+
+		Profile: &profile,
 	}
 
 	assert.True(conn1.Equals(conn2), "Both connections should have the same values and be equal")
@@ -281,11 +282,11 @@ func TestAwsConnectionEquals(t *testing.T) {
 	// Case 6: Connections have different Ttl
 	conn2.SessionToken = &sessionToken // Reset SessionToken to the same
 	ttl2 := 7200
-	conn2.Ttl = &ttl2
+	conn2.Ttl = ttl2
 	assert.False(conn1.Equals(conn2), "Connections have different Ttl values, should return false")
 
 	// Case 7: Connections have different Profile
-	conn2.Ttl = &ttl // Reset Ttl to the same
+	conn2.Ttl = ttl // Reset Ttl to the same
 	profile2 := "different_profile"
 	conn2.Profile = &profile2
 	assert.False(conn1.Equals(conn2), "Connections have different Profile values, should return false")
@@ -1089,18 +1090,18 @@ func TestGcpConnectionEquals(t *testing.T) {
 	conn1 = &GcpConnection{
 		ConnectionImpl: ConnectionImpl{
 			ShortName: "default",
+			Ttl:       ttl,
 		},
 		Credentials: &credentials,
-		Ttl:         &ttl,
 		AccessToken: &accessToken,
 	}
 
 	conn2 = &GcpConnection{
 		ConnectionImpl: ConnectionImpl{
 			ShortName: "default",
+			Ttl:       ttl,
 		},
 		Credentials: &credentials,
-		Ttl:         &ttl,
 		AccessToken: &accessToken,
 	}
 
@@ -1114,7 +1115,7 @@ func TestGcpConnectionEquals(t *testing.T) {
 	// Case 5: Connections have different Ttl
 	conn2.Credentials = &credentials // Reset Credentials to match conn1
 	differentTtl := 7200
-	conn2.Ttl = &differentTtl
+	conn2.Ttl = differentTtl
 	assert.False(conn1.Equals(conn2), "Connections have different Ttl, should return false")
 }
 
@@ -1132,8 +1133,10 @@ func TestGcpConnectionValidate(t *testing.T) {
 	accessToken := "access_token_value"
 
 	conn = &GcpConnection{
+		ConnectionImpl: ConnectionImpl{
+			Ttl: ttl,
+		},
 		Credentials: &credentials,
-		Ttl:         &ttl,
 		AccessToken: &accessToken,
 	}
 	diagnostics = conn.Validate()

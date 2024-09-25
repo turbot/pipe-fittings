@@ -30,6 +30,10 @@ func (c *TrelloConnection) GetConnectionType() string {
 }
 
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &TrelloConnection{})
+	}
 
 	if c.APIKey == nil && c.Token == nil {
 		apiKeyEnvVar := os.Getenv("TRELLO_API_KEY")
@@ -70,15 +74,20 @@ func (c *TrelloConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *TrelloConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil || c.Token != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *TrelloConnection) GetTtl() int {
-	return -1
 }
 
 func (c *TrelloConnection) CtyValue() (cty.Value, error) {

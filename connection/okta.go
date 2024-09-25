@@ -30,6 +30,10 @@ func (c *OktaConnection) GetConnectionType() string {
 }
 
 func (c *OktaConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &OktaConnection{})
+	}
 
 	if c.Token == nil && c.Domain == nil {
 		apiTokenEnvVar := os.Getenv("OKTA_CLIENT_TOKEN")
@@ -71,15 +75,21 @@ func (c *OktaConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *OktaConnection) Validate() hcl.Diagnostics {
-	return hcl.Diagnostics{}
-}
+	if c.Pipes != nil && (c.Token != nil || c.Domain != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 
-func (c *OktaConnection) GetTtl() int {
-	return -1
+	return hcl.Diagnostics{}
 }
 
 func (c *OktaConnection) CtyValue() (cty.Value, error) {

@@ -15,27 +15,35 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const GcpConnectionType = "gcp"
+const (
+	GcpConnectionType = "gcp"
+	defaultGcpTtl     = 5 * 60
+)
 
 type GcpConnection struct {
 	ConnectionImpl
 
 	Credentials *string `json:"credentials,omitempty" cty:"credentials" hcl:"credentials,optional"`
-	Ttl         *int    `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
-
 	AccessToken *string `json:"access_token,omitempty" cty:"access_token" hcl:"access_token,optional"`
 }
 
 func NewGcpConnection(shortName string, declRange hcl.Range) PipelingConnection {
-	return &GcpConnection{
+	res := &GcpConnection{
 		ConnectionImpl: NewConnectionImpl(GcpConnectionType, shortName, declRange),
 	}
+	// set the default ttl
+	res.SetTtl(defaultGcpTtl)
+	return res
 }
 func (c *GcpConnection) GetConnectionType() string {
 	return GcpConnectionType
 }
 
 func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &GcpConnection{})
+	}
 
 	// First check if the credential file is supplied
 	var credentialFile string
@@ -91,8 +99,9 @@ func (c *GcpConnection) Resolve(ctx context.Context) (PipelingConnection, error)
 		}
 
 		newConnection := &GcpConnection{
-			AccessToken: &token.AccessToken,
-			Credentials: &credentialFile,
+			ConnectionImpl: c.ConnectionImpl,
+			AccessToken:    &token.AccessToken,
+			Credentials:    &credentialFile,
 		}
 		return newConnection, nil
 	}
@@ -134,14 +143,20 @@ func (c *GcpConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
-		return false
-	}
-
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *GcpConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.Credentials != nil || c.AccessToken != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
+
 	return hcl.Diagnostics{}
 }
 
@@ -155,13 +170,6 @@ func (c *GcpConnection) CtyValue() (cty.Value, error) {
 	valueMap["env"] = cty.ObjectVal(c.GetEnv())
 
 	return cty.ObjectVal(valueMap), nil
-}
-
-func (c *GcpConnection) GetTtl() int {
-	if c.Ttl == nil {
-		return 5 * 60 // in seconds
-	}
-	return *c.Ttl
 }
 
 func (c *GcpConnection) GetEnv() map[string]cty.Value {

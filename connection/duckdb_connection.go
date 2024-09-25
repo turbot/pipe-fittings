@@ -25,10 +25,14 @@ func (c *DuckDbConnection) GetConnectionType() string {
 	return DuckDbConnectionType
 }
 
-func (p *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+func (c *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AwsConnection{})
+	}
 	// if we have a connection string, return it as is
-	if p.ConnectionString != nil {
-		return p, nil
+	if c.ConnectionString != nil {
+		return c, nil
 	}
 
 	// TODO KAI build a connection string from the other fields
@@ -36,26 +40,32 @@ func (p *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, err
 
 }
 
-func (p *DuckDbConnection) GetTtl() int {
-	return -1
-}
+func (c *DuckDbConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.ConnectionString != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 
-func (p *DuckDbConnection) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-func (p *DuckDbConnection) GetEnv() map[string]cty.Value {
+func (c *DuckDbConnection) GetEnv() map[string]cty.Value {
 	// TODO DUCKDB ENV
 	return map[string]cty.Value{}
 }
 
-func (p *DuckDbConnection) Equals(otherConnection PipelingConnection) bool {
+func (c *DuckDbConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && helpers.IsNil(otherConnection) {
+	if c == nil && helpers.IsNil(otherConnection) {
 		return true
 	}
 
-	if (p == nil && !helpers.IsNil(otherConnection)) || (p != nil && helpers.IsNil(otherConnection)) {
+	if (c == nil && !helpers.IsNil(otherConnection)) || (c != nil && helpers.IsNil(otherConnection)) {
 		return false
 	}
 
@@ -64,17 +74,17 @@ func (p *DuckDbConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return utils.PtrEqual(p.ConnectionString, other.ConnectionString)
+	return utils.PtrEqual(c.ConnectionString, other.ConnectionString)
 
 }
 
-func (p *DuckDbConnection) CtyValue() (cty.Value, error) {
-	return ctyValueForConnection(p)
+func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
+	return ctyValueForConnection(c)
 }
 
-func (p *DuckDbConnection) GetConnectionString() string {
-	if p.ConnectionString != nil {
-		return *p.ConnectionString
+func (c *DuckDbConnection) GetConnectionString() string {
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
 	}
 	return ""
 }

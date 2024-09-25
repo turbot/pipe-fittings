@@ -29,6 +29,10 @@ func (c *MastodonConnection) GetConnectionType() string {
 }
 
 func (c *MastodonConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &MastodonConnection{})
+	}
 	return c, nil
 }
 
@@ -55,15 +59,20 @@ func (c *MastodonConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *MastodonConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessToken != nil || c.Server != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *MastodonConnection) GetTtl() int {
-	return -1
 }
 
 func (c *MastodonConnection) CtyValue() (cty.Value, error) {

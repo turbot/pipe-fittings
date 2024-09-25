@@ -30,10 +30,15 @@ func (c *PostgresConnection) GetConnectionType() string {
 	return PostgresConnectionType
 }
 
-func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+func (c *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &PostgresConnection{})
+	}
+
 	// if we have a connection string, return it as is
-	if p.ConnectionString != nil {
-		return p, nil
+	if c.ConnectionString != nil {
+		return c, nil
 	}
 
 	// TODO KAI build a connection string from the other fields
@@ -41,26 +46,31 @@ func (p *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, e
 
 }
 
-func (p *PostgresConnection) GetTtl() int {
-	return -1
-}
-
-func (p *PostgresConnection) Validate() hcl.Diagnostics {
+func (c *PostgresConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
-func (p *PostgresConnection) GetEnv() map[string]cty.Value {
+func (c *PostgresConnection) GetEnv() map[string]cty.Value {
 	// TODO POSTGRES ENV
 	return map[string]cty.Value{}
 }
 
-func (p *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
+func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
-	if p == nil && helpers.IsNil(otherConnection) {
+	if c == nil && helpers.IsNil(otherConnection) {
 		return true
 	}
 
-	if (p == nil && !helpers.IsNil(otherConnection)) || (p != nil && helpers.IsNil(otherConnection)) {
+	if (c == nil && !helpers.IsNil(otherConnection)) || (c != nil && helpers.IsNil(otherConnection)) {
 		return false
 	}
 
@@ -69,22 +79,23 @@ func (p *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return utils.PtrEqual(p.UserName, other.UserName) &&
-		utils.PtrEqual(p.Host, other.Host) &&
-		utils.PtrEqual(p.Port, other.Port) &&
-		utils.PtrEqual(p.ConnectionString, other.ConnectionString) &&
-		utils.PtrEqual(p.Password, other.Password) &&
-		utils.PtrEqual(p.SearchPath, other.SearchPath)
+	return utils.PtrEqual(c.UserName, other.UserName) &&
+		utils.PtrEqual(c.Host, other.Host) &&
+		utils.PtrEqual(c.Port, other.Port) &&
+		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
+		utils.PtrEqual(c.Password, other.Password) &&
+		utils.PtrEqual(c.SearchPath, other.SearchPath) &&
+		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 
 }
 
-func (p *PostgresConnection) CtyValue() (cty.Value, error) {
-	return ctyValueForConnection(p)
+func (c *PostgresConnection) CtyValue() (cty.Value, error) {
+	return ctyValueForConnection(c)
 }
 
-func (p *PostgresConnection) GetConnectionString() string {
-	if p.ConnectionString != nil {
-		return *p.ConnectionString
+func (c *PostgresConnection) GetConnectionString() string {
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
 	}
 	return ""
 }

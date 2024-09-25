@@ -31,6 +31,11 @@ func (c *GuardrailsConnection) GetConnectionType() string {
 }
 
 func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &GuardrailsConnection{})
+	}
+
 	guardrailsAccessKeyEnvVar := os.Getenv("TURBOT_ACCESS_KEY")
 	guardrailsSecretKeyEnvVar := os.Getenv("TURBOT_SECRET_KEY")
 	guardrailsWorkspaceEnvVar := os.Getenv("TURBOT_WORKSPACE")
@@ -89,15 +94,20 @@ func (c *GuardrailsConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *GuardrailsConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.AccessKey != nil || c.SecretKey != nil || c.Workspace != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *GuardrailsConnection) GetTtl() int {
-	return -1
 }
 
 func (c *GuardrailsConnection) CtyValue() (cty.Value, error) {

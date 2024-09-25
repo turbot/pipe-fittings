@@ -31,6 +31,11 @@ func (c *JiraConnection) GetConnectionType() string {
 }
 
 func (c *JiraConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &JiraConnection{})
+	}
+
 	if c.APIToken == nil && c.BaseURL == nil && c.Username == nil {
 		// The order of precedence for the Jira API token environment variable
 		// 1. JIRA_API_TOKEN
@@ -83,15 +88,20 @@ func (c *JiraConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *JiraConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIToken != nil || c.BaseURL != nil || c.Username != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *JiraConnection) GetTtl() int {
-	return -1
 }
 
 func (c *JiraConnection) CtyValue() (cty.Value, error) {

@@ -3,29 +3,29 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/connection"
 	"os"
 	"path"
 	"slices"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/zclconf/go-cty/cty"
-
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/workspace"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type FlowpipeModTestSuite struct {
@@ -301,9 +301,10 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_connections"})
-	assert.Nil(err.Error)
+	require.Nil(err.Error)
 
 	pcon := flowpipeConfig.PipelingConnections["aws.prod_conn"]
 	if helpers.IsNil(pcon) {

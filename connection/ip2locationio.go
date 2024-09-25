@@ -30,6 +30,11 @@ func (c *IP2LocationIOConnection) GetConnectionType() string {
 }
 
 func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &IP2LocationIOConnection{})
+	}
+
 	if c.APIKey == nil {
 		ip2locationAPIKeyEnvVar := os.Getenv("IP2LOCATIONIO_API_KEY")
 
@@ -45,6 +50,15 @@ func (c *IP2LocationIOConnection) Resolve(ctx context.Context) (PipelingConnecti
 }
 
 func (c *IP2LocationIOConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
 }
 
@@ -67,11 +81,7 @@ func (c *IP2LocationIOConnection) Equals(otherConnection PipelingConnection) boo
 		return false
 	}
 
-	return true
-}
-
-func (c *IP2LocationIOConnection) GetTtl() int {
-	return -1
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *IP2LocationIOConnection) CtyValue() (cty.Value, error) {

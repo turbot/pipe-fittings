@@ -29,6 +29,11 @@ func (c *AbuseIPDBConnection) GetConnectionType() string {
 }
 
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
+	// if pipes metadata is set, call pipes to retrieve the creds
+	if c.Pipes != nil {
+		return c.Pipes.Resolve(ctx, &AbuseIPDBConnection{})
+	}
+
 	if c.APIKey == nil {
 		abuseIPDBAPIKeyEnvVar := os.Getenv("ABUSEIPDB_API_KEY")
 
@@ -62,15 +67,20 @@ func (c *AbuseIPDBConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return true
+	return c.GetConnectionImpl().Equals(otherConnection.GetConnectionImpl())
 }
 
 func (c *AbuseIPDBConnection) Validate() hcl.Diagnostics {
+	if c.Pipes != nil && (c.APIKey != nil) {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
-}
-
-func (c *AbuseIPDBConnection) GetTtl() int {
-	return -1
 }
 
 func (c *AbuseIPDBConnection) CtyValue() (cty.Value, error) {
