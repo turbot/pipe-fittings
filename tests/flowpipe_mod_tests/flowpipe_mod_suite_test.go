@@ -2333,7 +2333,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 			found = true
 			break
 		}
-		assert.Equal(false, param.IsCustomType())
+		assert.Equal(false, modconfig.IsCustomType(param.Type))
 	}
 
 	if !found {
@@ -2883,7 +2883,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		return
 	}
 
-	connMap, err := parse.BuildTemporaryConnectionMapForEvalContext(context.TODO(), flowpipeConfig.PipelingConnections)
+	connMap := parse.BuildTemporaryConnectionMapForEvalContext(flowpipeConfig.PipelingConnections)
 	if err != nil {
 		assert.Fail("error building connection map")
 		return
@@ -2917,7 +2917,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		testLists := testCustomTypeTwoData[param.Name]
 		t.Log("testing param: ", param.Name)
 
-		assert.Equal(true, param.IsCustomType())
+		assert.Equal(true, modconfig.IsCustomType(param.Type))
 		for _, testData := range testLists {
 			t.Log("testing: ", testData.Name)
 			valid, _, err := param.ValidateSetting(testData.Setting, evalContext)
@@ -2948,16 +2948,16 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 
 	for _, p := range pipeline.Params {
 		if p.Name == "conn" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("connection.AwsConnection", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_conns" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("connection.AwsConnection", p.Type.ListElementType().EncapsulatedType().String())
 		} else if p.Name == "conn_generic" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*connection.ConnectionImpl", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_conns_generic" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*connection.ConnectionImpl", p.Type.ListElementType().EncapsulatedType().String())
 		}
 	}
@@ -2994,13 +2994,13 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 
 	for _, p := range pipeline.Params {
 		if p.Name == "notifier" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*modconfig.NotifierImpl", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_notifiers" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
 		} else if p.Name == "list_of_notifiers_more" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
 		} else {
 			assert.Fail("unexpected param")

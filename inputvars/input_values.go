@@ -9,7 +9,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
-	"github.com/zclconf/go-cty/cty/convert"
 )
 
 // SetVariableValues determines whether the given variable is a public variable and if so sets its value
@@ -59,34 +58,36 @@ func CheckInputVariables(defs map[string]*modconfig.Variable, values terraform.I
 		wantType := def.Type
 
 		// A given value is valid if it can convert to the desired type.
-		_, err := convert.Convert(val.Value, wantType)
-		if err != nil {
+		validateDiags := modconfig.ValidateValueMatchesType(val.Value, wantType, val.SourceRange.ToHCL().Ptr())
+
+		if len(validateDiags) > 0 {
+			msg := validateDiags[0].Summary
 			switch val.SourceType {
 			case terraform.ValueFromConfig, terraform.ValueFromAutoFile, terraform.ValueFromNamedFile:
 				// We have source location information for these.
 				diags = diags.Append(&hcl.Diagnostic{
 					Severity: hcl.DiagError,
 					Summary:  "Invalid value for input variable",
-					Detail:   fmt.Sprintf("The given value is not valid for variable %q: %s.", name, err),
+					Detail:   fmt.Sprintf("The given value is not valid for variable %q: %s.", name, msg),
 					Subject:  val.SourceRange.ToHCL().Ptr(),
 				})
 			case terraform.ValueFromEnvVar:
 				diags = diags.Append(tfdiags.Sourceless(
 					tfdiags.Error,
 					"Invalid value for input variable",
-					fmt.Sprintf("The environment variable %s%s does not contain a valid value for variable %q: %s.", app_specific.EnvAppPrefix, name, name, err),
+					fmt.Sprintf("The environment variable %s%s does not contain a valid value for variable %q: %s.", app_specific.EnvAppPrefix, name, name, msg),
 				))
 			case terraform.ValueFromCLIArg:
 				diags = diags.Append(tfdiags.Sourceless(
 					tfdiags.Error,
 					"Invalid value for input variable",
-					fmt.Sprintf("The argument --var=\"%s=...\" does not contain a valid value for variable %q: %s.", name, name, err),
+					fmt.Sprintf("The argument --var=\"%s=...\" does not contain a valid value for variable %q: %s.", name, name, msg),
 				))
 			case terraform.ValueFromInput:
 				diags = diags.Append(tfdiags.Sourceless(
 					tfdiags.Error,
 					"Invalid value for input variable",
-					fmt.Sprintf("The value entered for variable %q is not valid: %s.", name, err),
+					fmt.Sprintf("The value entered for variable %q is not valid: %s.", name, msg),
 				))
 			default:
 				// The above gets us good coverage for the situations users
@@ -96,7 +97,7 @@ func CheckInputVariables(defs map[string]*modconfig.Variable, values terraform.I
 				diags = diags.Append(tfdiags.Sourceless(
 					tfdiags.Error,
 					"Invalid value for input variable",
-					fmt.Sprintf("The value provided for variable %q is not valid: %s.", name, err),
+					fmt.Sprintf("The value provided for variable %q is not valid: %s.", name, msg),
 				))
 			}
 		}

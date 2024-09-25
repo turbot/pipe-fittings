@@ -9,7 +9,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
-	"github.com/zclconf/go-cty/cty/convert"
 )
 
 func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *ModParseContext) (*modconfig.RawVariable, hcl.Diagnostics) {
@@ -58,30 +57,16 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 	}
 
 	if attr, exists := content.Attributes[schema.AttributeTypeDefault]; exists {
-		val, valDiags := attr.Expr.Value(parseCtx.EvalCtx)
-		diags = append(diags, valDiags...)
+		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
+		diags = append(diags, moreDiags...)
 
-		// Convert the default to the expected type so we can catch invalid
-		// defaults early and allow later code to assume validity.
-		// Note that this depends on us having already processed any "type"
-		// attribute above.
-		// However, we can't do this if we're in an override file where
-		// the type might not be set; we'll catch that during merge.
-		if v.Type != cty.NilType {
-			var err error
-			val, err = convert.Convert(val, v.Type)
-			if err != nil {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "Invalid default value for variable",
-					Detail:   fmt.Sprintf("This default value is not compatible with the variable's type constraint: %s.", err),
-					Subject:  attr.Expr.Range().Ptr(),
-				})
-				val = cty.DynamicVal
-			}
+		// Does the default value matches the specified type?
+		moreDiags = modconfig.ValidateValueMatchesType(ctyVal, v.Type, attr.Range.Ptr())
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
+			return nil, diags
 		}
-
-		v.Default = val
+		v.Default = ctyVal
 	}
 
 	if attr, exists := content.Attributes[schema.AttributeTypeEnum]; exists {

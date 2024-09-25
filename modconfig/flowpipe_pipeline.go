@@ -452,29 +452,6 @@ type PipelineParam struct {
 	Tags        map[string]string `json:"tags,omitempty"`
 }
 
-func (p *PipelineParam) IsCustomType() bool {
-	if !p.Type.IsCapsuleType() && !(p.Type.IsListType() && p.Type.ElementType().IsCapsuleType()) {
-		return false
-	}
-
-	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
-	if _, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
-		return true
-	}
-
-	if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
-		return true
-	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
-		return true
-	}
-
-	return false
-}
-
-func (p *PipelineParam) IsNotifierType() bool {
-	return false
-}
-
 func (p *PipelineParam) Equals(other *PipelineParam) bool {
 	if p == nil && other == nil {
 		return true
@@ -505,7 +482,7 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 
 	// Helper function to perform capsule type and list type validations
 	validateCustomType := func() (bool, hcl.Diagnostics) {
-		ctdiags := connection.CustomTypeValidation(nil, setting, p.Type)
+		ctdiags := CustomTypeValidation(setting, p.Type, nil)
 		if len(ctdiags) > 0 {
 			return false, hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -519,7 +496,7 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 	}
 
 	// Check for capsule type or list of capsule types
-	if p.IsCustomType() {
+	if IsCustomType(p.Type) {
 		valid, diags := validateCustomType()
 		return valid, diags, nil
 	} else if !hclhelpers.IsValueCompatibleWithType(p.Type, setting) {
@@ -530,26 +507,6 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 	// Enum-based validation
 	valid, err := hclhelpers.ValidateSettingWithEnum(setting, p.Enum)
 	return valid, hcl.Diagnostics{}, err
-}
-
-func PipelineParamCustomValueListValidation(name string, setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
-
-	if !hclhelpers.IsListLike(setting.Type()) {
-		diag := &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Invalid value for param " + name,
-			Detail:   "The value for param must be a list",
-		}
-		return hcl.Diagnostics{diag}
-	}
-
-	var diags hcl.Diagnostics
-	for it := setting.ElementIterator(); it.Next(); {
-		_, element := it.Element()
-		diags = append(diags, CustomValueValidation(name, element, evalCtx)...)
-	}
-
-	return diags
 }
 
 func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
@@ -710,6 +667,35 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 		Detail:   "Invalid value for param " + name,
 	}
 	return hcl.Diagnostics{diag}
+}
+
+func (p *PipelineParam) IsConnectionType() bool {
+	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
+	if !nestedCapsule {
+		return false
+	}
+
+	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
+	if _, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
+		return true
+	}
+
+	var connectionImpl *connection.ConnectionImpl
+	return encapsulatedGoType.String() == reflect.TypeOf(connectionImpl).String()
+}
+
+func (p *PipelineParam) IsNotifierType() bool {
+	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
+	if !nestedCapsule {
+		return false
+	}
+
+	var notifierImpl *NotifierImpl
+	if encapsulatedGoType.String() == reflect.TypeOf(notifierImpl).String() {
+		return true
+	}
+
+	return false
 }
 
 type PipelineOutput struct {
