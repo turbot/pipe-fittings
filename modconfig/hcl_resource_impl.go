@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
@@ -197,7 +198,7 @@ func (b *HclResourceImpl) CtyValue() (cty.Value, error) {
 	if b.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return GetCtyValue(b)
+	return cty_helpers.GetCtyValue(b)
 }
 
 // GetBase implements HclResource

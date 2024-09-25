@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
@@ -476,11 +477,11 @@ func (p *PipelineParam) IsConnectionType() bool {
 	}
 
 	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
-	if _, ok := encapulatedInstanceNew.Interface().(PipelingConnection); ok {
+	if _, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
 		return true
 	}
 
-	if encapsulatedGoType.String() == "*modconfig.ConnectionImpl" {
+	if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
 		return true
 	}
 
@@ -517,7 +518,7 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalCont
 
 	// Helper function to perform capsule type and list type validations
 	validateCustomType := func() (bool, hcl.Diagnostics) {
-		ctdiags := CustomTypeValidation(nil, setting, p.Type)
+		ctdiags := connection.CustomTypeValidation(nil, setting, p.Type)
 		if len(ctdiags) > 0 {
 			return false, hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,

@@ -91,6 +91,8 @@ const (
 	ArgWhere                   = "where"
 	ArgWorkspaceProfile        = "workspace"
 	ArgWorkspaceDatabase       = "workspace-database"
+	ArgResume                  = "resume"
+	ArgResumeInput             = "resume-input"
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
 	ArgMaxConcurrencyQuery     = "max-concurrency-query"

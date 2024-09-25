@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
@@ -127,7 +128,7 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 	if b.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return GetCtyValue(b)
+	return cty_helpers.GetCtyValue(b)
 }
 
 // GetShowData implements printers.Showable

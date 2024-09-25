@@ -16,7 +16,7 @@ package pipeline_test
 // 		return
 // 	}
 
-// 	assert.Equal("credential.aws.aws_static", credential.GetUnqualifiedName())
+// 	assert.Equal("credential.aws.aws_static", credential.Name())
 // 	assert.Equal("aws", credential.GetCredentialType())
 
 // 	awsCred := credential.(*modconfig.AwsCredential)

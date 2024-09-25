@@ -222,7 +222,7 @@ const (
 	// Q: So why would step failure does not mean pipeline fail straight away?
 	// A: We can't raise the pipeline fail command if there's "ignore error" directive on the step.
 	//    If there are steps that depend on the failed step, these steps becomes "inaccessible", they can't start
-	//    because the dependend step has failed.
+	//    because the prerequisites have failed.
 	//
 	NextStepActionInaccessible NextStepAction = "inaccessible"
 
@@ -1490,6 +1490,7 @@ func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext
 
 	return hcl.Diagnostics{}
 }
+
 func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	return setStringSliceAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }

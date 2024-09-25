@@ -3,6 +3,7 @@ package modconfig
 import (
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -88,7 +89,7 @@ func (t *DashboardText) GetType() string {
 
 // CtyValue implements CtyValueProvider
 func (t *DashboardText) CtyValue() (cty.Value, error) {
-	return GetCtyValue(t)
+	return cty_helpers.GetCtyValue(t)
 }
 
 func (t *DashboardText) setBaseProperties() {

@@ -21,6 +21,18 @@ func (r Range) HclRange() hcl.Range {
 	}
 }
 
+func (r Range) HclRangePointer() *hcl.Range {
+	return &hcl.Range{
+		Filename: r.Filename,
+		Start:    r.Start.HclPos(),
+		End:      r.End.HclPos(),
+	}
+}
+
+func (r Range) Equals(declRange Range) bool {
+	return r.Filename == declRange.Filename && r.Start == declRange.Start && r.End == declRange.End
+}
+
 func NewRange(sourceRange hcl.Range) Range {
 	return Range{
 		Filename: sourceRange.Filename,

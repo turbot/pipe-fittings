@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/types"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -98,7 +99,7 @@ func (q *Query) OnDecoded(*hcl.Block, ResourceMapsProvider) hcl.Diagnostics {
 
 // CtyValue implements CtyValueProvider
 func (q *Query) CtyValue() (cty.Value, error) {
-	return GetCtyValue(q)
+	return cty_helpers.GetCtyValue(q)
 }
 
 func (q *Query) Diff(other *Query) *DashboardTreeItemDiffs {

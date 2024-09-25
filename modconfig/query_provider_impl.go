@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
@@ -160,7 +161,7 @@ func (q *QueryProviderImpl) CtyValue() (cty.Value, error) {
 	if q.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return GetCtyValue(q)
+	return cty_helpers.GetCtyValue(q)
 }
 
 func (q *QueryProviderImpl) setBaseProperties() {

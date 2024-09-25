@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -191,7 +192,7 @@ func (g *DashboardGraph) AddChild(child HclResource) hcl.Diagnostics {
 
 // CtyValue implements CtyValueProvider
 func (g *DashboardGraph) CtyValue() (cty.Value, error) {
-	return GetCtyValue(g)
+	return cty_helpers.GetCtyValue(g)
 }
 
 func (g *DashboardGraph) setBaseProperties() {

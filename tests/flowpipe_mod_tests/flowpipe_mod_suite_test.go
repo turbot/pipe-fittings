@@ -9,22 +9,23 @@ import (
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/zclconf/go-cty/cty"
-
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/workspace"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type FlowpipeModTestSuite struct {
@@ -300,9 +301,10 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_connections"})
-	assert.Nil(err.Error)
+	require.Nil(err.Error)
 
 	pcon := flowpipeConfig.PipelingConnections["aws.prod_conn"]
 	if helpers.IsNil(pcon) {
@@ -310,7 +312,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		return
 	}
 
-	awsConn, ok := pcon.(*modconfig.AwsConnection)
+	awsConn, ok := pcon.(*connection.AwsConnection)
 	if !ok {
 		assert.Fail("aws.prod_conn is not an AwsConnection")
 		return
@@ -323,7 +325,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		return
 	}
 
-	slackConn, ok := pcon.(*modconfig.SlackConnection)
+	slackConn, ok := pcon.(*connection.SlackConnection)
 	if !ok {
 		assert.Fail("slack.slack_conn is not a SlackConnection")
 		return
@@ -341,7 +343,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		return
 	}
 
-	awsConn, ok = pcon.(*modconfig.AwsConnection)
+	awsConn, ok = pcon.(*connection.AwsConnection)
 	if !ok {
 		assert.Fail("aws.prod_conn is not an AwsCredential")
 		return
@@ -1255,15 +1257,11 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	assert := assert.New(suite.T())
 
-	connections := map[string]modconfig.PipelingConnection{
-		"aws.default": &modconfig.AwsConnection{
-			ConnectionImpl: modconfig.ConnectionImpl{
-				HclResourceImpl: modconfig.HclResourceImpl{
-					FullName:        "aws.default",
-					ShortName:       "default",
-					UnqualifiedName: "aws.default",
-				},
-				Type: "aws",
+	connections := map[string]connection.PipelingConnection{
+		"aws.default": &connection.AwsConnection{
+			ConnectionImpl: connection.ConnectionImpl{
+				FullName:  "aws.default",
+				ShortName: "default",
 			},
 		},
 	}
@@ -1298,15 +1296,11 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	assert := assert.New(suite.T())
 
-	connections := map[string]modconfig.PipelingConnection{
-		"aws.default": &modconfig.AwsConnection{
-			ConnectionImpl: modconfig.ConnectionImpl{
-				HclResourceImpl: modconfig.HclResourceImpl{
-					FullName:        "aws.default",
-					ShortName:       "default",
-					UnqualifiedName: "aws.default",
-				},
-				Type: "aws",
+	connections := map[string]connection.PipelingConnection{
+		"aws.default": &connection.AwsConnection{
+			ConnectionImpl: connection.ConnectionImpl{
+				FullName:  "aws.default",
+				ShortName: "default",
 			},
 		},
 	}
@@ -1374,15 +1368,11 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 	assert := assert.New(suite.T())
 
-	connections := map[string]modconfig.PipelingConnection{
-		"aws.aws_static": &modconfig.AwsConnection{
-			ConnectionImpl: modconfig.ConnectionImpl{
-				HclResourceImpl: modconfig.HclResourceImpl{
-					FullName:        "aws.static",
-					ShortName:       "static",
-					UnqualifiedName: "aws.static",
-				},
-				Type: "aws",
+	connections := map[string]connection.PipelingConnection{
+		"aws.aws_static": &connection.AwsConnection{
+			ConnectionImpl: connection.ConnectionImpl{
+				FullName:  "aws.static",
+				ShortName: "static",
 			},
 		},
 	}
@@ -2771,16 +2761,16 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 	for _, p := range pipeline.Params {
 		if p.Name == "conn" {
 			assert.Equal(true, p.IsCustomType())
-			assert.Equal("modconfig.AwsConnection", p.Type.EncapsulatedType().String())
+			assert.Equal("connection.AwsConnection", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_conns" {
 			assert.Equal(true, p.IsCustomType())
-			assert.Equal("modconfig.AwsConnection", p.Type.ListElementType().EncapsulatedType().String())
+			assert.Equal("connection.AwsConnection", p.Type.ListElementType().EncapsulatedType().String())
 		} else if p.Name == "conn_generic" {
 			assert.Equal(true, p.IsCustomType())
-			assert.Equal("*modconfig.ConnectionImpl", p.Type.EncapsulatedType().String())
+			assert.Equal("*connection.ConnectionImpl", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_conns_generic" {
 			assert.Equal(true, p.IsCustomType())
-			assert.Equal("*modconfig.ConnectionImpl", p.Type.ListElementType().EncapsulatedType().String())
+			assert.Equal("*connection.ConnectionImpl", p.Type.ListElementType().EncapsulatedType().String())
 		}
 	}
 }

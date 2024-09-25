@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/schema"
@@ -344,7 +345,7 @@ func (m *Mod) validatePluginVersions(availablePlugins plugin.PluginVersionMap) [
 
 // CtyValue implements CtyValueProvider
 func (m *Mod) CtyValue() (cty.Value, error) {
-	return GetCtyValue(m)
+	return cty_helpers.GetCtyValue(m)
 }
 
 // GetInstallCacheKey returns the key used to find this mod in a workspace lock InstallCache
