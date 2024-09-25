@@ -8,21 +8,26 @@ mod "custom_type_three" {
     }
 
 variable "list_of_conns" {
-
+    type = list(connection.aws)
     default = [
         connection.aws.example,
         connection.aws.example_2,
         connection.aws.example_3
     ]
-    type = list(connection.aws)
 }
 
 variable "conn_generic" {
     type = connection
+    default = connection.aws.example
 }
 
 variable "list_of_conns_generic" {
     type = list(connection)
+    default = [
+            connection.aws.example,
+            connection.aws.example_2,
+            connection.aws.example_3
+        ]
 }
 
 

@@ -11,13 +11,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -275,6 +275,9 @@ func (w *Workspace) getVariablesParseContext(ctx context.Context) (*parse.ModPar
 	variablesParseCtx.SetBlockTypes(schema.BlockTypeVariable)
 	// NOTE: exclude mod block as we have already loaded the mod definition
 	variablesParseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
+	// add the connections and notifiers to the eval context
+	variablesParseCtx.SetIncludeConnectionsAndNotifiers(true)
+
 	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
 }
 

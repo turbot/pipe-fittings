@@ -73,6 +73,10 @@ func (c *ConnectionImpl) Equals(other *ConnectionImpl) bool {
 	return true
 }
 
+// CustomType implements custom_type.CustomType interface
+func (c *ConnectionImpl) CustomType() {
+}
+
 func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 	ctyValue, err := cty_helpers.GetCtyValue(connection)
 	if err != nil {

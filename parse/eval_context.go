@@ -1,13 +1,11 @@
 package parse
 
 import (
-	"context"
 	"log/slog"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -29,13 +27,15 @@ func BuildNotifierMapForEvalContext(notifiers map[string]modconfig.Notifier) (ma
 // **WARNING** this function has a specific use case do not use
 //
 // The key word is "temporary"
-func BuildTemporaryConnectionMapForEvalContext(ctx context.Context, allConnections map[string]connection.PipelingConnection) (map[string]cty.Value, error) {
+func BuildTemporaryConnectionMapForEvalContext(allConnections map[string]connection.PipelingConnection) map[string]cty.Value {
 	connectionMap := map[string]cty.Value{}
 
 	for _, c := range allConnections {
 		parts := strings.Split(c.Name(), ".")
 		if len(parts) != 2 {
-			return nil, perr.BadRequestWithMessage("invalid credential name: " + c.Name())
+			// this should never happen as Name() should always return a string in the format "type.name"
+			slog.Warn("connection name is not in the correct format", "connection", c.Name())
+			continue
 		}
 
 		tempMap := map[string]cty.Value{
@@ -65,5 +65,5 @@ func BuildTemporaryConnectionMapForEvalContext(ctx context.Context, allConnectio
 		}
 	}
 
-	return connectionMap, nil
+	return connectionMap
 }

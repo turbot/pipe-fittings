@@ -95,6 +95,11 @@ type ModParseContext struct {
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
 	resourceMaps     *modconfig.ResourceMaps
+
+	// tactical: should connections and notifiers be added to the reference values?
+	// this is a temporary solution until the 2 methods of determining runtime dependencies are merged
+	includeConnectionsAndNotifiersInEvalContext bool
+
 	// mutex to control access to topLevelDependencyMods and resourceMaps when asyncronously adding dependency mods
 	depLock sync.Mutex
 }
@@ -127,7 +132,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 	}
 	// add root node - this will depend on all other nodes
 	c.DependencyGraph = c.newDependencyGraph()
-	c.buildEvalContext()
+	c.RebuildEvalContext()
 
 	return c
 }
@@ -228,7 +233,7 @@ func (m *ModParseContext) AddInputVariableValues(inputVariables *modconfig.ModVa
 func (m *ModParseContext) AddVariablesToEvalContext() {
 	m.addRootVariablesToReferenceMap()
 	m.addDependencyVariablesToReferenceMap()
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 }
 
 // addRootVariablesToReferenceMap sets the Variables property
@@ -298,7 +303,7 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	}
 
 	// rebuild the eval context
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 	return diags
 }
 
@@ -337,7 +342,7 @@ func (m *ModParseContext) AddResource(resource modconfig.HclResource) hcl.Diagno
 	}
 
 	// rebuild the eval context
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 
 	return nil
 }
@@ -395,8 +400,8 @@ func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) 
 	return m.GetResourceMaps().GetResource(parsedName)
 }
 
-// build the eval context from the cached reference values
-func (m *ModParseContext) buildEvalContext() {
+// RebuildEvalContext the eval context from the cached reference values
+func (m *ModParseContext) RebuildEvalContext() {
 	// convert reference values to cty objects
 	variables := make(map[string]cty.Value)
 
@@ -434,6 +439,22 @@ func (m *ModParseContext) buildEvalContext() {
 
 	variables[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
 
+	// should we include connections and notifiers?
+	if m.includeConnectionsAndNotifiersInEvalContext {
+		if len(m.PipelingConnections) > 0 {
+			connMap := BuildTemporaryConnectionMapForEvalContext(m.PipelingConnections)
+			variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
+		}
+
+		if len(m.Notifiers) > 0 {
+			notifierMap, err := BuildNotifierMapForEvalContext(m.Notifiers)
+			if err != nil {
+				slog.Warn("failed to build notifier map for eval context", "error", err)
+			}
+
+			variables[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
+		}
+	}
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(variables)
 }
@@ -811,7 +832,7 @@ func (m *ModParseContext) AddPipeline(pipelineHcl *modconfig.Pipeline) hcl.Diagn
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, pipelineHcl.Name())
 
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 	return nil
 }
 
@@ -827,7 +848,7 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, trigger.Name())
 
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 	return nil
 }
 
@@ -845,4 +866,11 @@ func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
 	for _, t := range blockTypes {
 		m.blockTypeExclusions[t] = struct{}{}
 	}
+}
+
+// SetIncludeConnectionsAndNotifiers sets whether connections and notifiers should be included in the eval context
+// and rebuilds the eval context
+func (m *ModParseContext) SetIncludeConnectionsAndNotifiers(include bool) {
+	m.includeConnectionsAndNotifiersInEvalContext = include
+	m.RebuildEvalContext()
 }

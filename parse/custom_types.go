@@ -14,8 +14,10 @@ import (
 
 var BaseNotifierCtyType = cty.Capsule("BaseNotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
 
+// customTypeFunc is a function that returns a custom cty.Type for a given subtype
 type customTypeFunc func(string) cty.Type
 
+// customTypeMappings is a map of resource types to custom cty.Type functions
 var customTypeMappings = map[string]customTypeFunc{
 	schema.BlockTypeConnection: app_specific_connection.ConnectionCtyType,
 	schema.BlockTypeNotifier: func(string) cty.Type {

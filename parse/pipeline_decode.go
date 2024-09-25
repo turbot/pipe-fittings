@@ -1,9 +1,7 @@
 package parse
 
 import (
-	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"strings"
 
@@ -175,51 +173,11 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 		Name: block.Labels[0],
 	}
 
-	evalCtx := parseCtx.EvalCtx
-
 	// because we want to use late binding for temp creds *and* the ability for pipeline param to define custom type,
-	// we do the validation where with a list of temporary connections
-	if len(parseCtx.PipelingConnections) > 0 {
-		connMap, err := BuildTemporaryConnectionMapForEvalContext(context.TODO(), parseCtx.PipelingConnections)
-		if err != nil {
-			slog.Warn("failed to build temporary connection map for eval context", "error", err)
-			return o, hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "failed to build temporary connection map for eval context",
-					Subject:  &block.DefRange,
-				},
-			}
-		}
-
-		vars := evalCtx.Variables
-		vars[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
-		evalCtx.Variables = vars
-
-		defer func() {
-			vars := evalCtx.Variables
-			delete(vars, schema.BlockTypeConnection)
-			evalCtx.Variables = vars
-		}()
-	}
-
-	if len(parseCtx.Notifiers) > 0 {
-		notifierMap, err := BuildNotifierMapForEvalContext(parseCtx.Notifiers)
-		if err != nil {
-			slog.Warn("failed to build notifier map for eval context", "error", err)
-			return o, hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "failed to build notifier map for eval context",
-					Subject:  &block.DefRange,
-				},
-			}
-		}
-
-		vars := evalCtx.Variables
-		vars[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
-		evalCtx.Variables = vars
-	}
+	// we do the validation with with a list of temporary connections
+	parseCtx.SetIncludeConnectionsAndNotifiers(true)
+	// be sure to revert the eval context to remove the temporary connections again
+	defer parseCtx.SetIncludeConnectionsAndNotifiers(false)
 
 	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
 
@@ -247,35 +205,19 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeDefault]; exists {
 		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
-		if moreDiags.HasErrors() {
-			diags = append(diags, moreDiags...)
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
 			return o, diags
 		}
 
 		// Does the default value matches the specified type?
-		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
-			if o.IsCustomType() {
-				ctdiags := connection.CustomTypeValidation(attr, ctyVal, o.Type)
-				if len(ctdiags) > 0 {
-					diags = append(diags, ctdiags...)
-					return o, diags
-				}
-				o.Default = ctyVal
-			} else {
-				isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
-				if !isCompatible {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
-						Subject:  &attr.Range,
-					})
-				} else {
-					o.Default = ctyVal
-				}
-			}
-		} else {
-			o.Default = ctyVal
+		moreDiags = modconfig.ValidateValueMatchesType(ctyVal, o.Type, attr.Range.Ptr())
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
+			return o, diags
 		}
+		o.Default = ctyVal
+
 	} else if o.Optional {
 		o.Default = cty.NullVal(o.Type)
 	}
