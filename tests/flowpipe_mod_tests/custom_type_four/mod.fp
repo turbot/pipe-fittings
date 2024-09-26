@@ -2,64 +2,48 @@ mod "custom_type_four" {
 }
 
 
-
-
 variable "conn" {
-    default = connection.aws.example
     type = connection.aws
+    default = connection.aws.example
 }
 
 variable "list_of_conns" {
+    type = list(connection.aws)
     default = [
         connection.aws.example,
         connection.aws.example_2,
         connection.aws.example_3
     ]
-    type = list(connection.aws)
 }
 
 variable "conn_generic" {
     type = connection
+      default = connection.aws.example
+
 }
 
 variable "list_of_conns_generic" {
     type = list(connection)
-}
-
-variable "notifier" {
-    type = notifier
-}
-
-variable "list_of_notifier" {
-    type = list(notifier)
-}
-
-
-pipeline "custom_type_four" {
-    param "conn" {
-        default = connection.aws.example
-        type = connection.aws
-    }
-
-    param "list_of_conns" {
-        
-        default = [
+     default = [
             connection.aws.example,
             connection.aws.example_2,
             connection.aws.example_3
         ]
-        type = list(connection.aws)
-    }
+}
 
-    param "conn_generic" {
-        type = connection
-    }
 
-    param "list_of_conns_generic" {
-        type = list(connection)
-    }
+pipeline "a" {
 
-    step "transform" "echo" {
-        value = param.conn.secret_key
+     step "query" "select" {
+        database = connection.aws.example
+        sql = "SELECT 1"
+    }
+}
+
+pipeline "b" {
+
+     step "query" "select" {
+        database = var.conn
+        sql = "SELECT 1"
     }
 }
