@@ -16,9 +16,9 @@ type ConnectionImpl struct {
 	Pipes *PipesConnectionMetadata `json:"pipes,omitempty" cty:"pipes" hcl:"pipes,block"`
 
 	ShortName string `json:"short_name" cty:"short_name"`
-	FullName  string `json:"full_name,omitempty"`
+	FullName  string `json:"full_name,omitempty" cty:"full_name"`
 	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
-	DeclRange hclhelpers.Range `json:"decl_range,omitempty"`
+	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
 	// cache ttl in seconds
 	Ttl int `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
 }
