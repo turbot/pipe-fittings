@@ -22,7 +22,6 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 	pconstants "github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/queryresult"
 	pqueryresult "github.com/turbot/pipe-fittings/queryresult"
 	"golang.org/x/text/language"
@@ -30,12 +29,10 @@ import (
 )
 
 // ShowOutput displays the output using the proper formatter as applicable
-func ShowOutput[T any](ctx context.Context, startTime time.Time, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string) (rowCount, rowErrors int) {
+func ShowOutput[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 
 	outputFormat := viper.GetString(pconstants.ArgOutput)
 	switch outputFormat {
-	case constants.OutputFormatPowerpipeSnapshotShort, constants.OutputFormatSteampipeSnapshotShort, constants.OutputFormatSnapshot:
-		rowCount, rowErrors = displaySnapshot(ctx, result, resolvedQuery, searchPath, startTime)
 	case constants.OutputFormatJSON:
 		rowCount, rowErrors = displayJSON(ctx, result)
 	case constants.OutputFormatCSV:
@@ -168,53 +165,20 @@ func getTerminalColumnsRequiredForString(str string) int {
 	return colsRequired
 }
 
-// displaySnapshot function to generate, serialize, and display the snapshot as valid JSON
-func displaySnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (int, int) {
-	// Generate the snapshot
-	snapshot, err := generateSnapshot(ctx, result, resolvedQuery, searchPath, startTime)
-	if err != nil {
-		error_helpers.ShowError(ctx, err)
-		return 0, 0
-	}
-
-	// Call iterateResults to process rows and return rowErrors
-	rowErrors := 0
-	count, err := iterateResults(result, func(row []interface{}, result *queryresult.Result[T]) {
-		// Logic to handle row processing if needed
-		// (This will depend on how you want to process individual rows)
-	})
-	if err != nil {
-		error_helpers.ShowError(ctx, err)
-		rowErrors++
-	}
-
-	// display the snapshot as JSON
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", " ")
-	encoder.SetEscapeHTML(false)
-	if err := encoder.Encode(snapshot); err != nil {
-		//nolint:forbidigo // acceptable
-		fmt.Print("Error displaying result as snapshot", err)
-		return 0, 0
-	}
-
-	return count, rowErrors
-}
-
 type jsonOutput[T any] struct {
 	Columns  []pqueryresult.ColumnDef `json:"columns"`
 	Rows     []map[string]interface{} `json:"rows"`
 	Metadata T                        `json:"metadata,omitempty"`
 }
 
-func newJSONOutput[T any]() *jsonOutput[T] {
+func NewJSONOutput[T any]() *jsonOutput[T] {
 	return &jsonOutput[T]{
 		Rows: make([]map[string]interface{}, 0),
 	}
 }
 
 func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
-	jsonOutput := newJSONOutput[T]()
+	jsonOutput := NewJSONOutput[T]()
 
 	// add column defs to the JSON output
 	for _, col := range result.Cols {
@@ -242,7 +206,7 @@ func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	}
 
 	// call this function for each row
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
@@ -281,7 +245,7 @@ func displayCSV[T any](ctx context.Context, result *queryresult.Result[T]) (rowC
 	}
 
 	// call this function for each row
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
@@ -359,7 +323,7 @@ func displayLine[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	}
 
 	// call this function for each row
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
@@ -418,7 +382,7 @@ func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (ro
 	}
 
 	// iterate each row, adding each to the table
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		// display the error
 		//nolint:forbidigo // acceptable
@@ -440,7 +404,7 @@ func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (ro
 type displayResultsFunc[T any] func(row []interface{}, result *queryresult.Result[T])
 
 // call func displayResult for each row of results
-func iterateResults[T any](result *queryresult.Result[T], displayResult displayResultsFunc[T]) (int, error) {
+func IterateResults[T any](result *queryresult.Result[T], displayResult displayResultsFunc[T]) (int, error) {
 	count := 0
 	for row := range result.RowChan {
 		if row == nil {

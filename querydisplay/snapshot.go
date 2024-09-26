@@ -1,11 +1,8 @@
 package querydisplay
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"html/template"
 	"strings"
 	"time"
 
@@ -18,126 +15,16 @@ import (
 
 const schemaVersion = "20221222"
 
-const snapshotTemplate = `
-{
-  "schema_version": "{{ .SchemaVersion }}",
-  "panels": {
-    {{- range $panel := .Panels }}
-    "{{ $panel.Dashboard }}": {
-      "dashboard": "{{ $panel.Dashboard }}",
-      "name": "{{ $panel.Name }}",
-      "panel_type": "{{ $panel.PanelType }}",
-      "source_definition": "{{ $panel.SourceDefinition }}",
-      "status": "{{ $panel.Status }}",
-      "title": "{{ $panel.Title }}"
-    },
-    "custom.table.results": {
-      "dashboard": "{{ $panel.Dashboard }}",
-      "name": "custom.table.results",
-      "panel_type": "table",
-      "source_definition": "{{ $panel.SourceDefinition }}",
-      "status": "{{ $panel.Status }}",
-      "sql": "{{ $panel.SQL }}",
-      "properties": {
-        "name": "results"
-      },
-      {{- if $panel.Data }}
-      "data": {
-        "columns": [
-          {{- range $i, $col := $panel.Data.Columns }}
-          {
-            "name": "{{ $col.Name }}",
-            "data_type": "{{ $col.DataType }}",
-            "original_name": "{{ $col.OriginalName }}"
-          }{{ if lt (add1 $i) (len $panel.Data.Columns) }},{{ end }}
-          {{- end }}
-        ],
-        "rows": [
-          {{- range $rowIndex, $row := $panel.Data.Rows }}
-          {
-            {{- $rowLen := len $row }}
-            {{- $currentIndex := 0 }}
-            {{- range $key, $value := $row }}
-            "{{ $key }}": {{ $value }}{{ if lt (add1 $currentIndex) $rowLen }},{{ end }}
-            {{- $currentIndex = add1 $currentIndex }}
-            {{- end }}
-          }{{ if lt (add1 $rowIndex) (len $panel.Data.Rows) }},{{ end }}
-          {{- end }}
-        ]
-      }
-      {{- end }}
-    }
-    {{- end }}
-  },
-  "inputs": {},
-  "variables": {},
-  "search_path": [
-    {{- range $i, $path := .SearchPath }}
-    "{{ $path }}"{{ if lt (add1 $i) (len $.SearchPath) }},{{ end }}
-    {{- end }}
-  ],
-  "start_time": "{{ .StartTime }}",
-  "end_time": "{{ .EndTime }}",
-  "layout": {
-    "name": "{{ .Layout.Name }}",
-    "children": [
-      {
-        "name": "custom.table.results",
-        "panel_type": "table"
-      }
-    ],
-    "panel_type": "dashboard"
-  }
-}
-`
-
 // SteampipeSnapshot struct definition
 type SteampipeSnapshot struct {
 	SchemaVersion string                 `json:"schema_version"`
 	Panels        map[string]PanelData   `json:"panels"`
+	Inputs        map[string]interface{} `json:"inputs"`
+	Variables     map[string]interface{} `json:"variables"`
 	SearchPath    []string               `json:"search_path"`
 	StartTime     string                 `json:"start_time"`
 	EndTime       string                 `json:"end_time"`
-	Layout        map[string]interface{} `json:"layout"`
-	Inputs        map[string]interface{} `json:"inputs"`
-	Variables     map[string]interface{} `json:"variables"`
-}
-
-// a snapshot in steampipe is generated using templating since we do not have a snapshot data type
-// generateSnapshot function using Go templating
-func generateSnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (*SteampipeSnapshot, error) {
-	var out bytes.Buffer
-	endTime := time.Now()
-	// Initialize the template
-	tmpl, err := template.New("snapshot").Funcs(template.FuncMap{
-		"add1": func(i int) int { return i + 1 },
-	}).Parse(snapshotTemplate)
-	if err != nil {
-		error_helpers.ShowError(ctx, fmt.Errorf("unable to parse snapshot template: %w", err))
-		return nil, err
-	}
-	// Build the snapshot data (use the new getData function to retrieve data)
-	snapshotData := map[string]any{
-		"SchemaVersion": schemaVersion,
-		"Panels":        getPanels[T](ctx, result, resolvedQuery),
-		"SearchPath":    searchPath,
-		"StartTime":     startTime.Format(time.RFC3339),
-		"EndTime":       endTime.Format(time.RFC3339),
-		"Layout":        getLayout[T](result, resolvedQuery),
-	}
-	// Render the template
-	if err := tmpl.Execute(&out, snapshotData); err != nil {
-		error_helpers.ShowError(ctx, fmt.Errorf("unable to execute snapshot template: %w", err))
-		return nil, err
-	}
-
-	// Unmarshal the bytes.Buffer (JSON data) into SteampipeSnapshot struct
-	var snapshot SteampipeSnapshot
-	if err := json.Unmarshal(out.Bytes(), &snapshot); err != nil {
-		error_helpers.ShowError(ctx, fmt.Errorf("unable to unmarshal JSON: %w", err))
-		return nil, err
-	}
-	return &snapshot, nil
+	Layout        LayoutData             `json:"layout"`
 }
 
 type PanelData struct {
@@ -145,11 +32,42 @@ type PanelData struct {
 	Name             string                 `json:"name"`
 	PanelType        string                 `json:"panel_type"`
 	SourceDefinition string                 `json:"source_definition"`
-	Title            string                 `json:"title,omitempty"`
 	Status           string                 `json:"status,omitempty"`
+	Title            string                 `json:"title,omitempty"`
 	SQL              string                 `json:"sql,omitempty"`
+	Properties       map[string]string      `json:"properties,omitempty"`
 	Data             map[string]interface{} `json:"data,omitempty"`
-	Properties       map[string]interface{} `json:"properties,omitempty"`
+}
+
+type LayoutData struct {
+	Name      string        `json:"name"`
+	Children  []LayoutChild `json:"children"` // Slice of LayoutChild structs
+	PanelType string        `json:"panel_type"`
+}
+
+type LayoutChild struct {
+	Name      string `json:"name"`
+	PanelType string `json:"panel_type"`
+}
+
+// a snapshot in steampipe is generated using templating since we do not have a snapshot data type
+// QueryResultToSnapshot function to generate a snapshot from a query result
+func QueryResultToSnapshot[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery, searchPath []string, startTime time.Time) (*SteampipeSnapshot, error) {
+
+	endTime := time.Now()
+	// Build the snapshot data (use the new getData function to retrieve data)
+	snapshotData := &SteampipeSnapshot{
+		SchemaVersion: schemaVersion,
+		Panels:        getPanels[T](ctx, result, resolvedQuery),
+		Inputs:        map[string]interface{}{},
+		Variables:     map[string]interface{}{},
+		SearchPath:    searchPath,
+		StartTime:     startTime.Format(time.RFC3339),
+		EndTime:       endTime.Format(time.RFC3339),
+		Layout:        getLayout[T](result, resolvedQuery),
+	}
+	// Return the snapshot data
+	return snapshotData, nil
 }
 
 func getPanels[T any](ctx context.Context, result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery) map[string]PanelData {
@@ -160,21 +78,31 @@ func getPanels[T any](ctx context.Context, result *queryresult.Result[T], resolv
 	dashboardName := fmt.Sprintf("custom.dashboard.sql_%s", hash)
 	// Build panel data with proper fields
 	return map[string]PanelData{
-		"panelKey": {
+		dashboardName: {
 			Dashboard:        dashboardName,
 			Name:             dashboardName,
 			PanelType:        "dashboard",
 			SourceDefinition: "",
+			Status:           "complete",
 			Title:            fmt.Sprintf("Custom query [%s]", hash),
+		},
+		"custom.table.results": {
+			Dashboard:        dashboardName,
+			Name:             "custom.table.results",
+			PanelType:        "table",
+			SourceDefinition: "",
 			Status:           "complete",
 			SQL:              resolvedQuery.RawSQL,
-			Data:             getData(ctx, result),
+			Properties: map[string]string{
+				"name": "results",
+			},
+			Data: getData(ctx, result),
 		},
 	}
 }
 
 func getData[T any](ctx context.Context, result *queryresult.Result[T]) map[string]interface{} {
-	jsonOutput := newJSONOutput[T]()
+	jsonOutput := NewJSONOutput[T]()
 	// Ensure columns are being added
 	if len(result.Cols) == 0 {
 		error_helpers.ShowError(ctx, fmt.Errorf("no columns found in the result"))
@@ -198,25 +126,32 @@ func getData[T any](ctx context.Context, result *queryresult.Result[T]) map[stri
 		jsonOutput.Rows = append(jsonOutput.Rows, record)
 	}
 	// Call iterateResults and ensure rows are processed
-	_, err := iterateResults(result, rowFunc)
+	_, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 	}
 	// Return the full data (including columns and rows)
 	return map[string]interface{}{
-		"Columns": jsonOutput.Columns,
-		"Rows":    jsonOutput.Rows,
+		"columns": jsonOutput.Columns,
+		"rows":    jsonOutput.Rows,
 	}
 }
 
-func getLayout[T any](result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery) map[string]any {
+func getLayout[T any](result *queryresult.Result[T], resolvedQuery *modconfig.ResolvedQuery) LayoutData {
 	hash, err := utils.Base36Hash(resolvedQuery.RawSQL, 8)
 	if err != nil {
-		return nil
+		return LayoutData{}
 	}
 	dashboardName := fmt.Sprintf("custom.dashboard.sql_%s", hash)
 	// Define layout structure
-	return map[string]any{
-		"Name": dashboardName,
+	return LayoutData{
+		Name: dashboardName,
+		Children: []LayoutChild{
+			{
+				Name:      "custom.table.results",
+				PanelType: "table",
+			},
+		},
+		PanelType: "dashboard",
 	}
 }
