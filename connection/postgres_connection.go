@@ -2,9 +2,9 @@ package connection
 
 import (
 	"context"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -13,11 +13,7 @@ const PostgresConnectionType = "postgres"
 
 type PostgresConnection struct {
 	ConnectionImpl
-	UserName         *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
-	Host             *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
-	Port             *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
 	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
-	Password         *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 	SearchPath       *string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 }
 
@@ -36,18 +32,12 @@ func (c *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, e
 		return c.Pipes.Resolve(ctx, &PostgresConnection{})
 	}
 
-	// if we have a connection string, return it as is
-	if c.ConnectionString != nil {
-		return c, nil
-	}
-
-	// TODO KAI build a connection string from the other fields
-	panic("implement me")
-
+	// if pipes is nil, we must have a connection string, so there is nothing to so
+	return c, nil
 }
 
 func (c *PostgresConnection) Validate() hcl.Diagnostics {
-	if c.Pipes != nil && (c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil) {
+	if c.Pipes != nil && (c.ConnectionString != nil) {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -56,7 +46,21 @@ func (c *PostgresConnection) Validate() hcl.Diagnostics {
 			},
 		}
 	}
+	if c.Pipes == nil && c.ConnectionString == nil {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "either pipes block or connection_string should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
 	return hcl.Diagnostics{}
+}
+
+func (c *PostgresConnection) GetConnectionString() string {
+	// we always expect connection string to be set if GetConnectionString is called
+	return typehelpers.SafeString(c.ConnectionString)
 }
 
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {
@@ -79,11 +83,7 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return utils.PtrEqual(c.UserName, other.UserName) &&
-		utils.PtrEqual(c.Host, other.Host) &&
-		utils.PtrEqual(c.Port, other.Port) &&
-		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
-		utils.PtrEqual(c.Password, other.Password) &&
+	return utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		utils.PtrEqual(c.SearchPath, other.SearchPath) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 
@@ -91,11 +91,4 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *PostgresConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
-}
-
-func (c *PostgresConnection) GetConnectionString() string {
-	if c.ConnectionString != nil {
-		return *c.ConnectionString
-	}
-	return ""
 }
