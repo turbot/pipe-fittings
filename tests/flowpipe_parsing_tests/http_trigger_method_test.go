@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -55,7 +56,7 @@ func TestPipelineWithoutHTTPTriggerMethod(t *testing.T) {
 	pipelineInfo := methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
 
-	argsInfo, err := methodInfo.GetArgs(nil)
+	argsInfo, err := methodInfo.GetArgs(modconfig.NewEvalContext(&hcl.EvalContext{}))
 	assert.Nil(err)
 	assert.NotNil(argsInfo)
 	assert.Equal("one", argsInfo["param_one"])
@@ -108,7 +109,7 @@ func TestPipelineWithHTTPGetMethod(t *testing.T) {
 	pipelineInfo := methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
 
-	argsInfo, err := methodInfo.GetArgs(nil)
+	argsInfo, err := methodInfo.GetArgs(modconfig.NewEvalContext(&hcl.EvalContext{}))
 	assert.Nil(err)
 	assert.NotNil(argsInfo)
 	assert.Equal("one", argsInfo["param_one"])
@@ -161,7 +162,7 @@ func TestPipelineWithHTTPTriggerMethodMultiple(t *testing.T) {
 	pipelineInfo := methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
 
-	argsInfo, err := methodInfo.GetArgs(nil)
+	argsInfo, err := methodInfo.GetArgs(modconfig.NewEvalContext(&hcl.EvalContext{}))
 	assert.Nil(err)
 	assert.NotNil(argsInfo)
 	assert.Equal("one", argsInfo["param_one"])
@@ -174,7 +175,7 @@ func TestPipelineWithHTTPTriggerMethodMultiple(t *testing.T) {
 	pipelineInfo = methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
 
-	argsInfo, err = methodInfo.GetArgs(nil)
+	argsInfo, err = methodInfo.GetArgs(modconfig.NewEvalContext(&hcl.EvalContext{}))
 	assert.Nil(err)
 	assert.NotNil(argsInfo)
 	assert.Equal("one", argsInfo["param_one"])
@@ -230,7 +231,7 @@ func TestPipelineWithHTTPTriggerPrecedence(t *testing.T) {
 	pipelineInfo := methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
 
-	argsInfo, err := methodInfo.GetArgs(nil)
+	argsInfo, err := methodInfo.GetArgs(modconfig.NewEvalContext(&hcl.EvalContext{}))
 	assert.Nil(err)
 	assert.NotNil(argsInfo)
 	assert.Equal("one", argsInfo["param_one"])
