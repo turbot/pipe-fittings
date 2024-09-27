@@ -12,13 +12,20 @@ type TimingMetadata struct {
 	Duration time.Duration
 }
 
-type Result[T any] struct {
+// TimingContainer is an interface that allows us to parameterize the Result struct
+// it must handle case of a query returning a stream of timing data OR a timing data struct directly
+// the GetTiming func is used to populate the timing data in the JSON output (as we cannot serialise a stream!)
+type TimingContainer interface {
+	GetTiming() any
+}
+
+type Result[T TimingContainer] struct {
 	RowChan chan *RowResult
 	Cols    []*ColumnDef
 	Timing  T
 }
 
-func NewResult[T any](cols []*ColumnDef, emptyTiming T) *Result[T] {
+func NewResult[T TimingContainer](cols []*ColumnDef, emptyTiming T) *Result[T] {
 	c := make(chan *RowResult)
 	return &Result[T]{
 		RowChan: c,
@@ -42,8 +49,8 @@ func (r *Result[T]) StreamError(err error) {
 	r.RowChan <- &RowResult{Error: err}
 }
 
-type SyncQueryResult[T any] struct {
+type SyncQueryResult struct {
 	Rows   []interface{}
 	Cols   []*ColumnDef
-	Timing T
+	Timing any
 }

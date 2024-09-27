@@ -1,11 +1,11 @@
 package queryresult
 
-type ResultStreamer[T any] struct {
+type ResultStreamer[T TimingContainer] struct {
 	Results            chan *Result[T]
 	allResultsReceived chan string
 }
 
-func NewResultStreamer[T any]() *ResultStreamer[T] {
+func NewResultStreamer[T TimingContainer]() *ResultStreamer[T] {
 	return &ResultStreamer[T]{
 		// make buffered channel so we can always stream a single result
 		Results:            make(chan *Result[T], 1),
