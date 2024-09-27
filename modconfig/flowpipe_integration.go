@@ -22,7 +22,7 @@ type Integration interface {
 	GetIntegrationImpl() *IntegrationImpl
 	GetIntegrationType() string
 	MapInterface() (map[string]interface{}, error)
-	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
+	SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 	SetUrl(string)
 	Validate() hcl.Diagnostics
@@ -224,27 +224,27 @@ func (i *SlackIntegration) Validate() hcl.Diagnostics {
 	return diags
 }
 
-func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (i *SlackIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeToken:
-			token, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
+			token, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, true)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
 			i.Token = token
 		case schema.AttributeTypeSigningSecret:
-			ss, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
+			ss, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, true)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
 			i.SigningSecret = ss
 		case schema.AttributeTypeWebhookUrl:
-			webhookUrl, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			webhookUrl, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -445,27 +445,27 @@ func (i *EmailIntegration) Validate() hcl.Diagnostics {
 	return diags
 }
 
-func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSmtpHost:
-			host, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			host, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
 			i.SmtpHost = host
 		case schema.AttributeTypeSmtpTls:
-			tls, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			tls, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
 			i.SmtpTls = tls
 		case schema.AttributeTypeSmtpPort:
-			port, moreDiags := hclhelpers.AttributeToInt(attr, evalContext, false)
+			port, moreDiags := hclhelpers.AttributeToInt(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -473,7 +473,7 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			portInt := int(*port)
 			i.SmtpPort = &portInt
 		case schema.AttributeTypeSmtpsPort:
-			port, moreDiags := hclhelpers.AttributeToInt(attr, evalContext, false)
+			port, moreDiags := hclhelpers.AttributeToInt(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -481,21 +481,21 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			portInt := int(*port)
 			i.SmtpsPort = &portInt
 		case schema.AttributeTypeSmtpUsername:
-			uName, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			uName, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
 			i.SmtpUsername = uName
 		case schema.AttributeTypeSmtpPassword:
-			pass, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			pass, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
 			}
 			i.SmtpPassword = pass
 		case schema.AttributeTypeFrom:
-			from, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			from, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -503,7 +503,7 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			i.From = from
 
 		case schema.AttributeTypeTo:
-			ctyVal, moreDiags := attr.Expr.Value(evalContext)
+			ctyVal, moreDiags := attr.Expr.Value(evalContext.EvalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -522,7 +522,7 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			}
 
 		case schema.AttributeTypeCc:
-			ctyVal, moreDiags := attr.Expr.Value(evalContext)
+			ctyVal, moreDiags := attr.Expr.Value(evalContext.EvalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -541,7 +541,7 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			}
 
 		case schema.AttributeTypeBcc:
-			ctyVal, moreDiags := attr.Expr.Value(evalContext)
+			ctyVal, moreDiags := attr.Expr.Value(evalContext.EvalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -560,7 +560,7 @@ func (i *EmailIntegration) SetAttributes(hclAttributes hcl.Attributes, evalConte
 			}
 
 		case schema.AttributeTypeSubject:
-			subject, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			subject, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -978,7 +978,7 @@ func (i *HttpIntegration) Validate() hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
-func (i *HttpIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (i *HttpIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	return hcl.Diagnostics{}
 }
 
@@ -1067,13 +1067,13 @@ func (i *MsTeamsIntegration) MapInterface() (map[string]interface{}, error) {
 	return res, nil
 }
 
-func (i *MsTeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (i *MsTeamsIntegration) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeWebhookUrl:
-			webhookUrl, moreDiags := hclhelpers.AttributeToString(attr, evalContext, false)
+			webhookUrl, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, false)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue

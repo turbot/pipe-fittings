@@ -2,6 +2,7 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -107,7 +108,7 @@ func TestEmailStep(t *testing.T) {
 		}),
 	})
 
-	evalContext := &hcl.EvalContext{}
+	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 

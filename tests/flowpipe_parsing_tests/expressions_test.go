@@ -2,6 +2,7 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -34,11 +35,11 @@ func TestExpression(t *testing.T) {
 			}),
 		}),
 	})
-	evalContext := &hcl.EvalContext{}
+	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["step"] = objectVal
 
-	diag := gohcl.DecodeExpression(expr, evalContext, &output)
+	diag := gohcl.DecodeExpression(expr, evalContext.EvalContext, &output)
 	if diag.HasErrors() {
 		assert.Fail("error decoding expression")
 		return

@@ -56,7 +56,7 @@ func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 		reflect.DeepEqual(p.Env, other.Env)
 }
 
-func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepContainer) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
@@ -89,7 +89,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 		env = p.Env
 	} else {
 		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEnv], evalContext, &args)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEnv], evalContext.EvalContext, &args)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -171,7 +171,7 @@ func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[str
 	return results, nil
 }
 
-func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

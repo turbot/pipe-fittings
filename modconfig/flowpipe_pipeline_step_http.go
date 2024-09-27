@@ -76,7 +76,7 @@ func (p *PipelineStepHttp) Equals(iOther PipelineStep) bool {
 		reflect.DeepEqual(p.RequestHeaders, other.RequestHeaders)
 }
 
-func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepHttp) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 	var diags hcl.Diagnostics
 
 	inputs, err := p.GetBaseInputs(evalContext)
@@ -108,7 +108,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		}
 	} else {
 		var insecure bool
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeInsecure], evalContext, &insecure)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeInsecure], evalContext.EvalContext, &insecure)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -127,7 +127,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 		}
 	} else {
 		var requestHeaders map[string]string
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders], evalContext, &requestHeaders)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRequestHeaders], evalContext.EvalContext, &requestHeaders)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -149,7 +149,7 @@ func (p *PipelineStepHttp) GetInputs(evalContext *hcl.EvalContext) (map[string]i
 	return inputs, nil
 }
 
-func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
@@ -250,7 +250,7 @@ func (p *PipelineStepHttp) SetAttributes(hclAttributes hcl.Attributes, evalConte
 	return diags
 }
 
-func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepHttp) SetBlockConfig(blocks hcl.Blocks, evalContext *EvalContext) hcl.Diagnostics {
 
 	diags := p.PipelineStepBase.SetBlockConfig(blocks, evalContext)
 
@@ -333,13 +333,13 @@ type BasicAuthConfig struct {
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
 }
 
-func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttributes map[string]hcl.Expression) (*BasicAuthConfig, hcl.Diagnostics) {
+func (b *BasicAuthConfig) GetInputs(evalContext *EvalContext, unresolvedAttributes map[string]hcl.Expression) (*BasicAuthConfig, hcl.Diagnostics) {
 
 	newBasicAuthConfig := &BasicAuthConfig{}
 
 	var username, password string
 	if unresolvedAttributes[schema.AttributeTypeUsername] != nil {
-		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypeUsername], evalContext, &username)
+		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypeUsername], evalContext.EvalContext, &username)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -349,7 +349,7 @@ func (b *BasicAuthConfig) GetInputs(evalContext *hcl.EvalContext, unresolvedAttr
 	}
 
 	if unresolvedAttributes[schema.AttributeTypePassword] != nil {
-		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypePassword], evalContext, &password)
+		diags := gohcl.DecodeExpression(unresolvedAttributes[schema.AttributeTypePassword], evalContext.EvalContext, &password)
 		if diags.HasErrors() {
 			return nil, diags
 		}

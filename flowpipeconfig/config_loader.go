@@ -323,7 +323,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 	return diags
 }
 
-func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[string]modconfig.Integration) (*hcl.EvalContext, hcl.Diagnostics) {
+func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[string]modconfig.Integration) (*modconfig.EvalContext, hcl.Diagnostics) {
 
 	diags := hcl.Diagnostics{}
 	variables := make(map[string]cty.Value)
@@ -397,8 +397,8 @@ func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[st
 
 	variables["integration"] = cty.ObjectVal(integrationVariables)
 
-	return &hcl.EvalContext{
+	return modconfig.NewEvalContext(&hcl.EvalContext{
 		Functions: funcs.ContextFunctions(configPath),
 		Variables: variables,
-	}, diags
+	}), diags
 }

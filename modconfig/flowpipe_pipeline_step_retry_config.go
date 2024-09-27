@@ -90,7 +90,7 @@ func (r *RetryConfig) GetPipeline() *Pipeline {
 	return r.PipelineStepBase.GetPipeline()
 }
 
-func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (r *RetryConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	for name, attr := range hclAttributes {

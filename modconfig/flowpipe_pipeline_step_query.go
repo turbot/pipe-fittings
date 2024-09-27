@@ -56,7 +56,7 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 		utils.PtrEqual(p.Sql, other.Sql)
 }
 
-func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepQuery) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 	var diags hcl.Diagnostics
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
@@ -73,7 +73,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	if databaseExpression, ok := p.UnresolvedAttributes[schema.AttributeTypeDatabase]; ok {
 		// attribute needs resolving, this case may happen if we specify the entire option as an attribute
 		var connValue cty.Value
-		diags := gohcl.DecodeExpression(databaseExpression, evalContext, &connValue)
+		diags := gohcl.DecodeExpression(databaseExpression, evalContext.EvalContext, &connValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -103,7 +103,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 
 	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
 		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext.EvalContext, &args)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -121,7 +121,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	return results, nil
 }
 
-func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

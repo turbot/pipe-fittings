@@ -370,7 +370,7 @@ func (n *Notify) Validate() hcl.Diagnostics {
 	return diags
 }
 
-func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+func (n *Notify) SetAttributes(body hcl.Body, evalCtx *EvalContext) hcl.Diagnostics {
 	attribs, diags := body.JustAttributes()
 	if diags.HasErrors() {
 		return diags
@@ -387,7 +387,7 @@ func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diag
 		}
 	}
 
-	integrationCtys, diags := attr.Expr.Value(evalCtx)
+	integrationCtys, diags := attr.Expr.Value(evalCtx.EvalContext)
 	if diags.HasErrors() {
 		return diags
 	}

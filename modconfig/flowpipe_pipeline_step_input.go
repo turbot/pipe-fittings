@@ -74,7 +74,7 @@ func (p *PipelineStepInput) Equals(other PipelineStep) bool {
 
 }
 
-func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepInput) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 	results := map[string]interface{}{}
 	results[schema.AttributeTypeType] = p.InputType
 
@@ -123,7 +123,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	if p.UnresolvedAttributes[schema.AttributeTypeOptions] != nil {
 		// attribute needs resolving, this case may happen if we specify the entire option as an attribute
 		var opts cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext, &opts)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeOptions], evalContext.EvalContext, &opts)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -151,7 +151,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	if attr, ok := p.UnresolvedAttributes[schema.AttributeTypeNotifier]; !ok {
 		results[schema.AttributeTypeNotifier] = p.Notifier
 	} else {
-		notifierCtyVal, moreDiags := attr.Value(evalContext)
+		notifierCtyVal, moreDiags := attr.Value(evalContext.EvalContext)
 		if moreDiags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, moreDiags)
 		}
@@ -166,7 +166,7 @@ func (p *PipelineStepInput) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	return results, nil
 }
 
-func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {
@@ -249,7 +249,7 @@ func (p *PipelineStepInput) SetAttributes(hclAttributes hcl.Attributes, evalCont
 	return diags
 }
 
-func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepInput) SetBlockConfig(blocks hcl.Blocks, evalContext *EvalContext) hcl.Diagnostics {
 
 	diags := p.PipelineStepBase.SetBlockConfig(blocks, evalContext)
 
@@ -461,7 +461,7 @@ func (p *PipelineStepInputOption) AddUnresolvedAttribute(name string, expr hcl.E
 	p.UnresolvedAttributes[name] = expr
 }
 
-func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*PipelineStepInputOption, hcl.Diagnostics) {
+func (p *PipelineStepInputOption) Resolve(evalContext *EvalContext) (*PipelineStepInputOption, hcl.Diagnostics) {
 
 	newOpt := &PipelineStepInputOption{}
 
@@ -470,7 +470,7 @@ func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*Pipeli
 		newOpt.Label = utils.ToPointer(*p.Label)
 	} else if p.UnresolvedAttributes[schema.AttributeTypeLabel] != nil {
 		attr := p.UnresolvedAttributes[schema.AttributeTypeLabel]
-		val, diags := attr.Value(evalContext)
+		val, diags := attr.Value(evalContext.EvalContext)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -495,7 +495,7 @@ func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*Pipeli
 	if p.Value != nil {
 		newOpt.Value = utils.ToPointer(*p.Value)
 	} else if p.UnresolvedAttributes[schema.AttributeTypeValue] != nil {
-		val, diags := p.UnresolvedAttributes[schema.AttributeTypeValue].Value(evalContext)
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeValue].Value(evalContext.EvalContext)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -508,7 +508,7 @@ func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*Pipeli
 	if p.Selected != nil {
 		newOpt.Selected = utils.ToPointer(*p.Selected)
 	} else if p.UnresolvedAttributes[schema.AttributeTypeSelected] != nil {
-		val, diags := p.UnresolvedAttributes[schema.AttributeTypeLabel].Value(evalContext)
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeLabel].Value(evalContext.EvalContext)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -521,7 +521,7 @@ func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*Pipeli
 	if p.Style != nil {
 		newOpt.Style = utils.ToPointer(*p.Style)
 	} else if p.UnresolvedAttributes[schema.AttributeTypeStyle] != nil {
-		val, diags := p.UnresolvedAttributes[schema.AttributeTypeStyle].Value(evalContext)
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeStyle].Value(evalContext.EvalContext)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -539,7 +539,7 @@ func (p *PipelineStepInputOption) Resolve(evalContext *hcl.EvalContext) (*Pipeli
 	return newOpt, hcl.Diagnostics{}
 }
 
-func (p *PipelineStepInputOption) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepInputOption) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 
 	diags := hcl.Diagnostics{}
 

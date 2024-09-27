@@ -7,7 +7,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+func CustomValueValidation(name string, setting cty.Value, evalCtx *EvalContext) hcl.Diagnostics {
 	// this time we check if the given setting, i.e.
 	// name = "example
 	// type = "aws"
@@ -136,7 +136,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 	return hcl.Diagnostics{diag}
 }
 
-func pipelineParamCustomValueListValidation(name string, setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
+func pipelineParamCustomValueListValidation(name string, setting cty.Value, evalCtx *EvalContext) hcl.Diagnostics {
 
 	if !hclhelpers.IsListLike(setting.Type()) {
 		diag := &hcl.Diagnostic{
