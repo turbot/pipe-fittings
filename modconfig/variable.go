@@ -145,11 +145,11 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	v.ValueSourceEndLineNumber = sourceRange.End.Line
 	v.ValueGo, _ = hclhelpers.CtyToGo(value)
 	// TODO KAI VERIFY is this still needed
-	//// if type string is not set, derive from the type of value
-	//if v.TypeString == "" {
-	//	v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
-	//	v.TypeString = v.TypeHclString
-	//}
+	// if type string is not set, derive from the type of value
+	if v.TypeString == "" {
+		v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
+		v.TypeString = v.TypeHclString
+	}
 
 	if v.Enum != cty.NilVal {
 		// check that the value is in the enum
@@ -186,4 +186,11 @@ func (v *Variable) Diff(other *Variable) *DashboardTreeItemDiffs {
 // CtyValue implements CtyValueProvider
 func (v *Variable) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(v)
+}
+
+// IsLateBinding returns true if the variable has a type which is late binding, i.e. the value is resolved at run time
+// rather than at parse time.
+// These variables are not added to the eval context, but instead are resolved at execution time
+func (v *Variable) IsLateBinding() bool {
+	return IsLateBindingType(v.Type)
 }

@@ -14,7 +14,6 @@ const PostgresConnectionType = "postgres"
 type PostgresConnection struct {
 	ConnectionImpl
 	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
-	SearchPath       *string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 }
 
 func NewPostgresConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -59,7 +58,6 @@ func (c *PostgresConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *PostgresConnection) GetConnectionString() string {
-	// we always expect connection string to be set if GetConnectionString is called
 	return typehelpers.SafeString(c.ConnectionString)
 }
 
@@ -84,7 +82,6 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 	}
 
 	return utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
-		utils.PtrEqual(c.SearchPath, other.SearchPath) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 
 }

@@ -2,9 +2,9 @@ package connection
 
 import (
 	"context"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -30,14 +30,9 @@ func (c *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, err
 	if c.Pipes != nil {
 		return c.Pipes.Resolve(ctx, &AwsConnection{})
 	}
-	// if we have a connection string, return it as is
-	if c.ConnectionString != nil {
-		return c, nil
-	}
 
-	// TODO KAI build a connection string from the other fields
-	panic("implement me")
-
+	// we must have a connection string or validaiton would have failed
+	return c, nil
 }
 
 func (c *DuckDbConnection) Validate() hcl.Diagnostics {
@@ -46,6 +41,17 @@ func (c *DuckDbConnection) Validate() hcl.Diagnostics {
 			{
 				Severity: hcl.DiagError,
 				Summary:  "if pipes block is defined, no other auth properties should be set",
+				Subject:  c.DeclRange.HclRangePointer(),
+			},
+		}
+	}
+
+	// one of the two should be set
+	if c.Pipes == nil && c.ConnectionString == nil {
+		return hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "either pipes block or database connection string should be set",
 				Subject:  c.DeclRange.HclRangePointer(),
 			},
 		}
@@ -83,8 +89,5 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *DuckDbConnection) GetConnectionString() string {
-	if c.ConnectionString != nil {
-		return *c.ConnectionString
-	}
-	return ""
+	return typehelpers.SafeString(c.ConnectionString)
 }

@@ -33,7 +33,7 @@ variable "list_of_conns_generic" {
 
 
 pipeline "a" {
-
+ # SHOULD FAIL - NOT CONNECTION STRING
      step "query" "select" {
         database = connection.aws.example
         sql = "SELECT 1"

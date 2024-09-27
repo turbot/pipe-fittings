@@ -14,6 +14,27 @@ import (
 type customType interface {
 	CustomType()
 }
+type lateBindingType interface {
+	LateBinding()
+}
+
+// IsLateBinding returns true if the  type is late binding, i.e. the value is resolved at run time rather than at parse time.
+func IsLateBindingType(ty cty.Type) bool {
+	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(ty)
+	if !nestedCapsule {
+		return false
+	}
+
+	// dereference the pointer
+	if encapsulatedGoType.Kind() == reflect.Ptr {
+		encapsulatedGoType = encapsulatedGoType.Elem()
+	}
+	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
+
+	_, isLateBindingType := encapulatedInstanceNew.Interface().(lateBindingType)
+
+	return isLateBindingType
+}
 
 // IsCustomType returns true if the given cty.Type is a custom type, as determined by the customType interface
 func IsCustomType(ty cty.Type) bool {

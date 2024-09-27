@@ -8,6 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
@@ -123,7 +124,7 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 func (f *FlowpipeConfig) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: f.ConfigPaths,
-		Include:     filehelpers.InclusionsFromExtensions([]string{".fpc"}),
+		Include:     filehelpers.InclusionsFromExtensions([]string{app_specific.ConfigExtension}),
 		ListFlag:    filehelpers.FilesRecursive,
 		EventMask:   fsnotify.Create | fsnotify.Remove | fsnotify.Rename | fsnotify.Write,
 		// we should look into passing the callback function into the underlying watcher
