@@ -9,6 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
+	"github.com/zclconf/go-cty/cty/convert"
 )
 
 // SetVariableValues determines whether the given variable is a public variable and if so sets its value
@@ -57,9 +58,14 @@ func CheckInputVariables(defs map[string]*modconfig.Variable, values terraform.I
 
 		wantType := def.Type
 
+		// TODO kai tests fail if we replace convert.Convert with ValidateValueMatchesType
 		// A given value is valid if it can convert to the desired type.
-		validateDiags := modconfig.ValidateValueMatchesType(val.Value, wantType, val.SourceRange.ToHCL().Ptr())
-
+		var validateDiags hcl.Diagnostics
+		_, err := convert.Convert(val.Value, wantType)
+		if err != nil {
+			validateDiags = modconfig.ValidateValueMatchesType(val.Value, wantType, val.SourceRange.ToHCL().Ptr())
+			// A given value is valid if it can convert to the desired type.
+		}
 		if len(validateDiags) > 0 {
 			msg := validateDiags[0].Summary
 			switch val.SourceType {
