@@ -46,14 +46,14 @@ func (p *PipelineStepTransform) Equals(iOther PipelineStep) bool {
 	return reflect.DeepEqual(p.Value, other.Value)
 }
 
-func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepTransform) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 	var value any
 
 	if p.UnresolvedAttributes[schema.AttributeTypeValue] == nil {
 		value = p.Value
 	} else {
 		var transformValueCtyValue cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &transformValueCtyValue)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext.EvalContext, &transformValueCtyValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -70,7 +70,7 @@ func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[str
 	}, nil
 }
 
-func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 

@@ -96,7 +96,7 @@ func (*LoopContainerStep) GetType() string {
 	return schema.BlockTypePipelineStepContainer
 }
 
-func (l *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+func (l *LoopContainerStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
 
 	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeImage, l.Image)
 	if len(diags) > 0 {
@@ -161,7 +161,7 @@ func (l *LoopContainerStep) UpdateInput(input Input, evalContext *hcl.EvalContex
 	return result, nil
 }
 
-func (l *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (l *LoopContainerStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

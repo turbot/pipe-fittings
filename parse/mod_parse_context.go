@@ -877,3 +877,30 @@ func (m *ModParseContext) SetIncludeConnectionsAndNotifiers(include bool) {
 	m.includeConnectionsAndNotifiersInEvalContext = include
 	m.RebuildEvalContext()
 }
+
+func (m *ModParseContext) GetEvalCtx() *modconfig.EvalContext {
+	ctx := modconfig.NewEvalContext(m.EvalCtx)
+	ctx.LateBindingVariables = m.lateBindingVariables()
+	return ctx
+}
+
+func (m *ModParseContext) lateBindingVariables() map[string]*modconfig.Variable {
+	lateBindingVars := make(map[string]*modconfig.Variable)
+	if m.Variables == nil {
+		return lateBindingVars
+	}
+
+	for _, v := range m.Variables.RootVariables {
+		if v.IsLateBinding() {
+			lateBindingVars[v.Name()] = v
+		}
+	}
+	for _, depVars := range m.Variables.DependencyVariables {
+		for _, v := range depVars.RootVariables {
+			if v.IsLateBinding() {
+				lateBindingVars[v.Name()] = v
+			}
+		}
+	}
+	return lateBindingVars
+}

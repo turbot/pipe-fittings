@@ -76,7 +76,7 @@ func (l *LoopEmailStep) Equals(other LoopDefn) bool {
 		utils.PtrEqual(l.Subject, otherLoopEmailStep.Subject)
 }
 
-func (l *LoopEmailStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+func (l *LoopEmailStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
 	if l.To != nil {
 		input["to"] = *l.To
 	}
@@ -117,7 +117,7 @@ func (*LoopEmailStep) GetType() string {
 	return schema.BlockTypePipelineStepEmail
 }
 
-func (l *LoopEmailStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (l *LoopEmailStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	return diags
 }

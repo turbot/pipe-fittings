@@ -77,7 +77,7 @@ func (s *LoopInputStep) GetType() string {
 	return schema.BlockTypeInput
 }
 
-func (l *LoopInputStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+func (l *LoopInputStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
 	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypePrompt, l.Prompt)
 	if len(diags) > 0 {
 		return nil, error_helpers.BetterHclDiagsToError("input", diags)
@@ -111,7 +111,7 @@ func (l *LoopInputStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (
 	if l.Notifier != nil {
 		input[schema.AttributeTypeNotifier] = *l.Notifier
 	} else if attr, ok := l.GetUnresolvedAttributes()[schema.AttributeTypeNotifier]; ok {
-		val, diags := attr.Value(evalContext)
+		val, diags := attr.Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, error_helpers.BetterHclDiagsToError("input", diags)
 		}
@@ -128,7 +128,7 @@ func (l *LoopInputStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (
 	return result, nil
 }
 
-func (l *LoopInputStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (l *LoopInputStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

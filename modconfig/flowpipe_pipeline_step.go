@@ -287,16 +287,16 @@ type PipelineStep interface {
 	GetPipelineName() string
 	IsResolved() bool
 	AddUnresolvedBody(string, hcl.Body)
-	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
+	GetInputs(*EvalContext) (map[string]interface{}, error)
 	GetDependsOn() []string
 	GetCredentialDependsOn() []string
 	GetConnectionDependsOn() []string
 	GetForEach() hcl.Expression
-	SetAttributes(hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	SetAttributes(hcl.Attributes, *EvalContext) hcl.Diagnostics
 	GetUnresolvedAttributes() map[string]hcl.Expression
-	SetBlockConfig(hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
-	GetErrorConfig(*hcl.EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
-	GetRetryConfig(*hcl.EvalContext, bool) (*RetryConfig, hcl.Diagnostics)
+	SetBlockConfig(hcl.Blocks, *EvalContext) hcl.Diagnostics
+	GetErrorConfig(*EvalContext, bool) (*ErrorConfig, hcl.Diagnostics)
+	GetRetryConfig(*EvalContext, bool) (*RetryConfig, hcl.Diagnostics)
 	GetLoopConfig() LoopDefn
 	GetThrowConfig() []*ThrowConfig
 	SetOutputConfig(map[string]*PipelineOutput)
@@ -306,7 +306,7 @@ type PipelineStep interface {
 	SetFileReference(fileName string, startLineNumber int, endLineNumber int)
 	SetRange(*hcl.Range)
 	GetRange() *hcl.Range
-	GetMaxConcurrency(*hcl.EvalContext) *int
+	GetMaxConcurrency(*EvalContext) *int
 }
 
 type PipelineStepBaseInterface interface {
@@ -371,7 +371,7 @@ func (p *PipelineStepBase) GetRange() *hcl.Range {
 	return p.Range
 }
 
-func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolution bool) (*RetryConfig, hcl.Diagnostics) {
+func (p *PipelineStepBase) GetRetryConfig(evalContext *EvalContext, ifResolution bool) (*RetryConfig, hcl.Diagnostics) {
 
 	if p.RetryConfig == nil {
 		return nil, hcl.Diagnostics{}
@@ -385,7 +385,7 @@ func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolu
 	newRetryConfig := &RetryConfig{}
 
 	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeIf] != nil {
-		ifValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeIf].Value(evalContext)
+		ifValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeIf].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -398,7 +398,7 @@ func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolu
 
 	// resolved the rest of the unresolved attributes
 	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxAttempts] != nil {
-		maxAttemptsValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxAttempts].Value(evalContext)
+		maxAttemptsValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxAttempts].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -416,7 +416,7 @@ func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolu
 	}
 
 	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeStrategy] != nil {
-		strategyValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeStrategy].Value(evalContext)
+		strategyValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeStrategy].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -439,7 +439,7 @@ func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolu
 	}
 
 	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMinInterval] != nil {
-		minIntervalValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMinInterval].Value(evalContext)
+		minIntervalValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMinInterval].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -457,7 +457,7 @@ func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolu
 	}
 
 	if p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxInterval] != nil {
-		maxIntervalValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxInterval].Value(evalContext)
+		maxIntervalValue, diags := p.RetryConfig.UnresolvedAttributes[schema.AttributeTypeMaxInterval].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -492,7 +492,7 @@ func (p *PipelineStepBase) GetThrowConfig() []*ThrowConfig {
 	return p.ThrowConfig
 }
 
-func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepBase) SetBlockConfig(blocks hcl.Blocks, evalContext *EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	stepType := p.GetType()
@@ -722,7 +722,7 @@ func (p *PipelineStepBase) GetPipelineName() string {
 	return p.PipelineName
 }
 
-func (p *PipelineStepBase) GetErrorConfig(evalContext *hcl.EvalContext, ifResolution bool) (*ErrorConfig, hcl.Diagnostics) {
+func (p *PipelineStepBase) GetErrorConfig(evalContext *EvalContext, ifResolution bool) (*ErrorConfig, hcl.Diagnostics) {
 
 	if p.ErrorConfig == nil {
 		return nil, hcl.Diagnostics{}
@@ -735,7 +735,7 @@ func (p *PipelineStepBase) GetErrorConfig(evalContext *hcl.EvalContext, ifResolu
 	// do not modify the existing error config, it should always be resolved at runtime
 	newErrorConfig := &ErrorConfig{}
 	if p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIf] != nil {
-		ifValue, diags := p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIf].Value(evalContext)
+		ifValue, diags := p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIf].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -749,7 +749,7 @@ func (p *PipelineStepBase) GetErrorConfig(evalContext *hcl.EvalContext, ifResolu
 	}
 
 	if p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIgnore] != nil {
-		ignoreValue, diags := p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIgnore].Value(evalContext)
+		ignoreValue, diags := p.ErrorConfig.UnresolvedAttributes[schema.AttributeTypeIgnore].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -901,11 +901,11 @@ func decodeDependsOn(attr *hcl.Attribute) ([]hcl.Traversal, hcl.Diagnostics) {
 	return ret, diags
 }
 
-func (p *PipelineStepBase) GetMaxConcurrency(evalContext *hcl.EvalContext) *int {
+func (p *PipelineStepBase) GetMaxConcurrency(evalContext *EvalContext) *int {
 	if p.MaxConcurrency != nil {
 		return p.MaxConcurrency
 	} else if p.UnresolvedAttributes[schema.AttributeTypeMaxConcurrency] != nil {
-		val, diags := p.UnresolvedAttributes[schema.AttributeTypeMaxConcurrency].Value(evalContext)
+		val, diags := p.UnresolvedAttributes[schema.AttributeTypeMaxConcurrency].Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil
 		}
@@ -929,7 +929,7 @@ func (p *PipelineStepBase) GetMaxConcurrency(evalContext *hcl.EvalContext) *int 
 	return p.MaxConcurrency
 }
 
-func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	var hclDependsOn []hcl.Traversal
 	if attr, exists := hclAttributes[schema.AttributeTypeDependsOn]; exists {
@@ -1058,7 +1058,7 @@ func (p *PipelineStepBase) SetBaseAttributes(hclAttributes hcl.Attributes, evalC
 	return diags
 }
 
-func (p *PipelineStepBase) GetBaseInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepBase) GetBaseInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 	inputs := map[string]interface{}{}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeTimeout] == nil && p.Timeout != nil {
@@ -1066,7 +1066,7 @@ func (p *PipelineStepBase) GetBaseInputs(evalContext *hcl.EvalContext) (map[stri
 	} else if p.UnresolvedAttributes[schema.AttributeTypeTimeout] != nil {
 
 		var timeoutDurationCtyValue cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext, &timeoutDurationCtyValue)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTimeout], evalContext.EvalContext, &timeoutDurationCtyValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -1216,7 +1216,7 @@ func (p *PipelineStepBase) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseStepAttributes, name)
 }
 
-func interfaceSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]interface{}) (map[string]interface{}, hcl.Diagnostics) {
+func interfaceSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *EvalContext, attributeName string, fieldValue *[]interface{}) (map[string]interface{}, hcl.Diagnostics) {
 	var tempValue *[]interface{}
 
 	unresolvedAttrib := unresolvedAttributes[attributeName]
@@ -1226,7 +1226,7 @@ func interfaceSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expres
 	} else {
 		var args cty.Value
 
-		diags := gohcl.DecodeExpression(unresolvedAttrib, evalContext, &args)
+		diags := gohcl.DecodeExpression(unresolvedAttrib, evalContext.EvalContext, &args)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -1254,7 +1254,7 @@ func interfaceSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expres
 	return results, hcl.Diagnostics{}
 }
 
-func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *[]string) (map[string]interface{}, hcl.Diagnostics) {
+func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *EvalContext, attributeName string, fieldValue *[]string) (map[string]interface{}, hcl.Diagnostics) {
 	var tempValue *[]string
 
 	unresolvedAttrib := unresolvedAttributes[attributeName]
@@ -1264,7 +1264,7 @@ func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expressio
 	} else {
 		var args cty.Value
 
-		diags := gohcl.DecodeExpression(unresolvedAttrib, evalContext, &args)
+		diags := gohcl.DecodeExpression(unresolvedAttrib, evalContext.EvalContext, &args)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -1328,7 +1328,7 @@ func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Exp
 			tempValue = fieldValue
 		}
 	} else {
-		diags := gohcl.DecodeExpression(unresolvedAttributes[attributeName], evalContext, &tempValue)
+		diags := gohcl.DecodeExpression(unresolvedAttributes[attributeName], evalContext.EvalContext, &tempValue)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -1352,12 +1352,12 @@ func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Exp
 	return results, hcl.Diagnostics{}
 }
 
-func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *map[string]string) (map[string]interface{}, hcl.Diagnostics) {
+func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *EvalContext, attributeName string, fieldValue *map[string]string) (map[string]interface{}, hcl.Diagnostics) {
 	if fieldValue != nil {
 		results[attributeName] = *fieldValue
 	} else if unresolvedAttributes[attributeName] != nil {
 		attr := unresolvedAttributes[attributeName]
-		val, diags := attr.Value(evalContext)
+		val, diags := attr.Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -1381,12 +1381,12 @@ func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression,
 	return results, hcl.Diagnostics{}
 }
 
-func mapInterfaceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *map[string]interface{}) (map[string]interface{}, hcl.Diagnostics) {
+func mapInterfaceInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *EvalContext, attributeName string, fieldValue *map[string]interface{}) (map[string]interface{}, hcl.Diagnostics) {
 	if fieldValue != nil {
 		results[attributeName] = *fieldValue
 	} else if unresolvedAttributes[attributeName] != nil {
 		attr := unresolvedAttributes[attributeName]
-		val, diags := attr.Value(evalContext)
+		val, diags := attr.Value(evalContext.EvalContext)
 		if len(diags) > 0 {
 			return nil, diags
 		}
@@ -1439,7 +1439,7 @@ func setField(v interface{}, fieldName string, value interface{}) error {
 	return nil
 }
 
-func setInterfaceSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+func setInterfaceSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
 	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
@@ -1479,7 +1479,7 @@ func setInterfaceSliceAttributeWithResultReference(attr *hcl.Attribute, evalCont
 	return hcl.Diagnostics{}
 }
 
-func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
 	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
@@ -1519,11 +1519,11 @@ func setStringSliceAttributeWithResultReference(attr *hcl.Attribute, evalContext
 	return hcl.Diagnostics{}
 }
 
-func setStringSliceAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+func setStringSliceAttribute(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	return setStringSliceAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }
 
-func setStringAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
+func setStringAttributeWithResultReference(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultsReference bool) hcl.Diagnostics {
 	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultsReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
@@ -1563,11 +1563,11 @@ func setStringAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl
 	return hcl.Diagnostics{}
 }
 
-func setStringAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+func setStringAttribute(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	return setStringAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }
 
-func setBoolAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
+func setBoolAttributeWithResultReference(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
 	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
@@ -1609,11 +1609,11 @@ func setBoolAttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.E
 
 	return hcl.Diagnostics{}
 }
-func setBoolAttribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+func setBoolAttribute(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 	return setBoolAttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 }
 
-func setInt64AttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
+func setInt64AttributeWithResultReference(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool, resultReference bool) hcl.Diagnostics {
 	val, stepDiags := dependsOnFromExpressionsWithResultControl(attr, evalContext, p, resultReference)
 	if stepDiags.HasErrors() {
 		return stepDiags
@@ -1659,11 +1659,11 @@ func setInt64AttributeWithResultReference(attr *hcl.Attribute, evalContext *hcl.
 	return hcl.Diagnostics{}
 }
 
-// func setInt64Attribute(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
+// func setInt64Attribute(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, fieldName string, isPtr bool) hcl.Diagnostics {
 // 	return setInt64AttributeWithResultReference(attr, evalContext, p, fieldName, isPtr, false)
 // }
 
-func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
+func dependsOnFromExpressions(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface) (cty.Value, hcl.Diagnostics) {
 	return dependsOnFromExpressionsWithResultControl(attr, evalContext, p, false)
 }
 
@@ -1749,7 +1749,7 @@ func allDependsOnFromVariables(traversals []hcl.Traversal) ([]string, []string, 
 	return allDependsOn, allCredentialDependsOn, allConnectionDependsOn
 }
 
-func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext *hcl.EvalContext, p PipelineStepBaseInterface, resultsReference bool) (cty.Value, hcl.Diagnostics) {
+func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext *EvalContext, p PipelineStepBaseInterface, resultsReference bool) (cty.Value, hcl.Diagnostics) {
 	expr := attr.Expr
 
 	// If there is a param in the expression, then we must assume that we can't resolve it at this stage.
@@ -1801,7 +1801,7 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 
 	leftOverDiags := hcl.Diagnostics{}
 	// resolve it first if we can
-	val, stepDiags := expr.Value(evalContext)
+	val, stepDiags := expr.Value(evalContext.EvalContext)
 	if stepDiags != nil && stepDiags.HasErrors() {
 		resolvedDiags := 0
 		for _, e := range stepDiags {

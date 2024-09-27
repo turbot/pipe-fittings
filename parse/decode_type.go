@@ -3,16 +3,15 @@ package parse
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/ext/typeexpr"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
 )
 
 func decodeTypeExpression(attr *hcl.Attribute) (cty.Type, hcl.Diagnostics) {
 	expr := attr.Expr
 
-	if hclhelpers.ExprIsNativeQuotedString(expr) {
-		return handleQuotedTypeName(expr)
-	}
+	//if hclhelpers.ExprIsNativeQuotedString(expr) {
+	//	return handleQuotedTypeName(expr)
+	//}
 
 	ty, diags := typeexpr.TypeConstraint(expr)
 	if !diags.HasErrors() {

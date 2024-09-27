@@ -52,7 +52,7 @@ func (l *LoopQueryStep) Equals(other LoopDefn) bool {
 		utils.PtrEqual(l.Sql, otherLoopQueryStep.Sql)
 }
 
-func (l *LoopQueryStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
+func (l *LoopQueryStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
 
 	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeDatabase, l.Database)
 	if len(diags) > 0 {
@@ -76,7 +76,7 @@ func (*LoopQueryStep) GetType() string {
 	return schema.BlockTypePipelineStepQuery
 }
 
-func (l *LoopQueryStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (l *LoopQueryStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

@@ -53,7 +53,7 @@ func (p *PipelineStepMessage) Equals(iOther PipelineStep) bool {
 		p.Notifier.Equals(&other.Notifier)
 }
 
-func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepMessage) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
 	results := map[string]interface{}{}
 	var diags hcl.Diagnostics
 
@@ -97,7 +97,7 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 	if attr, ok := p.UnresolvedAttributes[schema.AttributeTypeNotifier]; !ok {
 		results[schema.AttributeTypeNotifier] = p.Notifier
 	} else {
-		notifierCtyVal, moreDiags := attr.Value(evalContext)
+		notifierCtyVal, moreDiags := attr.Value(evalContext.EvalContext)
 		if moreDiags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, moreDiags)
 		}
@@ -113,7 +113,7 @@ func (p *PipelineStepMessage) GetInputs(evalContext *hcl.EvalContext) (map[strin
 
 }
 
-func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (p *PipelineStepMessage) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
 
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
