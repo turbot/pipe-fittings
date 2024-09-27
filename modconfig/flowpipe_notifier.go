@@ -143,6 +143,10 @@ func (c *NotifierImpl) Validate() hcl.Diagnostics {
 	return diags
 }
 
+// CustomType implements custom_type.CustomType interface
+func (c *NotifierImpl) CustomType() {
+}
+
 type Notify struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
@@ -235,7 +239,6 @@ func (n *Notify) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-
 func (n *Notify) MapInterface() (map[string]interface{}, error) {
 	notifyMap := make(map[string]interface{})
 
@@ -275,6 +278,7 @@ func (n *Notify) MapInterface() (map[string]interface{}, error) {
 
 	return notifyMap, nil
 }
+
 func (n *Notify) CtyValue() (cty.Value, error) {
 	notifyMap := make(map[string]interface{})
 
@@ -402,8 +406,4 @@ func (n *Notify) SetAttributes(body hcl.Body, evalCtx *hcl.EvalContext) hcl.Diag
 
 	n.Integration = integration
 	return diags
-}
-
-// CustomType implements custom_type.CustomType interface
-func (c *Notify) CustomType() {
 }

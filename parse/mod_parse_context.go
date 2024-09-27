@@ -210,10 +210,13 @@ func (m *ModParseContext) PeekParent() string {
 }
 
 // VariableValueCtyMap converts a map of variables to a map of the underlying cty value
+// Note: if the variable type is a late binding type (i.e. PipelingConnection), DO NOT add to map
 func VariableValueCtyMap(variables map[string]*modconfig.Variable) map[string]cty.Value {
 	ret := make(map[string]cty.Value, len(variables))
 	for k, v := range variables {
-		ret[k] = v.Value
+		if !v.IsLateBinding() {
+			ret[k] = v.Value
+		}
 	}
 	return ret
 }

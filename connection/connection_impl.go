@@ -76,6 +76,10 @@ func (c *ConnectionImpl) Equals(other *ConnectionImpl) bool {
 func (c *ConnectionImpl) CustomType() {
 }
 
+// LateBinding
+func (c *ConnectionImpl) LateBinding() {
+}
+
 func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 	ctyValue, err := cty_helpers.GetCtyValue(connection)
 	if err != nil {

@@ -23,3 +23,8 @@ type PipelingConnection interface {
 
 	SetTtl(int)
 }
+
+// ConnectionStringProvider is implemented by all connections which can provide a connection string
+type ConnectionStringProvider interface {
+	GetConnectionString() string
+}

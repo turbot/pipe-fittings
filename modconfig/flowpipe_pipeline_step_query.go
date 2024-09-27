@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/perr"
@@ -80,11 +81,8 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		if err != nil {
 			return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 		}
-		// does this connection support a connection string
-		type connectionStringProvider interface {
-			GetConnectionString() string
-		}
-		if conn, ok := c.(connectionStringProvider); ok {
+
+		if conn, ok := c.(connection.ConnectionStringProvider); ok {
 			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 		} else {
 			slog.Warn("connection does not support connection string", "db", c)
