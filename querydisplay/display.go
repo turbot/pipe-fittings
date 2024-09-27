@@ -214,7 +214,9 @@ func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *que
 	}
 
 	// now we have iterated the rows, get the timing
-	jsonOutput.Metadata = result.Timing.GetTiming()
+	if viper.IsSet(constants.ArgTiming) {
+		jsonOutput.Metadata = result.Timing.GetTiming()
+	}
 
 	// display the JSON
 	encoder := json.NewEncoder(os.Stdout)
