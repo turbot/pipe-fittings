@@ -39,12 +39,12 @@ func (l *LoopPipelineStep) Equals(other LoopDefn) bool {
 	return reflect.DeepEqual(l.Args, otherLoopPipelineStep.Args)
 }
 
-func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
+func (l *LoopPipelineStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 
 	if !helpers.IsNil(l.Args) {
 		input[schema.AttributeTypeArgs] = l.Args
 	} else if attr, ok := l.GetUnresolvedAttributes()[schema.AttributeTypeArgs]; ok {
-		val, diags := attr.Value(evalContext.EvalContext)
+		val, diags := attr.Value(evalContext)
 		if len(diags) > 0 {
 			return nil, error_helpers.BetterHclDiagsToError("pipeline", diags)
 		}
@@ -65,7 +65,7 @@ func (*LoopPipelineStep) GetType() string {
 	return schema.BlockTypePipelineStepPipeline
 }
 
-func (l *LoopPipelineStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (l *LoopPipelineStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	if attr, ok := hclAttributes[schema.AttributeTypeArgs]; ok {

@@ -60,7 +60,7 @@ func (l *LoopHttpStep) Equals(other LoopDefn) bool {
 		utils.BoolPtrEqual(l.Insecure, otherLoopHttpStep.Insecure)
 }
 
-func (l *LoopHttpStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
+func (l *LoopHttpStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 
 	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeUrl, l.URL)
 	if len(diags) > 0 {
@@ -91,7 +91,7 @@ func (l *LoopHttpStep) UpdateInput(input Input, evalContext *EvalContext) (Input
 		input[schema.AttributeTypeRequestHeaders] = *l.RequestHeaders
 	} else if l.UnresolvedAttributes[schema.AttributeTypeRequestHeaders] != nil {
 		attr := l.UnresolvedAttributes[schema.AttributeTypeRequestHeaders]
-		val, diags := attr.Value(evalContext.EvalContext)
+		val, diags := attr.Value(evalContext)
 		if len(diags) > 0 {
 			return nil, error_helpers.BetterHclDiagsToError("http", diags)
 		}
@@ -121,7 +121,7 @@ func (*LoopHttpStep) GetType() string {
 	return schema.BlockTypePipelineStepHttp
 }
 
-func (l *LoopHttpStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (l *LoopHttpStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := l.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

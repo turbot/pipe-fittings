@@ -2,7 +2,6 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"strings"
 	"testing"
 
@@ -63,7 +62,7 @@ func TestSimpleForAndParam(t *testing.T) {
 			cty.StringVal("bar"),
 		})})
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = objectVal
 
@@ -74,7 +73,7 @@ func TestSimpleForAndParam(t *testing.T) {
 		return
 	}
 
-	diag := gohcl.DecodeExpression(step.GetForEach(), evalContext.EvalContext, &output)
+	diag := gohcl.DecodeExpression(step.GetForEach(), evalContext, &output)
 	if diag.HasErrors() {
 		assert.Fail("error decoding expression")
 		return
@@ -94,7 +93,7 @@ func TestSimpleForAndParam(t *testing.T) {
 	var stringOutput string
 	evalContext.Variables["each"] = eachVal
 
-	diag = gohcl.DecodeExpression(textAttribute, evalContext.EvalContext, &stringOutput)
+	diag = gohcl.DecodeExpression(textAttribute, evalContext, &stringOutput)
 	if diag.HasErrors() {
 		assert.Fail("error decoding expression")
 		return
@@ -137,7 +136,7 @@ func TestParamsProcessing(t *testing.T) {
 		return
 	}
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 
 	params := map[string]cty.Value{}
@@ -154,7 +153,7 @@ func TestParamsProcessing(t *testing.T) {
 
 	var output []string
 
-	diag := gohcl.DecodeExpression(step.GetForEach(), evalContext.EvalContext, &output)
+	diag := gohcl.DecodeExpression(step.GetForEach(), evalContext, &output)
 	if diag.HasErrors() {
 		assert.Fail("error decoding expression " + diag.Error())
 		return
@@ -163,7 +162,7 @@ func TestParamsProcessing(t *testing.T) {
 	assert.Equal("jerry Janis Jimi", strings.Join(output, " "), "wrong output")
 
 	// use Value function
-	ctyOutput, diags := step.GetForEach().Value(evalContext.EvalContext)
+	ctyOutput, diags := step.GetForEach().Value(evalContext)
 	if diags.HasErrors() {
 		assert.Fail("error in getting step value")
 		return

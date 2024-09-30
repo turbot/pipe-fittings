@@ -2,7 +2,6 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -68,7 +67,7 @@ func TestSleepStepLoadUnresolved(t *testing.T) {
 		"duration_integer": cty.NumberIntVal(3000),
 	})
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 

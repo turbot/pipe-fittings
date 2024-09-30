@@ -38,12 +38,12 @@ func (l *LoopTransformStep) Equals(other LoopDefn) bool {
 	return reflect.DeepEqual(l.Value, otherLoopTransformStep.Value)
 }
 
-func (l *LoopTransformStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
+func (l *LoopTransformStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 
 	if !helpers.IsNil(l.Value) {
 		input[schema.AttributeTypeValue] = l.Value
 	} else if l.UnresolvedAttributes[schema.AttributeTypeValue] != nil {
-		val, err := l.UnresolvedAttributes[schema.AttributeTypeValue].Value(evalContext.EvalContext)
+		val, err := l.UnresolvedAttributes[schema.AttributeTypeValue].Value(evalContext)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func (*LoopTransformStep) GetType() string {
 	return schema.BlockTypePipelineStepTransform
 }
 
-func (s *LoopTransformStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (s *LoopTransformStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := s.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

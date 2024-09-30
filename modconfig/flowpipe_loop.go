@@ -14,15 +14,15 @@ import (
 
 type LoopDefn interface {
 	GetType() string
-	UpdateInput(input Input, evalContext *EvalContext) (Input, error)
-	SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics
+	UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error)
+	SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics
 	Equals(LoopDefn) bool
 	AppendDependsOn(...string)
 	AppendCredentialDependsOn(...string)
 	AppendConnectionDependsOn(...string)
 	AddUnresolvedAttribute(string, hcl.Expression)
 	GetUnresolvedAttributes() map[string]hcl.Expression
-	ResolveUntil(evalContext *EvalContext) (bool, hcl.Diagnostics)
+	ResolveUntil(evalContext *hcl.EvalContext) (bool, hcl.Diagnostics)
 }
 
 func GetLoopDefn(stepType string, p *PipelineStepBase, hclRange *hcl.Range) LoopDefn {
@@ -82,7 +82,7 @@ type LoopStep struct {
 	Until                *bool
 }
 
-func (l *LoopStep) ResolveUntil(evalContext *EvalContext) (bool, hcl.Diagnostics) {
+func (l *LoopStep) ResolveUntil(evalContext *hcl.EvalContext) (bool, hcl.Diagnostics) {
 
 	diags := hcl.Diagnostics{}
 	if l.Until != nil {
@@ -90,7 +90,7 @@ func (l *LoopStep) ResolveUntil(evalContext *EvalContext) (bool, hcl.Diagnostics
 	}
 
 	if l.UnresolvedAttributes[schema.AttributeTypeUntil] != nil {
-		until, diags := l.UnresolvedAttributes[schema.AttributeTypeUntil].Value(evalContext.EvalContext)
+		until, diags := l.UnresolvedAttributes[schema.AttributeTypeUntil].Value(evalContext)
 		if diags.HasErrors() {
 			slog.Error("Error resolving until", "diags", diags)
 			return false, diags
@@ -130,7 +130,7 @@ func (l *LoopStep) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	l.UnresolvedAttributes[name] = expr
 }
 
-func (l *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (l *LoopStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	if attr, ok := hclAttributes[schema.AttributeTypeUntil]; ok {
@@ -207,7 +207,7 @@ func (l *LoopSleepStep) Equals(other LoopDefn) bool {
 		utils.PtrEqual(l.Duration, otherLoopSleepStep.Duration)
 }
 
-func (l *LoopSleepStep) UpdateInput(input Input, evalContext *EvalContext) (Input, error) {
+func (l *LoopSleepStep) UpdateInput(input Input, evalContext *hcl.EvalContext) (Input, error) {
 
 	result, diags := simpleTypeInputFromAttribute(l.GetUnresolvedAttributes(), input, evalContext, schema.AttributeTypeDuration, l.Duration)
 	if len(diags) > 0 {
@@ -221,7 +221,7 @@ func (*LoopSleepStep) GetType() string {
 	return schema.BlockTypePipelineStepSleep
 }
 
-func (s *LoopSleepStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (s *LoopSleepStep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := s.LoopStep.SetAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

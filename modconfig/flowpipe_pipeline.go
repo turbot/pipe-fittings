@@ -102,11 +102,11 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 	p.EndLineNumber = endLineNumber
 }
 
-// func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}, evalCtx *EvalContext) []error {
+// func (p *Pipeline) ValidatePipelineParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
 // 	return ValidateParams(p, params, evalCtx)
 // }
 
-// func (p *Pipeline) CoercePipelineParams(params map[string]string, evalCtx *EvalContext) (map[string]interface{}, []error) {
+// func (p *Pipeline) CoercePipelineParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
 // 	return CoerceParams(p, params, evalCtx)
 // }
 
@@ -353,14 +353,14 @@ func (p *Pipeline) Equals(other *Pipeline) bool {
 		p.GetMetadata().ModFullName == other.GetMetadata().ModFullName
 }
 
-func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeDescription:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(evalContext.EvalContext)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
 					diags = append(diags, err...)
 					continue
@@ -371,7 +371,7 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *Eval
 			}
 		case schema.AttributeTypeTitle:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(evalContext.EvalContext)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
 					diags = append(diags, err...)
 					continue
@@ -382,7 +382,7 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *Eval
 			}
 		case schema.AttributeTypeDocumentation:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(evalContext.EvalContext)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
 					diags = append(diags, err...)
 					continue
@@ -393,7 +393,7 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *Eval
 			}
 		case schema.AttributeTypeTags:
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(evalContext.EvalContext)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
 					diags = append(diags, err...)
 					continue
@@ -475,7 +475,7 @@ func (p *PipelineParam) Equals(other *PipelineParam) bool {
 		p.Type.Equals(other.Type)
 }
 
-func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *EvalContext) (bool, hcl.Diagnostics, error) {
+func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *hcl.EvalContext) (bool, hcl.Diagnostics, error) {
 	if setting.IsNull() {
 		return true, hcl.Diagnostics{}, nil
 	}
@@ -509,7 +509,7 @@ func (p *PipelineParam) ValidateSetting(setting cty.Value, evalCtx *EvalContext)
 	return valid, hcl.Diagnostics{}, err
 }
 
-func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, evalCtx *EvalContext) hcl.Diagnostics {
+func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, evalCtx *hcl.EvalContext) hcl.Diagnostics {
 	return CustomValueValidation(p.Name, setting, evalCtx)
 }
 

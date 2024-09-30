@@ -2,7 +2,6 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -53,7 +52,7 @@ func TestTransformStep(t *testing.T) {
 		"random_text": cty.StringVal("hello world"),
 	})
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 
@@ -101,7 +100,7 @@ func TestTransformStep(t *testing.T) {
 		"random": cty.NumberIntVal(1000),
 	})
 
-	evalContext = modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext = &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 
@@ -137,7 +136,7 @@ func TestTransformStep(t *testing.T) {
 		"value": cty.StringVal("freddie"),
 	})
 
-	evalContext = modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext = &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 	evalContext.Variables["each"] = eachVal
@@ -173,7 +172,7 @@ func TestTransformStep(t *testing.T) {
 		"value": cty.NumberIntVal(3),
 	})
 
-	evalContext = modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext = &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 	evalContext.Variables["each"] = eachVal
@@ -222,7 +221,7 @@ func TestTransformStep(t *testing.T) {
 		}),
 	})
 
-	evalContext = modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext = &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 	evalContext.Variables["each"] = eachVal

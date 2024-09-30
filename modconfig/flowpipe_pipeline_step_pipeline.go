@@ -85,7 +85,7 @@ func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
 	return p.Pipeline.AsValueMap()[schema.LabelName] == other.Pipeline.AsValueMap()[schema.LabelName]
 }
 
-func (p *PipelineStepPipeline) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 
 	var pipeline string
 	if p.UnresolvedAttributes[schema.AttributeTypePipeline] == nil {
@@ -103,7 +103,7 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *EvalContext) (map[string]i
 
 	} else {
 		var pipelineCty cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePipeline], evalContext.EvalContext, &pipelineCty)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePipeline], evalContext, &pipelineCty)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -123,7 +123,7 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *EvalContext) (map[string]i
 
 	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
 		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext.EvalContext, &args)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -141,7 +141,7 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *EvalContext) (map[string]i
 	return results, nil
 }
 
-func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 
 	for name, attr := range hclAttributes {

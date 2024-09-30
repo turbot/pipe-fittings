@@ -71,11 +71,11 @@ func (t *Trigger) GetParams() []PipelineParam {
 	return t.Params
 }
 
-// func (t *Trigger) ValidateTriggerParam(params map[string]interface{}, evalCtx *EvalContext) []error {
+// func (t *Trigger) ValidateTriggerParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
 // 	return ValidateParams(t, params, evalCtx)
 // }
 
-// func (p *Trigger) CoerceTriggerParams(params map[string]string, evalCtx *EvalContext) (map[string]interface{}, []error) {
+// func (p *Trigger) CoerceTriggerParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
 // 	return CoerceParams(p, params, evalCtx)
 // }
 
@@ -146,13 +146,13 @@ func (t *Trigger) GetPipeline() cty.Value {
 	return t.Pipeline
 }
 
-func (t *Trigger) GetArgs(evalContext *EvalContext) (Input, hcl.Diagnostics) {
+func (t *Trigger) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Diagnostics) {
 
 	if t.ArgsRaw == nil {
 		return Input{}, hcl.Diagnostics{}
 	}
 
-	value, diags := t.ArgsRaw.Value(evalContext.EvalContext)
+	value, diags := t.ArgsRaw.Value(evalContext)
 
 	if diags.HasErrors() {
 		return Input{}, diags
@@ -182,12 +182,12 @@ func (t *Trigger) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseTriggerAttributes, name)
 }
 
-func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
 	var diags hcl.Diagnostics
 
 	if attr, exists := hclAttributes[schema.AttributeTypeDescription]; exists {
-		desc, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, true)
+		desc, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -196,7 +196,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeTitle]; exists {
-		title, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, true)
+		title, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -205,7 +205,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeDocumentation]; exists {
-		doc, moreDiags := hclhelpers.AttributeToString(attr, evalContext.EvalContext, true)
+		doc, moreDiags := hclhelpers.AttributeToString(attr, evalContext, true)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -214,7 +214,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeTags]; exists {
-		tags, moreDiags := hclhelpers.AttributeToMap(attr, evalContext.EvalContext, true)
+		tags, moreDiags := hclhelpers.AttributeToMap(attr, evalContext, true)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -231,7 +231,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	if attr != nil {
 		expr := attr.Expr
 
-		val, err := expr.Value(evalContext.EvalContext)
+		val, err := expr.Value(evalContext)
 		if err != nil {
 			// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
 			// so if the Pipeline is not parsed (yet) then the error message is:
@@ -249,7 +249,7 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 	}
 
 	if attr, exists := hclAttributes[schema.AttributeTypeEnabled]; exists {
-		triggerEnabled, moreDiags := hclhelpers.AttributeToBool(attr, evalContext.EvalContext, true)
+		triggerEnabled, moreDiags := hclhelpers.AttributeToBool(attr, evalContext, true)
 		if moreDiags != nil && moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
@@ -339,7 +339,7 @@ func (t *TriggerSchedule) Equals(other TriggerConfig) bool {
 	return t.Schedule == otherTrigger.Schedule
 }
 
-func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
 	if diags.HasErrors() {
 		return diags
@@ -394,7 +394,7 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	return diags
 }
 
-func (t *TriggerSchedule) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *EvalContext) hcl.Diagnostics {
+func (t *TriggerSchedule) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	return diags
 }
@@ -568,7 +568,7 @@ func (c *TriggerQueryCapture) Equals(other *TriggerQueryCapture) bool {
 	return true
 }
 
-func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
 	if diags.HasErrors() {
 		return diags
@@ -690,7 +690,7 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 
 var validCaptureBlockTypes = []string{"insert", "update", "delete"}
 
-func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *EvalContext) hcl.Diagnostics {
+func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	t.Captures = make(map[string]*TriggerQueryCapture)
@@ -754,7 +754,7 @@ func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Block
 
 		expr := attr.Expr
 
-		val, err := expr.Value(evalContext.EvalContext)
+		val, err := expr.Value(evalContext)
 		if err != nil {
 			// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
 			// so if the Pipeline is not parsed (yet) then the error message is:
@@ -782,13 +782,13 @@ func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Block
 	return diags
 }
 
-func (c *TriggerQueryCapture) GetArgs(evalContext *EvalContext) (Input, hcl.Diagnostics) {
+func (c *TriggerQueryCapture) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Diagnostics) {
 
 	if c.ArgsRaw == nil {
 		return Input{}, hcl.Diagnostics{}
 	}
 
-	value, diags := c.ArgsRaw.Value(evalContext.EvalContext)
+	value, diags := c.ArgsRaw.Value(evalContext)
 
 	if diags.HasErrors() {
 		return Input{}, diags
@@ -940,7 +940,7 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeExecutionMode:
-			val, moreDiags := attr.Expr.Value(evalContext.EvalContext)
+			val, moreDiags := attr.Expr.Value(evalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -981,7 +981,7 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 	return diags
 }
 
-func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *EvalContext) hcl.Diagnostics {
+func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	t.Methods = make(map[string]*TriggerHTTPMethod)
@@ -1076,7 +1076,7 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 
 		expr := attr.Expr
 
-		val, err := expr.Value(evalContext.EvalContext)
+		val, err := expr.Value(evalContext)
 		if err != nil {
 			// For Trigger's Pipeline reference, all it needs is the pipeline. It can't possibly use the output of a pipeline
 			// so if the Pipeline is not parsed (yet) then the error message is:
@@ -1100,7 +1100,7 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 
 		if attr, exists := hclAttributes[schema.AttributeTypeExecutionMode]; exists {
 			if attr.Expr != nil {
-				val, err := attr.Expr.Value(evalContext.EvalContext)
+				val, err := attr.Expr.Value(evalContext)
 				if err != nil {
 					diags = append(diags, err...)
 				}
@@ -1133,13 +1133,13 @@ func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks
 	return diags
 }
 
-func (c *TriggerHTTPMethod) GetArgs(evalContext *EvalContext) (Input, hcl.Diagnostics) {
+func (c *TriggerHTTPMethod) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Diagnostics) {
 
 	if c.ArgsRaw == nil {
 		return Input{}, hcl.Diagnostics{}
 	}
 
-	value, diags := c.ArgsRaw.Value(evalContext.EvalContext)
+	value, diags := c.ArgsRaw.Value(evalContext)
 
 	if diags.HasErrors() {
 		return Input{}, diags

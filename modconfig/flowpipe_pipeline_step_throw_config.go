@@ -47,7 +47,7 @@ func (t *ThrowConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	t.UnresolvedAttributes[name] = expr
 }
 
-func (t *ThrowConfig) SetAttributes(throwBlock *hcl.Block, hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (t *ThrowConfig) SetAttributes(throwBlock *hcl.Block, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	for name, attr := range hclAttributes {
@@ -122,7 +122,7 @@ func (t *ThrowConfig) Equals(other *ThrowConfig) bool {
 		utils.PtrEqual(t.Message, other.Message)
 }
 
-func (t *ThrowConfig) Resolve(evalContext *EvalContext) (*ThrowConfig, hcl.Diagnostics) {
+func (t *ThrowConfig) Resolve(evalContext *hcl.EvalContext) (*ThrowConfig, hcl.Diagnostics) {
 	// make a copy, don't point to the same memory
 	newThrowConfig := &ThrowConfig{}
 	diags := hcl.Diagnostics{}
@@ -133,7 +133,7 @@ func (t *ThrowConfig) Resolve(evalContext *EvalContext) (*ThrowConfig, hcl.Diagn
 		newThrowConfig.If = utils.ToPointer(*t.If)
 	} else if t.UnresolvedAttributes[schema.AttributeTypeIf] != nil {
 		attr := t.UnresolvedAttributes[schema.AttributeTypeIf]
-		val, moreDiags := attr.Value(evalContext.EvalContext)
+		val, moreDiags := attr.Value(evalContext)
 		if len(moreDiags) > 0 {
 			diags = append(diags, moreDiags...)
 		}
@@ -162,7 +162,7 @@ func (t *ThrowConfig) Resolve(evalContext *EvalContext) (*ThrowConfig, hcl.Diagn
 		newThrowConfig.Message = utils.ToPointer(*t.Message)
 	} else if t.UnresolvedAttributes[schema.AttributeTypeMessage] != nil {
 		attr := t.UnresolvedAttributes[schema.AttributeTypeMessage]
-		val, moreDiags := attr.Value(evalContext.EvalContext)
+		val, moreDiags := attr.Value(evalContext)
 		if len(moreDiags) > 0 {
 			diags = append(diags, moreDiags...)
 		}

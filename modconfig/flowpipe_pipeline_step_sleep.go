@@ -39,7 +39,7 @@ func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 	return reflect.DeepEqual(p.Duration, other.Duration)
 }
 
-func (p *PipelineStepSleep) GetInputs(evalContext *EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
 	var durationInput interface{}
 
 	if p.UnresolvedAttributes[schema.AttributeTypeDuration] == nil {
@@ -47,7 +47,7 @@ func (p *PipelineStepSleep) GetInputs(evalContext *EvalContext) (map[string]inte
 	} else {
 
 		var sleepDurationCtyValue cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext.EvalContext, &sleepDurationCtyValue)
+		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &sleepDurationCtyValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
@@ -64,7 +64,7 @@ func (p *PipelineStepSleep) GetInputs(evalContext *EvalContext) (map[string]inte
 	}, nil
 }
 
-func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
 	diags := p.SetBaseAttributes(hclAttributes, evalContext)
 

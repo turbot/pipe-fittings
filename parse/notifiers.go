@@ -27,7 +27,7 @@ var notifierBlockSchema = &hcl.BodySchema{
 	},
 }
 
-func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *modconfig.EvalContext) (*modconfig.NotifierImpl, hcl.Diagnostics) {
+func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.NotifierImpl, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	if len(block.Labels) != 1 {
 		diags = hcl.Diagnostics{
@@ -60,7 +60,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *modconfig.Eval
 		switch b.Type {
 		case schema.BlockTypeNotify:
 			notify := modconfig.Notify{}
-			moreDiags := gohcl.DecodeBody(b.Body, evalCtx.EvalContext, &notify)
+			moreDiags := gohcl.DecodeBody(b.Body, evalCtx, &notify)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				continue
@@ -88,7 +88,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *modconfig.Eval
 		}
 	}
 
-	moreDiags := modconfig.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx.EvalContext)
+	moreDiags := modconfig.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx)
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}

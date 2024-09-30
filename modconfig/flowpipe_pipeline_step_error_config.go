@@ -72,7 +72,7 @@ func (e *ErrorConfig) AddUnresolvedAttribute(name string, expr hcl.Expression) {
 	e.UnresolvedAttributes[name] = expr
 }
 
-func (e *ErrorConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *EvalContext) hcl.Diagnostics {
+func (e *ErrorConfig) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
 	diags := hcl.Diagnostics{}
 
