@@ -16,7 +16,7 @@ import (
 	"github.com/zclconf/go-cty/cty/gocty"
 )
 
-func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interface{}, evalCtx *modconfig.EvalContext) []error {
+func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interface{}, evalCtx *hcl.EvalContext) []error {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -73,7 +73,7 @@ func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interf
 	return errors
 }
 
-func validateParam(param *modconfig.PipelineParam, inputParam interface{}, evalCtx *modconfig.EvalContext) error {
+func validateParam(param *modconfig.PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
 	if !hclhelpers.IsComplexType(param.Type) && !param.Type.HasDynamicTypes() {
@@ -103,7 +103,7 @@ func validateParam(param *modconfig.PipelineParam, inputParam interface{}, evalC
 // This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
 // and again we convert from Go -> Cty when we're executing the pipeline to build EvalContext when we're evaluating
 // data are not resolved during parse time.
-func CoerceParams(p modconfig.ResourceWithParam, inputParams map[string]string, evalCtx *modconfig.EvalContext) (map[string]interface{}, []error) {
+func CoerceParams(p modconfig.ResourceWithParam, inputParams map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -134,7 +134,7 @@ func CoerceParams(p modconfig.ResourceWithParam, inputParams map[string]string, 
 					continue
 				}
 
-				ctyVal, diags := expr.Value(evalCtx.EvalContext)
+				ctyVal, diags := expr.Value(evalCtx)
 				if diags.HasErrors() {
 					errors = append(errors, error_helpers.BetterHclDiagsToError(k, diags))
 					continue
@@ -169,7 +169,7 @@ func CoerceParams(p modconfig.ResourceWithParam, inputParams map[string]string, 
 					continue
 				}
 
-				ctyVal, diags := expr.Value(evalCtx.EvalContext)
+				ctyVal, diags := expr.Value(evalCtx)
 				if diags.HasErrors() {
 					errors = append(errors, error_helpers.BetterHclDiagsToError(k, diags))
 					continue

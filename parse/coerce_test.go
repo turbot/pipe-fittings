@@ -351,9 +351,9 @@ func TestCoerceCustomValue(tm *testing.T) {
 			}),
 		}),
 	}
-	evalCtx := modconfig.NewEvalContext(&hcl.EvalContext{
+	evalCtx := &hcl.EvalContext{
 		Variables: variables,
-	})
+	}
 
 	for _, tc := range coerceValueTests {
 		tm.Run(tc.title, func(t *testing.T) {

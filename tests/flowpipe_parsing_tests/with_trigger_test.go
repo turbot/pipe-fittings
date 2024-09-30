@@ -2,7 +2,6 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/hashicorp/hcl/v2"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,7 +115,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	pipelineInfo := methodInfo.Pipeline.AsValueMap()
 	assert.Equal("local.pipeline.simple_with_trigger", pipelineInfo[schema.AttributeTypeName].AsString())
 
-	argsInfo, err := methodInfo.GetArgs(modconfig.NewEvalContext(&hcl.EvalContext{}))
+	argsInfo, err := methodInfo.GetArgs(nil)
 	assert.Nil(err)
 	assert.NotNil(argsInfo)
 	assert.Equal("one", argsInfo["param_one"])

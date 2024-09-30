@@ -48,12 +48,12 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		return step, diags
 	}
 
-	moreDiags := step.SetAttributes(stepOptions.Attributes, parseCtx.GetEvalCtx())
+	moreDiags := step.SetAttributes(stepOptions.Attributes, parseCtx.EvalCtx)
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}
 
-	moreDiags = step.SetBlockConfig(stepOptions.Blocks, parseCtx.GetEvalCtx())
+	moreDiags = step.SetBlockConfig(stepOptions.Blocks, parseCtx.EvalCtx)
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}
@@ -401,13 +401,13 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return nil, res
 	}
 
-	diags = triggerHcl.Config.SetAttributes(mod, triggerHcl, triggerOptions.Attributes, parseCtx.GetEvalCtx())
+	diags = triggerHcl.Config.SetAttributes(mod, triggerHcl, triggerOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.HandleDecodeDiags(diags)
 		return triggerHcl, res
 	}
 
-	diags = triggerHcl.Config.SetBlocks(mod, triggerHcl, triggerOptions.Blocks, parseCtx.GetEvalCtx())
+	diags = triggerHcl.Config.SetBlocks(mod, triggerHcl, triggerOptions.Blocks, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.HandleDecodeDiags(diags)
 		return triggerHcl, res
@@ -458,7 +458,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 		return pipelineHcl, res
 	}
 
-	diags = pipelineHcl.SetAttributes(pipelineOptions.Attributes, parseCtx.GetEvalCtx())
+	diags = pipelineHcl.SetAttributes(pipelineOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.HandleDecodeDiags(diags)
 		return pipelineHcl, res

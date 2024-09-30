@@ -417,7 +417,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 		}),
 	})
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["connection"] = paramVal
 
@@ -1508,7 +1508,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 		}),
 	})
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["credential"] = paramVal
 
@@ -2785,11 +2785,11 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
 	variables[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{
+	evalContext := &hcl.EvalContext{
 		Variables: variables,
 		// use the mod path as the file root for functions
 		Functions: funcs.ContextFunctions("./"),
-	})
+	}
 
 	customTypePipeline := w.Mod.ResourceMaps.Pipelines["custom_type_two.pipeline.custom_type_two"]
 
@@ -2854,20 +2854,19 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 	}
 }
 
-//
-//func (suite *FlowpipeModTestSuite) TestCustomTypeFour() {
-//	t := suite.T()
-//	require := require.New(t)
-//
-//	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_four"})
-//	require.Nil(errAndWarning.Error)
-//
-//	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_four", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
-//
-//	require.NotNil(w)
-//	require.Nil(errAndWarning.Error)
-//
-//}
+func (suite *FlowpipeModTestSuite) TestCustomTypeFour() {
+	t := suite.T()
+	require := require.New(t)
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_four"})
+	require.Nil(errAndWarning.Error)
+
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_four", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	require.NotNil(w)
+	require.Nil(errAndWarning.Error)
+
+}
 
 func (suite *FlowpipeModTestSuite) TestCustomType() {
 	assert := assert.New(suite.T())

@@ -2,7 +2,6 @@ package pipeline_test
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -60,7 +59,7 @@ func TestFunctionStep(t *testing.T) {
 		"handler": cty.StringVal("my_file.my_handler"),
 	})
 
-	evalContext := modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext := &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 
@@ -117,7 +116,7 @@ func TestFunctionStep(t *testing.T) {
 		"handler": cty.StringVal("my_file.my_handler"),
 	})
 
-	evalContext = modconfig.NewEvalContext(&hcl.EvalContext{})
+	evalContext = &hcl.EvalContext{}
 	evalContext.Variables = map[string]cty.Value{}
 	evalContext.Variables["param"] = paramVal
 
