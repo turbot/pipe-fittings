@@ -179,24 +179,6 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	// be sure to revert the eval context to remove the temporary connections again
 	defer parseCtx.SetIncludeConnectionsAndNotifiers(false)
 
-	if len(parseCtx.Notifiers) > 0 {
-		notifierMap, err := BuildNotifierMapForEvalContext(parseCtx.Notifiers)
-		if err != nil {
-			slog.Warn("failed to build notifier map for eval context", "error", err)
-			return o, hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "failed to build notifier map for eval context",
-					Subject:  &block.DefRange,
-				},
-			}
-		}
-
-		vars := evalCtx.Variables
-		vars[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
-		evalCtx.Variables = vars
-	}
-
 	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
 
 	if diags.HasErrors() {

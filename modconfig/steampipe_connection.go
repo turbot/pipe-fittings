@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/plugin"
 	"log/slog"
 	"path"
 	"strings"
