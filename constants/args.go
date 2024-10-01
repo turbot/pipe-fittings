@@ -28,6 +28,7 @@ const (
 	ArgDashboardStartTimeout   = "dashboard-start-timeout"
 	ArgDashboardTimeout        = "dashboard-timeout"
 	ArgDatabase                = "database"
+	ArgConnection              = "connection"
 	ArgDatabaseListenAddresses = "database-listen"
 	ArgDatabasePort            = "database-port"
 	ArgDatabaseQueryTimeout    = "query-timeout"

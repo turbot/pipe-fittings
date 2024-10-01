@@ -14,7 +14,6 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
-	"github.com/zclconf/go-cty/cty/gocty"
 )
 
 type PipelineStepQuery struct {
@@ -58,7 +57,6 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-
 	var diags hcl.Diagnostics
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
@@ -79,15 +77,12 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
-		c, err := CtyValueToConnection(connValue)
+		c, err := app_specific_connection.CtyValueToConnection(connValue)
 		if err != nil {
 			return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 		}
-		// does this connection support a connection string
-		type connectionStringProvider interface {
-			GetConnectionString() string
-		}
-		if conn, ok := c.(connectionStringProvider); ok {
+
+		if conn, ok := c.(connection.ConnectionStringProvider); ok {
 			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 		} else {
 			slog.Warn("connection does not support connection string", "db", c)
@@ -177,46 +172,4 @@ func (p *PipelineStepQuery) Validate() hcl.Diagnostics {
 	// validate the base attributes
 	diags := p.ValidateBaseAttributes()
 	return diags
-}
-
-func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = perr.BadRequestWithMessage("unable to decode connection: " + r.(string))
-		}
-	}()
-
-	// get the name and extract the block type
-	shortName := value.GetAttr("short_name").AsString()
-	connectionType := value.GetAttr("type").AsString()
-	var declRange hclhelpers.Range
-	err = gocty.FromCtyValue(value.GetAttr("decl_range"), &declRange)
-	if err != nil {
-		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
-	}
-
-	// now instantiate an empty connection of the correct type
-	conn, err := app_specific_connection.NewPipelingConnection(connectionType, shortName, declRange.HclRange())
-	if err != nil {
-		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
-	}
-
-	// now decode the cty value into the connection
-
-	// we already decoded the base fields, so remove from the value
-	baseFields := []string{"type", "short_name", "decl_range", "env"}
-	originalMap := value.AsValueMap()
-	// Remove the base fields that belong to the nested struct (ConnectionImpl)
-	// create new cty values, one for the base
-	for _, field := range baseFields {
-		delete(originalMap, field)
-	}
-	connectionValue := cty.ObjectVal(originalMap)
-
-	err = gocty.FromCtyValue(connectionValue, &conn)
-	if err != nil {
-		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
-	}
-
-	return conn, nil
 }

@@ -8,8 +8,27 @@ import (
 // cache resource schemas
 var resourceSchemaCache = make(map[string]*hcl.BodySchema)
 
-// Custom config schema for Flowpipe. The connection block setup is different, Steampipe only has one label
-// while Flowipe has 2 labels. Credential, CredentialImport, Integration and Notifer are also specific to Flowpipe
+// PowerpipeConfigBlockSchema defines the config schema for Flowpipe config blocks.
+// The connection block setup is different, Steampipe only has one label while Pipelingconnections has 2 labels.
+// Credential, CredentialImport, Integration and Notifer are specific to Flowpipe
+var PowerpipeConfigBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			// Flowpipe connnections have 2 labels
+			Type:       schema.BlockTypeConnection,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeWorkspaceProfile,
+			LabelNames: []string{"name"},
+		},
+	},
+}
+
+// FlowpipeConfigBlockSchema defines the config schema for Flowpipe config blocks.
+// The connection block setup is different, Steampipe only has one label while Pipelingconnections has 2 labels.
+// Credential, CredentialImport, Integration and Notifer are specific to Flowpipe
 var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{

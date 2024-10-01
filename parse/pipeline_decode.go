@@ -1,19 +1,14 @@
 package parse
 
 import (
-	"context"
 	"fmt"
-	"log/slog"
 	"os"
-	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/ext/typeexpr"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -148,55 +143,6 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 	return step, diags
 }
 
-var ConnectionCtyType = cty.Capsule("ConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
-var NotifierCtyType = cty.Capsule("NotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
-
-func handleScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.Type, bool) {
-	dottedString := hclhelpers.TraversalAsString(expr.Traversal)
-	parts := strings.Split(dottedString, ".")
-	if len(parts) == 2 {
-		switch parts[0] {
-		case schema.BlockTypeConnection:
-			ty := app_specific_connection.ConnectionCtyType(parts[1])
-			return ty, ty == cty.NilType
-		case schema.BlockTypeNotifier:
-			return NotifierCtyType, false
-		}
-	} else if len(parts) == 1 {
-		switch parts[0] {
-		case schema.BlockTypeConnection:
-			return ConnectionCtyType, false
-		case schema.BlockTypeNotifier:
-			return NotifierCtyType, false
-		}
-	}
-	return cty.NilType, true
-}
-
-func handleFunctionCallExpr(fCallExpr *hclsyntax.FunctionCallExpr) (cty.Type, bool) {
-	if fCallExpr.Name == "list" && len(fCallExpr.Args) == 1 {
-		dottedString := hclhelpers.TraversalAsString(fCallExpr.Args[0].Variables()[0])
-		parts := strings.Split(dottedString, ".")
-		if len(parts) == 2 {
-			switch parts[0] {
-			case schema.BlockTypeConnection:
-				innerTy := app_specific_connection.ConnectionCtyType(parts[1])
-				return cty.List(innerTy), innerTy == cty.NilType
-			case schema.BlockTypeNotifier:
-				return cty.List(NotifierCtyType), false
-			}
-		} else if len(parts) == 1 {
-			switch parts[0] {
-			case schema.BlockTypeConnection:
-				return cty.List(ConnectionCtyType), false
-			case schema.BlockTypeNotifier:
-				return cty.List(NotifierCtyType), false
-			}
-		}
-	}
-	return cty.NilType, true
-}
-
 func extractExpressionString(expr hcl.Expression, src string) string {
 	rng := expr.Range()
 	return src[rng.Start.Byte:rng.End.Byte]
@@ -222,56 +168,15 @@ func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
 }
 
 func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
-
 	o := &modconfig.PipelineParam{
 		Name: block.Labels[0],
 	}
 
-	evalCtx := parseCtx.EvalCtx
-
 	// because we want to use late binding for temp creds *and* the ability for pipeline param to define custom type,
-	// we do the validation where with a list of temporary connections
-	if len(parseCtx.PipelingConnections) > 0 {
-		connMap, err := BuildTemporaryConnectionMapForEvalContext(context.TODO(), parseCtx.PipelingConnections)
-		if err != nil {
-			slog.Warn("failed to build temporary connection map for eval context", "error", err)
-			return o, hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "failed to build temporary connection map for eval context",
-					Subject:  &block.DefRange,
-				},
-			}
-		}
-
-		vars := evalCtx.Variables
-		vars[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
-		evalCtx.Variables = vars
-
-		defer func() {
-			vars := evalCtx.Variables
-			delete(vars, schema.BlockTypeConnection)
-			evalCtx.Variables = vars
-		}()
-	}
-
-	if len(parseCtx.Notifiers) > 0 {
-		notifierMap, err := BuildNotifierMapForEvalContext(parseCtx.Notifiers)
-		if err != nil {
-			slog.Warn("failed to build notifier map for eval context", "error", err)
-			return o, hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "failed to build notifier map for eval context",
-					Subject:  &block.DefRange,
-				},
-			}
-		}
-
-		vars := evalCtx.Variables
-		vars[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
-		evalCtx.Variables = vars
-	}
+	// we do the validation with with a list of temporary connections
+	parseCtx.SetIncludeConnectionsAndNotifiers(true)
+	// be sure to revert the eval context to remove the temporary connections again
+	defer parseCtx.SetIncludeConnectionsAndNotifiers(false)
 
 	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
 
@@ -280,44 +185,13 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeType]; exists {
-		expr := attr.Expr
-		ty, moreDiags := typeexpr.TypeConstraint(expr)
-
-		typeErr := moreDiags.HasErrors()
-
-		if typeErr {
-			// Handle shorthand forms for list, map, and set
-
-			switch hcl.ExprAsKeyword(expr) {
-			case "list":
-				ty = cty.List(cty.DynamicPseudoType)
-				typeErr = false
-			case "map":
-				ty = cty.Map(cty.DynamicPseudoType)
-				typeErr = false
-			case "set":
-				ty = cty.Set(cty.DynamicPseudoType)
-				typeErr = false
-			default:
-				if scopeTraversalExpr, ok := expr.(*hclsyntax.ScopeTraversalExpr); ok {
-					ty, typeErr = handleScopeTraversalExpr(scopeTraversalExpr)
-				} else if fCallExpr, ok := expr.(*hclsyntax.FunctionCallExpr); ok {
-					ty, typeErr = handleFunctionCallExpr(fCallExpr)
-				}
-			}
-
-			if typeErr {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  "A type specification is either a primitive type keyword (bool, number, string), complex type constructor call or Turbot custom type (connection, notifier)",
-					Subject:  &attr.Range,
-				})
-				return o, diags
-			}
+		ty, diags := decodeTypeExpression(attr)
+		if diags.HasErrors() {
+			return o, diags
 		}
 
 		o.Type = ty
-		o.TypeString = extractExpressionString(expr, src)
+		o.TypeString = extractExpressionString(attr.Expr, src)
 	} else {
 		o.Type = cty.DynamicPseudoType
 		o.TypeString = "any"
@@ -330,35 +204,19 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeDefault]; exists {
 		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
-		if moreDiags.HasErrors() {
-			diags = append(diags, moreDiags...)
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
 			return o, diags
 		}
 
 		// Does the default value matches the specified type?
-		if o.Type != cty.DynamicPseudoType && ctyVal.Type() != o.Type {
-			if o.IsCustomType() {
-				ctdiags := connection.CustomTypeValidation(attr, ctyVal, o.Type)
-				if len(ctdiags) > 0 {
-					diags = append(diags, ctdiags...)
-					return o, diags
-				}
-				o.Default = ctyVal
-			} else {
-				isCompatible := hclhelpers.IsValueCompatibleWithType(o.Type, ctyVal)
-				if !isCompatible {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", o.Type.FriendlyName(), ctyVal.Type().FriendlyName()),
-						Subject:  &attr.Range,
-					})
-				} else {
-					o.Default = ctyVal
-				}
-			}
-		} else {
-			o.Default = ctyVal
+		moreDiags = modconfig.ValidateValueMatchesType(ctyVal, o.Type, attr.Range.Ptr())
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
+			return o, diags
 		}
+		o.Default = ctyVal
+
 	} else if o.Optional {
 		o.Default = cty.NullVal(o.Type)
 	}

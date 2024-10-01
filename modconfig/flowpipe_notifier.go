@@ -143,6 +143,10 @@ func (c *NotifierImpl) Validate() hcl.Diagnostics {
 	return diags
 }
 
+// CustomType implements custom_type.CustomType interface
+func (c *NotifierImpl) CustomType() {
+}
+
 type Notify struct {
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
@@ -235,7 +239,6 @@ func (n *Notify) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
-
 func (n *Notify) MapInterface() (map[string]interface{}, error) {
 	notifyMap := make(map[string]interface{})
 
@@ -275,6 +278,7 @@ func (n *Notify) MapInterface() (map[string]interface{}, error) {
 
 	return notifyMap, nil
 }
+
 func (n *Notify) CtyValue() (cty.Value, error) {
 	notifyMap := make(map[string]interface{})
 
@@ -321,41 +325,41 @@ func (n *Notify) CtyValue() (cty.Value, error) {
 	return ctyVal, nil
 }
 
-func (c *Notify) Validate() hcl.Diagnostics {
+func (n *Notify) Validate() hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
-	if c.Integration != nil {
-		integrationType := c.Integration.GetIntegrationType()
+	if n.Integration != nil {
+		integrationType := n.Integration.GetIntegrationType()
 
-		if integrationType != schema.IntegrationTypeEmail && len(c.Cc) > 0 {
+		if integrationType != schema.IntegrationTypeEmail && len(n.Cc) > 0 {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Attribute '" + schema.AttributeTypeCc + "' is not a valid attribute for " + integrationType + " type integration",
 			})
 		}
 
-		if integrationType != schema.IntegrationTypeEmail && len(c.Bcc) > 0 {
+		if integrationType != schema.IntegrationTypeEmail && len(n.Bcc) > 0 {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Attribute '" + schema.AttributeTypeBcc + "' is not a valid attribute for " + integrationType + " type integration",
 			})
 		}
 
-		if integrationType != schema.IntegrationTypeEmail && len(c.To) > 0 {
+		if integrationType != schema.IntegrationTypeEmail && len(n.To) > 0 {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Attribute '" + schema.AttributeTypeTo + "' is not a valid attribute for " + integrationType + " type integration",
 			})
 		}
 
-		if integrationType != schema.IntegrationTypeEmail && c.Subject != nil {
+		if integrationType != schema.IntegrationTypeEmail && n.Subject != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Attribute '" + schema.AttributeTypeSubject + "' is not a valid attribute for " + integrationType + " type integration",
 			})
 		}
 
-		if integrationType != schema.IntegrationTypeSlack && c.Channel != nil {
+		if integrationType != schema.IntegrationTypeSlack && n.Channel != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Attribute '" + schema.AttributeTypeChannel + "' is not a valid attribute for " + integrationType + " type integration",

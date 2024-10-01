@@ -2,12 +2,11 @@ package connection
 
 import (
 	"fmt"
-	"maps"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
+	"maps"
 )
 
 // no hcl tags needed apart from pipes block - this is a manually populated
@@ -16,9 +15,9 @@ type ConnectionImpl struct {
 	Pipes *PipesConnectionMetadata `json:"pipes,omitempty" cty:"pipes" hcl:"pipes,block"`
 
 	ShortName string `json:"short_name" cty:"short_name"`
-	FullName  string `json:"full_name,omitempty"`
+	FullName  string `json:"full_name,omitempty" cty:"full_name"`
 	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
-	DeclRange hclhelpers.Range `json:"decl_range,omitempty"`
+	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
 	// cache ttl in seconds
 	Ttl int `json:"ttl,omitempty" cty:"ttl" hcl:"ttl,optional"`
 }
@@ -71,6 +70,14 @@ func (c *ConnectionImpl) Equals(other *ConnectionImpl) bool {
 		return false
 	}
 	return true
+}
+
+// CustomType implements custom_type.CustomType interface
+func (c *ConnectionImpl) CustomType() {
+}
+
+// LateBinding
+func (c *ConnectionImpl) LateBinding() {
 }
 
 func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {

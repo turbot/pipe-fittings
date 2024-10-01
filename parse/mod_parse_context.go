@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"strings"
 	"sync"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
@@ -95,6 +97,11 @@ type ModParseContext struct {
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
 	resourceMaps     *modconfig.ResourceMaps
+
+	// tactical: should connections and notifiers be added to the reference values?
+	// this is a temporary solution until the 2 methods of determining runtime dependencies are merged
+	includeConnectionsAndNotifiersInEvalContext bool
+
 	// mutex to control access to topLevelDependencyMods and resourceMaps when asyncronously adding dependency mods
 	depLock sync.Mutex
 }
@@ -127,7 +134,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 	}
 	// add root node - this will depend on all other nodes
 	c.DependencyGraph = c.newDependencyGraph()
-	c.buildEvalContext()
+	c.RebuildEvalContext()
 
 	return c
 }
@@ -205,12 +212,23 @@ func (m *ModParseContext) PeekParent() string {
 }
 
 // VariableValueCtyMap converts a map of variables to a map of the underlying cty value
-func VariableValueCtyMap(variables map[string]*modconfig.Variable) map[string]cty.Value {
+// Note: if the variable type is a late binding type (i.e. PipelingConnection), DO NOT add to map
+func VariableValueCtyMap(variables map[string]*modconfig.Variable) (map[string]cty.Value, map[string]cty.Value) {
+	var lateBindingVars = make(map[string]cty.Value)
 	ret := make(map[string]cty.Value, len(variables))
 	for k, v := range variables {
-		ret[k] = v.Value
+		if v.IsLateBinding() {
+			// if the variable is a late binding variable, build a cty value containing all referenced connections
+			resourceNames, ok := ConnectionNamesValueFromCtyValue(v.Value)
+			if ok {
+				// add to late binding vars map
+				lateBindingVars[v.ShortName] = resourceNames
+			}
+		} else {
+			ret[k] = v.Value
+		}
 	}
-	return ret
+	return ret, lateBindingVars
 }
 
 // AddInputVariableValues adds evaluated variables to the run context.
@@ -228,7 +246,7 @@ func (m *ModParseContext) AddInputVariableValues(inputVariables *modconfig.ModVa
 func (m *ModParseContext) AddVariablesToEvalContext() {
 	m.addRootVariablesToReferenceMap()
 	m.addDependencyVariablesToReferenceMap()
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 }
 
 // addRootVariablesToReferenceMap sets the Variables property
@@ -238,7 +256,11 @@ func (m *ModParseContext) addRootVariablesToReferenceMap() {
 	variables := m.Variables.RootVariables
 	// write local variables directly into referenceValues map
 	// NOTE: we add with the name "var" not "variable" as that is how variables are referenced
-	m.referenceValues["local"]["var"] = VariableValueCtyMap(variables)
+	varCtyMap, lateBindingVars := VariableValueCtyMap(variables)
+	m.referenceValues["local"]["var"] = varCtyMap
+
+	m.addLateBindingVariablesToReferenceValues(m.referenceValues["local"], lateBindingVars)
+
 }
 
 // addDependencyVariablesToReferenceMap adds the dependency variables to the referenceValues map
@@ -252,7 +274,10 @@ func (m *ModParseContext) addDependencyVariablesToReferenceMap() {
 		if m.referenceValues[alias] == nil {
 			m.referenceValues[alias] = make(ReferenceTypeValueMap)
 		}
-		m.referenceValues[alias]["var"] = VariableValueCtyMap(depVars.RootVariables)
+
+		varCtyMap, lateBindingVars := VariableValueCtyMap(depVars.RootVariables)
+		m.referenceValues[alias]["var"] = varCtyMap
+		m.addLateBindingVariablesToReferenceValues(m.referenceValues[alias], lateBindingVars)
 	}
 }
 
@@ -298,7 +323,7 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	}
 
 	// rebuild the eval context
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 	return diags
 }
 
@@ -337,7 +362,7 @@ func (m *ModParseContext) AddResource(resource modconfig.HclResource) hcl.Diagno
 	}
 
 	// rebuild the eval context
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 
 	return nil
 }
@@ -395,8 +420,8 @@ func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) 
 	return m.GetResourceMaps().GetResource(parsedName)
 }
 
-// build the eval context from the cached reference values
-func (m *ModParseContext) buildEvalContext() {
+// RebuildEvalContext the eval context from the cached reference values
+func (m *ModParseContext) RebuildEvalContext() {
 	// convert reference values to cty objects
 	variables := make(map[string]cty.Value)
 
@@ -434,6 +459,22 @@ func (m *ModParseContext) buildEvalContext() {
 
 	variables[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
 
+	// should we include connections and notifiers?
+	if m.includeConnectionsAndNotifiersInEvalContext {
+		if len(m.PipelingConnections) > 0 {
+			connMap := BuildTemporaryConnectionMapForEvalContext(m.PipelingConnections)
+			variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
+		}
+
+		if len(m.Notifiers) > 0 {
+			notifierMap, err := BuildNotifierMapForEvalContext(m.Notifiers)
+			if err != nil {
+				slog.Warn("failed to build notifier map for eval context", "error", err)
+			}
+
+			variables[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
+		}
+	}
 	// rebuild the eval context
 	m.ParseContext.BuildEvalContext(variables)
 }
@@ -811,7 +852,7 @@ func (m *ModParseContext) AddPipeline(pipelineHcl *modconfig.Pipeline) hcl.Diagn
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, pipelineHcl.Name())
 
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 	return nil
 }
 
@@ -827,7 +868,7 @@ func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, trigger.Name())
 
-	m.buildEvalContext()
+	m.RebuildEvalContext()
 	return nil
 }
 
@@ -845,4 +886,20 @@ func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
 	for _, t := range blockTypes {
 		m.blockTypeExclusions[t] = struct{}{}
 	}
+}
+
+// SetIncludeConnectionsAndNotifiers sets whether connections and notifiers should be included in the eval context
+// and rebuilds the eval context
+func (m *ModParseContext) SetIncludeConnectionsAndNotifiers(include bool) {
+	m.includeConnectionsAndNotifiersInEvalContext = include
+	m.RebuildEvalContext()
+}
+
+func (m *ModParseContext) addLateBindingVariablesToReferenceValues(targetMap ReferenceTypeValueMap, varNames map[string]cty.Value) {
+	// do we already have a map for late binding variables?
+	if targetMap[constants.LateBindingVarsKey] == nil {
+		targetMap[constants.LateBindingVarsKey] = map[string]cty.Value{}
+	}
+
+	maps.Copy(targetMap[constants.LateBindingVarsKey], varNames)
 }
