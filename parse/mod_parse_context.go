@@ -219,7 +219,7 @@ func VariableValueCtyMap(variables map[string]*modconfig.Variable) (map[string]c
 	for k, v := range variables {
 		if v.IsLateBinding() {
 			// if the variable is a late binding variable, build a cty value containing all referenced connections
-			resourceNames, ok := connectionNamesValueFromVarValue(v.Value)
+			resourceNames, ok := ConnectionNamesValueFromCtyValue(v.Value)
 			if ok {
 				// add to late binding vars map
 				lateBindingVars[v.ShortName] = resourceNames

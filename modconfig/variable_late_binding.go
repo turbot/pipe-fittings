@@ -1,10 +1,11 @@
 package modconfig
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 	"strings"
 )
@@ -13,13 +14,19 @@ import (
 // (late binding variables are not added to the eval context as they are evaluated at run time)
 func resourceNamesFromLateBindingVarValueError(e *hcl.Diagnostic, evalContext *hcl.EvalContext) []string {
 	if e.Summary == "Unsupported attribute" {
-		if sta, ok := e.Expression.(*hclsyntax.ScopeTraversalExpr); ok {
-			if sta.Traversal.RootName() == "var" {
+		var resourceNames []string
+
+		v := e.Expression.Variables()
+		fmt.Println(v)
+
+		for _, traversal := range v {
+			if traversal.RootName() == schema.AttributeVar {
 				// is there an entry for theivariable in the late binding vars map
 				if lateBindingVars, ok := evalContext.Variables[constants.LateBindingVarsKey]; ok {
 					// retrieve the list of resource names the late binding variable depends on
-					varShortName := VarShortNameFromTraversal(sta.Traversal)
-					return ResourceNamesFromLateBindingVarValue(lateBindingVars, varShortName)
+					varShortName := VarShortNameFromTraversal(traversal)
+					moreResourceNames := ResourceNamesFromLateBindingVarValue(lateBindingVars, varShortName)
+					resourceNames = append(resourceNames, moreResourceNames...)
 				}
 			}
 		}

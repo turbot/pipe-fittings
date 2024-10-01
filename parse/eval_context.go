@@ -68,17 +68,18 @@ func BuildTemporaryConnectionMapForEvalContext(allConnections map[string]connect
 	return connectionMap
 }
 
-// connectionNamesValueFromVarValue takes the cty value of a variable, and if the variable contains one or more
+// ConnectionNamesValueFromCtyValue takes the cty value of a variable, and if the variable contains one or more
 // temporary connections, it builds a list of the connection names and returns as a cty value
-func connectionNamesValueFromVarValue(v cty.Value) (cty.Value, bool) {
+func ConnectionNamesValueFromCtyValue(v cty.Value) (cty.Value, bool) {
 	var connectionNames []cty.Value
 	ty := v.Type()
-	if ty.IsObjectType() {
+	switch {
+	case ty.IsObjectType(), ty.IsMapType():
 		resourceName, ok := ConnectionNameFromTemporaryConnectionMap(v.AsValueMap())
 		if ok {
 			connectionNames = append(connectionNames, cty.StringVal(resourceName))
 		}
-	} else if ty.IsListType() || ty.IsTupleType() {
+	case ty.IsListType(), ty.IsTupleType():
 		for _, val := range v.AsValueSlice() {
 			ty := val.Type()
 			if ty.IsObjectType() {
@@ -88,7 +89,10 @@ func connectionNamesValueFromVarValue(v cty.Value) (cty.Value, bool) {
 				}
 			}
 		}
+	default:
+		return cty.NilVal, false
 	}
+
 	return cty.ListVal(connectionNames), true
 }
 
