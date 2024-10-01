@@ -1806,26 +1806,23 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		resolvedDiags := 0
 		for _, e := range stepDiags {
 			if e.Severity == hcl.DiagError {
-				if e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` || e.Detail == `There is no variable named "connection".` {
-
-					dependsOn, credsDependsOn, connDependsOn := allDependsOnFromVariables(expr.Variables())
-					p.AppendDependsOn(dependsOn...)
-					p.AppendCredentialDependsOn(credsDependsOn...)
-					p.AppendConnectionDependsOn(connDependsOn...)
-
-					dependsOnAdded := len(dependsOn) > 0 || len(credsDependsOn) > 0 || len(connDependsOn) > 0
-
+				// is the error caused by referencing a resource whose value will be resolved at runtime
+				// (i.e. connection, credential, step output)?,
+				if lateBindingValueError(e) {
+					// identify connections, credentials and other resources which the step depends on
+					dependsOnAdded := handleMissingDependencyError(expr, p)
 					if dependsOnAdded {
 						resolvedDiags++
 					}
-				} else if e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == `There is no variable named "loop".` {
+					// is the error an expected dependency error (in which case we ignore)
+					// (i.e.  try function, each, param, loop, retry)
+				} else if expectedMissingDependencyError(e) ||
+					tryFunctionError(e) ||
+					stepResultError(e, resultsReference) {
 					resolvedDiags++
-					// try function generate this different error message:
-					// "Call to function \"try\" failed: no expression succeeded:\n- Unknown variable (at /Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_mod_tests/mod_try_function/mod.fp:25,21-25)\n  There is no variable named \"each\".\n- Unknown variable (at /Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_mod_tests/mod_try_function/mod.fp:25,85-89)\n  There is no variable named \"each\".\n\nAt least one expression must produce a successful result."
-				} else if strings.Contains(e.Detail, `Call to function "try" failed`) && strings.Contains(e.Detail, `There is no variable named "each".`) {
-					resolvedDiags++
-				} else if e.Detail == `There is no variable named "result".` && resultsReference {
-					// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
+					// is the error caused by referencing a variable whose value will be resolved at runtime
+				} else if resourceNames := resourceNamesFromLateBindingVarValueError(e, evalContext); len(resourceNames) > 0 {
+					p.AppendConnectionDependsOn(resourceNames...)
 					resolvedDiags++
 				} else {
 					leftOverDiags = append(leftOverDiags, e)
@@ -1840,10 +1837,7 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 		// check if all diags have been resolved
 		if resolvedDiags == len(stepDiags) {
 			// mop up any other depends on that may be missed with the above logic
-			dependsOn, credsDependsOn, connDependsOn := allDependsOnFromVariables(expr.Variables())
-			p.AppendDependsOn(dependsOn...)
-			p.AppendCredentialDependsOn(credsDependsOn...)
-			p.AppendConnectionDependsOn(connDependsOn...)
+			handleMissingDependencyError(expr, p)
 
 			// * Don't forget to add this, if you change the logic ensure that the code flow still
 			// * calls AddUnresolvedAttribute
@@ -1856,4 +1850,33 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 	}
 
 	return val, hcl.Diagnostics{}
+}
+
+func handleMissingDependencyError(expr hcl.Expression, p PipelineStepBaseInterface) bool {
+	dependsOn, credsDependsOn, connDependsOn := allDependsOnFromVariables(expr.Variables())
+	p.AppendDependsOn(dependsOn...)
+	p.AppendCredentialDependsOn(credsDependsOn...)
+	p.AppendConnectionDependsOn(connDependsOn...)
+
+	dependsOnAdded := len(dependsOn) > 0 || len(credsDependsOn) > 0 || len(connDependsOn) > 0
+	return dependsOnAdded
+}
+
+func lateBindingValueError(e *hcl.Diagnostic) bool {
+	return e.Detail == `There is no variable named "step".` || e.Detail == `There is no variable named "credential".` || e.Detail == `There is no variable named "connection".`
+}
+
+func stepResultError(e *hcl.Diagnostic, resultsReference bool) bool {
+	// result is a reference to the output of the step after it was run, however it should only apply to the loop type block or retry type block
+	return e.Detail == `There is no variable named "result".` && resultsReference
+}
+
+func tryFunctionError(e *hcl.Diagnostic) bool {
+	// try function generate this different error message:
+	// "Call to function \"try\" failed: no expression succeeded:\n- Unknown variable (at /Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_mod_tests/mod_try_function/mod.fp:25,21-25)\n  There is no variable named \"each\".\n- Unknown variable (at /Users/victorhadianto/z-development/turbot/pipe-fittings/tests/flowpipe_mod_tests/mod_try_function/mod.fp:25,85-89)\n  There is no variable named \"each\".\n\nAt least one expression must produce a successful result."
+	return strings.Contains(e.Detail, `Call to function "try" failed`) && strings.Contains(e.Detail, `There is no variable named "each".`)
+}
+
+func expectedMissingDependencyError(e *hcl.Diagnostic) bool {
+	return e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == `There is no variable named "loop".`
 }

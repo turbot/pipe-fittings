@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"log/slog"
+	"maps"
 	"strings"
 	"sync"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
@@ -211,14 +213,22 @@ func (m *ModParseContext) PeekParent() string {
 
 // VariableValueCtyMap converts a map of variables to a map of the underlying cty value
 // Note: if the variable type is a late binding type (i.e. PipelingConnection), DO NOT add to map
-func VariableValueCtyMap(variables map[string]*modconfig.Variable) map[string]cty.Value {
+func VariableValueCtyMap(variables map[string]*modconfig.Variable) (map[string]cty.Value, map[string]cty.Value) {
+	var lateBindingVars = make(map[string]cty.Value)
 	ret := make(map[string]cty.Value, len(variables))
 	for k, v := range variables {
-		if !v.IsLateBinding() {
+		if v.IsLateBinding() {
+			// if the variable is a late binding variable, build a cty value containing all referenced connections
+			resourceNames, ok := connectionNamesValueFromVarValue(v.Value)
+			if ok {
+				// add to late binding vars map
+				lateBindingVars[v.ShortName] = resourceNames
+			}
+		} else {
 			ret[k] = v.Value
 		}
 	}
-	return ret
+	return ret, lateBindingVars
 }
 
 // AddInputVariableValues adds evaluated variables to the run context.
@@ -246,7 +256,11 @@ func (m *ModParseContext) addRootVariablesToReferenceMap() {
 	variables := m.Variables.RootVariables
 	// write local variables directly into referenceValues map
 	// NOTE: we add with the name "var" not "variable" as that is how variables are referenced
-	m.referenceValues["local"]["var"] = VariableValueCtyMap(variables)
+	varCtyMap, lateBindingVars := VariableValueCtyMap(variables)
+	m.referenceValues["local"]["var"] = varCtyMap
+
+	m.addLateBindingVariablesToReferenceValues(m.referenceValues["local"], lateBindingVars)
+
 }
 
 // addDependencyVariablesToReferenceMap adds the dependency variables to the referenceValues map
@@ -260,7 +274,10 @@ func (m *ModParseContext) addDependencyVariablesToReferenceMap() {
 		if m.referenceValues[alias] == nil {
 			m.referenceValues[alias] = make(ReferenceTypeValueMap)
 		}
-		m.referenceValues[alias]["var"] = VariableValueCtyMap(depVars.RootVariables)
+
+		varCtyMap, lateBindingVars := VariableValueCtyMap(depVars.RootVariables)
+		m.referenceValues[alias]["var"] = varCtyMap
+		m.addLateBindingVariablesToReferenceValues(m.referenceValues[alias], lateBindingVars)
 	}
 }
 
@@ -897,4 +914,13 @@ func (m *ModParseContext) lateBindingVariables() map[string]*modconfig.Variable 
 		}
 	}
 	return lateBindingVars
+}
+
+func (m *ModParseContext) addLateBindingVariablesToReferenceValues(targetMap ReferenceTypeValueMap, varNames map[string]cty.Value) {
+	// do we already have a map for late binding variables?
+	if targetMap[constants.LateBindingVarsKey] == nil {
+		targetMap[constants.LateBindingVarsKey] = map[string]cty.Value{}
+	}
+
+	maps.Copy(targetMap[constants.LateBindingVarsKey], varNames)
 }
