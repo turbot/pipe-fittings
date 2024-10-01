@@ -6,7 +6,6 @@ integration "slack" "bad_slack_integration" {
 
 notifier "bad_slack_notifier" {
   notify {
-
     // This was causing a null pointer exception
     integration = "integration.slack.bad_slack_integration"
     channel     = "my_channel"

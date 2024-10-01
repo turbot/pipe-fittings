@@ -1292,6 +1292,34 @@ func stringSliceInputFromAttribute(unresolvedAttributes map[string]hcl.Expressio
 	return results, hcl.Diagnostics{}
 }
 
+func simpleOutputFromAttribute[T any](unresolvedAttributes map[string]hcl.Expression, evalContext *hcl.EvalContext, attributeName string, fieldValue T) (T, hcl.Diagnostics) {
+	var tempValue T
+
+	if !helpers.IsNil(fieldValue) {
+		if utils.IsPointer(fieldValue) {
+			return tempValue, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Value of the attribute '" + attributeName + "' must not be a pointer for simpleOutputFromAttribute to work",
+				},
+			}
+		}
+	}
+
+	if unresolvedAttributes[attributeName] == nil {
+		if !helpers.IsNil(fieldValue) {
+			tempValue = fieldValue
+		}
+	} else {
+		diags := gohcl.DecodeExpression(unresolvedAttributes[attributeName], evalContext, &tempValue)
+		if diags.HasErrors() {
+			return tempValue, diags
+		}
+	}
+
+	return tempValue, hcl.Diagnostics{}
+}
+
 func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue T) (map[string]interface{}, hcl.Diagnostics) {
 	var tempValue T
 
