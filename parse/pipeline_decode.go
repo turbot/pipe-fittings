@@ -168,7 +168,6 @@ func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
 }
 
 func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
-
 	o := &modconfig.PipelineParam{
 		Name: block.Labels[0],
 	}
