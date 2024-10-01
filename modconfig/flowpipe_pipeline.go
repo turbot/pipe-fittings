@@ -535,11 +535,8 @@ func (p *PipelineParam) IsNotifierType() bool {
 	}
 
 	var notifierImpl *NotifierImpl
-	if encapsulatedGoType.String() == reflect.TypeOf(notifierImpl).String() {
-		return true
-	}
 
-	return false
+	return encapsulatedGoType.String() == reflect.TypeOf(notifierImpl).String()
 }
 
 type PipelineOutput struct {

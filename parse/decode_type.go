@@ -9,10 +9,6 @@ import (
 func decodeTypeExpression(attr *hcl.Attribute) (cty.Type, hcl.Diagnostics) {
 	expr := attr.Expr
 
-	//if hclhelpers.ExprIsNativeQuotedString(expr) {
-	//	return handleQuotedTypeName(expr)
-	//}
-
 	ty, diags := typeexpr.TypeConstraint(expr)
 	if !diags.HasErrors() {
 		return ty, nil
@@ -49,43 +45,4 @@ func decodeTypeExpression(attr *hcl.Attribute) (cty.Type, hcl.Diagnostics) {
 	}
 
 	return ty, nil
-}
-
-func handleQuotedTypeName(expr hcl.Expression) (cty.Type, hcl.Diagnostics) {
-	val, diags := expr.Value(nil)
-	if diags.HasErrors() {
-		return cty.DynamicPseudoType, diags
-	}
-	str := val.AsString()
-	switch str {
-	case "string":
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Invalid quoted type constraints",
-			Subject:  expr.Range().Ptr(),
-		})
-		return cty.DynamicPseudoType, diags
-	case "list":
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Invalid quoted type constraints",
-			Subject:  expr.Range().Ptr(),
-		})
-		return cty.DynamicPseudoType, diags
-	case "map":
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Invalid quoted type constraints",
-			Subject:  expr.Range().Ptr(),
-		})
-		return cty.DynamicPseudoType, diags
-	default:
-
-		return cty.DynamicPseudoType, hcl.Diagnostics{{
-			Severity: hcl.DiagError,
-			Summary:  "Invalid legacy variable type hint",
-			Subject:  expr.Range().Ptr(),
-		}}
-	}
-
 }

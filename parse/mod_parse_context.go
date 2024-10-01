@@ -895,27 +895,6 @@ func (m *ModParseContext) SetIncludeConnectionsAndNotifiers(include bool) {
 	m.RebuildEvalContext()
 }
 
-func (m *ModParseContext) lateBindingVariables() map[string]*modconfig.Variable {
-	lateBindingVars := make(map[string]*modconfig.Variable)
-	if m.Variables == nil {
-		return lateBindingVars
-	}
-
-	for _, v := range m.Variables.RootVariables {
-		if v.IsLateBinding() {
-			lateBindingVars[v.Name()] = v
-		}
-	}
-	for _, depVars := range m.Variables.DependencyVariables {
-		for _, v := range depVars.RootVariables {
-			if v.IsLateBinding() {
-				lateBindingVars[v.Name()] = v
-			}
-		}
-	}
-	return lateBindingVars
-}
-
 func (m *ModParseContext) addLateBindingVariablesToReferenceValues(targetMap ReferenceTypeValueMap, varNames map[string]cty.Value) {
 	// do we already have a map for late binding variables?
 	if targetMap[constants.LateBindingVarsKey] == nil {
