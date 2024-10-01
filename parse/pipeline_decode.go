@@ -554,23 +554,12 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return triggerHcl, res
 	}
 
-	// Read the entire file content as bytes
-	content, err := os.ReadFile(block.DefRange.Filename)
-	if err != nil {
-		diag := &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("error reading file %s", block.DefRange.Filename),
-			Subject:  &block.DefRange,
-		}
-		res.HandleDecodeDiags(hcl.Diagnostics{diag})
-		return triggerHcl, res
-	}
-	src := string(content)
+	src := parseCtx.FileData[block.DefRange.Filename]
 
 	var triggerParams []modconfig.PipelineParam
 	for _, block := range triggerOptions.Blocks {
 		if block.Type == schema.BlockTypeParam {
-			param, diags := decodePipelineParam(src, block, parseCtx)
+			param, diags := decodePipelineParam(string(src), block, parseCtx)
 			if len(diags) > 0 {
 				res.HandleDecodeDiags(diags)
 				return triggerHcl, res

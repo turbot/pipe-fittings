@@ -156,6 +156,50 @@ func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
 	assert.Equal(0, len(w.Mods["mod_depend_b"].ResourceMaps.Triggers), "Expected 0 trigger in mod_depend_a")
 }
 
+func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_with_param"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_with_param", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	rootMod := w.Mod
+	if rootMod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	trigger := rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_param"]
+	if trigger == nil {
+		assert.Fail("trigger not found")
+		return
+	}
+
+	// check trigger params
+	assert.Equal(3, len(trigger.Params))
+	for _, param := range trigger.Params {
+		switch param.Name {
+		case "database_connection":
+			assert.Equal("string", param.TypeString)
+			assert.Equal("postgres://steampipe:@localhost:9193/steampipe", param.Default.AsString())
+		case "sql":
+			assert.Equal("string", param.TypeString)
+			assert.Equal("select * from aws_s3_bucket", param.Default.AsString())
+		case "primary_key":
+			assert.Equal("string", param.TypeString)
+			assert.Equal("arn", param.Default.AsString())
+		default:
+			assert.Fail("unexpected param")
+		}
+	}
+
+	unresolvedAttributes := trigger.Config.GetUnresolvedAttributes()
+	assert.Equal(3, len(unresolvedAttributes))
+}
+
 func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
 	assert := assert.New(suite.T())
 
