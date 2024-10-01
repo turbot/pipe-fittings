@@ -1755,8 +1755,8 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 	// If there is a param in the expression, then we must assume that we can't resolve it at this stage.
 	// If the param has a default, it will be fully resolved and when we change the param, Flowpipe doesn't know that the
 	// attribute needs to be recalculated
-	for _, traversals := range expr.Variables() {
-		if traversals.RootName() == "param" {
+	for _, traversal := range expr.Variables() {
+		if traversal.RootName() == "param" {
 			p.AddUnresolvedAttribute(attr.Name, expr)
 			// Don't return here because there may be other dependencies to be created below
 
@@ -1783,6 +1783,12 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 			if attr.Name == "pipeline" {
 				return cty.NilVal, hcl.Diagnostics{}
 			}
+		}
+		if traversal.RootName() == "var" {
+			// if the variable is a late binding variable, then we need to add the resource name to the connection depends on
+			connectionNames := ResourceNamesFromLateBingingVarTraversal(traversal, evalContext)
+			p.AppendConnectionDependsOn(connectionNames...)
+			p.AddUnresolvedAttribute(attr.Name, expr)
 		}
 	}
 
