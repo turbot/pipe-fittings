@@ -89,7 +89,9 @@ func ConnectionNamesValueFromCtyValue(v cty.Value) (cty.Value, bool) {
 				}
 			}
 		}
-	default:
+	}
+
+	if len(connectionNames) == 0{
 		return cty.NilVal, false
 	}
 
