@@ -58,13 +58,12 @@ func CheckInputVariables(defs map[string]*modconfig.Variable, values terraform.I
 
 		wantType := def.Type
 
-		// TODO kai tests fail if we replace convert.Convert with ValidateValueMatchesType
 		// A given value is valid if it can convert to the desired type.
 		var validateDiags hcl.Diagnostics
 		_, err := convert.Convert(val.Value, wantType)
 		if err != nil {
+			// fall back on ValidateValueMatchesType
 			validateDiags = modconfig.ValidateValueMatchesType(val.Value, wantType, val.SourceRange.ToHCL().Ptr())
-			// A given value is valid if it can convert to the desired type.
 		}
 		if len(validateDiags) > 0 {
 			msg := validateDiags[0].Summary

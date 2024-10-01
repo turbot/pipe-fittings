@@ -36,7 +36,7 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 
 	// split the cty value into fields for ConnectionImpl and the derived connection,
 	// (NOTE: exclude the 'env' and 'type' field, which is manually added)
-	baseValue, derivedValue, err := splitCtyValueMap(value, conn.GetConnectionImpl(), "env", "type")
+	baseValue, derivedValue, err := getKnownCtyFields(value, conn.GetConnectionImpl(), "env", "type")
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}
@@ -54,9 +54,9 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	return conn, nil
 }
 
-// splitCtyValueMap splits the provided cty.Value object into known and unknown based on the struct's cty tags.
+// getKnownCtyFields splits the provided cty.Value object into known and unknown based on the struct's cty tags.
 // It returns the two maps as cty.Value objects.
-func splitCtyValueMap(ctyVal cty.Value, targetStruct interface{}, excludeFields ...string) (cty.Value, cty.Value, error) {
+func getKnownCtyFields(ctyVal cty.Value, targetStruct interface{}, excludeFields ...string) (cty.Value, cty.Value, error) {
 	if !ctyVal.Type().IsObjectType() {
 		return cty.NilVal, cty.NilVal, fmt.Errorf("provided cty.Value is not an object")
 	}

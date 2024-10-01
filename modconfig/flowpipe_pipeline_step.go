@@ -1785,7 +1785,8 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 			}
 		}
 		if traversal.RootName() == "var" {
-			// if the variable is a late binding variable, then we need to add the resource name to the connection depends on
+			// if the variable is a late binding variable, then we need to add the connection names
+			// to the connection depends on
 			connectionNames := ResourceNamesFromLateBingingVarTraversal(traversal, evalContext)
 			if len(connectionNames) > 0 {
 				p.AppendConnectionDependsOn(connectionNames...)
