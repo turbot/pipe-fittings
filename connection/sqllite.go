@@ -9,7 +9,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const SqliteConnectionType = "Sqlite"
+const SqliteConnectionType = "sqlite"
 
 type SqliteConnection struct {
 	ConnectionImpl
