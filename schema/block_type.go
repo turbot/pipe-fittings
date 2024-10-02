@@ -168,6 +168,7 @@ const (
 	AttributeTypeSelected     = "selected"
 	AttributeTypeNotifier     = "notifier"
 	AttributeTypeNotifies     = "notifies"
+	AttributeTypeNotifierName = "notifier_name"
 	AttributeTypeMarkdown     = "markdown"
 	AttributeTypeStyle        = "style"
 
