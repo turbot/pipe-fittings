@@ -56,7 +56,8 @@ func customTypeFromScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.T
 		return cty.NilType, true
 	}
 
-	return customTypeFunc(subtype), false
+	customType := customTypeFunc(subtype)
+	return customType, customType == cty.NilType
 }
 
 // customTypeFromFunctionCallExpr returns the custom cty.Type for the given hclsyntax.FunctionCallExpr,
