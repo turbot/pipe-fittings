@@ -353,6 +353,9 @@ func ctyValueToPipelineStepNotifierValueMap(value cty.Value) (NotifierImpl, erro
 	if valueMap["short_name"] != cty.NilVal {
 		notifier.ShortName = valueMap["short_name"].AsString()
 	}
+	if valueMap["notifier_name"] != cty.NilVal {
+		notifier.NotifierName = valueMap["notifier_name"].AsString()
+	}
 
 	return notifier, nil
 }
