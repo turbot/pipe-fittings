@@ -10,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const PipesConnectionType = "turbot_pipes"
+const PipesConnectionType = "pipes"
 
 type PipesConnection struct {
 	ConnectionImpl

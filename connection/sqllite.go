@@ -13,7 +13,7 @@ const SqliteConnectionType = "Sqlite"
 
 type SqliteConnection struct {
 	ConnectionImpl
-	ConnectionString *string `json:"database,omitempty" cty:"database" hcl:"database,optional"`
+	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
 }
 
 func NewSqliteConnection(shortName string, declRange hcl.Range) PipelingConnection {

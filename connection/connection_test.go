@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/utils"
 	"os"
 	"testing"
 
@@ -867,6 +868,61 @@ func TestDiscordConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated DiscordConnection")
+}
+
+// ------------------------------------------------------------
+// DuckDb
+// ------------------------------------------------------------
+
+func TestDuckDbConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *DuckDbConnection
+	var conn2 *DuckDbConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &DuckDbConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same connection_string
+	connectionString := "postgres://user:password@localhost:5432/dbname"
+	conn1.ConnectionString = &connectionString
+	conn2 = &DuckDbConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		ConnectionString: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different connection_strings
+	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
+	conn2.ConnectionString = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+}
+
+func TestDuckDbConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty DuckDbConnection, should fail with diagnostics
+	conn := &DuckDbConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty DuckDbConnection")
+
+	// Case 2: Validate a DuckDbConnection with connection_String should pass with no diagnostics
+	conn = &DuckDbConnection{
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a DuckDbConnection with connection_string")
 }
 
 // ------------------------------------------------------------
@@ -2168,6 +2224,61 @@ func TestPagerDutyConnectionValidate(t *testing.T) {
 }
 
 // ------------------------------------------------------------
+// Postgres
+// ------------------------------------------------------------
+
+func TestPostgresConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *PostgresConnection
+	var conn2 *PostgresConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same connection_string
+	connectionString := "postgres://user:password@localhost:5432/dbname"
+	conn1.ConnectionString = &connectionString
+	conn2 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		ConnectionString: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different connection_strings
+	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
+	conn2.ConnectionString = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+}
+
+func TestPostgresConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty PostgresConnection, should fail with diagnostics
+	conn := &PostgresConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty PostgresConnection")
+
+	// Case 2: Validate a PostgresConnection with connection_String should pass with no diagnostics
+	conn = &PostgresConnection{
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with connection_string")
+}
+
+// ------------------------------------------------------------
 // SendGrid
 // ------------------------------------------------------------
 
@@ -2468,6 +2579,130 @@ func TestSlackConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated SlackConnection")
+}
+
+// ------------------------------------------------------------
+// SteampipePg
+// ------------------------------------------------------------
+
+func TestSteampipePgConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *SteampipePgConnection
+	var conn2 *SteampipePgConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+	// Case 3: Both connections have the same connection_string
+	connectionString := "postgres://user:password@localhost:5432/dbname"
+	conn1.ConnectionString = &connectionString
+	conn2 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		ConnectionString: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different connection_strings
+	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
+	conn2.ConnectionString = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+	//Case 5: Connections have same settings
+	conn1 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	conn2 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same settings and should be equal")
+
+	//Case 6: Connections have different settings
+
+	conn2.UserName = utils.ToStringPointer("user2")
+	assert.False(conn1.Equals(conn2), "Both connections have the different user_name and should not be equal")
+
+	// Case 7: Connection 2 is a subset of Connection 1
+	conn2 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	assert.False(conn1.Equals(conn2), "Connection 2 is a subset of Connection 1, should return false")
+}
+
+func TestSteampipePgConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty SteampipePgConnection, should fail with diagnostics
+	conn := &SteampipePgConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty SteampipePgConnection")
+
+	// Case 2: Validate a SteampipePgConnection with connection_String should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SteampipePgConnection with connection_string")
+
+	// Case 2: Validate a SteampipePgConnection with user name and db should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		UserName: utils.ToStringPointer("user"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SteampipePgConnection with user name and db")
+
+	// Case 3: Validate a SteampipePgConnection with connectrion string AND user name and db, should fail with diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+		UserName:         utils.ToStringPointer("user"),
+		DbName:           utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with connection_string and user name and db")
+
+	// Case 4: Validate a SteampipePgConnection with user name but no db, should fail with diagnostics
+	conn = &SteampipePgConnection{
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with user name but no db")
+
+	// Case 5: Validate a SteampipePgConnection with db name but no user, should fail with diagnostics
+	conn = &SteampipePgConnection{
+		DbName: utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with db name but no user")
 }
 
 // ------------------------------------------------------------
@@ -2777,6 +3012,61 @@ func TestPipesConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated PipesConnection")
+}
+
+// ------------------------------------------------------------
+// Sqlite
+// ------------------------------------------------------------
+
+func TestSqliteConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *SqliteConnection
+	var conn2 *SqliteConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &SqliteConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same connection_string
+	connectionString := "postgres://user:password@localhost:5432/dbname"
+	conn1.ConnectionString = &connectionString
+	conn2 = &SqliteConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		ConnectionString: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different connection_strings
+	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
+	conn2.ConnectionString = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+}
+
+func TestSqliteConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty SqliteConnection, should fail with diagnostics
+	conn := &SqliteConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty SqliteConnection")
+
+	// Case 2: Validate a SqliteConnection with connection_String should pass with no diagnostics
+	conn = &SqliteConnection{
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SqliteConnection with connection_string")
 }
 
 // ------------------------------------------------------------
