@@ -29,7 +29,8 @@ type NotifierImpl struct {
 	HclResourceImpl          `json:"-"`
 	ResourceWithMetadataImpl `json:"-"`
 
-	Notifies []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
+	NotifierName string   `json:"notifier_name" cty:"notifier_name" hcl:"notifier_name"`
+	Notifies     []Notify `json:"notifies" cty:"notifies" hcl:"notifies"`
 
 	// required to allow partial decoding
 	Remain hcl.Body `hcl:",remain" json:"-"`
@@ -70,12 +71,12 @@ func (n *NotifierImpl) SetFileReference(fileName string, startLineNumber int, en
 	n.EndLineNumber = endLineNumber
 }
 
-func (c *NotifierImpl) GetNotifies() []Notify {
-	return c.Notifies
+func (n *NotifierImpl) GetNotifies() []Notify {
+	return n.Notifies
 }
 
-func (c *NotifierImpl) GetNotifierImpl() *NotifierImpl {
-	return c
+func (n *NotifierImpl) GetNotifierImpl() *NotifierImpl {
+	return n
 }
 
 func DefaultNotifiers(defaultHttpIntegration Integration) (map[string]Notifier, error) {
@@ -102,10 +103,10 @@ func DefaultNotifiers(defaultHttpIntegration Integration) (map[string]Notifier, 
 	return notifiers, nil
 }
 
-func (c *NotifierImpl) CtyValue() (cty.Value, error) {
+func (n *NotifierImpl) CtyValue() (cty.Value, error) {
 	notifies := []any{}
 
-	for _, notify := range c.Notifies {
+	for _, notify := range n.Notifies {
 		mapInterface, err := notify.MapInterface()
 		if err != nil {
 			return cty.NilVal, err
@@ -116,13 +117,13 @@ func (c *NotifierImpl) CtyValue() (cty.Value, error) {
 
 	notifierMap := make(map[string]interface{}, 1)
 	notifierMap["notifies"] = notifies
-	notifierMap["title"] = c.Title
-	notifierMap["full_name"] = c.FullName
-	notifierMap["short_name"] = c.ShortName
-	notifierMap["name"] = c.ShortName
-	notifierMap["unqualified_name"] = c.UnqualifiedName
-	if c.Description != nil {
-		notifierMap["description"] = *c.Description
+	notifierMap["title"] = n.Title
+	notifierMap["full_name"] = n.FullName
+	notifierMap["short_name"] = n.ShortName
+	notifierMap["name"] = n.ShortName
+	notifierMap["unqualified_name"] = n.UnqualifiedName
+	if n.Description != nil {
+		notifierMap["description"] = *n.Description
 	}
 	notifierMap["resource_type"] = "notifier"
 
@@ -130,21 +131,21 @@ func (c *NotifierImpl) CtyValue() (cty.Value, error) {
 	return notifierCtyVal, err
 }
 
-func (c *NotifierImpl) Validate() hcl.Diagnostics {
+func (n *NotifierImpl) Validate() hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
-	notifies := c.GetNotifies()
+	notifies := n.GetNotifies()
 	if len(notifies) < 1 {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  schema.BlockTypeNotifier + " must have at least one " + schema.BlockTypeNotify + " block to send the request to: " + c.Name(),
+			Summary:  schema.BlockTypeNotifier + " must have at least one " + schema.BlockTypeNotify + " block to send the request to: " + n.Name(),
 		})
 	}
 	return diags
 }
 
 // CustomType implements custom_type.CustomType interface
-func (c *NotifierImpl) CustomType() {
+func (n *NotifierImpl) CustomType() {
 }
 
 type Notify struct {
