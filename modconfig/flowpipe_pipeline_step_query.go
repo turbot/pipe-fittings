@@ -72,19 +72,19 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 	// database
 	if databaseExpression, ok := p.UnresolvedAttributes[schema.AttributeTypeDatabase]; ok {
 		// attribute needs resolving, this case may happen if we specify the entire option as an attribute
-		var connValue cty.Value
-		diags := gohcl.DecodeExpression(databaseExpression, evalContext, &connValue)
+		var dbValue cty.Value
+		diags := gohcl.DecodeExpression(databaseExpression, evalContext, &dbValue)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
-		if connValue.Type() == cty.String {
-			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(connValue.AsString())
+		// check if this is a connection string or a connection
+		if dbValue.Type() == cty.String {
+			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(dbValue.AsString())
 		} else {
-			c, err := app_specific_connection.CtyValueToConnection(connValue)
+			c, err := app_specific_connection.CtyValueToConnection(dbValue)
 			if err != nil {
 				return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 			}
-
 			if conn, ok := c.(connection.ConnectionStringProvider); ok {
 				results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 			} else {
