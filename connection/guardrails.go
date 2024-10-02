@@ -10,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const GuardrailsConnectionType = "turbot_guardrails"
+const GuardrailsConnectionType = "guardrails"
 
 type GuardrailsConnection struct {
 	ConnectionImpl

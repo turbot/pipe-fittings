@@ -13,7 +13,7 @@ const DuckDbConnectionType = "duckdb"
 
 type DuckDbConnection struct {
 	ConnectionImpl
-	ConnectionString *string `json:"database,omitempty" cty:"database" hcl:"database,optional"`
+	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
 }
 
 func NewDuckDbConnection(shortName string, declRange hcl.Range) PipelingConnection {
