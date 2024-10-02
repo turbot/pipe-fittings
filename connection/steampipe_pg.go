@@ -46,14 +46,17 @@ func (c *SteampipePgConnection) Resolve(ctx context.Context) (PipelingConnection
 
 func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 	// if pipes metadata is set, no other properties should be sets
-	if c.Pipes != nil && (c.ConnectionString != nil || c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil) {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "if pipes block is defined, no other auth properties should be set",
-				Subject:  c.DeclRange.HclRangePointer(),
-			},
+	if c.Pipes != nil {
+		if c.ConnectionString != nil || c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil {
+			return hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "if pipes block is defined, no other auth properties should be set",
+					Subject:  c.DeclRange.HclRangePointer(),
+				},
+			}
 		}
+		return nil
 	}
 	// if pipes is not set, either connection_string or user AND db must be set
 	if c.ConnectionString == nil {
@@ -61,7 +64,7 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 			return hcl.Diagnostics{
 				{
 					Severity: hcl.DiagError,
-					Summary:  "either connection_string or username AND db must be set",
+					Summary:  "either connection_string or username and db must be set",
 					Subject:  c.DeclRange.HclRangePointer(),
 				},
 			}

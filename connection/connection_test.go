@@ -2703,6 +2703,42 @@ func TestSteampipePgConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with db name but no user")
+
+	pipes := &PipesConnectionMetadata{
+		Connection: utils.ToStringPointer("default"),
+		User:       utils.ToStringPointer("user"),
+		Org:        utils.ToStringPointer("org"),
+		Workspace:  utils.ToStringPointer("ws"),
+	}
+
+	// Case 6: Validate a SteampipePgConnection with pipes block and no connection string, should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SteampipePgConnection with pipes block and no connection string")
+
+	// Case 7: Validate a SteampipePgConnection with pipes block and connection string, should fail with diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with pipes block and connection string")
+
+	// Case 8: Validate a SteampipePgConnection with pipes block and user name, should fail with diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with pipes block and user")
 }
 
 // ------------------------------------------------------------
