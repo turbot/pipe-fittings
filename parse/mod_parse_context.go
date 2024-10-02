@@ -97,6 +97,7 @@ type ModParseContext struct {
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
 	resourceMaps     *modconfig.ResourceMaps
+	lateBindingVars  map[string]cty.Value
 
 	// tactical: should connections and notifiers be added to the reference values?
 	// this is a temporary solution until the 2 methods of determining runtime dependencies are merged
@@ -126,6 +127,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 		referenceValues: map[string]ReferenceTypeValueMap{
 			"local": make(ReferenceTypeValueMap),
 		},
+		lateBindingVars: make(map[string]cty.Value),
 	}
 
 	// apply options
@@ -213,22 +215,24 @@ func (m *ModParseContext) PeekParent() string {
 
 // VariableValueCtyMap converts a map of variables to a map of the underlying cty value
 // Note: if the variable type is a late binding type (i.e. PipelingConnection), DO NOT add to map
-func VariableValueCtyMap(variables map[string]*modconfig.Variable) (map[string]cty.Value, map[string]cty.Value) {
-	var lateBindingVars = make(map[string]cty.Value)
-	ret := make(map[string]cty.Value, len(variables))
+func VariableValueCtyMap(variables map[string]*modconfig.Variable) (ret, lateBindingVars, lateBindingVarDeps map[string]cty.Value) {
+	lateBindingVarDeps = make(map[string]cty.Value)
+	ret = make(map[string]cty.Value, len(variables))
+	lateBindingVars = make(map[string]cty.Value, len(variables))
 	for k, v := range variables {
 		if v.IsLateBinding() {
 			// if the variable is a late binding variable, build a cty value containing all referenced connections
 			resourceNames, ok := ConnectionNamesValueFromCtyValue(v.Value)
 			if ok {
 				// add to late binding vars map
-				lateBindingVars[v.ShortName] = resourceNames
+				lateBindingVars[v.ShortName] = v.Value
+				lateBindingVarDeps[v.ShortName] = resourceNames
 			}
 		} else {
 			ret[k] = v.Value
 		}
 	}
-	return ret, lateBindingVars
+	return ret, lateBindingVars, lateBindingVarDeps
 }
 
 // AddInputVariableValues adds evaluated variables to the run context.
@@ -256,10 +260,12 @@ func (m *ModParseContext) addRootVariablesToReferenceMap() {
 	variables := m.Variables.RootVariables
 	// write local variables directly into referenceValues map
 	// NOTE: we add with the name "var" not "variable" as that is how variables are referenced
-	varCtyMap, lateBindingVars := VariableValueCtyMap(variables)
+	varCtyMap, lateBindingVars, lateBindingVarDeps := VariableValueCtyMap(variables)
 	m.referenceValues["local"]["var"] = varCtyMap
-
-	m.addLateBindingVariablesToReferenceValues(m.referenceValues["local"], lateBindingVars)
+	// store the late binding vars in case we need to add them (to parse pipeline params for example)
+	maps.Copy(m.lateBindingVars, lateBindingVars)
+	// add late binding variables deps to reference values
+	m.addLateBindingVariablesToReferenceValues(m.referenceValues["local"], lateBindingVarDeps)
 
 }
 
@@ -275,9 +281,16 @@ func (m *ModParseContext) addDependencyVariablesToReferenceMap() {
 			m.referenceValues[alias] = make(ReferenceTypeValueMap)
 		}
 
-		varCtyMap, lateBindingVars := VariableValueCtyMap(depVars.RootVariables)
+		varCtyMap, lateBindingVars, lateBindingVarDeps := VariableValueCtyMap(depVars.RootVariables)
 		m.referenceValues[alias]["var"] = varCtyMap
-		m.addLateBindingVariablesToReferenceValues(m.referenceValues[alias], lateBindingVars)
+		if m.lateBindingVars == nil {
+			m.lateBindingVars = make(map[string]cty.Value)
+		}
+		// store the late binding vars in case we need to add them (to parse pipeline params for example)
+		maps.Copy(m.lateBindingVars, lateBindingVars)
+		// add late binding variables deps to reference values
+		m.addLateBindingVariablesToReferenceValues(m.referenceValues["local"], lateBindingVarDeps)
+
 	}
 }
 
@@ -473,6 +486,20 @@ func (m *ModParseContext) RebuildEvalContext() {
 			}
 
 			variables[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
+		}
+		if len(m.lateBindingVars) > 0 {
+			var vars map[string]cty.Value
+			if currentVars, gotVars := variables[schema.AttributeVar]; gotVars {
+				vars = currentVars.AsValueMap()
+			}
+			if vars == nil {
+				vars = make(map[string]cty.Value)
+			}
+			for k, v := range m.lateBindingVars {
+				vars[k] = v
+			}
+			// convert back to cty object
+			variables[schema.AttributeVar] = cty.ObjectVal(vars)
 		}
 	}
 	// rebuild the eval context

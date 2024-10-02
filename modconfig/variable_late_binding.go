@@ -15,13 +15,13 @@ func resourceNamesFromLateBindingVarValueError(e *hcl.Diagnostic, evalContext *h
 	if e.Summary == "Unsupported attribute" {
 
 		for _, traversal := range e.Expression.Variables() {
-			resourceNames = ResourceNamesFromLateBingingVarTraversal(traversal, evalContext)
+			resourceNames = ResourceNamesFromLateBindingVarTraversal(traversal, evalContext)
 		}
 	}
 	return resourceNames
 }
 
-func ResourceNamesFromLateBingingVarTraversal(traversal hcl.Traversal, evalContext *hcl.EvalContext) []string {
+func ResourceNamesFromLateBindingVarTraversal(traversal hcl.Traversal, evalContext *hcl.EvalContext) []string {
 	// parse the traversal as a property path
 	pp, err := ParseResourcePropertyPath(hclhelpers.TraversalAsString(traversal))
 	if err == nil && pp.ItemType == schema.AttributeVar {
