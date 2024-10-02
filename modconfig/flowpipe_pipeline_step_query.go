@@ -85,6 +85,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 			if err != nil {
 				return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 			}
+
 			if conn, ok := c.(connection.ConnectionStringProvider); ok {
 				results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 			} else {
