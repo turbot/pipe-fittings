@@ -11,7 +11,7 @@ import (
 	"net/url"
 )
 
-const SteampipePgConnectionType = "steampipe_pg"
+const SteampipePgConnectionType = "steampipe"
 
 type SteampipePgConnection struct {
 	ConnectionImpl

@@ -77,16 +77,20 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
-		c, err := app_specific_connection.CtyValueToConnection(connValue)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
-		}
-
-		if conn, ok := c.(connection.ConnectionStringProvider); ok {
-			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
+		if connValue.Type() == cty.String {
+			results[schema.AttributeTypeDatabase] = utils.ToStringPointer(connValue.AsString())
 		} else {
-			slog.Warn("connection does not support connection string", "db", c)
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable invalid connection reference - only connections which implement GetConnectionString() are supported")
+			c, err := app_specific_connection.CtyValueToConnection(connValue)
+			if err != nil {
+				return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
+			}
+
+			if conn, ok := c.(connection.ConnectionStringProvider); ok {
+				results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
+			} else {
+				slog.Warn("connection does not support connection string", "db", c)
+				return nil, perr.BadRequestWithMessage(p.Name + ": unable invalid connection reference - only connections which implement GetConnectionString() are supported")
+			}
 		}
 
 	} else {
