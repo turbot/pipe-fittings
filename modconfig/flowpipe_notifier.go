@@ -126,6 +126,7 @@ func (n *NotifierImpl) CtyValue() (cty.Value, error) {
 		notifierMap["description"] = *n.Description
 	}
 	notifierMap["resource_type"] = "notifier"
+	notifierMap["notifier_name"] = n.NotifierName
 
 	notifierCtyVal, err := hclhelpers.ConvertInterfaceToCtyValue(notifierMap)
 	return notifierCtyVal, err
