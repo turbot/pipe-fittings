@@ -276,7 +276,7 @@ func (w *Workspace) getVariablesParseContext(ctx context.Context) (*parse.ModPar
 	// NOTE: exclude mod block as we have already loaded the mod definition
 	variablesParseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
 	// add the connections and notifiers to the eval context
-	variablesParseCtx.SetIncludeConnectionsAndNotifiers(true)
+	variablesParseCtx.SetIncludeLateBindingResources(true)
 
 	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
 }
