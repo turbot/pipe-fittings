@@ -15,6 +15,13 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
+//
+//type ImportSteampipeConnection interface {
+//	GetSource() *string
+//	GetPrefix() *string
+//	GetConnections() []string
+//}
+
 type FlowpipeConfig struct {
 	ConfigPaths []string
 
@@ -22,6 +29,7 @@ type FlowpipeConfig struct {
 	Credentials         map[string]credential.Credential
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
+	ConnectionImports   map[string]modconfig.ConnectionImport
 	PipelingConnections map[string]connection.PipelingConnection
 
 	watcher                 *filewatcher.FileWatcher
@@ -43,6 +51,7 @@ func (f *FlowpipeConfig) updateResources(other *FlowpipeConfig) {
 	f.Integrations = other.Integrations
 	f.Notifiers = other.Notifiers
 	f.PipelingConnections = other.PipelingConnections
+	f.ConnectionImports = other.ConnectionImports
 
 }
 
@@ -117,6 +126,17 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 			return false
 		}
 	}
+	if len(f.ConnectionImports) != len(other.ConnectionImports) {
+		return false
+	}
+	for k, v := range f.ConnectionImports {
+		if _, ok := other.ConnectionImports[k]; !ok {
+			return false
+		}
+		if !other.ConnectionImports[k].Equals(v) {
+			return false
+		}
+	}
 
 	return true
 }
@@ -177,6 +197,20 @@ func (f *FlowpipeConfig) handleFileWatcherEvent(ctx context.Context) {
 
 }
 
+func (f *FlowpipeConfig) credentialsToConnection() error {
+	for _, cred := range f.Credentials {
+		if _, exists := f.PipelingConnections[cred.Name()]; !exists {
+			conn, err := cred.ToConnection()
+			if err == nil {
+				return err
+			}
+			f.PipelingConnections[conn.Name()] = conn
+		}
+	}
+
+	return nil
+}
+
 func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 	defaultCreds, err := credential.DefaultCredentials()
 	if err != nil {
@@ -209,6 +243,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		Notifiers:           defaultNotifiers,
 		ConfigPaths:         configPaths,
 		PipelingConnections: defaultPipelingConnections,
+		ConnectionImports:   make(map[string]modconfig.ConnectionImport),
 		loadLock:            &sync.Mutex{},
 	}
 

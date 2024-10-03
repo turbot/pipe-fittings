@@ -62,10 +62,3 @@ var ConnectionTypeLookup = make(map[string]struct{}, 0)
 func RegisterConnectionType(connectionType string) {
 	ConnectionTypeLookup[connectionType] = struct{}{}
 }
-
-func ConnectionBlockForType(connectionType string) *hcl.Block {
-	return &hcl.Block{
-		Type:   connectionType,
-		Labels: []string{connectionType},
-	}
-}

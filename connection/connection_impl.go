@@ -76,9 +76,13 @@ func (c *ConnectionImpl) Equals(other *ConnectionImpl) bool {
 func (c *ConnectionImpl) CustomType() {
 }
 
-// LateBinding
+// LateBinding implements the LateBinding interface, marking this as a type whose value is not known until runtime
 func (c *ConnectionImpl) LateBinding() {
 }
+
+// ConnectionImportTarget implements the ConnectionImportTarget interface
+// marking this as a type that cvan be imported from a steampipe connection
+func (c *ConnectionImpl) ConnectionImportTarget() {}
 
 func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 	ctyValue, err := cty_helpers.GetCtyValue(connection)

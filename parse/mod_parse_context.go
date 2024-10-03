@@ -72,6 +72,7 @@ type ModParseContext struct {
 	Credentials         map[string]credential.Credential
 	CredentialImports   map[string]credential.CredentialImport
 	PipelingConnections map[string]connection.PipelingConnection
+	ConnectionImports   map[string]modconfig.ConnectionImport
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 

@@ -2,6 +2,10 @@ package credential
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/cty_helpers"
+	"golang.org/x/exp/maps"
 	"log/slog"
 	"reflect"
 	"strings"
@@ -182,6 +186,7 @@ type Credential interface {
 	getEnv() map[string]cty.Value
 
 	Equals(Credential) bool
+	GetCredentialImpl() CredentialImpl
 }
 
 type CredentialImpl struct {
@@ -209,3 +214,48 @@ func (c *CredentialImpl) GetCredentialType() string {
 func (c *CredentialImpl) SetCredentialType(credType string) {
 	c.Type = credType
 }
+
+func (c *CredentialImpl) GetCredentialImpl() CredentialImpl {
+	return *c
+}
+
+func ctyValueForCredential(credential Credential) (cty.Value, error) {
+	ctyValue, err := cty_helpers.GetCtyValue(credential)
+	if err != nil {
+		return cty.NilVal, err
+	}
+	impl := credential.GetCredentialImpl()
+	baseCtyValue, err := cty_helpers.GetCtyValue(impl)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	valueMap := ctyValue.AsValueMap()
+	mergedValueMap := baseCtyValue.AsValueMap()
+
+	// copy into mergedValueMap, overriding base properties with derived properties if where there are clashes
+	// we will return mergedValueMap
+	maps.Copy(mergedValueMap, valueMap)
+
+	mergedValueMap["env"] = cty.ObjectVal(credential.getEnv())
+	mergedValueMap["type"] = cty.StringVal(credential.GetCredentialType())
+	return cty.ObjectVal(mergedValueMap), nil
+}
+
+func CredentialToConnection(credential Credential) (connection.PipelingConnection, error) {
+	ctyValue, err := credential.CtyValue()
+	if err != nil {
+		return nil, err
+	}
+	conn, err := app_specific_connection.CtyValueToConnection(ctyValue)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+//
+//// ConnectionImportTarget implements the ConnectionImportTarget interface
+//// marking this as a type that cvan be imported from a steampipe connection
+//func (c *CredentialImpl) ConnectionImportTarget() {}

@@ -2,6 +2,9 @@ package credential
 
 import (
 	"context"
+	"fmt"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/utils"
 	"os"
 	"testing"
 
@@ -962,4 +965,43 @@ func XTestAwsCredentialRole(t *testing.T) {
 
 	assert.NotNil(newAwsCreds.SessionToken)
 	assert.NotEqual("", newAwsCreds.SessionToken)
+}
+
+func TestCredentialImpl_ToConnection(t *testing.T) {
+	tests := []struct {
+		name       string
+		credential Credential
+		want       connection.PipelingConnection
+		wantErr    assert.ErrorAssertionFunc
+	}{
+		{
+			name: "AbuseIPDBCredential",
+			credential: &AbuseIPDBCredential{
+				CredentialImpl: CredentialImpl{
+					HclResourceImpl: modconfig.HclResourceImpl{
+						ShortName: "default",
+						FullName:  "abuseipdb.default",
+					},
+				},
+				APIKey: utils.ToStringPointer("api key"),
+			},
+			want: &connection.AbuseIPDBConnection{
+				ConnectionImpl: connection.ConnectionImpl{
+					ShortName: "default",
+					FullName:  "abuseipdb.default",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			got, err := CredentialToConnection(tt.credential)
+			if !tt.wantErr(t, err, fmt.Sprintf("ToConnection()")) {
+				return
+			}
+			assert.Equalf(t, tt.want, got, "ToConnection()")
+		})
+	}
 }
