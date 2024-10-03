@@ -174,9 +174,9 @@ func decodePipelineParam(src string, block *hcl.Block, parseCtx *ModParseContext
 
 	// because we want to use late binding for temp creds *and* the ability for pipeline param to define custom type,
 	// we do the validation with with a list of temporary connections
-	parseCtx.SetIncludeConnectionsAndNotifiers(true)
+	parseCtx.SetIncludeLateBindingResources(true)
 	// be sure to revert the eval context to remove the temporary connections again
-	defer parseCtx.SetIncludeConnectionsAndNotifiers(false)
+	defer parseCtx.SetIncludeLateBindingResources(false)
 
 	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
 
