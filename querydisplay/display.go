@@ -165,6 +165,18 @@ func getTerminalColumnsRequiredForString(str string) int {
 	return colsRequired
 }
 
+type snapshotPanelData struct {
+	Columns  []*queryresult.ColumnDef `json:"columns"`
+	Rows     []map[string]interface{} `json:"rows"`
+	Metadata any                      `json:"metadata,omitempty"`
+}
+
+func NewSnapshotPanelData() *snapshotPanelData {
+	return &snapshotPanelData{
+		Rows: make([]map[string]interface{}, 0),
+	}
+}
+
 type jsonOutput struct {
 	Columns  []pqueryresult.ColumnDef `json:"columns"`
 	Rows     []map[string]interface{} `json:"rows"`
