@@ -97,11 +97,13 @@ type ModParseContext struct {
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
 	resourceMaps     *modconfig.ResourceMaps
-	lateBindingVars  map[string]cty.Value
+	// map of late binding variable values
+	// - this is added to the eval context if includeLateBindingResourcesInEvalContext is true
+	lateBindingVars map[string]cty.Value
 
 	// tactical: should connections and notifiers be added to the reference values?
 	// this is a temporary solution until the 2 methods of determining runtime dependencies are merged
-	includeConnectionsAndNotifiersInEvalContext bool
+	includeLateBindingResourcesInEvalContext bool
 
 	// mutex to control access to topLevelDependencyMods and resourceMaps when asyncronously adding dependency mods
 	depLock sync.Mutex
@@ -167,6 +169,8 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 	child.Integrations = parent.Integrations
 	child.CredentialImports = parent.CredentialImports
 	child.Notifiers = parent.Notifiers
+	// ensure to inherit the value of includeLateBindingResourcesInEvalContext
+	child.includeLateBindingResourcesInEvalContext = parent.includeLateBindingResourcesInEvalContext
 
 	// if this is a filepath dependency, we need to exclude hidden files underneath the target filepath
 	// (so we ignore any .steampipe or .powerpipe folders under the mod folder)
@@ -473,7 +477,7 @@ func (m *ModParseContext) RebuildEvalContext() {
 	variables[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
 
 	// should we include connections and notifiers?
-	if m.includeConnectionsAndNotifiersInEvalContext {
+	if m.includeLateBindingResourcesInEvalContext {
 		if len(m.PipelingConnections) > 0 {
 			connMap := BuildTemporaryConnectionMapForEvalContext(m.PipelingConnections)
 			variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
@@ -915,10 +919,10 @@ func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
 	}
 }
 
-// SetIncludeConnectionsAndNotifiers sets whether connections and notifiers should be included in the eval context
+// SetIncludeLateBindingResources sets whether connections and notifiers should be included in the eval context
 // and rebuilds the eval context
-func (m *ModParseContext) SetIncludeConnectionsAndNotifiers(include bool) {
-	m.includeConnectionsAndNotifiersInEvalContext = include
+func (m *ModParseContext) SetIncludeLateBindingResources(include bool) {
+	m.includeLateBindingResourcesInEvalContext = include
 	m.RebuildEvalContext()
 }
 
