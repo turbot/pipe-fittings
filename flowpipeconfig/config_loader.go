@@ -78,7 +78,7 @@ func LoadFlowpipeConfig(configPaths []string) (config *FlowpipeConfig, errorsAnd
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
-	err := config.credentialsToConnection()
+	err = config.credentialsToConnection()
 	if err != nil {
 		slog.Error("failed to convert credentials to connections", "error", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)

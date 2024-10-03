@@ -5,6 +5,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"log/slog"
 	"reflect"
 
 	"github.com/turbot/pipe-fittings/perr"
@@ -23,8 +24,11 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	shortName := value.GetAttr("short_name").AsString()
 	connectionType := value.GetAttr("type").AsString()
 	var declRange hclhelpers.Range
+
 	err = gocty.FromCtyValue(value.GetAttr("decl_range"), &declRange)
 	if err != nil {
+		// when converting from credential or steampipe conneciton, we will not have the decl range
+		slog.Info("unable to decode decl_range", "error", err)
 		return nil, perr.BadRequestWithMessage("unable to decode decl_range: " + err.Error())
 	}
 

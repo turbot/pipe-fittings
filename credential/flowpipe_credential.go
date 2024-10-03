@@ -5,6 +5,7 @@ import (
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"golang.org/x/exp/maps"
 	"log/slog"
 	"reflect"
@@ -224,21 +225,25 @@ func ctyValueForCredential(credential Credential) (cty.Value, error) {
 	if err != nil {
 		return cty.NilVal, err
 	}
-	impl := credential.GetCredentialImpl()
-	baseCtyValue, err := cty_helpers.GetCtyValue(impl)
+	credentialImpl := credential.GetCredentialImpl()
+	credentialsImplCtyValue, err := cty_helpers.GetCtyValue(credentialImpl)
+	if err != nil {
+		return cty.NilVal, err
+	}
+	hclImpl := credential.GetHclResourceImpl()
+	hclImplCtyValue, err := cty_helpers.GetCtyValue(hclImpl)
 	if err != nil {
 		return cty.NilVal, err
 	}
 
-	valueMap := ctyValue.AsValueMap()
-	mergedValueMap := baseCtyValue.AsValueMap()
-
 	// copy into mergedValueMap, overriding base properties with derived properties if where there are clashes
 	// we will return mergedValueMap
+	valueMap := ctyValue.AsValueMap()
+	mergedValueMap := hclImplCtyValue.AsValueMap()
 	maps.Copy(mergedValueMap, valueMap)
-
+	maps.Copy(mergedValueMap, credentialsImplCtyValue.AsValueMap())
 	mergedValueMap["env"] = cty.ObjectVal(credential.getEnv())
-	mergedValueMap["type"] = cty.StringVal(credential.GetCredentialType())
+
 	return cty.ObjectVal(mergedValueMap), nil
 }
 
@@ -247,6 +252,22 @@ func CredentialToConnection(credential Credential) (connection.PipelingConnectio
 	if err != nil {
 		return nil, err
 	}
+
+	// add ttl and hcl range
+	valueMap := ctyValue.AsValueMap()
+	valueMap["ttl"] = cty.NumberIntVal(int64(credential.GetTtl()))
+	declRange := hclhelpers.NewRange(credential.GetHclResourceImpl().DeclRange)
+	declRangeCty, err := cty_helpers.GetCtyValue(declRange)
+	if err != nil {
+		return nil, err
+	}
+	valueMap["decl_range"] = declRangeCty
+	keyesToDelete := []string{"title", "documentation", "description", "tags", "unqualified_name", "max_concurrency"}
+	for _, key := range keyesToDelete {
+		delete(valueMap, key)
+	}
+	ctyValue = cty.ObjectVal(valueMap)
+
 	conn, err := app_specific_connection.CtyValueToConnection(ctyValue)
 	if err != nil {
 		return nil, err

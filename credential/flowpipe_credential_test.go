@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
 	"os"
 	"testing"
@@ -968,6 +969,8 @@ func XTestAwsCredentialRole(t *testing.T) {
 }
 
 func TestCredentialImpl_ToConnection(t *testing.T) {
+	test_init.SetAppSpecificConstants()
+
 	tests := []struct {
 		name       string
 		credential Credential
@@ -982,6 +985,7 @@ func TestCredentialImpl_ToConnection(t *testing.T) {
 						ShortName: "default",
 						FullName:  "abuseipdb.default",
 					},
+					Type: "abuseipdb",
 				},
 				APIKey: utils.ToStringPointer("api key"),
 			},
@@ -989,8 +993,11 @@ func TestCredentialImpl_ToConnection(t *testing.T) {
 				ConnectionImpl: connection.ConnectionImpl{
 					ShortName: "default",
 					FullName:  "abuseipdb.default",
+					Ttl:       -1,
 				},
+				APIKey: utils.ToStringPointer("api key"),
 			},
+			wantErr: assert.NoError,
 		},
 	}
 

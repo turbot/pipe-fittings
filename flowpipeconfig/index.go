@@ -198,15 +198,15 @@ func (f *FlowpipeConfig) handleFileWatcherEvent(ctx context.Context) {
 }
 
 func (f *FlowpipeConfig) credentialsToConnection() error {
-	for _, cred := range f.Credentials {
-		if _, exists := f.PipelingConnections[cred.Name()]; !exists {
-			conn, err := cred.ToConnection()
-			if err == nil {
-				return err
-			}
-			f.PipelingConnections[conn.Name()] = conn
-		}
-	}
+	//for _, cred := range f.Credentials {
+	//	if _, exists := f.PipelingConnections[cred.Name()]; !exists {
+	//		conn, err := cred.ToConnection()
+	//		if err == nil {
+	//			return err
+	//		}
+	//		f.PipelingConnections[conn.Name()] = conn
+	//	}
+	//}
 
 	return nil
 }
