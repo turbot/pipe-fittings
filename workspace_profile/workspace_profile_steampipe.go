@@ -35,11 +35,9 @@ type SteampipeWorkspaceProfile struct {
 	Base              *SteampipeWorkspaceProfile `hcl:"base"`
 
 	// options
-	QueryOptions     *options.Query     `cty:"query-options"`
-	CheckOptions     *options.Check     `cty:"check-options"`
-	DashboardOptions *options.Dashboard `cty:"dashboard-options"`
-	DeclRange        hcl.Range
-	block            *hcl.Block
+	QueryOptions *options.Query `cty:"query-options"`
+	DeclRange    hcl.Range
+	block        *hcl.Block
 }
 
 func NewSteampipeWorkspaceProfile(block *hcl.Block) *SteampipeWorkspaceProfile {
@@ -66,10 +64,6 @@ func (p *SteampipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (option
 
 	case options.QueryBlock:
 		return new(options.Query), nil
-	case options.CheckBlock:
-		return new(options.Check), nil
-	case options.DashboardBlock:
-		return new(options.Dashboard), nil
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -98,16 +92,6 @@ func (p *SteampipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.
 			diags = append(diags, duplicateOptionsBlockDiag(block))
 		}
 		p.QueryOptions = o
-	case *options.Check:
-		if p.CheckOptions != nil {
-			diags = append(diags, duplicateOptionsBlockDiag(block))
-		}
-		p.CheckOptions = o
-	case *options.Dashboard:
-		if p.DashboardOptions != nil {
-			diags = append(diags, duplicateOptionsBlockDiag(block))
-		}
-		p.DashboardOptions = o
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -190,16 +174,6 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	} else {
 		p.QueryOptions.SetBaseProperties(p.Base.QueryOptions)
 	}
-	if p.CheckOptions == nil {
-		p.CheckOptions = p.Base.CheckOptions
-	} else {
-		p.CheckOptions.SetBaseProperties(p.Base.CheckOptions)
-	}
-	if p.DashboardOptions == nil {
-		p.DashboardOptions = p.Base.DashboardOptions
-	} else {
-		p.DashboardOptions.SetBaseProperties(p.Base.DashboardOptions)
-	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
@@ -226,12 +200,6 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 
 	if cmd.Name() == constants.CmdNameQuery && p.QueryOptions != nil {
 		res.PopulateConfigMapForOptions(p.QueryOptions)
-	}
-	if cmd.Name() == constants.CmdNameCheck && p.CheckOptions != nil {
-		res.PopulateConfigMapForOptions(p.CheckOptions)
-	}
-	if cmd.Name() == constants.CmdNameDashboard && p.DashboardOptions != nil {
-		res.PopulateConfigMapForOptions(p.DashboardOptions)
 	}
 
 	return res
