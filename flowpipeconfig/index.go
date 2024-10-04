@@ -15,12 +15,6 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-type ImportSteampipeConnection interface {
-	GetSource() *string
-	GetPrefix() *string
-	GetConnections() []string
-}
-
 type FlowpipeConfig struct {
 	ConfigPaths []string
 

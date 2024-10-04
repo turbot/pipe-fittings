@@ -247,13 +247,18 @@ func ctyValueForCredential(credential Credential) (cty.Value, error) {
 	return cty.ObjectVal(mergedValueMap), nil
 }
 
+// CredentialToConnection converts a credential to a connection
+// it does this by converting to a cty value, modifyin gthis cty value to be compatibel with connection cty
+// representation and then converting this to a connection
 func CredentialToConnection(credential Credential) (connection.PipelingConnection, error) {
 	ctyValue, err := credential.CtyValue()
 	if err != nil {
 		return nil, err
 	}
 
-	// add ttl and hcl range
+	// we need to modify this tty value to be compatible with connection cty representation
+
+	// add ttl and decl_range range
 	valueMap := ctyValue.AsValueMap()
 	valueMap["ttl"] = cty.NumberIntVal(int64(credential.GetTtl()))
 	declRange := hclhelpers.NewRange(credential.GetHclResourceImpl().DeclRange)
@@ -262,16 +267,14 @@ func CredentialToConnection(credential Credential) (connection.PipelingConnectio
 		return nil, err
 	}
 	valueMap["decl_range"] = declRangeCty
+
+	// remove some keys that are not needed in connection cty representation
 	keyesToDelete := []string{"title", "documentation", "description", "tags", "unqualified_name", "max_concurrency"}
 	for _, key := range keyesToDelete {
 		delete(valueMap, key)
 	}
 	ctyValue = cty.ObjectVal(valueMap)
 
-	conn, err := app_specific_connection.CtyValueToConnection(ctyValue)
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
+	// now convert this cty value to connection
+	return app_specific_connection.CtyValueToConnection(ctyValue)
 }

@@ -92,12 +92,6 @@ func LoadFlowpipeConfig(configPaths []string) (config *FlowpipeConfig, errorsAnd
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
-	//err := config.importConnections()
-	//if err != nil {
-	//	slog.Error("failed to import connections", "error", err)
-	//	return nil, error_helpers.NewErrorsAndWarning(err)
-	//}
-
 	return config, errorsAndWarnings
 }
 
