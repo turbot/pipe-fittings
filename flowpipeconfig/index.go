@@ -22,6 +22,7 @@ type FlowpipeConfig struct {
 	Credentials         map[string]credential.Credential
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
+	ConnectionImports   map[string]modconfig.ConnectionImport
 	PipelingConnections map[string]connection.PipelingConnection
 
 	watcher                 *filewatcher.FileWatcher
@@ -43,6 +44,7 @@ func (f *FlowpipeConfig) updateResources(other *FlowpipeConfig) {
 	f.Integrations = other.Integrations
 	f.Notifiers = other.Notifiers
 	f.PipelingConnections = other.PipelingConnections
+	f.ConnectionImports = other.ConnectionImports
 
 }
 
@@ -114,6 +116,17 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 		}
 
 		if !other.PipelingConnections[k].Equals(v) {
+			return false
+		}
+	}
+	if len(f.ConnectionImports) != len(other.ConnectionImports) {
+		return false
+	}
+	for k, v := range f.ConnectionImports {
+		if _, ok := other.ConnectionImports[k]; !ok {
+			return false
+		}
+		if !other.ConnectionImports[k].Equals(v) {
 			return false
 		}
 	}
@@ -209,6 +222,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		Notifiers:           defaultNotifiers,
 		ConfigPaths:         configPaths,
 		PipelingConnections: defaultPipelingConnections,
+		ConnectionImports:   make(map[string]modconfig.ConnectionImport),
 		loadLock:            &sync.Mutex{},
 	}
 

@@ -23,6 +23,7 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	shortName := value.GetAttr("short_name").AsString()
 	connectionType := value.GetAttr("type").AsString()
 	var declRange hclhelpers.Range
+
 	err = gocty.FromCtyValue(value.GetAttr("decl_range"), &declRange)
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode decl_range: " + err.Error())

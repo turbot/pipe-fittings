@@ -1,4 +1,4 @@
-package credential
+package parse
 
 import (
 	"github.com/hashicorp/hcl/v2"

@@ -2,12 +2,17 @@ package credential
 
 import (
 	"context"
+	"golang.org/x/exp/maps"
 	"log/slog"
 	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
@@ -182,6 +187,7 @@ type Credential interface {
 	getEnv() map[string]cty.Value
 
 	Equals(Credential) bool
+	GetCredentialImpl() CredentialImpl
 }
 
 type CredentialImpl struct {
@@ -208,4 +214,67 @@ func (c *CredentialImpl) GetCredentialType() string {
 
 func (c *CredentialImpl) SetCredentialType(credType string) {
 	c.Type = credType
+}
+
+func (c *CredentialImpl) GetCredentialImpl() CredentialImpl {
+	return *c
+}
+
+func ctyValueForCredential(credential Credential) (cty.Value, error) {
+	ctyValue, err := cty_helpers.GetCtyValue(credential)
+	if err != nil {
+		return cty.NilVal, err
+	}
+	credentialImpl := credential.GetCredentialImpl()
+	credentialsImplCtyValue, err := cty_helpers.GetCtyValue(credentialImpl)
+	if err != nil {
+		return cty.NilVal, err
+	}
+	hclImpl := credential.GetHclResourceImpl()
+	hclImplCtyValue, err := cty_helpers.GetCtyValue(hclImpl)
+	if err != nil {
+		return cty.NilVal, err
+	}
+
+	// copy into mergedValueMap, overriding base properties with derived properties if where there are clashes
+	// we will return mergedValueMap
+	valueMap := ctyValue.AsValueMap()
+	mergedValueMap := hclImplCtyValue.AsValueMap()
+	maps.Copy(mergedValueMap, valueMap)
+	maps.Copy(mergedValueMap, credentialsImplCtyValue.AsValueMap())
+	mergedValueMap["env"] = cty.ObjectVal(credential.getEnv())
+
+	return cty.ObjectVal(mergedValueMap), nil
+}
+
+// CredentialToConnection converts a credential to a connection
+// it does this by converting to a cty value, modifyin gthis cty value to be compatibel with connection cty
+// representation and then converting this to a connection
+func CredentialToConnection(credential Credential) (connection.PipelingConnection, error) {
+	ctyValue, err := credential.CtyValue()
+	if err != nil {
+		return nil, err
+	}
+
+	// we need to modify this tty value to be compatible with connection cty representation
+
+	// add ttl and decl_range range
+	valueMap := ctyValue.AsValueMap()
+	valueMap["ttl"] = cty.NumberIntVal(int64(credential.GetTtl()))
+	declRange := hclhelpers.NewRange(credential.GetHclResourceImpl().DeclRange)
+	declRangeCty, err := cty_helpers.GetCtyValue(declRange)
+	if err != nil {
+		return nil, err
+	}
+	valueMap["decl_range"] = declRangeCty
+
+	// remove some keys that are not needed in connection cty representation
+	keyesToDelete := []string{"title", "documentation", "description", "tags", "unqualified_name", "max_concurrency"}
+	for _, key := range keyesToDelete {
+		delete(valueMap, key)
+	}
+	ctyValue = cty.ObjectVal(valueMap)
+
+	// now convert this cty value to connection
+	return app_specific_connection.CtyValueToConnection(ctyValue)
 }

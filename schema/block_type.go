@@ -46,6 +46,7 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeLoop              = "loop"
+	BlockTypeConnectionImport  = "connection_import"
 	BlockTypeCredential        = "credential"
 	BlockTypeCredentialImport  = "credential_import" //nolint:gosec // this is not a password
 	BlockTypeNotify            = "notify"

@@ -54,6 +54,10 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 			LabelNames: []string{schema.LabelName},
 		},
 		{
+			Type:       schema.BlockTypeConnectionImport,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
 			Type:       schema.BlockTypeIntegration,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},

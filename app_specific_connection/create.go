@@ -63,9 +63,7 @@ func RegisterConnectionType(connectionType string) {
 	ConnectionTypeLookup[connectionType] = struct{}{}
 }
 
-func ConnectionBlockForType(connectionType string) *hcl.Block {
-	return &hcl.Block{
-		Type:   connectionType,
-		Labels: []string{connectionType},
-	}
+func ConnectionTypeSupported(connectionType string) bool {
+	_, exists := ConnectionTypeLookup[connectionType]
+	return exists
 }

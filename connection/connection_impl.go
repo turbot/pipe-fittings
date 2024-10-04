@@ -15,7 +15,7 @@ type ConnectionImpl struct {
 	Pipes *PipesConnectionMetadata `json:"pipes,omitempty" cty:"pipes" hcl:"pipes,block"`
 
 	ShortName string `json:"short_name" cty:"short_name"`
-	FullName  string `json:"full_name,omitempty" cty:"full_name"`
+	FullName  string `json:"full_name,omitempty" cty:"name"`
 	// DeclRange uses the hclhelpers.Range type which reimplements hcl.Range with custom serialisation
 	DeclRange hclhelpers.Range `json:"decl_range,omitempty" cty:"decl_range"`
 	// cache ttl in seconds
@@ -76,7 +76,7 @@ func (c *ConnectionImpl) Equals(other *ConnectionImpl) bool {
 func (c *ConnectionImpl) CustomType() {
 }
 
-// LateBinding
+// LateBinding implements the LateBinding interface, marking this as a type whose value is not known until runtime
 func (c *ConnectionImpl) LateBinding() {
 }
 

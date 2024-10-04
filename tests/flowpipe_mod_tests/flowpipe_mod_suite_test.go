@@ -427,6 +427,34 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert.Equal("sfhshfhslfh", stepInputs["value"], "profile should be set to sfhshfhslfh")
 }
 
+// veify crentials are converted to connections buty DO NOT overwrite existin gconnections
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigCredentialsAndConnection() {
+	assert := assert.New(suite.T())
+	require := require.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_credentials_and_connections"})
+	require.Nil(err.Error)
+
+	// verify that the slack credential has been copied to a connection bu the existing aws connection is not overwritten
+	// has slack been copied
+	slackConn := flowpipeConfig.PipelingConnections["slack.slack_conn"]
+	if helpers.IsNil(slackConn) {
+		assert.Fail("slack.slack_conn credential not converted to a connection")
+		return
+	}
+
+	assert.Equal("abc1", *slackConn.(*connection.SlackConnection).Token)
+
+	// verify aws has not been overwritten
+	pcon := flowpipeConfig.PipelingConnections["aws.prod_conn"]
+	if helpers.IsNil(pcon) {
+		assert.Fail("aws.prod_conn connection not found")
+		return
+	}
+	assert.Equal("prod1_connection", *pcon.(*connection.AwsConnection).Profile)
+
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
 	assert := assert.New(suite.T())
 	// Reading from different file will always result in different config
@@ -757,6 +785,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 		return
 	}
 
+	// verify credentials
 	// AbuseIPDB
 	assert.Equal("steampipe_abuseipdb", flowpipeConfig.CredentialImports["steampipe_abuseipdb"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_abuseipdb"].Prefix)
@@ -1062,6 +1091,473 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("pam@dmj.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Email)
 	assert.Equal("dmj", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Subdomain)
 	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Token)
+
+	// verify connections
+
+	// AbuseIPDB
+	assert.Equal("abuseipdb.sp1_abuseipdb_1", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].GetConnectionImpl().FullName)
+	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].(*connection.AbuseIPDBConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].(*connection.AbuseIPDBConnection).APIKey)
+
+	// Alicloud
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).SecretKey)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).SecretKey)
+
+	// AWS
+	assert.Equal("aws.sp1_aws", flowpipeConfig.PipelingConnections["aws.sp1_aws"].GetConnectionImpl().FullName)
+	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].GetConnectionImpl().FullName)
+	assert.Equal("abc", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).AccessKey)
+	assert.Equal("123", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).SecretKey)
+
+	// Azure
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].GetConnectionImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].GetConnectionImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientSecret)
+	assert.Nil(flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).TenantID)
+
+	// Bitbucket
+	assert.Equal("bitbucket.sp1_bitbucket_1", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].GetConnectionImpl().FullName)
+	assert.Equal("bitbucket.sp1_bitbucket_2", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Username)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Username)
+
+	// ClickUp
+	assert.Equal("clickup.sp1_clickup_1", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].GetConnectionImpl().FullName)
+	assert.Equal("clickup.sp1_clickup_2", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].(*connection.ClickUpConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].(*connection.ClickUpConnection).Token)
+
+	// Datadog
+	assert.Equal("datadog.sp1_datadog_1", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].GetConnectionImpl().FullName)
+	assert.Equal("datadog.sp1_datadog_2", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].GetConnectionImpl().FullName)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef56a7", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c111a1", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).AppKey)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef57b8", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c222b2", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).AppKey)
+
+	// Discord
+	assert.Equal("discord.sp1_discord_1", flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].GetConnectionImpl().FullName)
+	assert.Equal("discord.sp1_discord_2", flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].(*connection.DiscordConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].(*connection.DiscordConnection).Token)
+
+	// Freshdesk
+	assert.Equal("freshdesk.sp1_freshdesk_1", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("freshdesk.sp1_freshdesk_2", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).Subdomain)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).Subdomain)
+
+	// GCP
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].GetConnectionImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].GetConnectionImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].(*connection.GcpConnection).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].(*connection.GcpConnection).Credentials)
+
+	// Github
+	assert.Equal("github.sp1_github_1", flowpipeConfig.PipelingConnections["github.sp1_github_1"].GetConnectionImpl().FullName)
+	assert.Equal("github.sp1_github_2", flowpipeConfig.PipelingConnections["github.sp1_github_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["github.sp1_github_1"].(*connection.GithubConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["github.sp1_github_2"].(*connection.GithubConnection).Token)
+
+	// Gitlab
+	assert.Equal("gitlab.sp1_gitlab_1", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].GetConnectionImpl().FullName)
+	assert.Equal("gitlab.sp1_gitlab_2", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].GetConnectionImpl().FullName)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].(*connection.GitLabConnection).Token)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].(*connection.GitLabConnection).Token)
+
+	// Guardrails
+	assert.Equal("guardrails.sp1_guardrails_1", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].GetConnectionImpl().FullName)
+	assert.Equal("guardrails.sp1_guardrails_2", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].GetConnectionImpl().FullName)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).Workspace)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).Workspace)
+
+	// IP2LocationIO
+	assert.Equal("ip2locationio.sp1_ip2locationio_1", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].GetConnectionImpl().FullName)
+	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].(*connection.IP2LocationIOConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].(*connection.IP2LocationIOConnection).APIKey)
+
+	// IPstack
+	assert.Equal("ipstack.sp1_ipstack_1", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].GetConnectionImpl().FullName)
+	assert.Equal("ipstack.sp1_ipstack_2", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].GetConnectionImpl().FullName)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].(*connection.IPstackConnection).AccessKey)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].(*connection.IPstackConnection).AccessKey)
+
+	// Jira
+	assert.Equal("jira.sp1_jira_1", flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_2", flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_3", flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgj", *flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].(*connection.JiraConnection).APIToken)
+
+	// JumpCloud
+	assert.Equal("jumpcloud.sp1_jumpcloud_1", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("jumpcloud.sp1_jumpcloud_2", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].(*connection.JumpCloudConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].(*connection.JumpCloudConnection).APIKey)
+
+	// Mastodon
+	assert.Equal("mastodon.sp1_mastodon_1", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].GetConnectionImpl().FullName)
+	assert.Equal("mastodon.sp1_mastodon_2", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].GetConnectionImpl().FullName)
+	assert.Equal("FK1_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).Server)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).Server)
+
+	// Okta
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].GetConnectionImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Token)
+
+	// OpenAI
+	assert.Equal("openai.sp1_openai_1", flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].GetConnectionImpl().FullName)
+	assert.Equal("openai.sp1_openai_2", flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].(*connection.OpenAIConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].(*connection.OpenAIConnection).APIKey)
+
+	// Opsgenie
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].GetConnectionImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].GetConnectionImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).IncidentAPIKey)
+
+	// PagerDuty
+	assert.Equal("pagerduty.sp1_pagerduty_1", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].GetConnectionImpl().FullName)
+	assert.Equal("pagerduty.sp1_pagerduty_2", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].(*connection.PagerDutyConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].(*connection.PagerDutyConnection).Token)
+
+	// Pipes
+	assert.Equal("pipes.sp1_pipes_1", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].GetConnectionImpl().FullName)
+	assert.Equal("pipes.sp1_pipes_2", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].(*connection.PipesConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].(*connection.PipesConnection).Token)
+
+	// SendGrid
+	assert.Equal("sendgrid.sp1_sendgrid_1", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].GetConnectionImpl().FullName)
+	assert.Equal("sendgrid.sp1_sendgrid_2", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].(*connection.SendGridConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].(*connection.SendGridConnection).APIKey)
+
+	// ServiceNow
+	assert.Equal("servicenow.sp1_servicenow_1", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].GetConnectionImpl().FullName)
+	assert.Equal("servicenow.sp1_servicenow_2", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Password)
+	assert.Equal("https://test1.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword1", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Password)
+
+	// Slack
+	assert.Equal("slack.sp1_slack_l1", flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].GetConnectionImpl().FullName)
+	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].(*connection.SlackConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].(*connection.SlackConnection).Token)
+
+	// Trello
+	assert.Equal("trello.sp1_trello_1", flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].GetConnectionImpl().FullName)
+	assert.Equal("trello.sp1_trello_2", flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).Token)
+
+	// Urlscan
+	assert.Equal("urlscan.sp1_urlscan_1", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].GetConnectionImpl().FullName)
+	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].(*connection.UrlscanConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].(*connection.UrlscanConnection).APIKey)
+
+	// Vault
+	assert.Equal("vault.sp1_vault_1", flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].GetConnectionImpl().FullName)
+	assert.Equal("vault.sp1_vault_2", flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Address)
+	assert.Equal("sometoken", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Token)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Address)
+	assert.Nil(flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Token)
+
+	// Zendesk
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmi", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmj", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Token)
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithConnectionImport() {
+	assert := assert.New(suite.T())
+
+	// Load the config from 2 different directories to test that we can load from multiple directories where the integration is defined after
+	// we load the notifiers.
+	//
+	// ensure that "config_dir" is loaded first, that's where the notifier is.
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_with_connection_import", "./empty_mod"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	// verify connections
+
+	// AbuseIPDB
+	assert.Equal("abuseipdb.sp1_abuseipdb_1", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].GetConnectionImpl().FullName)
+	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].(*connection.AbuseIPDBConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].(*connection.AbuseIPDBConnection).APIKey)
+
+	// Alicloud
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).SecretKey)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).SecretKey)
+
+	// AWS
+	assert.Equal("aws.sp1_aws", flowpipeConfig.PipelingConnections["aws.sp1_aws"].GetConnectionImpl().FullName)
+	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].GetConnectionImpl().FullName)
+	assert.Equal("abc", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).AccessKey)
+	assert.Equal("123", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).SecretKey)
+
+	// Azure
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].GetConnectionImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].GetConnectionImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientSecret)
+	assert.Nil(flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).TenantID)
+
+	// Bitbucket
+	assert.Equal("bitbucket.sp1_bitbucket_1", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].GetConnectionImpl().FullName)
+	assert.Equal("bitbucket.sp1_bitbucket_2", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Username)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Username)
+
+	// ClickUp
+	assert.Equal("clickup.sp1_clickup_1", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].GetConnectionImpl().FullName)
+	assert.Equal("clickup.sp1_clickup_2", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].(*connection.ClickUpConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].(*connection.ClickUpConnection).Token)
+
+	// Datadog
+	assert.Equal("datadog.sp1_datadog_1", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].GetConnectionImpl().FullName)
+	assert.Equal("datadog.sp1_datadog_2", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].GetConnectionImpl().FullName)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef56a7", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c111a1", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).AppKey)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef57b8", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c222b2", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).AppKey)
+
+	// Discord
+	assert.Equal("discord.sp1_discord_1", flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].GetConnectionImpl().FullName)
+	assert.Equal("discord.sp1_discord_2", flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].(*connection.DiscordConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].(*connection.DiscordConnection).Token)
+
+	// Freshdesk
+	assert.Equal("freshdesk.sp1_freshdesk_1", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("freshdesk.sp1_freshdesk_2", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).Subdomain)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).Subdomain)
+
+	// GCP
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].GetConnectionImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].GetConnectionImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].(*connection.GcpConnection).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].(*connection.GcpConnection).Credentials)
+
+	// Github
+	assert.Equal("github.sp1_github_1", flowpipeConfig.PipelingConnections["github.sp1_github_1"].GetConnectionImpl().FullName)
+	assert.Equal("github.sp1_github_2", flowpipeConfig.PipelingConnections["github.sp1_github_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["github.sp1_github_1"].(*connection.GithubConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["github.sp1_github_2"].(*connection.GithubConnection).Token)
+
+	// Gitlab
+	assert.Equal("gitlab.sp1_gitlab_1", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].GetConnectionImpl().FullName)
+	assert.Equal("gitlab.sp1_gitlab_2", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].GetConnectionImpl().FullName)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].(*connection.GitLabConnection).Token)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].(*connection.GitLabConnection).Token)
+
+	// Guardrails
+	assert.Equal("guardrails.sp1_guardrails_1", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].GetConnectionImpl().FullName)
+	assert.Equal("guardrails.sp1_guardrails_2", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].GetConnectionImpl().FullName)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).Workspace)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).Workspace)
+
+	// IP2LocationIO
+	assert.Equal("ip2locationio.sp1_ip2locationio_1", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].GetConnectionImpl().FullName)
+	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].(*connection.IP2LocationIOConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].(*connection.IP2LocationIOConnection).APIKey)
+
+	// IPstack
+	assert.Equal("ipstack.sp1_ipstack_1", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].GetConnectionImpl().FullName)
+	assert.Equal("ipstack.sp1_ipstack_2", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].GetConnectionImpl().FullName)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].(*connection.IPstackConnection).AccessKey)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].(*connection.IPstackConnection).AccessKey)
+
+	// Jira
+	assert.Equal("jira.sp1_jira_1", flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_2", flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_3", flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgj", *flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].(*connection.JiraConnection).APIToken)
+
+	// JumpCloud
+	assert.Equal("jumpcloud.sp1_jumpcloud_1", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("jumpcloud.sp1_jumpcloud_2", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].(*connection.JumpCloudConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].(*connection.JumpCloudConnection).APIKey)
+
+	// Mastodon
+	assert.Equal("mastodon.sp1_mastodon_1", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].GetConnectionImpl().FullName)
+	assert.Equal("mastodon.sp1_mastodon_2", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].GetConnectionImpl().FullName)
+	assert.Equal("FK1_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).Server)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).Server)
+
+	// Okta
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].GetConnectionImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Token)
+
+	// OpenAI
+	assert.Equal("openai.sp1_openai_1", flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].GetConnectionImpl().FullName)
+	assert.Equal("openai.sp1_openai_2", flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].(*connection.OpenAIConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].(*connection.OpenAIConnection).APIKey)
+
+	// Opsgenie
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].GetConnectionImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].GetConnectionImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).IncidentAPIKey)
+
+	// PagerDuty
+	assert.Equal("pagerduty.sp1_pagerduty_1", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].GetConnectionImpl().FullName)
+	assert.Equal("pagerduty.sp1_pagerduty_2", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].(*connection.PagerDutyConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].(*connection.PagerDutyConnection).Token)
+
+	// Pipes
+	assert.Equal("pipes.sp1_pipes_1", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].GetConnectionImpl().FullName)
+	assert.Equal("pipes.sp1_pipes_2", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].(*connection.PipesConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].(*connection.PipesConnection).Token)
+
+	// SendGrid
+	assert.Equal("sendgrid.sp1_sendgrid_1", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].GetConnectionImpl().FullName)
+	assert.Equal("sendgrid.sp1_sendgrid_2", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].(*connection.SendGridConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].(*connection.SendGridConnection).APIKey)
+
+	// ServiceNow
+	assert.Equal("servicenow.sp1_servicenow_1", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].GetConnectionImpl().FullName)
+	assert.Equal("servicenow.sp1_servicenow_2", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Password)
+	assert.Equal("https://test1.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword1", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Password)
+
+	// Slack
+	assert.Equal("slack.sp1_slack_l1", flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].GetConnectionImpl().FullName)
+	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].(*connection.SlackConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].(*connection.SlackConnection).Token)
+
+	// Trello
+	assert.Equal("trello.sp1_trello_1", flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].GetConnectionImpl().FullName)
+	assert.Equal("trello.sp1_trello_2", flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).Token)
+
+	// Urlscan
+	assert.Equal("urlscan.sp1_urlscan_1", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].GetConnectionImpl().FullName)
+	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].(*connection.UrlscanConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].(*connection.UrlscanConnection).APIKey)
+
+	// Vault
+	assert.Equal("vault.sp1_vault_1", flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].GetConnectionImpl().FullName)
+	assert.Equal("vault.sp1_vault_2", flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Address)
+	assert.Equal("sometoken", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Token)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Address)
+	assert.Nil(flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Token)
+
+	// Zendesk
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmi", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmj", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Token)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
