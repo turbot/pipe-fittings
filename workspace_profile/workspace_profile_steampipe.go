@@ -3,6 +3,8 @@ package workspace_profile
 import (
 	"fmt"
 
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
@@ -10,27 +12,19 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
 
 type SteampipeWorkspaceProfile struct {
-	ProfileName string `hcl:"name,label" cty:"name"`
-	// deprecated
-	CloudHost *string `hcl:"cloud_host,optional" cty:"cloud_host"`
-	PipesHost *string `hcl:"pipes_host,optional" cty:"pipes_host"`
-	// deprecated
-	CloudToken        *string                    `hcl:"cloud_token,optional" cty:"cloud_token"`
+	ProfileName       string                     `hcl:"name,label" cty:"name"`
+	PipesHost         *string                    `hcl:"pipes_host,optional" cty:"pipes_host"`
 	PipesToken        *string                    `hcl:"pipes_token,optional" cty:"pipes_token"`
 	InstallDir        *string                    `hcl:"install_dir,optional" cty:"install_dir"`
-	ModLocation       *string                    `hcl:"mod_location,optional" cty:"mod_location"`
 	QueryTimeout      *int                       `hcl:"query_timeout,optional" cty:"query_timeout"`
 	SnapshotLocation  *string                    `hcl:"snapshot_location,optional" cty:"snapshot_location"`
 	WorkspaceDatabase *string                    `hcl:"workspace_database,optional" cty:"workspace_database"`
 	SearchPath        *string                    `hcl:"search_path" cty:"search_path"`
 	SearchPathPrefix  *string                    `hcl:"search_path_prefix" cty:"search_path_prefix"`
-	Watch             *bool                      `hcl:"watch" cty:"watch"`
 	MaxParallel       *int                       `hcl:"max_parallel" cty:"max-parallel"`
-	Introspection     *string                    `hcl:"introspection" cty:"introspection"`
 	Input             *bool                      `hcl:"input" cty:"input"`
 	Progress          *bool                      `hcl:"progress" cty:"progress"`
 	Theme             *string                    `hcl:"theme" cty:"theme"`
@@ -39,11 +33,9 @@ type SteampipeWorkspaceProfile struct {
 	Base              *SteampipeWorkspaceProfile `hcl:"base"`
 
 	// options
-	QueryOptions     *options.Query     `cty:"query-options"`
-	CheckOptions     *options.Check     `cty:"check-options"`
-	DashboardOptions *options.Dashboard `cty:"dashboard-options"`
-	DeclRange        hcl.Range
-	block            *hcl.Block
+	QueryOptions *options.Query `cty:"query-options"`
+	DeclRange    hcl.Range
+	block        *hcl.Block
 }
 
 func NewSteampipeWorkspaceProfile(block *hcl.Block) *SteampipeWorkspaceProfile {
@@ -70,10 +62,6 @@ func (p *SteampipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (option
 
 	case options.QueryBlock:
 		return new(options.Query), nil
-	case options.CheckBlock:
-		return new(options.Check), nil
-	case options.DashboardBlock:
-		return new(options.Dashboard), nil
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -102,16 +90,6 @@ func (p *SteampipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.
 			diags = append(diags, duplicateOptionsBlockDiag(block))
 		}
 		p.QueryOptions = o
-	case *options.Check:
-		if p.CheckOptions != nil {
-			diags = append(diags, duplicateOptionsBlockDiag(block))
-		}
-		p.CheckOptions = o
-	case *options.Dashboard:
-		if p.DashboardOptions != nil {
-			diags = append(diags, duplicateOptionsBlockDiag(block))
-		}
-		p.DashboardOptions = o
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -140,61 +118,15 @@ func (p *SteampipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 
 func (p *SteampipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
-
-	return p.validate()
-}
-
-func (p *SteampipeWorkspaceProfile) validate() hcl.Diagnostics {
-	var diags hcl.Diagnostics
-	// validate that both deprecated and new versions of propertied have not been set
-	if p.CloudHost != nil && p.PipesHost != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "both cloud_host and pipes_host cannot be set",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	if p.CloudToken != nil && p.PipesToken != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "both cloud_token and pipes_token cannot be set",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	// return warnings if deprecated properties are set
-	if p.CloudHost != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  "cloud_host is deprecated, use pipes_host",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	if p.CloudToken != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  "cloud_token is deprecated, use pipes_token",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	return diags
+	return nil
 }
 
 func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
 	}
-
-	if p.CloudHost == nil {
-		p.CloudHost = p.Base.CloudHost
-	}
-	if p.CloudToken == nil {
-		p.CloudToken = p.Base.CloudToken
-	}
 	if p.InstallDir == nil {
 		p.InstallDir = p.Base.InstallDir
-	}
-	if p.ModLocation == nil {
-		p.ModLocation = p.Base.ModLocation
 	}
 	if p.SnapshotLocation == nil {
 		p.SnapshotLocation = p.Base.SnapshotLocation
@@ -211,14 +143,8 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.SearchPathPrefix == nil {
 		p.SearchPathPrefix = p.Base.SearchPathPrefix
 	}
-	if p.Watch == nil {
-		p.Watch = p.Base.Watch
-	}
 	if p.MaxParallel == nil {
 		p.MaxParallel = p.Base.MaxParallel
-	}
-	if p.Introspection == nil {
-		p.Introspection = p.Base.Introspection
 	}
 	if p.Input == nil {
 		p.Input = p.Base.Input
@@ -240,16 +166,6 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	} else {
 		p.QueryOptions.SetBaseProperties(p.Base.QueryOptions)
 	}
-	if p.CheckOptions == nil {
-		p.CheckOptions = p.Base.CheckOptions
-	} else {
-		p.CheckOptions.SetBaseProperties(p.Base.CheckOptions)
-	}
-	if p.DashboardOptions == nil {
-		p.DashboardOptions = p.Base.DashboardOptions
-	} else {
-		p.DashboardOptions.SetBaseProperties(p.Base.DashboardOptions)
-	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
@@ -257,20 +173,15 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res := ConfigMap{}
 	// add non-empty properties to config map
 
-	res.SetStringItem(p.CloudHost, constants.ArgPipesHost)
-	res.SetStringItem(p.CloudToken, constants.ArgPipesToken)
 	res.SetStringItem(p.PipesHost, constants.ArgPipesHost)
 	res.SetStringItem(p.PipesToken, constants.ArgPipesToken)
 	res.SetStringItem(p.InstallDir, constants.ArgInstallDir)
-	res.SetStringItem(p.ModLocation, constants.ArgModLocation)
 	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)
 	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
 	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
-	res.SetBoolItem(p.Watch, constants.ArgWatch)
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPath, ","), constants.ArgSearchPath)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPathPrefix, ","), constants.ArgSearchPathPrefix)
-	res.SetStringItem(p.Introspection, constants.ArgIntrospection)
 	res.SetBoolItem(p.Input, constants.ArgInput)
 	res.SetBoolItem(p.Progress, constants.ArgProgress)
 	res.SetStringItem(p.Theme, constants.ArgTheme)
@@ -279,12 +190,6 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 
 	if cmd.Name() == constants.CmdNameQuery && p.QueryOptions != nil {
 		res.PopulateConfigMapForOptions(p.QueryOptions)
-	}
-	if cmd.Name() == constants.CmdNameCheck && p.CheckOptions != nil {
-		res.PopulateConfigMapForOptions(p.CheckOptions)
-	}
-	if cmd.Name() == constants.CmdNameDashboard && p.DashboardOptions != nil {
-		res.PopulateConfigMapForOptions(p.DashboardOptions)
 	}
 
 	return res

@@ -29,7 +29,7 @@ import (
 )
 
 // ShowOutput displays the output using the proper formatter as applicable
-func ShowOutput[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func ShowOutput[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 
 	outputFormat := viper.GetString(pconstants.ArgOutput)
 	switch outputFormat {
@@ -165,20 +165,20 @@ func getTerminalColumnsRequiredForString(str string) int {
 	return colsRequired
 }
 
-type jsonOutput[T any] struct {
+type jsonOutput struct {
 	Columns  []pqueryresult.ColumnDef `json:"columns"`
 	Rows     []map[string]interface{} `json:"rows"`
-	Metadata T                        `json:"metadata,omitempty"`
+	Metadata any                      `json:"metadata,omitempty"`
 }
 
-func newJSONOutput[T any]() *jsonOutput[T] {
-	return &jsonOutput[T]{
+func newJSONOutput() *jsonOutput {
+	return &jsonOutput{
 		Rows: make([]map[string]interface{}, 0),
 	}
 }
 
-func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
-	jsonOutput := newJSONOutput[T]()
+func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+	jsonOutput := newJSONOutput()
 
 	// add column defs to the JSON output
 	for _, col := range result.Cols {
@@ -206,7 +206,7 @@ func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	}
 
 	// call this function for each row
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
@@ -214,7 +214,9 @@ func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	}
 
 	// now we have iterated the rows, get the timing
-	jsonOutput.Metadata = result.Timing
+	if viper.IsSet(constants.ArgTiming) {
+		jsonOutput.Metadata = result.Timing.GetTiming()
+	}
 
 	// display the JSON
 	encoder := json.NewEncoder(os.Stdout)
@@ -228,7 +230,7 @@ func displayJSON[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	return count, rowErrors
 }
 
-func displayCSV[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func displayCSV[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 
 	csvWriter := csv.NewWriter(os.Stdout)
 	csvWriter.Comma = []rune(viper.GetString(pconstants.ArgSeparator))[0]
@@ -245,7 +247,7 @@ func displayCSV[T any](ctx context.Context, result *queryresult.Result[T]) (rowC
 	}
 
 	// call this function for each row
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
@@ -260,7 +262,7 @@ func displayCSV[T any](ctx context.Context, result *queryresult.Result[T]) (rowC
 	return count, rowErrors
 }
 
-func displayLine[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func displayLine[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 
 	maxColNameLength, rowErrors := 0, 0
 	for _, col := range result.Cols {
@@ -323,7 +325,7 @@ func displayLine[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	}
 
 	// call this function for each row
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
@@ -333,7 +335,7 @@ func displayLine[T any](ctx context.Context, result *queryresult.Result[T]) (row
 	return count, rowErrors
 }
 
-func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func displayTable[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 	// the buffer to put the output data in
 	outbuf := bytes.NewBufferString("")
 
@@ -382,7 +384,7 @@ func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (ro
 	}
 
 	// iterate each row, adding each to the table
-	count, err := iterateResults(result, rowFunc)
+	count, err := IterateResults(result, rowFunc)
 	if err != nil {
 		// display the error
 		//nolint:forbidigo // acceptable
@@ -401,10 +403,10 @@ func displayTable[T any](ctx context.Context, result *queryresult.Result[T]) (ro
 	return count, rowErrors
 }
 
-type displayResultsFunc[T any] func(row []interface{}, result *queryresult.Result[T])
+type displayResultsFunc[T queryresult.TimingContainer] func(row []interface{}, result *queryresult.Result[T])
 
 // call func displayResult for each row of results
-func iterateResults[T any](result *queryresult.Result[T], displayResult displayResultsFunc[T]) (int, error) {
+func IterateResults[T queryresult.TimingContainer](result *queryresult.Result[T], displayResult displayResultsFunc[T]) (int, error) {
 	count := 0
 	for row := range result.RowChan {
 		if row == nil {
