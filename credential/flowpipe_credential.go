@@ -2,17 +2,17 @@ package credential
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/app_specific_connection"
-	"github.com/turbot/pipe-fittings/connection"
-	"github.com/turbot/pipe-fittings/cty_helpers"
-	"github.com/turbot/pipe-fittings/hclhelpers"
 	"golang.org/x/exp/maps"
 	"log/slog"
 	"reflect"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
@@ -275,8 +275,3 @@ func CredentialToConnection(credential Credential) (connection.PipelingConnectio
 
 	return conn, nil
 }
-
-//
-//// ConnectionImportTarget implements the ConnectionImportTarget interface
-//// marking this as a type that cvan be imported from a steampipe connection
-//func (c *CredentialImpl) ConnectionImportTarget() {}

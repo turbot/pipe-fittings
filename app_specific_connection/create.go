@@ -62,3 +62,8 @@ var ConnectionTypeLookup = make(map[string]struct{}, 0)
 func RegisterConnectionType(connectionType string) {
 	ConnectionTypeLookup[connectionType] = struct{}{}
 }
+
+func ConnectionTypeSupported(connectionType string) bool {
+	_, exists := ConnectionTypeLookup[connectionType]
+	return exists
+}

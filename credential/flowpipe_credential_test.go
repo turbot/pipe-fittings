@@ -3,14 +3,14 @@ package credential
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/connection"
-	"github.com/turbot/pipe-fittings/tests/test_init"
-	"github.com/turbot/pipe-fittings/utils"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/tests/test_init"
+	"github.com/turbot/pipe-fittings/utils"
 )
 
 func TestAwsCredential(t *testing.T) {

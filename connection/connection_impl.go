@@ -80,10 +80,6 @@ func (c *ConnectionImpl) CustomType() {
 func (c *ConnectionImpl) LateBinding() {
 }
 
-// ConnectionImportTarget implements the ConnectionImportTarget interface
-// marking this as a type that cvan be imported from a steampipe connection
-func (c *ConnectionImpl) ConnectionImportTarget() {}
-
 func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 	ctyValue, err := cty_helpers.GetCtyValue(connection)
 	if err != nil {
