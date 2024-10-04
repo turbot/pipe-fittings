@@ -3,6 +3,8 @@ package workspace_profile
 import (
 	"fmt"
 
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
@@ -10,16 +12,11 @@ import (
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
 
 type SteampipeWorkspaceProfile struct {
-	ProfileName string `hcl:"name,label" cty:"name"`
-	// deprecated
-	CloudHost *string `hcl:"cloud_host,optional" cty:"cloud_host"`
-	PipesHost *string `hcl:"pipes_host,optional" cty:"pipes_host"`
-	// deprecated
-	CloudToken        *string                    `hcl:"cloud_token,optional" cty:"cloud_token"`
+	ProfileName       string                     `hcl:"name,label" cty:"name"`
+	PipesHost         *string                    `hcl:"pipes_host,optional" cty:"pipes_host"`
 	PipesToken        *string                    `hcl:"pipes_token,optional" cty:"pipes_token"`
 	InstallDir        *string                    `hcl:"install_dir,optional" cty:"install_dir"`
 	ModLocation       *string                    `hcl:"mod_location,optional" cty:"mod_location"`
@@ -140,55 +137,12 @@ func (p *SteampipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 
 func (p *SteampipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
-
-	return p.validate()
-}
-
-func (p *SteampipeWorkspaceProfile) validate() hcl.Diagnostics {
-	var diags hcl.Diagnostics
-	// validate that both deprecated and new versions of propertied have not been set
-	if p.CloudHost != nil && p.PipesHost != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "both cloud_host and pipes_host cannot be set",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	if p.CloudToken != nil && p.PipesToken != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "both cloud_token and pipes_token cannot be set",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	// return warnings if deprecated properties are set
-	if p.CloudHost != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  "cloud_host is deprecated, use pipes_host",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	if p.CloudToken != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  "cloud_token is deprecated, use pipes_token",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	return diags
+	return nil
 }
 
 func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
-	}
-
-	if p.CloudHost == nil {
-		p.CloudHost = p.Base.CloudHost
-	}
-	if p.CloudToken == nil {
-		p.CloudToken = p.Base.CloudToken
 	}
 	if p.InstallDir == nil {
 		p.InstallDir = p.Base.InstallDir
@@ -257,8 +211,6 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res := ConfigMap{}
 	// add non-empty properties to config map
 
-	res.SetStringItem(p.CloudHost, constants.ArgPipesHost)
-	res.SetStringItem(p.CloudToken, constants.ArgPipesToken)
 	res.SetStringItem(p.PipesHost, constants.ArgPipesHost)
 	res.SetStringItem(p.PipesToken, constants.ArgPipesToken)
 	res.SetStringItem(p.InstallDir, constants.ArgInstallDir)
