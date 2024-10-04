@@ -26,7 +26,6 @@ type SteampipeWorkspaceProfile struct {
 	SearchPathPrefix  *string                    `hcl:"search_path_prefix" cty:"search_path_prefix"`
 	Watch             *bool                      `hcl:"watch" cty:"watch"`
 	MaxParallel       *int                       `hcl:"max_parallel" cty:"max-parallel"`
-	Introspection     *string                    `hcl:"introspection" cty:"introspection"`
 	Input             *bool                      `hcl:"input" cty:"input"`
 	Progress          *bool                      `hcl:"progress" cty:"progress"`
 	Theme             *string                    `hcl:"theme" cty:"theme"`
@@ -151,9 +150,6 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.MaxParallel == nil {
 		p.MaxParallel = p.Base.MaxParallel
 	}
-	if p.Introspection == nil {
-		p.Introspection = p.Base.Introspection
-	}
 	if p.Input == nil {
 		p.Input = p.Base.Input
 	}
@@ -191,7 +187,6 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPath, ","), constants.ArgSearchPath)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPathPrefix, ","), constants.ArgSearchPathPrefix)
-	res.SetStringItem(p.Introspection, constants.ArgIntrospection)
 	res.SetBoolItem(p.Input, constants.ArgInput)
 	res.SetBoolItem(p.Progress, constants.ArgProgress)
 	res.SetStringItem(p.Theme, constants.ArgTheme)
