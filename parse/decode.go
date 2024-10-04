@@ -298,6 +298,11 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 		slog.Error("decodeVariable failed", "diags", res.Diags)
 		return nil, res
 	}
+	// if a type property was specified, extract type string from the hcl source
+	if attr, exists := content.Attributes[schema.AttributeTypeType]; exists {
+		src := parseCtx.FileData[attr.Expr.Range().Filename]
+		variable.TypeString = extractExpressionString(attr.Expr, src)
+	}
 
 	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)
 	res.HandleDecodeDiags(diags)

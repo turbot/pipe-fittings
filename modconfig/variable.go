@@ -30,20 +30,13 @@ type Variable struct {
 	Tags    map[string]string `cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
 	Enum    cty.Value         `json:"-"`
 
-	// TypeString (json: type) is currently showing the HCL Type: string or list(string)
-	// current type = list(list(string))
-	//
-	// future type = ["list",["list","string"]]
-	TypeString string `json:"type"`
-
-	// This is the strategic field, where the HCL string representation of cty.Type is stored
-	// for example: list(list(string))
-	TypeHclString string `json:"type_string"`
-
-	DefaultGo any    `json:"value_default"`
-	ValueGo   any    `json:"value"`
-	EnumGo    []any  `json:"enum,omitempty"`
-	ModName   string `json:"mod_name"`
+	// TypeString shows the type as specified in the hcl file
+	// or if no type is specified, it derives a type string from the variable value
+	TypeString string `json:"type_string"`
+	DefaultGo  any    `json:"value_default"`
+	ValueGo    any    `json:"value"`
+	EnumGo     []any  `json:"enum,omitempty"`
+	ModName    string `json:"mod_name"`
 
 	Subtype       hcl.Expression `json:"-"`
 	SubtypeString string         `json:"subtype_string,omitempty"`
@@ -86,16 +79,11 @@ func NewVariable(v *RawVariable, mod *Mod) *Variable {
 		ModName:     mod.ShortName,
 		Enum:        v.Enum,
 		EnumGo:      v.EnumGo,
-
-		TypeHclString: hclhelpers.CtyTypeToHclType(v.Type, v.Default.Type()), // strategic, this where the HCL string representation of cty.Type is stored
 	}
 
 	if v.Title != "" {
 		res.Title = &v.Title
 	}
-
-	// deprecated, we will change this "type" to cty.Type's json serialisation later
-	res.TypeString = res.TypeHclString
 
 	// if no type is set and a default _is_ set, use default to set the type
 	if res.Type.Equals(cty.DynamicPseudoType) && !res.Default.IsNull() {
@@ -144,11 +132,10 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	v.ValueSourceStartLineNumber = sourceRange.Start.Line
 	v.ValueSourceEndLineNumber = sourceRange.End.Line
 	v.ValueGo, _ = hclhelpers.CtyToGo(value)
-	// TODO KAI VERIFY is this still needed
+
 	// if type string is not set, derive from the type of value
 	if v.TypeString == "" {
-		v.TypeHclString = hclhelpers.CtyTypeToHclType(value.Type())
-		v.TypeString = v.TypeHclString
+		v.TypeString = hclhelpers.CtyTypeToHclType(value.Type())
 	}
 
 	if v.Enum != cty.NilVal {
