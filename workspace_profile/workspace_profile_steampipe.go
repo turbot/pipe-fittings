@@ -24,7 +24,6 @@ type SteampipeWorkspaceProfile struct {
 	WorkspaceDatabase *string                    `hcl:"workspace_database,optional" cty:"workspace_database"`
 	SearchPath        *string                    `hcl:"search_path" cty:"search_path"`
 	SearchPathPrefix  *string                    `hcl:"search_path_prefix" cty:"search_path_prefix"`
-	Watch             *bool                      `hcl:"watch" cty:"watch"`
 	MaxParallel       *int                       `hcl:"max_parallel" cty:"max-parallel"`
 	Input             *bool                      `hcl:"input" cty:"input"`
 	Progress          *bool                      `hcl:"progress" cty:"progress"`
@@ -144,9 +143,6 @@ func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.SearchPathPrefix == nil {
 		p.SearchPathPrefix = p.Base.SearchPathPrefix
 	}
-	if p.Watch == nil {
-		p.Watch = p.Base.Watch
-	}
 	if p.MaxParallel == nil {
 		p.MaxParallel = p.Base.MaxParallel
 	}
@@ -183,7 +179,6 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)
 	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
 	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
-	res.SetBoolItem(p.Watch, constants.ArgWatch)
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPath, ","), constants.ArgSearchPath)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPathPrefix, ","), constants.ArgSearchPathPrefix)
