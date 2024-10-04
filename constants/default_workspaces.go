@@ -19,7 +19,6 @@ const DefaultSteampipeWorkspaceContent = `
 #   search_path        = "aws,aws_1,aws_2,gcp,gcp_1,gcp_2,slack,github"
 #   search_path_prefix = "aws_all"
 #   max_parallel       = 5
-#   introspection      = false
 #   input              = true
 #   progress           = true
 #   theme              = "dark"  # light, dark, plain 
