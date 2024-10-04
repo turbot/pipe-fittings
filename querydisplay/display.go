@@ -165,32 +165,20 @@ func getTerminalColumnsRequiredForString(str string) int {
 	return colsRequired
 }
 
-type snapshotPanelData struct {
-	Columns  []*queryresult.ColumnDef `json:"columns"`
-	Rows     []map[string]interface{} `json:"rows"`
-	Metadata any                      `json:"metadata,omitempty"`
-}
-
-func NewSnapshotPanelData() *snapshotPanelData {
-	return &snapshotPanelData{
-		Rows: make([]map[string]interface{}, 0),
-	}
-}
-
 type jsonOutput struct {
 	Columns  []pqueryresult.ColumnDef `json:"columns"`
 	Rows     []map[string]interface{} `json:"rows"`
 	Metadata any                      `json:"metadata,omitempty"`
 }
 
-func NewJSONOutput() *jsonOutput {
+func newJSONOutput() *jsonOutput {
 	return &jsonOutput{
 		Rows: make([]map[string]interface{}, 0),
 	}
 }
 
 func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
-	jsonOutput := NewJSONOutput()
+	jsonOutput := newJSONOutput()
 
 	// add column defs to the JSON output
 	for _, col := range result.Cols {
