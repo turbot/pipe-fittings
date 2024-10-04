@@ -100,5 +100,6 @@ func ctyValueForConnection(connection PipelingConnection) (cty.Value, error) {
 
 	mergedValueMap["env"] = cty.ObjectVal(connection.GetEnv())
 	mergedValueMap["type"] = cty.StringVal(connection.GetConnectionType())
+	mergedValueMap["resource_type"] = cty.StringVal("connection." + connection.GetConnectionType())
 	return cty.ObjectVal(mergedValueMap), nil
 }

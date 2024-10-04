@@ -36,6 +36,31 @@ func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interf
 
 		errorExist := false
 
+		// if the param is a custom type, check the resource type
+		if mapParam, ok := v.(map[string]any); ok {
+			switch {
+			case param.IsConnectionType():
+				// handle type connection and connection.<subtype>
+				requiredTypeParts := strings.Split(param.TypeString, ".")
+				typeParts := strings.Split(mapParam["resource_type"].(string), ".")
+
+				if len(requiredTypeParts) == 1 && requiredTypeParts[0] != typeParts[0] {
+					errorExist = true
+					errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted connection but received %s", k, param.TypeString)))
+				} else if len(requiredTypeParts) == 2 && mapParam["resource_type"] != param.TypeString {
+					errorExist = true
+					errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, param.TypeString, mapParam["resource_type"])))
+				}
+				continue
+			case param.IsNotifierType():
+				if mapParam["resource_type"] != param.TypeString {
+					errorExist = true
+					errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, param.TypeString, mapParam["resource_type"])))
+				}
+				continue
+			}
+		}
+
 		if !hclhelpers.GoTypeMatchesCtyType(v, param.Type) {
 			wanted := param.Type.FriendlyName()
 			typeOfInterface := reflect.TypeOf(v)
