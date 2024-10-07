@@ -21,7 +21,9 @@ const (
 
 var YamlExtensions = []string{".yml", ".yaml"}
 
-var ConnectionConfigExtensions = append(YamlExtensions, app_specific.ConfigExtension, JsonExtension)
+func ConnectionConfigExtension() []string {
+	return append(YamlExtensions, app_specific.ConfigExtension, JsonExtension)
+}
 
 func IsYamlExtension(ext string) bool {
 	return helpers.StringSliceContains(YamlExtensions, ext)
