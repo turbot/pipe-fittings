@@ -44,26 +44,19 @@ func DefaultPipelingConnections() (map[string]connection.PipelingConnection, err
 	conns := make(map[string]connection.PipelingConnection)
 
 	for k := range ConnectionTypeRegistry {
-		defaultCred, err := NewPipelingConnection(k, "default", hcl.Range{})
-		if err != nil {
-			return nil, err
+		// check for a default connection of this type
+		defaultConnection, exists := DefaultConnections[k]
+		// if no default was specified, create an empty connection
+		if !exists {
+			var err error
+			defaultConnection, err = NewPipelingConnection(k, "default", hcl.Range{})
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		conns[k+".default"] = defaultCred
-
-		RegisterConnectionType(k)
+		conns[k+".default"] = defaultConnection
 	}
 
 	return conns, nil
-}
-
-var ConnectionTypeLookup = make(map[string]struct{}, 0)
-
-func RegisterConnectionType(connectionType string) {
-	ConnectionTypeLookup[connectionType] = struct{}{}
-}
-
-func ConnectionTypeSupported(connectionType string) bool {
-	_, exists := ConnectionTypeLookup[connectionType]
-	return exists
 }
