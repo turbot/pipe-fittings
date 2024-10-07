@@ -286,9 +286,9 @@ type unparsedVariableValueExpression struct {
 	sourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueExpression) ParseVariableValue(mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v unparsedVariableValueExpression) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
-	val, hclDiags := v.expr.Value(nil) // nil because no function calls or variable references are allowed here
+	val, hclDiags := v.expr.Value(evalCtx)
 	diags = diags.Append(hclDiags)
 
 	rng := tfdiags.SourceRangeFromHCL(v.expr.Range())
@@ -310,10 +310,10 @@ type unparsedVariableValueString struct {
 	sourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueString) ParseVariableValue(mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v unparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 
-	val, hclDiags := mode.Parse(v.name, v.str)
+	val, hclDiags := mode.Parse(evalCtx, v.name, v.str)
 	diags = diags.Append(hclDiags)
 
 	return &terraform.InputValue{
