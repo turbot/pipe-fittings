@@ -127,6 +127,7 @@ func (f *FlowpipeConfig) importCredentials() error {
 	maps.Copy(f.Credentials, credentials)
 	return nil
 }
+
 func (f *FlowpipeConfig) importConnections() error {
 	if len(f.ConnectionImports) == 0 {
 		return nil
