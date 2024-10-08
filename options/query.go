@@ -14,7 +14,7 @@ type Query struct {
 	Separator    *string `hcl:"separator" cty:"query_separator"`
 	Header       *bool   `hcl:"header" cty:"query_header"`
 	Multi        *bool   `hcl:"multi" cty:"query_multi"`
-	Timing       *string `cty:"query_timing"` // parsed manually
+	Timing       *string `hcl:"timing" cty:"query_timing"` // parsed manually
 	AutoComplete *bool   `hcl:"autocomplete" cty:"query_autocomplete"`
 }
 
