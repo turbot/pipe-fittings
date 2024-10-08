@@ -8,23 +8,24 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
-// General
-type Query struct {
-	Output       *string `hcl:"output" cty:"query_output"`
-	Separator    *string `hcl:"separator" cty:"query_separator"`
-	Header       *bool   `hcl:"header" cty:"query_header"`
-	Multi        *bool   `hcl:"multi" cty:"query_multi"`
-	Timing       *string `hcl:"timing" cty:"query_timing"` // parsed manually
-	AutoComplete *bool   `hcl:"autocomplete" cty:"query_autocomplete"`
+// Check options are deprecated and removed. They are kept here for compatibility with old configurations.
+type Check struct {
+	Output    *string `hcl:"output" cty:"check_output"`
+	Separator *string `hcl:"separator" cty:"check_separator"`
+	Header    *bool   `hcl:"header" cty:"check_header"`
+	Timing    *bool   `hcl:"timing" cty:"check_timing"`
 }
 
-func (t *Query) SetBaseProperties(otherOptions Options) {
+func (t *Check) SetBaseProperties(otherOptions Options) {
 	if helpers.IsNil(otherOptions) {
 		return
 	}
-	if o, ok := otherOptions.(*Query); ok {
+	if o, ok := otherOptions.(*Check); ok {
 		if t.Output == nil && o.Output != nil {
 			t.Output = o.Output
+		}
+		if t.Separator == nil && o.Separator != nil {
+			t.Separator = o.Separator
 		}
 		if t.Separator == nil && o.Separator != nil {
 			t.Separator = o.Separator
@@ -32,20 +33,11 @@ func (t *Query) SetBaseProperties(otherOptions Options) {
 		if t.Header == nil && o.Header != nil {
 			t.Header = o.Header
 		}
-		if t.Multi == nil && o.Multi != nil {
-			t.Multi = o.Multi
-		}
-		if t.Timing == nil && o.Timing != nil {
-			t.Timing = o.Timing
-		}
-		if t.AutoComplete == nil && o.AutoComplete != nil {
-			t.AutoComplete = o.AutoComplete
-		}
 	}
 }
 
 // ConfigMap creates a config map that can be merged with viper
-func (t *Query) ConfigMap() map[string]interface{} {
+func (t *Check) ConfigMap() map[string]interface{} {
 	// only add keys which are non null
 	res := map[string]interface{}{}
 	if t.Output != nil {
@@ -57,23 +49,17 @@ func (t *Query) ConfigMap() map[string]interface{} {
 	if t.Header != nil {
 		res[constants.ArgHeader] = t.Header
 	}
-	if t.Multi != nil {
-		res[constants.ArgMultiLine] = t.Multi
-	}
 	if t.Timing != nil {
-		res[constants.ArgTiming] = *t.Timing
-	}
-	if t.AutoComplete != nil {
-		res[constants.ArgAutoComplete] = t.AutoComplete
+		res[constants.ArgTiming] = t.Timing
 	}
 	return res
 }
 
 // Merge :: merge other options over the the top of this options object
 // i.e. if a property is set in otherOptions, it takes precedence
-func (t *Query) Merge(otherOptions Options) {
+func (t *Check) Merge(otherOptions Options) {
 	switch o := otherOptions.(type) {
-	case *Query:
+	case *Check:
 		if o.Output != nil {
 			t.Output = o.Output
 		}
@@ -83,19 +69,13 @@ func (t *Query) Merge(otherOptions Options) {
 		if o.Header != nil {
 			t.Header = o.Header
 		}
-		if o.Multi != nil {
-			t.Multi = o.Multi
-		}
 		if o.Timing != nil {
 			t.Timing = o.Timing
-		}
-		if o.AutoComplete != nil {
-			t.AutoComplete = o.AutoComplete
 		}
 	}
 }
 
-func (t *Query) String() string {
+func (t *Check) String() string {
 	if t == nil {
 		return ""
 	}
@@ -115,20 +95,10 @@ func (t *Query) String() string {
 	} else {
 		str = append(str, fmt.Sprintf("  Header: %v", *t.Header))
 	}
-	if t.Multi == nil {
-		str = append(str, "  Multi: nil")
-	} else {
-		str = append(str, fmt.Sprintf("  Multi: %v", *t.Multi))
-	}
 	if t.Timing == nil {
 		str = append(str, "  Timing: nil")
 	} else {
 		str = append(str, fmt.Sprintf("  Timing: %v", *t.Timing))
-	}
-	if t.AutoComplete == nil {
-		str = append(str, "  AutoComplete: nil")
-	} else {
-		str = append(str, fmt.Sprintf("  AutoComplete: %v", *t.AutoComplete))
 	}
 	return strings.Join(str, "\n")
 }
