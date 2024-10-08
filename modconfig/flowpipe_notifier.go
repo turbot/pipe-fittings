@@ -91,6 +91,7 @@ func DefaultNotifiers(defaultHttpIntegration Integration) (map[string]Notifier, 
 			UnqualifiedName: "default",
 			Description:     &description,
 		},
+		NotifierName: "default",
 	}
 
 	notify := Notify{

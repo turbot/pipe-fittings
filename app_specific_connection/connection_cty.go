@@ -36,8 +36,8 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	}
 
 	// split the cty value into fields for ConnectionImpl and the derived connection,
-	// (NOTE: exclude the 'env' and 'type' field, which is manually added)
-	baseValue, derivedValue, err := getKnownCtyFields(value, conn.GetConnectionImpl(), "env", "type")
+	// (NOTE: exclude the 'env', 'type', 'resource_type' fields, which are manually added)
+	baseValue, derivedValue, err := getKnownCtyFields(value, conn.GetConnectionImpl(), "env", "type", "resource_type")
 	if err != nil {
 		return nil, perr.BadRequestWithMessage("unable to decode connection: " + err.Error())
 	}
