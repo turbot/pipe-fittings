@@ -17,24 +17,24 @@ import (
 
 type SteampipeWorkspaceProfile struct {
 	ProfileName string `hcl:"name,label" cty:"name"`
-	// deprecated and removed
+	// no longer supported, exists here only to avoid errors
 	CloudHost *string `hcl:"cloud_host,optional" cty:"cloud_host"`
 	PipesHost *string `hcl:"pipes_host,optional" cty:"pipes_host"`
-	// deprecated and removed
+	// no longer supported, exists here only to avoid errors
 	CloudToken *string `hcl:"cloud_token,optional" cty:"cloud_token"`
 	PipesToken *string `hcl:"pipes_token,optional" cty:"pipes_token"`
 	InstallDir *string `hcl:"install_dir,optional" cty:"install_dir"`
-	// deprecated and removed
+	// no longer supported, exists here only to avoid errors
 	ModLocation       *string `hcl:"mod_location,optional" cty:"mod_location"`
 	QueryTimeout      *int    `hcl:"query_timeout,optional" cty:"query_timeout"`
 	SnapshotLocation  *string `hcl:"snapshot_location,optional" cty:"snapshot_location"`
 	WorkspaceDatabase *string `hcl:"workspace_database,optional" cty:"workspace_database"`
 	SearchPath        *string `hcl:"search_path" cty:"search_path"`
 	SearchPathPrefix  *string `hcl:"search_path_prefix" cty:"search_path_prefix"`
-	// deprecated and removed
+	// no longer supported, exists here only to avoid errors
 	Watch       *bool `hcl:"watch" cty:"watch"`
 	MaxParallel *int  `hcl:"max_parallel" cty:"max-parallel"`
-	// deprecated and removed
+	// no longer supported, exists here only to avoid errors
 	Introspection *string                    `hcl:"introspection" cty:"introspection"`
 	Input         *bool                      `hcl:"input" cty:"input"`
 	Progress      *bool                      `hcl:"progress" cty:"progress"`
@@ -45,7 +45,7 @@ type SteampipeWorkspaceProfile struct {
 
 	// options
 	QueryOptions *options.Query `cty:"query-options"`
-	// deprecated and removed
+	// no longer supported, exists here only to avoid errors
 	CheckOptions     *options.Check     `cty:"check-options"`
 	DashboardOptions *options.Dashboard `cty:"dashboard-options"`
 
