@@ -203,7 +203,7 @@ func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 			}
 			return res.(T)
 		case *workspace_profile.SteampipeWorkspaceProfile:
-			slog.Debug("getImplicitWorkspace - %s is implicit workspace: SnapshotLocation=%s, WorkspaceDatabase=%s", name, name, name)
+			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)
 			var res workspace_profile.WorkspaceProfile = &workspace_profile.SteampipeWorkspaceProfile{
 				SnapshotLocation:  utils.ToStringPointer(name),
 				WorkspaceDatabase: utils.ToStringPointer(name),
