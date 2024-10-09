@@ -3,9 +3,10 @@ package printers
 import (
 	"context"
 	"encoding/json"
+	"io"
+
 	"github.com/turbot/pipe-fittings/color"
 	"github.com/turbot/pipe-fittings/sanitize"
-	"io"
 )
 
 type JsonPrinter[T any] struct {
@@ -14,7 +15,7 @@ type JsonPrinter[T any] struct {
 
 func NewJsonPrinter[T any]() (*JsonPrinter[T], error) {
 	return &JsonPrinter[T]{
-		Sanitizer: sanitize.NullSanitizer,
+		Sanitizer: sanitize.Instance,
 	}, nil
 }
 
