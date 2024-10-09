@@ -118,7 +118,7 @@ var coerceValueTests = []coerceValueTest{
 		},
 		expected: map[string]interface{}{
 			"param_connection": map[string]interface{}{
-				"name":          "default",
+				"short_name":    "default",
 				"type":          "aws",
 				"resource_type": "connection",
 				"temporary":     true,
@@ -161,13 +161,13 @@ var coerceValueTests = []coerceValueTest{
 		expected: map[string]interface{}{
 			"param_connection": []interface{}{
 				map[string]interface{}{
-					"name":          "default",
+					"short_name":    "default",
 					"type":          "aws",
 					"resource_type": "connection",
 					"temporary":     true,
 				},
 				map[string]interface{}{
-					"name":          "example",
+					"short_name":    "example",
 					"type":          "aws",
 					"resource_type": "connection",
 					"temporary":     true,
@@ -221,7 +221,7 @@ var coerceValueTests = []coerceValueTest{
 		expected: map[string]interface{}{
 			"param_connection": []interface{}{
 				map[string]interface{}{
-					"name":          "default",
+					"short_name":    "default",
 					"type":          "aws",
 					"resource_type": "connection",
 					"temporary":     true,
@@ -245,13 +245,13 @@ var coerceValueTests = []coerceValueTest{
 		expected: map[string]interface{}{
 			"param_connection": map[string]interface{}{
 				"default": map[string]interface{}{
-					"name":          "default",
+					"short_name":    "default",
 					"type":          "aws",
 					"resource_type": "connection",
 					"temporary":     true,
 				},
 				"example": map[string]interface{}{
-					"name":          "example",
+					"short_name":    "example",
 					"type":          "aws",
 					"resource_type": "connection",
 					"temporary":     true,
@@ -309,7 +309,7 @@ var coerceValueTests = []coerceValueTest{
 		expected: map[string]interface{}{
 			"param_connection": map[string]interface{}{
 				"aws": map[string]interface{}{
-					"name":          "default",
+					"short_name":    "default",
 					"type":          "aws",
 					"resource_type": "connection",
 					"temporary":     true,
@@ -322,18 +322,17 @@ var coerceValueTests = []coerceValueTest{
 }
 
 func TestCoerceCustomValue(tm *testing.T) {
-
 	variables := map[string]cty.Value{
 		"connection": cty.ObjectVal(map[string]cty.Value{
 			"aws": cty.ObjectVal(map[string]cty.Value{
 				"default": cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"temporary":     cty.BoolVal(true),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				"example": cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"temporary":     cty.BoolVal(true),
 					"resource_type": cty.StringVal("connection"),

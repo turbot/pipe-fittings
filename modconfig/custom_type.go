@@ -10,6 +10,9 @@ import (
 	"reflect"
 )
 
+var notifierImpl *NotifierImpl
+var notifierImplTypeName = reflect.TypeOf(notifierImpl).String()
+
 // customType is an interface that custom cty types must implement
 type customType interface {
 	CustomType()
@@ -89,7 +92,7 @@ func CustomTypeValidation(ctyVal cty.Value, ctyType cty.Type, sourceRange *hcl.R
 	}
 
 	if ctyType.IsCapsuleType() {
-		return customTypeValidationSingle(ctyVal, encapsulatedGoType, sourceRange)
+		return customTypeCheckResourceTypeCorrect(ctyVal, encapsulatedGoType, sourceRange)
 	}
 
 	return customTypeValidation(ctyVal, ctyType, encapsulatedGoType, sourceRange)
@@ -109,7 +112,7 @@ func validateMapAttribute(valueMap map[string]cty.Value, key string, errMsg stri
 	return diags
 }
 
-func customTypeValidationSingle(ctyVal cty.Value, encapsulatedGoType reflect.Type, sourceRange *hcl.Range) hcl.Diagnostics {
+func customTypeCheckResourceTypeCorrect(ctyVal cty.Value, encapsulatedGoType reflect.Type, sourceRange *hcl.Range) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	var valueMap map[string]cty.Value
@@ -123,30 +126,16 @@ func customTypeValidationSingle(ctyVal cty.Value, encapsulatedGoType reflect.Typ
 			Summary:  "value must be a map if the type is a capsule",
 			Subject:  sourceRange,
 		}
-
 		return append(diags, diag)
 	}
 
-	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
-	if connInterface, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
-		diags := validateMapAttribute(valueMap, "type", "missing type in value", sourceRange)
-		if len(diags) > 0 {
-			return diags
-		}
-
-		if connInterface.GetConnectionType() == valueMap["type"].AsString() {
-			return diags
-		}
-	} else if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
-		diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
-		if len(diags) > 0 {
-			return diags
-		}
-
-		if valueMap["resource_type"].AsString() == schema.BlockTypeConnection {
-			return diags
-		}
-	} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
+	isConnection, diags := isConnectionValueMapOfType(encapsulatedGoType, valueMap, sourceRange)
+	if diags != nil {
+		return diags
+	}
+	if isConnection {
+		return diags
+	} else if encapsulatedGoType.String() == notifierImplTypeName {
 		diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
 		if len(diags) > 0 {
 			return diags
@@ -166,49 +155,39 @@ func customTypeValidationSingle(ctyVal cty.Value, encapsulatedGoType reflect.Typ
 	return append(diags, diag)
 }
 
-func customTypeCheckResourceTypeCorrect(val cty.Value, encapsulatedGoType reflect.Type, sourceRange *hcl.Range) hcl.Diagnostics {
-	diags := hcl.Diagnostics{}
-	if val.Type().IsMapType() || val.Type().IsObjectType() {
-		valueMap := val.AsValueMap()
-
+// IsConnectionValueMapOfType checks if the connection value map has the type specified by ty
+func isConnectionValueMapOfType(ty reflect.Type, valueMap map[string]cty.Value, sourceRange *hcl.Range) (bool, hcl.Diagnostics) {
+	// declare ConnectionImpl and NotifierImpl purely to get the type name for use below
+	var connectionImpl *connection.ConnectionImpl
+	var connectionImplTypeName = reflect.TypeOf(connectionImpl).String()
+	encapulatedInstanceNew := reflect.New(ty)
+	if connInstance, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
+		// "resource_type" and "type should be set to
 		diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
 		if len(diags) > 0 {
-			return diags
+			return false, diags
 		}
-
-		encapsulatedInstanceNew := reflect.New(encapsulatedGoType)
-		valid := false
-		if pc, ok := encapsulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
-			// Validate list of capsule type
-			valid = valueMap["resource_type"].AsString() == schema.BlockTypeConnection && valueMap["type"].AsString() == pc.GetConnectionType()
-		} else if encapsulatedGoType.String() == "*connection.ConnectionImpl" {
-			valid = valueMap["resource_type"].AsString() == schema.BlockTypeConnection
-		} else if encapsulatedGoType.String() == "*modconfig.NotifierImpl" {
-			// Validate internal notifier resource
-			valid = valueMap["resource_type"].AsString() == schema.BlockTypeNotifier
+		diags = validateMapAttribute(valueMap, "type", "missing type in value", sourceRange)
+		if len(diags) > 0 {
+			return false, diags
 		}
+		requiredTypeString := fmt.Sprintf("connection.%s", connInstance.GetConnectionType())
+		actualTypeString := fmt.Sprintf("%s.%s", valueMap["resource_type"].AsString(), valueMap["type"].AsString())
 
-		if !valid {
-			diag := &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "value type mismatched with the capsule type",
-				Subject:  sourceRange,
-			}
-
-			return append(diags, diag)
-		}
-
-		return diags
+		return connection.ConnectionTypeMeetsRequiredType(requiredTypeString, actualTypeString), nil
 	}
 
-	diag := &hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  "value must be a map if the type is a list of capsules",
-		Subject:  sourceRange,
+	// if ty is a connectionImpl, the 'type' is connection
+	if ty.String() == connectionImplTypeName {
+		// "resource_type" should be set to "connection"
+		diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
+		if len(diags) > 0 {
+			return false, diags
+		}
+		return connection.ConnectionTypeMeetsRequiredType(schema.BlockTypeConnection, valueMap["resource_type"].AsString()), nil
 	}
 
-	return append(diags, diag)
-
+	return false, nil
 }
 
 func customTypeValidation(ctyVal cty.Value, settingType cty.Type, encapsulatedGoType reflect.Type, sourceRange *hcl.Range) hcl.Diagnostics {

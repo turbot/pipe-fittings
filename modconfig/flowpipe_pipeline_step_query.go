@@ -1,6 +1,7 @@
 package modconfig
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/hashicorp/hcl/v2"
@@ -89,10 +90,9 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 				results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 			} else {
 				slog.Warn("connection does not support connection string", "db", c)
-				return nil, perr.BadRequestWithMessage(p.Name + ": unable invalid connection reference - only connections which implement GetConnectionString() are supported")
+				return nil, perr.BadRequestWithMessage(fmt.Sprintf("%s: invalid connection reference '%s' - only connections which implement GetConnectionString() are supported", p.Name, c.Name()))
 			}
 		}
-
 	} else {
 		// database
 		results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeDatabase, p.Database)

@@ -2,6 +2,8 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
@@ -28,12 +30,10 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 
 	settingValueMap := setting.AsValueMap()
 
-	resourceType := ""
-	if !settingValueMap["resource_type"].IsNull() {
-		resourceType = settingValueMap["resource_type"].AsString()
-	}
+	// get resource type (if present)
+	resourceType, _ := cty_helpers.StringValueFromCtyMap(settingValueMap, "resource_type")
 
-	if resourceType == schema.BlockTypeConnection {
+	if connection.ConnectionTypeMeetsRequiredType(schema.BlockTypeConnection, resourceType) {
 		if settingValueMap["type"].IsNull() {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -51,9 +51,20 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 			}
 			return hcl.Diagnostics{diag}
 		}
-
-		connectionType := settingValueMap["type"].AsString()
-		connectionName := settingValueMap["name"].AsString()
+		connectionType, ok := cty_helpers.StringValueFromCtyMap(settingValueMap, "type")
+		if !ok {
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "The value for param must have a 'type' key",
+			}}
+		}
+		connectionName, ok := cty_helpers.StringValueFromCtyMap(settingValueMap, "short_name")
+		if !ok {
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "The value for param must have a 'short_name' key",
+			}}
+		}
 
 		if allConnections.Type().IsMapType() || allConnections.Type().IsObjectType() {
 			allConnectionsMap := allConnections.AsValueMap()
@@ -88,7 +99,13 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 			return hcl.Diagnostics{diag}
 		}
 
-		notifierName := settingValueMap["name"].AsString()
+		notifierName, ok := cty_helpers.StringValueFromCtyMap(settingValueMap, "name")
+		if !ok {
+			return hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "The value for param must have a 'name' key",
+			}}
+		}
 
 		if allNotifiers.Type().IsMapType() || allNotifiers.Type().IsObjectType() {
 			allNotifiersMap := allNotifiers.AsValueMap()
