@@ -2867,7 +2867,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "example",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2876,7 +2876,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "default",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("default"),
+				"short_name":    cty.StringVal("default"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2885,7 +2885,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "not_valid",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("not_valid"),
+				"short_name":    cty.StringVal("not_valid"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2894,7 +2894,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "wrong_type",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("wrong_type"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2916,12 +2916,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "example",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2932,7 +2932,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "default",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2943,12 +2943,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "not_valid",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("defaultsssss"),
+					"short_name":    cty.StringVal("defaultsssss"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2959,12 +2959,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "one_with_wrong_type",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("slack"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2986,7 +2986,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "example",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2995,7 +2995,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "example_slack",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("slack"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -3004,7 +3004,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "default",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("default"),
+				"short_name":    cty.StringVal("default"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -3013,7 +3013,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "not_valid",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("not_valid"),
+				"short_name":    cty.StringVal("not_valid"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -3022,7 +3022,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "wrong_type",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("wrong_type"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -3044,12 +3044,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "example",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -3060,17 +3060,17 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "mixed_type",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("slack"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -3081,7 +3081,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "default",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -3092,7 +3092,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "default_slack",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("slack"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -3103,12 +3103,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "not_valid",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("defaultsssss"),
+					"short_name":    cty.StringVal("defaultsssss"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -3119,12 +3119,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "one_with_wrong_type",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("slack_invalid"),
 					"resource_type": cty.StringVal("connection"),
 				}),

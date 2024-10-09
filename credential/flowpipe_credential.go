@@ -269,8 +269,8 @@ func CredentialToConnection(credential Credential) (connection.PipelingConnectio
 	valueMap["decl_range"] = declRangeCty
 
 	// remove some keys that are not needed in connection cty representation
-	keyesToDelete := []string{"title", "documentation", "description", "tags", "unqualified_name", "max_concurrency"}
-	for _, key := range keyesToDelete {
+	keysToDelete := []string{"title", "documentation", "description", "tags", "unqualified_name", "max_concurrency"}
+	for _, key := range keysToDelete {
 		delete(valueMap, key)
 	}
 	ctyValue = cty.ObjectVal(valueMap)

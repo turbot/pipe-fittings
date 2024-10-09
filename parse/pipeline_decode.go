@@ -314,8 +314,10 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 				parts := hclhelpers.TraversalAsStringSlice(traversal)
 				if len(parts) > 0 {
 					if parts[0] == schema.BlockTypePipelineStep {
-						dependsOn := parts[1] + "." + parts[2]
-						o.AppendDependsOn(dependsOn)
+						if len(parts) >= 3 {
+							dependsOn := parts[1] + "." + parts[2]
+							o.AppendDependsOn(dependsOn)
+						}
 					} else if parts[0] == schema.BlockTypeCredential {
 
 						if len(parts) == 2 {

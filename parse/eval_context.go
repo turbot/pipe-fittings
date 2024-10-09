@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"log/slog"
 	"strings"
 
@@ -39,7 +40,8 @@ func BuildTemporaryConnectionMapForEvalContext(allConnections map[string]connect
 		}
 
 		tempMap := map[string]cty.Value{
-			"name":          cty.StringVal(c.GetShortName()),
+			"name":          cty.StringVal(c.Name()),
+			"short_name":    cty.StringVal(c.GetShortName()),
 			"type":          cty.StringVal(parts[0]),
 			"resource_type": cty.StringVal("connection"),
 			"temporary":     cty.BoolVal(true),
@@ -91,7 +93,7 @@ func ConnectionNamesValueFromCtyValue(v cty.Value) (cty.Value, bool) {
 		}
 	}
 
-	if len(connectionNames) == 0{
+	if len(connectionNames) == 0 {
 		return cty.NilVal, false
 	}
 
@@ -99,30 +101,16 @@ func ConnectionNamesValueFromCtyValue(v cty.Value) (cty.Value, bool) {
 }
 
 func ConnectionNameFromTemporaryConnectionMap(valueMap map[string]cty.Value) (string, bool) {
-	var resourceType, ty, name string
+	var resourceType, name string
 	var ok bool
-	resourceType, ok = StringValueFromCtyMap(valueMap, "resource_type")
+	resourceType, ok = cty_helpers.StringValueFromCtyMap(valueMap, "resource_type")
 	if !ok || resourceType != "connection" {
 		return "", false
 	}
-	ty, ok = StringValueFromCtyMap(valueMap, "type")
-	if !ok {
-		return "", false
-	}
-	name, ok = StringValueFromCtyMap(valueMap, "name")
+	name, ok = cty_helpers.StringValueFromCtyMap(valueMap, "name")
 	if !ok {
 		return "", false
 
 	}
-	return ty + "." + name, true
-}
-
-func StringValueFromCtyMap(valueMap map[string]cty.Value, key string) (string, bool) {
-	if valueMap[key] == cty.NilVal ||
-		valueMap[key].IsNull() ||
-		valueMap[key].Type() != cty.String {
-		return "", false
-	}
-
-	return valueMap[key].AsString(), true
+	return name, true
 }
