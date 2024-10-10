@@ -47,23 +47,31 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
 	}
 
+	// identify the config schema to use
 	var temp T
-	var content *hcl.BodyContent
+	var schema *hcl.BodySchema
 	switch any(temp).(type) {
 	case *workspace_profile.FlowpipeWorkspaceProfile:
-		// do a partial decode
-		content, diags = body.Content(FlowpipeConfigBlockSchema)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
-		}
+		schema = FlowpipeConfigBlockSchema
+
+	case *workspace_profile.PowerpipeWorkspaceProfile:
+		schema = PowerpipeConfigBlockSchema
+	case *workspace_profile.SteampipeWorkspaceProfile:
+		schema = SteampipeConfigBlockSchema
+
 	default:
-		// do a partial decode
-		content, diags = body.Content(ConfigBlockSchema)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
-		}
+		// unexpected type
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("unexpected workspace profile type %s", temp.ShortName()),
+		})
+	}
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
 	}
 
+	// do a partial decode
+	content, diags := body.Content(schema)
 	parseCtx := NewWorkspaceProfileParseContext[T](workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)
 

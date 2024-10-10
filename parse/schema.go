@@ -76,12 +76,12 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 	},
 }
 
-var ConfigBlockSchema = &hcl.BodySchema{
+var SteampipeConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeConnection,
-			LabelNames: []string{schema.LabelName},
+			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypePlugin,
