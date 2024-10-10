@@ -29,6 +29,7 @@ type LoadWorkspaceConfig struct {
 	blockTypeInclusions         []string
 	validateVariables           bool
 	skipResourceLoadIfNoModfile bool
+	supportLateBinding          bool
 }
 
 func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
@@ -38,12 +39,19 @@ func newLoadWorkspaceConfig() *LoadWorkspaceConfig {
 		notifiers:           make(map[string]modconfig.Notifier),
 		pipelingConnections: make(map[string]connection.PipelingConnection),
 		validateVariables:   true,
+		supportLateBinding:  true,
 	}
 }
 
 func WithPipelingConnections(pipelingConnections map[string]connection.PipelingConnection) LoadWorkspaceOption {
 	return func(m *LoadWorkspaceConfig) {
 		m.pipelingConnections = pipelingConnections
+	}
+}
+
+func WithLateBinding(enabled bool) LoadWorkspaceOption {
+	return func(m *LoadWorkspaceConfig) {
+		m.supportLateBinding = enabled
 	}
 }
 

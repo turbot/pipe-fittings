@@ -22,6 +22,8 @@ type QueryProviderImpl struct {
 	Params    []*ParamDef `cty:"params" json:"params,omitempty"`
 	QueryName *string     `json:"query,omitempty"`
 
+	ConnectionString *string `cty:"_" hcl:"_" json:"-"`
+
 	//nolint:unused // TODO: unused function
 	withs               []*DashboardWith
 	disableCtySerialise bool

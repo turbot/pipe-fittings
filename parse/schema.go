@@ -81,7 +81,7 @@ var SteampipeConfigBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{
 		{
 			Type:       schema.BlockTypeConnection,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
+			LabelNames: []string{schema.LabelName},
 		},
 		{
 			Type:       schema.BlockTypePlugin,
