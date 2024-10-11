@@ -15,7 +15,7 @@ func TestSteampipePgConnection_GetConnectionString(t *testing.T) {
 		Host             *string
 		Port             *int
 		Password         *string
-		SearchPath       *string
+		SearchPath       *[]string
 		SslMode          *string
 	}
 	tests := []struct {

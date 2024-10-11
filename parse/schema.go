@@ -76,7 +76,7 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 	},
 }
 
-var ConfigBlockSchema = &hcl.BodySchema{
+var SteampipeConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{

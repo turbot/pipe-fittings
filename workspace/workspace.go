@@ -70,6 +70,7 @@ type Workspace struct {
 	OnFileWatcherEvent  func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
 	BlockTypeInclusions []string
 	validateVariables   bool
+	supportLateBinding  bool
 }
 
 // Load_ creates a Workspace and loads the workspace mod
@@ -90,6 +91,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 
 	w.Credentials = cfg.credentials
 	w.PipelingConnections = cfg.pipelingConnections
+	w.supportLateBinding = cfg.supportLateBinding
 	w.Integrations = cfg.integrations
 	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
@@ -300,19 +302,24 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 	if err != nil {
 		return nil, err
 	}
+	listOptions := filehelpers.ListOptions{
+		Flags:   filehelpers.FilesRecursive,
+		Exclude: w.exclusions,
+		// load files specified by inclusions
+		Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
+	}
 
-	parseCtx := parse.NewModParseContext(workspaceLock,
-		w.Path,
+	parseCtx, err := parse.NewModParseContext(workspaceLock, w.Path,
 		parse.WithParseFlags(parse.CreateDefaultMod),
-		parse.WithListOptions(filehelpers.ListOptions{
-			Flags:   filehelpers.FilesRecursive,
-			Exclude: w.exclusions,
-			// load files specified by inclusions
-			Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
-		}))
+		parse.WithListOptions(listOptions),
+		parse.WithConnections(w.PipelingConnections),
+		parse.WithLateBinding(w.supportLateBinding))
+
+	if err != nil {
+		return nil, err
+	}
 
 	parseCtx.Credentials = w.Credentials
-	parseCtx.PipelingConnections = w.PipelingConnections
 	parseCtx.Integrations = w.Integrations
 	parseCtx.Notifiers = w.Notifiers
 

@@ -15,14 +15,15 @@ const SteampipePgConnectionType = "steampipe"
 
 type SteampipePgConnection struct {
 	ConnectionImpl
-	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
-	DbName           *string `json:"db,omitempty" cty:"db" hcl:"db,optional"`
-	UserName         *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
-	Host             *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
-	Port             *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
-	Password         *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
-	SearchPath       *string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
-	SslMode          *string `json:"sslmode,omitempty" cty:"sslmode" hcl:"sslmode,optional"`
+	ConnectionString *string   `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
+	DbName           *string   `json:"db,omitempty" cty:"db" hcl:"db,optional"`
+	UserName         *string   `json:"username,omitempty" cty:"username" hcl:"username,optional"`
+	Host             *string   `json:"host,omitempty" cty:"host" hcl:"host,optional"`
+	Port             *int      `json:"port,omitempty" cty:"port" hcl:"port,optional"`
+	Password         *string   `json:"password,omitempty" cty:"password" hcl:"password,optional"`
+	SearchPath       *[]string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
+	SearchPathPrefix *[]string `json:"search_path_prefix,omitempty" cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
+	SslMode          *string   `json:"sslmode,omitempty" cty:"sslmode" hcl:"sslmode,optional"`
 }
 
 func NewSteampipePgConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -135,6 +136,20 @@ func (c *SteampipePgConnection) GetConnectionString() string {
 
 }
 
+func (c *SteampipePgConnection) GetSearchPath() []string {
+	if c.SearchPath != nil {
+		return *c.SearchPath
+	}
+	return []string{}
+}
+
+func (c *SteampipePgConnection) GetSearchPathPrefix() []string {
+	if c.SearchPathPrefix != nil {
+		return *c.SearchPathPrefix
+	}
+	return []string{}
+}
+
 func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {
 	// TODO POSTGRES ENV
 	return map[string]cty.Value{}
@@ -159,7 +174,7 @@ func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool 
 		utils.PtrEqual(c.Host, other.Host) &&
 		utils.PtrEqual(c.Port, other.Port) &&
 		utils.PtrEqual(c.Password, other.Password) &&
-		utils.PtrEqual(c.SearchPath, other.SearchPath) &&
+		utils.SlicePtrEqual(c.SearchPath, other.SearchPath) &&
 		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 

@@ -54,9 +54,11 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 						FullName:        fullName,
 						UnqualifiedName: parsedName.ToResourceName(),
 						Title:           utils.ToStringPointer(qp.GetTitle()),
-						blockType:       schema.BlockTypeTable,
+
+						blockType: schema.BlockTypeTable,
 					},
-					Mod: qp.GetMod(),
+					Database: qp.GetDatabase(),
+					Mod:      qp.GetMod(),
 				},
 			},
 			Query:  qp.GetQuery(),

@@ -118,6 +118,21 @@ func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
 	return nil
 }
 
+// SetDatabase implements DatabaseItem
+func (b *ModTreeItemImpl) SetDatabase(database *string) {
+	b.Database = database
+}
+
+// SetSearchPath implements DatabaseItem
+func (b *ModTreeItemImpl) SetSearchPath(searchPath []string) {
+	b.SearchPath = searchPath
+}
+
+// SetSearchPathPrefix implements DatabaseItem
+func (b *ModTreeItemImpl) SetSearchPathPrefix(searchPathPrefix []string) {
+	b.SearchPathPrefix = searchPathPrefix
+}
+
 // GetModTreeItemImpl implements ModTreeItem
 func (b *ModTreeItemImpl) GetModTreeItemImpl() *ModTreeItemImpl {
 	return b

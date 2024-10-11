@@ -162,7 +162,10 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 		return err
 	}
 	// create a parse context for the dependency mod
-	childParseCtx := parse.NewChildModParseContext(parseCtx, modDependency.ResolvedVersionConstraint, dependencyDir)
+	childParseCtx, err := parse.NewChildModParseContext(parseCtx, modDependency.ResolvedVersionConstraint, dependencyDir)
+	if err != nil {
+		return err
+	}
 
 	// NOTE: pass in the version and dependency path of the mod - these must be set before it loads its dependencies
 	dependencyMod, errAndWarnings := LoadMod(ctx, dependencyDir, childParseCtx)

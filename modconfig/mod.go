@@ -59,6 +59,8 @@ type Mod struct {
 	// convenient aggregation of all resources
 	ResourceMaps *ResourceMaps `json:"-"`
 
+	ConnectionString *string `cty:"_" hcl:"_" json:"-"`
+
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
 }

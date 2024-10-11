@@ -207,7 +207,7 @@ func importCredential(source *string, connectionNames []string, prefix *string) 
 	}
 
 	// do a partial decode
-	content, moreDiags := body.Content(parse.ConfigBlockSchema)
+	content, moreDiags := body.Content(parse.SteampipeConfigBlockSchema)
 	if moreDiags.HasErrors() {
 		diags = append(diags, moreDiags...)
 		return nil, error_helpers.HclDiagsToError("Flowpipe Config", diags)

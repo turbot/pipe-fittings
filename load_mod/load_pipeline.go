@@ -90,7 +90,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 		return nil, perr.BadRequestWithMessage("invalid path")
 	}
 
-	parseCtx := parse.NewModParseContext(
+	parseCtx, err := parse.NewModParseContext(
 		nil,
 		modDir,
 		parse.WithParseFlags(parse.CreateDefaultMod),
@@ -99,6 +99,9 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 			Include: []string{"**/" + fileName},
 		}))
 
+	if err != nil {
+		return nil, err
+	}
 	mod, errorsAndWarnings := LoadModWithFileName(ctx, modDir, modFileNameToLoad, parseCtx)
 
 	if errorsAndWarnings.Error != nil {
