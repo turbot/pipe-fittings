@@ -325,7 +325,9 @@ func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig
 	if diags.HasErrors() {
 		return nil, res
 	}
-	// do a partial decode using an empty schema - use to pull out all body content in the remain block
+
+	// decode the database attribute separately
+	// do a partial decode using a schema containing just database - use to pull out all other body content in the remain block
 	databaseContent, remain, diags := block.Body.PartialContent(&hcl.BodySchema{
 		Attributes: []hcl.AttributeSchema{
 			{Name: schema.AttributeTypeDatabase},
@@ -343,10 +345,9 @@ func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig
 	// decode 'with',args and params blocks
 	res.Merge(decodeQueryProviderBlocks(block, remain.(*hclsyntax.Body), resource, parseCtx))
 
+	// resolve the connection string
 	qp := resource.(modconfig.QueryProvider)
-	if res.Success() {
-		resolveConnectionString(qp, databaseContent, parseCtx)
-	}
+	resolveConnectionString(qp, databaseContent, parseCtx)
 
 	return qp, res
 }

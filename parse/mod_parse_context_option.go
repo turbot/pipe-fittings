@@ -12,16 +12,19 @@ func WithParseFlags(flags ParseModFlag) ModParseContextOption {
 		m.Flags = flags
 	}
 }
+
 func WithListOptions(listOptions filehelpers.ListOptions) ModParseContextOption {
 	return func(m *ModParseContext) {
 		m.ListOptions = listOptions
 	}
 }
+
 func WithLateBinding(enabled bool) ModParseContextOption {
 	return func(m *ModParseContext) {
 		m.supportLateBinding = enabled
 	}
 }
+
 func WithConnections(connections map[string]connection.PipelingConnection) ModParseContextOption {
 	return func(m *ModParseContext) {
 		m.PipelingConnections = connections
