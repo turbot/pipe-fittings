@@ -10,7 +10,6 @@ var EnvUpdateCheck,
 	EnvDashboardStartTimeout,
 	EnvSnapshotLocation,
 	EnvDatabase,
-	EnvConnection,
 	EnvWorkspaceProfile,
 	EnvDisplayWidth,
 	EnvCacheEnabled,
@@ -45,7 +44,6 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvDashboardStartTimeout = buildEnv("DASHBOARD_START_TIMEOUT")
 	EnvSnapshotLocation = buildEnv("SNAPSHOT_LOCATION")
 	EnvDatabase = buildEnv("DATABASE")
-	EnvConnection = buildEnv("CONNECTION")
 	EnvWorkspaceProfile = buildEnv("WORKSPACE")
 	EnvDisplayWidth = buildEnv("DISPLAY_WIDTH")
 	EnvCacheEnabled = buildEnv("CACHE")

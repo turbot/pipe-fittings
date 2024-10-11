@@ -59,10 +59,11 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 					Mod: qp.GetMod(),
 				},
 			},
-			Query:  qp.GetQuery(),
-			SQL:    qp.GetSQL(),
-			Params: qp.GetParams(),
-			Args:   qp.GetArgs(),
+			Query:            qp.GetQuery(),
+			SQL:              qp.GetSQL(),
+			Params:           qp.GetParams(),
+			Args:             qp.GetArgs(),
+			ConnectionString: qp.GetConnectionString(),
 		},
 	}
 	return c, nil

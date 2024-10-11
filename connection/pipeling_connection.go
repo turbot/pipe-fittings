@@ -31,6 +31,13 @@ type ConnectionStringProvider interface {
 	GetConnectionString() string
 }
 
+// SearchPathProvider is implemented by all connections which can provide a connection string
+type SearchPathProvider interface {
+	ConnectionStringProvider
+	GetSearchPath() []string
+	GetSearchPathPrefix() []string
+}
+
 func ConnectionTypeMeetsRequiredType(requiredType, actualType string) bool {
 	// handle type connection and connection.<subtype>
 	requiredTypeParts := strings.Split(requiredType, ".")
