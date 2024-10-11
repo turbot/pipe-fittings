@@ -25,6 +25,7 @@ type RawVariable struct {
 	Enum           cty.Value
 	EnumGo         []any
 	DescriptionSet bool
+	Format         string
 	DeclRange      hcl.Range
 }
 
