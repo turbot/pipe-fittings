@@ -48,6 +48,7 @@ type Variable struct {
 	ValueSourceStartLineNumber int                 `json:"-"`
 	ValueSourceEndLineNumber   int                 `json:"-"`
 	ParsingMode                VariableParsingMode `json:"-"`
+	Format                     string              `json:"-"`
 }
 
 func NewVariable(v *RawVariable, mod *Mod) *Variable {
@@ -79,6 +80,7 @@ func NewVariable(v *RawVariable, mod *Mod) *Variable {
 		ModName:     mod.ShortName,
 		Enum:        v.Enum,
 		EnumGo:      v.EnumGo,
+		Format:      v.Format,
 	}
 
 	if v.Title != "" {

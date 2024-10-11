@@ -2,9 +2,12 @@ package parse
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
@@ -80,7 +83,7 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 			return v, diags
 		}
 
-		ctyVal, moreDiags := attr.Expr.Value(nil)
+		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
 		if moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 			return v, diags
@@ -159,6 +162,44 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 
 		v.EnumGo = enumGoSlice
 
+	}
+
+	if attr, exists := content.Attributes[schema.AttributeTypeFormat]; exists {
+		if v.Type != cty.String {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  `"format" may only be set for string variables`,
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+
+		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
+		if moreDiags.HasErrors() {
+			diags = append(diags, moreDiags...)
+			return v, diags
+		}
+
+		if ctyVal.Type() != cty.String {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "foamat must be a string",
+				Subject:  &attr.Range,
+			})
+			return v, diags
+		}
+		formatVal := ctyVal.AsString()
+
+		if !constants.IsValidVariableFormat(formatVal) {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid format, must be one of \"%s\"", strings.Join(constants.ValidVariableFormats, `", "`)),
+			})
+		}
+		v.Format = formatVal
+	} else if v.Type == cty.String {
+		// if this is a string var, default to text
+		v.Format = constants.VariableFormatText
 	}
 
 	for _, block := range content.Blocks {
