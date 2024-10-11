@@ -22,8 +22,6 @@ type QueryProviderImpl struct {
 	Params    []*ParamDef `cty:"params" json:"params,omitempty"`
 	QueryName *string     `json:"query,omitempty"`
 
-	ConnectionString *string `cty:"_" hcl:"_" json:"-"`
-
 	//nolint:unused // TODO: unused function
 	withs               []*DashboardWith
 	disableCtySerialise bool
@@ -51,11 +49,6 @@ func (q *QueryProviderImpl) GetArgs() *QueryArgs {
 
 }
 
-// GetConnectionString implements QueryProvider
-func (q *QueryProviderImpl) GetConnectionString() *string {
-	return q.ConnectionString
-}
-
 // GetSQL implements QueryProvider
 func (q *QueryProviderImpl) GetSQL() *string {
 	return q.SQL
@@ -69,11 +62,6 @@ func (q *QueryProviderImpl) GetQuery() *Query {
 // SetArgs implements QueryProvider
 func (q *QueryProviderImpl) SetArgs(args *QueryArgs) {
 	q.Args = args
-}
-
-// SetConnectionString implements QueryProvider
-func (q *QueryProviderImpl) SetConnectionString(connectionString *string) {
-	q.ConnectionString = connectionString
 }
 
 // SetParams implements QueryProvider

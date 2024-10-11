@@ -47,6 +47,9 @@ type DatabaseItem interface {
 	GetDatabase() *string
 	GetSearchPath() []string
 	GetSearchPathPrefix() []string
+	SetDatabase(*string)
+	SetSearchPath([]string)
+	SetSearchPathPrefix([]string)
 }
 
 type ModItem interface {
@@ -70,12 +73,10 @@ type WithProvider interface {
 type QueryProvider interface {
 	RuntimeDependencyProvider
 	GetArgs() *QueryArgs
-	GetConnectionString() *string
 	GetParams() []*ParamDef
 	GetSQL() *string
 	GetQuery() *Query
 	SetArgs(*QueryArgs)
-	SetConnectionString(*string)
 	SetParams([]*ParamDef)
 	GetResolvedQuery(*QueryArgs) (*ResolvedQuery, error)
 	RequiresExecution(QueryProvider) bool

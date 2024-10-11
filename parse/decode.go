@@ -364,7 +364,7 @@ func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig
 	qp := resource.(modconfig.QueryProvider)
 	connectionString, diags := resolveConnectionString(databaseContent, parseCtx.EvalCtx)
 	if connectionString != nil {
-		qp.SetConnectionString(connectionString)
+		qp.SetDatabase(connectionString)
 	}
 	res.HandleDecodeDiags(diags)
 
@@ -386,6 +386,7 @@ func resolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext)
 	if diags.HasErrors() {
 		return nil, diags
 	}
+	// TODO KAI also support cloud workspace
 
 	// check if this is a connection string or a connection
 	if dbValue.Type() == cty.String {
