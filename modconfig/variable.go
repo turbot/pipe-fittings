@@ -39,8 +39,9 @@ type Variable struct {
 	ModName    string `json:"mod_name"`
 
 	Subtype       hcl.Expression `json:"-"`
-	SubtypeString string         `json:"subtype_string,omitempty"`
+	Format                     string              `json:"format,omitempty"`
 
+	SubtypeString string         `json:"subtype_string,omitempty"`
 	// set after value resolution `column:"value,jsonb"`
 	Value                      cty.Value           `json:"-"`
 	ValueSourceType            string              `json:"-"`
@@ -48,7 +49,6 @@ type Variable struct {
 	ValueSourceStartLineNumber int                 `json:"-"`
 	ValueSourceEndLineNumber   int                 `json:"-"`
 	ParsingMode                VariableParsingMode `json:"-"`
-	Format                     string              `json:"-"`
 }
 
 func NewVariable(v *RawVariable, mod *Mod) *Variable {
