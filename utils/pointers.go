@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"slices"
 
 	"golang.org/x/exp/constraints"
 )
@@ -51,4 +52,14 @@ func BoolPtrEqual(a, b *bool) bool {
 		return false
 	}
 	return *a == *b
+}
+
+func SlicePtrEqual[T constraints.Ordered](a, b *[]T) bool {
+	if a == nil && b == nil {
+		return true
+	}
+	if a == nil || b == nil {
+		return false
+	}
+	return slices.Equal(*a, *b)
 }

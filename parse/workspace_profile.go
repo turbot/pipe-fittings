@@ -72,6 +72,9 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 
 	// do a partial decode
 	content, diags := body.Content(schema)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+	}
 	parseCtx := NewWorkspaceProfileParseContext[T](workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)
 

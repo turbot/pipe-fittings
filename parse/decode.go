@@ -190,7 +190,8 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	moreDiags := DecodeHclBody(remain, evalCtx, mod, mod)
 	res.HandleDecodeDiags(moreDiags)
 
-	connectionString, diags := resolveConnectionString(databaseContent, evalCtx)
+	connectionString, moreDiags := resolveConnectionString(databaseContent, evalCtx)
+	res.HandleDecodeDiags(moreDiags)
 	if connectionString != nil {
 		mod.ConnectionString = connectionString
 	}
