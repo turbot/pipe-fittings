@@ -224,6 +224,24 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 	assert.Equal(1, len(conns))
 	assert.Equal("steampipe.default", conns[0])
 
+	trigger = rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_connection_in_param"]
+	if trigger == nil {
+		assert.Fail("trigger not found")
+		return
+	}
+
+	config, ok = trigger.Config.(*modconfig.TriggerQuery)
+	if !ok {
+		assert.Fail("trigger is not a query trigger")
+		return
+	}
+
+	db = config.GetUnresolvedAttributes()["database"]
+	if db == nil {
+		assert.Fail("database attribute not found")
+		return
+	}
+
 }
 
 func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
