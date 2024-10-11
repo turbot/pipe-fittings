@@ -866,15 +866,15 @@ func (p *PipelineStepBase) AppendCredentialDependsOn(credentialDependsOn ...stri
 func (p *PipelineStepBase) AppendConnectionDependsOn(connectionDependsOn ...string) {
 	// Use map to track existing DependsOn, this will make the lookup below much faster
 	// rather than using nested loops
-	existingDeps := make(map[string]bool)
+	existingDeps := make(map[string]struct{}, len(p.ConnectionDependsOn))
 	for _, dep := range p.ConnectionDependsOn {
-		existingDeps[dep] = true
+		existingDeps[dep] = struct{}{}
 	}
 
 	for _, dep := range connectionDependsOn {
-		if !existingDeps[dep] {
+		if _, exists := existingDeps[dep]; !exists {
 			p.ConnectionDependsOn = append(p.ConnectionDependsOn, dep)
-			existingDeps[dep] = true
+			existingDeps[dep] = struct{}{}
 		}
 	}
 }

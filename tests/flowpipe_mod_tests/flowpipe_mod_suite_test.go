@@ -201,6 +201,29 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 
 	unresolvedAttributes := trigger.Config.GetUnresolvedAttributes()
 	assert.Equal(3, len(unresolvedAttributes))
+
+	trigger = rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_connection"]
+	if trigger == nil {
+		assert.Fail("trigger not found")
+		return
+	}
+
+	config, ok := trigger.Config.(*modconfig.TriggerQuery)
+	if !ok {
+		assert.Fail("trigger is not a query trigger")
+		return
+	}
+
+	db := config.GetUnresolvedAttributes()["database"]
+	if db == nil {
+		assert.Fail("database attribute not found")
+		return
+	}
+
+	conns := config.GetConnectionDependsOn()
+	assert.Equal(1, len(conns))
+	assert.Equal("steampipe.default", conns[0])
+
 }
 
 func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
