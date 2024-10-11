@@ -3450,6 +3450,25 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 	}
 }
 
+func (suite *FlowpipeModTestSuite) TestComplexVariable() {
+	assert := assert.New(suite.T())
+	require := require.New(suite.T())
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./complex_variable"})
+	assert.Nil(errAndWarning.Error)
+	w, errorAndWarning := workspace.Load(suite.ctx, "./complex_variable", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
+
+	modVar := w.Mod.ResourceMaps.Variables["complex_variable.var.base_tag_rules"]
+	assert.NotNil(modVar)
+	mapVal, ok := modVar.ValueGo.(map[string]interface{})
+	assert.True(ok)
+	assert.NotNil(mapVal)
+	assert.Equal([]any{}, mapVal["remove_except"])
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {

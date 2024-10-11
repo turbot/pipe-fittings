@@ -2,12 +2,13 @@ package modconfig
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
 
 var notifierImpl *NotifierImpl
@@ -58,18 +59,22 @@ func IsCustomType(ty cty.Type) bool {
 }
 
 func ValidateValueMatchesType(ctyVal cty.Value, ty cty.Type, sourceRange *hcl.Range) hcl.Diagnostics {
-	if ty != cty.DynamicPseudoType && ctyVal.Type() != ty {
-		if IsCustomType(ty) {
-			return CustomTypeValidation(ctyVal, ty, sourceRange)
-		}
-		if !hclhelpers.IsValueCompatibleWithType(ty, ctyVal) {
-			return hcl.Diagnostics{
-				&hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", ty.FriendlyName(), ctyVal.Type().FriendlyName()),
-					Subject:  sourceRange},
+	if ty != cty.DynamicPseudoType {
+		ctyValType := ctyVal.Type()
+		if !ctyValType.Equals(ty) {
+			if IsCustomType(ty) {
+				return CustomTypeValidation(ctyVal, ty, sourceRange)
+			}
+			if !hclhelpers.IsValueCompatibleWithType(ty, ctyVal) {
+				return hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("default value type mismatched - expected %s, got %s", ty.FriendlyName(), ctyVal.Type().FriendlyName()),
+						Subject:  sourceRange},
+				}
 			}
 		}
+
 	}
 
 	return nil

@@ -258,7 +258,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 
 		if o.Default != cty.NilVal {
 			if !hclhelpers.IsEnumValueCompatibleWithType(o.Default.Type(), ctyVal) {
-				return o, append(diags, createErrorDiagnostic("param default value type mismatched with enum", &attr.Range))
+				return o, append(diags, createErrorDiagnostic("param default value type mismatched with enum in pipeline param", &attr.Range))
 			}
 			if valid, err := hclhelpers.ValidateSettingWithEnum(o.Default, ctyVal); err != nil || !valid {
 				return o, append(diags, createErrorDiagnostic("default value not in enum or error validating", &attr.Range))
