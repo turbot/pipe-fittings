@@ -240,12 +240,12 @@ func (m *ModParseContext) PeekParent() string {
 
 // VariableValueCtyMap converts a map of variables to a map of the underlying cty value
 // Note: if the variable type is a late binding type (i.e. PipelingConnection), DO NOT add to map
-func VariableValueCtyMap(variables map[string]*modconfig.Variable) (ret, lateBindingVars, lateBindingVarDeps map[string]cty.Value) {
+func VariableValueCtyMap(variables map[string]*modconfig.Variable, supportLateBinding bool) (ret, lateBindingVars, lateBindingVarDeps map[string]cty.Value) {
 	lateBindingVarDeps = make(map[string]cty.Value)
 	ret = make(map[string]cty.Value, len(variables))
 	lateBindingVars = make(map[string]cty.Value, len(variables))
 	for k, v := range variables {
-		if v.IsLateBinding() {
+		if supportLateBinding && v.IsLateBinding() {
 			// if the variable is a late binding variable, build a cty value containing all referenced connections
 			resourceNames, ok := ConnectionNamesValueFromCtyValue(v.Value)
 			if ok {
@@ -285,7 +285,7 @@ func (m *ModParseContext) addRootVariablesToReferenceMap() {
 	variables := m.Variables.RootVariables
 	// write local variables directly into referenceValues map
 	// NOTE: we add with the name "var" not "variable" as that is how variables are referenced
-	varCtyMap, lateBindingVars, lateBindingVarDeps := VariableValueCtyMap(variables)
+	varCtyMap, lateBindingVars, lateBindingVarDeps := VariableValueCtyMap(variables, m.supportLateBinding)
 	m.referenceValues["local"]["var"] = varCtyMap
 	// store the late binding vars in case we need to add them (to parse pipeline params for example)
 	maps.Copy(m.lateBindingVars, lateBindingVars)
@@ -306,7 +306,7 @@ func (m *ModParseContext) addDependencyVariablesToReferenceMap() {
 			m.referenceValues[alias] = make(ReferenceTypeValueMap)
 		}
 
-		varCtyMap, lateBindingVars, lateBindingVarDeps := VariableValueCtyMap(depVars.RootVariables)
+		varCtyMap, lateBindingVars, lateBindingVarDeps := VariableValueCtyMap(depVars.RootVariables, m.supportLateBinding)
 		m.referenceValues[alias]["var"] = varCtyMap
 		if m.lateBindingVars == nil {
 			m.lateBindingVars = make(map[string]cty.Value)
