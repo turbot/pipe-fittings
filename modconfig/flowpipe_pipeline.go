@@ -402,6 +402,15 @@ func (p *Pipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.
 				valString := val.AsValueMap()
 				resultMap := make(map[string]string)
 				for key, value := range valString {
+					if value.Type() != cty.String {
+						diags = append(diags, &hcl.Diagnostic{
+							Severity: hcl.DiagError,
+							Summary:  "Invalid type for tag value",
+							Detail:   "The tag value must be a string",
+							Subject:  &attr.Range,
+						})
+						continue
+					}
 					resultMap[key] = value.AsString()
 				}
 				p.Tags = resultMap
