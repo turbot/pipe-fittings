@@ -48,7 +48,7 @@ type Variable struct {
 	ValueSourceStartLineNumber int                 `json:"-"`
 	ValueSourceEndLineNumber   int                 `json:"-"`
 	ParsingMode                VariableParsingMode `json:"-"`
-	Format                     string              `json:"format,omitempty"`
+	Format                     string              `json:"-"`
 }
 
 func NewVariable(v *RawVariable, mod *Mod) *Variable {

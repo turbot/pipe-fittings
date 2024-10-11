@@ -168,7 +168,7 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 		if v.Type != cty.String {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "format may only be set for string variables",
+				Summary:  `"format" may only be set for string variables`,
 				Subject:  &attr.Range,
 			})
 			return v, diags
@@ -193,7 +193,7 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 		if !constants.IsValidVariableFormat(formatVal) {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid format, must be one of %s", strings.Join(constants.ValidVariableFormats, ", ")),
+				Summary:  fmt.Sprintf("invalid format, must be one of \"%s\"", strings.Join(constants.ValidVariableFormats, `", "`)),
 			})
 		}
 		v.Format = formatVal
