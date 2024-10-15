@@ -38,14 +38,13 @@ type SearchPathProvider interface {
 	GetSearchPathPrefix() []string
 }
 
-func ConnectionTypeMeetsRequiredType(requiredType, actualType string) bool {
+func ConnectionTypeMeetsRequiredType(requiredType, actualResourceType, actualType string) bool {
 	// handle type connection and connection.<subtype>
 	requiredTypeParts := strings.Split(requiredType, ".")
-	typeParts := strings.Split(actualType, ".")
 
-	if len(requiredTypeParts) == 1 && requiredTypeParts[0] != typeParts[0] {
+	if len(requiredTypeParts) == 1 && requiredTypeParts[0] != actualResourceType {
 		return false
-	} else if len(requiredTypeParts) == 2 && requiredType != actualType {
+	} else if len(requiredTypeParts) == 2 && (requiredTypeParts[0] != actualResourceType || requiredTypeParts[1] != actualType) {
 		return false
 	}
 	return true

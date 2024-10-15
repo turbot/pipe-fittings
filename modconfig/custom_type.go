@@ -177,9 +177,10 @@ func isConnectionValueMapOfType(ty reflect.Type, valueMap map[string]cty.Value, 
 			return false, diags
 		}
 		requiredTypeString := fmt.Sprintf("connection.%s", connInstance.GetConnectionType())
-		actualTypeString := fmt.Sprintf("%s.%s", valueMap["resource_type"].AsString(), valueMap["type"].AsString())
+		actualResourceType := valueMap["resource_type"].AsString()
+		actualType := valueMap["type"].AsString()
 
-		return connection.ConnectionTypeMeetsRequiredType(requiredTypeString, actualTypeString), nil
+		return connection.ConnectionTypeMeetsRequiredType(requiredTypeString, actualResourceType, actualType), nil
 	}
 
 	// if ty is a connectionImpl, the 'type' is connection
@@ -189,7 +190,7 @@ func isConnectionValueMapOfType(ty reflect.Type, valueMap map[string]cty.Value, 
 		if len(diags) > 0 {
 			return false, diags
 		}
-		return connection.ConnectionTypeMeetsRequiredType(schema.BlockTypeConnection, valueMap["resource_type"].AsString()), nil
+		return connection.ConnectionTypeMeetsRequiredType(schema.BlockTypeConnection, valueMap["resource_type"].AsString(), valueMap["type"].AsString()), nil
 	}
 
 	return false, nil

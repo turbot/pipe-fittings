@@ -41,7 +41,7 @@ func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interf
 		if mapParam, ok := v.(map[string]any); ok {
 			switch {
 			case param.IsConnectionType():
-				if !connection.ConnectionTypeMeetsRequiredType(param.TypeString, mapParam["resource_type"].(string)) {
+				if !connection.ConnectionTypeMeetsRequiredType(param.TypeString, mapParam["resource_type"].(string), mapParam["type"].(string)) {
 					errorExist = true
 					errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted connection but received %s", k, param.TypeString)))
 				} else {

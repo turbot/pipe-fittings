@@ -31,9 +31,10 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 	settingValueMap := setting.AsValueMap()
 
 	// get resource type (if present)
-	resourceType, _ := cty_helpers.StringValueFromCtyMap(settingValueMap, "resource_type")
+	valueResourceType, _ := cty_helpers.StringValueFromCtyMap(settingValueMap, "resource_type")
+	valueType, _ := cty_helpers.StringValueFromCtyMap(settingValueMap, "type")
 
-	if connection.ConnectionTypeMeetsRequiredType(schema.BlockTypeConnection, resourceType) {
+	if connection.ConnectionTypeMeetsRequiredType(schema.BlockTypeConnection, valueResourceType, valueType) {
 		if settingValueMap["type"].IsNull() {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -88,7 +89,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 				return hcl.Diagnostics{}
 			}
 		}
-	} else if resourceType == schema.BlockTypeNotifier {
+	} else if valueResourceType == schema.BlockTypeNotifier {
 		// check if the connection actually exists in the eval context
 		allNotifiers := evalCtx.Variables[schema.BlockTypeNotifier]
 		if allNotifiers == cty.NilVal {
