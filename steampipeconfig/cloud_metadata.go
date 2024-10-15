@@ -7,6 +7,10 @@ type CloudMetadata struct {
 	ConnectionString string             `json:"-"`
 }
 
+func (c *CloudMetadata) GetConnectionString() string {
+	return c.ConnectionString
+}
+
 type ActorMetadata struct {
 	Id     string `json:"id,omitempty"`
 	Handle string `json:"handle,omitempty"`
