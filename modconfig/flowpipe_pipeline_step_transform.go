@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -47,27 +46,21 @@ func (p *PipelineStepTransform) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepTransform) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
+}
+
+func (p *PipelineStepTransform) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 	var value any
 
-	if p.UnresolvedAttributes[schema.AttributeTypeValue] == nil {
-		value = p.Value
-	} else {
-		var transformValueCtyValue cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeValue], evalContext, &transformValueCtyValue)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-
-		goVal, err := hclhelpers.CtyToGo(transformValueCtyValue)
-		if err != nil {
-			return nil, err
-		}
-		value = goVal
+	value, allConnectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeValue, p.Value)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	return map[string]interface{}{
 		schema.AttributeTypeValue: value,
-	}, nil
+	}, allConnectionDependencies, nil
 }
 
 func (p *PipelineStepTransform) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

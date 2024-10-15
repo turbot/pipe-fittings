@@ -48,11 +48,17 @@ func (p *PipelineStepFunction) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
+}
+func (p *PipelineStepFunction) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	var allConnectionDependencies []ConnectionDependency
 
 	var env map[string]string
 	if p.UnresolvedAttributes[schema.AttributeTypeEnv] == nil {
@@ -61,70 +67,52 @@ func (p *PipelineStepFunction) GetInputs(evalContext *hcl.EvalContext) (map[stri
 		var args cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEnv], evalContext, &args)
 		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+			return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
 		var err error
 		env, err = hclhelpers.CtyToGoMapString(args)
 		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse env attribute to map[string]string: " + err.Error())
+			return nil, nil, perr.BadRequestWithMessage(p.Name + ": unable to parse env attribute to map[string]string: " + err.Error())
 		}
 	}
-
-	var event map[string]interface{}
-	if p.UnresolvedAttributes[schema.AttributeTypeEvent] == nil {
-		event = p.Event
-	} else {
-		val, diags := p.UnresolvedAttributes[schema.AttributeTypeEvent].Value(evalContext)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-
-		var err error
-		event, err = hclhelpers.CtyToGoMapInterface(val)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse event attribute to map[string]interface{}: " + err.Error())
-		}
-	}
-
-	var src string
-	if p.UnresolvedAttributes[schema.AttributeTypeSource] == nil {
-		src = p.Source
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSource], evalContext, &src)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var runtime string
-	if p.UnresolvedAttributes[schema.AttributeTypeRuntime] == nil {
-		runtime = p.Runtime
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeRuntime], evalContext, &runtime)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var handler string
-	if p.UnresolvedAttributes[schema.AttributeTypeHandler] == nil {
-		handler = p.Handler
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeHandler], evalContext, &handler)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-	}
-
-	results[schema.LabelName] = p.PipelineName + "." + p.GetFullyQualifiedName()
-	results[schema.AttributeTypeSource] = src
-	results[schema.AttributeTypeRuntime] = runtime
-	results[schema.AttributeTypeHandler] = handler
-	results[schema.AttributeTypeEvent] = event
 	results[schema.AttributeTypeEnv] = env
 
-	return results, nil
+	// event
+	eventValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeEvent, p.Event)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeEvent] = eventValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// src
+	srcValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSource, p.Source)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeSource] = srcValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// runtime
+	runtimeValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeRuntime, p.Runtime)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeRuntime] = runtimeValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// handler
+	handlerValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeHandler, p.Handler)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeHandler] = handlerValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	results[schema.LabelName] = p.PipelineName + "." + p.GetFullyQualifiedName()
+
+	return results, allConnectionDependencies, nil
 }
 
 func (p *PipelineStepFunction) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

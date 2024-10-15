@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -40,28 +39,22 @@ func (p *PipelineStepSleep) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepSleep) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var durationInput interface{}
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
+}
 
-	if p.UnresolvedAttributes[schema.AttributeTypeDuration] == nil {
-		durationInput = p.Duration
-	} else {
+func (p *PipelineStepSleep) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
+	var durationInput any
+	var connectionDependencies []ConnectionDependency
 
-		var sleepDurationCtyValue cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeDuration], evalContext, &sleepDurationCtyValue)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-
-		goVal, err := hclhelpers.CtyToGo(sleepDurationCtyValue)
-		if err != nil {
-			return nil, err
-		}
-		durationInput = goVal
+	durationInput, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeDuration, p.Duration)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
 
 	return map[string]interface{}{
 		schema.AttributeTypeDuration: durationInput,
-	}, nil
+	}, connectionDependencies, nil
 }
 
 func (p *PipelineStepSleep) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
