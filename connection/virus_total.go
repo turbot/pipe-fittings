@@ -10,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const VirusTotalConnectionType = "virus_total"
+const VirusTotalConnectionType = "virustotal"
 
 type VirusTotalConnection struct {
 	ConnectionImpl
