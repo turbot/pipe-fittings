@@ -229,6 +229,12 @@ func importCredential(source *string, connectionNames []string, prefix *string) 
 				strParts := strings.Split(connectionType, "/")
 				connectionType = strParts[len(strParts)-1]
 			}
+			// If the plugin name contains @ sign, takes the first part of the name
+			if strings.Contains(connectionType, "@") {
+				strParts := strings.Split(connectionType, "@")
+				connectionType = strParts[0]
+			}
+
 			connectionName := block.Labels[0]
 
 			if len(connectionNames) > 0 {
