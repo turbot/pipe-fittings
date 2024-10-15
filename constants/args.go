@@ -17,7 +17,7 @@ const (
 	//nolint:gosec // This is not a hardcoded credential
 	ArgDatabaseSSLPassword     = "database-ssl-password"
 	ArgArg                     = "arg"
-	ArgAutoComplete            = "auto-complete"
+	ArgAutoComplete            = "autocomplete"
 	ArgBaseUrl                 = "base-url"
 	ArgBenchmarkTimeout        = "benchmark-timeout"
 	ArgCacheMaxTtl             = "cache-max-ttl"
@@ -56,7 +56,7 @@ const (
 	ArgMemoryMaxMbPlugin       = "memory-max-mb-plugin"
 	ArgModInstall              = "mod-install"
 	ArgModLocation             = "mod-location"
-	ArgMultiLine               = "multi-line"
+	ArgMultiLine               = "multi"
 	ArgOff                     = "off"
 	ArgOn                      = "on"
 	ArgOutput                  = "output"
