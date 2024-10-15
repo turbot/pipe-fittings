@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"log/slog"
 	"reflect"
 	"slices"
 	"strings"
@@ -287,7 +288,10 @@ type PipelineStep interface {
 	GetPipelineName() string
 	IsResolved() bool
 	AddUnresolvedBody(string, hcl.Body)
+
 	GetInputs(*hcl.EvalContext) (map[string]interface{}, error)
+	GetInputs2(*hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error)
+
 	GetDependsOn() []string
 	GetCredentialDependsOn() []string
 	GetConnectionDependsOn() []string
@@ -315,6 +319,11 @@ type PipelineStepBaseInterface interface {
 	AppendConnectionDependsOn(...string)
 	AddUnresolvedAttribute(string, hcl.Expression)
 	GetPipeline() *Pipeline
+}
+
+type ConnectionDependency struct {
+	Source string
+	Type   string
 }
 
 // A common base struct that all pipeline steps must embed
@@ -369,6 +378,10 @@ func (p *PipelineStepBase) SetRange(r *hcl.Range) {
 
 func (p *PipelineStepBase) GetRange() *hcl.Range {
 	return p.Range
+}
+
+func (p *PipelineStepBase) GetInputs2(*hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
+	return nil, nil, nil
 }
 
 func (p *PipelineStepBase) GetRetryConfig(evalContext *hcl.EvalContext, ifResolution bool) (*RetryConfig, hcl.Diagnostics) {
@@ -1352,6 +1365,88 @@ func simpleTypeInputFromAttribute[T any](unresolvedAttributes map[string]hcl.Exp
 	return results, hcl.Diagnostics{}
 }
 
+func decodeStepAttribute[T any](unresolvedAttributes map[string]hcl.Expression, evalContext *hcl.EvalContext, stepName, attributeName string, fieldValue T) (any, []ConnectionDependency, hcl.Diagnostics) {
+	var res any
+	var connectionDependencies []ConnectionDependency
+
+	var decodedCtyValue cty.Value
+
+	if unresolvedAttributes[attributeName] == nil {
+		if !helpers.IsNil(fieldValue) {
+			if utils.IsPointer(fieldValue) {
+				valueOfTempValue := reflect.ValueOf(fieldValue)
+				if valueOfTempValue.Kind() == reflect.Ptr && !valueOfTempValue.IsNil() {
+					// Dereference the pointer and set the result in the map
+					res = valueOfTempValue.Elem().Interface()
+				} else {
+					res = fieldValue
+				}
+			} else {
+				res = fieldValue
+			}
+		}
+
+	} else {
+		diags := gohcl.DecodeExpression(unresolvedAttributes[attributeName], evalContext, &decodedCtyValue)
+		if diags.HasErrors() {
+			// Handle connection errors
+			if IsConnectionError(diags) {
+				conns := FindConnectionFromDiags(diags)
+				slog.Debug(fmt.Sprintf("Missing connections for step.%s.%s", attributeName, stepName), "connections", conns)
+				connectionDependencies = append(connectionDependencies, conns...)
+				return res, connectionDependencies, nil
+			}
+			// Return any other errors
+			return res, nil, diags
+		}
+	}
+
+	if !decodedCtyValue.IsNull() {
+
+		fieldType := reflect.TypeOf(fieldValue)
+		if fieldType != nil && fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String {
+			var err error
+			res, err = hclhelpers.CtyToGoStringSlice(decodedCtyValue, decodedCtyValue.Type())
+			if err != nil {
+				return res, nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + attributeName + " attribute to string slice",
+						Subject:  unresolvedAttributes[attributeName].Range().Ptr(),
+					},
+				}
+			}
+		} else if fieldType != nil && fieldType.Kind() == reflect.Map && fieldType.Key().Kind() == reflect.String && fieldType.Elem().Kind() == reflect.String {
+			var err error
+			res, err = hclhelpers.CtyToGoMapString(decodedCtyValue)
+			if err != nil {
+				return res, nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + attributeName + " attribute to map[string]string",
+						Subject:  unresolvedAttributes[attributeName].Range().Ptr(),
+					},
+				}
+			}
+		} else {
+			goVal, err := hclhelpers.CtyToGo(decodedCtyValue)
+			if err != nil {
+				return res, nil, hcl.Diagnostics{
+					&hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + attributeName + " attribute to interface",
+						Subject:  unresolvedAttributes[attributeName].Range().Ptr(),
+					},
+				}
+			}
+
+			res = goVal
+		}
+	}
+
+	return res, connectionDependencies, hcl.Diagnostics{}
+}
+
 func stringMapInputFromAttribute(unresolvedAttributes map[string]hcl.Expression, results map[string]interface{}, evalContext *hcl.EvalContext, attributeName string, fieldValue *map[string]string) (map[string]interface{}, hcl.Diagnostics) {
 	if fieldValue != nil {
 		results[attributeName] = *fieldValue
@@ -1888,4 +1983,248 @@ func tryFunctionError(e *hcl.Diagnostic) bool {
 
 func expectedMissingDependencyError(e *hcl.Diagnostic) bool {
 	return e.Detail == `There is no variable named "each".` || e.Detail == `There is no variable named "param".` || e.Detail == `There is no variable named "loop".`
+}
+
+func IsConnectionScopeTraversal(scopeTraversals *hclsyntax.ScopeTraversalExpr) bool {
+	if len(scopeTraversals.Traversal) > 0 {
+		if traverserRoot, ok := scopeTraversals.Traversal[0].(hcl.TraverseRoot); ok {
+			if traverserRoot.Name == "connection" || traverserRoot.Name == "credential" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func IsConnectionIndexTraversal(indexExpr *hclsyntax.IndexExpr) bool {
+	if key, ok := indexExpr.Key.(*hclsyntax.ScopeTraversalExpr); ok {
+		if IsConnectionScopeTraversal(key) {
+			return true
+		}
+	}
+
+	if collection, ok := indexExpr.Collection.(*hclsyntax.ScopeTraversalExpr); ok {
+		if IsConnectionScopeTraversal(collection) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func IsConnectionExpr(expr hcl.Expression) bool {
+	if scopeTraversals, ok := expr.(*hclsyntax.ScopeTraversalExpr); ok {
+		return IsConnectionScopeTraversal(scopeTraversals)
+	} else if indexExpr, ok := expr.(*hclsyntax.IndexExpr); ok {
+		return IsConnectionIndexTraversal(indexExpr)
+	} else if objType, ok := expr.(*hclsyntax.ObjectConsExpr); ok {
+		for _, item := range objType.Items {
+			if IsConnectionExpr(item.ValueExpr) {
+				return true
+			}
+		}
+	} else if templateExpr, ok := expr.(*hclsyntax.TemplateExpr); ok {
+		for _, part := range templateExpr.Parts {
+			if IsConnectionExpr(part) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func IsConnectionError(diags hcl.Diagnostics) bool {
+	if !diags.HasErrors() {
+		return false
+	}
+
+	for _, diag := range diags {
+		if diag.Expression != nil {
+			if IsConnectionExpr(diag.Expression) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func GuessRequiredConnectionScopeTraversal(scopeTraversals *hclsyntax.ScopeTraversalExpr) []ConnectionDependency {
+	var res []ConnectionDependency
+
+	connectionDependency := IsConnectionScopeTraversal(scopeTraversals)
+	if !connectionDependency {
+		return res
+	}
+
+	dottedString := hclhelpers.TraversalAsString(scopeTraversals.Traversal)
+	parts := strings.Split(dottedString, ".")
+	if len(parts) < 2 {
+		return res
+	}
+
+	connectionType := parts[1]
+	connectionSource := ""
+	if len(parts) > 2 {
+		connectionSource = parts[2]
+	}
+
+	return []ConnectionDependency{
+		{
+			Source: connectionSource,
+			Type:   connectionType,
+		},
+	}
+}
+
+func GuessRequiredConnectionIndex(indexExpr *hclsyntax.IndexExpr) []ConnectionDependency {
+	// value = connection.aws[step.transform.source.value]
+
+	var res []ConnectionDependency
+	// check the key if it's a connection dependency
+	connectionDependency := false
+	if scopeTraverals, ok := indexExpr.Collection.(*hclsyntax.ScopeTraversalExpr); ok {
+		connectionDependency = IsConnectionScopeTraversal(scopeTraverals)
+	}
+
+	if !connectionDependency {
+		return res
+	}
+
+	connType := ""
+	connSource := ""
+
+	if key, ok := indexExpr.Collection.(*hclsyntax.ScopeTraversalExpr); ok {
+		dottedString := hclhelpers.TraversalAsString(key.Traversal)
+		parts := strings.Split(dottedString, ".")
+		if len(parts) < 2 {
+			return res
+		}
+
+		connType = parts[1]
+	}
+
+	// flatten the keys
+	if key, ok := indexExpr.Key.(*hclsyntax.ScopeTraversalExpr); ok {
+		connSource = hclhelpers.TraversalAsString(key.Traversal)
+
+	}
+
+	return []ConnectionDependency{
+		{
+			Source: connSource,
+			Type:   connType,
+		},
+	}
+}
+
+func GuessRequiredConnectionRelativeTraversal(relativeTraversal *hclsyntax.RelativeTraversalExpr) []ConnectionDependency {
+	var res []ConnectionDependency
+
+	if scopeTraversals, ok := relativeTraversal.Source.(*hclsyntax.ScopeTraversalExpr); ok {
+		newRes := GuessRequiredConnectionScopeTraversal(scopeTraversals)
+		res = append(res, newRes...)
+	} else if indexExpr, ok := relativeTraversal.Source.(*hclsyntax.IndexExpr); ok {
+		newRes := GuessRequiredConnectionIndex(indexExpr)
+		res = append(res, newRes...)
+	}
+
+	return res
+}
+
+func GuessRequiredConnectionTemplate(templateExpr *hclsyntax.TemplateExpr) []ConnectionDependency {
+	var res []ConnectionDependency
+
+	for _, part := range templateExpr.Parts {
+		if scopeTraverals, ok := part.(*hclsyntax.ScopeTraversalExpr); ok {
+			newRes := GuessRequiredConnectionScopeTraversal(scopeTraverals)
+			res = append(res, newRes...)
+		} else if relativeTraversal, ok := part.(*hclsyntax.RelativeTraversalExpr); ok {
+			newRes := GuessRequiredConnectionRelativeTraversal(relativeTraversal)
+			res = append(res, newRes...)
+		} else if indexExpr, ok := part.(*hclsyntax.IndexExpr); ok {
+			newRes := GuessRequiredConnectionIndex(indexExpr)
+			res = append(res, newRes...)
+		}
+	}
+
+	return res
+}
+
+func FindRequiredConnection(expr hcl.Expression) string {
+	connectionType := ""
+	connectionSource := ""
+	if indexExpr, ok := expr.(*hclsyntax.IndexExpr); ok {
+		if collectionExpr, ok := indexExpr.Collection.(*hclsyntax.ScopeTraversalExpr); ok {
+			collectionString := hclhelpers.TraversalAsString(collectionExpr.Traversal)
+			collectionStringParts := strings.Split(collectionString, ".")
+			if len(collectionStringParts) == 2 {
+				connectionType = collectionStringParts[1]
+
+			}
+		}
+
+		if keyExpr, ok := indexExpr.Key.(*hclsyntax.ScopeTraversalExpr); ok {
+			connectionSource = hclhelpers.TraversalAsString(keyExpr.Traversal)
+		}
+	}
+
+	if connectionType != "" && connectionSource != "" {
+		return connectionType + "." + connectionSource
+	}
+
+	return ""
+}
+
+func GuessRequiredConnection(expr hcl.Expression) []ConnectionDependency {
+	var res []ConnectionDependency
+
+	if scopeTraverals, ok := expr.(*hclsyntax.ScopeTraversalExpr); ok {
+		newRes := GuessRequiredConnectionScopeTraversal(scopeTraverals)
+		res = append(res, newRes...)
+	} else if objType, ok := expr.(*hclsyntax.ObjectConsExpr); ok {
+		/**
+				    step "transform" "repeat" {
+		        for_each = step.transform.source.value
+		        value = {
+		            "value" = "bar"
+		            "param_foo" = param.foo
+		            "akey" = connection.aws[each.value]
+		        }
+		    }
+
+			**/
+		for _, item := range objType.Items {
+			if scopeTraverals, ok := item.ValueExpr.(*hclsyntax.ScopeTraversalExpr); ok {
+				newRes := GuessRequiredConnectionScopeTraversal(scopeTraverals)
+				res = append(res, newRes...)
+			} else if indexExpr, ok := item.ValueExpr.(*hclsyntax.IndexExpr); ok {
+				newRes := GuessRequiredConnectionIndex(indexExpr)
+				res = append(res, newRes...)
+			} else if templateExpr, ok := item.ValueExpr.(*hclsyntax.TemplateExpr); ok {
+				newRes := GuessRequiredConnectionTemplate(templateExpr)
+				res = append(res, newRes...)
+			}
+
+		}
+	} else if indexExpr, ok := expr.(*hclsyntax.IndexExpr); ok {
+		newRes := GuessRequiredConnectionIndex(indexExpr)
+		res = append(res, newRes...)
+	}
+
+	return res
+}
+
+func FindConnectionFromDiags(diags hcl.Diagnostics) []ConnectionDependency {
+	var res []ConnectionDependency
+
+	for _, diag := range diags {
+		if diag.Expression != nil {
+			newRes := GuessRequiredConnection(diag.Expression)
+			res = append(res, newRes...)
+		}
+	}
+
+	return res
 }

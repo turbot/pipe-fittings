@@ -86,15 +86,22 @@ func (p *PipelineStepPipeline) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
+}
+
+func (p *PipelineStepPipeline) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 
 	var pipeline string
+	var allConnectionDependencies []ConnectionDependency
+
 	if p.UnresolvedAttributes[schema.AttributeTypePipeline] == nil {
 		if p.Pipeline == cty.NilVal {
-			return nil, perr.InternalWithMessage(p.Name + ": pipeline must be supplied")
+			return nil, nil, perr.InternalWithMessage(p.Name + ": pipeline must be supplied")
 		}
 
 		if !p.Pipeline.Type().IsMapType() && !p.Pipeline.Type().IsObjectType() {
-			return nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
+			return nil, nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
 		}
 
 		valueMap := p.Pipeline.AsValueMap()
@@ -105,11 +112,11 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 		var pipelineCty cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePipeline], evalContext, &pipelineCty)
 		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+			return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 
 		if !pipelineCty.Type().IsMapType() && !pipelineCty.Type().IsObjectType() {
-			return nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
+			return nil, nil, perr.InternalWithMessage(p.Name + ": invalid pipeline type")
 		}
 
 		valueMap := pipelineCty.AsValueMap()
@@ -121,24 +128,31 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 
 	results[schema.AttributeTypePipeline] = pipeline
 
-	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-
-		mapValue, err := hclhelpers.CtyToGoMapInterface(args)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to map[string]interface{}: " + err.Error())
-		}
-		results[schema.AttributeTypeArgs] = mapValue
-
-	} else if p.Args != nil {
-		results[schema.AttributeTypeArgs] = p.Args
+	argsValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeArgs, p.Args)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeArgs] = argsValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	return results, nil
+	// if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
+	// 	var args cty.Value
+	// 	diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
+	// 	if diags.HasErrors() {
+	// 		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	// 	}
+
+	// 	mapValue, err := hclhelpers.CtyToGoMapInterface(args)
+	// 	if err != nil {
+	// 		return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to map[string]interface{}: " + err.Error())
+	// 	}
+	// 	results[schema.AttributeTypeArgs] = mapValue
+
+	// } else if p.Args != nil {
+	// 	results[schema.AttributeTypeArgs] = p.Args
+	// }
+
+	return results, allConnectionDependencies, nil
 }
 
 func (p *PipelineStepPipeline) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

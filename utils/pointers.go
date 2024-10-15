@@ -21,9 +21,20 @@ func ToPointer[T any](value T) *T {
 	return &value
 }
 
-func IsPointer[T any](v T) bool {
-	// Reflect on the type of the value to determine if it's a pointer
-	return reflect.TypeOf(v).Kind() == reflect.Ptr
+func IsPointer[T any](val T) bool {
+	// Check if the type is nil to avoid panics
+	if reflect.TypeOf(val) == nil {
+		return false
+	}
+	return reflect.TypeOf(val).Kind() == reflect.Ptr
+}
+
+func IsInterface[T any](val T) bool {
+	// Check if the type is nil to avoid panics
+	if reflect.TypeOf(val) == nil {
+		return false
+	}
+	return reflect.TypeOf(val).Kind() == reflect.Interface
 }
 
 // Deref safely dereferences a pointer, returning a default value if the pointer is nil
