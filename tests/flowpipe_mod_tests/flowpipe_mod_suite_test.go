@@ -2231,6 +2231,9 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert.Equal("enum2", mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].ValueGo)
 	assert.Equal(2, len(mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].EnumGo))
 	assert.Equal(3, mod.ResourceMaps.Variables["test_mod.var.number_with_enum"].ValueGo)
+	assert.Equal("text", mod.ResourceMaps.Variables["test_mod.var.text_format"].Format)
+	assert.Equal("text", mod.ResourceMaps.Variables["test_mod.var.format_implicit"].Format)
+	assert.Equal("multiline", mod.ResourceMaps.Variables["test_mod.var.multiline_format"].Format)
 
 	pipelines := mod.ResourceMaps.Pipelines
 	pipelineOne := pipelines["test_mod.pipeline.one"]
@@ -2319,6 +2322,16 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 		assert.Fail("echo_b pipeline not found")
 		return
 	}
+
+	paramFormatPipeline := pipelines["test_mod.pipeline.param_format"]
+	if githubIssuePipeline == nil {
+		assert.Fail("github_issue pipeline not found")
+		return
+	}
+
+	assert.Equal("text", paramFormatPipeline.Params[0].Format)
+	assert.Equal("text", paramFormatPipeline.Params[1].Format)
+	assert.Equal("multiline", paramFormatPipeline.Params[2].Format)
 
 	// The default value is 300 but we override it in the parent's pvars file to 42
 	assert.Equal("description from variable 42", *modDependBPipelineEchoB.Description)

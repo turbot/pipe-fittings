@@ -32,12 +32,11 @@ type Variable struct {
 
 	// TypeString shows the type as specified in the hcl file
 	// or if no type is specified, it derives a type string from the variable value
-	TypeString string `json:"type_string"`
-	DefaultGo  any    `json:"value_default"`
-	ValueGo    any    `json:"value"`
-	EnumGo     []any  `json:"enum,omitempty"`
-	ModName    string `json:"mod_name"`
-
+	TypeString    string         `json:"type_string"`
+	DefaultGo     any            `json:"value_default"`
+	ValueGo       any            `json:"value"`
+	EnumGo        []any          `json:"enum,omitempty"`
+	ModName       string         `json:"mod_name"`
 	Subtype       hcl.Expression `json:"-"`
 	SubtypeString string         `json:"subtype_string,omitempty"`
 
