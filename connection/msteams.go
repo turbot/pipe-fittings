@@ -10,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const MicrosoftTeamsConnectionType = "microsoft_teams"
+const MicrosoftTeamsConnectionType = "teams"
 
 type MicrosoftTeamsConnection struct {
 	ConnectionImpl

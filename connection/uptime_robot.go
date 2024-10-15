@@ -10,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const UptimeRobotConnectionType = "uptime_robot"
+const UptimeRobotConnectionType = "uptimerobot"
 
 type UptimeRobotConnection struct {
 	ConnectionImpl
