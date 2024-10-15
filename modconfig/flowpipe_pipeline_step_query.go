@@ -57,18 +57,22 @@ func (p *PipelineStepQuery) Equals(iOther PipelineStep) bool {
 		utils.PtrEqual(p.Sql, other.Sql)
 }
 
-func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+func (p *PipelineStepQuery) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 	var diags hcl.Diagnostics
+	var allConnnectionDependencies []ConnectionDependency
+
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// sql
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeSql, p.Sql)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	sqlValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSql, p.Sql)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeSql] = sqlValue
+	allConnnectionDependencies = append(allConnnectionDependencies, connectionDependencies...)
 
 	// database
 	if databaseExpression, ok := p.UnresolvedAttributes[schema.AttributeTypeDatabase]; ok {
@@ -76,7 +80,7 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		var dbValue cty.Value
 		diags := gohcl.DecodeExpression(databaseExpression, evalContext, &dbValue)
 		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+			return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
 		// check if this is a connection string or a connection
 		if dbValue.Type() == cty.String {
@@ -84,45 +88,60 @@ func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]
 		} else {
 			c, err := app_specific_connection.CtyValueToConnection(dbValue)
 			if err != nil {
-				return nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
+				return nil, nil, perr.BadRequestWithMessage(p.Name + ": unable to resolve connection attribute: " + err.Error())
 			}
 			if conn, ok := c.(connection.ConnectionStringProvider); ok {
 				results[schema.AttributeTypeDatabase] = utils.ToStringPointer(conn.GetConnectionString())
 			} else {
 				slog.Warn("connection does not support connection string", "db", c)
-				return nil, perr.BadRequestWithMessage(fmt.Sprintf("%s: invalid connection reference '%s' - only connections which implement GetConnectionString() are supported", p.Name, c.Name()))
+				return nil, nil, perr.BadRequestWithMessage(fmt.Sprintf("%s: invalid connection reference '%s' - only connections which implement GetConnectionString() are supported", p.Name, c.Name()))
 			}
 		}
 	} else {
 		// database
-		results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeDatabase, p.Database)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+		databaseValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeDatabase, p.Database)
+		if len(diags) > 0 {
+			return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
+		results[schema.AttributeTypeDatabase] = databaseValue
+		allConnnectionDependencies = append(allConnnectionDependencies, connectionDependencies...)
 	}
 
 	if _, ok := results[schema.AttributeTypeDatabase]; !ok {
-		return nil, perr.BadRequestWithMessage(p.Name + ": database must be supplied")
+		return nil, nil, perr.BadRequestWithMessage(p.Name + ": database must be supplied")
 	}
 
-	if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-
-		mapValue, err := hclhelpers.CtyToGoInterfaceSlice(args)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to an array " + err.Error())
-		}
-		results[schema.AttributeTypeArgs] = mapValue
-
-	} else if p.Args != nil {
-		results[schema.AttributeTypeArgs] = p.Args
+	// args
+	argsValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeArgs, p.Args)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeArgs] = argsValue
+	allConnnectionDependencies = append(allConnnectionDependencies, connectionDependencies...)
 
-	return results, nil
+	// if p.UnresolvedAttributes[schema.AttributeTypeArgs] != nil {
+	// 	var args cty.Value
+	// 	diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeArgs], evalContext, &args)
+	// 	if diags.HasErrors() {
+	// 		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	// 	}
+
+	// 	mapValue, err := hclhelpers.CtyToGoInterfaceSlice(args)
+	// 	if err != nil {
+	// 		return nil, nil, perr.BadRequestWithMessage(p.Name + ": unable to parse args attribute to an array " + err.Error())
+	// 	}
+	// 	results[schema.AttributeTypeArgs] = mapValue
+
+	// } else if p.Args != nil {
+	// 	results[schema.AttributeTypeArgs] = p.Args
+	// }
+
+	return results, allConnnectionDependencies, nil
+}
+
+func (p *PipelineStepQuery) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
 }
 
 func (p *PipelineStepQuery) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

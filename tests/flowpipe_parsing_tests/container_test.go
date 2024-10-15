@@ -113,7 +113,6 @@ func TestContainerStep(t *testing.T) {
 	assert.Equal("test/image", inputs[schema.AttributeTypeImage])
 	assert.Equal(120000, inputs[schema.AttributeTypeTimeout])
 	assert.Equal(int64(512), inputs[schema.AttributeTypeCpuShares])
-
 	assert.Equal(int64(128), inputs[schema.AttributeTypeMemory])
 	assert.Equal(int64(64), inputs[schema.AttributeTypeMemoryReservation])
 	assert.Equal(int64(-1), inputs[schema.AttributeTypeMemorySwap])

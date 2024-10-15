@@ -3469,6 +3469,25 @@ func (suite *FlowpipeModTestSuite) TestComplexVariable() {
 	assert.Equal([]any{}, mapVal["remove_except"])
 }
 
+func (suite *FlowpipeModTestSuite) XTestForEach() {
+	assert := assert.New(suite.T())
+	require := require.New(suite.T())
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./for_each"})
+	assert.Nil(errAndWarning.Error)
+	w, errorAndWarning := workspace.Load(suite.ctx, "./for_each", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
+
+	modVar := w.Mod.ResourceMaps.Variables["for_each.var.foreach_with_conn"]
+	assert.NotNil(modVar)
+	mapVal, ok := modVar.ValueGo.(map[string]interface{})
+	assert.True(ok)
+	assert.NotNil(mapVal)
+	assert.Equal([]any{}, mapVal["remove_except"])
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestFlowpipeModTestSuite(t *testing.T) {
