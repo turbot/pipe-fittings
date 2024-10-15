@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -283,6 +284,18 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {
 		valDiags := decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
 		diags = append(diags, valDiags...)
+	}
+
+	if attr, exists := paramOptions.Attributes[schema.AttributeTypeFormat]; exists {
+		formatVal, moreDiags := DecodeVarFormat(o.Type, attr, parseCtx)
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
+			return o, diags
+		}
+		o.Format = formatVal
+	} else if o.Type == cty.String {
+		// if this is a string param, default to text
+		o.Format = constants.VariableFormatText
 	}
 
 	return o, diags

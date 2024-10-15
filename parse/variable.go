@@ -165,36 +165,10 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 	}
 
 	if attr, exists := content.Attributes[schema.AttributeTypeFormat]; exists {
-		if v.Type != cty.String {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  `"format" may only be set for string variables`,
-				Subject:  &attr.Range,
-			})
+		formatVal, moreDiags := DecodeVarFormat(v.Type, attr, parseCtx)
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
 			return v, diags
-		}
-
-		ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
-		if moreDiags.HasErrors() {
-			diags = append(diags, moreDiags...)
-			return v, diags
-		}
-
-		if ctyVal.Type() != cty.String {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "foamat must be a string",
-				Subject:  &attr.Range,
-			})
-			return v, diags
-		}
-		formatVal := ctyVal.AsString()
-
-		if !constants.IsValidVariableFormat(formatVal) {
-			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  fmt.Sprintf("invalid format, must be one of \"%s\"", strings.Join(constants.ValidVariableFormats, `", "`)),
-			})
 		}
 		v.Format = formatVal
 	} else if v.Type == cty.String {
@@ -213,4 +187,41 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 	}
 
 	return v, diags
+}
+
+func DecodeVarFormat(ty cty.Type, attr *hcl.Attribute, parseCtx *ModParseContext) (string, hcl.Diagnostics) {
+	var diags hcl.Diagnostics
+	if ty != cty.String {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  `"format" may only be set for string variables`,
+			Subject:  &attr.Range,
+		})
+		return "", diags
+	}
+
+	ctyVal, moreDiags := attr.Expr.Value(parseCtx.EvalCtx)
+	if moreDiags.HasErrors() {
+		diags = append(diags, moreDiags...)
+		return "", diags
+	}
+
+	if ctyVal.Type() != cty.String {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "foamat must be a string",
+			Subject:  &attr.Range,
+		})
+		return "", diags
+	}
+	formatVal := ctyVal.AsString()
+
+	if !constants.IsValidVariableFormat(formatVal) {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("invalid format, must be one of \"%s\"", strings.Join(constants.ValidVariableFormats, `", "`)),
+		})
+	}
+
+	return formatVal, diags
 }

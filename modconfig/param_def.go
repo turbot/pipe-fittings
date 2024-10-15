@@ -15,7 +15,6 @@ type ParamDef struct {
 	UnqualifiedName string  `cty:"full_name" json:"-"`
 	Description     *string `cty:"description" json:"description"`
 	Default         *string `cty:"default" json:"default"`
-	Format          string  `json:"format"`
 	// tactical - is the raw value a string
 	IsString bool `cty:"is_string" json:"-"`
 

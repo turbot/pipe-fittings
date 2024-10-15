@@ -11,14 +11,12 @@ import (
 	steampipecloud "github.com/turbot/pipes-sdk-go"
 )
 
-// GetCloudMetadata returns the cloud metadata for a given workspace database string
-
 func GetCloudMetadata(ctx context.Context, workspaceDatabaseString, token string) (*steampipeconfig.CloudMetadata, error) {
 	client := newSteampipeCloudClient(token)
 
 	parts := strings.Split(workspaceDatabaseString, "/")
 	if len(parts) != 2 {
-		return nil, sperr.New("invalid 'workspace-database' argument '%s' - must be either a connection string or in format <identity>/<workspace>", workspaceDatabaseString)
+		return nil, sperr.New("invalid argument '%s' - must be in format <identity>/<workspace>", workspaceDatabaseString)
 	}
 	identityHandle := parts[0]
 	workspaceHandle := parts[1]

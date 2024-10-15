@@ -459,6 +459,7 @@ type PipelineParam struct {
 	Type        cty.Type          `json:"-"`
 	TypeString  string            `json:"type_string"`
 	Tags        map[string]string `json:"tags,omitempty"`
+	Format      string            `json:"format"`
 }
 
 func (p *PipelineParam) Equals(other *PipelineParam) bool {
