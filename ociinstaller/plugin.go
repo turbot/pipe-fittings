@@ -135,7 +135,7 @@ func installPluginBinary(image *OciImage[*PluginImage, *PluginImageConfig], temp
 
 	// unzip the file into the plugin folder
 	if _, err := Ungzip(sourcePath, destDir); err != nil {
-		return fmt.Errorf("could not unzip %s to %s", sourcePath, destDir)
+		return fmt.Errorf("could not unzip %s to %s: %w", sourcePath, destDir, err)
 	}
 	return nil
 }
