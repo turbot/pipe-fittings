@@ -192,7 +192,7 @@ Essentially, --workspace acme/dev is equivalent to:
 */
 func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	var empty T
-	if steampipeconfig.IsCloudWorkspaceIdentifier(name) {
+	if steampipeconfig.IsPipesWorkspaceIdentifier(name) {
 		switch any(empty).(type) {
 		case *workspace_profile.PowerpipeWorkspaceProfile:
 			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)

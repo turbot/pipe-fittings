@@ -1,4 +1,4 @@
-package cloud
+package pipes
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 //
 // if there are 0 or > 1 workspaces this is an error
 func GetUserWorkspaceHandle(ctx context.Context, token string) (string, error) {
-	client := newSteampipeCloudClient(token)
+	client := newPipesClient(token)
 	actor, _, err := client.Actors.Get(ctx).Execute()
 	if err != nil {
 		return "", error_helpers.InvalidCloudTokenError()

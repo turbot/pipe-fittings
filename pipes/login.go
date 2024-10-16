@@ -1,4 +1,4 @@
-package cloud
+package pipes
 
 import (
 	"context"
@@ -23,7 +23,7 @@ var UnconfirmedError = "Not confirmed"
 // WebLogin POSTs to ${envBaseUrl}/api/latest/login/token to retrieve a login is
 // it then opens the login webpage and returns th eid
 func WebLogin(ctx context.Context) (string, error) {
-	client := newSteampipeCloudClient(viper.GetString(constants.ArgPipesToken))
+	client := newPipesClient(viper.GetString(constants.ArgPipesToken))
 
 	tempTokenReq, _, err := client.Auth.LoginTokenCreate(ctx).Execute()
 	if err != nil {
@@ -45,7 +45,7 @@ func WebLogin(ctx context.Context) (string, error) {
 
 // GetLoginToken uses the login id and code and retrieves an authentication token
 func GetLoginToken(ctx context.Context, id, code string) (string, error) {
-	client := newSteampipeCloudClient("")
+	client := newPipesClient("")
 	tokenResp, _, err := client.Auth.LoginTokenGet(ctx, id).Code(code).Execute()
 	if err != nil {
 		var apiErr steampipecloud.GenericOpenAPIError
@@ -83,7 +83,7 @@ func LoadToken() (string, error) {
 }
 
 func GetUserName(ctx context.Context, token string) (string, error) {
-	client := newSteampipeCloudClient(token)
+	client := newPipesClient(token)
 	actor, _, err := client.Actors.Get(ctx).Execute()
 	if err != nil {
 		return "", sperr.Wrap(err)

@@ -8,12 +8,12 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/cloud"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
+	"github.com/turbot/pipe-fittings/pipes"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -249,9 +249,9 @@ func (p *PowerpipeWorkspaceProfile) IsCloudWorkspace() bool {
 	return p.CloudWorkspace != nil
 }
 
-// GetCloudMetadata returns the cloud metadata for the cloud workspace
+// GetPipesMetadata returns the cloud metadata for the cloud workspace
 // note: call IsCloudWorkspace before calling this to ensure it is a cloud workspace
-func (p *PowerpipeWorkspaceProfile) GetCloudMetadata() (*steampipeconfig.CloudMetadata, error_helpers.ErrorAndWarnings) {
+func (p *PowerpipeWorkspaceProfile) GetPipesMetadata() (*steampipeconfig.PipesMetadata, error_helpers.ErrorAndWarnings) {
 	if !p.IsCloudWorkspace() {
 		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("workspace profile is not a cloud workspace"))
 	}
@@ -263,13 +263,13 @@ func (p *PowerpipeWorkspaceProfile) GetCloudMetadata() (*steampipeconfig.CloudMe
 	}
 
 	// so we have a database and a token - build the connection string and set it in viper
-	cloudMetadata, err := cloud.GetCloudMetadata(context.Background(), *p.CloudWorkspace, cloudToken)
+	pipesMetadata, err := pipes.GetPipesMetadata(context.Background(), *p.CloudWorkspace, cloudToken)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
 	// set the default conneciton to the cloud metadata
-	return cloudMetadata, error_helpers.ErrorAndWarnings{}
+	return pipesMetadata, error_helpers.ErrorAndWarnings{}
 }
 
 // searchPathFromString checks that `str` is `nil` and returns a string slice with `str`
