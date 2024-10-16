@@ -8,10 +8,27 @@ import (
 	"path/filepath"
 )
 
-// TODO verify size
-const maxDecompressedSize = 100 << 20 // 100 MB size limit for decompressed data
+const defaultMaxDecompressedSize = 500 << 20 // 500 MB size limit for decompressed data
 
-func Ungzip(sourceFile string, destDir string) (string, error) {
+// define option pattern
+type gzipConfig struct {
+	maxDecompressedSize int64
+}
+type UngzipOption func(*gzipConfig)
+
+func WithMaxDecompressedSize(size int64) UngzipOption {
+	return func(c *gzipConfig) {
+		c.maxDecompressedSize = size
+	}
+}
+
+func Ungzip(sourceFile string, destDir string, opts ...UngzipOption) (string, error) {
+	cfg := &gzipConfig{
+		maxDecompressedSize: defaultMaxDecompressedSize,
+	}
+	for _, opt := range opts {
+		opt(cfg)
+	}
 	r, err := os.Open(sourceFile)
 	if err != nil {
 		return "", err
@@ -22,23 +39,25 @@ func Ungzip(sourceFile string, destDir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer uncompressedStream.Close()
 
 	// Limit the amount of data being written to prevent decompression bombs
-	limitedReader := io.LimitReader(uncompressedStream, maxDecompressedSize)
+	limitedReader := io.LimitReader(uncompressedStream, cfg.maxDecompressedSize)
 
 	destFile := filepath.Join(destDir, uncompressedStream.Name)
 	outFile, err := os.OpenFile(destFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
+	defer outFile.Close()
 
-	if _, err := io.Copy(outFile, limitedReader); err != nil {
+	n, err := io.Copy(outFile, limitedReader)
+	if err != nil {
 		return "", err
 	}
-
-	outFile.Close()
-	if err := uncompressedStream.Close(); err != nil {
-		return "", err
+	// Check if the data was truncated due to the limit
+	if n == cfg.maxDecompressedSize {
+		return "", fmt.Errorf("data was truncated: limit of %d bytes reached", cfg.maxDecompressedSize)
 	}
 
 	return destFile, nil
