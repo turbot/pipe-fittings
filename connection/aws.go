@@ -41,7 +41,11 @@ func (c *AwsConnection) GetConnectionType() string {
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		newConnection := &AwsConnection{
+			ConnectionImpl: c.ConnectionImpl,
+		}
+
+		return c.Pipes.Resolve(ctx, newConnection)
 	}
 
 	// if access key and secret key are provided, just return it

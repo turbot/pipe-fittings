@@ -72,7 +72,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 			if allConnectionsMap[connectionType].IsNull() {
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "No connection found for the given connection type",
+					Summary:  "No connection found for the given connection type: " + connectionType,
 				}
 				return hcl.Diagnostics{diag}
 			}
@@ -81,7 +81,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 			if connectionTypeMap[connectionName].IsNull() {
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "No connection found for the given connection name",
+					Summary:  "No connection found for the given connection name: " + connectionName,
 				}
 				return hcl.Diagnostics{diag}
 			} else {
