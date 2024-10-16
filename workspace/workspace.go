@@ -48,7 +48,7 @@ type Workspace struct {
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 
-	CloudMetadata *steampipeconfig.CloudMetadata
+	PipesMetadata *steampipeconfig.PipesMetadata
 
 	// source snapshot paths
 	// if this is set, no other mod resources are loaded and

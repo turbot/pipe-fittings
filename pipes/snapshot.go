@@ -1,4 +1,4 @@
-package cloud
+package pipes
 
 import (
 	"context"
@@ -23,7 +23,7 @@ func PublishSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSna
 	}
 
 	// if snapshot location is a workspace handle, upload it
-	if steampipeconfig.IsCloudWorkspaceIdentifier(snapshotLocation) {
+	if steampipeconfig.IsPipesWorkspaceIdentifier(snapshotLocation) {
 		url, err := uploadSnapshot(ctx, snapshot, share)
 		if err != nil {
 			return "", sperr.Wrap(err)
@@ -54,7 +54,7 @@ func exportSnapshot(snapshot *steampipeconfig.SteampipeSnapshot) (string, error)
 }
 
 func uploadSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSnapshot, share bool) (string, error) {
-	client := newSteampipeCloudClient(viper.GetString(constants.ArgPipesToken))
+	client := newPipesClient(viper.GetString(constants.ArgPipesToken))
 
 	cloudWorkspace := viper.GetString(constants.ArgSnapshotLocation)
 	parts := strings.Split(cloudWorkspace, "/")
