@@ -103,6 +103,16 @@ func (p *PipelineStepQuery) GetInputs2(evalContext *hcl.EvalContext) (map[string
 		if len(diags) > 0 {
 			return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
+		// if no database is set, get the default database from the mod
+		if databaseValue == nil {
+			if p.Pipeline.mod.Database != nil {
+				databaseValue = p.Pipeline.mod.Database
+			} else {
+				// if no database is set on mod, use the default steampipe connection
+				databaseValue = app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider).GetConnectionString()
+			}
+		}
+
 		results[schema.AttributeTypeDatabase] = databaseValue
 		allConnnectionDependencies = append(allConnnectionDependencies, connectionDependencies...)
 	}

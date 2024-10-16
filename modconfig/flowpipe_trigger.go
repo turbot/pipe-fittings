@@ -269,7 +269,7 @@ type TriggerConfig interface {
 	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	Equals(other TriggerConfig) bool
 	GetType() string
-	GetConfig(*hcl.EvalContext) (TriggerConfig, error)
+	GetConfig(*hcl.EvalContext, *Mod) (TriggerConfig, error)
 	GetConnectionDependsOn() []string
 }
 
@@ -279,7 +279,7 @@ type TriggerSchedule struct {
 	ConnectionDependsOn  []string                  `json:"connection_depends_on,omitempty"`
 }
 
-func (t *TriggerSchedule) GetConfig(evalCtx *hcl.EvalContext) (TriggerConfig, error) {
+func (t *TriggerSchedule) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (TriggerConfig, error) {
 	return t, nil
 }
 
@@ -469,7 +469,7 @@ func (t *TriggerQuery) GetType() string {
 	return schema.TriggerTypeQuery
 }
 
-func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext) (TriggerConfig, error) {
+func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (TriggerConfig, error) {
 
 	var database string
 
@@ -500,6 +500,16 @@ func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext) (TriggerConfig, e
 		database, diags = simpleOutputFromAttribute(t.GetUnresolvedAttributes(), evalContext, schema.AttributeTypeDatabase, t.Database)
 		if diags.HasErrors() {
 			return nil, error_helpers.BetterHclDiagsToError("query trigger", diags)
+		}
+	}
+
+	// if no database is set, get the default database from the mod
+	if database == "" {
+		if mod.Database != nil {
+			database = *mod.Database
+		} else {
+			// if no database is set on mod, use the default steampipe connection
+			database = app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider).GetConnectionString()
 		}
 	}
 
@@ -902,7 +912,7 @@ func (t *TriggerHttp) GetType() string {
 	return schema.TriggerTypeHttp
 }
 
-func (t *TriggerHttp) GetConfig(*hcl.EvalContext) (TriggerConfig, error) {
+func (t *TriggerHttp) GetConfig(*hcl.EvalContext, *Mod) (TriggerConfig, error) {
 	return t, nil
 }
 
