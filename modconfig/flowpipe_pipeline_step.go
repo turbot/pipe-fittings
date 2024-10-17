@@ -285,7 +285,6 @@ type PipelineStep interface {
 	SetType(string)
 	SetPipelineName(string)
 	SetPipeline(*Pipeline)
-	GetPipeline() *Pipeline
 	GetPipelineName() string
 	IsResolved() bool
 	AddUnresolvedBody(string, hcl.Body)

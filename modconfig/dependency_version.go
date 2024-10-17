@@ -13,23 +13,6 @@ type DependencyVersion struct {
 	Tag      string          `json:"tag,omitempty"`
 }
 
-func (v DependencyVersion) String() string {
-	stringForm := ""
-	if v.Version != nil {
-		stringForm = v.Version.String()
-	}
-	if v.Branch != "" {
-		stringForm += " " + v.Branch
-	}
-	if v.FilePath != "" {
-		stringForm += " " + v.FilePath
-	}
-	if v.Tag != "" {
-		stringForm += " " + v.Tag
-	}
-	return stringForm
-}
-
 func (v DependencyVersion) Equal(other *DependencyVersion) bool {
 	if other == nil {
 		return false

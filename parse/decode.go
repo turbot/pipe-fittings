@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -385,13 +386,35 @@ func resolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext)
 
 	var dbValue cty.Value
 	diags = gohcl.DecodeExpression(attr.Expr, evalCtx, &dbValue)
+
 	if diags.HasErrors() {
-		return nil, diags
+		// use decode result to handle any dependencies
+		res := NewDecodeResult()
+		res.HandleDecodeDiags(diags)
+		diags = res.Diags
+		// if there are other errors, return them
+		if diags.HasErrors() {
+			return nil, res.Diags
+		}
+		// so there is a dependency error - if it is for a connection, return the connection name as the connection string
+		for _, dep := range res.Depends {
+			for _, traversal := range dep.Traversals {
+				depName := hclhelpers.TraversalAsString(traversal)
+				if strings.HasPrefix(depName, "connection.") {
+					return &depName, diags
+				}
+			}
+		}
 	}
 	// check if this is a connection string or a connection
 	if dbValue.Type() == cty.String {
 		connectionString = dbValue.AsString()
 	} else {
+		// if this is a temporary connection, ignore (this will only occur during the vareiable parsing phase)
+		if dbValue.Type().HasAttribute("temporary") {
+			return nil, diags
+		}
+
 		c, err := app_specific_connection.CtyValueToConnection(dbValue)
 		if err != nil {
 			return nil, hcl.Diagnostics{

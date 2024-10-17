@@ -63,10 +63,6 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 }
 
 func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
-	// include connections in eval context while loading mods (for flowpipe)
-	parseCtx.SetIncludeLateBindingResources(true)
-	defer parseCtx.SetIncludeLateBindingResources(false)
-
 	utils.LogTime(fmt.Sprintf("loadModDefinition start: %s", modPath))
 	defer utils.LogTime(fmt.Sprintf("loadModDefinition end: %s", modPath))
 
