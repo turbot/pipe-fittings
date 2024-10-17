@@ -38,7 +38,7 @@ func (c *SteampipePgConnection) GetConnectionType() string {
 func (c *SteampipePgConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &SteampipePgConnection{})
+		return c.Pipes.Resolve(ctx, &SteampipePgConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	// if pipes is nil, we can just return ourselves - we have all the info we need

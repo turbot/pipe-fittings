@@ -30,7 +30,7 @@ func (c *OpenAIConnection) GetConnectionType() string {
 func (c *OpenAIConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &OpenAIConnection{})
+		return c.Pipes.Resolve(ctx, &OpenAIConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {

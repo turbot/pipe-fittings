@@ -31,7 +31,7 @@ func (c *TrelloConnection) GetConnectionType() string {
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &TrelloConnection{})
+		return c.Pipes.Resolve(ctx, &TrelloConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil && c.Token == nil {

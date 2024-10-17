@@ -30,7 +30,7 @@ func (c *AbuseIPDBConnection) GetConnectionType() string {
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AbuseIPDBConnection{})
+		return c.Pipes.Resolve(ctx, &AzureConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {

@@ -30,7 +30,7 @@ func (c *UptimeRobotConnection) GetConnectionType() string {
 func (c *UptimeRobotConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &UptimeRobotConnection{})
+		return c.Pipes.Resolve(ctx, &UptimeRobotConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {

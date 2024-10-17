@@ -31,7 +31,7 @@ func (c *VaultConnection) GetConnectionType() string {
 func (c *VaultConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &VaultConnection{})
+		return c.Pipes.Resolve(ctx, &VaultConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.Token == nil && c.Address == nil {

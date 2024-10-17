@@ -30,7 +30,7 @@ func (c *ClickUpConnection) GetConnectionType() string {
 func (c *ClickUpConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &ClickUpConnection{})
+		return c.Pipes.Resolve(ctx, &ClickUpConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.Token == nil {
