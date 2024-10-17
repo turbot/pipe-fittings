@@ -90,8 +90,7 @@ func ConnectionStringFromConnectionName(evalContext *hcl.EvalContext, longName s
 	if !ok {
 		return "", perr.BadRequestWithMessage("connection does not support connection string: " + longName)
 	}
-	longName = csp.GetConnectionString()
-	return longName, nil
+	return csp.GetConnectionString(), nil
 }
 
 // parseConnectionName parses the connection name in the form "connection.<type>.<name>", and returns the type and name
