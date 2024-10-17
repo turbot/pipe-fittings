@@ -37,14 +37,16 @@ func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
 		HclResourceImpl: HclResourceImpl{
 			// The FullName is the full name of the resource, including the mod name
 			FullName:        pipelineFullName,
+			ShortName:       block.Labels[0],
 			UnqualifiedName: "pipeline." + block.Labels[0],
 			DeclRange:       block.DefRange,
 			blockType:       block.Type,
 		},
 		// TODO: hack to serialise pipeline name because HclResourceImpl is not serialised
-		PipelineName: pipelineFullName,
-		Params:       []PipelineParam{},
-		mod:          mod,
+		PipelineName:   pipelineFullName,
+		Params:         []PipelineParam{},
+		mod:            mod,
+		ModFullVersion: mod.CacheKey(),
 	}
 
 	return pipeline
@@ -68,6 +70,10 @@ type Pipeline struct {
 
 	// TODO: hack to serialise pipeline name because HclResourceImpl is not serialised
 	PipelineName string `json:"pipeline_name"`
+	// To be used when passing pipeline as a parameter to another pipeline, we need to know the source mod of
+	// this pipeline so we can resolve the pipeline later. Name is not enough because there may be multiple
+	// versions of the same mod in the current context
+	ModFullVersion string `json:"mod_full_version"`
 
 	// Unparsed HCL body, needed so we can de-code the step HCL into the correct struct
 	RawBody hcl.Body `json:"-" hcl:",remain"`
@@ -133,6 +139,7 @@ func (p *Pipeline) CtyValue() (cty.Value, error) {
 
 	pipelineVars := baseCtyValue.AsValueMap()
 	pipelineVars[schema.LabelName] = cty.StringVal(p.Name())
+	pipelineVars["mod_full_version"] = cty.StringVal(p.ModFullVersion)
 
 	if p.Description != nil {
 		pipelineVars[schema.AttributeTypeDescription] = cty.StringVal(*p.Description)

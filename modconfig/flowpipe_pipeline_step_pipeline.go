@@ -93,6 +93,7 @@ func (p *PipelineStepPipeline) GetInputs(evalContext *hcl.EvalContext) (map[stri
 func (p *PipelineStepPipeline) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 
 	var pipeline string
+	var modFullVersion string
 	var allConnectionDependencies []ConnectionDependency
 
 	if p.UnresolvedAttributes[schema.AttributeTypePipeline] == nil {
@@ -108,6 +109,8 @@ func (p *PipelineStepPipeline) GetInputs2(evalContext *hcl.EvalContext) (map[str
 		pipelineNameCty := valueMap[schema.LabelName]
 		pipeline = pipelineNameCty.AsString()
 
+		modFullVersionCty := valueMap["mod_full_version"]
+		modFullVersion = modFullVersionCty.AsString()
 	} else {
 		var pipelineCty cty.Value
 		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePipeline], evalContext, &pipelineCty)
@@ -122,11 +125,15 @@ func (p *PipelineStepPipeline) GetInputs2(evalContext *hcl.EvalContext) (map[str
 		valueMap := pipelineCty.AsValueMap()
 		pipelineNameCty := valueMap[schema.LabelName]
 		pipeline = pipelineNameCty.AsString()
+
+		modFullVersionCty := valueMap["mod_full_version"]
+		modFullVersion = modFullVersionCty.AsString()
 	}
 
 	results := map[string]interface{}{}
 
 	results[schema.AttributeTypePipeline] = pipeline
+	results["mod_full_version"] = modFullVersion
 
 	argsValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeArgs, p.Args)
 	if len(diags) > 0 {
