@@ -30,7 +30,7 @@ func (c *IPstackConnection) GetConnectionType() string {
 func (c *IPstackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &IPstackConnection{})
+		return c.Pipes.Resolve(ctx, &IPstackConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.AccessKey == nil {

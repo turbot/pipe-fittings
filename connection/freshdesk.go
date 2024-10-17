@@ -31,7 +31,7 @@ func (c *FreshdeskConnection) GetConnectionType() string {
 func (c *FreshdeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &FreshdeskConnection{})
+		return c.Pipes.Resolve(ctx, &FreshdeskConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	freshdeskAPIKeyEnvVar := os.Getenv("FRESHDESK_API_KEY")

@@ -32,7 +32,7 @@ func (c *GuardrailsConnection) GetConnectionType() string {
 func (c *GuardrailsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &GuardrailsConnection{})
+		return c.Pipes.Resolve(ctx, &GuardrailsConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	guardrailsAccessKeyEnvVar := os.Getenv("TURBOT_ACCESS_KEY")

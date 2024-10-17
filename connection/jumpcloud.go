@@ -30,7 +30,7 @@ func (c *JumpCloudConnection) GetConnectionType() string {
 func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &JumpCloudConnection{})
+		return c.Pipes.Resolve(ctx, &JumpCloudConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {

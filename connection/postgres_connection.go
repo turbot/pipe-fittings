@@ -28,7 +28,7 @@ func (c *PostgresConnection) GetConnectionType() string {
 func (c *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &PostgresConnection{})
+		return c.Pipes.Resolve(ctx, &PostgresConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	// if pipes is nil, we must have a connection string, so there is nothing to so
