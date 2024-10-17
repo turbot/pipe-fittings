@@ -2,8 +2,11 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -58,8 +61,6 @@ type Mod struct {
 
 	// convenient aggregation of all resources
 	ResourceMaps *ResourceMaps `json:"-"`
-
-	ConnectionString *string `cty:"_" hcl:"_" json:"-"`
 
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
@@ -397,4 +398,27 @@ func (m *Mod) RequireHasUnresolvedArgs() bool {
 		}
 	}
 	return false
+}
+
+func (m *Mod) GetConnectionDependsOn() []string {
+	if m.Database != nil && strings.HasPrefix(*m.Database, "connection.") {
+		return []string{strings.TrimPrefix(*m.Database, "connection.")}
+	}
+	return nil
+}
+
+func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
+	if m.Database != nil {
+		modDatabase := *m.Database
+
+		// if the database is actually a connection name, try to resolve from eval context
+		if strings.HasPrefix(modDatabase, "connection.") {
+			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, modDatabase)
+		} else {
+			return modDatabase, nil
+		}
+	}
+	// if no database is set on mod, use the default steampipe connection
+	defaultConnection := app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider)
+	return defaultConnection.GetConnectionString(), nil
 }

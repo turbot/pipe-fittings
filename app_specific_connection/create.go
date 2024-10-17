@@ -1,11 +1,13 @@
 package app_specific_connection
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
 
 var BaseConnectionCtyType = cty.Capsule("BaseConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
@@ -59,4 +61,51 @@ func DefaultPipelingConnections() (map[string]connection.PipelingConnection, err
 	}
 
 	return conns, nil
+}
+
+// ConnectionStringFromConnectionName resolves the connection name to a conneciton onbject in the eval context and
+// return the connection string
+func ConnectionStringFromConnectionName(evalContext *hcl.EvalContext, longName string) (string, error) {
+	ty, name, err := parseConnectionName(longName)
+	if err != nil {
+		return "", err
+	}
+	// look in the eval context for the connection
+	connectionMap, ok := evalContext.Variables["connection"]
+	if !ok {
+		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+	}
+	connextionsOfType, ok := connectionMap.AsValueMap()[ty]
+	if !ok {
+		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+	}
+	connCty, ok := connextionsOfType.AsValueMap()[name]
+	if !ok {
+		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+	}
+	conn, err := CtyValueToConnection(connCty)
+	if err != nil {
+		return "", err
+	}
+	csp, ok := conn.(connection.ConnectionStringProvider)
+	if !ok {
+		return "", perr.BadRequestWithMessage("connection does not support connection string: " + longName)
+	}
+	return csp.GetConnectionString(), nil
+}
+
+// parseConnectionName parses the connection name in the form "connection.<type>.<name>", and returns the type and name
+func parseConnectionName(longName string) (ty, name string, err error) {
+	if !strings.HasPrefix(longName, "connection.") {
+		return "", "", perr.BadRequestWithMessage("invalid connection reference: " + longName)
+	}
+
+	parts := strings.Split(longName, ".")
+	if len(parts) != 3 {
+		return "", "", perr.BadRequestWithMessage("invalid connection reference: " + longName)
+	}
+	ty = parts[1]
+	name = parts[2]
+
+	return ty, name, nil
 }

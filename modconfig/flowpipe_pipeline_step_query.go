@@ -2,8 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"log/slog"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
@@ -15,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
+	"log/slog"
 )
 
 type PipelineStepQuery struct {
@@ -103,6 +102,14 @@ func (p *PipelineStepQuery) GetInputs2(evalContext *hcl.EvalContext) (map[string
 		if len(diags) > 0 {
 			return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 		}
+		// if no database is set, get the default database from the mod
+		if databaseValue == nil {
+			databaseValue, err = p.Pipeline.mod.GetDefaultConnectionString(evalContext)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+
 		results[schema.AttributeTypeDatabase] = databaseValue
 		allConnnectionDependencies = append(allConnnectionDependencies, connectionDependencies...)
 	}

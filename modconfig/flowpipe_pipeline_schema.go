@@ -215,7 +215,7 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name:     schema.AttributeTypeDatabase,
-			Required: true,
+			Required: false,
 		},
 		{
 			Name: schema.AttributeTypeEnabled,
