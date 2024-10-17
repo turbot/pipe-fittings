@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -58,8 +59,6 @@ type Mod struct {
 
 	// convenient aggregation of all resources
 	ResourceMaps *ResourceMaps `json:"-"`
-
-	ConnectionString *string `cty:"_" hcl:"_" json:"-"`
 
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
@@ -397,4 +396,11 @@ func (m *Mod) RequireHasUnresolvedArgs() bool {
 		}
 	}
 	return false
+}
+
+func (m *Mod) GetConnectionDependsOn() []string {
+	if m.Database != nil && strings.HasPrefix(*m.Database, "connection.") {
+		return []string{strings.TrimPrefix(*m.Database, "connection.")}
+	}
+	return nil
 }

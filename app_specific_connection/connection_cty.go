@@ -2,11 +2,12 @@ package app_specific_connection
 
 import (
 	"fmt"
+	"reflect"
+
+	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"reflect"
-
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
@@ -23,6 +24,16 @@ func CtyValueToConnection(value cty.Value) (_ connection.PipelingConnection, err
 	shortName := value.GetAttr("short_name").AsString()
 	connectionType := value.GetAttr("type").AsString()
 	var declRange hclhelpers.Range
+
+	// NOTE: if a flowpipe mod has a database property referencing a connection,
+	// at parse time the connection in the eval context will be a temporary connection
+	// - create a TemporaryConnectionand return it - this will be handled by the calling code
+	if value.Type().HasAttribute("temporary") {
+		conn := &connection.TemporaryConnection{
+			ConnectionImpl: connection.NewConnectionImpl(connectionType, shortName, hcl.Range{}),
+		}
+		return conn, nil
+	}
 
 	err = gocty.FromCtyValue(value.GetAttr("decl_range"), &declRange)
 	if err != nil {

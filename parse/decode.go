@@ -191,9 +191,10 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	res.HandleDecodeDiags(moreDiags)
 
 	connectionString, moreDiags := resolveConnectionString(databaseContent, evalCtx)
+
 	res.HandleDecodeDiags(moreDiags)
 	if connectionString != nil {
-		mod.ConnectionString = connectionString
+		mod.Database = connectionString
 	}
 
 	return mod, res
@@ -387,8 +388,6 @@ func resolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext)
 	if diags.HasErrors() {
 		return nil, diags
 	}
-	// TODO KAI also support cloud workspace
-
 	// check if this is a connection string or a connection
 	if dbValue.Type() == cty.String {
 		connectionString = dbValue.AsString()
