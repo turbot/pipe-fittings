@@ -131,6 +131,15 @@ func (m *Mod) Equals(other *Mod) bool {
 	return m.ResourceMaps.Equals(other.ResourceMaps)
 }
 
+func (m *Mod) CacheKey() string {
+	cacheKey := m.Name()
+	if m.Version != nil {
+		cacheKey += "." + m.Version.String()
+	}
+
+	return cacheKey
+}
+
 // CreateDefaultMod creates a default mod created for a workspace with no mod definition
 func CreateDefaultMod(modPath string) *Mod {
 	m := NewMod(defaultModName, modPath, hcl.Range{})
