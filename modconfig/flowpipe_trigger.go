@@ -505,19 +505,10 @@ func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (Trigge
 
 	// if no database is set, get the default database from the mod
 	if database == "" {
-		if mod.Database != nil {
-			// if the database is actually a connection name, try to retrieve from eval context
-			database = *mod.Database
-			if strings.HasPrefix(database, "connection.") {
-				if connectionString, err := app_specific_connection.ConnectionStringFromConnectionName(evalContext, database); err != nil {
-					return nil, err
-				} else {
-					database = connectionString
-				}
-			}
-		} else {
-			// if no database is set on mod, use the default steampipe connection
-			database = app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider).GetConnectionString()
+		var err error
+		database, err = app_specific_connection.GetDefaultConnectionString(evalContext, mod)
+		if err != nil {
+			return nil, err
 		}
 	}
 

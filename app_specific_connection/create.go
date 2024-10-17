@@ -6,6 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -108,4 +109,20 @@ func parseConnectionName(longName string) (ty, name string, err error) {
 	name = parts[2]
 
 	return ty, name, nil
+}
+
+func GetDefaultConnectionString(evalContext *hcl.EvalContext, mod *modconfig.Mod) (string, error) {
+	if mod.Database != nil {
+		modDatabase := *mod.Database
+
+		// if the database is actually a connection name, try to resolve from eval context
+		if strings.HasPrefix(modDatabase, "connection.") {
+			return ConnectionStringFromConnectionName(evalContext, modDatabase)
+		} else {
+			return modDatabase, nil
+		}
+	}
+	// if no database is set on mod, use the default steampipe connection
+	defaultConnection := DefaultConnections["steampipe"].(connection.ConnectionStringProvider)
+	return defaultConnection.GetConnectionString(), nil
 }

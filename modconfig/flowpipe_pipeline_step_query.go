@@ -2,9 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"log/slog"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
@@ -16,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
+	"log/slog"
 )
 
 type PipelineStepQuery struct {
@@ -106,21 +104,9 @@ func (p *PipelineStepQuery) GetInputs2(evalContext *hcl.EvalContext) (map[string
 		}
 		// if no database is set, get the default database from the mod
 		if databaseValue == nil {
-			if p.Pipeline.mod.Database != nil {
-				modDatabase := *p.Pipeline.mod.Database
-
-				// if the database is actually a connection name, try to resolve from eval context
-				if strings.HasPrefix(modDatabase, "connection.") {
-					if connectionString, err := app_specific_connection.ConnectionStringFromConnectionName(evalContext, modDatabase); err != nil {
-						return nil, nil, err
-					} else {
-						modDatabase = connectionString
-					}
-				}
-				databaseValue = &modDatabase
-			} else {
-				// if no database is set on mod, use the default steampipe connection
-				databaseValue = app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider).GetConnectionString()
+			databaseValue, err = app_specific_connection.GetDefaultConnectionString(evalContext, p.Pipeline.mod)
+			if err != nil {
+				return nil, nil, err
 			}
 		}
 
