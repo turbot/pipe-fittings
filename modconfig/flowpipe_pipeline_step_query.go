@@ -104,7 +104,7 @@ func (p *PipelineStepQuery) GetInputs2(evalContext *hcl.EvalContext) (map[string
 		}
 		// if no database is set, get the default database from the mod
 		if databaseValue == nil {
-			databaseValue, err = app_specific_connection.GetDefaultConnectionString(evalContext, p.Pipeline.mod)
+			databaseValue, err = p.Pipeline.mod.GetDefaultConnectionString(evalContext)
 			if err != nil {
 				return nil, nil, err
 			}

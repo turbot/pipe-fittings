@@ -2,6 +2,8 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"os"
 	"path/filepath"
 	"strings"
@@ -403,4 +405,20 @@ func (m *Mod) GetConnectionDependsOn() []string {
 		return []string{strings.TrimPrefix(*m.Database, "connection.")}
 	}
 	return nil
+}
+
+func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
+	if m.Database != nil {
+		modDatabase := *m.Database
+
+		// if the database is actually a connection name, try to resolve from eval context
+		if strings.HasPrefix(modDatabase, "connection.") {
+			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, modDatabase)
+		} else {
+			return modDatabase, nil
+		}
+	}
+	// if no database is set on mod, use the default steampipe connection
+	defaultConnection := app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider)
+	return defaultConnection.GetConnectionString(), nil
 }
