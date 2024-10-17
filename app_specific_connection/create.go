@@ -1,12 +1,13 @@
 package app_specific_connection
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
-	"strings"
 )
 
 var BaseConnectionCtyType = cty.Capsule("BaseConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
