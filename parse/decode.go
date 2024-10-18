@@ -405,6 +405,9 @@ func resolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext)
 				}
 			}
 		}
+		// if we get here, there is a dependency error but it is not for a connection
+		// return the original diags for the calling code to handle
+		return nil, diags
 	}
 	// check if this is a connection string or a connection
 	if dbValue.Type() == cty.String {

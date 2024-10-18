@@ -162,7 +162,9 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 	// create a child run context
 	child, err := NewModParseContext(parent.WorkspaceLock, rootEvalPath,
 		WithParseFlags(parent.Flags),
-		WithListOptions(parent.ListOptions))
+		WithListOptions(parent.ListOptions),
+		WithLateBinding(parent.supportLateBinding),
+		WithConnections(parent.PipelingConnections))
 
 	if err != nil {
 		return nil, err
@@ -183,11 +185,10 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 		}
 	}
 	child.Credentials = parent.Credentials
-	child.PipelingConnections = parent.PipelingConnections
+
 	child.Integrations = parent.Integrations
 	child.CredentialImports = parent.CredentialImports
 	child.Notifiers = parent.Notifiers
-	child.supportLateBinding = parent.supportLateBinding
 	child.connectionValueMap = parent.connectionValueMap
 
 	// ensure to inherit the value of includeLateBindingResourcesInEvalContext
