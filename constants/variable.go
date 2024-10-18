@@ -11,11 +11,13 @@ const (
 const (
 	VariableFormatText      = "text"
 	VariableFormatMultiline = "multiline"
+	VariableFormatJson      = "json"
 )
 
 var ValidVariableFormats = []string{
 	VariableFormatText,
 	VariableFormatMultiline,
+	VariableFormatJson,
 }
 
 func IsValidVariableFormat(format string) bool {
