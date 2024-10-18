@@ -21,6 +21,7 @@ const (
 	stgCloudHost   = "pipes.turbot-stg.com"
 	devCloudHost   = "pipes.turbot-dev.com"
 	localCloudHost = "pipes.turbot-local.com:8080"
+	mockCloudHost  = "localhost:7104"
 )
 
 var allowedCloudHosts = []string{
@@ -28,6 +29,7 @@ var allowedCloudHosts = []string{
 	stgCloudHost,
 	devCloudHost,
 	localCloudHost,
+	mockCloudHost,
 }
 
 type PipesConnectionMetadata struct {
@@ -126,6 +128,14 @@ func (m PipesConnectionMetadata) endpoint() string {
 	if m.CloudHost != nil {
 		cloudHost = *m.CloudHost
 	}
+
+	if m.CloudHost != nil && *m.CloudHost == mockCloudHost {
+		if m.Org != nil {
+			return fmt.Sprintf("http://%s/api/v0/org/%s/workspace/%s/connection/%s/private", cloudHost, *m.Org, *m.Workspace, *m.Connection)
+		}
+		return fmt.Sprintf("http://%s/api/v0/user/%s/workspace/%s/connection/%s/private", cloudHost, *m.User, *m.Workspace, *m.Connection)
+	}
+
 	// org or user?
 	if m.Org != nil {
 		return fmt.Sprintf("https://%s/api/v0/org/%s/workspace/%s/connection/%s/private", cloudHost, *m.Org, *m.Workspace, *m.Connection)
