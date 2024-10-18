@@ -32,7 +32,7 @@ const DefaultSteampipeWorkspaceContent = `
 #     multi        = false   # true, false
 #     output       = "table" # json, csv, table, line
 #     separator    = ","     # any single char
-#     timing       = on   # off, on, verbose
+#     timing       = "on"   # off, on, verbose
 #   }
 # }
 `
