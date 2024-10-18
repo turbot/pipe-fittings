@@ -1,8 +1,12 @@
 package parse
 
 import (
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
@@ -55,4 +59,17 @@ func diagsToDependency(diag *hcl.Diagnostic) *modconfig.ResourceDependency {
 
 func (p *DecodeResult) AddDiags(diags hcl.Diagnostics) {
 	p.Diags = append(p.Diags, diags...)
+}
+
+func (p *DecodeResult) VariableDependenciesToWarnings() []string {
+	var res []string
+	for _, dep := range p.Depends {
+		for _, t := range dep.Traversals {
+			traversalString := hclhelpers.TraversalAsString(t)
+			if strings.HasPrefix(traversalString, "var.") {
+				res = append(res, constants.MissingVariableWarning+traversalString)
+			}
+		}
+	}
+	return res
 }
