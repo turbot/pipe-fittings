@@ -22,7 +22,7 @@ func JSONToHcl(jsonString string) (string, hcl.Diagnostics) {
 	return res, nil
 }
 
-// HclBodyToHclString builds a hcl string with all attributes in the connection config which are NOT specified in the coneciton block schema
+// HclBodyToHclString builds a hcl string with all attributes in the connection config which are NOT specified in the connection block schema
 // this is passed to the plugin who will validate and parse it
 func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent) (string, hcl.Diagnostics) {
 	var diags hcl.Diagnostics

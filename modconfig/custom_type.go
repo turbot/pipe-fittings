@@ -33,9 +33,9 @@ func IsLateBindingType(ty cty.Type) bool {
 	if encapsulatedGoType.Kind() == reflect.Ptr {
 		encapsulatedGoType = encapsulatedGoType.Elem()
 	}
-	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
+	encapsulatedInstanceNew := reflect.New(encapsulatedGoType)
 
-	_, isLateBindingType := encapulatedInstanceNew.Interface().(lateBindingType)
+	_, isLateBindingType := encapsulatedInstanceNew.Interface().(lateBindingType)
 
 	return isLateBindingType
 }
@@ -51,9 +51,9 @@ func IsCustomType(ty cty.Type) bool {
 	if encapsulatedGoType.Kind() == reflect.Ptr {
 		encapsulatedGoType = encapsulatedGoType.Elem()
 	}
-	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
+	encapsulatedInstanceNew := reflect.New(encapsulatedGoType)
 
-	_, isCustomType := encapulatedInstanceNew.Interface().(customType)
+	_, isCustomType := encapsulatedInstanceNew.Interface().(customType)
 
 	return isCustomType
 }
@@ -165,8 +165,8 @@ func isConnectionValueMapOfType(ty reflect.Type, valueMap map[string]cty.Value, 
 	// declare ConnectionImpl and NotifierImpl purely to get the type name for use below
 	var connectionImpl *connection.ConnectionImpl
 	var connectionImplTypeName = reflect.TypeOf(connectionImpl).String()
-	encapulatedInstanceNew := reflect.New(ty)
-	if connInstance, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
+	encapsulatedInstanceNew := reflect.New(ty)
+	if connInstance, ok := encapsulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
 		// "resource_type" and "type should be set to
 		diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
 		if len(diags) > 0 {

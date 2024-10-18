@@ -61,7 +61,7 @@ func BuildInstallSummary(installData *InstallData) string {
 		if len(installData.Lock.InstallCache) == 0 {
 			return "No mods are installed"
 		}
-		return "All targetted mods are up to date"
+		return "All targeted mods are up to date"
 	}
 	return fmt.Sprintf("%s%s%s%s", installString, upgradeString, downgradeString, uninstallString)
 }
