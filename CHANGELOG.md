@@ -11,6 +11,8 @@ _What's new_
 
 _Bug fixes_
 
+* Fix missing fields when importing Jira connections. ([#577](https://github.com/turbot/pipe-fittings/issues/577))
+
 ## v1.5.7 [2024-09-23]
 
 _Bug fixes_
