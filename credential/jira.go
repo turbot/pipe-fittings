@@ -126,6 +126,8 @@ func (c *JiraConnectionConfig) GetCredential(name string, shortName string) Cred
 		// there is another type of token (personal access token)
 		// In future we could update the Steampipe plugin arg too, but not necessary right now.
 		APIToken: &jiraAPIToken,
+		BaseURL:  c.BaseURL,
+		Username: c.Username,
 	}
 
 	return jiraCred
