@@ -468,7 +468,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert.Equal("sfhshfhslfh", stepInputs["value"], "profile should be set to sfhshfhslfh")
 }
 
-// veify crentials are converted to connections buty DO NOT overwrite existin gconnections
+// verify credentials are converted to connections but DO NOT overwrite existing connections
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigCredentialsAndConnection() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
