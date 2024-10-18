@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/constants"
 )
@@ -131,4 +132,20 @@ func (t *Query) String() string {
 		str = append(str, fmt.Sprintf("  AutoComplete: %v", *t.AutoComplete))
 	}
 	return strings.Join(str, "\n")
+}
+
+func (t *Query) SetTiming(flag string, r hcl.Range) hcl.Diagnostics {
+	// check the value is valid
+	if _, ok := constants.QueryTimingValueLookup[flag]; !ok {
+		return hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("Invalid timing value '%s', query options support: on, off, verbose, true, false", flag),
+				Subject:  &r,
+			},
+		}
+	}
+	t.Timing = &flag
+
+	return nil
 }
