@@ -2063,6 +2063,7 @@ func TestMysqlConnectionGetConnectionString(t *testing.T) {
 				Port:     tt.fields.port,
 				Password: tt.fields.password,
 			}
+			c.Validate()
 			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
 		})
 	}
@@ -2595,7 +2596,7 @@ func TestPostgresConnectionGetConnectionString(t *testing.T) {
 			want: "postgresql://user@host:1234/db",
 		},
 		{
-			name: "password",
+			name: "db, user, password",
 			fields: fields{
 				db:       utils.ToStringPointer("db"),
 				username: utils.ToStringPointer("user"),
@@ -2652,6 +2653,7 @@ func TestPostgresConnectionGetConnectionString(t *testing.T) {
 				Password: tt.fields.password,
 				SslMode:  tt.fields.sslMode,
 			}
+			c.Validate()
 			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
 		})
 	}
@@ -2796,6 +2798,7 @@ func TestPostgresConnectionGetEnv(t *testing.T) {
 				Password: tt.fields.password,
 				SslMode:  tt.fields.sslMode,
 			}
+			c.Validate()
 			assert.Equalf(t, tt.want, c.GetEnv(), "GetEnv()")
 		})
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 
 	"github.com/hashicorp/hcl/v2"
@@ -14,12 +13,13 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const (
-	PostgresConnectionType = "postgres"
-	defaultPostgresDbName  = "postgres"
-	defaultPostgresUser    = "postgres"
-	defaultPostgresPort    = 5432
-	defaultPostgresHost    = "localhost"
+const PostgresConnectionType = "postgres"
+
+var (
+	defaultPostgresDbName = "postgres"
+	defaultPostgresUser   = "postgres"
+	defaultPostgresPort   = 5432
+	defaultPostgresHost   = "localhost"
 )
 
 type PostgresConnection struct {
@@ -32,6 +32,7 @@ type PostgresConnection struct {
 	SearchPath       *[]string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 	SearchPathPrefix *[]string `json:"search_path_prefix,omitempty" cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
 	SslMode          *string   `json:"sslmode,omitempty" cty:"sslmode" hcl:"sslmode,optional"`
+	ConnectionString *string   `json:"connection_string,omitempty" cty:"connection_string"`
 }
 
 func NewPostgresConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -68,9 +69,28 @@ func (c *PostgresConnection) Validate() hcl.Diagnostics {
 		return nil
 	}
 
-	// validate sslmode
-	if c.SslMode != nil {
-		return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
+	if c.Pipes == nil {
+		// set nil values to default
+		if c.DbName == nil {
+			c.DbName = &defaultPostgresDbName
+		}
+
+		if c.UserName == nil {
+			c.UserName = &defaultPostgresUser
+		}
+
+		if c.Host == nil {
+			c.Host = &defaultPostgresHost
+		}
+
+		if c.Port == nil {
+			c.Port = &defaultPostgresPort
+		}
+
+		// validate sslmode
+		if c.SslMode != nil {
+			return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
+		}
 	}
 	return nil
 }
@@ -100,22 +120,27 @@ func validateSSlMode(s string, declRange *hcl.Range) hcl.Diagnostics {
 }
 
 func (c *PostgresConnection) GetConnectionString() string {
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
+	}
+
 	// db, username, host and port all have default values if not set
 	connString := buildPostgresConnectionString(
-		c.getDbName(),
-		c.getUserName(),
-		c.getHost(),
-		c.getPort(),
+		typehelpers.SafeString(c.DbName),
+		typehelpers.SafeString(c.UserName),
+		typehelpers.SafeString(c.Host),
+		*c.Port,
 		c.Password, c.SslMode)
 	return connString
 }
 
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {
 	// db, username, host and port all have default values if not set
-	return postgresConnectionParamsToEnvValueMap(c.getDbName(),
-		c.getUserName(),
-		c.getHost(),
-		c.getPort(),
+	return postgresConnectionParamsToEnvValueMap(
+		typehelpers.SafeString(c.DbName),
+		typehelpers.SafeString(c.UserName),
+		typehelpers.SafeString(c.Host),
+		*c.Port,
 		c.Password,
 		c.SslMode)
 }
@@ -162,40 +187,6 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *PostgresConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
-}
-
-func (c *PostgresConnection) getDbName() string {
-	if c.DbName != nil {
-		return *c.DbName
-	}
-
-	return defaultPostgresDbName
-}
-
-func (c *PostgresConnection) getUserName() string {
-	if c.UserName != nil {
-		return *c.UserName
-	}
-	// get PGUSER env
-	if user, ok := os.LookupEnv("PGUSER"); ok {
-		return user
-	}
-	return defaultPostgresUser
-}
-
-func (c *PostgresConnection) getHost() string {
-	if c.Host != nil {
-		return *c.Host
-	}
-
-	return defaultPostgresHost
-}
-
-func (c *PostgresConnection) getPort() int {
-	if c.Port != nil {
-		return *c.Port
-	}
-	return defaultPostgresPort
 }
 
 func buildPostgresConnectionString(db string, user string, host string, port int, pPassword *string, pSslMode *string) string {
