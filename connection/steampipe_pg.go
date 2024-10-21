@@ -78,6 +78,11 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 				},
 			}
 		}
+
+		// validate sslmode
+		if c.SslMode != nil {
+			return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
+		}
 	}
 	return nil
 }
