@@ -3,10 +3,11 @@ package backend
 import (
 	"context"
 	"database/sql"
-	"github.com/turbot/pipe-fittings/constants"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/turbot/pipe-fittings/constants"
 
 	"github.com/turbot/pipe-fittings/queryresult"
 	"github.com/turbot/pipe-fittings/sperr"
@@ -71,23 +72,28 @@ func newMySqlRowReader() RowReader {
 
 func mysqlReadCell(columnValue any, col *queryresult.ColumnDef) (result any, err error) {
 	if columnValue != nil {
-		asStr := string(columnValue.([]byte))
-		switch col.DataType {
-		case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT", "YEAR":
-			result, err = strconv.ParseInt(asStr, 10, 64)
-		case "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE":
-			result, err = strconv.ParseFloat(asStr, 64)
-		case "DATE":
-			result, err = time.Parse(time.DateOnly, asStr)
-		case "TIME":
-			result, err = time.Parse(time.TimeOnly, asStr)
-		case "DATETIME", "TIMESTAMP":
-			result, err = time.Parse(time.DateTime, asStr)
-		case "BIT":
-			result = columnValue.([]byte)
-		// case "CHAR", "VARCHAR", "TEXT", "BINARY", "VARBINARY", "ENUM", "SET":
+		switch t := columnValue.(type) {
+		case []byte:
+			asStr := string(t)
+			switch col.DataType {
+			case "INT", "TINYINT", "SMALLINT", "MEDIUMINT", "BIGINT", "YEAR":
+				result, err = strconv.ParseInt(asStr, 10, 64)
+			case "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE":
+				result, err = strconv.ParseFloat(asStr, 64)
+			case "DATE":
+				result, err = time.Parse(time.DateOnly, asStr)
+			case "TIME":
+				result, err = time.Parse(time.TimeOnly, asStr)
+			case "DATETIME", "TIMESTAMP":
+				result, err = time.Parse(time.DateTime, asStr)
+			case "BIT":
+				result = columnValue.([]byte)
+			// case "CHAR", "VARCHAR", "TEXT", "BINARY", "VARBINARY", "ENUM", "SET":
+			default:
+				result = asStr
+			}
 		default:
-			result = asStr
+			return columnValue, nil
 		}
 	}
 	return result, err
