@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
@@ -13,7 +14,7 @@ const DuckDbConnectionType = "duckdb"
 
 type DuckDbConnection struct {
 	ConnectionImpl
-	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
+	FileName *string `json:"file_name,omitempty" cty:"file_name" hcl:"file_name,optional"`
 }
 
 func NewDuckDbConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -28,15 +29,15 @@ func (c *DuckDbConnection) GetConnectionType() string {
 func (c *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{ConnectionImpl: c.ConnectionImpl})
+		return c.Pipes.Resolve(ctx, &DuckDbConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
-	// we must have a connection string or validaiton would have failed
+	// we must have a filename or validation would have failed
 	return c, nil
 }
 
 func (c *DuckDbConnection) Validate() hcl.Diagnostics {
-	if c.Pipes != nil && (c.ConnectionString != nil) {
+	if c.Pipes != nil && (c.FileName != nil) {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -47,11 +48,11 @@ func (c *DuckDbConnection) Validate() hcl.Diagnostics {
 	}
 
 	// one of the two should be set
-	if c.Pipes == nil && c.ConnectionString == nil {
+	if c.Pipes == nil && c.FileName == nil {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
-				Summary:  "either pipes block or database connection string should be set",
+				Summary:  "either pipes block or filename should be set",
 				Subject:  c.DeclRange.HclRangePointer(),
 			},
 		}
@@ -61,7 +62,6 @@ func (c *DuckDbConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *DuckDbConnection) GetEnv() map[string]cty.Value {
-	// TODO DUCKDB ENV
 	return map[string]cty.Value{}
 }
 
@@ -80,7 +80,7 @@ func (c *DuckDbConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return utils.PtrEqual(c.ConnectionString, other.ConnectionString)
+	return utils.PtrEqual(c.FileName, other.FileName)
 
 }
 
@@ -89,5 +89,5 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *DuckDbConnection) GetConnectionString() string {
-	return typehelpers.SafeString(c.ConnectionString)
+	return fmt.Sprintf("duckdb://%s", typehelpers.SafeString(c.FileName))
 }

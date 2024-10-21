@@ -2,8 +2,6 @@ package modconfig
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific_connection"
-	"github.com/turbot/pipe-fittings/connection"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +11,8 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/plugin"
@@ -419,6 +419,5 @@ func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, 
 		}
 	}
 	// if no database is set on mod, use the default steampipe connection
-	defaultConnection := app_specific_connection.DefaultConnections["steampipe"].(connection.ConnectionStringProvider)
-	return defaultConnection.GetConnectionString(), nil
+	return constants.DefaultSteampipeConnectionString, nil
 }

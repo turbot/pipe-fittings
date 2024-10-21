@@ -8,11 +8,16 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const SteampipePgConnectionType = "steampipe"
+const (
+	SteampipeConnectionType = "steampipe"
+	defaultSteampipeDbName  = "steampipe"
+	defaultSteampipeUser    = "steampipe"
+	defaultSteampipePort    = 9193
+	defaultSteampipeHost    = "localhost"
+)
 
 type SteampipePgConnection struct {
 	ConnectionImpl
-	ConnectionString *string   `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
 	DbName           *string   `json:"db,omitempty" cty:"db" hcl:"db,optional"`
 	UserName         *string   `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 	Host             *string   `json:"host,omitempty" cty:"host" hcl:"host,optional"`
@@ -25,11 +30,11 @@ type SteampipePgConnection struct {
 
 func NewSteampipePgConnection(shortName string, declRange hcl.Range) PipelingConnection {
 	return &SteampipePgConnection{
-		ConnectionImpl: NewConnectionImpl(SteampipePgConnectionType, shortName, declRange),
+		ConnectionImpl: NewConnectionImpl(SteampipeConnectionType, shortName, declRange),
 	}
 }
 func (c *SteampipePgConnection) GetConnectionType() string {
-	return SteampipePgConnectionType
+	return SteampipeConnectionType
 }
 
 func (c *SteampipePgConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
@@ -38,14 +43,14 @@ func (c *SteampipePgConnection) Resolve(ctx context.Context) (PipelingConnection
 		return c.Pipes.Resolve(ctx, &SteampipePgConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
-	// if pipes is nil, we can just return ourselves - we have all the info we need
+	// if pipes is nil, we must have a connection string, so there is nothing to so
 	return c, nil
 }
 
 func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 	// if pipes metadata is set, no other properties should be sets
 	if c.Pipes != nil {
-		if c.ConnectionString != nil || c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil {
+		if c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil {
 			return hcl.Diagnostics{
 				{
 					Severity: hcl.DiagError,
@@ -56,45 +61,32 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 		}
 		return nil
 	}
-	// if pipes is not set, either connection_string or user AND db must be set
-	if c.ConnectionString == nil {
-		if c.UserName == nil || c.DbName == nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "either connection_string or username and db must be set",
-					Subject:  c.DeclRange.HclRangePointer(),
-				},
-			}
-		}
-	} else {
-		// so connection string is set, user and db should not be set
-		if c.UserName != nil || c.DbName != nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "cannot set both connection_string and username/db",
-					Subject:  c.DeclRange.HclRangePointer(),
-				},
-			}
-		}
 
-		// validate sslmode
-		if c.SslMode != nil {
-			return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
-		}
+	// validate sslmode
+	if c.SslMode != nil {
+		return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
 	}
 	return nil
 }
 
 func (c *SteampipePgConnection) GetConnectionString() string {
-	if c.ConnectionString != nil {
-		return *c.ConnectionString
-	}
+	// db, username, host and port all have default values if not set
+	return buildPostgresConnectionString(
+		c.getDbName(),
+		c.getUserName(),
+		c.getHost(),
+		c.getPort(),
+		c.Password, c.SslMode)
+}
 
-	// we know that db and user are set (as it is in the validation_ sop we can ignore the error
-	connString, _ := buildPostgresConnectionString(c.DbName, c.UserName, c.Host, c.Port, c.Password, c.SslMode)
-	return connString
+func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {
+	// db, username, host and port all have default values if not set
+	return postgresConnectionParamsToEnvValueMap(c.getDbName(),
+		c.getUserName(),
+		c.getHost(),
+		c.getPort(),
+		c.Password,
+		c.SslMode)
 }
 
 func (c *SteampipePgConnection) GetSearchPath() []string {
@@ -109,10 +101,6 @@ func (c *SteampipePgConnection) GetSearchPathPrefix() []string {
 		return *c.SearchPathPrefix
 	}
 	return []string{}
-}
-
-func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {
-	return postgresConnectionToEnvVarMap(c.ConnectionString, c.DbName, c.UserName, c.Password, c.Host, c.Port, c.SslMode)
 }
 
 func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool {
@@ -137,10 +125,41 @@ func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool 
 		utils.SlicePtrEqual(c.SearchPath, other.SearchPath) &&
 		utils.SlicePtrEqual(c.SearchPathPrefix, other.SearchPathPrefix) &&
 		utils.PtrEqual(c.SslMode, other.SslMode) &&
-		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
+
 }
 
 func (c *SteampipePgConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
+}
+
+func (c *SteampipePgConnection) getDbName() string {
+	if c.DbName != nil {
+		return *c.DbName
+	}
+
+	return defaultSteampipeDbName
+}
+
+func (c *SteampipePgConnection) getUserName() string {
+	if c.UserName != nil {
+		return *c.UserName
+	}
+
+	return defaultSteampipeUser
+}
+
+func (c *SteampipePgConnection) getHost() string {
+	if c.Host != nil {
+		return *c.Host
+	}
+
+	return defaultSteampipeHost
+}
+
+func (c *SteampipePgConnection) getPort() int {
+	if c.Port != nil {
+		return *c.Port
+	}
+	return defaultSteampipePort
 }

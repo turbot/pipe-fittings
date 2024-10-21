@@ -3,8 +3,8 @@ package connection
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net/url"
+	"os"
 	"strconv"
 
 	"github.com/hashicorp/hcl/v2"
@@ -14,11 +14,16 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const PostgresConnectionType = "postgres"
+const (
+	PostgresConnectionType = "postgres"
+	defaultPostgresDbName  = "postgres"
+	defaultPostgresUser    = "postgres"
+	defaultPostgresPort    = 5432
+	defaultPostgresHost    = "localhost"
+)
 
 type PostgresConnection struct {
 	ConnectionImpl
-	ConnectionString *string   `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
 	DbName           *string   `json:"db,omitempty" cty:"db" hcl:"db,optional"`
 	UserName         *string   `json:"username,omitempty" cty:"username" hcl:"username,optional"`
 	Host             *string   `json:"host,omitempty" cty:"host" hcl:"host,optional"`
@@ -51,7 +56,7 @@ func (c *PostgresConnection) Resolve(ctx context.Context) (PipelingConnection, e
 func (c *PostgresConnection) Validate() hcl.Diagnostics {
 	// if pipes metadata is set, no other properties should be sets
 	if c.Pipes != nil {
-		if c.ConnectionString != nil || c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil {
+		if c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil || c.SearchPath != nil {
 			return hcl.Diagnostics{
 				{
 					Severity: hcl.DiagError,
@@ -62,29 +67,7 @@ func (c *PostgresConnection) Validate() hcl.Diagnostics {
 		}
 		return nil
 	}
-	// if pipes is not set, either connection_string or user AND db must be set
-	if c.ConnectionString == nil {
-		if c.UserName == nil || c.DbName == nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "either connection_string or username and db must be set",
-					Subject:  c.DeclRange.HclRangePointer(),
-				},
-			}
-		}
-	} else {
-		// so connection string is set, user and db should not be set
-		if c.UserName != nil || c.DbName != nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "cannot set both connection_string and username/db",
-					Subject:  c.DeclRange.HclRangePointer(),
-				},
-			}
-		}
-	}
+
 	// validate sslmode
 	if c.SslMode != nil {
 		return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
@@ -117,17 +100,24 @@ func validateSSlMode(s string, declRange *hcl.Range) hcl.Diagnostics {
 }
 
 func (c *PostgresConnection) GetConnectionString() string {
-	if c.ConnectionString != nil {
-		return *c.ConnectionString
-	}
-
-	// we know that db and user are set (as it is in the validation_ sop we can ignore the error
-	connString, _ := buildPostgresConnectionString(c.DbName, c.UserName, c.Host, c.Port, c.Password, c.SslMode)
+	// db, username, host and port all have default values if not set
+	connString := buildPostgresConnectionString(
+		c.getDbName(),
+		c.getUserName(),
+		c.getHost(),
+		c.getPort(),
+		c.Password, c.SslMode)
 	return connString
 }
 
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {
-	return postgresConnectionToEnvVarMap(c.ConnectionString, c.DbName, c.UserName, c.Password, c.Host, c.Port, c.SslMode)
+	// db, username, host and port all have default values if not set
+	return postgresConnectionParamsToEnvValueMap(c.getDbName(),
+		c.getUserName(),
+		c.getHost(),
+		c.getPort(),
+		c.Password,
+		c.SslMode)
 }
 
 func (c *PostgresConnection) GetSearchPath() []string {
@@ -166,7 +156,6 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 		utils.SlicePtrEqual(c.SearchPath, other.SearchPath) &&
 		utils.SlicePtrEqual(c.SearchPathPrefix, other.SearchPathPrefix) &&
 		utils.PtrEqual(c.SslMode, other.SslMode) &&
-		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 
 }
@@ -175,28 +164,42 @@ func (c *PostgresConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func buildPostgresConnectionString(pDbName *string, pUserName *string, pHost *string, pPort *int, pPassword *string, pSslMode *string) (string, error) {
-	if pDbName == nil || pUserName == nil {
-		return "", fmt.Errorf("both username and db must be set to build a connection string")
+func (c *PostgresConnection) getDbName() string {
+	if c.DbName != nil {
+		return *c.DbName
 	}
 
-	user := typehelpers.SafeString(pUserName)
-	db := typehelpers.SafeString(pDbName)
-	var host, password string
-	var port int
-	if pHost != nil {
-		host = *pHost
-	} else {
-		host = "localhost"
+	return defaultPostgresDbName
+}
+
+func (c *PostgresConnection) getUserName() string {
+	if c.UserName != nil {
+		return *c.UserName
 	}
-	if pPort != nil {
-		port = *pPort
-	} else {
-		port = 5432
+	// get PGUSER env
+	if user, ok := os.LookupEnv("PGUSER"); ok {
+		return user
 	}
-	if pPassword != nil {
-		password = *pPassword
+	return defaultPostgresUser
+}
+
+func (c *PostgresConnection) getHost() string {
+	if c.Host != nil {
+		return *c.Host
 	}
+
+	return defaultPostgresHost
+}
+
+func (c *PostgresConnection) getPort() int {
+	if c.Port != nil {
+		return *c.Port
+	}
+	return defaultPostgresPort
+}
+
+func buildPostgresConnectionString(db string, user string, host string, port int, pPassword *string, pSslMode *string) string {
+	password := typehelpers.SafeString(pPassword)
 	sslmode := typehelpers.SafeString(pSslMode)
 
 	// Use url.URL to encode the connection string parameters safely
@@ -220,91 +223,20 @@ func buildPostgresConnectionString(pDbName *string, pUserName *string, pHost *st
 	}
 	connStr.RawQuery = q.Encode()
 
-	return connStr.String(), nil
+	return connStr.String()
 }
 
-func postgresConnectionToEnvVarMap(connectionString, db, username, password, host *string, port *int, sslmode *string) map[string]cty.Value {
-	if connectionString != nil {
-		envVars, err := connectionStringToEnvVarMap(*connectionString)
-		if err != nil {
-			slog.Error("error converting connection string to env vars", "error", err)
-			return map[string]cty.Value{}
-		}
-		return envVars
+func postgresConnectionParamsToEnvValueMap(db, username, host string, port int, password, sslmode *string) map[string]cty.Value {
+	envVars := map[string]cty.Value{
+		"PGDATABASE": cty.StringVal(db),
+		"PGUSER":     cty.StringVal(username),
+		"PGHOST":     cty.StringVal(host),
+		"PGPORT":     cty.StringVal(strconv.Itoa(port)),
 	}
-	return postgresConnectionParamsToEnvValueMap(*db, *username, password, host, port, sslmode)
-
-}
-
-func connectionStringToEnvVarMap(connString string) (map[string]cty.Value, error) {
-	// Create a map to hold the environment variables and their values
-	envVars := make(map[string]cty.Value)
-
-	// Parse the connection string
-	u, err := url.Parse(connString)
-	if err != nil {
-		if err != nil {
-			return envVars, err
-		}
-	}
-
-	var db, username string
-	var password, host, sslmode *string
-	var port *int
-	// Extract username and password (username required)
-	if u.User != nil {
-		username = u.User.Username()
-		if username == "" {
-			return envVars, fmt.Errorf("username is required")
-		}
-		if pw, ok := u.User.Password(); ok {
-			password = &pw
-		}
-	} else {
-		return envVars, fmt.Errorf("username is required")
-	}
-
-	// Extract host and port (optional)
-	h := u.Hostname()
-	if h != "" {
-		host = &h
-	}
-	if p, err := strconv.Atoi(u.Port()); err == nil {
-		port = &p
-	}
-
-	// Extract DB name
-	if len(u.Path) > 1 {
-		db = u.Path[1:] // Remove leading "/"
-	} else {
-		return envVars, fmt.Errorf("database name is required")
-	}
-
-	// Extract sslmode (optional)
-	sm := u.Query().Get("sslmode")
-	if sm != "" {
-		sslmode = &sm
-	}
-
-	return postgresConnectionParamsToEnvValueMap(db, username, password, host, port, sslmode), nil
-}
-
-func postgresConnectionParamsToEnvValueMap(db, username string, password, host *string, port *int, sslmode *string) map[string]cty.Value {
-	envVars := make(map[string]cty.Value)
-
-	// Add required fields
-	envVars["PGDATABASE"] = cty.StringVal(db)
-	envVars["PGUSER"] = cty.StringVal(username)
 
 	// Add optional fields if not nil
 	if password != nil {
 		envVars["PGPASSWORD"] = cty.StringVal(*password)
-	}
-	if host != nil {
-		envVars["PGHOST"] = cty.StringVal(*host)
-	}
-	if port != nil {
-		envVars["PGPORT"] = cty.StringVal(strconv.Itoa(*port))
 	}
 	if sslmode != nil {
 		envVars["PGSSLMODE"] = cty.StringVal(*sslmode)

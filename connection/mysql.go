@@ -8,18 +8,24 @@ import (
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
+	"strconv"
 )
 
-const MysqlConnectionType = "mysql"
+const (
+	MysqlConnectionType = "mysql"
+	defaultMysqlDbName  = "mysql"
+	defaultMysqlUser    = "root"
+	defaultMysqlPort    = 3306
+	defaultMysqlHost    = "localhost"
+)
 
 type MysqlConnection struct {
 	ConnectionImpl
-	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string" hcl:"connection_string,optional"`
-	DbName           *string `json:"db,omitempty" cty:"db" hcl:"db,optional"`
-	UserName         *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
-	Host             *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
-	Port             *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
-	Password         *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
+	DbName   *string `json:"db,omitempty" cty:"db" hcl:"db,optional"`
+	UserName *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
+	Host     *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
+	Port     *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
+	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
 }
 
 func NewMysqlConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -44,7 +50,7 @@ func (c *MysqlConnection) Resolve(ctx context.Context) (PipelingConnection, erro
 func (c *MysqlConnection) Validate() hcl.Diagnostics {
 	// if pipes metadata is set, no other properties should be sets
 	if c.Pipes != nil {
-		if c.ConnectionString != nil || c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil {
+		if c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil {
 			return hcl.Diagnostics{
 				{
 					Severity: hcl.DiagError,
@@ -55,35 +61,35 @@ func (c *MysqlConnection) Validate() hcl.Diagnostics {
 		}
 		return nil
 	}
-	// if pipes is not set, either connection_string or user AND db must be set
-	if c.ConnectionString == nil {
-		if c.UserName == nil || c.DbName == nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "either connection_string or username and db must be set",
-					Subject:  c.DeclRange.HclRangePointer(),
-				},
-			}
-		}
-	} else {
-		// so connection string is set, user and db should not be set
-		if c.UserName != nil || c.DbName != nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "cannot set both connection_string and username/db",
-					Subject:  c.DeclRange.HclRangePointer(),
-				},
-			}
-		}
-	}
 
 	return nil
 }
 
+func (c *MysqlConnection) GetConnectionString() string {
+	db := c.getDbName()
+	user := c.getUserName()
+	host := c.getHost()
+	port := c.getPort()
+	password := typehelpers.SafeString(c.Password)
+
+	// MySQL connection string format: "mysql://user:password@tcp(host:port)/dbname
+	var userString string
+	if password == "" {
+		userString = user
+	} else {
+		userString = fmt.Sprintf("%s:%s",
+			user, password)
+	}
+	connString := fmt.Sprintf("mysql://%s@tcp(%s:%d)/%s", userString, host, port, db)
+
+	return connString
+}
+
 func (c *MysqlConnection) GetEnv() map[string]cty.Value {
-	return map[string]cty.Value{}
+	return map[string]cty.Value{
+		"MYSQL_TCP_PORT": cty.StringVal(strconv.Itoa(c.getPort())),
+		"MYSQL_TCP_HOST": cty.StringVal(c.getHost()),
+	}
 }
 
 func (c *MysqlConnection) Equals(otherConnection PipelingConnection) bool {
@@ -105,7 +111,6 @@ func (c *MysqlConnection) Equals(otherConnection PipelingConnection) bool {
 		utils.PtrEqual(c.Host, other.Host) &&
 		utils.PtrEqual(c.Port, other.Port) &&
 		utils.PtrEqual(c.Password, other.Password) &&
-		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 }
 
@@ -113,48 +118,33 @@ func (c *MysqlConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func (c *MysqlConnection) GetConnectionString() string {
-	if c.ConnectionString != nil {
-		return *c.ConnectionString
+func (c *MysqlConnection) getDbName() string {
+	if c.DbName != nil {
+		return *c.DbName
 	}
 
-	// we know that db and user are set (as it is in the validation_ sop we can ignore the error
-	connString, _ := buildMysqlConnectionString(c.DbName, c.UserName, c.Host, c.Port, c.Password)
-	return connString
+	return defaultMysqlDbName
+
 }
 
-func buildMysqlConnectionString(pDbName *string, pUserName *string, pHost *string, pPort *int, pPassword *string) (string, error) {
-	if pDbName == nil || pUserName == nil {
-		return "", fmt.Errorf("both username and db must be set to build a connection string")
+func (c *MysqlConnection) getUserName() string {
+	if c.UserName != nil {
+		return *c.UserName
+	}
+	return defaultMysqlUser
+}
+
+func (c *MysqlConnection) getHost() string {
+	if c.Host != nil {
+		return *c.Host
 	}
 
-	user := typehelpers.SafeString(pUserName)
-	db := typehelpers.SafeString(pDbName)
-	var host, password string
-	var port int
-	if pHost != nil {
-		host = *pHost
-	} else {
-		host = "localhost"
-	}
-	if pPort != nil {
-		port = *pPort
-	} else {
-		port = 3306
-	}
-	if pPassword != nil {
-		password = *pPassword
-	}
+	return defaultMysqlHost
+}
 
-	// MySQL connection string format: "mysql://user:password@tcp(host:port)/dbname
-	var userString string
-	if password == "" {
-		userString = user
-	} else {
-		userString = fmt.Sprintf("%s:%s",
-			user, password)
+func (c *MysqlConnection) getPort() int {
+	if c.Port != nil {
+		return *c.Port
 	}
-	connString := fmt.Sprintf("mysql://%s@tcp(%s:%d)/%s", userString, host, port, db)
-
-	return connString, nil
+	return defaultMysqlPort
 }
