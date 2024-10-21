@@ -48,8 +48,7 @@ type PowerpipeWorkspaceProfile struct {
 	Progress *bool `hcl:"progress" cty:"progress"`
 
 	// "default" db settings
-	// TODO KAI deprecated
-	Database     *string `hcl:"database" cty:"database"`
+	Database     *string `hcl:"database" cty:"database"` // deprecated
 	QueryTimeout *int    `hcl:"query_timeout,optional" cty:"query_timeout"`
 	MaxParallel  *int    `hcl:"max_parallel" cty:"max-parallel"`
 

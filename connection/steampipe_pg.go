@@ -2,13 +2,10 @@ package connection
 
 import (
 	"context"
-	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
-	"net/url"
 )
 
 const SteampipePgConnectionType = "steampipe"
@@ -83,7 +80,6 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 		}
 	}
 	return nil
-
 }
 
 func (c *SteampipePgConnection) GetConnectionString() string {
@@ -91,49 +87,9 @@ func (c *SteampipePgConnection) GetConnectionString() string {
 		return *c.ConnectionString
 	}
 
-	// we know that username and db are set
-	user := typehelpers.SafeString(c.UserName)
-	db := typehelpers.SafeString(c.DbName)
-	var host, password string
-	var port int
-	if c.Host != nil {
-		host = *c.Host
-	} else {
-		host = "localhost"
-	}
-	if c.Port != nil {
-		port = *c.Port
-	} else {
-		port = 5432
-	}
-	if c.Password != nil {
-		password = *c.Password
-	}
-	sslmode := typehelpers.SafeString(c.SslMode)
-
-	// Use url.URL to encode the connection string parameters safely
-	connStr := url.URL{
-		Scheme: "postgresql",
-		Host:   fmt.Sprintf("%s:%d", host, port),
-		Path:   db, // This adds the /dbname part in the connection string
-	}
-
-	// Set the user with or without the password
-	if password == "" {
-		connStr.User = url.User(user) // No password
-	} else {
-		connStr.User = url.UserPassword(user, password)
-	}
-
-	// Add SSL mode or other query parameters if needed
-	q := connStr.Query()
-	if sslmode != "" {
-		q.Add("sslmode", sslmode)
-	}
-	connStr.RawQuery = q.Encode()
-
-	return connStr.String()
-
+	// we know that db and user are set (as it is in the validation_ sop we can ignore the error
+	connString, _ := buildPostgresConnectionString(c.DbName, c.UserName, c.Host, c.Port, c.Password, c.SslMode)
+	return connString
 }
 
 func (c *SteampipePgConnection) GetSearchPath() []string {
@@ -151,8 +107,7 @@ func (c *SteampipePgConnection) GetSearchPathPrefix() []string {
 }
 
 func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {
-	// TODO POSTGRES ENV
-	return map[string]cty.Value{}
+	return postgresConnectionToEnvVarMap(c.ConnectionString, c.DbName, c.UserName, c.Password, c.Host, c.Port, c.SslMode)
 }
 
 func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool {
@@ -175,9 +130,10 @@ func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool 
 		utils.PtrEqual(c.Port, other.Port) &&
 		utils.PtrEqual(c.Password, other.Password) &&
 		utils.SlicePtrEqual(c.SearchPath, other.SearchPath) &&
+		utils.SlicePtrEqual(c.SearchPathPrefix, other.SearchPathPrefix) &&
+		utils.PtrEqual(c.SslMode, other.SslMode) &&
 		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
-
 }
 
 func (c *SteampipePgConnection) CtyValue() (cty.Value, error) {
