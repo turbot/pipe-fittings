@@ -227,7 +227,18 @@ func (s *Sanitizer) SanitizeString(v string) string {
 		r := newReplacements[i]
 		v = v[:r.start] + RedactedStr + v[r.end:]
 	}
+
+	v = redactDbConnectionPassword(v)
 	return v
+}
+
+// The database connection string is also redacted by the Basic Auth redaction, it will actually redact more than the
+// plain db redaction
+func redactDbConnectionPassword(connectionString string) string {
+	// Define the regex to match and capture only the password part
+	re := regexp.MustCompile(`(?P<protocol>[^:]+://)(?P<username>[^:]+):(?P<password>[^@]+)(?P<rest>@.+)`)
+	// Replace only the password part with "REDACTED"
+	return re.ReplaceAllString(connectionString, `${protocol}${username}:REDACTED${rest}`)
 }
 
 // Sanitize takes any value and returns a sanitized version of the value.
