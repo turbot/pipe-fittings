@@ -90,10 +90,10 @@ func (c *MysqlConnection) GetConnectionString() string {
 		return *c.ConnectionString
 	}
 
-	db := typehelpers.SafeString(c.DbName)
-	user := typehelpers.SafeString(c.UserName)
-	host := typehelpers.SafeString(c.Host)
-	port := *c.Port
+	db := c.getDbName()
+	user := c.getUserName()
+	host := c.getHost()
+	port := c.getPort()
 	password := typehelpers.SafeString(c.Password)
 
 	// MySQL connection string format: "mysql://user:password@tcp(host:port)/dbname
@@ -111,8 +111,8 @@ func (c *MysqlConnection) GetConnectionString() string {
 
 func (c *MysqlConnection) GetEnv() map[string]cty.Value {
 	return map[string]cty.Value{
-		"MYSQL_TCP_PORT": cty.StringVal(strconv.Itoa(*c.Port)),
-		"MYSQL_TCP_HOST": cty.StringVal(typehelpers.SafeString(c.Host)),
+		"MYSQL_TCP_PORT": cty.StringVal(strconv.Itoa(c.getPort())),
+		"MYSQL_TCP_HOST": cty.StringVal(c.getHost()),
 	}
 }
 
@@ -140,4 +140,32 @@ func (c *MysqlConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *MysqlConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
+}
+
+func (c *MysqlConnection) getPort() int {
+	if c.Port != nil {
+		return *c.Port
+	}
+	return defaultMysqlPort
+}
+
+func (c *MysqlConnection) getHost() string {
+	if c.Host != nil {
+		return *c.Host
+	}
+	return defaultMysqlHost
+}
+
+func (c *MysqlConnection) getDbName() string {
+	if c.DbName != nil {
+		return *c.DbName
+	}
+	return defaultMysqlDbName
+}
+
+func (c *MysqlConnection) getUserName() string {
+	if c.UserName != nil {
+		return *c.UserName
+	}
+	return defaultMysqlUser
 }
