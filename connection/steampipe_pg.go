@@ -8,12 +8,13 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const (
-	SteampipeConnectionType = "steampipe"
-	defaultSteampipeDbName  = "steampipe"
-	defaultSteampipeUser    = "steampipe"
-	defaultSteampipePort    = 9193
-	defaultSteampipeHost    = "localhost"
+const SteampipeConnectionType = "steampipe"
+
+var (
+	defaultSteampipeDbName = "steampipe"
+	defaultSteampipeUser   = "steampipe"
+	defaultSteampipePort   = 9193
+	defaultSteampipeHost   = "localhost"
 )
 
 type SteampipePgConnection struct {
@@ -26,6 +27,7 @@ type SteampipePgConnection struct {
 	SearchPath       *[]string `json:"search_path,omitempty" cty:"search_path" hcl:"search_path,optional"`
 	SearchPathPrefix *[]string `json:"search_path_prefix,omitempty" cty:"search_path_prefix" hcl:"search_path_prefix,optional"`
 	SslMode          *string   `json:"sslmode,omitempty" cty:"sslmode" hcl:"sslmode,optional"`
+	ConnectionString *string   `json:"connection_string,omitempty" cty:"connection_string"`
 }
 
 func NewSteampipePgConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -62,6 +64,24 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 		return nil
 	}
 
+	if c.Pipes == nil {
+		// set nil values to default
+		if c.DbName == nil {
+			c.DbName = &defaultSteampipeDbName
+		}
+		if c.UserName == nil {
+			c.UserName = &defaultSteampipeUser
+		}
+
+		if c.Host == nil {
+			c.Host = &defaultSteampipeHost
+		}
+
+		if c.Port == nil {
+			c.Port = &defaultSteampipePort
+		}
+	}
+
 	// validate sslmode
 	if c.SslMode != nil {
 		return validateSSlMode(*c.SslMode, c.DeclRange.HclRangePointer())
@@ -70,12 +90,16 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *SteampipePgConnection) GetConnectionString() string {
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
+	}
 	// db, username, host and port all have default values if not set
 	return buildPostgresConnectionString(
 		c.getDbName(),
 		c.getUserName(),
 		c.getHost(),
 		c.getPort(),
+
 		c.Password, c.SslMode)
 }
 
@@ -132,6 +156,8 @@ func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool 
 func (c *SteampipePgConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
+
+// TODO these are needed for Powerpipe because resolve is not called
 
 func (c *SteampipePgConnection) getDbName() string {
 	if c.DbName != nil {

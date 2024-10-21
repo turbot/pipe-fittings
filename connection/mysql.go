@@ -11,21 +11,23 @@ import (
 	"strconv"
 )
 
-const (
-	MysqlConnectionType = "mysql"
-	defaultMysqlDbName  = "mysql"
-	defaultMysqlUser    = "root"
-	defaultMysqlPort    = 3306
-	defaultMysqlHost    = "localhost"
+const MysqlConnectionType = "mysql"
+
+var (
+	defaultMysqlDbName = "mysql"
+	defaultMysqlUser   = "root"
+	defaultMysqlPort   = 3306
+	defaultMysqlHost   = "localhost"
 )
 
 type MysqlConnection struct {
 	ConnectionImpl
-	DbName   *string `json:"db,omitempty" cty:"db" hcl:"db,optional"`
-	UserName *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
-	Host     *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
-	Port     *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
-	Password *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
+	DbName           *string `json:"db,omitempty" cty:"db" hcl:"db,optional"`
+	UserName         *string `json:"username,omitempty" cty:"username" hcl:"username,optional"`
+	Host             *string `json:"host,omitempty" cty:"host" hcl:"host,optional"`
+	Port             *int    `json:"port,omitempty" cty:"port" hcl:"port,optional"`
+	Password         *string `json:"password,omitempty" cty:"password" hcl:"password,optional"`
+	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string"`
 }
 
 func NewMysqlConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -62,14 +64,36 @@ func (c *MysqlConnection) Validate() hcl.Diagnostics {
 		return nil
 	}
 
+	if c.Pipes == nil {
+		// set nil values to default
+		if c.DbName == nil {
+			c.DbName = &defaultMysqlDbName
+		}
+		if c.UserName == nil {
+			c.UserName = &defaultMysqlUser
+		}
+
+		if c.Host == nil {
+			c.Host = &defaultMysqlHost
+		}
+
+		if c.Port == nil {
+			c.Port = &defaultMysqlPort
+		}
+	}
+
 	return nil
 }
 
 func (c *MysqlConnection) GetConnectionString() string {
-	db := c.getDbName()
-	user := c.getUserName()
-	host := c.getHost()
-	port := c.getPort()
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
+	}
+
+	db := typehelpers.SafeString(c.DbName)
+	user := typehelpers.SafeString(c.UserName)
+	host := typehelpers.SafeString(c.Host)
+	port := *c.Port
 	password := typehelpers.SafeString(c.Password)
 
 	// MySQL connection string format: "mysql://user:password@tcp(host:port)/dbname
@@ -87,8 +111,8 @@ func (c *MysqlConnection) GetConnectionString() string {
 
 func (c *MysqlConnection) GetEnv() map[string]cty.Value {
 	return map[string]cty.Value{
-		"MYSQL_TCP_PORT": cty.StringVal(strconv.Itoa(c.getPort())),
-		"MYSQL_TCP_HOST": cty.StringVal(c.getHost()),
+		"MYSQL_TCP_PORT": cty.StringVal(strconv.Itoa(*c.Port)),
+		"MYSQL_TCP_HOST": cty.StringVal(typehelpers.SafeString(c.Host)),
 	}
 }
 
@@ -116,35 +140,4 @@ func (c *MysqlConnection) Equals(otherConnection PipelingConnection) bool {
 
 func (c *MysqlConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
-}
-
-func (c *MysqlConnection) getDbName() string {
-	if c.DbName != nil {
-		return *c.DbName
-	}
-
-	return defaultMysqlDbName
-
-}
-
-func (c *MysqlConnection) getUserName() string {
-	if c.UserName != nil {
-		return *c.UserName
-	}
-	return defaultMysqlUser
-}
-
-func (c *MysqlConnection) getHost() string {
-	if c.Host != nil {
-		return *c.Host
-	}
-
-	return defaultMysqlHost
-}
-
-func (c *MysqlConnection) getPort() int {
-	if c.Port != nil {
-		return *c.Port
-	}
-	return defaultMysqlPort
 }
