@@ -892,21 +892,21 @@ func TestDuckDbConnectionEquals(t *testing.T) {
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
-	// Case 3: Both connections have the same connection_string
+	// Case 3: Both connections have the same file name
 	connectionString := "postgres://user:password@localhost:5432/dbname"
-	conn1.ConnectionString = &connectionString
+	conn1.FileName = &connectionString
 	conn2 = &DuckDbConnection{
 		ConnectionImpl: ConnectionImpl{
 			ShortName: "default",
 		},
-		ConnectionString: &connectionString,
+		FileName: &connectionString,
 	}
 
 	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
 
-	// Case 4: Connections have different connection_strings
+	// Case 4: Connections have different file names
 	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
-	conn2.ConnectionString = &connectionString2
+	conn2.FileName = &connectionString2
 	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
 
 }
@@ -919,9 +919,9 @@ func TestDuckDbConnectionValidate(t *testing.T) {
 	diagnostics := conn.Validate()
 	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty DuckDbConnection")
 
-	// Case 2: Validate a DuckDbConnection with connection_String should pass with no diagnostics
+	// Case 2: Validate a DuckDbConnection with file name should pass with no diagnostics
 	conn = &DuckDbConnection{
-		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+		FileName: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a DuckDbConnection with connection_string")
@@ -3124,21 +3124,21 @@ func TestSqliteConnectionEquals(t *testing.T) {
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
-	// Case 3: Both connections have the same connection_string
+	// Case 3: Both connections have the same  file name
 	connectionString := "postgres://user:password@localhost:5432/dbname"
-	conn1.ConnectionString = &connectionString
+	conn1.FileName = &connectionString
 	conn2 = &SqliteConnection{
 		ConnectionImpl: ConnectionImpl{
 			ShortName: "default",
 		},
-		ConnectionString: &connectionString,
+		FileName: &connectionString,
 	}
 
 	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
 
-	// Case 4: Connections have different connection_strings
+	// Case 4: Connections have different file name
 	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
-	conn2.ConnectionString = &connectionString2
+	conn2.FileName = &connectionString2
 	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
 
 }
@@ -3151,9 +3151,9 @@ func TestSqliteConnectionValidate(t *testing.T) {
 	diagnostics := conn.Validate()
 	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty SqliteConnection")
 
-	// Case 2: Validate a SqliteConnection with connection_String should pass with no diagnostics
+	// Case 2: Validate a SqliteConnection with  file name should pass with no diagnostics
 	conn = &SqliteConnection{
-		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+		FileName: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SqliteConnection with connection_string")
