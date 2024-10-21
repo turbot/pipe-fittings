@@ -48,17 +48,6 @@ func (c *SqliteConnection) Validate() hcl.Diagnostics {
 		}
 	}
 
-	// one of the two should be set
-	if c.Pipes == nil && c.FileName == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "either pipes block or filename should be set",
-				Subject:  c.DeclRange.HclRangePointer(),
-			},
-		}
-	}
-
 	return hcl.Diagnostics{}
 }
 

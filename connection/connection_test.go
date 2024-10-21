@@ -914,10 +914,10 @@ func TestDuckDbConnectionEquals(t *testing.T) {
 func TestDuckDbConnectionValidate(t *testing.T) {
 	assert := assert.New(t)
 
-	// Case 1: Validate an empty DuckDbConnection, should fail with diagnostics
+	// Case 1: Validate an empty DuckDbConnection, should pass with no diagnostics
 	conn := &DuckDbConnection{}
 	diagnostics := conn.Validate()
-	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty DuckDbConnection")
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for an empty DuckDbConnection")
 
 	// Case 2: Validate a DuckDbConnection with file name should pass with no diagnostics
 	conn = &DuckDbConnection{
@@ -3146,10 +3146,10 @@ func TestSqliteConnectionEquals(t *testing.T) {
 func TestSqliteConnectionValidate(t *testing.T) {
 	assert := assert.New(t)
 
-	// Case 1: Validate an empty SqliteConnection, should fail with diagnostics
+	// Case 1: Validate an empty SqliteConnection, should should pass with no diagnostics
 	conn := &SqliteConnection{}
 	diagnostics := conn.Validate()
-	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty SqliteConnection")
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for an empty SqliteConnection")
 
 	// Case 2: Validate a SqliteConnection with  file name should pass with no diagnostics
 	conn = &SqliteConnection{
