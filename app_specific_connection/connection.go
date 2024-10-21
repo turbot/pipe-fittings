@@ -14,9 +14,6 @@ func ConnectionTypeSupported(connectionType string) bool {
 	return exists
 }
 
-// DefaultConnections should be populated with any default connections which require specific configuration
-var DefaultConnections = map[string]connection.PipelingConnection{}
-
 func RegisterConnections(funcs ...ConnectionFunc) {
 	if ConnectionTypeRegistry == nil {
 		ConnectionTypeRegistry = make(map[string]ConnectionFunc)
