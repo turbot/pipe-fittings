@@ -3,9 +3,10 @@ package connection
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -32,7 +33,6 @@ func (c *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, err
 		return c.Pipes.Resolve(ctx, &DuckDbConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
-	// we must have a filename or validation would have failed
 	return c, nil
 }
 
@@ -42,17 +42,6 @@ func (c *DuckDbConnection) Validate() hcl.Diagnostics {
 			{
 				Severity: hcl.DiagError,
 				Summary:  "if pipes block is defined, no other auth properties should be set",
-				Subject:  c.DeclRange.HclRangePointer(),
-			},
-		}
-	}
-
-	// one of the two should be set
-	if c.Pipes == nil && c.FileName == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "either pipes block or filename should be set",
 				Subject:  c.DeclRange.HclRangePointer(),
 			},
 		}
@@ -89,5 +78,12 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *DuckDbConnection) GetConnectionString() string {
-	return fmt.Sprintf("duckdb://%s", typehelpers.SafeString(c.FileName))
+	return fmt.Sprintf("duckdb://%s", c.getFileName())
+}
+
+func (c *DuckDbConnection) getFileName() any {
+	if c.FileName != nil {
+		return *c.FileName
+	}
+	return os.Getenv("DUCKDB_FILENAME")
 }

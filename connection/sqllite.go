@@ -3,9 +3,10 @@ package connection
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -89,5 +90,12 @@ func (c *SqliteConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *SqliteConnection) GetConnectionString() string {
-	return fmt.Sprintf("sqlite://%s", typehelpers.SafeString(c.FileName))
+	return fmt.Sprintf("sqlite://%s", c.getFileName())
+}
+
+func (c *SqliteConnection) getFileName() any {
+	if c.FileName != nil {
+		return *c.FileName
+	}
+	return os.Getenv("DUCKDB_FILENAME")
 }
