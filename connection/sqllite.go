@@ -3,9 +3,10 @@ package connection
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -47,17 +48,6 @@ func (c *SqliteConnection) Validate() hcl.Diagnostics {
 		}
 	}
 
-	// one of the two should be set
-	if c.Pipes == nil && c.FileName == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "either pipes block or filename should be set",
-				Subject:  c.DeclRange.HclRangePointer(),
-			},
-		}
-	}
-
 	return hcl.Diagnostics{}
 }
 
@@ -89,5 +79,12 @@ func (c *SqliteConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *SqliteConnection) GetConnectionString() string {
-	return fmt.Sprintf("sqlite://%s", typehelpers.SafeString(c.FileName))
+	return fmt.Sprintf("sqlite://%s", c.getFileName())
+}
+
+func (c *SqliteConnection) getFileName() any {
+	if c.FileName != nil {
+		return *c.FileName
+	}
+	return os.Getenv("DUCKDB_FILENAME")
 }
