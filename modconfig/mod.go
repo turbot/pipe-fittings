@@ -62,6 +62,12 @@ type Mod struct {
 	// convenient aggregation of all resources
 	ResourceMaps *ResourceMaps `json:"-"`
 
+	// store mod database, search path and search path prefix in separate variables from the ModTreeItemImpl fields
+	// as these have lower precedence
+	ModDatabase         *string  `cty:"mod_database"`
+	ModSearchPath       []string `cty:"mod_search_path"`
+	ModSearchPathPrefix []string `cty:"mod_search_path_prefix"`
+
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
 }
