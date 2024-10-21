@@ -3,12 +3,15 @@ package connection
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"net/url"
+	"strconv"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
-	"net/url"
 )
 
 const PostgresConnectionType = "postgres"
@@ -124,7 +127,7 @@ func (c *PostgresConnection) GetConnectionString() string {
 }
 
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {
-	return map[string]cty.Value{}
+	return postgresConnectionToEnvVarMap(c.ConnectionString, c.DbName, c.UserName, c.Password, c.Host, c.Port, c.SslMode)
 }
 
 func (c *PostgresConnection) GetSearchPath() []string {
@@ -151,7 +154,7 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	other, ok := otherConnection.(*SteampipePgConnection)
+	other, ok := otherConnection.(*PostgresConnection)
 	if !ok {
 		return false
 	}
@@ -161,6 +164,8 @@ func (c *PostgresConnection) Equals(otherConnection PipelingConnection) bool {
 		utils.PtrEqual(c.Port, other.Port) &&
 		utils.PtrEqual(c.Password, other.Password) &&
 		utils.SlicePtrEqual(c.SearchPath, other.SearchPath) &&
+		utils.SlicePtrEqual(c.SearchPathPrefix, other.SearchPathPrefix) &&
+		utils.PtrEqual(c.SslMode, other.SslMode) &&
 		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 
@@ -216,4 +221,95 @@ func buildPostgresConnectionString(pDbName *string, pUserName *string, pHost *st
 	connStr.RawQuery = q.Encode()
 
 	return connStr.String(), nil
+}
+
+func postgresConnectionToEnvVarMap(connectionString, db, username, password, host *string, port *int, sslmode *string) map[string]cty.Value {
+	if connectionString != nil {
+		envVars, err := connectionStringToEnvVarMap(*connectionString)
+		if err != nil {
+			slog.Error("error converting connection string to env vars", "error", err)
+			return map[string]cty.Value{}
+		}
+		return envVars
+	}
+	return postgresConnectionParamsToEnvValueMap(*db, *username, password, host, port, sslmode)
+
+}
+
+func connectionStringToEnvVarMap(connString string) (map[string]cty.Value, error) {
+	// Create a map to hold the environment variables and their values
+	envVars := make(map[string]cty.Value)
+
+	// Parse the connection string
+	u, err := url.Parse(connString)
+	if err != nil {
+		if err != nil {
+			return envVars, err
+		}
+	}
+
+	var db, username string
+	var password, host, sslmode *string
+	var port *int
+	// Extract username and password (username required)
+	if u.User != nil {
+		username = u.User.Username()
+		if username == "" {
+			return envVars, fmt.Errorf("username is required")
+		}
+		if pw, ok := u.User.Password(); ok {
+			password = &pw
+		}
+	} else {
+		return envVars, fmt.Errorf("username is required")
+	}
+
+	// Extract host and port (optional)
+	h := u.Hostname()
+	if h != "" {
+		host = &h
+	}
+	if p, err := strconv.Atoi(u.Port()); err == nil {
+		port = &p
+	}
+
+	// Extract DB name
+	if len(u.Path) > 1 {
+		db = u.Path[1:] // Remove leading "/"
+	} else {
+		return envVars, fmt.Errorf("database name is required")
+	}
+
+	// Extract sslmode (optional)
+	sm := u.Query().Get("sslmode")
+	if sm != "" {
+		sslmode = &sm
+	}
+
+	return postgresConnectionParamsToEnvValueMap(db, username, password, host, port, sslmode), nil
+}
+
+func postgresConnectionParamsToEnvValueMap(db, username string, password, host *string, port *int, sslmode *string) map[string]cty.Value {
+	envVars := make(map[string]cty.Value)
+
+	// Add required fields
+	envVars["PGDATABASE"] = cty.StringVal(db)
+	envVars["PGUSER"] = cty.StringVal(username)
+
+	// Add optional fields if not nil
+	if password != nil {
+		envVars["PGPASSWORD"] = cty.StringVal(*password)
+	}
+	if host != nil {
+		envVars["PGHOST"] = cty.StringVal(*host)
+	}
+	if port != nil {
+		envVars["PGPORT"] = cty.StringVal(strconv.Itoa(*port))
+	}
+	if sslmode != nil {
+		envVars["PGSSLMODE"] = cty.StringVal(*sslmode)
+	}
+
+	// Convert the map to a cty.Value map
+	return envVars
 }

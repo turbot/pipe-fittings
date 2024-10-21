@@ -1853,6 +1853,167 @@ func TestMicrosoftTeamsConnectionValidate(t *testing.T) {
 }
 
 // ------------------------------------------------------------
+// Mysql
+// ------------------------------------------------------------
+
+func TestMysqlConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *MysqlConnection
+	var conn2 *MysqlConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+	// Case 3: Both connections have the same connection_string
+	connectionString := "Mysql://user:password@localhost:5432/dbname"
+	conn1.ConnectionString = &connectionString
+	conn2 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		ConnectionString: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different connection_strings
+	connectionString2 := "Mysql://user:password@localhost:5432/dbname2"
+	conn2.ConnectionString = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+	//Case 5: Connections have same settings
+	conn1 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	conn2 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same settings and should be equal")
+
+	//Case 6: Connections have different settings
+
+	conn2.UserName = utils.ToStringPointer("user2")
+	assert.False(conn1.Equals(conn2), "Both connections have the different user_name and should not be equal")
+
+	// Case 7: Connection 2 is a subset of Connection 1
+	conn2 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	assert.False(conn1.Equals(conn2), "Connection 2 is a subset of Connection 1, should return false")
+
+}
+
+func TestMysqlConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty MysqlConnection, should fail with diagnostics
+	conn := &MysqlConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for an empty MysqlConnection")
+
+	// Case 2: Validate a MysqlConnection with connection_String should pass with no diagnostics
+	conn = &MysqlConnection{
+		ConnectionString: utils.ToStringPointer("Mysql://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a MysqlConnection with connection_string")
+
+	// Case 2: Validate a MysqlConnection with user name and db should pass with no diagnostics
+	conn = &MysqlConnection{
+		UserName: utils.ToStringPointer("user"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a MysqlConnection with user name and db")
+
+	// Case 3: Validate a MysqlConnection with connectrion string AND user name and db, should fail with diagnostics
+	conn = &MysqlConnection{
+		ConnectionString: utils.ToStringPointer("Mysql://user:password@localhost:5432/dbname"),
+		UserName:         utils.ToStringPointer("user"),
+		DbName:           utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a MysqlConnection with connection_string and user name and db")
+
+	// Case 4: Validate a MysqlConnection with user name but no db, should fail with diagnostics
+	conn = &MysqlConnection{
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a MysqlConnection with user name but no db")
+
+	// Case 5: Validate a MysqlConnection with db name but no user, should fail with diagnostics
+	conn = &MysqlConnection{
+		DbName: utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a MysqlConnection with db name but no user")
+
+	pipes := &PipesConnectionMetadata{
+		Connection: utils.ToStringPointer("default"),
+		User:       utils.ToStringPointer("user"),
+		Org:        utils.ToStringPointer("org"),
+		Workspace:  utils.ToStringPointer("ws"),
+	}
+
+	// Case 6: Validate a MysqlConnection with pipes block and no connection string, should pass with no diagnostics
+	conn = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a MysqlConnection with pipes block and no connection string")
+
+	// Case 7: Validate a MysqlConnection with pipes block and connection string, should fail with diagnostics
+	conn = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		ConnectionString: utils.ToStringPointer("Mysql://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a MysqlConnection with pipes block and connection string")
+
+	// Case 8: Validate a MysqlConnection with pipes block and user name, should fail with diagnostics
+	conn = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a MysqlConnection with pipes block and user")
+}
+
+// ------------------------------------------------------------
 // Okta
 // ------------------------------------------------------------
 
@@ -2242,7 +2403,6 @@ func TestPostgresConnectionEquals(t *testing.T) {
 		},
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
-
 	// Case 3: Both connections have the same connection_string
 	connectionString := "postgres://user:password@localhost:5432/dbname"
 	conn1.ConnectionString = &connectionString
@@ -2260,6 +2420,46 @@ func TestPostgresConnectionEquals(t *testing.T) {
 	conn2.ConnectionString = &connectionString2
 	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
 
+	//Case 5: Connections have same settings
+	conn1 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	conn2 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same settings and should be equal")
+
+	//Case 6: Connections have different settings
+
+	conn2.UserName = utils.ToStringPointer("user2")
+	assert.False(conn1.Equals(conn2), "Both connections have the different user_name and should not be equal")
+
+	// Case 7: Connection 2 is a subset of Connection 1
+	conn2 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	assert.False(conn1.Equals(conn2), "Connection 2 is a subset of Connection 1, should return false")
+
 }
 
 func TestPostgresConnectionValidate(t *testing.T) {
@@ -2276,6 +2476,73 @@ func TestPostgresConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with connection_string")
+
+	// Case 2: Validate a PostgresConnection with user name and db should pass with no diagnostics
+	conn = &PostgresConnection{
+		UserName: utils.ToStringPointer("user"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with user name and db")
+
+	// Case 3: Validate a PostgresConnection with connectrion string AND user name and db, should fail with diagnostics
+	conn = &PostgresConnection{
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+		UserName:         utils.ToStringPointer("user"),
+		DbName:           utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a PostgresConnection with connection_string and user name and db")
+
+	// Case 4: Validate a PostgresConnection with user name but no db, should fail with diagnostics
+	conn = &PostgresConnection{
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a PostgresConnection with user name but no db")
+
+	// Case 5: Validate a PostgresConnection with db name but no user, should fail with diagnostics
+	conn = &PostgresConnection{
+		DbName: utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a PostgresConnection with db name but no user")
+
+	pipes := &PipesConnectionMetadata{
+		Connection: utils.ToStringPointer("default"),
+		User:       utils.ToStringPointer("user"),
+		Org:        utils.ToStringPointer("org"),
+		Workspace:  utils.ToStringPointer("ws"),
+	}
+
+	// Case 6: Validate a PostgresConnection with pipes block and no connection string, should pass with no diagnostics
+	conn = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with pipes block and no connection string")
+
+	// Case 7: Validate a PostgresConnection with pipes block and connection string, should fail with diagnostics
+	conn = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		ConnectionString: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a PostgresConnection with pipes block and connection string")
+
+	// Case 8: Validate a PostgresConnection with pipes block and user name, should fail with diagnostics
+	conn = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a PostgresConnection with pipes block and user")
 }
 
 // ------------------------------------------------------------

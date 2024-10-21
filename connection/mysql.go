@@ -101,8 +101,12 @@ func (c *MysqlConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return utils.PtrEqual(c.ConnectionString, other.ConnectionString)
-
+	return utils.PtrEqual(c.UserName, other.UserName) &&
+		utils.PtrEqual(c.Host, other.Host) &&
+		utils.PtrEqual(c.Port, other.Port) &&
+		utils.PtrEqual(c.Password, other.Password) &&
+		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
+		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 }
 
 func (c *MysqlConnection) CtyValue() (cty.Value, error) {

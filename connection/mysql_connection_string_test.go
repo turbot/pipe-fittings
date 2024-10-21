@@ -30,7 +30,7 @@ func Test_buildMysqlConnectionString(t *testing.T) {
 				pPort:     utils.ToIntegerPointer(1234),
 				pPassword: utils.ToStringPointer("password"),
 			},
-			want:    "postgresql://user:password@host:1234/db?sslmode=allow",
+			want:    "mysql://user:password@tcp(host:1234)/db",
 			wantErr: assert.NoError,
 		},
 		{
@@ -41,7 +41,7 @@ func Test_buildMysqlConnectionString(t *testing.T) {
 				pPort:     utils.ToIntegerPointer(1234),
 				pPassword: utils.ToStringPointer("password"),
 			},
-			want:    "postgresql://user:password@localhost:1234/db?sslmode=allow",
+			want:    "mysql://user:password@tcp(localhost:1234)/db",
 			wantErr: assert.NoError,
 		},
 		{
@@ -50,7 +50,7 @@ func Test_buildMysqlConnectionString(t *testing.T) {
 				pDbName:   utils.ToStringPointer("db"),
 				pUserName: utils.ToStringPointer("user"),
 			},
-			want:    "postgresql://user@localhost:5432/db",
+			want:    "mysql://user@tcp(localhost:3306)/db",
 			wantErr: assert.NoError,
 		},
 		{

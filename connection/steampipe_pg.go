@@ -107,8 +107,7 @@ func (c *SteampipePgConnection) GetSearchPathPrefix() []string {
 }
 
 func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {
-	// TODO POSTGRES ENV
-	return map[string]cty.Value{}
+	return postgresConnectionToEnvVarMap(c.ConnectionString, c.DbName, c.UserName, c.Password, c.Host, c.Port, c.SslMode)
 }
 
 func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool {
@@ -131,9 +130,10 @@ func (c *SteampipePgConnection) Equals(otherConnection PipelingConnection) bool 
 		utils.PtrEqual(c.Port, other.Port) &&
 		utils.PtrEqual(c.Password, other.Password) &&
 		utils.SlicePtrEqual(c.SearchPath, other.SearchPath) &&
+		utils.SlicePtrEqual(c.SearchPathPrefix, other.SearchPathPrefix) &&
+		utils.PtrEqual(c.SslMode, other.SslMode) &&
 		utils.PtrEqual(c.ConnectionString, other.ConnectionString) &&
 		c.GetConnectionImpl().Equals(other.GetConnectionImpl())
-
 }
 
 func (c *SteampipePgConnection) CtyValue() (cty.Value, error) {
