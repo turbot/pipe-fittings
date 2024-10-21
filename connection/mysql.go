@@ -10,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const MysqlConnectionType = "Mysql"
+const MysqlConnectionType = "mysql"
 
 type MysqlConnection struct {
 	ConnectionImpl
@@ -42,28 +42,44 @@ func (c *MysqlConnection) Resolve(ctx context.Context) (PipelingConnection, erro
 }
 
 func (c *MysqlConnection) Validate() hcl.Diagnostics {
-	if c.Pipes != nil && (c.ConnectionString != nil) {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "if pipes block is defined, no other auth properties should be set",
-				Subject:  c.DeclRange.HclRangePointer(),
-			},
+	// if pipes metadata is set, no other properties should be sets
+	if c.Pipes != nil {
+		if c.ConnectionString != nil || c.UserName != nil || c.Host != nil || c.Port != nil || c.Password != nil {
+			return hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "if pipes block is defined, no other auth properties should be set",
+					Subject:  c.DeclRange.HclRangePointer(),
+				},
+			}
+		}
+		return nil
+	}
+	// if pipes is not set, either connection_string or user AND db must be set
+	if c.ConnectionString == nil {
+		if c.UserName == nil || c.DbName == nil {
+			return hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "either connection_string or username and db must be set",
+					Subject:  c.DeclRange.HclRangePointer(),
+				},
+			}
+		}
+	} else {
+		// so connection string is set, user and db should not be set
+		if c.UserName != nil || c.DbName != nil {
+			return hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "cannot set both connection_string and username/db",
+					Subject:  c.DeclRange.HclRangePointer(),
+				},
+			}
 		}
 	}
 
-	// one of the two should be set
-	if c.Pipes == nil && c.ConnectionString == nil {
-		return hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "either pipes block or database connection string should be set",
-				Subject:  c.DeclRange.HclRangePointer(),
-			},
-		}
-	}
-
-	return hcl.Diagnostics{}
+	return nil
 }
 
 func (c *MysqlConnection) GetEnv() map[string]cty.Value {
