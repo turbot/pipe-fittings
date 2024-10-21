@@ -196,13 +196,13 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 
 	// if connection string or search path was specified (by the mod referencing a connection), set them
 	if connectionString != nil {
-		mod.Database = connectionString
+		mod.ModDatabase = connectionString
 	}
 	if searchPath != nil {
-		mod.SearchPath = searchPathPrefix
+		mod.ModSearchPath = searchPathPrefix
 	}
 	if searchPathPrefix != nil {
-		mod.SearchPathPrefix = searchPathPrefix
+		mod.ModSearchPathPrefix = searchPathPrefix
 	}
 
 	return mod, res
