@@ -2063,7 +2063,8 @@ func TestMysqlConnectionGetConnectionString(t *testing.T) {
 				Port:     tt.fields.port,
 				Password: tt.fields.password,
 			}
-			c.Validate()
+			// call validate to initialise the default values
+			_ = c.Validate()
 			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
 		})
 	}
@@ -2653,7 +2654,8 @@ func TestPostgresConnectionGetConnectionString(t *testing.T) {
 				Password: tt.fields.password,
 				SslMode:  tt.fields.sslMode,
 			}
-			c.Validate()
+			// call validate to initialise the default values
+			_ = c.Validate()
 			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
 		})
 	}
@@ -2798,7 +2800,9 @@ func TestPostgresConnectionGetEnv(t *testing.T) {
 				Password: tt.fields.password,
 				SslMode:  tt.fields.sslMode,
 			}
-			c.Validate()
+			// call validate to initialise the default values
+			_ = c.Validate()
+
 			assert.Equalf(t, tt.want, c.GetEnv(), "GetEnv()")
 		})
 	}
