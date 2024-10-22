@@ -140,7 +140,7 @@ func (c *PostgresConnection) GetEnv() map[string]cty.Value {
 		c.getDbName(),
 		c.getUserName(),
 		c.getHost(),
-		*c.Port,
+		c.getPort(),
 		c.Password,
 		c.SslMode)
 }
