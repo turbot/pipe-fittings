@@ -73,7 +73,7 @@ func ParseVariableValues(evalContext *hcl.EvalContext, inputValueUnparsed map[st
 		var valDiags tfdiags.Diagnostics
 		// if the variable is a connection, use special case logic to parse the value
 		// - handling connection strings and pipes workspace handle
-		if config.IsConnectionType() {
+		if declared && config.IsConnectionType() {
 			val, valDiags = parseConnectionVariableValue(evalContext, unparsedVal, mode)
 		} else {
 			val, valDiags = unparsedVal.ParseVariableValue(evalContext, mode)
