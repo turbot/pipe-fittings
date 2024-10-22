@@ -228,13 +228,15 @@ func (s *Sanitizer) SanitizeString(v string) string {
 		v = v[:r.start] + RedactedStr + v[r.end:]
 	}
 
-	v = redactDbConnectionPassword(v)
+	// found some cases that it causes a JSON string to be invalid, removing for now. The db connection string
+	// should be redacted by Basic Auth redaction anyway.
+	// v = redactDbConnectionPassword(v)
 	return v
 }
 
 // The database connection string is also redacted by the Basic Auth redaction, it will actually redact more than the
 // plain db redaction
-func redactDbConnectionPassword(connectionString string) string {
+func RedactDbConnectionPassword(connectionString string) string {
 	// Define the regex to match and capture only the password part
 	re := regexp.MustCompile(`(?P<protocol>[^:]+://)(?P<username>[^:]+):(?P<password>[^@]+)(?P<rest>@.+)`)
 	// Replace only the password part with "REDACTED"
