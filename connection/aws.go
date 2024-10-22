@@ -7,7 +7,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -42,7 +41,7 @@ func (c *AwsConnection) GetConnectionType() string {
 func (c *AwsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
+		return c.Pipes.Resolve(ctx, &AwsConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	// if access key and secret key are provided, just return it
@@ -152,15 +151,9 @@ func (c *AwsConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *AwsConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *AwsConnection) GetEnv() map[string]cty.Value {

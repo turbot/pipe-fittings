@@ -1,15 +1,20 @@
 package workspace_profile
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
+	"github.com/turbot/pipe-fittings/pipes"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -43,7 +48,7 @@ type PowerpipeWorkspaceProfile struct {
 	Progress *bool `hcl:"progress" cty:"progress"`
 
 	// "default" db settings
-	Database     *string `hcl:"database" cty:"database"`
+	Database     *string `hcl:"database" cty:"database"` // deprecated
 	QueryTimeout *int    `hcl:"query_timeout,optional" cty:"query_timeout"`
 	MaxParallel  *int    `hcl:"max_parallel" cty:"max-parallel"`
 
@@ -56,6 +61,9 @@ type PowerpipeWorkspaceProfile struct {
 	Output    *string `hcl:"output"`
 	Separator *string `hcl:"separator"`
 	Timing    *bool   `hcl:"timing"`
+
+	// set if this is an implicit profile for a cloud workspace
+	CloudWorkspace *string `hcl:"-"`
 
 	Base      *PowerpipeWorkspaceProfile `hcl:"base"`
 	DeclRange hcl.Range
@@ -235,6 +243,33 @@ func (p *PowerpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.
 		Summary:  "options blocks are supported",
 		Subject:  hclhelpers.BlockRangePointer(block),
 	}}
+}
+
+func (p *PowerpipeWorkspaceProfile) IsCloudWorkspace() bool {
+	return p.CloudWorkspace != nil
+}
+
+// GetPipesMetadata returns the cloud metadata for the cloud workspace
+// note: call IsCloudWorkspace before calling this to ensure it is a cloud workspace
+func (p *PowerpipeWorkspaceProfile) GetPipesMetadata() (*steampipeconfig.PipesMetadata, error_helpers.ErrorAndWarnings) {
+	if !p.IsCloudWorkspace() {
+		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("workspace profile is not a cloud workspace"))
+	}
+
+	// verify the cloud token was provided
+	cloudToken := viper.GetString(constants.ArgPipesToken)
+	if cloudToken == "" {
+		return nil, error_helpers.NewErrorsAndWarning(error_helpers.MissingCloudTokenError())
+	}
+
+	// so we have a database and a token - build the connection string and set it in viper
+	pipesMetadata, err := pipes.GetPipesMetadata(context.Background(), *p.CloudWorkspace, cloudToken)
+	if err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
+
+	// set the default conneciton to the cloud metadata
+	return pipesMetadata, error_helpers.ErrorAndWarnings{}
 }
 
 // searchPathFromString checks that `str` is `nil` and returns a string slice with `str`

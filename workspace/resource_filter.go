@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/danwakefield/fnmatch"
@@ -16,22 +17,24 @@ import (
 
 type ResourceFilter struct {
 	Where          string
-	Tags           map[string]string
+	Tags           map[string][]string
 	WherePredicate func(item modconfig.HclResource) bool
 }
 
 // ResourceFilterFromTags creates a ResourceFilter from a list of tag values of the form 'key=value'
 func ResourceFilterFromTags(tags []string) ResourceFilter {
 	var res = ResourceFilter{
-		Tags: make(map[string]string),
+		Tags: make(map[string][]string),
 	}
 
 	// 'tags' should be KV Pairs of the form: 'benchmark=pic' or 'cis_level=1'
 	for _, tag := range tags {
 		value, _ := url.ParseQuery(tag)
 		for k, v := range value {
-
-			res.Tags[k] = v[0]
+			if _, ok := res.Tags[k]; !ok {
+				res.Tags[k] = []string{}
+			}
+			res.Tags[k] = append(res.Tags[k], v...)
 		}
 	}
 	return res
@@ -73,7 +76,7 @@ func (f *ResourceFilter) getTagPredicate() func(resource modconfig.HclResource) 
 	tagPredicate := func(resource modconfig.HclResource) bool {
 		tags := resource.GetTags()
 		for k, v := range f.Tags {
-			if tags[k] != v {
+			if !slices.Contains(v, tags[k]) {
 				return false
 			}
 		}

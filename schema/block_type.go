@@ -46,6 +46,7 @@ const (
 	BlockTypePipelineBasicAuth = "basic_auth"
 	BlockTypeIntegration       = "integration"
 	BlockTypeLoop              = "loop"
+	BlockTypeConnectionImport  = "connection_import"
 	BlockTypeCredential        = "credential"
 	BlockTypeCredentialImport  = "credential_import" //nolint:gosec // this is not a password
 	BlockTypeNotify            = "notify"
@@ -61,7 +62,8 @@ const (
 	AttributeTypeType    = "type"
 	AttributeTypeDefault = "default"
 	AttributeTypeEnum    = "enum"
-
+	AttributeTypeFormat  = "format"
+	
 	AttributeTypeSensitive = "sensitive"
 	// Pipeline param block
 	AttributeTypeOptional = "optional"
@@ -168,6 +170,7 @@ const (
 	AttributeTypeSelected     = "selected"
 	AttributeTypeNotifier     = "notifier"
 	AttributeTypeNotifies     = "notifies"
+	AttributeTypeNotifierName = "notifier_name"
 	AttributeTypeMarkdown     = "markdown"
 	AttributeTypeStyle        = "style"
 

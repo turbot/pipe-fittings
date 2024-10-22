@@ -11,13 +11,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -48,7 +48,7 @@ type Workspace struct {
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
 
-	CloudMetadata *steampipeconfig.CloudMetadata
+	PipesMetadata *steampipeconfig.PipesMetadata
 
 	// source snapshot paths
 	// if this is set, no other mod resources are loaded and
@@ -70,6 +70,7 @@ type Workspace struct {
 	OnFileWatcherEvent  func(context.Context, *modconfig.ResourceMaps, *modconfig.ResourceMaps)
 	BlockTypeInclusions []string
 	validateVariables   bool
+	supportLateBinding  bool
 }
 
 // Load_ creates a Workspace and loads the workspace mod
@@ -90,6 +91,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 
 	w.Credentials = cfg.credentials
 	w.PipelingConnections = cfg.pipelingConnections
+	w.supportLateBinding = cfg.supportLateBinding
 	w.Integrations = cfg.integrations
 	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
@@ -192,27 +194,18 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 		return error_helpers.NewErrorsAndWarning(err)
 	}
 
-	// resolve values of all input variables
+	// resolve values of all input variables and add to parse context
 	// we WILL validate missing variables when loading
 	// NOTE: this does an initial mod load, loading only variable blocks
-
-	inputVariables, errorsAndWarnings := w.getInputVariables(ctx, w.validateVariables)
-	if errorsAndWarnings.Error != nil {
-		slog.Error("Error loading input variables", "error", errorsAndWarnings.Error)
-		return errorsAndWarnings
+	inputVariables, ew := w.resolveVariableValues(ctx)
+	if ew.Error != nil {
+		return ew
 	}
-
-	// populate the parsed variable values
-	w.VariableValues, errorsAndWarnings.Error = inputVariables.GetPublicVariableValues()
-	if errorsAndWarnings.Error != nil {
-		return errorsAndWarnings
-	}
-
 	// build run context which we use to load the workspace
 	parseCtx, err := w.getParseContext(ctx)
 	if err != nil {
-		errorsAndWarnings.Error = err
-		return errorsAndWarnings
+		ew.Error = err
+		return ew
 	}
 
 	// add evaluated variables to the context
@@ -231,9 +224,9 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 
 	// load the workspace mod
 	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
-	errorsAndWarnings.Merge(otherErrorAndWarning)
-	if errorsAndWarnings.Error != nil {
-		return errorsAndWarnings
+	ew.Merge(otherErrorAndWarning)
+	if ew.Error != nil {
+		return ew
 	}
 
 	// now set workspace properties
@@ -248,24 +241,69 @@ func (w *Workspace) loadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	w.Mods[w.Mod.Name()] = w.Mod
 
 	// verify all runtime dependencies can be resolved
-	errorsAndWarnings.Error = w.verifyResourceRuntimeDependencies()
+	ew.Error = w.verifyResourceRuntimeDependencies()
 
-	return errorsAndWarnings
+	return ew
 }
 
-func (w *Workspace) getInputVariables(ctx context.Context, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
-	utils.LogTime("getInputVariables start")
-	defer utils.LogTime("getInputVariables end")
+// resolve values of all input variables
+// we may need to load the mod more than once to resolve all variable dependencies
+func (w *Workspace) resolveVariableValues(ctx context.Context) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+	lastDependCount := -1
 
-	variablesParseCtx, ew := w.getVariablesParseContext(ctx)
-	if ew.Error != nil {
-		return nil, ew
+	var inputVariables *modconfig.ModVariableMap
+	var ew error_helpers.ErrorAndWarnings
+
+	for {
+		variablesParseCtx, ew := w.getVariablesParseContext(ctx, inputVariables)
+		if ew.Error != nil {
+			return nil, ew
+		}
+
+		utils.LogTime("getInputVariables start")
+
+		var otherEw error_helpers.ErrorAndWarnings
+		inputVariables, otherEw = w.getVariableValues(ctx, variablesParseCtx, w.validateVariables)
+		utils.LogTime("getInputVariables end")
+		ew.Merge(otherEw)
+		if ew.Error != nil {
+			slog.Error("Error loading input variables", "error", ew.Error)
+			return nil, ew
+		}
+
+		// populate the parsed variable values
+		w.VariableValues, ew.Error = inputVariables.GetPublicVariableValues()
+		if ew.Error != nil {
+			return nil, error_helpers.ErrorAndWarnings{}
+		}
+
+		// do we have any variable dependencies? If so there will be warnings
+		dependCount := getVariableDependencyCount(ew)
+		if dependCount == 0 {
+			break
+		}
+		if dependCount == lastDependCount {
+			slog.Warn("Failed to resolve all variable dependencies")
+			break
+		}
+
+		lastDependCount = dependCount
 	}
 
-	return w.getVariableValues(ctx, variablesParseCtx, validateMissing)
+	return inputVariables, ew
 }
 
-func (w *Workspace) getVariablesParseContext(ctx context.Context) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
+func getVariableDependencyCount(ew error_helpers.ErrorAndWarnings) int {
+	count := 0
+	for _, w := range ew.Warnings {
+		if strings.Contains(w, constants.MissingVariableWarning) {
+			count++
+		}
+	}
+	return count
+}
+
+func (w *Workspace) getVariablesParseContext(ctx context.Context, inputVariable *modconfig.ModVariableMap) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
 	// build a run context just to use to load variable definitions
 	variablesParseCtx, err := w.getParseContext(ctx)
 	if err != nil {
@@ -275,6 +313,12 @@ func (w *Workspace) getVariablesParseContext(ctx context.Context) (*parse.ModPar
 	variablesParseCtx.SetBlockTypes(schema.BlockTypeVariable)
 	// NOTE: exclude mod block as we have already loaded the mod definition
 	variablesParseCtx.SetBlockTypeExclusions(schema.BlockTypeMod)
+	// add the connections and notifiers to the eval context
+	variablesParseCtx.SetIncludeLateBindingResources(true)
+
+	if inputVariable != nil {
+		variablesParseCtx.AddInputVariableValues(inputVariable)
+	}
 	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
 }
 
@@ -283,12 +327,14 @@ func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *pa
 	defer utils.LogTime("getInputVariables end")
 
 	// load variable definitions
-	variableMap, err := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
-	if err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+	variableMap, ew := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
+	if ew.Error != nil {
+		return nil, ew
 	}
 	// get the values
-	return load_mod.GetVariableValues(variablesParseCtx, variableMap, validateMissing)
+	m, moreEw := load_mod.GetVariableValues(variablesParseCtx, variableMap, validateMissing)
+	ew.Merge(moreEw)
+	return m, ew
 }
 
 // build options used to load workspace
@@ -297,19 +343,24 @@ func (w *Workspace) getParseContext(ctx context.Context) (*parse.ModParseContext
 	if err != nil {
 		return nil, err
 	}
+	listOptions := filehelpers.ListOptions{
+		Flags:   filehelpers.FilesRecursive,
+		Exclude: w.exclusions,
+		// load files specified by inclusions
+		Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
+	}
 
-	parseCtx := parse.NewModParseContext(workspaceLock,
-		w.Path,
+	parseCtx, err := parse.NewModParseContext(workspaceLock, w.Path,
 		parse.WithParseFlags(parse.CreateDefaultMod),
-		parse.WithListOptions(filehelpers.ListOptions{
-			Flags:   filehelpers.FilesRecursive,
-			Exclude: w.exclusions,
-			// load files specified by inclusions
-			Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
-		}))
+		parse.WithListOptions(listOptions),
+		parse.WithConnections(w.PipelingConnections),
+		parse.WithLateBinding(w.supportLateBinding))
+
+	if err != nil {
+		return nil, err
+	}
 
 	parseCtx.Credentials = w.Credentials
-	parseCtx.PipelingConnections = w.PipelingConnections
 	parseCtx.Integrations = w.Integrations
 	parseCtx.Notifiers = w.Notifiers
 

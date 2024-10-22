@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -32,7 +31,7 @@ func (c *AlicloudConnection) GetConnectionType() string {
 func (c *AlicloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AlicloudConnection{})
+		return c.Pipes.Resolve(ctx, &AlicloudConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	// The order of precedence for the environment variable
@@ -139,15 +138,9 @@ func (c *AlicloudConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *AlicloudConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *AlicloudConnection) GetEnv() map[string]cty.Value {

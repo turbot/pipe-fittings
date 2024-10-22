@@ -139,7 +139,7 @@ var compatibleTests = map[string]compatibleTest{
 		value:    cty.ListVal([]cty.Value{cty.ListVal([]cty.Value{cty.NumberIntVal(42), cty.NumberIntVal(43)}), cty.ListVal([]cty.Value{cty.NumberIntVal(42), cty.NumberIntVal(43)})}),
 		expected: false,
 	},
-	"list of list of string vs tuplie of list of number": {
+	"list of list of string vs tuple of list of number": {
 		ctyType:  cty.List(cty.List(cty.String)),
 		value:    cty.TupleVal([]cty.Value{cty.ListVal([]cty.Value{cty.NumberIntVal(42), cty.NumberIntVal(43)}), cty.ListVal([]cty.Value{cty.NumberIntVal(42), cty.NumberIntVal(43)})}),
 		expected: false,

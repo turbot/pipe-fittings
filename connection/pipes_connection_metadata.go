@@ -4,18 +4,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/perr"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/perr"
+
 	"github.com/turbot/pipe-fittings/constants"
 )
 
-const defaultCloudHost = "pipes.turbot.com"
+const (
+	prodCoudHost   = "pipes.turbot.com"
+	stgCloudHost   = "pipes.turbot-stg.com"
+	devCloudHost   = "pipes.turbot-dev.com"
+	localCloudHost = "pipes.turbot-local.com:8080"
+	mockCloudHost  = "localhost:7104"
+)
+
+var allowedCloudHosts = []string{
+	prodCoudHost,
+	stgCloudHost,
+	devCloudHost,
+	localCloudHost,
+	mockCloudHost,
+}
 
 type PipesConnectionMetadata struct {
 	CloudHost  *string `json:"cloud_host,omitempty" cty:"cloud_host" hcl:"cloud_host,optional"`
@@ -108,11 +123,19 @@ func (m PipesConnectionMetadata) handlePipesCredApiResponse(resp io.ReadCloser, 
 }
 
 func (m PipesConnectionMetadata) endpoint() string {
-	cloudHost := defaultCloudHost
+	cloudHost := prodCoudHost
 
 	if m.CloudHost != nil {
 		cloudHost = *m.CloudHost
 	}
+
+	if m.CloudHost != nil && *m.CloudHost == mockCloudHost {
+		if m.Org != nil {
+			return fmt.Sprintf("http://%s/api/v0/org/%s/workspace/%s/connection/%s/private", cloudHost, *m.Org, *m.Workspace, *m.Connection)
+		}
+		return fmt.Sprintf("http://%s/api/v0/user/%s/workspace/%s/connection/%s/private", cloudHost, *m.User, *m.Workspace, *m.Connection)
+	}
+
 	// org or user?
 	if m.Org != nil {
 		return fmt.Sprintf("https://%s/api/v0/org/%s/workspace/%s/connection/%s/private", cloudHost, *m.Org, *m.Workspace, *m.Connection)
@@ -123,24 +146,33 @@ func (m PipesConnectionMetadata) endpoint() string {
 func (m PipesConnectionMetadata) validate() error {
 	// connection, workspace and either user or org are required
 	if m.Connection == nil {
-		return fmt.Errorf("connection is required")
+		return perr.BadRequestWithMessage("connection is required")
+
 	}
 	if m.Workspace == nil {
-		return fmt.Errorf("workspace is required")
+		return perr.BadRequestWithMessage("workspace is required")
 	}
 	if m.User == nil && m.Org == nil {
-		return fmt.Errorf("either user or org is required")
+		return perr.BadRequestWithMessage("either user or org is required")
 	}
 	// if org is provided, user is not allowed
 	if m.Org != nil && m.User != nil {
-		return fmt.Errorf("only one of user or org is allowed")
+		return perr.BadRequestWithMessage("only one of user or org is allowed")
 	}
 
 	// cloudhost, if provided, must END in pipes.turbot.com
 	if m.CloudHost != nil {
-		if !strings.HasSuffix(*m.CloudHost, defaultCloudHost) {
-			return fmt.Errorf("cloud_host must end in %s", defaultCloudHost)
+		valid := false
+		for _, host := range allowedCloudHosts {
+			if strings.HasSuffix(*m.CloudHost, host) {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return perr.BadRequestWithMessage("cloud_host must end in one of the allowed hosts")
 		}
 	}
+
 	return nil
 }

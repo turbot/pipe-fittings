@@ -1,4 +1,4 @@
-package cloud
+package pipes
 
 import (
 	"fmt"
@@ -6,12 +6,12 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
-	steampipecloud "github.com/turbot/pipes-sdk-go"
+	"github.com/turbot/pipes-sdk-go"
 )
 
-func newSteampipeCloudClient(token string) *steampipecloud.APIClient {
+func newPipesClient(token string) *pipes.APIClient {
 	// Create a default configuration
-	configuration := steampipecloud.NewConfiguration()
+	configuration := pipes.NewConfiguration()
 	configuration.Host = viper.GetString(constants.ArgPipesHost)
 
 	// Add your Turbot Pipes user token as an auth header
@@ -20,7 +20,7 @@ func newSteampipeCloudClient(token string) *steampipecloud.APIClient {
 	}
 
 	// Create a client
-	return steampipecloud.NewAPIClient(configuration)
+	return pipes.NewAPIClient(configuration)
 }
 
 func getLoginTokenConfirmUIUrl() string {

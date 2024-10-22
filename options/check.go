@@ -8,6 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
+// Check options are deprecated and removed. They are kept here for compatibility with old configurations.
 type Check struct {
 	Output    *string `hcl:"output" cty:"check_output"`
 	Separator *string `hcl:"separator" cty:"check_separator"`

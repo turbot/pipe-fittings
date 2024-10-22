@@ -2,6 +2,8 @@ package connection
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
@@ -13,7 +15,7 @@ const DuckDbConnectionType = "duckdb"
 
 type DuckDbConnection struct {
 	ConnectionImpl
-	ConnectionString *string `json:"database,omitempty" cty:"database" hcl:"database,optional"`
+	FileName *string `json:"file_name,omitempty" cty:"file_name" hcl:"file_name,optional"`
 }
 
 func NewDuckDbConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -28,20 +30,14 @@ func (c *DuckDbConnection) GetConnectionType() string {
 func (c *DuckDbConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AwsConnection{})
-	}
-	// if we have a connection string, return it as is
-	if c.ConnectionString != nil {
-		return c, nil
+		return c.Pipes.Resolve(ctx, &DuckDbConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
-	// TODO KAI build a connection string from the other fields
-	panic("implement me")
-
+	return c, nil
 }
 
 func (c *DuckDbConnection) Validate() hcl.Diagnostics {
-	if c.Pipes != nil && (c.ConnectionString != nil) {
+	if c.Pipes != nil && (c.FileName != nil) {
 		return hcl.Diagnostics{
 			{
 				Severity: hcl.DiagError,
@@ -55,7 +51,6 @@ func (c *DuckDbConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *DuckDbConnection) GetEnv() map[string]cty.Value {
-	// TODO DUCKDB ENV
 	return map[string]cty.Value{}
 }
 
@@ -74,7 +69,7 @@ func (c *DuckDbConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
-	return utils.PtrEqual(c.ConnectionString, other.ConnectionString)
+	return utils.PtrEqual(c.FileName, other.FileName)
 
 }
 
@@ -83,8 +78,12 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *DuckDbConnection) GetConnectionString() string {
-	if c.ConnectionString != nil {
-		return *c.ConnectionString
+	return fmt.Sprintf("duckdb://%s", c.getFileName())
+}
+
+func (c *DuckDbConnection) getFileName() any {
+	if c.FileName != nil {
+		return *c.FileName
 	}
-	return ""
+	return os.Getenv("DUCKDB_FILENAME")
 }

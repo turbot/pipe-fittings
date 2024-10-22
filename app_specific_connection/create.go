@@ -1,12 +1,16 @@
 package app_specific_connection
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
+
+var BaseConnectionCtyType = cty.Capsule("BaseConnectionCtyType", reflect.TypeOf(&connection.ConnectionImpl{}))
 
 func NewPipelingConnection(connectionType, shortName string, declRange hcl.Range) (connection.PipelingConnection, error) {
 	ctor, exists := ConnectionTypeRegistry[connectionType]
@@ -18,6 +22,11 @@ func NewPipelingConnection(connectionType, shortName string, declRange hcl.Range
 }
 
 func ConnectionCtyType(connectionType string) cty.Type {
+	// NOTE: if not type is provided, just return the type of ConnectionImpl
+	if connectionType == "" {
+		return BaseConnectionCtyType
+	}
+
 	ctor, exists := ConnectionTypeRegistry[connectionType]
 	if !exists {
 		return cty.NilType
@@ -37,28 +46,59 @@ func DefaultPipelingConnections() (map[string]connection.PipelingConnection, err
 	conns := make(map[string]connection.PipelingConnection)
 
 	for k := range ConnectionTypeRegistry {
-		defaultCred, err := NewPipelingConnection(k, "default", hcl.Range{})
+		defaultConnection, err := NewPipelingConnection(k, "default", hcl.Range{})
 		if err != nil {
 			return nil, err
 		}
-
-		conns[k+".default"] = defaultCred
-
-		RegisterConnectionType(k)
+		conns[k+".default"] = defaultConnection
 	}
 
 	return conns, nil
 }
 
-var ConnectionTypeLookup = make(map[string]struct{}, 0)
-
-func RegisterConnectionType(connectionType string) {
-	ConnectionTypeLookup[connectionType] = struct{}{}
+// ConnectionStringFromConnectionName resolves the connection name to a conneciton onbject in the eval context and
+// return the connection string
+func ConnectionStringFromConnectionName(evalContext *hcl.EvalContext, longName string) (string, error) {
+	ty, name, err := parseConnectionName(longName)
+	if err != nil {
+		return "", err
+	}
+	// look in the eval context for the connection
+	connectionMap, ok := evalContext.Variables["connection"]
+	if !ok {
+		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+	}
+	connextionsOfType, ok := connectionMap.AsValueMap()[ty]
+	if !ok {
+		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+	}
+	connCty, ok := connextionsOfType.AsValueMap()[name]
+	if !ok {
+		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+	}
+	conn, err := CtyValueToConnection(connCty)
+	if err != nil {
+		return "", err
+	}
+	csp, ok := conn.(connection.ConnectionStringProvider)
+	if !ok {
+		return "", perr.BadRequestWithMessage("connection does not support connection string: " + longName)
+	}
+	return csp.GetConnectionString(), nil
 }
 
-func ConnectionBlockForType(connectionType string) *hcl.Block {
-	return &hcl.Block{
-		Type:   connectionType,
-		Labels: []string{connectionType},
+// parseConnectionName parses the connection name in the form "connection.<type>.<name>", and returns the type and name
+func parseConnectionName(longName string) (ty, name string, err error) {
+	if !strings.HasPrefix(longName, "connection.") {
+		return "", "", perr.BadRequestWithMessage("invalid connection reference: " + longName)
 	}
+
+	parts := strings.Split(longName, ".")
+	if len(parts) != 3 {
+		return "", "", perr.BadRequestWithMessage("invalid connection reference: " + longName)
+	}
+	ty = parts[1]
+	name = parts[2]
+
+	return ty, name, nil
 }

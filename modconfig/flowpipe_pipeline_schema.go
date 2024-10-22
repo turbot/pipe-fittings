@@ -215,7 +215,7 @@ var TriggerQueryBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name:     schema.AttributeTypeDatabase,
-			Required: true,
+			Required: false,
 		},
 		{
 			Name: schema.AttributeTypeEnabled,
@@ -348,6 +348,10 @@ var PipelineParamBlockSchema = &hcl.BodySchema{
 		},
 		{
 			Name:     schema.AttributeTypeOptional,
+			Required: false,
+		},
+		{
+			Name:     schema.AttributeTypeFormat,
 			Required: false,
 		},
 	},

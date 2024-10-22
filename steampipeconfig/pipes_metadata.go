@@ -1,10 +1,14 @@
 package steampipeconfig
 
-type CloudMetadata struct {
+type PipesMetadata struct {
 	Actor            *ActorMetadata     `json:"actor,omitempty"`
 	Identity         *IdentityMetadata  `json:"identity,omitempty"`
 	Workspace        *WorkspaceMetadata `json:"workspace,omitempty"`
 	ConnectionString string             `json:"-"`
+}
+
+func (c *PipesMetadata) GetConnectionString() string {
+	return c.ConnectionString
 }
 
 type ActorMetadata struct {

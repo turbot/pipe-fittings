@@ -3,34 +3,29 @@ package workspace_profile
 import (
 	"fmt"
 
+	"reflect"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 )
 
 type SteampipeWorkspaceProfile struct {
-	ProfileName string `hcl:"name,label" cty:"name"`
-	// deprecated
-	CloudHost *string `hcl:"cloud_host,optional" cty:"cloud_host"`
-	PipesHost *string `hcl:"pipes_host,optional" cty:"pipes_host"`
-	// deprecated
-	CloudToken        *string                    `hcl:"cloud_token,optional" cty:"cloud_token"`
+	ProfileName       string                     `hcl:"name,label" cty:"name"`
+	PipesHost         *string                    `hcl:"pipes_host,optional" cty:"pipes_host"`
 	PipesToken        *string                    `hcl:"pipes_token,optional" cty:"pipes_token"`
 	InstallDir        *string                    `hcl:"install_dir,optional" cty:"install_dir"`
-	ModLocation       *string                    `hcl:"mod_location,optional" cty:"mod_location"`
 	QueryTimeout      *int                       `hcl:"query_timeout,optional" cty:"query_timeout"`
 	SnapshotLocation  *string                    `hcl:"snapshot_location,optional" cty:"snapshot_location"`
 	WorkspaceDatabase *string                    `hcl:"workspace_database,optional" cty:"workspace_database"`
 	SearchPath        *string                    `hcl:"search_path" cty:"search_path"`
 	SearchPathPrefix  *string                    `hcl:"search_path_prefix" cty:"search_path_prefix"`
-	Watch             *bool                      `hcl:"watch" cty:"watch"`
 	MaxParallel       *int                       `hcl:"max_parallel" cty:"max-parallel"`
-	Introspection     *string                    `hcl:"introspection" cty:"introspection"`
 	Input             *bool                      `hcl:"input" cty:"input"`
 	Progress          *bool                      `hcl:"progress" cty:"progress"`
 	Theme             *string                    `hcl:"theme" cty:"theme"`
@@ -39,11 +34,19 @@ type SteampipeWorkspaceProfile struct {
 	Base              *SteampipeWorkspaceProfile `hcl:"base"`
 
 	// options
-	QueryOptions     *options.Query     `cty:"query-options"`
+	QueryOptions *options.Query `cty:"query-options"`
+
+	DeclRange hcl.Range
+	block     *hcl.Block
+
+	// no longer supported, exists here only to avoid errors (remove in future steampipe release)
+	CloudHost        *string            `hcl:"cloud_host,optional" cty:"cloud_host"`
+	CloudToken       *string            `hcl:"cloud_token,optional" cty:"cloud_token"`
+	ModLocation      *string            `hcl:"mod_location,optional" cty:"mod_location"`
+	Watch            *bool              `hcl:"watch" cty:"watch"`
+	Introspection    *string            `hcl:"introspection" cty:"introspection"`
 	CheckOptions     *options.Check     `cty:"check-options"`
 	DashboardOptions *options.Dashboard `cty:"dashboard-options"`
-	DeclRange        hcl.Range
-	block            *hcl.Block
 }
 
 func NewSteampipeWorkspaceProfile(block *hcl.Block) *SteampipeWorkspaceProfile {
@@ -140,50 +143,34 @@ func (p *SteampipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 
 func (p *SteampipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
-
-	return p.validate()
+	// show warnings for deprecated/removed properties
+	p.showDeprecationWarnings()
+	return nil
 }
 
-func (p *SteampipeWorkspaceProfile) validate() hcl.Diagnostics {
-	var diags hcl.Diagnostics
-	// validate that both deprecated and new versions of propertied have not been set
-	if p.CloudHost != nil && p.PipesHost != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "both cloud_host and pipes_host cannot be set",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	if p.CloudToken != nil && p.PipesToken != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "both cloud_token and pipes_token cannot be set",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
-	}
-	// return warnings if deprecated properties are set
+// showDeprecationWarnings shows warnings for removed properties because we dont want to fail
+func (p *SteampipeWorkspaceProfile) showDeprecationWarnings() {
+	var ew = error_helpers.ErrorAndWarnings{}
+
 	if p.CloudHost != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  "cloud_host is deprecated, use pipes_host",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
+		ew.AddWarning(fmt.Sprintf("argument 'cloud_host' has been removed from the workspace profile, please use 'pipes_host' (%v)", p.GetDeclRange()))
 	}
 	if p.CloudToken != nil {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagWarning,
-			Summary:  "cloud_token is deprecated, use pipes_token",
-			Subject:  hclhelpers.BlockRangePointer(p.block),
-		})
+		ew.AddWarning(fmt.Sprintf("argument 'cloud_token' has been removed from the workspace profile, please use 'pipes_token' (%v)", p.GetDeclRange()))
 	}
-	return diags
+	if p.Watch != nil || p.ModLocation != nil || p.Introspection != nil {
+		ew.AddWarning(fmt.Sprintf("arguments 'watch', 'mod_location' and 'introspection' have been removed from the workspace profile because mod functionality has been moved to Powerpipe(https://powerpipe.io/docs). (%v)", p.GetDeclRange()))
+	}
+	if p.CheckOptions != nil || p.DashboardOptions != nil {
+		ew.AddWarning(fmt.Sprintf("options 'check' and 'dashboard' have been removed from the workspace profile because mod functionality has been moved to Powerpipe(https://powerpipe.io/docs). (%v)", p.GetDeclRange()))
+	}
+	ew.ShowWarnings()
 }
 
 func (p *SteampipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
 	}
-
 	if p.CloudHost == nil {
 		p.CloudHost = p.Base.CloudHost
 	}
@@ -266,8 +253,8 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)
 	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
 	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
-	res.SetBoolItem(p.Watch, constants.ArgWatch)
 	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
+	res.SetBoolItem(p.Watch, constants.ArgWatch)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPath, ","), constants.ArgSearchPath)
 	res.SetStringSliceItem(searchPathFromString(p.SearchPathPrefix, ","), constants.ArgSearchPathPrefix)
 	res.SetStringItem(p.Introspection, constants.ArgIntrospection)

@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/plugin"
@@ -58,6 +61,12 @@ type Mod struct {
 
 	// convenient aggregation of all resources
 	ResourceMaps *ResourceMaps `json:"-"`
+
+	// store mod database, search path and search path prefix in separate variables from the ModTreeItemImpl fields
+	// as these have lower precedence
+	ModDatabase         *string  `cty:"mod_database"`
+	ModSearchPath       []string `cty:"mod_search_path"`
+	ModSearchPathPrefix []string `cty:"mod_search_path_prefix"`
 
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
@@ -127,6 +136,15 @@ func (m *Mod) Equals(other *Mod) bool {
 
 	// now check the child resources
 	return m.ResourceMaps.Equals(other.ResourceMaps)
+}
+
+func (m *Mod) CacheKey() string {
+	cacheKey := m.Name()
+	if m.Version != nil {
+		cacheKey += "." + m.Version.String()
+	}
+
+	return cacheKey
 }
 
 // CreateDefaultMod creates a default mod created for a workspace with no mod definition
@@ -386,4 +404,26 @@ func (m *Mod) RequireHasUnresolvedArgs() bool {
 		}
 	}
 	return false
+}
+
+func (m *Mod) GetConnectionDependsOn() []string {
+	if m.ModDatabase != nil && strings.HasPrefix(*m.ModDatabase, "connection.") {
+		return []string{strings.TrimPrefix(*m.ModDatabase, "connection.")}
+	}
+	return nil
+}
+
+func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
+	if m.ModDatabase != nil {
+		modDatabase := *m.ModDatabase
+
+		// if the database is actually a connection name, try to resolve from eval context
+		if strings.HasPrefix(modDatabase, "connection.") {
+			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, modDatabase)
+		} else {
+			return modDatabase, nil
+		}
+	}
+	// if no database is set on mod, use the default steampipe connection
+	return constants.DefaultSteampipeConnectionString, nil
 }

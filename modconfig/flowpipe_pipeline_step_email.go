@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/schema"
@@ -59,177 +58,115 @@ func (p *PipelineStepEmail) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepEmail) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
-	var to []string
-	if p.UnresolvedAttributes[schema.AttributeTypeTo] == nil {
-		to = p.To
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeTo], evalContext, &to)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var from *string
-	if p.UnresolvedAttributes[schema.AttributeTypeFrom] == nil {
-		from = p.From
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeFrom], evalContext, &from)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var smtpUsername *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSmtpUsername] == nil {
-		smtpUsername = p.SmtpUsername
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSmtpUsername], evalContext, &smtpUsername)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var smtpPassword *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSmtpPassword] == nil {
-		smtpPassword = p.SmtpPassword
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSmtpPassword], evalContext, &smtpPassword)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var host *string
-	if p.UnresolvedAttributes[schema.AttributeTypeHost] == nil {
-		host = p.Host
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeHost], evalContext, &host)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var port *int64
-	if p.UnresolvedAttributes[schema.AttributeTypePort] == nil {
-		port = p.Port
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypePort], evalContext, &port)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var senderName *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSenderName] == nil {
-		senderName = p.SenderName
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSenderName], evalContext, &senderName)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var body *string
-	if p.UnresolvedAttributes[schema.AttributeTypeBody] == nil {
-		body = p.Body
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeBody], evalContext, &body)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var subject *string
-	if p.UnresolvedAttributes[schema.AttributeTypeSubject] == nil {
-		subject = p.Subject
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeSubject], evalContext, &subject)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var contentType *string
-	if p.UnresolvedAttributes[schema.AttributeTypeContentType] == nil {
-		contentType = p.ContentType
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeContentType], evalContext, &contentType)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var cc []string
-	if p.UnresolvedAttributes[schema.AttributeTypeCc] == nil {
-		cc = p.Cc
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeCc], evalContext, &cc)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
-
-	var bcc []string
-	if p.UnresolvedAttributes[schema.AttributeTypeBcc] == nil {
-		bcc = p.Bcc
-	} else {
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeBcc], evalContext, &bcc)
-		if diags.HasErrors() {
-			return nil, error_helpers.HclDiagsToError(p.Name, diags)
-		}
-	}
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
+}
+func (p *PipelineStepEmail) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 
 	results := map[string]interface{}{}
+	var allConnectionDependencies []ConnectionDependency
 
-	if to != nil {
-		results[schema.AttributeTypeTo] = to
+	// to
+	toValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeTo, p.To)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeTo] = toValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// from
+	fromValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeFrom, p.From)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeFrom] = fromValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// smtp_username
+	smtpUsernameValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSmtpUsername, p.SmtpUsername)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeSmtpUsername] = smtpUsernameValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// smtp_password
+	smtpPasswordValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSmtpPassword, p.SmtpPassword)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeSmtpPassword] = smtpPasswordValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// host
+	hostValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeHost, p.Host)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+	results[schema.AttributeTypeHost] = hostValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// port
+	portValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypePort, p.Port)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
+	}
+	if portValueInt, ok := portValue.(int); ok {
+		portValue = int64(portValueInt)
 	}
 
-	if from != nil {
-		results[schema.AttributeTypeFrom] = *from
-	}
+	results[schema.AttributeTypePort] = portValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if smtpUsername != nil {
-		results[schema.AttributeTypeSmtpUsername] = *smtpUsername
+	// sender_name
+	senderNameValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSenderName, p.SenderName)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeSenderName] = senderNameValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if smtpPassword != nil {
-		results[schema.AttributeTypeSmtpPassword] = *smtpPassword
+	// body
+	bodyValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeBody, p.Body)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeBody] = bodyValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if host != nil {
-		results[schema.AttributeTypeHost] = *host
+	// subject
+	subjectValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSubject, p.Subject)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeSubject] = subjectValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if port != nil {
-		results[schema.AttributeTypePort] = *port
+	// content_type
+	contentTypeValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeContentType, p.ContentType)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeContentType] = contentTypeValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if senderName != nil {
-		results[schema.AttributeTypeSenderName] = *senderName
+	// cc
+	ccValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeCc, p.Cc)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeCc] = ccValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if cc != nil {
-		results[schema.AttributeTypeCc] = cc
+	// bcc
+	bccValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeBcc, p.Bcc)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.HclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeBcc] = bccValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
-	if bcc != nil {
-		results[schema.AttributeTypeBcc] = bcc
-	}
-
-	if body != nil {
-		results[schema.AttributeTypeBody] = *body
-	}
-
-	if contentType != nil {
-		results[schema.AttributeTypeContentType] = *contentType
-	}
-
-	if subject != nil {
-		results[schema.AttributeTypeSubject] = *subject
-	}
-
-	return results, nil
+	return results, allConnectionDependencies, nil
 }
 
 func (p *PipelineStepEmail) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

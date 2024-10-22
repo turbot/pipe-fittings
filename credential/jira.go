@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -25,15 +24,7 @@ func (c *JiraCredential) getEnv() map[string]cty.Value {
 }
 
 func (c *JiraCredential) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.getEnv())
-
-	return cty.ObjectVal(valueMap), nil
+	return ctyValueForCredential(c)
 }
 
 func (c *JiraCredential) Equals(otherCredential Credential) bool {
@@ -135,6 +126,8 @@ func (c *JiraConnectionConfig) GetCredential(name string, shortName string) Cred
 		// there is another type of token (personal access token)
 		// In future we could update the Steampipe plugin arg too, but not necessary right now.
 		APIToken: &jiraAPIToken,
+		BaseURL:  c.BaseURL,
+		Username: c.Username,
 	}
 
 	return jiraCred

@@ -87,11 +87,12 @@ func (suite *FlowpipeModTestSuite) TearDownSuite() {
 
 func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_throw_config", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipelines := w.Mod.ResourceMaps.Pipelines
 
@@ -105,10 +106,11 @@ func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 
 func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_with_tags", workspace.WithCredentials(map[string]credential.Credential{}))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -137,13 +139,14 @@ func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 
 func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_dependencies"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_dependencies", workspace.WithCredentials(flowpipeConfig.Credentials))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	rootMod := w.Mod
 	if rootMod == nil {
@@ -156,15 +159,101 @@ func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
 	assert.Equal(0, len(w.Mods["mod_depend_b"].ResourceMaps.Triggers), "Expected 0 trigger in mod_depend_a")
 }
 
+func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
+	assert := assert.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_with_param"})
+	assert.Nil(err.Error)
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_with_param", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	assert.NotNil(w)
+	assert.Nil(errorAndWarning.Error)
+
+	rootMod := w.Mod
+	if rootMod == nil {
+		assert.Fail("mod is nil")
+		return
+	}
+
+	trigger := rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_param"]
+	if trigger == nil {
+		assert.Fail("trigger not found")
+		return
+	}
+
+	// check trigger params
+	assert.Equal(3, len(trigger.Params))
+	for _, param := range trigger.Params {
+		switch param.Name {
+		case "database_connection":
+			assert.Equal("string", param.TypeString)
+			assert.Equal("postgres://steampipe:@localhost:9193/steampipe", param.Default.AsString())
+		case "sql":
+			assert.Equal("string", param.TypeString)
+			assert.Equal("select * from aws_s3_bucket", param.Default.AsString())
+		case "primary_key":
+			assert.Equal("string", param.TypeString)
+			assert.Equal("arn", param.Default.AsString())
+		default:
+			assert.Fail("unexpected param")
+		}
+	}
+
+	unresolvedAttributes := trigger.Config.GetUnresolvedAttributes()
+	assert.Equal(3, len(unresolvedAttributes))
+
+	trigger = rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_connection"]
+	if trigger == nil {
+		assert.Fail("trigger not found")
+		return
+	}
+
+	config, ok := trigger.Config.(*modconfig.TriggerQuery)
+	if !ok {
+		assert.Fail("trigger is not a query trigger")
+		return
+	}
+
+	db := config.GetUnresolvedAttributes()["database"]
+	if db == nil {
+		assert.Fail("database attribute not found")
+		return
+	}
+
+	conns := config.GetConnectionDependsOn()
+	assert.Equal(1, len(conns))
+	assert.Equal("steampipe.default", conns[0])
+
+	trigger = rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_connection_in_param"]
+	if trigger == nil {
+		assert.Fail("trigger not found")
+		return
+	}
+
+	config, ok = trigger.Config.(*modconfig.TriggerQuery)
+	if !ok {
+		assert.Fail("trigger is not a query trigger")
+		return
+	}
+
+	db = config.GetUnresolvedAttributes()["database"]
+	if db == nil {
+		assert.Fail("database attribute not found")
+		return
+	}
+
+}
+
 func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./tags_multiple_files"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./tags_multiple_files", workspace.WithCredentials(flowpipeConfig.Credentials))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -175,10 +264,11 @@ func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
 
 func (suite *FlowpipeModTestSuite) TestModWithDocs() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./with_docs", workspace.WithCredentials(map[string]credential.Credential{}))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -197,11 +287,12 @@ func (suite *FlowpipeModTestSuite) TestModWithDocs() {
 
 func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./good_mod", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -271,11 +362,12 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 
 func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_references", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -293,7 +385,6 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 	assert := assert.New(suite.T())
-
 	// Reading from different file will always result in different config
 	_, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_invalid_integration"})
 	assert.NotNil(err.Error)
@@ -334,8 +425,8 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 
 	// Check that the connection is loaded in the workspace
 	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connections", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pcon = w.PipelingConnections["aws.prod_conn"]
 	if helpers.IsNil(pcon) {
@@ -377,9 +468,36 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert.Equal("sfhshfhslfh", stepInputs["value"], "profile should be set to sfhshfhslfh")
 }
 
+// verify credentials are converted to connections but DO NOT overwrite existing connections
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigCredentialsAndConnection() {
+	assert := assert.New(suite.T())
+	require := require.New(suite.T())
+
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_credentials_and_connections"})
+	require.Nil(err.Error)
+
+	// verify that the slack credential has been copied to a connection bu the existing aws connection is not overwritten
+	// has slack been copied
+	slackConn := flowpipeConfig.PipelingConnections["slack.slack_conn"]
+	if helpers.IsNil(slackConn) {
+		assert.Fail("slack.slack_conn credential not converted to a connection")
+		return
+	}
+
+	assert.Equal("abc1", *slackConn.(*connection.SlackConnection).Token)
+
+	// verify aws has not been overwritten
+	pcon := flowpipeConfig.PipelingConnections["aws.prod_conn"]
+	if helpers.IsNil(pcon) {
+		assert.Fail("aws.prod_conn connection not found")
+		return
+	}
+	assert.Equal("prod1_connection", *pcon.(*connection.AwsConnection).Profile)
+
+}
+
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
 	assert := assert.New(suite.T())
-
 	// Reading from different file will always result in different config
 	flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_equality_test_a"})
 	assert.Nil(err.Error)
@@ -411,6 +529,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigEquality() {
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
 
@@ -418,8 +537,8 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	credentials := w.Credentials
 	slackCreds := credentials["slack.slack_creds"]
@@ -435,6 +554,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 
 func (suite *FlowpipeModTestSuite) TestModWithConnWithContextFunction() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	os.Setenv("TEST_SLACK_TOKEN", "abcdefghi")
 
@@ -442,8 +562,8 @@ func (suite *FlowpipeModTestSuite) TestModWithConnWithContextFunction() {
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_using_context_function", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	connections := w.PipelingConnections
 	slackConn := connections["slack.slack_conn"]
@@ -459,13 +579,14 @@ func (suite *FlowpipeModTestSuite) TestModWithConnWithContextFunction() {
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_output"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_output", workspace.WithCredentials(flowpipeConfig.Credentials))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	credentials := w.Credentials
 	awsExampleCreds := credentials["aws.example"]
@@ -493,13 +614,14 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 
 func (suite *FlowpipeModTestSuite) TestModWithConnInOutput() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_output"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_output", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	connections := w.PipelingConnections
 	awsExampleCreds := connections["aws.example"]
@@ -527,13 +649,14 @@ func (suite *FlowpipeModTestSuite) TestModWithConnInOutput() {
 
 func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_integration_notifier_param"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_integration_notifier_param", workspace.WithCredentials(flowpipeConfig.Credentials))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["mod_integration_notifier_param.pipeline.integration_pipe_default_with_param"]
 	unresolvedAttributes := pipeline.Steps[0].GetUnresolvedAttributes()
@@ -543,13 +666,14 @@ func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
 
 func (suite *FlowpipeModTestSuite) TestModSimpleInputStep() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_input_step_simple"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_input_step_simple", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["mod_with_input_step_simple.pipeline.simple_input_step"]
 
@@ -636,6 +760,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeModWithOneIntegration() {
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	// the order of directories matter because we determine which one has precedent. the "admins" notifier used will be the one defined in config_dir_more_integrations
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
@@ -650,8 +775,8 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	}
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 	assert.Equal(5, len(w.Integrations))
 
 	pipelines := w.Mod.ResourceMaps.Pipelines
@@ -701,6 +826,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 		return
 	}
 
+	// verify credentials
 	// AbuseIPDB
 	assert.Equal("steampipe_abuseipdb", flowpipeConfig.CredentialImports["steampipe_abuseipdb"].FullName)
 	assert.Equal("sp1_", *flowpipeConfig.CredentialImports["steampipe_abuseipdb"].Prefix)
@@ -1006,10 +1132,478 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithCredImport() {
 	assert.Equal("pam@dmj.com", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Email)
 	assert.Equal("dmj", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Subdomain)
 	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.Credentials["zendesk.sp1_zendesk_2"].(*credential.ZendeskCredential).Token)
+
+	// verify connections
+
+	// AbuseIPDB
+	assert.Equal("abuseipdb.sp1_abuseipdb_1", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].GetConnectionImpl().FullName)
+	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].(*connection.AbuseIPDBConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].(*connection.AbuseIPDBConnection).APIKey)
+
+	// Alicloud
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).SecretKey)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).SecretKey)
+
+	// AWS
+	assert.Equal("aws.sp1_aws", flowpipeConfig.PipelingConnections["aws.sp1_aws"].GetConnectionImpl().FullName)
+	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].GetConnectionImpl().FullName)
+	assert.Equal("abc", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).AccessKey)
+	assert.Equal("123", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).SecretKey)
+
+	// Azure
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].GetConnectionImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].GetConnectionImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientSecret)
+	assert.Nil(flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).TenantID)
+
+	// Bitbucket
+	assert.Equal("bitbucket.sp1_bitbucket_1", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].GetConnectionImpl().FullName)
+	assert.Equal("bitbucket.sp1_bitbucket_2", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Username)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Username)
+
+	// ClickUp
+	assert.Equal("clickup.sp1_clickup_1", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].GetConnectionImpl().FullName)
+	assert.Equal("clickup.sp1_clickup_2", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].(*connection.ClickUpConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].(*connection.ClickUpConnection).Token)
+
+	// Datadog
+	assert.Equal("datadog.sp1_datadog_1", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].GetConnectionImpl().FullName)
+	assert.Equal("datadog.sp1_datadog_2", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].GetConnectionImpl().FullName)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef56a7", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c111a1", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).AppKey)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef57b8", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c222b2", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).AppKey)
+
+	// Discord
+	assert.Equal("discord.sp1_discord_1", flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].GetConnectionImpl().FullName)
+	assert.Equal("discord.sp1_discord_2", flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].(*connection.DiscordConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].(*connection.DiscordConnection).Token)
+
+	// Freshdesk
+	assert.Equal("freshdesk.sp1_freshdesk_1", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("freshdesk.sp1_freshdesk_2", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).Subdomain)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).Subdomain)
+
+	// GCP
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].GetConnectionImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].GetConnectionImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].(*connection.GcpConnection).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].(*connection.GcpConnection).Credentials)
+
+	// Github
+	assert.Equal("github.sp1_github_1", flowpipeConfig.PipelingConnections["github.sp1_github_1"].GetConnectionImpl().FullName)
+	assert.Equal("github.sp1_github_2", flowpipeConfig.PipelingConnections["github.sp1_github_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["github.sp1_github_1"].(*connection.GithubConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["github.sp1_github_2"].(*connection.GithubConnection).Token)
+
+	// Gitlab
+	assert.Equal("gitlab.sp1_gitlab_1", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].GetConnectionImpl().FullName)
+	assert.Equal("gitlab.sp1_gitlab_2", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].GetConnectionImpl().FullName)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].(*connection.GitLabConnection).Token)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].(*connection.GitLabConnection).Token)
+
+	// Guardrails
+	assert.Equal("guardrails.sp1_guardrails_1", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].GetConnectionImpl().FullName)
+	assert.Equal("guardrails.sp1_guardrails_2", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].GetConnectionImpl().FullName)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).Workspace)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).Workspace)
+
+	// IP2LocationIO
+	assert.Equal("ip2locationio.sp1_ip2locationio_1", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].GetConnectionImpl().FullName)
+	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].(*connection.IP2LocationIOConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].(*connection.IP2LocationIOConnection).APIKey)
+
+	// IPstack
+	assert.Equal("ipstack.sp1_ipstack_1", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].GetConnectionImpl().FullName)
+	assert.Equal("ipstack.sp1_ipstack_2", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].GetConnectionImpl().FullName)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].(*connection.IPstackConnection).AccessKey)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].(*connection.IPstackConnection).AccessKey)
+
+	// Jira
+	assert.Equal("jira.sp1_jira_1", flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_2", flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_3", flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgj", *flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].(*connection.JiraConnection).APIToken)
+
+	// JumpCloud
+	assert.Equal("jumpcloud.sp1_jumpcloud_1", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("jumpcloud.sp1_jumpcloud_2", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].(*connection.JumpCloudConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].(*connection.JumpCloudConnection).APIKey)
+
+	// Mastodon
+	assert.Equal("mastodon.sp1_mastodon_1", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].GetConnectionImpl().FullName)
+	assert.Equal("mastodon.sp1_mastodon_2", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].GetConnectionImpl().FullName)
+	assert.Equal("FK1_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).Server)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).Server)
+
+	// Okta
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].GetConnectionImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Token)
+
+	// OpenAI
+	assert.Equal("openai.sp1_openai_1", flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].GetConnectionImpl().FullName)
+	assert.Equal("openai.sp1_openai_2", flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].(*connection.OpenAIConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].(*connection.OpenAIConnection).APIKey)
+
+	// Opsgenie
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].GetConnectionImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].GetConnectionImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).IncidentAPIKey)
+
+	// PagerDuty
+	assert.Equal("pagerduty.sp1_pagerduty_1", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].GetConnectionImpl().FullName)
+	assert.Equal("pagerduty.sp1_pagerduty_2", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].(*connection.PagerDutyConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].(*connection.PagerDutyConnection).Token)
+
+	// Pipes
+	assert.Equal("pipes.sp1_pipes_1", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].GetConnectionImpl().FullName)
+	assert.Equal("pipes.sp1_pipes_2", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].(*connection.PipesConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].(*connection.PipesConnection).Token)
+
+	// SendGrid
+	assert.Equal("sendgrid.sp1_sendgrid_1", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].GetConnectionImpl().FullName)
+	assert.Equal("sendgrid.sp1_sendgrid_2", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].(*connection.SendGridConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].(*connection.SendGridConnection).APIKey)
+
+	// ServiceNow
+	assert.Equal("servicenow.sp1_servicenow_1", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].GetConnectionImpl().FullName)
+	assert.Equal("servicenow.sp1_servicenow_2", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Password)
+	assert.Equal("https://test1.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword1", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Password)
+
+	// Slack
+	assert.Equal("slack.sp1_slack_l1", flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].GetConnectionImpl().FullName)
+	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].(*connection.SlackConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].(*connection.SlackConnection).Token)
+
+	// Trello
+	assert.Equal("trello.sp1_trello_1", flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].GetConnectionImpl().FullName)
+	assert.Equal("trello.sp1_trello_2", flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).Token)
+
+	// Urlscan
+	assert.Equal("urlscan.sp1_urlscan_1", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].GetConnectionImpl().FullName)
+	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].(*connection.UrlscanConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].(*connection.UrlscanConnection).APIKey)
+
+	// Vault
+	assert.Equal("vault.sp1_vault_1", flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].GetConnectionImpl().FullName)
+	assert.Equal("vault.sp1_vault_2", flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Address)
+	assert.Equal("sometoken", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Token)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Address)
+	assert.Nil(flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Token)
+
+	// Zendesk
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmi", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmj", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Token)
+}
+
+func (suite *FlowpipeModTestSuite) TestFlowpipeConfigWithConnectionImport() {
+	assert := assert.New(suite.T())
+
+	// Load the config from 2 different directories to test that we can load from multiple directories where the integration is defined after
+	// we load the notifiers.
+	//
+	// ensure that "config_dir" is loaded first, that's where the notifier is.
+	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_with_connection_import", "./empty_mod"})
+	if err.Error != nil {
+		assert.FailNow(err.Error.Error())
+		return
+	}
+
+	if flowpipeConfig == nil {
+		assert.Fail("flowpipeConfig is nil")
+		return
+	}
+
+	// verify connections
+
+	// AbuseIPDB
+	assert.Equal("abuseipdb.sp1_abuseipdb_1", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].GetConnectionImpl().FullName)
+	assert.Equal("abuseipdb.sp1_abuseipdb_2", flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_1"].(*connection.AbuseIPDBConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["abuseipdb.sp1_abuseipdb_2"].(*connection.AbuseIPDBConnection).APIKey)
+
+	// Alicloud
+	assert.Equal("alicloud.sp1_alicloud_1", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("alicloud.sp1_alicloud_2", flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_1"].(*connection.AlicloudConnection).SecretKey)
+	assert.Equal("XXXXGBV", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).AccessKey)
+	assert.Equal("6iNPvThisIsNotARealSecretk1sZF", *flowpipeConfig.PipelingConnections["alicloud.sp1_alicloud_2"].(*connection.AlicloudConnection).SecretKey)
+
+	// AWS
+	assert.Equal("aws.sp1_aws", flowpipeConfig.PipelingConnections["aws.sp1_aws"].GetConnectionImpl().FullName)
+	assert.Equal("aws.sp1_aws_keys1", flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].GetConnectionImpl().FullName)
+	assert.Equal("abc", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).AccessKey)
+	assert.Equal("123", *flowpipeConfig.PipelingConnections["aws.sp1_aws_keys1"].(*connection.AwsConnection).SecretKey)
+
+	// Azure
+	assert.Equal("azure.sp1_azure_1", flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].GetConnectionImpl().FullName)
+	assert.Equal("azure.sp1_azure_2", flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].GetConnectionImpl().FullName)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).ClientSecret)
+	assert.Nil(flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_1"].(*connection.AzureConnection).TenantID)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientID)
+	assert.Equal("~dummy@3password", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).ClientSecret)
+	assert.Equal("AZUREUSGOVERNMENTCLOUD", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).Environment)
+	assert.Equal("00000000-0000-0000-0000-000000000000", *flowpipeConfig.PipelingConnections["azure.sp1_azure_2"].(*connection.AzureConnection).TenantID)
+
+	// Bitbucket
+	assert.Equal("bitbucket.sp1_bitbucket_1", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].GetConnectionImpl().FullName)
+	assert.Equal("bitbucket.sp1_bitbucket_2", flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername1", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_1"].(*connection.BitbucketConnection).Username)
+	assert.Equal("https://api.bitbucket.org/2.0", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).BaseURL)
+	assert.Equal("blHdmvlkFakeToken2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Password)
+	assert.Equal("MyUsername2", *flowpipeConfig.PipelingConnections["bitbucket.sp1_bitbucket_2"].(*connection.BitbucketConnection).Username)
+
+	// ClickUp
+	assert.Equal("clickup.sp1_clickup_1", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].GetConnectionImpl().FullName)
+	assert.Equal("clickup.sp1_clickup_2", flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_1"].(*connection.ClickUpConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["clickup.sp1_clickup_2"].(*connection.ClickUpConnection).Token)
+
+	// Datadog
+	assert.Equal("datadog.sp1_datadog_1", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].GetConnectionImpl().FullName)
+	assert.Equal("datadog.sp1_datadog_2", flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].GetConnectionImpl().FullName)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef56a7", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c111a1", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_1"].(*connection.DatadogConnection).AppKey)
+	assert.Equal("1a2345bc6d78e9d98fa7bcd6e5ef57b8", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIKey)
+	assert.Equal("https://api.datadoghq.com/", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).APIUrl)
+	assert.Equal("b1cf234c0ed4c567890b524a3b42f1bd91c222b2", *flowpipeConfig.PipelingConnections["datadog.sp1_datadog_2"].(*connection.DatadogConnection).AppKey)
+
+	// Discord
+	assert.Equal("discord.sp1_discord_1", flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].GetConnectionImpl().FullName)
+	assert.Equal("discord.sp1_discord_2", flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["discord.sp1_discord_1"].(*connection.DiscordConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["discord.sp1_discord_2"].(*connection.DiscordConnection).Token)
+
+	// Freshdesk
+	assert.Equal("freshdesk.sp1_freshdesk_1", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("freshdesk.sp1_freshdesk_2", flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_1"].(*connection.FreshdeskConnection).Subdomain)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).APIKey)
+	assert.Equal("test", *flowpipeConfig.PipelingConnections["freshdesk.sp1_freshdesk_2"].(*connection.FreshdeskConnection).Subdomain)
+
+	// GCP
+	assert.Equal("gcp.sp1_gcp_1", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].GetConnectionImpl().FullName)
+	assert.Equal("gcp.sp1_gcp_2", flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].GetConnectionImpl().FullName)
+	assert.Equal("/home/me/my-service-account-creds-for-project-aaa.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_1"].(*connection.GcpConnection).Credentials)
+	assert.Equal("/home/me/my-service-account-creds-for-project-bbb.json", *flowpipeConfig.PipelingConnections["gcp.sp1_gcp_2"].(*connection.GcpConnection).Credentials)
+
+	// Github
+	assert.Equal("github.sp1_github_1", flowpipeConfig.PipelingConnections["github.sp1_github_1"].GetConnectionImpl().FullName)
+	assert.Equal("github.sp1_github_2", flowpipeConfig.PipelingConnections["github.sp1_github_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["github.sp1_github_1"].(*connection.GithubConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["github.sp1_github_2"].(*connection.GithubConnection).Token)
+
+	// Gitlab
+	assert.Equal("gitlab.sp1_gitlab_1", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].GetConnectionImpl().FullName)
+	assert.Equal("gitlab.sp1_gitlab_2", flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].GetConnectionImpl().FullName)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_1"].(*connection.GitLabConnection).Token)
+	assert.Equal("f7Ea3C3ojOY0GLzmhS5kE", *flowpipeConfig.PipelingConnections["gitlab.sp1_gitlab_2"].(*connection.GitLabConnection).Token)
+
+	// Guardrails
+	assert.Equal("guardrails.sp1_guardrails_1", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].GetConnectionImpl().FullName)
+	assert.Equal("guardrails.sp1_guardrails_2", flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].GetConnectionImpl().FullName)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_1"].(*connection.GuardrailsConnection).Workspace)
+	assert.Equal("c8e2c2ed-1ca8-429b-b369-010e3cf75aac", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).AccessKey)
+	assert.Equal("a3d8385d-47f7-40c5-a90c-bfdf5b43c8dd", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).SecretKey)
+	assert.Equal("https://turbot-acme.cloud.turbot.com/", *flowpipeConfig.PipelingConnections["guardrails.sp1_guardrails_2"].(*connection.GuardrailsConnection).Workspace)
+
+	// IP2LocationIO
+	assert.Equal("ip2locationio.sp1_ip2locationio_1", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].GetConnectionImpl().FullName)
+	assert.Equal("ip2locationio.sp1_ip2locationio_2", flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_1"].(*connection.IP2LocationIOConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["ip2locationio.sp1_ip2locationio_2"].(*connection.IP2LocationIOConnection).APIKey)
+
+	// IPstack
+	assert.Equal("ipstack.sp1_ipstack_1", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].GetConnectionImpl().FullName)
+	assert.Equal("ipstack.sp1_ipstack_2", flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].GetConnectionImpl().FullName)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_1"].(*connection.IPstackConnection).AccessKey)
+	assert.Equal("e0067f483763d6132d934864f8a6de22", *flowpipeConfig.PipelingConnections["ipstack.sp1_ipstack_2"].(*connection.IPstackConnection).AccessKey)
+
+	// Jira
+	assert.Equal("jira.sp1_jira_1", flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_2", flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].GetConnectionImpl().FullName)
+	assert.Equal("jira.sp1_jira_3", flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jira.sp1_jira_1"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jira.sp1_jira_2"].(*connection.JiraConnection).APIToken)
+	assert.Equal("abcdefgj", *flowpipeConfig.PipelingConnections["jira.sp1_jira_3"].(*connection.JiraConnection).APIToken)
+
+	// JumpCloud
+	assert.Equal("jumpcloud.sp1_jumpcloud_1", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].GetConnectionImpl().FullName)
+	assert.Equal("jumpcloud.sp1_jumpcloud_2", flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_1"].(*connection.JumpCloudConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["jumpcloud.sp1_jumpcloud_2"].(*connection.JumpCloudConnection).APIKey)
+
+	// Mastodon
+	assert.Equal("mastodon.sp1_mastodon_1", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].GetConnectionImpl().FullName)
+	assert.Equal("mastodon.sp1_mastodon_2", flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].GetConnectionImpl().FullName)
+	assert.Equal("FK1_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_1"].(*connection.MastodonConnection).Server)
+	assert.Equal("FK2_gBrl7b9sPOSADhx61-fakezv9EDuMrXuc1AlcNU", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).AccessToken)
+	assert.Equal("https://myserver.social", *flowpipeConfig.PipelingConnections["mastodon.sp1_mastodon_2"].(*connection.MastodonConnection).Server)
+
+	// Okta
+	assert.Equal("okta.sp1_okta_1", flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].GetConnectionImpl().FullName)
+	assert.Equal("okta.sp1_okta_2", flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test1.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_1"].(*connection.OktaConnection).Token)
+	assert.Equal("https://test2.okta.com", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Domain)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["okta.sp1_okta_2"].(*connection.OktaConnection).Token)
+
+	// OpenAI
+	assert.Equal("openai.sp1_openai_1", flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].GetConnectionImpl().FullName)
+	assert.Equal("openai.sp1_openai_2", flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["openai.sp1_openai_1"].(*connection.OpenAIConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["openai.sp1_openai_2"].(*connection.OpenAIConnection).APIKey)
+
+	// Opsgenie
+	assert.Equal("opsgenie.sp1_opsgenie_1", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].GetConnectionImpl().FullName)
+	assert.Equal("opsgenie.sp1_opsgenie_2", flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].GetConnectionImpl().FullName)
+	assert.Equal("alertapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey1", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_1"].(*connection.OpsgenieConnection).IncidentAPIKey)
+	assert.Equal("alertapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).AlertAPIKey)
+	assert.Equal("incidentapikey2", *flowpipeConfig.PipelingConnections["opsgenie.sp1_opsgenie_2"].(*connection.OpsgenieConnection).IncidentAPIKey)
+
+	// PagerDuty
+	assert.Equal("pagerduty.sp1_pagerduty_1", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].GetConnectionImpl().FullName)
+	assert.Equal("pagerduty.sp1_pagerduty_2", flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_1"].(*connection.PagerDutyConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pagerduty.sp1_pagerduty_2"].(*connection.PagerDutyConnection).Token)
+
+	// Pipes
+	assert.Equal("pipes.sp1_pipes_1", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].GetConnectionImpl().FullName)
+	assert.Equal("pipes.sp1_pipes_2", flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_1"].(*connection.PipesConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["pipes.sp1_pipes_2"].(*connection.PipesConnection).Token)
+
+	// SendGrid
+	assert.Equal("sendgrid.sp1_sendgrid_1", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].GetConnectionImpl().FullName)
+	assert.Equal("sendgrid.sp1_sendgrid_2", flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_1"].(*connection.SendGridConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["sendgrid.sp1_sendgrid_2"].(*connection.SendGridConnection).APIKey)
+
+	// ServiceNow
+	assert.Equal("servicenow.sp1_servicenow_1", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].GetConnectionImpl().FullName)
+	assert.Equal("servicenow.sp1_servicenow_2", flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://test.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_1"].(*connection.ServiceNowConnection).Password)
+	assert.Equal("https://test1.service-now.com", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).InstanceURL)
+	assert.Equal("flowpipe", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Username)
+	assert.Equal("somepassword1", *flowpipeConfig.PipelingConnections["servicenow.sp1_servicenow_2"].(*connection.ServiceNowConnection).Password)
+
+	// Slack
+	assert.Equal("slack.sp1_slack_l1", flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].GetConnectionImpl().FullName)
+	assert.Equal("slack.sp1_slack_l2", flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l1"].(*connection.SlackConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["slack.sp1_slack_l2"].(*connection.SlackConnection).Token)
+
+	// Trello
+	assert.Equal("trello.sp1_trello_1", flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].GetConnectionImpl().FullName)
+	assert.Equal("trello.sp1_trello_2", flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_1"].(*connection.TrelloConnection).Token)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).APIKey)
+	assert.Equal("testtoken", *flowpipeConfig.PipelingConnections["trello.sp1_trello_2"].(*connection.TrelloConnection).Token)
+
+	// Urlscan
+	assert.Equal("urlscan.sp1_urlscan_1", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].GetConnectionImpl().FullName)
+	assert.Equal("urlscan.sp1_urlscan_2", flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].GetConnectionImpl().FullName)
+	assert.Equal("abcdefgh", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_1"].(*connection.UrlscanConnection).APIKey)
+	assert.Equal("abcdefgi", *flowpipeConfig.PipelingConnections["urlscan.sp1_urlscan_2"].(*connection.UrlscanConnection).APIKey)
+
+	// Vault
+	assert.Equal("vault.sp1_vault_1", flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].GetConnectionImpl().FullName)
+	assert.Equal("vault.sp1_vault_2", flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].GetConnectionImpl().FullName)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Address)
+	assert.Equal("sometoken", *flowpipeConfig.PipelingConnections["vault.sp1_vault_1"].(*connection.VaultConnection).Token)
+	assert.Equal("https://vault.mycorp.com/", *flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Address)
+	assert.Nil(flowpipeConfig.PipelingConnections["vault.sp1_vault_2"].(*connection.VaultConnection).Token)
+
+	// Zendesk
+	assert.Equal("zendesk.sp1_zendesk_1", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].GetConnectionImpl().FullName)
+	assert.Equal("zendesk.sp1_zendesk_2", flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].GetConnectionImpl().FullName)
+	assert.Equal("pam@dmi.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmi", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_1"].(*connection.ZendeskConnection).Token)
+	assert.Equal("pam@dmj.com", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Email)
+	assert.Equal("dmj", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Subdomain)
+	assert.Equal("17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwVdrb23kj4", *flowpipeConfig.PipelingConnections["zendesk.sp1_zendesk_2"].(*connection.ZendeskConnection).Token)
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir", "./mod_with_integration"})
 	if err.Error != nil {
@@ -1076,8 +1670,8 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("#devs", devsNotifiesSlice[0].AsValueMap()["channel"].AsString())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 	assert.Equal(2, len(w.Integrations))
 	assert.NotNil(w.Integrations["slack.my_slack_app"])
 	if i, ok := w.Integrations["slack.my_slack_app"].(*modconfig.SlackIntegration); !ok {
@@ -1174,6 +1768,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 
 func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	credentials := map[string]credential.Credential{
 		"aws.default": &credential.AwsCredential{
@@ -1191,8 +1786,8 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	os.Setenv("ACCESS_KEY", "foobarbaz")
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithCredentials(credentials))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1216,6 +1811,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	credentials := map[string]credential.Credential{
 		"aws.default": &credential.AwsCredential{
@@ -1233,8 +1829,8 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithCredentials(credentials))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1256,6 +1852,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 
 func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	connections := map[string]connection.PipelingConnection{
 		"aws.default": &connection.AwsConnection{
@@ -1271,8 +1868,8 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", workspace.WithPipelingConnections(connections))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1295,6 +1892,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 
 func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	connections := map[string]connection.PipelingConnection{
 		"aws.default": &connection.AwsConnection{
@@ -1308,8 +1906,8 @@ func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", workspace.WithPipelingConnections(connections))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1331,6 +1929,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 
 func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	credentials := map[string]credential.Credential{
 		"aws.aws_static": &credential.AwsCredential{
@@ -1347,8 +1946,8 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_creds", workspace.WithCredentials(credentials))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1367,6 +1966,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 
 func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	connections := map[string]connection.PipelingConnection{
 		"aws.aws_static": &connection.AwsConnection{
@@ -1379,8 +1979,8 @@ func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_conn", workspace.WithPipelingConnections(connections))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1403,6 +2003,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 
 func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	credentials := map[string]credential.Credential{
 		"slack.slack_static": &credential.SlackCredential{
@@ -1420,8 +2021,8 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_resolved", workspace.WithCredentials(credentials))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1456,11 +2057,12 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 
 func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_step_output", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1481,11 +2083,12 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 
 func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_one", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1544,11 +2147,12 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 
 func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_simple", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1604,13 +2208,14 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 
 func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	os.Setenv("FP_VAR_var_six", "set from env var")
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_variable", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1626,6 +2231,9 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert.Equal("enum2", mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].ValueGo)
 	assert.Equal(2, len(mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].EnumGo))
 	assert.Equal(3, mod.ResourceMaps.Variables["test_mod.var.number_with_enum"].ValueGo)
+	assert.Equal("text", mod.ResourceMaps.Variables["test_mod.var.text_format"].Format)
+	assert.Equal("text", mod.ResourceMaps.Variables["test_mod.var.format_implicit"].Format)
+	assert.Equal("multiline", mod.ResourceMaps.Variables["test_mod.var.multiline_format"].Format)
 
 	pipelines := mod.ResourceMaps.Pipelines
 	pipelineOne := pipelines["test_mod.pipeline.one"]
@@ -1715,12 +2323,23 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 		return
 	}
 
+	paramFormatPipeline := pipelines["test_mod.pipeline.param_format"]
+	if githubIssuePipeline == nil {
+		assert.Fail("github_issue pipeline not found")
+		return
+	}
+
+	assert.Equal("text", paramFormatPipeline.Params[0].Format)
+	assert.Equal("text", paramFormatPipeline.Params[1].Format)
+	assert.Equal("multiline", paramFormatPipeline.Params[2].Format)
+
 	// The default value is 300 but we override it in the parent's pvars file to 42
 	assert.Equal("description from variable 42", *modDependBPipelineEchoB.Description)
 }
 
 func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_message_step"})
 	assert.Nil(err.Error)
@@ -1728,11 +2347,11 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_message_step", workspace.WithCredentials(flowpipeConfig.Credentials),
 		workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1814,6 +2433,7 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 
 func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_dynamic_pipeline_ref"})
 	assert.Nil(err.Error)
@@ -1821,11 +2441,11 @@ func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dynamic_pipeline_ref", workspace.WithCredentials(flowpipeConfig.Credentials),
 		workspace.WithIntegrations(flowpipeConfig.Integrations), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -1848,13 +2468,14 @@ func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 
 func (suite *FlowpipeModTestSuite) TestModTryFunction() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_try_function"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_try_function", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function"]
 	assert.NotNil(pipeline)
@@ -1902,24 +2523,26 @@ func (suite *FlowpipeModTestSuite) TestModTryFunction() {
 
 func (suite *FlowpipeModTestSuite) TestInputStepWithThrow() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_throw"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_throw", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 }
 
 func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_loop"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_loop", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.input_with_loop_2"]
 
@@ -1935,13 +2558,14 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
 
 func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_loop_various"})
 	assert.Nil(err.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_loop_various", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithNotifiers(flowpipeConfig.Notifiers))
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep"]
 	assert.NotNil(pipeline)
@@ -2124,11 +2748,12 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 
 func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_param_order", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -2151,11 +2776,12 @@ func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
 
 func (suite *FlowpipeModTestSuite) TestModTriggers() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./triggers", workspace.WithCredentials(map[string]credential.Credential{}))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -2205,10 +2831,11 @@ func (suite *FlowpipeModTestSuite) TestModTriggers() {
 
 func (suite *FlowpipeModTestSuite) TestEnumParam() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./enum_param")
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -2219,11 +2846,12 @@ func (suite *FlowpipeModTestSuite) TestEnumParam() {
 
 func (suite *FlowpipeModTestSuite) TestTags() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./tags")
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	mod := w.Mod
 	if mod == nil {
@@ -2255,7 +2883,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 			found = true
 			break
 		}
-		assert.Equal(false, param.IsCustomType())
+		assert.Equal(false, modconfig.IsCustomType(param.Type))
 	}
 
 	if !found {
@@ -2293,7 +2921,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "example",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2302,7 +2930,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "default",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("default"),
+				"short_name":    cty.StringVal("default"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2311,7 +2939,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "not_valid",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("not_valid"),
+				"short_name":    cty.StringVal("not_valid"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2320,7 +2948,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "wrong_type",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("wrong_type"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2342,12 +2970,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "example",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2358,7 +2986,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "default",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2369,12 +2997,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "not_valid",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("defaultsssss"),
+					"short_name":    cty.StringVal("defaultsssss"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2385,12 +3013,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "one_with_wrong_type",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("slack"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2412,7 +3040,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "example",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2421,7 +3049,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "example_slack",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("slack"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2430,7 +3058,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "default",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("default"),
+				"short_name":    cty.StringVal("default"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2439,7 +3067,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "not_valid",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("not_valid"),
+				"short_name":    cty.StringVal("not_valid"),
 				"type":          cty.StringVal("aws"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2448,7 +3076,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 		{
 			Name: "wrong_type",
 			Setting: cty.ObjectVal(map[string]cty.Value{
-				"name":          cty.StringVal("example"),
+				"short_name":    cty.StringVal("example"),
 				"type":          cty.StringVal("wrong_type"),
 				"resource_type": cty.StringVal("connection"),
 			}),
@@ -2470,12 +3098,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "example",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2486,17 +3114,17 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "mixed_type",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("slack"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2507,7 +3135,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "default",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2518,7 +3146,7 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "default_slack",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("slack"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2529,12 +3157,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "not_valid",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("defaultsssss"),
+					"short_name":    cty.StringVal("defaultsssss"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2545,12 +3173,12 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 			Name: "one_with_wrong_type",
 			Setting: cty.ListVal([]cty.Value{
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("example"),
+					"short_name":    cty.StringVal("example"),
 					"type":          cty.StringVal("aws"),
 					"resource_type": cty.StringVal("connection"),
 				}),
 				cty.ObjectVal(map[string]cty.Value{
-					"name":          cty.StringVal("default"),
+					"short_name":    cty.StringVal("default"),
 					"type":          cty.StringVal("slack_invalid"),
 					"resource_type": cty.StringVal("connection"),
 				}),
@@ -2681,14 +3309,15 @@ var testCustomTypeTwoData = map[string][]testCustomTypeTwoTestData{
 func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	t := suite.T()
 	assert := assert.New(t)
+	require := require.New(t)
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_two"})
-	assert.Nil(errAndWarning.Error)
+	require.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), workspace.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), workspace.WithNotifiers(flowpipeConfig.Notifiers))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errAndWarning.Error)
 
 	notifierMap, err := parse.BuildNotifierMapForEvalContext(flowpipeConfig.Notifiers)
 	if err != nil {
@@ -2696,7 +3325,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		return
 	}
 
-	connMap, err := parse.BuildTemporaryConnectionMapForEvalContext(context.TODO(), flowpipeConfig.PipelingConnections)
+	connMap := parse.BuildTemporaryConnectionMapForEvalContext(flowpipeConfig.PipelingConnections)
 	if err != nil {
 		assert.Fail("error building connection map")
 		return
@@ -2730,7 +3359,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		testLists := testCustomTypeTwoData[param.Name]
 		t.Log("testing param: ", param.Name)
 
-		assert.Equal(true, param.IsCustomType())
+		assert.Equal(true, modconfig.IsCustomType(param.Type))
 		for _, testData := range testLists {
 			t.Log("testing: ", testData.Name)
 			valid, _, err := param.ValidateSetting(testData.Setting, evalContext)
@@ -2747,56 +3376,72 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 	t := suite.T()
 	assert := assert.New(t)
+	require := require.New(t)
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_three"})
-	assert.Nil(errAndWarning.Error)
+	require.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_three", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
-
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_three", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	require.NotNil(w)
+	require.Nil(errAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["custom_type_three.pipeline.custom_type_three"]
 
 	for _, p := range pipeline.Params {
 		if p.Name == "conn" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("connection.AwsConnection", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_conns" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("connection.AwsConnection", p.Type.ListElementType().EncapsulatedType().String())
 		} else if p.Name == "conn_generic" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*connection.ConnectionImpl", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_conns_generic" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*connection.ConnectionImpl", p.Type.ListElementType().EncapsulatedType().String())
 		}
 	}
 }
 
+func (suite *FlowpipeModTestSuite) TestCustomTypeFour() {
+	t := suite.T()
+	require := require.New(t)
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_four"})
+	require.Nil(errAndWarning.Error)
+
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_four", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	require.NotNil(w)
+	require.Nil(errAndWarning.Error)
+
+}
+
 func (suite *FlowpipeModTestSuite) TestCustomType() {
 	assert := assert.New(suite.T())
+	require := require.New(suite.T())
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type"})
 	assert.Nil(errAndWarning.Error)
 	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 }
 
 func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 	t := suite.T()
 	assert := assert.New(t)
+	require := require.New(t)
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_notifier"})
 	assert.Nil(errAndWarning.Error)
 
 	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_notifier", workspace.WithNotifiers(flowpipeConfig.Notifiers), workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
-	assert.NotNil(w)
-	assert.Nil(errorAndWarning.Error)
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
 
 	pipeline := w.Mod.ResourceMaps.Pipelines["custom_type_notifier.pipeline.notifier"]
 
@@ -2804,18 +3449,56 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 
 	for _, p := range pipeline.Params {
 		if p.Name == "notifier" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*modconfig.NotifierImpl", p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_notifiers" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
 		} else if p.Name == "list_of_notifiers_more" {
-			assert.Equal(true, p.IsCustomType())
+			assert.Equal(true, modconfig.IsCustomType(p.Type))
 			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
 		} else {
 			assert.Fail("unexpected param")
 		}
 	}
+}
+
+func (suite *FlowpipeModTestSuite) TestComplexVariable() {
+	assert := assert.New(suite.T())
+	require := require.New(suite.T())
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./complex_variable"})
+	assert.Nil(errAndWarning.Error)
+	w, errorAndWarning := workspace.Load(suite.ctx, "./complex_variable", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
+
+	modVar := w.Mod.ResourceMaps.Variables["complex_variable.var.base_tag_rules"]
+	assert.NotNil(modVar)
+	mapVal, ok := modVar.ValueGo.(map[string]interface{})
+	assert.True(ok)
+	assert.NotNil(mapVal)
+	assert.Equal([]any{}, mapVal["remove_except"])
+}
+
+func (suite *FlowpipeModTestSuite) XTestForEach() {
+	assert := assert.New(suite.T())
+	require := require.New(suite.T())
+
+	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./for_each"})
+	assert.Nil(errAndWarning.Error)
+	w, errorAndWarning := workspace.Load(suite.ctx, "./for_each", workspace.WithCredentials(flowpipeConfig.Credentials), workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+
+	require.NotNil(w)
+	require.Nil(errorAndWarning.Error)
+
+	modVar := w.Mod.ResourceMaps.Variables["for_each.var.foreach_with_conn"]
+	assert.NotNil(modVar)
+	mapVal, ok := modVar.ValueGo.(map[string]interface{})
+	assert.True(ok)
+	assert.NotNil(mapVal)
+	assert.Equal([]any{}, mapVal["remove_except"])
 }
 
 // In order for 'go test' to run this suite, we need to create

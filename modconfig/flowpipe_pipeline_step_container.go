@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -57,118 +56,187 @@ func (p *PipelineStepContainer) Equals(iOther PipelineStep) bool {
 }
 
 func (p *PipelineStepContainer) GetInputs(evalContext *hcl.EvalContext) (map[string]interface{}, error) {
+	res, _, err := p.GetInputs2(evalContext)
+	return res, err
+}
+func (p *PipelineStepContainer) GetInputs2(evalContext *hcl.EvalContext) (map[string]interface{}, []ConnectionDependency, error) {
 
 	results, err := p.GetBaseInputs(evalContext)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	var diags hcl.Diagnostics
+	var allConnectionDependencies []ConnectionDependency
 
 	// image
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeImage, p.Image)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	imageValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeImage, p.Image)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeImage] = imageValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// source
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeSource, p.Source)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	sourceValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeSource, p.Source)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeSource] = sourceValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// cmd
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCmd, &p.Cmd)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	cmdValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeCmd, p.Cmd)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeCmd] = cmdValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCmd, &p.Cmd)
+	// if diags.HasErrors() {
+	// 	return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	// }
 
 	// env
-	var env map[string]string
-	if p.UnresolvedAttributes[schema.AttributeTypeEnv] == nil {
-		env = p.Env
-	} else {
-		var args cty.Value
-		diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEnv], evalContext, &args)
-		if diags.HasErrors() {
-			return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
-		}
-
-		var err error
-		env, err = hclhelpers.CtyToGoMapString(args)
-		if err != nil {
-			return nil, perr.BadRequestWithMessage(p.Name + ": unable to parse env attribute to map[string]string: " + err.Error())
-		}
+	envValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeEnv, p.Env)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
-	results[schema.AttributeTypeEnv] = env
+	results[schema.AttributeTypeEnv] = envValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
+
+	// var env map[string]string
+	// if p.UnresolvedAttributes[schema.AttributeTypeEnv] == nil {
+	// 	env = p.Env
+	// } else {
+	// 	var args cty.Value
+	// 	diags := gohcl.DecodeExpression(p.UnresolvedAttributes[schema.AttributeTypeEnv], evalContext, &args)
+	// 	if diags.HasErrors() {
+	// 		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	// 	}
+
+	// 	var err error
+	// 	env, err = hclhelpers.CtyToGoMapString(args)
+	// 	if err != nil {
+	// 		return nil, nil, perr.BadRequestWithMessage(p.Name + ": unable to parse env attribute to map[string]string: " + err.Error())
+	// 	}
+	// }
+	// results[schema.AttributeTypeEnv] = env
 
 	// entry_point
-	results, diags = stringSliceInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeEntrypoint, &p.Entrypoint)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	entryPointValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeEntrypoint, p.Entrypoint)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeEntrypoint] = entryPointValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// cpu_shares
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeCpuShares, p.CpuShares)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	cpuSharesValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeCpuShares, p.CpuShares)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	if cpuSharesValueInt, ok := cpuSharesValue.(int); ok {
+		cpuSharesValue = int64(cpuSharesValueInt)
+	}
+
+	results[schema.AttributeTypeCpuShares] = cpuSharesValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// memory
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemory, p.Memory)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	memoryValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeMemory, p.Memory)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	if memoryValueInt, ok := memoryValue.(int); ok {
+		memoryValue = int64(memoryValueInt)
+	}
+
+	results[schema.AttributeTypeMemory] = memoryValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// memory_reservation
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemoryReservation, p.MemoryReservation)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	memoryReservationValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeMemoryReservation, p.MemoryReservation)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	if memoryReservationValueInt, ok := memoryReservationValue.(int); ok {
+		memoryReservationValue = int64(memoryReservationValueInt)
+	}
+
+	results[schema.AttributeTypeMemoryReservation] = memoryReservationValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// memory_swap
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemorySwap, p.MemorySwap)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	memorySwapValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeMemorySwap, p.MemorySwap)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	if memorySwapValueInt, ok := memorySwapValue.(int); ok {
+		memorySwapValue = int64(memorySwapValueInt)
+	}
+
+	results[schema.AttributeTypeMemorySwap] = memorySwapValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// memory_swappiness
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeMemorySwappiness, p.MemorySwappiness)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	memorySwappinessValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeMemorySwappiness, p.MemorySwappiness)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	if memorySwappinessValueInt, ok := memorySwappinessValue.(int); ok {
+		memorySwappinessValue = int64(memorySwappinessValueInt)
+	}
+
+	results[schema.AttributeTypeMemorySwappiness] = memorySwappinessValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// user
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeUser, p.User)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	userValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeUser, p.User)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeUser] = userValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// workdir
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeWorkdir, p.Workdir)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	workdirValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeWorkdir, p.Workdir)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeWorkdir] = workdirValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	// read_only
-	results, diags = simpleTypeInputFromAttribute(p.GetUnresolvedAttributes(), results, evalContext, schema.AttributeTypeReadOnly, p.ReadOnly)
-	if diags.HasErrors() {
-		return nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
+	readOnlyValue, connectionDependencies, diags := decodeStepAttribute(p.UnresolvedAttributes, evalContext, p.Name, schema.AttributeTypeReadOnly, p.ReadOnly)
+	if len(diags) > 0 {
+		return nil, nil, error_helpers.BetterHclDiagsToError(p.Name, diags)
 	}
+	results[schema.AttributeTypeReadOnly] = readOnlyValue
+	allConnectionDependencies = append(allConnectionDependencies, connectionDependencies...)
 
 	results[schema.LabelName] = p.Name
 
+	// Should we move all validation to validate function?
 	memorySwappinessI, ok := results[schema.AttributeTypeMemorySwappiness]
-	if ok {
-		memorySwappiness := memorySwappinessI.(int64)
-		// If the attribute is using any reference, it can only be resolved at the runtime
-		if !(memorySwappiness >= 0 && memorySwappiness <= 100) {
-			return nil, perr.BadRequestWithMessage("The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be between 0 and 100")
+	if ok && !helpers.IsNil(memorySwappinessI) {
+		var ms int64
+		if ms, ok = memorySwappinessI.(int64); !ok {
+			if msI64, ok := memorySwappinessI.(int); ok {
+				ms = int64(msI64)
+			} else {
+				return nil, nil, perr.BadRequestWithMessage("The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be an integer")
+			}
 		}
-		results[schema.AttributeTypeMemorySwappiness] = memorySwappiness
+
+		// If the attribute is using any reference, it can only be resolved at the runtime
+		if !(ms >= 0 && ms <= 100) {
+			return nil, nil, perr.BadRequestWithMessage("The value of '" + schema.AttributeTypeMemorySwappiness + "' attribute must be between 0 and 100")
+		}
+		results[schema.AttributeTypeMemorySwappiness] = ms
 	}
 
-	return results, nil
+	return results, allConnectionDependencies, nil
 }
 
 func (p *PipelineStepContainer) SetAttributes(hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {

@@ -24,7 +24,7 @@ type UnparsedVariableValue interface {
 	//
 	// If error diagnostics are returned, the resulting value may be invalid
 	// or incomplete.
-	ParseVariableValue(mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics)
+	ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics)
 }
 
 // ParseVariableValues processes a map of unparsed variable values by
@@ -38,7 +38,7 @@ type UnparsedVariableValue interface {
 // it can possibly be for the current operation. If any declared variables
 // are not included in the map, ParseVariableValues will either substitute
 // a configured default value or produce an error.
-func ParseVariableValues(inputValueUnparsed map[string]UnparsedVariableValue, requireArgs terraform.InputValues, variablesMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, tfdiags.Diagnostics) {
+func ParseVariableValues(evalContext *hcl.EvalContext, inputValueUnparsed map[string]UnparsedVariableValue, requireArgs terraform.InputValues, variablesMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 	ret := make(terraform.InputValues, len(inputValueUnparsed)*len(requireArgs))
 
@@ -62,7 +62,7 @@ func ParseVariableValues(inputValueUnparsed map[string]UnparsedVariableValue, re
 			mode = modconfig.VariableParseLiteral
 		}
 
-		val, valDiags := unparsedVal.ParseVariableValue(mode)
+		val, valDiags := unparsedVal.ParseVariableValue(evalContext, mode)
 		diags = diags.Append(valDiags)
 		if valDiags.HasErrors() {
 			continue
@@ -188,9 +188,9 @@ type UnparsedInteractiveVariableValue struct {
 	Name, RawValue string
 }
 
-func (v UnparsedInteractiveVariableValue) ParseVariableValue(mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v UnparsedInteractiveVariableValue) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
-	val, valDiags := mode.Parse(v.Name, v.RawValue)
+	val, valDiags := mode.Parse(evalCtx, v.Name, v.RawValue)
 	diags = diags.Append(valDiags)
 	if diags.HasErrors() {
 		return nil, diags

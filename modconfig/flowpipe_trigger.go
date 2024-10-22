@@ -1,13 +1,19 @@
 package modconfig
 
 import (
+	"log/slog"
 	"reflect"
 	"slices"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -69,14 +75,6 @@ func (t *Trigger) GetParam(paramName string) *PipelineParam {
 func (t *Trigger) GetParams() []PipelineParam {
 	return t.Params
 }
-
-// func (t *Trigger) ValidateTriggerParam(params map[string]interface{}, evalCtx *hcl.EvalContext) []error {
-// 	return ValidateParams(t, params, evalCtx)
-// }
-
-// func (p *Trigger) CoerceTriggerParams(params map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
-// 	return CoerceParams(p, params, evalCtx)
-// }
 
 func (t *Trigger) Equals(other *Trigger) bool {
 	if t == nil && other == nil {
@@ -267,13 +265,60 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 
 type TriggerConfig interface {
 	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	GetUnresolvedAttributes() map[string]hcl.Expression
 	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	Equals(other TriggerConfig) bool
 	GetType() string
+	GetConfig(*hcl.EvalContext, *Mod) (TriggerConfig, error)
+	GetConnectionDependsOn() []string
 }
 
 type TriggerSchedule struct {
-	Schedule string `json:"schedule"`
+	Schedule             string                    `json:"schedule"`
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+	ConnectionDependsOn  []string                  `json:"connection_depends_on,omitempty"`
+}
+
+func (t *TriggerSchedule) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (TriggerConfig, error) {
+	return t, nil
+}
+
+func (t *TriggerSchedule) AppendsDependsOn(dependsOn ...string) {
+}
+
+func (t *TriggerSchedule) AppendCredentialDependsOn(...string) {
+}
+
+func (t *TriggerSchedule) AppendConnectionDependsOn(connectionDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
+	existingDeps := make(map[string]struct{}, len(t.ConnectionDependsOn))
+	for _, dep := range t.ConnectionDependsOn {
+		existingDeps[dep] = struct{}{}
+	}
+
+	for _, dep := range connectionDependsOn {
+		if _, exists := existingDeps[dep]; !exists {
+			t.ConnectionDependsOn = append(t.ConnectionDependsOn, dep)
+			existingDeps[dep] = struct{}{}
+		}
+	}
+}
+
+func (t *TriggerSchedule) GetConnectionDependsOn() []string {
+	return t.ConnectionDependsOn
+}
+
+func (t *TriggerSchedule) AddUnresolvedAttribute(key string, value hcl.Expression) {
+	t.UnresolvedAttributes[key] = value
+}
+
+func (t *TriggerSchedule) GetPipeline() *Pipeline {
+	return nil
+}
+
+func (t *TriggerSchedule) GetUnresolvedAttributes() map[string]hcl.Expression {
+	return t.UnresolvedAttributes
 }
 
 func (t *TriggerSchedule) GetType() string {
@@ -294,6 +339,18 @@ func (t *TriggerSchedule) Equals(other TriggerConfig) bool {
 		return true
 	}
 
+	// Compare UnresolvedAttributes (map comparison)
+	if len(t.UnresolvedAttributes) != len(other.GetUnresolvedAttributes()) {
+		return false
+	}
+
+	for key, expr := range t.UnresolvedAttributes {
+		otherExpr, ok := other.GetUnresolvedAttributes()[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
+	}
+
 	return t.Schedule == otherTrigger.Schedule
 }
 
@@ -306,6 +363,7 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
+			// schedule should never be an unresolved variable, it needs to be fully resolved
 			val, moreDiags := attr.Expr.Value(evalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
@@ -324,7 +382,7 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 
 			t.Schedule = val.AsString()
 
-			if helpers.StringSliceContains(validIntervals, strings.ToLower(t.Schedule)) {
+			if slices.Contains(validIntervals, t.Schedule) {
 				continue
 			}
 
@@ -364,10 +422,128 @@ type TriggerQuery struct {
 	Database   string                          `json:"database"`
 	PrimaryKey string                          `json:"primary_key"`
 	Captures   map[string]*TriggerQueryCapture `json:"captures"`
+
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+	ConnectionDependsOn  []string                  `json:"connection_depends_on,omitempty"`
+}
+
+func (t *TriggerQuery) AppendDependsOn(...string) {
+}
+
+func (t *TriggerQuery) AppendCredentialDependsOn(...string) {
+}
+
+func (t *TriggerQuery) AppendConnectionDependsOn(connectionDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
+	existingDeps := make(map[string]struct{}, len(t.ConnectionDependsOn))
+	for _, dep := range t.ConnectionDependsOn {
+		existingDeps[dep] = struct{}{}
+	}
+
+	for _, dep := range connectionDependsOn {
+		if _, exists := existingDeps[dep]; !exists {
+			t.ConnectionDependsOn = append(t.ConnectionDependsOn, dep)
+			existingDeps[dep] = struct{}{}
+		}
+	}
+}
+
+func (t *TriggerQuery) GetConnectionDependsOn() []string {
+	return t.ConnectionDependsOn
+}
+
+func (t *TriggerQuery) AddUnresolvedAttribute(key string, value hcl.Expression) {
+	t.UnresolvedAttributes[key] = value
+}
+
+func (t *TriggerQuery) GetPipeline() *Pipeline {
+	return nil
+}
+
+func (t *TriggerQuery) GetUnresolvedAttributes() map[string]hcl.Expression {
+	return t.UnresolvedAttributes
 }
 
 func (t *TriggerQuery) GetType() string {
 	return schema.TriggerTypeQuery
+}
+
+func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (TriggerConfig, error) {
+
+	var database string
+
+	if databaseExpression, ok := t.UnresolvedAttributes[schema.AttributeTypeDatabase]; ok {
+		// attribute needs resolving, this case may happen if we specify the entire option as an attribute
+		var dbValue cty.Value
+		diags := gohcl.DecodeExpression(databaseExpression, evalContext, &dbValue)
+		if diags.HasErrors() {
+			return nil, error_helpers.BetterHclDiagsToError("query_trigger", diags)
+		}
+		// check if this is a connection string or a connection
+		if dbValue.Type() == cty.String {
+			database = dbValue.AsString()
+		} else {
+			c, err := app_specific_connection.CtyValueToConnection(dbValue)
+			if err != nil {
+				return nil, perr.BadRequestWithMessage("unable to resolve connection attribute: " + err.Error())
+			}
+			if conn, ok := c.(connection.ConnectionStringProvider); ok {
+				database = conn.GetConnectionString()
+			} else {
+				slog.Warn("connection does not support connection string", "db", c)
+				return nil, perr.BadRequestWithMessage("invalid connection reference - only connections which implement GetConnectionString() are supported")
+			}
+		}
+	} else {
+		var diags hcl.Diagnostics
+		database, diags = simpleOutputFromAttribute(t.GetUnresolvedAttributes(), evalContext, schema.AttributeTypeDatabase, t.Database)
+		if diags.HasErrors() {
+			return nil, error_helpers.BetterHclDiagsToError("query trigger", diags)
+		}
+	}
+
+	// if no database is set, get the default database from the mod
+	if database == "" {
+		var err error
+		database, err = mod.GetDefaultConnectionString(evalContext)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sql, diags := simpleOutputFromAttribute(t.GetUnresolvedAttributes(), evalContext, schema.AttributeTypeSql, t.Sql)
+	if diags.HasErrors() {
+		return nil, error_helpers.BetterHclDiagsToError("query trigger", diags)
+	}
+
+	schedule, diags := simpleOutputFromAttribute(t.GetUnresolvedAttributes(), evalContext, schema.AttributeTypeSchedule, t.Schedule)
+	if diags.HasErrors() {
+		return nil, error_helpers.BetterHclDiagsToError("query trigger", diags)
+	}
+
+	primaryKey, diags := simpleOutputFromAttribute(t.GetUnresolvedAttributes(), evalContext, schema.AttributeTypePrimaryKey, t.PrimaryKey)
+	if diags.HasErrors() {
+		return nil, error_helpers.BetterHclDiagsToError("query trigger", diags)
+	}
+
+	newT := &TriggerQuery{
+		Sql:        sql,
+		Schedule:   schedule,
+		Database:   database,
+		PrimaryKey: primaryKey,
+		Captures:   make(map[string]*TriggerQueryCapture),
+	}
+
+	for key, value := range t.Captures {
+		newT.Captures[key] = &TriggerQueryCapture{
+			Type:     value.Type,
+			Pipeline: value.Pipeline,
+			ArgsRaw:  value.ArgsRaw,
+		}
+	}
+
+	return newT, nil
 }
 
 func (t *TriggerQuery) Equals(other TriggerConfig) bool {
@@ -402,6 +578,18 @@ func (t *TriggerQuery) Equals(other TriggerConfig) bool {
 
 	if len(t.Captures) != len(otherTrigger.Captures) {
 		return false
+	}
+
+	// Compare UnresolvedAttributes (map comparison)
+	if len(t.UnresolvedAttributes) != len(other.GetUnresolvedAttributes()) {
+		return false
+	}
+
+	for key, expr := range t.UnresolvedAttributes {
+		otherExpr, ok := other.GetUnresolvedAttributes()[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
 	}
 
 	for key, value := range t.Captures {
@@ -454,12 +642,26 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 		return diags
 	}
 
+	// TriggerQuery is the only trigger that supports params for: database, sql and primary key. The other triggers don't have
+	// a use case for param support.
+
 	for name, attr := range hclAttributes {
 		switch name {
 		case schema.AttributeTypeSchedule:
+			// schedule should never be an unresolved variable, it needs to be fully resolved
 			val, moreDiags := attr.Expr.Value(evalContext)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
+				continue
+			}
+
+			if val.Type() != cty.String {
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "The given schedule is not a string",
+					Detail:   "The given schedule is not a string",
+					Subject:  &attr.Range,
+				})
 				continue
 			}
 
@@ -469,40 +671,64 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 				continue
 			}
 
-			// assume it's a cron expression
+			// if it's not an interval, assume it's a cron and attempt to validate the cron expression
 			_, err := cron.ParseStandard(t.Schedule)
 			if err != nil {
 				diags = append(diags, &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "Invalid cron expression: " + t.Schedule,
+					Summary:  "Invalid cron expression: " + t.Schedule + ". Specify valid intervals hourly, daily, weekly, monthly or valid cron expression",
 					Detail:   err.Error(),
 					Subject:  &attr.Range,
 				})
 			}
+
 		case schema.AttributeTypeSql:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, t)
+			if len(stepDiags) > 0 {
+				diags = append(diags, stepDiags...)
+				return diags
 			}
 
-			t.Sql = val.AsString()
+			if val != cty.NilVal {
+				sql, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeSchedule + " attribute to string",
+						Subject:  &attr.Range,
+					})
+					return diags
+				}
+				t.Sql = sql
+			}
+
 		case schema.AttributeTypeDatabase:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
+			structFieldName := utils.CapitalizeFirst(name)
+			stepDiags := setStringAttribute(attr, evalContext, t, structFieldName, false)
+			if stepDiags.HasErrors() {
+				diags = append(diags, stepDiags...)
 				continue
 			}
 
-			t.Database = val.AsString()
 		case schema.AttributeTypePrimaryKey:
-			val, moreDiags := attr.Expr.Value(evalContext)
-			if len(moreDiags) > 0 {
-				diags = append(diags, moreDiags...)
-				continue
+			val, stepDiags := dependsOnFromExpressions(attr, evalContext, t)
+			if len(stepDiags) > 0 {
+				diags = append(diags, stepDiags...)
+				return diags
 			}
 
-			t.PrimaryKey = val.AsString()
+			if val != cty.NilVal {
+				primaryKey, err := hclhelpers.CtyToString(val)
+				if err != nil {
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  "Unable to parse " + schema.AttributeTypeSchedule + " attribute to string",
+						Subject:  &attr.Range,
+					})
+					return diags
+				}
+				t.PrimaryKey = primaryKey
+			}
 
 		default:
 			if !trigger.IsBaseAttribute(name) {
@@ -526,6 +752,10 @@ func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Block
 	t.Captures = make(map[string]*TriggerQueryCapture)
 
 	for _, captureBlock := range hclBlocks {
+
+		if captureBlock.Type != schema.BlockTypeCapture {
+			continue
+		}
 
 		if len(captureBlock.Labels) != 1 {
 			diags = append(diags, &hcl.Diagnostic{
@@ -634,10 +864,55 @@ type TriggerHttp struct {
 	Url           string                        `json:"url"`
 	ExecutionMode string                        `json:"execution_mode"`
 	Methods       map[string]*TriggerHTTPMethod `json:"methods"`
+
+	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
+	ConnectionDependsOn  []string                  `json:"connection_depends_on,omitempty"`
+}
+
+func (t *TriggerHttp) AppendsDependsOn(dependsOn ...string) {
+}
+
+func (t *TriggerHttp) AppendCredentialDependsOn(...string) {
+}
+
+func (t *TriggerHttp) AppendConnectionDependsOn(connectionDependsOn ...string) {
+	// Use map to track existing DependsOn, this will make the lookup below much faster
+	// rather than using nested loops
+	existingDeps := make(map[string]struct{}, len(t.ConnectionDependsOn))
+	for _, dep := range t.ConnectionDependsOn {
+		existingDeps[dep] = struct{}{}
+	}
+
+	for _, dep := range connectionDependsOn {
+		if _, exists := existingDeps[dep]; !exists {
+			t.ConnectionDependsOn = append(t.ConnectionDependsOn, dep)
+			existingDeps[dep] = struct{}{}
+		}
+	}
+}
+
+func (t *TriggerHttp) GetConnectionDependsOn() []string {
+	return t.ConnectionDependsOn
+}
+
+func (t *TriggerHttp) AddUnresolvedAttribute(key string, value hcl.Expression) {
+	t.UnresolvedAttributes[key] = value
+}
+
+func (t *TriggerHttp) GetPipeline() *Pipeline {
+	return nil
+}
+
+func (t *TriggerHttp) GetUnresolvedAttributes() map[string]hcl.Expression {
+	return t.UnresolvedAttributes
 }
 
 func (t *TriggerHttp) GetType() string {
 	return schema.TriggerTypeHttp
+}
+
+func (t *TriggerHttp) GetConfig(*hcl.EvalContext, *Mod) (TriggerConfig, error) {
+	return t, nil
 }
 
 func (t *TriggerHttp) Equals(other TriggerConfig) bool {
@@ -664,6 +939,18 @@ func (t *TriggerHttp) Equals(other TriggerConfig) bool {
 
 	if len(t.Methods) != len(otherTrigger.Methods) {
 		return false
+	}
+
+	// Compare UnresolvedAttributes (map comparison)
+	if len(t.UnresolvedAttributes) != len(other.GetUnresolvedAttributes()) {
+		return false
+	}
+
+	for key, expr := range t.UnresolvedAttributes {
+		otherExpr, ok := other.GetUnresolvedAttributes()[key]
+		if !ok || !hclhelpers.ExpressionsEqual(expr, otherExpr) {
+			return false
+		}
 	}
 
 	for key, value := range t.Methods {
@@ -715,6 +1002,9 @@ var validExecutionMode = []string{"synchronous", "asynchronous"}
 var validMethodBlockTypes = []string{"post", "get"}
 
 func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+
+	// None of the Trigger Http attributes should be unresolved at parse time. It doesn't make sense to have params for the URL for example
+
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
 	if diags.HasErrors() {
 		return diags
@@ -964,11 +1254,17 @@ func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Tr
 
 	switch triggerType {
 	case schema.TriggerTypeSchedule:
-		trigger.Config = &TriggerSchedule{}
+		trigger.Config = &TriggerSchedule{
+			UnresolvedAttributes: make(map[string]hcl.Expression),
+		}
 	case schema.TriggerTypeQuery:
-		trigger.Config = &TriggerQuery{}
+		trigger.Config = &TriggerQuery{
+			UnresolvedAttributes: make(map[string]hcl.Expression),
+		}
 	case schema.TriggerTypeHttp:
-		trigger.Config = &TriggerHttp{}
+		trigger.Config = &TriggerHttp{
+			UnresolvedAttributes: make(map[string]hcl.Expression),
+		}
 	default:
 		return nil
 	}

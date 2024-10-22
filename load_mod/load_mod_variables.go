@@ -18,13 +18,15 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error) {
-	mod, errAndWarnings := LoadMod(ctx, variablePath, parseCtx)
-	if errAndWarnings.GetError() != nil {
-		return nil, errAndWarnings.GetError()
+func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+	mod, ew := LoadMod(ctx, variablePath, parseCtx)
+	if ew.GetError() != nil {
+		return nil, ew
 	}
 
-	return modconfig.NewModVariableMap(mod)
+	m, err := modconfig.NewModVariableMap(mod)
+	ew.Error = err
+	return m, ew
 
 }
 
@@ -69,7 +71,7 @@ func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 
 	// parse the input values (only parse values for public variables)
 	// NOTE: pass in variable values set in mod require block to ensure validation passes
-	parsedValues, diags := inputvars.ParseVariableValues(inputValuesUnparsed, depModArgs, variableMap, validate)
+	parsedValues, diags := inputvars.ParseVariableValues(parseCtx.EvalCtx, inputValuesUnparsed, depModArgs, variableMap, validate)
 
 	if validate {
 		moreDiags := inputvars.CheckInputVariables(variableMap.PublicVariables, parsedValues)

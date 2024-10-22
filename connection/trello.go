@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -32,7 +31,7 @@ func (c *TrelloConnection) GetConnectionType() string {
 func (c *TrelloConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &TrelloConnection{})
+		return c.Pipes.Resolve(ctx, &TrelloConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil && c.Token == nil {
@@ -91,15 +90,9 @@ func (c *TrelloConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *TrelloConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *TrelloConnection) GetEnv() map[string]cty.Value {

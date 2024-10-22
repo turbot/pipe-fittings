@@ -6,12 +6,11 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
-const MicrosoftTeamsConnectionType = "microsoft_teams"
+const MicrosoftTeamsConnectionType = "teams"
 
 type MicrosoftTeamsConnection struct {
 	ConnectionImpl
@@ -31,7 +30,7 @@ func (c *MicrosoftTeamsConnection) GetConnectionType() string {
 func (c *MicrosoftTeamsConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &MicrosoftTeamsConnection{})
+		return c.Pipes.Resolve(ctx, &MicrosoftTeamsConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.AccessToken == nil {
@@ -84,15 +83,9 @@ func (c *MicrosoftTeamsConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *MicrosoftTeamsConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *MicrosoftTeamsConnection) GetEnv() map[string]cty.Value {

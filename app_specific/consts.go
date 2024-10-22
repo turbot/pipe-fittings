@@ -19,7 +19,7 @@ var LegacyDefaultVarsFileName string
 
 // TODO KAI  we need to provide a default (for now) as the flowpipe test code does not (always)
 // call SetAppSpecificConstants so this may be empty we need a proper solution to this
-var ModFileNameDeprecated string = "mod.sp"
+var ModFileNameDeprecated = "mod.sp"
 
 func ModFileNames() []string {
 	var res []string
@@ -57,10 +57,6 @@ var ConfigExtension string
 var ModDataExtensions []string
 var VariablesExtensions []string
 var AutoVariablesExtensions []string
-
-// args
-
-var DefaultDatabase string
 
 // env vars
 

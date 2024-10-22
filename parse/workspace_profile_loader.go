@@ -14,7 +14,6 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/sperr"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
-	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
@@ -193,13 +192,21 @@ Essentially, --workspace acme/dev is equivalent to:
 */
 func (l *WorkspaceProfileLoader[T]) getImplicitWorkspace(name string) T {
 	var empty T
-	if steampipeconfig.IsCloudWorkspaceIdentifier(name) {
+	if steampipeconfig.IsPipesWorkspaceIdentifier(name) {
 		switch any(empty).(type) {
 		case *workspace_profile.PowerpipeWorkspaceProfile:
 			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)
 			var res workspace_profile.WorkspaceProfile = &workspace_profile.PowerpipeWorkspaceProfile{
-				SnapshotLocation: utils.ToStringPointer(name),
-				Database:         utils.ToStringPointer(name),
+				SnapshotLocation: &name,
+				// NOTE: we no longer set the deprecated Database property - instead set the CloudWorkspace property
+				CloudWorkspace: &name,
+			}
+			return res.(T)
+		case *workspace_profile.SteampipeWorkspaceProfile:
+			slog.Debug("getImplicitWorkspace - creating implicit workspace", "name", name)
+			var res workspace_profile.WorkspaceProfile = &workspace_profile.SteampipeWorkspaceProfile{
+				SnapshotLocation:  &name,
+				WorkspaceDatabase: &name,
 			}
 			return res.(T)
 		}

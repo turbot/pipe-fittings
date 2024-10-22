@@ -6,12 +6,11 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
-const PipesConnectionType = "turbot_pipes"
+const PipesConnectionType = "pipes"
 
 type PipesConnection struct {
 	ConnectionImpl
@@ -31,7 +30,7 @@ func (c *PipesConnection) GetConnectionType() string {
 func (c *PipesConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &PipesConnection{})
+		return c.Pipes.Resolve(ctx, &PipesConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.Token == nil {
@@ -84,15 +83,9 @@ func (c *PipesConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *PipesConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *PipesConnection) GetEnv() map[string]cty.Value {

@@ -5,7 +5,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -31,7 +30,7 @@ func (c *MastodonConnection) GetConnectionType() string {
 func (c *MastodonConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &MastodonConnection{})
+		return c.Pipes.Resolve(ctx, &MastodonConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 	return c, nil
 }
@@ -76,15 +75,9 @@ func (c *MastodonConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *MastodonConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *MastodonConnection) GetEnv() map[string]cty.Value {

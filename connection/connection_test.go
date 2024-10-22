@@ -3,10 +3,13 @@ package connection
 import (
 	"context"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // ------------------------------------------------------------
@@ -867,6 +870,61 @@ func TestDiscordConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated DiscordConnection")
+}
+
+// ------------------------------------------------------------
+// DuckDb
+// ------------------------------------------------------------
+
+func TestDuckDbConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *DuckDbConnection
+	var conn2 *DuckDbConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &DuckDbConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same file name
+	connectionString := "postgres://user:password@localhost:5432/dbname"
+	conn1.FileName = &connectionString
+	conn2 = &DuckDbConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		FileName: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different file names
+	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
+	conn2.FileName = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+}
+
+func TestDuckDbConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty DuckDbConnection, should pass with no diagnostics
+	conn := &DuckDbConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for an empty DuckDbConnection")
+
+	// Case 2: Validate a DuckDbConnection with file name should pass with no diagnostics
+	conn = &DuckDbConnection{
+		FileName: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a DuckDbConnection with connection_string")
 }
 
 // ------------------------------------------------------------
@@ -1797,6 +1855,222 @@ func TestMicrosoftTeamsConnectionValidate(t *testing.T) {
 }
 
 // ------------------------------------------------------------
+// Mysql
+// ------------------------------------------------------------
+
+func TestMysqlConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *MysqlConnection
+	var conn2 *MysqlConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	//Case 3: Connections have same settings
+	conn1 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	conn2 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same settings and should be equal")
+
+	//Case 4: Connections have different settings
+
+	conn2.UserName = utils.ToStringPointer("user2")
+	assert.False(conn1.Equals(conn2), "Both connections have the different user_name and should not be equal")
+
+	// Case 5: Connection 2 is a subset of Connection 1
+	conn2 = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	assert.False(conn1.Equals(conn2), "Connection 2 is a subset of Connection 1, should return false")
+
+}
+
+func TestMysqlConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty MysqlConnection, should  should pass with no with diagnostics
+	conn := &MysqlConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should  should pass with no diagnostics for an empty MysqlConnection")
+
+	// Case 2: Validate a MysqlConnection with user name and db should pass with no diagnostics
+	conn = &MysqlConnection{
+		UserName: utils.ToStringPointer("user"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a MysqlConnection with user name and db")
+
+	// Case 4: Validate a MysqlConnection with user name but no db, should pass with no diagnostics
+	conn = &MysqlConnection{
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a MysqlConnection with user name but no db")
+
+	// Case 5: Validate a MysqlConnection with db name but no user, should pass with no diagnostics
+	conn = &MysqlConnection{
+		DbName: utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should  pass with no diagnostics for a MysqlConnection with db name but no user")
+
+	pipes := &PipesConnectionMetadata{
+		Connection: utils.ToStringPointer("default"),
+		User:       utils.ToStringPointer("user"),
+		Org:        utils.ToStringPointer("org"),
+		Workspace:  utils.ToStringPointer("ws"),
+	}
+
+	// Case 6: Validate a MysqlConnection with pipes block and no connection string, should pass with no diagnostics
+	conn = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a MysqlConnection with pipes block and no connection string")
+
+	// Case 7: Validate a MysqlConnection with pipes block and user name, should fail with diagnostics
+	conn = &MysqlConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a MysqlConnection with pipes block and user")
+}
+
+func TestMysqlConnectionGetConnectionString(t *testing.T) {
+	type fields struct {
+		db       *string
+		username *string
+		host     *string
+		port     *int
+		password *string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "all values are set",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+			},
+			want: "mysql://user:password@tcp(host:1234)/db",
+		},
+		{
+			name: "db, username, host and port",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+			},
+			want: "mysql://user@tcp(host:1234)/db",
+		},
+		{
+			name: "db, username, password",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				password: utils.ToStringPointer("password"),
+			},
+			want: "mysql://user:password@tcp(localhost:3306)/db",
+		},
+		{
+			name: "no host",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+			},
+			want: "mysql://user:password@tcp(localhost:1234)/db",
+		},
+		{
+			name: "db and user only",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+			},
+			want: "mysql://user@tcp(localhost:3306)/db",
+		},
+		{
+			name: "user only",
+			fields: fields{
+				username: utils.ToStringPointer("user"),
+			},
+			want: "mysql://user@tcp(localhost:3306)/mysql",
+		},
+		{
+			name: "db only",
+			fields: fields{
+				db: utils.ToStringPointer("db"),
+			},
+			want: "mysql://root@tcp(localhost:3306)/db",
+		},
+		{
+			name:   "empty",
+			fields: fields{},
+			want:   "mysql://root@tcp(localhost:3306)/mysql",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &MysqlConnection{
+				DbName:   tt.fields.db,
+				UserName: tt.fields.username,
+				Host:     tt.fields.host,
+				Port:     tt.fields.port,
+				Password: tt.fields.password,
+			}
+			// call validate to initialise the default values
+			_ = c.Validate()
+			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
+		})
+	}
+}
+
+// ------------------------------------------------------------
 // Okta
 // ------------------------------------------------------------
 
@@ -2168,6 +2442,373 @@ func TestPagerDutyConnectionValidate(t *testing.T) {
 }
 
 // ------------------------------------------------------------
+// Postgres
+// ------------------------------------------------------------
+
+func TestPostgresConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *PostgresConnection
+	var conn2 *PostgresConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	//Case 3: Connections have same settings
+	conn1 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	conn2 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same settings and should be equal")
+
+	//Case 4: Connections have different settings
+
+	conn2.UserName = utils.ToStringPointer("user2")
+	assert.False(conn1.Equals(conn2), "Both connections have the different user_name and should not be equal")
+
+	// Case 5: Connection 2 is a subset of Connection 1
+	conn2 = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	assert.False(conn1.Equals(conn2), "Connection 2 is a subset of Connection 1, should return false")
+
+}
+
+func TestPostgresConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty PostgresConnection, should should pass with no diagnostics
+	conn := &PostgresConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for an empty PostgresConnection")
+
+	// Case 2: Validate a PostgresConnection with user name and db should pass with no diagnostics
+	conn = &PostgresConnection{
+		UserName: utils.ToStringPointer("user"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with user name and db")
+
+	// Case 3: Validate a PostgresConnection with user name but no db should pass with no diagnostics
+	conn = &PostgresConnection{
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with user name but no db")
+
+	// Case 4: Validate a PostgresConnection with db name but no user, should pass with no diagnostics
+	conn = &PostgresConnection{
+		DbName: utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with db name but no user")
+
+	pipes := &PipesConnectionMetadata{
+		Connection: utils.ToStringPointer("default"),
+		User:       utils.ToStringPointer("user"),
+		Org:        utils.ToStringPointer("org"),
+		Workspace:  utils.ToStringPointer("ws"),
+	}
+
+	// Case 5: Validate a PostgresConnection with pipes block and no connection string, should pass with no diagnostics
+	conn = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a PostgresConnection with pipes block and no connection string")
+
+	// Case 6: Validate a PostgresConnection with pipes block and user name, should fail with diagnostics
+	conn = &PostgresConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a PostgresConnection with pipes block and user")
+}
+
+func TestPostgresConnectionGetConnectionString(t *testing.T) {
+	type fields struct {
+		db       *string
+		username *string
+		host     *string
+		port     *int
+		password *string
+		sslMode  *string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "all values are set",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: "postgresql://user:password@host:1234/db?sslmode=allow",
+		},
+		{
+			name: "db user host and port",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+			},
+			want: "postgresql://user@host:1234/db",
+		},
+		{
+			name: "db, user, password",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				password: utils.ToStringPointer("password"),
+			},
+			want: "postgresql://user:password@localhost:5432/db",
+		},
+		{
+			name: "no host",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: "postgresql://user:password@localhost:1234/db?sslmode=allow",
+		},
+		{
+			name: "db and user only",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+			},
+			want: "postgresql://user@localhost:5432/db",
+		},
+		{
+			name: "user only",
+			fields: fields{
+				username: utils.ToStringPointer("user"),
+			},
+			want: "postgresql://user@localhost:5432/postgres",
+		},
+		{
+			name: "db only",
+			fields: fields{
+				db: utils.ToStringPointer("db"),
+			},
+			want: "postgresql://postgres@localhost:5432/db",
+		},
+		{
+			name:   "empty",
+			fields: fields{},
+			want:   "postgresql://postgres@localhost:5432/postgres",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &PostgresConnection{
+				DbName:   tt.fields.db,
+				UserName: tt.fields.username,
+				Host:     tt.fields.host,
+				Port:     tt.fields.port,
+				Password: tt.fields.password,
+				SslMode:  tt.fields.sslMode,
+			}
+			// call validate to initialise the default values
+			_ = c.Validate()
+			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
+		})
+	}
+}
+
+func TestPostgresConnectionGetEnv(t *testing.T) {
+	type fields struct {
+		db       *string
+		username *string
+		host     *string
+		port     *int
+		password *string
+		sslMode  *string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   map[string]cty.Value
+	}{
+		{
+			name: "all values are set",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPASSWORD": cty.StringVal("password"),
+				"PGHOST":     cty.StringVal("host"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(1234)),
+				"PGSSLMODE":  cty.StringVal("allow"),
+			},
+		},
+		{
+			name: "db, user, host and port",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGHOST":     cty.StringVal("host"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(1234)),
+			},
+		},
+		{
+			name: "db, user, password",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				password: utils.ToStringPointer("password"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPASSWORD": cty.StringVal("password"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultPostgresPort)),
+				"PGHOST":     cty.StringVal(defaultPostgresHost),
+			},
+		},
+		{
+			name: "no host",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPASSWORD": cty.StringVal("password"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(1234)),
+				"PGHOST":     cty.StringVal(defaultPostgresHost),
+				"PGSSLMODE":  cty.StringVal("allow"),
+			},
+		},
+		{
+			name: "db and user only",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultPostgresPort)),
+				"PGHOST":     cty.StringVal(defaultPostgresHost),
+			},
+		},
+		{
+			name: "user only",
+			fields: fields{
+				username: utils.ToStringPointer("user"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal(defaultPostgresDbName),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultPostgresPort)),
+				"PGHOST":     cty.StringVal(defaultPostgresHost),
+			},
+		},
+		{
+			name: "db only",
+			fields: fields{
+				db: utils.ToStringPointer("db"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal(defaultPostgresDbName),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultPostgresPort)),
+				"PGHOST":     cty.StringVal(defaultPostgresHost),
+			},
+		},
+		{
+			name:   "empty",
+			fields: fields{},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal(defaultPostgresDbName),
+				"PGUSER":     cty.StringVal(defaultPostgresDbName),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultPostgresPort)),
+				"PGHOST":     cty.StringVal(defaultPostgresHost),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &PostgresConnection{
+				DbName:   tt.fields.db,
+				UserName: tt.fields.username,
+				Host:     tt.fields.host,
+				Port:     tt.fields.port,
+				Password: tt.fields.password,
+				SslMode:  tt.fields.sslMode,
+			}
+			// call validate to initialise the default values
+			_ = c.Validate()
+
+			assert.Equalf(t, tt.want, c.GetEnv(), "GetEnv()")
+		})
+	}
+}
+
+// ------------------------------------------------------------
 // SendGrid
 // ------------------------------------------------------------
 
@@ -2468,6 +3109,422 @@ func TestSlackConnectionValidate(t *testing.T) {
 	}
 	diagnostics = conn.Validate()
 	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a populated SlackConnection")
+}
+
+// ------------------------------------------------------------
+// Sqlite
+// ------------------------------------------------------------
+
+func TestSqliteConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *SqliteConnection
+	var conn2 *SqliteConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &SqliteConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	// Case 3: Both connections have the same  file name
+	connectionString := "postgres://user:password@localhost:5432/dbname"
+	conn1.FileName = &connectionString
+	conn2 = &SqliteConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		FileName: &connectionString,
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same connection_string and should be equal")
+
+	// Case 4: Connections have different file name
+	connectionString2 := "postgres://user:password@localhost:5432/dbname2"
+	conn2.FileName = &connectionString2
+	assert.False(conn1.Equals(conn2), "Connections have different connection_string, should return false")
+
+}
+
+func TestSqliteConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty SqliteConnection, should should pass with no diagnostics
+	conn := &SqliteConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for an empty SqliteConnection")
+
+	// Case 2: Validate a SqliteConnection with  file name should pass with no diagnostics
+	conn = &SqliteConnection{
+		FileName: utils.ToStringPointer("postgres://user:password@localhost:5432/dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SqliteConnection with connection_string")
+}
+
+// ------------------------------------------------------------
+// SteampipePg
+// ------------------------------------------------------------
+
+func TestSteampipePgConnectionEquals(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Both connections are nil
+	var conn1 *SteampipePgConnection
+	var conn2 *SteampipePgConnection
+	assert.True(conn1.Equals(conn2), "Both connections should be nil and equal")
+
+	// Case 2: One connection is nil
+	conn1 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+	}
+	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
+
+	//Case 3: Connections have same settings
+	conn1 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	conn2 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		Host:     utils.ToStringPointer("localhost"),
+		Port:     utils.ToIntegerPointer(5432),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+
+	assert.True(conn1.Equals(conn2), "Both connections have the same settings and should be equal")
+
+	//Case 4: Connections have different settings
+
+	conn2.UserName = utils.ToStringPointer("user2")
+	assert.False(conn1.Equals(conn2), "Both connections have the different user_name and should not be equal")
+
+	// Case 5: Connection 2 is a subset of Connection 1
+	conn2 = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			ShortName: "default",
+		},
+		UserName: utils.ToStringPointer("user"),
+		Password: utils.ToStringPointer("password"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	assert.False(conn1.Equals(conn2), "Connection 2 is a subset of Connection 1, should return false")
+}
+
+func TestSteampipePgConnectionValidate(t *testing.T) {
+	assert := assert.New(t)
+
+	// Case 1: Validate an empty SteampipePgConnection, should pass with no diagnostics
+	conn := &SteampipePgConnection{}
+	diagnostics := conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for an empty SteampipePgConnection")
+
+	// Case 2: Validate a SteampipePgConnection with user name and db should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		UserName: utils.ToStringPointer("user"),
+		DbName:   utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SteampipePgConnection with user name and db")
+
+	// Case 3: Validate a SteampipePgConnection with user name but no db, should should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for a SteampipePgConnection with user name but no db")
+
+	// Case 4: Validate a SteampipePgConnection with db name but no user, should should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		DbName: utils.ToStringPointer("dbname"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should should pass with no diagnostics for a SteampipePgConnection with db name but no user")
+
+	pipes := &PipesConnectionMetadata{
+		Connection: utils.ToStringPointer("default"),
+		User:       utils.ToStringPointer("user"),
+		Org:        utils.ToStringPointer("org"),
+		Workspace:  utils.ToStringPointer("ws"),
+	}
+
+	// Case 5: Validate a SteampipePgConnection with pipes block and no connection string, should pass with no diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 0, "Validation should pass with no diagnostics for a SteampipePgConnection with pipes block and no connection string")
+
+	// Case 6: Validate a SteampipePgConnection with pipes block and user name, should fail with diagnostics
+	conn = &SteampipePgConnection{
+		ConnectionImpl: ConnectionImpl{
+			Pipes: pipes,
+		},
+		UserName: utils.ToStringPointer("user"),
+	}
+	diagnostics = conn.Validate()
+	assert.Len(diagnostics, 1, "Validation should fail with 1 diagnostics for a SteampipePgConnection with pipes block and user")
+}
+
+func TestSteampipeConnectionGetConnectionString(t *testing.T) {
+	type fields struct {
+		db       *string
+		username *string
+		host     *string
+		port     *int
+		password *string
+		sslMode  *string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "all values are set",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: "postgresql://user:password@host:1234/db?sslmode=allow",
+		},
+		{
+			name: "db user host and port",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+			},
+			want: "postgresql://user@host:1234/db",
+		},
+		{
+			name: "password",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				password: utils.ToStringPointer("password"),
+			},
+			want: "postgresql://user:password@localhost:9193/db",
+		},
+		{
+			name: "no host",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: "postgresql://user:password@localhost:1234/db?sslmode=allow",
+		},
+		{
+			name: "db and user only",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+			},
+			want: "postgresql://user@localhost:9193/db",
+		},
+		{
+			name: "user only",
+			fields: fields{
+				username: utils.ToStringPointer("user"),
+			},
+			want: "postgresql://user@localhost:9193/steampipe",
+		},
+		{
+			name: "no user",
+			fields: fields{
+				db: utils.ToStringPointer("db"),
+			},
+			want: "postgresql://steampipe@localhost:9193/db",
+		},
+		{
+			name:   "empty",
+			fields: fields{},
+			want:   "postgresql://steampipe@localhost:9193/steampipe",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &SteampipePgConnection{
+				DbName:   tt.fields.db,
+				UserName: tt.fields.username,
+				Host:     tt.fields.host,
+				Port:     tt.fields.port,
+				Password: tt.fields.password,
+				SslMode:  tt.fields.sslMode,
+			}
+			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
+		})
+	}
+}
+
+func TestSteampipeConnectionGetEnv(t *testing.T) {
+	type fields struct {
+		db       *string
+		username *string
+		host     *string
+		port     *int
+		password *string
+		sslMode  *string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   map[string]cty.Value
+	}{
+		{
+			name: "all values are set",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPASSWORD": cty.StringVal("password"),
+				"PGHOST":     cty.StringVal("host"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(1234)),
+				"PGSSLMODE":  cty.StringVal("allow"),
+			},
+		},
+		{
+			name: "db, user, host and port",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				host:     utils.ToStringPointer("host"),
+				port:     utils.ToIntegerPointer(1234),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGHOST":     cty.StringVal("host"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(1234)),
+			},
+		},
+		{
+			name: "db, user, password",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				password: utils.ToStringPointer("password"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPASSWORD": cty.StringVal("password"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultSteampipePort)),
+				"PGHOST":     cty.StringVal(defaultSteampipeHost),
+			},
+		},
+		{
+			name: "no host",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+				port:     utils.ToIntegerPointer(1234),
+				password: utils.ToStringPointer("password"),
+				sslMode:  utils.ToStringPointer("allow"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPASSWORD": cty.StringVal("password"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(1234)),
+				"PGHOST":     cty.StringVal(defaultSteampipeHost),
+				"PGSSLMODE":  cty.StringVal("allow"),
+			},
+		},
+		{
+			name: "db and user only",
+			fields: fields{
+				db:       utils.ToStringPointer("db"),
+				username: utils.ToStringPointer("user"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultSteampipePort)),
+				"PGHOST":     cty.StringVal(defaultSteampipeHost),
+			},
+		},
+		{
+			name: "user only",
+			fields: fields{
+				username: utils.ToStringPointer("user"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal(defaultSteampipeDbName),
+				"PGUSER":     cty.StringVal("user"),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultSteampipePort)),
+				"PGHOST":     cty.StringVal(defaultSteampipeHost),
+			},
+		},
+		{
+			name: "db only",
+			fields: fields{
+				db: utils.ToStringPointer("db"),
+			},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal("db"),
+				"PGUSER":     cty.StringVal(defaultSteampipeDbName),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultSteampipePort)),
+				"PGHOST":     cty.StringVal(defaultSteampipeHost),
+			},
+		},
+		{
+			name:   "empty",
+			fields: fields{},
+			want: map[string]cty.Value{
+				"PGDATABASE": cty.StringVal(defaultSteampipeDbName),
+				"PGUSER":     cty.StringVal(defaultSteampipeDbName),
+				"PGPORT":     cty.StringVal(strconv.Itoa(defaultSteampipePort)),
+				"PGHOST":     cty.StringVal(defaultSteampipeHost),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &SteampipePgConnection{
+				DbName:   tt.fields.db,
+				UserName: tt.fields.username,
+				Host:     tt.fields.host,
+				Port:     tt.fields.port,
+				Password: tt.fields.password,
+				SslMode:  tt.fields.sslMode,
+			}
+			assert.Equalf(t, tt.want, c.GetEnv(), "GetEnv()")
+		})
+	}
 }
 
 // ------------------------------------------------------------

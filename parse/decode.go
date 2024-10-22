@@ -3,15 +3,19 @@ package parse
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // A consistent detail message for all "not a valid identifier" diagnostics.
@@ -174,11 +178,35 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 
 func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (*modconfig.Mod, *DecodeResult) {
 	res := NewDecodeResult()
-	// decode the body
-	diags := DecodeHclBody(block.Body, evalCtx, mod, mod)
+
+	// decode the database attribute separately
+	// do a partial decode using a schema containing just database - use to pull out all other body content in the remain block
+	databaseContent, remain, diags := block.Body.PartialContent(&hcl.BodySchema{
+		Attributes: []hcl.AttributeSchema{
+			{Name: schema.AttributeTypeDatabase},
+		}})
 	res.HandleDecodeDiags(diags)
 
+	// decode the body
+	moreDiags := DecodeHclBody(remain, evalCtx, mod, mod)
+	res.HandleDecodeDiags(moreDiags)
+
+	connectionString, searchPath, searchPathPrefix, moreDiags := resolveConnectionString(databaseContent, evalCtx)
+	res.HandleDecodeDiags(moreDiags)
+
+	// if connection string or search path was specified (by the mod referencing a connection), set them
+	if connectionString != nil {
+		mod.ModDatabase = connectionString
+	}
+	if searchPath != nil {
+		mod.ModSearchPath = searchPathPrefix
+	}
+	if searchPathPrefix != nil {
+		mod.ModSearchPathPrefix = searchPathPrefix
+	}
+
 	return mod, res
+
 }
 
 func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Require, hcl.Diagnostics) {
@@ -289,7 +317,7 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	content, diags := block.Body.Content(VariableBlockSchema)
 	res.HandleDecodeDiags(diags)
 
-	v, diags := DecodeVariableBlock(block, content)
+	v, diags := DecodeVariableBlock(block, content, parseCtx)
 	res.HandleDecodeDiags(diags)
 
 	if res.Success() {
@@ -297,6 +325,11 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	} else {
 		slog.Error("decodeVariable failed", "diags", res.Diags)
 		return nil, res
+	}
+	// if a type property was specified, extract type string from the hcl source
+	if attr, exists := content.Attributes[schema.AttributeTypeType]; exists {
+		src := parseCtx.FileData[attr.Expr.Range().Filename]
+		variable.TypeString = extractExpressionString(attr.Expr, src)
 	}
 
 	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)
@@ -317,8 +350,14 @@ func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig
 	if diags.HasErrors() {
 		return nil, res
 	}
-	// do a partial decode using an empty schema - use to pull out all body content in the remain block
-	_, remain, diags := block.Body.PartialContent(&hcl.BodySchema{})
+
+	// decode the database attribute separately
+	// do a partial decode using a schema containing just database - use to pull out all other body content in the remain block
+	databaseContent, remain, diags := block.Body.PartialContent(&hcl.BodySchema{
+		Attributes: []hcl.AttributeSchema{
+			{Name: schema.AttributeTypeDatabase},
+		}})
+
 	res.HandleDecodeDiags(diags)
 	if !res.Success() {
 		return nil, res
@@ -331,7 +370,92 @@ func decodeQueryProvider(block *hcl.Block, parseCtx *ModParseContext) (modconfig
 	// decode 'with',args and params blocks
 	res.Merge(decodeQueryProviderBlocks(block, remain.(*hclsyntax.Body), resource, parseCtx))
 
-	return resource.(modconfig.QueryProvider), res
+	// resolve the connection string and (if set) search path
+	qp := resource.(modconfig.QueryProvider)
+	connectionString, searchPath, searchPathPrefix, diags := resolveConnectionString(databaseContent, parseCtx.EvalCtx)
+	if connectionString != nil {
+		qp.SetDatabase(connectionString)
+	}
+	if searchPath != nil {
+		qp.SetSearchPath(searchPath)
+	}
+	if searchPathPrefix != nil {
+		qp.SetSearchPathPrefix(searchPathPrefix)
+	}
+	res.HandleDecodeDiags(diags)
+
+	return qp, res
+}
+
+func resolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext) (cs *string, searchPath, searchPathPrefix []string, diags hcl.Diagnostics) {
+	var connectionString string
+	attr, exists := content.Attributes[schema.AttributeTypeDatabase]
+	if !exists {
+		return nil, searchPath, searchPathPrefix, diags
+	}
+
+	var dbValue cty.Value
+	diags = gohcl.DecodeExpression(attr.Expr, evalCtx, &dbValue)
+
+	if diags.HasErrors() {
+		// use decode result to handle any dependencies
+		res := NewDecodeResult()
+		res.HandleDecodeDiags(diags)
+		diags = res.Diags
+		// if there are other errors, return them
+		if diags.HasErrors() {
+			return nil, searchPath, searchPathPrefix, res.Diags
+		}
+		// so there is a dependency error - if it is for a connection, return the connection name as the connection string
+		for _, dep := range res.Depends {
+			for _, traversal := range dep.Traversals {
+				depName := hclhelpers.TraversalAsString(traversal)
+				if strings.HasPrefix(depName, "connection.") {
+					return &depName, searchPath, searchPathPrefix, diags
+				}
+			}
+		}
+		// if we get here, there is a dependency error but it is not for a connection
+		// return the original diags for the calling code to handle
+		return nil, searchPath, searchPathPrefix, diags
+	}
+	// check if this is a connection string or a connection
+	if dbValue.Type() == cty.String {
+		connectionString = dbValue.AsString()
+	} else {
+		// if this is a temporary connection, ignore (this will only occur during the vareiable parsing phase)
+		if dbValue.Type().HasAttribute("temporary") {
+			return nil, searchPath, searchPathPrefix, diags
+		}
+
+		c, err := app_specific_connection.CtyValueToConnection(dbValue)
+		if err != nil {
+			return nil, searchPath, searchPathPrefix, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  err.Error(),
+					Subject:  attr.Range.Ptr(),
+				}}
+		}
+
+		// the connection type must support connection strings
+		if conn, ok := c.(connection.ConnectionStringProvider); ok {
+			connectionString = conn.GetConnectionString()
+		} else {
+			slog.Warn("connection does not support connection string", "db", c)
+			return nil, searchPath, searchPathPrefix, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "invalid connection reference - only connections which implement GetConnectionString() are supported",
+				}}
+		}
+		if conn, ok := c.(connection.SearchPathProvider); ok {
+			searchPath = conn.GetSearchPath()
+			searchPathPrefix = conn.GetSearchPathPrefix()
+		}
+	}
+
+	return &connectionString, searchPath, searchPathPrefix, diags
 }
 
 func decodeQueryProviderBlocks(block *hcl.Block, content *hclsyntax.Body, resource modconfig.HclResource, parseCtx *ModParseContext) *DecodeResult {

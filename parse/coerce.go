@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -35,6 +36,28 @@ func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interf
 		}
 
 		errorExist := false
+
+		// if the param is a custom type, check the resource type
+		if mapParam, ok := v.(map[string]any); ok {
+			switch {
+			case param.IsConnectionType():
+				if !connection.ConnectionTypeMeetsRequiredType(param.TypeString, mapParam["resource_type"].(string), mapParam["type"].(string)) {
+					errorExist = true
+					errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted connection but received %s", k, param.TypeString)))
+				} else {
+					delete(pipelineParamsWithNoDefaultValue, k)
+				}
+				continue
+			case param.IsNotifierType():
+				if mapParam["resource_type"] != param.TypeString {
+					errorExist = true
+					errors = append(errors, perr.BadRequestWithMessage(fmt.Sprintf("invalid data type for parameter '%s' wanted %s but received %s", k, param.TypeString, mapParam["resource_type"])))
+				} else {
+					delete(pipelineParamsWithNoDefaultValue, k)
+				}
+				continue
+			}
+		}
 
 		if !hclhelpers.GoTypeMatchesCtyType(v, param.Type) {
 			wanted := param.Type.FriendlyName()

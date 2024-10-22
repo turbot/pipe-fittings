@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -31,7 +30,7 @@ func (c *JumpCloudConnection) GetConnectionType() string {
 func (c *JumpCloudConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &JumpCloudConnection{})
+		return c.Pipes.Resolve(ctx, &JumpCloudConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {
@@ -84,15 +83,9 @@ func (c *JumpCloudConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *JumpCloudConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *JumpCloudConnection) GetEnv() map[string]cty.Value {

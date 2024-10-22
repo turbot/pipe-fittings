@@ -19,7 +19,7 @@ func FileModTime(filePath string) (time.Time, error) {
 	return file.ModTime(), nil
 }
 
-// MoveFile moves a file from source to destiantion.
+// MoveFile moves a file from source to destination.
 //
 //	It first attempts the movement using OS primitives (os.Rename)
 //	If os.Rename fails, it copies the file byte-by-byte to the destination and then removes the source

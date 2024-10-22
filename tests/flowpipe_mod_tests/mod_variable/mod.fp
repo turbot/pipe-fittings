@@ -60,6 +60,23 @@ variable "var_six" {
   description = "test variable"
 }
 
+variable "text_format" {
+    type    = string
+    format  = "text"
+    default = "format text"
+}
+
+variable "format_implicit" {
+    type    = string
+    default = "format text (implicit)"
+}
+
+variable "multiline_format" {
+    type    = string
+    format  = "multiline"
+    default = "format\nmultiline"
+}
+
 pipeline "one" {
   step "transform" "one" {
     value = "prefix text here and ${var.var_one} and suffix"
@@ -172,6 +189,23 @@ pipeline "description_from_var_four" {
 
 pipeline "foo-bar" {
   description = "description from variable: ${var.var_four}"
+}
+
+pipeline "param_format" {
+    param "text_format" {
+        type    = string
+        format  = "text"
+        default = "format text"
+    }
+     param "format_implicit" {
+        type    = string
+        default = "format text (implicit)"
+    }
+    param "multiline_format" {
+        type    = string
+        format  = "multiline"
+        default = "format\nmultiline"
+    }
 }
 
 locals {

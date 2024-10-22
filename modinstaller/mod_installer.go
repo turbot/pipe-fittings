@@ -315,18 +315,18 @@ func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (
 	var errors []error
 
 	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
-		// is this mod targetted by the command (i.e. was the mod name passed as an arg
-		// - or else were no args passed, targetting all mods)
-		commandTargettingMod := i.isCommandTargettingMod(requiredModVersion)
+		// is this mod targeted by the command (i.e. was the mod name passed as an arg
+		// - or else were no args passed, targeting all mods)
+		commandTargetingMod := i.isCommandTargetingMod(requiredModVersion)
 
 		// do we have this mod installed for any parent?
-		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, commandTargettingMod)
+		currentMod, err := i.getModForRequirement(ctx, requiredModVersion, commandTargetingMod)
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
 
-		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, commandTargettingMod); err != nil {
+		if err := i.installModDependenciesRecursively(ctx, requiredModVersion, currentMod, parent, commandTargetingMod); err != nil {
 			errors = append(errors, err)
 		}
 	}
@@ -608,8 +608,8 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 	return resolvedRef, modDef, nil
 }
 
-// is this command targetting this mod - i.e. mod was included in the args
-func (i *ModInstaller) isCommandTargettingMod(m *modconfig.ModVersionConstraint) bool {
+// is this command targeting this mod - i.e. mod was included in the args
+func (i *ModInstaller) isCommandTargetingMod(m *modconfig.ModVersionConstraint) bool {
 	if len(i.targetMods) == 0 {
 		return true
 	}
@@ -722,7 +722,7 @@ func (i *ModInstaller) getUpdateStrategy() string {
 	return i.updateStrategy
 }
 
-// determine whether there is a newer mod version avoilable which satisfies the dependency version constraint
+// determine whether there is a newer mod version available which satisfies the dependency version constraint
 func (i *ModInstaller) newerVersionAvailable(requiredVersion *modconfig.ModVersionConstraint, currentVersion *semver.Version) (bool, error) {
 	// get available versions for this mod
 	includePrerelease := requiredVersion.IsPrerelease()
@@ -873,7 +873,7 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 	return remoteRef.Hash().String(), nil
 }
 
-// build the path of the temp location to copy this depednency to
+// build the path of the temp location to copy this dependency to
 func (i *ModInstaller) getDependencyDestPath(dependencyFullName string) string {
 	return filepath.Join(i.modsPath, dependencyFullName)
 }

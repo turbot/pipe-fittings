@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -11,7 +10,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-const VirusTotalConnectionType = "virus_total"
+const VirusTotalConnectionType = "virustotal"
 
 type VirusTotalConnection struct {
 	ConnectionImpl
@@ -31,7 +30,7 @@ func (c *VirusTotalConnection) GetConnectionType() string {
 func (c *VirusTotalConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &VirusTotalConnection{})
+		return c.Pipes.Resolve(ctx, &VirusTotalConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {
@@ -85,15 +84,9 @@ func (c *VirusTotalConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *VirusTotalConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *VirusTotalConnection) GetEnv() map[string]cty.Value {

@@ -20,10 +20,12 @@ type RawVariable struct {
 	Description    string
 	Default        cty.Value
 	Type           cty.Type
+	TypeString     string
 	ParsingMode    VariableParsingMode
 	Enum           cty.Value
 	EnumGo         []any
 	DescriptionSet bool
+	Format         string
 	DeclRange      hcl.Range
 }
 
@@ -61,7 +63,7 @@ const VariableParseHCL VariableParsingMode = 'H'
 //
 // If the returned diagnostics has errors, the returned value may not be
 // valid.
-func (m VariableParsingMode) Parse(name, value string) (cty.Value, hcl.Diagnostics) {
+func (m VariableParsingMode) Parse(evalCtx *hcl.EvalContext, name, value string) (cty.Value, hcl.Diagnostics) {
 	switch m {
 	case VariableParseLiteral:
 		return cty.StringVal(value), nil
@@ -71,7 +73,7 @@ func (m VariableParsingMode) Parse(name, value string) (cty.Value, hcl.Diagnosti
 		if diags.HasErrors() {
 			return cty.DynamicVal, diags
 		}
-		val, valDiags := expr.Value(nil)
+		val, valDiags := expr.Value(evalCtx)
 		diags = append(diags, valDiags...)
 		return val, diags
 	default:

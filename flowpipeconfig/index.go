@@ -8,6 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
@@ -21,6 +22,7 @@ type FlowpipeConfig struct {
 	Credentials         map[string]credential.Credential
 	Integrations        map[string]modconfig.Integration
 	Notifiers           map[string]modconfig.Notifier
+	ConnectionImports   map[string]modconfig.ConnectionImport
 	PipelingConnections map[string]connection.PipelingConnection
 
 	watcher                 *filewatcher.FileWatcher
@@ -42,6 +44,7 @@ func (f *FlowpipeConfig) updateResources(other *FlowpipeConfig) {
 	f.Integrations = other.Integrations
 	f.Notifiers = other.Notifiers
 	f.PipelingConnections = other.PipelingConnections
+	f.ConnectionImports = other.ConnectionImports
 
 }
 
@@ -116,6 +119,17 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 			return false
 		}
 	}
+	if len(f.ConnectionImports) != len(other.ConnectionImports) {
+		return false
+	}
+	for k, v := range f.ConnectionImports {
+		if _, ok := other.ConnectionImports[k]; !ok {
+			return false
+		}
+		if !other.ConnectionImports[k].Equals(v) {
+			return false
+		}
+	}
 
 	return true
 }
@@ -123,7 +137,7 @@ func (f *FlowpipeConfig) Equals(other *FlowpipeConfig) bool {
 func (f *FlowpipeConfig) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: f.ConfigPaths,
-		Include:     filehelpers.InclusionsFromExtensions([]string{".fpc"}),
+		Include:     filehelpers.InclusionsFromExtensions([]string{app_specific.ConfigExtension}),
 		ListFlag:    filehelpers.FilesRecursive,
 		EventMask:   fsnotify.Create | fsnotify.Remove | fsnotify.Rename | fsnotify.Write,
 		// we should look into passing the callback function into the underlying watcher
@@ -208,6 +222,7 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		Notifiers:           defaultNotifiers,
 		ConfigPaths:         configPaths,
 		PipelingConnections: defaultPipelingConnections,
+		ConnectionImports:   make(map[string]modconfig.ConnectionImport),
 		loadLock:            &sync.Mutex{},
 	}
 

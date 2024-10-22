@@ -49,6 +49,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 			UnqualifiedName: notifierName,
 			DeclRange:       block.DefRange,
 		},
+		NotifierName: notifierName,
 	}
 
 	content, diags := block.Body.Content(notifierBlockSchema)

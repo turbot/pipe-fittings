@@ -97,9 +97,9 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 		{
 			name: `tags t1=val1_foo t2=val2_foo`,
 			filter: ResourceFilter{
-				Tags: map[string]string{
-					"t1": "val1_foo",
-					"t2": "val2_foo",
+				Tags: map[string][]string{
+					"t1": {"val1_foo"},
+					"t2": {"val2_foo"},
 				},
 			},
 			want: map[string]struct{}{
@@ -111,9 +111,9 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 		{
 			name: `tags t1=val1_bar t2=val2_bar`,
 			filter: ResourceFilter{
-				Tags: map[string]string{
-					"t1": "val1_bar",
-					"t2": "val2_bar",
+				Tags: map[string][]string{
+					"t1": {"val1_bar"},
+					"t2": {"val2_bar"},
 				},
 			},
 			want: map[string]struct{}{
@@ -121,11 +121,24 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 			},
 		},
 		{
+			name: `tags t3=val3_foo t3=val3_bar`,
+			filter: ResourceFilter{
+				Tags: map[string][]string{
+					"t3": {"val3_foo", "val3_bar"},
+				},
+			},
+			want: map[string]struct{}{
+				"test_mod.control.control1": {},
+				"test_mod.control.control3": {},
+				"test_mod.control.control4": {},
+			},
+		},
+		{
 			name: `tags t1=val1_foo t2=something_else [NO MATCHES]`,
 			filter: ResourceFilter{
-				Tags: map[string]string{
-					"t1": "val1_foo",
-					"t2": "something_else",
+				Tags: map[string][]string{
+					"t1": {"val1_foo"},
+					"t2": {"something_else"},
 				},
 			},
 			want: map[string]struct{}{},

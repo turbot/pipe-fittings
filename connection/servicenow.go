@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -33,7 +32,7 @@ func (c *ServiceNowConnection) GetConnectionType() string {
 func (c *ServiceNowConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &ServiceNowConnection{})
+		return c.Pipes.Resolve(ctx, &ServiceNowConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	servicenowInstanceURLEnvVar := os.Getenv("SERVICENOW_INSTANCE_URL")
@@ -110,15 +109,9 @@ func (c *ServiceNowConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *ServiceNowConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *ServiceNowConnection) GetEnv() map[string]cty.Value {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -31,7 +30,7 @@ func (c *AbuseIPDBConnection) GetConnectionType() string {
 func (c *AbuseIPDBConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &AbuseIPDBConnection{})
+		return c.Pipes.Resolve(ctx, &AzureConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.APIKey == nil {
@@ -84,15 +83,7 @@ func (c *AbuseIPDBConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *AbuseIPDBConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
-
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
-
-	return cty.ObjectVal(valueMap), nil
+	return ctyValueForConnection(c)
 }
 
 func (c *AbuseIPDBConnection) GetEnv() map[string]cty.Value {

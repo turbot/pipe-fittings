@@ -8,6 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/constants"
 )
 
+// Dashboard options are deprecated and removed. They are kept here for compatibility with old configurations.
 type Dashboard struct {
 	// workspace profile
 	Browser *bool `hcl:"browser" cty:"profile_dashboard_browser"`

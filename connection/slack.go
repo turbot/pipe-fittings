@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -31,7 +30,7 @@ func (c *SlackConnection) GetConnectionType() string {
 func (c *SlackConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &SlackConnection{})
+		return c.Pipes.Resolve(ctx, &SlackConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.Token == nil {
@@ -84,15 +83,9 @@ func (c *SlackConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *SlackConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *SlackConnection) GetEnv() map[string]cty.Value {

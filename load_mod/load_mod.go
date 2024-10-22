@@ -21,19 +21,19 @@ import (
 // LoadMod parses all hcl files in modPath and returns a single mod
 // NOTE: it is an error if there is more than 1 mod defined, however zero mods is acceptable
 // - a default mod will be created assuming there are any resource files
-func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, ew error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("LoadMod start: %s", modPath))
 	defer utils.LogTime(fmt.Sprintf("LoadMod end: %s", modPath))
 
 	defer func() {
 		if r := recover(); r != nil {
-			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
+			ew.Error = helpers.ToError(r)
 		}
 	}()
 
-	mod, errorsAndWarnings = loadModDefinition(modPath, parseCtx)
-	if errorsAndWarnings.Error != nil {
-		return nil, errorsAndWarnings
+	mod, ew = loadModDefinition(modPath, parseCtx)
+	if ew.Error != nil {
+		return nil, ew
 	}
 
 	// if this is a dependency mod, initialise the dependency config
@@ -42,13 +42,13 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 	}
 
 	// set the current mod on the run context
-	if err := parseCtx.SetCurrentMod(mod); err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+	if ew.Error = parseCtx.SetCurrentMod(mod); ew.Error != nil {
+		return nil, ew
 	}
 
 	// load the mod dependencies
-	if err := loadModDependenciesAsync(ctx, mod, parseCtx); err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+	if ew.Error = loadModDependenciesAsync(ctx, mod, parseCtx); ew.Error != nil {
+		return nil, ew
 	}
 
 	// populate the resource maps of the current mod using the dependency mods
@@ -58,8 +58,8 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 	var resourceResult error_helpers.ErrorAndWarnings
 	mod, resourceResult = loadModResources(ctx, mod, parseCtx)
 
-	errorsAndWarnings.Merge(resourceResult)
-	return mod, errorsAndWarnings
+	ew.Merge(resourceResult)
+	return mod, ew
 }
 
 func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
@@ -67,7 +67,7 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 	defer utils.LogTime(fmt.Sprintf("loadModDefinition end: %s", modPath))
 
 	var mod *modconfig.Mod
-	errorsAndWarnings := error_helpers.ErrorAndWarnings{}
+	ew := error_helpers.ErrorAndWarnings{}
 
 	// verify the mod folder exists
 	modFilePath, exists := parse.ModFileExists(modPath)
@@ -76,14 +76,18 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 		var res *parse.DecodeResult
 		mod, res = parse.ParseModDefinition(modFilePath, parseCtx.EvalCtx)
 		if res.Diags.HasErrors() {
-			return nil, error_helpers.DiagsToErrorsAndWarnings("mod load failed", res.Diags)
+			ew.Error = error_helpers.HclDiagsToError("mod load failed", res.Diags)
+			return nil, ew
 		}
+		// if there are variable dependencies, add warnings
+		// this is a workaround to cover the case where a mod require arg block bas a variable dependency
+		ew.AddWarning(res.VariableDependenciesToWarnings()...)
 	} else {
 		// so there is no mod file - should we create a default?
 		if !parseCtx.ShouldCreateDefaultMod() {
-			errorsAndWarnings.Error = perr.BadRequestWithMessage(fmt.Sprintf("mod folder does not contain a mod resource definition '%s'", modPath))
+			ew.Error = perr.BadRequestWithMessage(fmt.Sprintf("mod folder does not contain a mod resource definition '%s'", modPath))
 			// ShouldCreateDefaultMod flag NOT set - fail
-			return nil, errorsAndWarnings
+			return nil, ew
 		}
 		// just create a default mod
 		mod = modconfig.CreateDefaultMod(modPath)
@@ -92,10 +96,10 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 	// NOTE: set the current mod on the parse context before adding metadata
 	parseCtx.CurrentMod = mod
 	diags := parse.AddResourceMetadata(mod, mod.GetHclResourceImpl().DeclRange, parseCtx)
-	ew := error_helpers.DiagsToErrorsAndWarnings("", diags)
-	errorsAndWarnings.Merge(ew)
+	moreEw := error_helpers.DiagsToErrorsAndWarnings("", diags)
+	ew.Merge(moreEw)
 
-	return mod, errorsAndWarnings
+	return mod, ew
 }
 
 func loadModDependenciesAsync(ctx context.Context, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
@@ -162,7 +166,10 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 		return err
 	}
 	// create a parse context for the dependency mod
-	childParseCtx := parse.NewChildModParseContext(parseCtx, modDependency.ResolvedVersionConstraint, dependencyDir)
+	childParseCtx, err := parse.NewChildModParseContext(parseCtx, modDependency.ResolvedVersionConstraint, dependencyDir)
+	if err != nil {
+		return err
+	}
 
 	// NOTE: pass in the version and dependency path of the mod - these must be set before it loads its dependencies
 	dependencyMod, errAndWarnings := LoadMod(ctx, dependencyDir, childParseCtx)

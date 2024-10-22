@@ -47,6 +47,9 @@ type DatabaseItem interface {
 	GetDatabase() *string
 	GetSearchPath() []string
 	GetSearchPathPrefix() []string
+	SetDatabase(*string)
+	SetSearchPath([]string)
+	SetSearchPathPrefix([]string)
 }
 
 type ModItem interface {

@@ -13,6 +13,27 @@ func IsValueCompatibleWithType(ctyType cty.Type, value cty.Value) bool {
 
 	valueType := value.Type()
 
+	/**
+	  Is this correct? This is to allow declaration such as
+
+	  variable "accessanalyzer_tag_rules" {
+		type = object({
+			add           = optional(map(string))
+			remove        = optional(list(string))
+			remove_except = optional(list(string))
+			update_keys   = optional(map(list(string)))
+			update_values = optional(map(map(list(string))))
+		})
+		description = "Access Analyzers specific tag rules"
+		default     = null
+	}
+
+
+	*/
+	if value.IsNull() {
+		return true
+	}
+
 	if ctyType.IsMapType() || ctyType.IsObjectType() {
 		if valueType.IsMapType() || valueType.IsObjectType() {
 			if ctyType.IsCollectionType() {

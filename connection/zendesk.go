@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/cty_helpers"
 	"os"
 
 	"github.com/hashicorp/hcl/v2"
@@ -33,7 +32,7 @@ func (c *ZendeskConnection) GetConnectionType() string {
 func (c *ZendeskConnection) Resolve(ctx context.Context) (PipelingConnection, error) {
 	// if pipes metadata is set, call pipes to retrieve the creds
 	if c.Pipes != nil {
-		return c.Pipes.Resolve(ctx, &ZendeskConnection{})
+		return c.Pipes.Resolve(ctx, &ZendeskConnection{ConnectionImpl: c.ConnectionImpl})
 	}
 
 	if c.Subdomain == nil && c.Email == nil && c.Token == nil {
@@ -99,15 +98,9 @@ func (c *ZendeskConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *ZendeskConnection) CtyValue() (cty.Value, error) {
-	ctyValue, err := cty_helpers.GetCtyValue(c)
-	if err != nil {
-		return cty.NilVal, err
-	}
 
-	valueMap := ctyValue.AsValueMap()
-	valueMap["env"] = cty.ObjectVal(c.GetEnv())
+	return ctyValueForConnection(c)
 
-	return cty.ObjectVal(valueMap), nil
 }
 
 func (c *ZendeskConnection) GetEnv() map[string]cty.Value {
