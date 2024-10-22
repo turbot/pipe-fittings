@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/turbot/pipe-fittings/perr"
@@ -531,18 +530,7 @@ func (p *PipelineParam) PipelineParamCustomValueValidation(setting cty.Value, ev
 }
 
 func (p *PipelineParam) IsConnectionType() bool {
-	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(p.Type)
-	if !nestedCapsule {
-		return false
-	}
-
-	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
-	if _, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
-		return true
-	}
-
-	var connectionImpl *connection.ConnectionImpl
-	return encapsulatedGoType.String() == reflect.TypeOf(connectionImpl).String()
+	return IsConnectionType(p.Type)
 }
 
 func (p *PipelineParam) IsNotifierType() bool {

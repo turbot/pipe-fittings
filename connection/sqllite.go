@@ -16,6 +16,8 @@ const SqliteConnectionType = "sqlite"
 type SqliteConnection struct {
 	ConnectionImpl
 	FileName *string `json:"file_name,omitempty" cty:"file_name" hcl:"file_name,optional"`
+	// used only to set the connection string from command line variable value with a connection string
+	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string"`
 }
 
 func NewSqliteConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -79,6 +81,10 @@ func (c *SqliteConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *SqliteConnection) GetConnectionString() string {
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
+	}
+
 	return fmt.Sprintf("sqlite://%s", c.getFileName())
 }
 
