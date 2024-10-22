@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -48,6 +49,7 @@ type pipesApiCredResponse struct {
 }
 
 func (m PipesConnectionMetadata) Resolve(ctx context.Context, target PipelingConnection) (PipelingConnection, error) {
+	slog.Info("Resolving pipes connection metadata")
 	if err := m.validate(); err != nil {
 		return nil, err
 	}
@@ -75,6 +77,7 @@ func (m PipesConnectionMetadata) callPipesCredApi(target PipelingConnection) err
 	}
 
 	// Create a new HTTP request
+	slog.Info("Calling Pipes API", "url", url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return perr.InternalWithMessage("failed to create request")
@@ -87,12 +90,14 @@ func (m PipesConnectionMetadata) callPipesCredApi(target PipelingConnection) err
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
+		slog.Info("Failed to execute request", "error", err)
 		return perr.InternalWithMessage("failed to execute request")
 	}
 	defer resp.Body.Close()
 
 	// Check if the status code is OK (200)
 	if resp.StatusCode != http.StatusOK {
+		slog.Info("Unexpected status code", "statusCode", resp.StatusCode)
 		return perr.InternalWithMessage(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
 	}
 
@@ -107,8 +112,11 @@ func (m PipesConnectionMetadata) handlePipesCredApiResponse(resp io.ReadCloser, 
 
 	err := json.NewDecoder(resp).Decode(&apiResponse)
 	if err != nil {
+		slog.Error("Failed to decode response body", "error", err)
 		return perr.InternalWithMessage("failed to decode response body")
 	}
+
+	slog.Info("Pipes API response", "apiResponse", apiResponse)
 
 	// always set a ttl, even if pipes does not provide one
 	ttl := constants.DefaultConnectionTtl
@@ -144,6 +152,8 @@ func (m PipesConnectionMetadata) endpoint() string {
 }
 
 func (m PipesConnectionMetadata) validate() error {
+	slog.Info("Validating pipes connection metadata")
+
 	// connection, workspace and either user or org are required
 	if m.Connection == nil {
 		return perr.BadRequestWithMessage("connection is required")
