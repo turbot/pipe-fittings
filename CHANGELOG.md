@@ -1,6 +1,11 @@
 # pipes-fittings
 
 Shared Pipes Component
+## v1.6.1 [2024-10-22]
+
+_What's new_
+ * Support setting a variable of type Connection using a connection string or cloud workspace handle. ([#592](https://github.com/turbot/pipe-fittings/issues/592)).
+
 
 ## v1.6.0 [2024-10-22]
 
