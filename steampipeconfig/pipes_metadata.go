@@ -7,10 +7,6 @@ type PipesMetadata struct {
 	ConnectionString string             `json:"-"`
 }
 
-func (c *PipesMetadata) GetConnectionString() string {
-	return c.ConnectionString
-}
-
 type ActorMetadata struct {
 	Id     string `json:"id,omitempty"`
 	Handle string `json:"handle,omitempty"`

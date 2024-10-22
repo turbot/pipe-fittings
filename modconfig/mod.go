@@ -62,12 +62,6 @@ type Mod struct {
 	// convenient aggregation of all resources
 	ResourceMaps *ResourceMaps `json:"-"`
 
-	// store mod database, search path and search path prefix in separate variables from the ModTreeItemImpl fields
-	// as these have lower precedence
-	ModDatabase         *string  `cty:"mod_database"`
-	ModSearchPath       []string `cty:"mod_search_path"`
-	ModSearchPathPrefix []string `cty:"mod_search_path_prefix"`
-
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
 }
@@ -407,15 +401,15 @@ func (m *Mod) RequireHasUnresolvedArgs() bool {
 }
 
 func (m *Mod) GetConnectionDependsOn() []string {
-	if m.ModDatabase != nil && strings.HasPrefix(*m.ModDatabase, "connection.") {
-		return []string{strings.TrimPrefix(*m.ModDatabase, "connection.")}
+	if m.Database != nil && strings.HasPrefix(*m.Database, "connection.") {
+		return []string{strings.TrimPrefix(*m.Database, "connection.")}
 	}
 	return nil
 }
 
 func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
-	if m.ModDatabase != nil {
-		modDatabase := *m.ModDatabase
+	if m.Database != nil {
+		modDatabase := *m.Database
 
 		// if the database is actually a connection name, try to resolve from eval context
 		if strings.HasPrefix(modDatabase, "connection.") {
