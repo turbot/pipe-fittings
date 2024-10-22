@@ -196,13 +196,13 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 
 	// if connection string or search path was specified (by the mod referencing a connection), set them
 	if connectionString != nil {
-		mod.ModDatabase = connectionString
+		mod.Database = connectionString
 	}
 	if searchPath != nil {
-		mod.ModSearchPath = searchPathPrefix
+		mod.SearchPath = searchPath
 	}
 	if searchPathPrefix != nil {
-		mod.ModSearchPathPrefix = searchPathPrefix
+		mod.SearchPathPrefix = searchPathPrefix
 	}
 
 	return mod, res
@@ -423,7 +423,7 @@ func resolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext)
 	if dbValue.Type() == cty.String {
 		connectionString = dbValue.AsString()
 	} else {
-		// if this is a temporary connection, ignore (this will only occur during the vareiable parsing phase)
+		// if this is a temporary connection, ignore (this will only occur during the variable parsing phase)
 		if dbValue.Type().HasAttribute("temporary") {
 			return nil, searchPath, searchPathPrefix, diags
 		}

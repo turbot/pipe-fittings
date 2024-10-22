@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
 )
@@ -89,9 +90,15 @@ func (b *ModTreeItemImpl) GetDatabase() *string {
 	if b.Database != nil {
 		return b.Database
 	}
+
+	// if we have a parent, ask for its database
+	// (stop when we get to the mod - the mod database property has lower precedence)
 	if len(b.parents) > 0 {
-		return b.GetParents()[0].GetDatabase()
+		if parent := b.GetParents()[0]; parent.BlockType() != schema.BlockTypeMod {
+			return parent.GetDatabase()
+		}
 	}
+
 	return nil
 }
 
