@@ -58,6 +58,23 @@ func IsCustomType(ty cty.Type) bool {
 	return isCustomType
 }
 
+// IsConnectionType returns true if the given cty.Type is a connection type
+func IsConnectionType(ty cty.Type) bool {
+	// is the value a workspace handle?
+	encapsulatedGoType, nestedCapsule := hclhelpers.IsNestedCapsuleType(ty)
+	if !nestedCapsule {
+		return false
+	}
+
+	encapulatedInstanceNew := reflect.New(encapsulatedGoType)
+	if _, ok := encapulatedInstanceNew.Interface().(connection.PipelingConnection); ok {
+		return true
+	}
+
+	var connectionImpl *connection.ConnectionImpl
+	return encapsulatedGoType.String() == reflect.TypeOf(connectionImpl).String()
+}
+
 func ValidateValueMatchesType(ctyVal cty.Value, ty cty.Type, sourceRange *hcl.Range) hcl.Diagnostics {
 	if ty != cty.DynamicPseudoType {
 		ctyValType := ctyVal.Type()

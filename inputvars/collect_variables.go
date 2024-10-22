@@ -49,7 +49,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 			name := raw[:eq]
 			rawVal := raw[eq+1:]
 
-			ret[name] = unparsedVariableValueString{
+			ret[name] = UnparsedVariableValueString{
 				str:        rawVal,
 				name:       name,
 				sourceType: terraform.ValueFromEnvVar,
@@ -122,7 +122,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 
 		name := raw[:eq]
 		rawVal := raw[eq+1:]
-		ret[name] = unparsedVariableValueString{
+		ret[name] = UnparsedVariableValueString{
 			str:        rawVal,
 			name:       name,
 			sourceType: terraform.ValueFromCLIArg,
@@ -300,17 +300,21 @@ func (v unparsedVariableValueExpression) ParseVariableValue(evalCtx *hcl.EvalCon
 	}, diags
 }
 
-// unparsedVariableValueString is a UnparsedVariableValue
+// UnparsedVariableValueString is a UnparsedVariableValue
 // implementation that parses its value from a string. This can be used
 // to deal with values given directly on the command line and via environment
 // variables.
-type unparsedVariableValueString struct {
+type UnparsedVariableValueString struct {
 	str        string
 	name       string
 	sourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v UnparsedVariableValueString) Raw() string {
+	return v.str
+}
+
+func (v UnparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 
 	val, hclDiags := mode.Parse(evalCtx, v.name, v.str)

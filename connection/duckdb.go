@@ -16,6 +16,8 @@ const DuckDbConnectionType = "duckdb"
 type DuckDbConnection struct {
 	ConnectionImpl
 	FileName *string `json:"file_name,omitempty" cty:"file_name" hcl:"file_name,optional"`
+	// used only to set the connection string from command line variable value with a connection string
+	ConnectionString *string `json:"connection_string,omitempty" cty:"connection_string"`
 }
 
 func NewDuckDbConnection(shortName string, declRange hcl.Range) PipelingConnection {
@@ -78,6 +80,10 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 }
 
 func (c *DuckDbConnection) GetConnectionString() string {
+	if c.ConnectionString != nil {
+		return *c.ConnectionString
+	}
+
 	return fmt.Sprintf("duckdb://%s", c.getFileName())
 }
 

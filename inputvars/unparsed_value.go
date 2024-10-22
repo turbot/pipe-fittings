@@ -1,11 +1,19 @@
 package inputvars
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/backend"
+	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/pipes"
+	"github.com/turbot/pipe-fittings/steampipeconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"github.com/zclconf/go-cty/cty"
@@ -61,8 +69,15 @@ func ParseVariableValues(evalContext *hcl.EvalContext, inputValueUnparsed map[st
 		} else {
 			mode = modconfig.VariableParseLiteral
 		}
-
-		val, valDiags := unparsedVal.ParseVariableValue(evalContext, mode)
+		var val *terraform.InputValue
+		var valDiags tfdiags.Diagnostics
+		// if the variable is a connection, use special case logic to parse the value
+		// - handling connection strings and pipes workspace handle
+		if config.IsConnectionType() {
+			val, valDiags = parseConnectionVariableValue(evalContext, unparsedVal, mode)
+		} else {
+			val, valDiags = unparsedVal.ParseVariableValue(evalContext, mode)
+		}
 		diags = diags.Append(valDiags)
 		if valDiags.HasErrors() {
 			continue
@@ -159,6 +174,71 @@ func ParseVariableValues(evalContext *hcl.EvalContext, inputValueUnparsed map[st
 	}
 
 	return ret, diags
+}
+
+// this function handles the case that the value for a connection variable is being set with a connection string or cloud workspace identifier
+func parseConnectionVariableValue(evalContext *hcl.EvalContext, unparsedVal UnparsedVariableValue, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+	var ctyVal cty.Value
+	var err error
+	if unparsedString, ok := unparsedVal.(UnparsedVariableValueString); ok {
+		str := unparsedString.Raw()
+		// is the value a workspace handle?
+		if steampipeconfig.IsPipesWorkspaceIdentifier(str) {
+			// verify the cloud token was provided
+			cloudToken := viper.GetString(constants.ArgPipesToken)
+			if cloudToken == "" {
+				return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to get pipes metadata", error_helpers.MissingCloudTokenError().Error())}
+			}
+
+			pipesMetadata, err := pipes.GetPipesMetadata(context.Background(), str, cloudToken)
+			if err != nil {
+				return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to get pipes metadata", err.Error())}
+			}
+			// create new  connection
+			c := connection.NewSteampipePgConnection(str, hcl.Range{}).(*connection.SteampipePgConnection)
+			c.ConnectionString = &pipesMetadata.ConnectionString
+			ctyVal, err = c.CtyValue()
+			if err != nil {
+				return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to get connection value", err.Error())}
+			}
+			return &terraform.InputValue{
+				Value:      ctyVal,
+				SourceType: terraform.ValueFromCLIArg,
+			}, nil
+
+		} else if backend.HasBackend(str) {
+			// is the value a connection string?
+			var c connection.PipelingConnection
+			switch {
+			case backend.IsDuckDBConnectionString(str):
+				c = connection.NewDuckDbConnection("command_arg", hcl.Range{}).(*connection.DuckDbConnection)
+				c.(*connection.DuckDbConnection).ConnectionString = &str
+			case backend.IsPostgresConnectionString(str):
+				c = connection.NewPostgresConnection("command_arg", hcl.Range{})
+				c.(*connection.PostgresConnection).ConnectionString = &str
+			case backend.IsMySqlConnectionString(str):
+				c = connection.NewMysqlConnection("command_arg", hcl.Range{})
+				c.(*connection.MysqlConnection).ConnectionString = &str
+			case backend.IsSqliteConnectionString(str):
+				c = connection.NewSqliteConnection("command_arg", hcl.Range{})
+				c.(*connection.SqliteConnection).ConnectionString = &str
+
+			default:
+				return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to get connection value", fmt.Sprintf("Invalid connection string: %s", str))}
+			}
+			ctyVal, err = c.CtyValue()
+			if err != nil {
+				return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to get connection value", err.Error())}
+			}
+
+			return &terraform.InputValue{
+				Value:      ctyVal,
+				SourceType: terraform.ValueFromCLIArg,
+			}, nil
+		}
+	}
+	// fall back to normal parsing
+	return unparsedVal.ParseVariableValue(evalContext, mode)
 }
 
 func getUndeclaredVariableError(name string, variablesMap *modconfig.ModVariableMap) string {
