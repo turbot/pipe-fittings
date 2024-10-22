@@ -126,10 +126,10 @@ func (c *PostgresConnection) GetConnectionString() string {
 
 	// db, username, host and port all have default values if not set
 	connString := buildPostgresConnectionString(
-		typehelpers.SafeString(c.DbName),
-		typehelpers.SafeString(c.UserName),
-		typehelpers.SafeString(c.Host),
-		*c.Port,
+		c.getDbName(),
+		c.getUserName(),
+		c.getHost(),
+		c.getPort(),
 		c.Password, c.SslMode)
 	return connString
 }
@@ -137,10 +137,10 @@ func (c *PostgresConnection) GetConnectionString() string {
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {
 	// db, username, host and port all have default values if not set
 	return postgresConnectionParamsToEnvValueMap(
-		typehelpers.SafeString(c.DbName),
-		typehelpers.SafeString(c.UserName),
-		typehelpers.SafeString(c.Host),
-		*c.Port,
+		c.getDbName(),
+		c.getUserName(),
+		c.getHost(),
+		c.getPort(),
 		c.Password,
 		c.SslMode)
 }
@@ -235,4 +235,33 @@ func postgresConnectionParamsToEnvValueMap(db, username, host string, port int, 
 
 	// Convert the map to a cty.Value map
 	return envVars
+}
+
+// TODO avoid the need for this
+func (c *PostgresConnection) getPort() int {
+	if c.Port != nil {
+		return *c.Port
+	}
+	return defaultPostgresPort
+}
+
+func (c *PostgresConnection) getHost() string {
+	if c.Host != nil {
+		return *c.Host
+	}
+	return defaultPostgresHost
+}
+
+func (c *PostgresConnection) getDbName() string {
+	if c.DbName != nil {
+		return *c.DbName
+	}
+	return defaultPostgresDbName
+}
+
+func (c *PostgresConnection) getUserName() string {
+	if c.UserName != nil {
+		return *c.UserName
+	}
+	return defaultPostgresUser
 }
