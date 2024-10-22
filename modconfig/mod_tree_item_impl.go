@@ -107,8 +107,12 @@ func (b *ModTreeItemImpl) GetSearchPath() []string {
 	if len(b.SearchPath) != 0 {
 		return b.SearchPath
 	}
+	// if we have a parent, ask for its search path
+	// (stop when we get to the mod - the mod database property has lower precedence)
 	if len(b.parents) > 0 {
-		return b.GetParents()[0].GetSearchPath()
+		if parent := b.GetParents()[0]; parent.BlockType() != schema.BlockTypeMod {
+			return parent.GetSearchPath()
+		}
 	}
 
 	return nil
@@ -119,9 +123,14 @@ func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
 	if len(b.SearchPathPrefix) != 0 {
 		return b.SearchPathPrefix
 	}
-	if len(b.GetParents()) > 0 {
-		return b.GetParents()[0].GetSearchPathPrefix()
+	// if we have a parent, ask for its search path prefix
+	// (stop when we get to the mod - the mod database property has lower precedence)
+	if len(b.parents) > 0 {
+		if parent := b.GetParents()[0]; parent.BlockType() != schema.BlockTypeMod {
+			return parent.GetSearchPath()
+		}
 	}
+
 	return nil
 }
 
