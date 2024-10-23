@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.6.3 [tbd]
+
+_Bug fixes_
+
+* `form_url` should be sanitized.
+
 ## v1.6.2 [2024-10-22]
 
 _Bug fixes_
