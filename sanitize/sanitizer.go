@@ -82,6 +82,7 @@ var Instance = NewSanitizer(SanitizerOptions{
 		"turbot_secret_key",
 		"servicenow_password",
 		"jumpcloud_api_key",
+		"form_url",
 	},
 	ExcludePatterns: []string{
 		`SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}`,   // sendgrid
