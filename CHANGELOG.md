@@ -2,11 +2,12 @@
 
 Shared Pipes Component
 
-## v1.6.3 [tbd]
+## v1.6.3 [2024-10-23]
 
 _Bug fixes_
 
 * `form_url` should be sanitized.
+* Coerce input variable entered from terminal to the correct type.
 
 ## v1.6.2 [2024-10-22]
 
