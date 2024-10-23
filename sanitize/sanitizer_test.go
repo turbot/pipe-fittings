@@ -35,6 +35,14 @@ func TestSanitizer_SanitizeString(t *testing.T) {
 			input: `key = ghp_abcdfyocz0uxyzyO9Xn2Estui2kv12aaabgd`,
 			want:  `key = ` + RedactedStr,
 		},
+		{
+			name: "form_url",
+			opts: SanitizerOptions{
+				ExcludeFields: []string{"form_url"},
+			},
+			input: `{"form_url":"https://example.com/form?token=1234abcd"}`,
+			want:  `{"form_url":"` + RedactedStr + `"}`,
+		},
 		// The database connection string is also redacted by the Basic Auth redaction, it will actually redact more than the
 		// plain db redaction
 		// {
