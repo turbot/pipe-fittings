@@ -2,12 +2,17 @@
 
 Shared Pipes Component
 
+## v1.6.4 [2024-10-24]
+
+_Bug fixes_
+
+* Coerce input variable entered from terminal to the correct type. ([#595](https://github.com/turbot/pipe-fittings/issues/595)).
+
 ## v1.6.3 [2024-10-23]
 
 _Bug fixes_
 
 * `form_url` should be sanitized.
-* Coerce input variable entered from terminal to the correct type.
 
 ## v1.6.2 [2024-10-22]
 
