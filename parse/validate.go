@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/dashboard"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -10,22 +11,22 @@ import (
 // validate the resource
 func validateResource(resource modconfig.HclResource) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-	if qp, ok := resource.(modconfig.NodeAndEdgeProvider); ok {
+	if qp, ok := resource.(dashboard.NodeAndEdgeProvider); ok {
 		moreDiags := validateNodeAndEdgeProvider(qp)
 		diags = append(diags, moreDiags...)
-	} else if qp, ok := resource.(modconfig.QueryProvider); ok {
+	} else if qp, ok := resource.(dashboard.QueryProvider); ok {
 		moreDiags := validateQueryProvider(qp)
 		diags = append(diags, moreDiags...)
 	}
 
-	if wp, ok := resource.(modconfig.WithProvider); ok {
+	if wp, ok := resource.(dashboard.WithProvider); ok {
 		moreDiags := validateRuntimeDependencyProvider(wp)
 		diags = append(diags, moreDiags...)
 	}
 	return diags
 }
 
-func validateRuntimeDependencyProvider(wp modconfig.WithProvider) hcl.Diagnostics {
+func validateRuntimeDependencyProvider(wp dashboard.WithProvider) hcl.Diagnostics {
 	resource := wp.(modconfig.HclResource)
 	var diags hcl.Diagnostics
 	if len(wp.GetWiths()) > 0 && !resource.IsTopLevel() {
@@ -41,7 +42,7 @@ func validateRuntimeDependencyProvider(wp modconfig.WithProvider) hcl.Diagnostic
 
 // validate that the provider does not contains both edges/nodes and a query/sql
 // enrich the loaded nodes and edges with the fully parsed resources from the resourceMapProvider
-func validateNodeAndEdgeProvider(resource modconfig.NodeAndEdgeProvider) hcl.Diagnostics {
+func validateNodeAndEdgeProvider(resource dashboard.NodeAndEdgeProvider) hcl.Diagnostics {
 	// TODO [node_reuse] add NodeAndEdgeProviderImpl and move validate there
 	// https://github.com/turbot/steampipe/issues/2918
 
@@ -74,7 +75,7 @@ func validateNodeAndEdgeProvider(resource modconfig.NodeAndEdgeProvider) hcl.Dia
 	return diags
 }
 
-func validateQueryProvider(resource modconfig.QueryProvider) hcl.Diagnostics {
+func validateQueryProvider(resource dashboard.QueryProvider) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	diags = append(diags, resource.ValidateQuery()...)
@@ -86,7 +87,7 @@ func validateQueryProvider(resource modconfig.QueryProvider) hcl.Diagnostics {
 	return diags
 }
 
-func validateParamAndQueryNotBothSet(resource modconfig.QueryProvider) hcl.Diagnostics {
+func validateParamAndQueryNotBothSet(resource dashboard.QueryProvider) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	// param block cannot be set if a query property is set - it is only valid if inline SQL ids defined
@@ -110,7 +111,7 @@ func validateParamAndQueryNotBothSet(resource modconfig.QueryProvider) hcl.Diagn
 	return diags
 }
 
-func validateSqlAndQueryNotBothSet(resource modconfig.QueryProvider) hcl.Diagnostics {
+func validateSqlAndQueryNotBothSet(resource dashboard.QueryProvider) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	// are both sql and query set?
 	if resource.GetSQL() != nil && resource.GetQuery() != nil {

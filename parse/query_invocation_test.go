@@ -2,9 +2,9 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/dashboard"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
@@ -16,10 +16,10 @@ type parseQueryInvocationTest struct {
 
 type parseQueryInvocationResult struct {
 	queryName string
-	args      *modconfig.QueryArgs
+	args      *dashboard.QueryArgs
 }
 
-var emptyArgs = modconfig.NewQueryArgs()
+var emptyArgs = dashboard.NewQueryArgs()
 var testCasesParseQueryInvocation = map[string]parseQueryInvocationTest{
 	"no brackets": {
 		input:    `query.q1`,
@@ -33,7 +33,7 @@ var testCasesParseQueryInvocation = map[string]parseQueryInvocationTest{
 		input: `query.q1(foo)`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{},
+			args:      &dashboard.QueryArgs{},
 		},
 	},
 	"invalid params 4": {
@@ -41,7 +41,7 @@ var testCasesParseQueryInvocation = map[string]parseQueryInvocationTest{
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
 
-			args: &modconfig.QueryArgs{},
+			args: &dashboard.QueryArgs{},
 		},
 	},
 
@@ -49,63 +49,63 @@ var testCasesParseQueryInvocation = map[string]parseQueryInvocationTest{
 		input: `query.q1("foo")`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo")}},
+			args:      &dashboard.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo")}},
 		},
 	},
 	"single positional param extra spaces": {
 		input: `query.q1("foo"   )   `,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo")}},
+			args:      &dashboard.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo")}},
 		},
 	},
 	"multiple positional params": {
 		input: `query.q1("foo", "bar", "foo-bar")`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo"), utils.ToStringPointer("bar"), utils.ToStringPointer("foo-bar")}},
+			args:      &dashboard.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo"), utils.ToStringPointer("bar"), utils.ToStringPointer("foo-bar")}},
 		},
 	},
 	"multiple positional params extra spaces": {
 		input: `query.q1("foo",   "bar",    "foo-bar"   )`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo"), utils.ToStringPointer("bar"), utils.ToStringPointer("foo-bar")}},
+			args:      &dashboard.QueryArgs{ArgList: []*string{utils.ToStringPointer("foo"), utils.ToStringPointer("bar"), utils.ToStringPointer("foo-bar")}},
 		},
 	},
 	"single named param": {
 		input: `query.q1(p1 => "foo")`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgMap: map[string]string{"p1": "foo"}},
+			args:      &dashboard.QueryArgs{ArgMap: map[string]string{"p1": "foo"}},
 		},
 	},
 	"single named param extra spaces": {
 		input: `query.q1(  p1  =>  "foo"  ) `,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgMap: map[string]string{"p1": "foo"}},
+			args:      &dashboard.QueryArgs{ArgMap: map[string]string{"p1": "foo"}},
 		},
 	},
 	"multiple named params": {
 		input: `query.q1(p1 => "foo", p2 => "bar")`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgMap: map[string]string{"p1": "foo", "p2": "bar"}},
+			args:      &dashboard.QueryArgs{ArgMap: map[string]string{"p1": "foo", "p2": "bar"}},
 		},
 	},
 	"multiple named params extra spaces": {
 		input: ` query.q1 ( p1 => "foo" ,  p2  => "bar"     ) `,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgMap: map[string]string{"p1": "foo", "p2": "bar"}},
+			args:      &dashboard.QueryArgs{ArgMap: map[string]string{"p1": "foo", "p2": "bar"}},
 		},
 	},
 	"named param with dot in value": {
 		input: `query.q1(p1 => "foo.bar")`,
 		expected: parseQueryInvocationResult{
 			queryName: `query.q1`,
-			args:      &modconfig.QueryArgs{ArgMap: map[string]string{"p1": "foo.bar"}},
+			args:      &dashboard.QueryArgs{ArgMap: map[string]string{"p1": "foo.bar"}},
 		},
 	},
 }

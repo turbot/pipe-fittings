@@ -2,13 +2,13 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/dashboard"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 // ParseQueryInvocation parses a query invocation and extracts the args (if any)
@@ -19,8 +19,8 @@ import (
 //
 // 2) named args
 // query.my_query(my_arg1 => "test", my_arg2 => "test2")
-func ParseQueryInvocation(arg string) (string, *modconfig.QueryArgs, error) {
-	var args *modconfig.QueryArgs
+func ParseQueryInvocation(arg string) (string, *dashboard.QueryArgs, error) {
+	var args *dashboard.QueryArgs
 
 	arg = strings.TrimSpace(arg)
 	query := arg
@@ -43,8 +43,8 @@ func ParseQueryInvocation(arg string) (string, *modconfig.QueryArgs, error) {
 //
 // 2) named args
 // my_arg1 => "val1", my_arg2 => "val2"
-func parseArgs(argsString string) (*modconfig.QueryArgs, error) {
-	res := modconfig.NewQueryArgs()
+func parseArgs(argsString string) (*dashboard.QueryArgs, error) {
+	res := dashboard.NewQueryArgs()
 	if len(argsString) == 0 {
 		return res, nil
 	}

@@ -2,13 +2,14 @@ package workspace
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/dashboard"
 	"log/slog"
 
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider, bool) {
+func (w *Workspace) GetQueryProvider(queryName string) (dashboard.QueryProvider, bool) {
 	parsedName, err := modconfig.ParseResourceName(queryName)
 	if err != nil {
 		return nil, false
@@ -16,7 +17,7 @@ func (w *Workspace) GetQueryProvider(queryName string) (modconfig.QueryProvider,
 	// try to find the resource
 	if resource, ok := w.GetResource(parsedName); ok {
 		// found a resource - is it a query provider
-		if qp := resource.(modconfig.QueryProvider); ok {
+		if qp := resource.(dashboard.QueryProvider); ok {
 			return qp, true
 		}
 		slog.Debug("GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
@@ -42,7 +43,7 @@ func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resou
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
-func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider modconfig.QueryProvider, runtimeArgs *modconfig.QueryArgs) (*modconfig.ResolvedQuery, error) {
+func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider dashboard.QueryProvider, runtimeArgs *dashboard.QueryArgs) (*dashboard.ResolvedQuery, error) {
 	slog.Debug("ResolveQueryFromQueryProvider", "resourceName", queryProvider.Name())
 
 	query := queryProvider.GetQuery()
@@ -52,7 +53,7 @@ func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider modconfig.QueryP
 
 	// merge the base args with the runtime args
 	var err error
-	runtimeArgs, err = modconfig.MergeArgs(queryProvider, runtimeArgs)
+	runtimeArgs, err = dashboard.MergeArgs(queryProvider, runtimeArgs)
 	if err != nil {
 		return nil, err
 	}

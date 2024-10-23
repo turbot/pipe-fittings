@@ -150,8 +150,8 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	return nil
 }
 
-func (v *Variable) Diff(other *Variable) *DashboardTreeItemDiffs {
-	res := &DashboardTreeItemDiffs{
+func (v *Variable) Diff(other *Variable) *ModTreeItemDiffs {
+	res := &ModTreeItemDiffs{
 		Item: v,
 		Name: v.Name(),
 	}

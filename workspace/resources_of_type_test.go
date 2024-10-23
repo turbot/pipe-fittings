@@ -1,6 +1,7 @@
 package workspace
 
 import (
+	"github.com/turbot/pipe-fittings/modconfig/dashboard"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
@@ -8,8 +9,8 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-func makeControl(mod *modconfig.Mod, name, title, description, sql string, tags map[string]string) *modconfig.Control {
-	control := modconfig.NewControl(&hcl.Block{Type: "control"}, mod, name).(*modconfig.Control)
+func makeControl(mod *modconfig.Mod, name, title, description, sql string, tags map[string]string) *dashboard.Control {
+	control := dashboard.NewControl(&hcl.Block{Type: "control"}, mod, name).(*dashboard.Control)
 	control.Title = &title
 	control.Description = &description
 	control.Tags = tags
@@ -27,8 +28,8 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 
 	var mod = modconfig.NewMod("test_mod", ".", hcl.Range{})
 	mod.ResourceMaps = &modconfig.ResourceMaps{
-		Benchmarks: map[string]*modconfig.Benchmark{},
-		Controls: map[string]*modconfig.Control{
+		Benchmarks: map[string]*dashboard.Benchmark{},
+		Controls: map[string]*dashboard.Control{
 			"control1":  makeControl(mod, "control1", "Control 1", "Control 1 description", "SELECT * FROM table1", map[string]string{"t1": "val1_foo", "t2": "val2_foo", "t3": "val3_foo"}),
 			"control2a": makeControl(mod, "control2a", "Control 2", "Control 2a description", "SELECT id FROM table2", map[string]string{"t1": "val1_foo", "t2": "val2_foo", "t3": "val3_foo_a"}),
 			"control2b": makeControl(mod, "control2b", "Control 2", "Control 2b description", "SELECT * FROM table2", map[string]string{"t1": "val1_foo", "t2": "val2_foo", "t3": "val3_foo_b"}),
@@ -40,7 +41,7 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 		Mod: mod,
 	}
 
-	controlTests := []testCase[*modconfig.Control]{
+	controlTests := []testCase[*dashboard.Control]{
 		{
 			name: `where "name = 'control1'"`,
 			filter: ResourceFilter{
@@ -147,10 +148,10 @@ func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 	//var testFilter = "name like 'control1'"
 	var testFilter = ""
 
-	executeTests[*modconfig.Control](t, controlTests, testFilter, w)
+	executeTests[*dashboard.Control](t, controlTests, testFilter, w)
 }
 
-func executeTests[T modconfig.HclResource](t *testing.T, controlTests []testCase[*modconfig.Control], testFilter string, w *Workspace) {
+func executeTests[T modconfig.HclResource](t *testing.T, controlTests []testCase[*dashboard.Control], testFilter string, w *Workspace) {
 	for _, tt := range controlTests {
 		// apply test filter if specified
 		if testFilter != "" && tt.name != testFilter {

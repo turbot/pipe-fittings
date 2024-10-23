@@ -2,6 +2,7 @@ package credential
 
 import (
 	"context"
+	"fmt"
 	"golang.org/x/exp/maps"
 	"log/slog"
 	"reflect"
@@ -155,8 +156,8 @@ func DefaultCredentials() (map[string]Credential, error) {
 func NewCredential(block *hcl.Block) (Credential, error) {
 	credentialType := block.Labels[0]
 	credentialName := block.Labels[1]
-
-	hclResourceImpl := modconfig.NewHclResourceImplNoMod(block, credentialType, credentialName)
+	fullName := fmt.Sprintf("%s.%s", credentialType, credentialName)
+	hclResourceImpl := modconfig.NewHclResourceImpl(block, fullName)
 
 	credential, err := instantiateCredential(credentialType, hclResourceImpl)
 	if err != nil {

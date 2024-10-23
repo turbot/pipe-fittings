@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/dashboard"
 	"log/slog"
 	"maps"
 	"strings"
@@ -576,7 +577,7 @@ func (m *ModParseContext) getResourceCtyValue(resource modconfig.HclResource) (c
 		return cty.Zero, m.errToCtyValueDiags(resource, err)
 	}
 
-	if qp, ok := resource.(modconfig.QueryProvider); ok {
+	if qp, ok := resource.(dashboard.QueryProvider); ok {
 		base := qp.GetQueryProviderImpl()
 		if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
 			return cty.Zero, m.errToCtyValueDiags(resource, err)

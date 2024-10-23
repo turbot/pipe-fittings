@@ -27,7 +27,7 @@ type HclResourceImpl struct {
 	Documentation   *string           `cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
 	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
 	Tags            map[string]string `cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
-	// TODO can we move this out of here?
+	// TODO K can we move this out of here?
 	MaxConcurrency *int `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource
@@ -36,30 +36,33 @@ type HclResourceImpl struct {
 	isTopLevel          bool
 }
 
-func NewHclResourceImpl(block *hcl.Block, fullName string) HclResourceImpl {
+// options pattern
+type HclResourceImplOption func(*HclResourceImpl)
+
+func WithDisableCtySerialise() HclResourceImplOption {
+	return func(b *HclResourceImpl) {
+		b.disableCtySerialise = true
+	}
+}
+
+func NewHclResourceImpl(block *hcl.Block, fullName string, opts ...HclResourceImplOption) HclResourceImpl {
 	// full name has been constructed with the correct short name - which may be a synthetic anonymous block name
 	// extract short name from final section of full name
 	parts := strings.Split(fullName, ".")
 	shortName := parts[len(parts)-1]
 
-	return HclResourceImpl{
+	res := HclResourceImpl{
 		ShortName:       shortName,
 		FullName:        fullName,
 		UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
 		DeclRange:       hclhelpers.BlockRange(block),
 		blockType:       block.Type,
 	}
-}
 
-func NewHclResourceImplNoMod(block *hcl.Block, resourceType, shortName string) HclResourceImpl {
-	fullName := fmt.Sprintf("%s.%s", resourceType, shortName)
-	return HclResourceImpl{
-		ShortName:       shortName,
-		FullName:        fullName,
-		UnqualifiedName: fmt.Sprintf("%s.%s", resourceType, shortName),
-		DeclRange:       hclhelpers.BlockRange(block),
-		blockType:       block.Type,
+	for _, opt := range opts {
+		opt(&res)
 	}
+	return res
 }
 
 func (b *HclResourceImpl) Equals(other *HclResourceImpl) bool {

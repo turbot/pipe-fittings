@@ -56,37 +56,6 @@ type ModItem interface {
 	GetMod() *Mod
 }
 
-// RuntimeDependencyProvider is implemented by all QueryProviders and Dashboard
-type RuntimeDependencyProvider interface {
-	ModTreeItem
-	AddRuntimeDependencies([]*RuntimeDependency)
-	GetRuntimeDependencies() map[string]*RuntimeDependency
-}
-
-type WithProvider interface {
-	AddWith(with *DashboardWith) hcl.Diagnostics
-	GetWiths() []*DashboardWith
-	GetWith(string) (*DashboardWith, bool)
-}
-
-// QueryProvider must be implemented by resources which have query/sql
-type QueryProvider interface {
-	RuntimeDependencyProvider
-	GetArgs() *QueryArgs
-	GetParams() []*ParamDef
-	GetSQL() *string
-	GetQuery() *Query
-	SetArgs(*QueryArgs)
-	SetParams([]*ParamDef)
-	GetResolvedQuery(*QueryArgs) (*ResolvedQuery, error)
-	RequiresExecution(QueryProvider) bool
-	ValidateQuery() hcl.Diagnostics
-	MergeParentArgs(QueryProvider, QueryProvider) hcl.Diagnostics
-	GetQueryProviderImpl() *QueryProviderImpl
-	ParamsInheritedFromBase() bool
-	ArgsInheritedFromBase() bool
-}
-
 type CtyValueProvider interface {
 	CtyValue() (cty.Value, error)
 }
@@ -102,15 +71,6 @@ type ResourceWithMetadata interface {
 	GetReferences() []*ResourceReference
 }
 
-// DashboardLeafNode must be implemented by resources may be a leaf node in the dashboard execution tree
-type DashboardLeafNode interface {
-	ModTreeItem
-	ResourceWithMetadata
-	GetDisplay() string
-	GetType() string
-	GetWidth() int
-}
-
 type ResourceMapsProvider interface {
 	GetResourceMaps() *ResourceMaps
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
@@ -118,18 +78,4 @@ type ResourceMapsProvider interface {
 
 type ResourceProvider interface {
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
-}
-
-// NodeAndEdgeProvider must be implemented by any dashboard leaf node which supports edges and nodes
-// (DashboardGraph, DashboardFlow, DashboardHierarchy)
-// TODO [node_reuse] add NodeAndEdgeProviderImpl https://github.com/turbot/steampipe/issues/2918
-type NodeAndEdgeProvider interface {
-	QueryProvider
-	WithProvider
-	GetEdges() DashboardEdgeList
-	SetEdges(DashboardEdgeList)
-	GetNodes() DashboardNodeList
-	SetNodes(DashboardNodeList)
-	AddCategory(category *DashboardCategory) hcl.Diagnostics
-	AddChild(child HclResource) hcl.Diagnostics
 }
