@@ -11,6 +11,7 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/pipes"
 	"github.com/turbot/pipe-fittings/steampipeconfig"
@@ -33,6 +34,7 @@ type UnparsedVariableValue interface {
 	// If error diagnostics are returned, the resulting value may be invalid
 	// or incomplete.
 	ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics)
+	ParseVariableValueToType(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode, targetType cty.Type) (*terraform.InputValue, tfdiags.Diagnostics)
 }
 
 // ParseVariableValues processes a map of unparsed variable values by
@@ -76,7 +78,19 @@ func ParseVariableValues(evalContext *hcl.EvalContext, inputValueUnparsed map[st
 		if declared && config.IsConnectionType() {
 			val, valDiags = parseConnectionVariableValue(evalContext, unparsedVal, mode)
 		} else {
-			val, valDiags = unparsedVal.ParseVariableValue(evalContext, mode)
+			// Find type of variable and parse the value
+			var ctyType cty.Type
+			for _, pv := range publicVariables {
+				if pv.ShortName == name {
+					ctyType = pv.Type
+					break
+				}
+			}
+			if ctyType == cty.NilType {
+				val, valDiags = unparsedVal.ParseVariableValue(evalContext, mode)
+			} else {
+				val, valDiags = unparsedVal.ParseVariableValueToType(evalContext, mode, ctyType)
+			}
 		}
 		diags = diags.Append(valDiags)
 		if valDiags.HasErrors() {
@@ -266,6 +280,31 @@ func getUndeclaredVariableError(name string, variablesMap *modconfig.ModVariable
 
 type UnparsedInteractiveVariableValue struct {
 	Name, RawValue string
+}
+
+func (v UnparsedInteractiveVariableValue) ParseVariableValueToType(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode, targetType cty.Type) (*terraform.InputValue, tfdiags.Diagnostics) {
+	var diags tfdiags.Diagnostics
+	val, valDiags := mode.Parse(evalCtx, v.Name, v.RawValue)
+	diags = diags.Append(valDiags)
+	if diags.HasErrors() {
+		return nil, diags
+	}
+
+	if val.Type() == cty.String {
+		valTarget, err := hclhelpers.CoerceStringToGoBasedOnCtyType(val.AsString(), targetType)
+		if err != nil {
+			return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to coerce value", err.Error())}
+		}
+
+		val, err = hclhelpers.ConvertInterfaceToCtyValue(valTarget)
+		if err != nil {
+			return nil, tfdiags.Diagnostics{tfdiags.Sourceless(tfdiags.Error, "Failed to convert value", err.Error())}
+		}
+	}
+	return &terraform.InputValue{
+		Value:      val,
+		SourceType: terraform.ValueFromInput,
+	}, diags
 }
 
 func (v UnparsedInteractiveVariableValue) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {

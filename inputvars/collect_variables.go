@@ -17,6 +17,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // CollectVariableValues inspects the various places that configuration input variable
@@ -300,6 +301,10 @@ func (v unparsedVariableValueExpression) ParseVariableValue(evalCtx *hcl.EvalCon
 	}, diags
 }
 
+func (v unparsedVariableValueExpression) ParseVariableValueToType(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode, targetType cty.Type) (*terraform.InputValue, tfdiags.Diagnostics) {
+	return v.ParseVariableValue(evalCtx, mode)
+}
+
 // UnparsedVariableValueString is a UnparsedVariableValue
 // implementation that parses its value from a string. This can be used
 // to deal with values given directly on the command line and via environment
@@ -324,6 +329,10 @@ func (v UnparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext
 		Value:      val,
 		SourceType: v.sourceType,
 	}, diags
+}
+
+func (v UnparsedVariableValueString) ParseVariableValueToType(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode, targetType cty.Type) (*terraform.InputValue, tfdiags.Diagnostics) {
+	return v.ParseVariableValue(evalCtx, mode)
 }
 
 // isAutoVarFile determines if the file ends with .auto.spvars or .auto.spvars.json
