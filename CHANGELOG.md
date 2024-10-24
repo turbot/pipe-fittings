@@ -7,6 +7,7 @@ Shared Pipes Component
 _Bug fixes_
 
 * Typos in error messages.
+* Crashes in Go to HCL conversion for complex types.
 
 ## v1.6.4 [2024-10-24]
 

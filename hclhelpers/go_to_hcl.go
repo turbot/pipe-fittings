@@ -23,6 +23,10 @@ func GoToHCLString(data interface{}) (string, error) {
 }
 
 func ctyValueToHCLString(val cty.Value) (string, error) {
+	if val.IsNull() {
+		return "null", nil
+	}
+
 	switch val.Type() {
 	case cty.String:
 		return fmt.Sprintf(`"%s"`, val.AsString()), nil
@@ -46,8 +50,8 @@ func ctyValueToHCLString(val cty.Value) (string, error) {
 				hclElements = append(hclElements, hclElement)
 			}
 			return fmt.Sprintf("[%s]", join(hclElements, ", ")), nil
-
 		}
+
 		return "", perr.BadRequestWithMessage("Unsupported cty type " + val.Type().FriendlyName())
 	}
 }

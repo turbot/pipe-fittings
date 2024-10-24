@@ -54,6 +54,14 @@ var goToHclTestCases = map[string]goToHclTestCase{
 		input:    map[string]any{"profile": "foo", "region": []any{"us-west-1", "us-west-2"}},
 		expected: "{profile = \"foo\", region = [\"us-west-1\", \"us-west-2\"]}",
 	},
+	"list of complex": {
+		input:    []any{map[string]any{"title": nil, "profile": "foo", "region": "us-west-1", "notifiers": []any{map[string]any{"name": "foo", "age": 23}}}, map[string]any{"profile": "bar", "region": "us-west-2"}},
+		expected: `[{notifiers = [{age = 23, name = "foo"}], profile = "foo", region = "us-west-1", title = null}, {profile = "bar", region = "us-west-2"}]`,
+	},
+	"with null": {
+		input:    map[string]any{"profile": "foo", "region": nil},
+		expected: "{profile = \"foo\", region = null}",
+	},
 }
 
 func TestGoToHcl(t *testing.T) {
