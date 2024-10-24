@@ -34,7 +34,7 @@ type DashboardInput struct {
 	dashboard *Dashboard
 }
 
-func NewDashboardInput(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardInput(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	// input cannot be anonymous
 	i := &DashboardInput{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
@@ -69,7 +69,7 @@ func (i *DashboardInput) Equals(other *DashboardInput) bool {
 
 // OnDecoded implements HclResource
 func (i *DashboardInput) OnDecoded(block *hcl.Block, resourceMapProvider modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	i.setBaseProperties()
+	i.SetBaseProperties()
 	return i.QueryProviderImpl.OnDecoded(block, resourceMapProvider)
 }
 
@@ -101,9 +101,9 @@ func (i *DashboardInput) Diff(other *DashboardInput) *modconfig.ModTreeItemDiffs
 		}
 	}
 
-	res.populateChildDiffs(i, other)
-	res.queryProviderDiff(i, other)
-	res.dashboardLeafNodeDiff(i, other)
+	res.PopulateChildDiffs(i, other)
+	res.Merge(i.QueryProviderImpl.Diff(other))
+	res.Merge(dashboardLeafNodeDiff(i, other))
 
 	return res
 }
@@ -159,14 +159,15 @@ func (i *DashboardInput) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(i)
 }
 
-func (i *DashboardInput) setBaseProperties() {
+func (i *DashboardInput) SetBaseProperties() {
 	if i.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	i.base = i.Base
-	// call into parent nested struct setBaseProperties
-	i.QueryProviderImpl.setBaseProperties()
+	i.HclResourceImpl.SetBase(i.Base)
+
+	// call into parent nested struct SetBaseProperties
+	i.QueryProviderImpl.SetBaseProperties()
 
 	if i.Type == nil {
 		i.Type = i.Base.Type

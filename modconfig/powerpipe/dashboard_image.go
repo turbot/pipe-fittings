@@ -28,7 +28,7 @@ type DashboardImage struct {
 	Base *DashboardImage `hcl:"base" json:"-"`
 }
 
-func NewDashboardImage(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardImage(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	i := &DashboardImage{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
@@ -43,7 +43,7 @@ func (i *DashboardImage) Equals(other *DashboardImage) bool {
 
 // OnDecoded implements HclResource
 func (i *DashboardImage) OnDecoded(block *hcl.Block, resourceMapProvider modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	i.setBaseProperties()
+	i.SetBaseProperties()
 	return i.QueryProviderImpl.OnDecoded(block, resourceMapProvider)
 }
 
@@ -60,9 +60,9 @@ func (i *DashboardImage) Diff(other *DashboardImage) *modconfig.ModTreeItemDiffs
 		res.AddPropertyDiff("Alt")
 	}
 
-	res.populateChildDiffs(i, other)
-	res.queryProviderDiff(i, other)
-	res.dashboardLeafNodeDiff(i, other)
+	res.PopulateChildDiffs(i, other)
+	res.Merge(i.QueryProviderImpl.Diff(other))
+	res.Merge(dashboardLeafNodeDiff(i, other))
 
 	return res
 }
@@ -101,14 +101,15 @@ func (i *DashboardImage) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(i)
 }
 
-func (i *DashboardImage) setBaseProperties() {
+func (i *DashboardImage) SetBaseProperties() {
 	if i.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	i.base = i.Base
-	// call into parent nested struct setBaseProperties
-	i.QueryProviderImpl.setBaseProperties()
+	i.HclResourceImpl.SetBase(i.Base)
+
+	// call into parent nested struct SetBaseProperties
+	i.QueryProviderImpl.SetBaseProperties()
 
 	if i.Src == nil {
 		i.Src = i.Base.Src

@@ -63,6 +63,14 @@ func (b *ModTreeItemImpl) GetChildren() []ModTreeItem {
 	return b.children
 }
 
+func (b *ModTreeItemImpl) SetChildren(children []ModTreeItem) {
+	b.children = children
+}
+
+func (b *ModTreeItemImpl) AddChild(children ...ModTreeItem) {
+	b.children = append(b.children, children...)
+}
+
 func (b *ModTreeItemImpl) GetPaths() []NodePath {
 	// lazy load
 	if len(b.Paths) == 0 {
@@ -94,7 +102,7 @@ func (b *ModTreeItemImpl) GetDatabase() *string {
 	// if we have a parent, ask for its database
 	// (stop when we get to the mod - the mod database property has lower precedence)
 	if len(b.parents) > 0 {
-		if parent := b.GetParents()[0]; parent.BlockType() != schema.BlockTypeMod {
+		if parent := b.GetParents()[0]; parent.GetBlockType() != schema.BlockTypeMod {
 			return parent.GetDatabase()
 		}
 	}
@@ -110,7 +118,7 @@ func (b *ModTreeItemImpl) GetSearchPath() []string {
 	// if we have a parent, ask for its search path
 	// (stop when we get to the mod - the mod database property has lower precedence)
 	if len(b.parents) > 0 {
-		if parent := b.GetParents()[0]; parent.BlockType() != schema.BlockTypeMod {
+		if parent := b.GetParents()[0]; parent.GetBlockType() != schema.BlockTypeMod {
 			return parent.GetSearchPath()
 		}
 	}
@@ -126,7 +134,7 @@ func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
 	// if we have a parent, ask for its search path prefix
 	// (stop when we get to the mod - the mod database property has lower precedence)
 	if len(b.parents) > 0 {
-		if parent := b.GetParents()[0]; parent.BlockType() != schema.BlockTypeMod {
+		if parent := b.GetParents()[0]; parent.GetBlockType() != schema.BlockTypeMod {
 			return parent.GetSearchPath()
 		}
 	}

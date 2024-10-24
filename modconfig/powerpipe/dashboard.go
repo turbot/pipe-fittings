@@ -40,7 +40,7 @@ type Dashboard struct {
 	runtimeDependencyGraph *topsort.Graph
 }
 
-func NewDashboard(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboard(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	d := &Dashboard{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}
@@ -60,7 +60,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	fullName := parsedName.ToFullName()
 
 	// for query dashboard use generated title, for control use original title
-	if qp.BlockType() != schema.BlockTypeQuery {
+	if qp.GetBlockType() != schema.BlockTypeQuery {
 		title = qp.GetTitle()
 	}
 
@@ -74,7 +74,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 				Description:     utils.ToStringPointer(qp.GetDescription()),
 				Documentation:   utils.ToStringPointer(qp.GetDocumentation()),
 				Tags:            qp.GetTags(),
-				blockType:       schema.BlockTypeDashboard,
+				BlockType:       schema.BlockTypeDashboard,
 				DeclRange:       *qp.GetDeclRange(),
 			},
 			Mod: qp.GetMod(),
@@ -87,7 +87,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	if err != nil {
 		return nil, err
 	}
-	dashboard.children = []modconfig.ModTreeItem{table}
+	dashboard.SetChildren([]modconfig.ModTreeItem{table})
 
 	return dashboard, nil
 }
@@ -131,13 +131,13 @@ func (d *Dashboard) Equals(other *Dashboard) bool {
 
 // OnDecoded implements HclResource
 func (d *Dashboard) OnDecoded(block *hcl.Block, _ modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	diags := d.setBaseProperties()
+	diags := d.SetBaseProperties()
 	if diags.HasErrors() {
 		return diags
 	}
-
-	d.ChildNames = make([]string, len(d.children))
-	for i, child := range d.children {
+	children := d.GetChildren()
+	d.ChildNames = make([]string, len(children))
+	for i, child := range children {
 		d.ChildNames[i] = child.Name()
 	}
 
@@ -198,17 +198,13 @@ func (d *Dashboard) Diff(other *Dashboard) *modconfig.ModTreeItemDiffs {
 		res.AddPropertyDiff("Documentation")
 	}
 
-	res.populateChildDiffs(d, other)
+	res.PopulateChildDiffs(d, other)
 	return res
-}
-
-func (d *Dashboard) SetChildren(children []modconfig.ModTreeItem) {
-	d.children = children
 }
 
 func (d *Dashboard) AddChild(child modconfig.ModTreeItem) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-	d.children = append(d.children, child)
+	d.ModTreeItemImpl.AddChild(child)
 
 	switch c := child.(type) {
 	case *DashboardInput:
@@ -229,7 +225,7 @@ func (d *Dashboard) AddChild(child modconfig.ModTreeItem) hcl.Diagnostics {
 }
 
 func (d *Dashboard) WalkResources(resourceFunc func(resource modconfig.HclResource) (bool, error)) error {
-	for _, child := range d.children {
+	for _, child := range d.GetChildren() {
 		continueWalking, err := resourceFunc(child.(modconfig.HclResource))
 		if err != nil {
 			return err
@@ -404,22 +400,22 @@ func (d *Dashboard) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(d)
 }
 
-func (d *Dashboard) setBaseProperties() hcl.Diagnostics {
+func (d *Dashboard) SetBaseProperties() hcl.Diagnostics {
 	var diags hcl.Diagnostics
 	if d.Base == nil {
 		return diags
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	d.base = d.Base
-	// call into parent nested struct setBaseProperties
-	d.ModTreeItemImpl.setBaseProperties()
+	d.HclResourceImpl.SetBase(d.Base)
+	// call into parent nested struct SetBaseProperties
+	d.ModTreeItemImpl.SetBaseProperties()
 
 	if d.Width == nil {
 		d.Width = d.Base.Width
 	}
 
 	if len(d.children) == 0 {
-		d.children = d.Base.children
+		d.GetChildren() = d.Base.children
 		d.ChildNames = d.Base.ChildNames
 	}
 
@@ -450,7 +446,7 @@ func (d *Dashboard) addBaseInputs(baseInputs []*DashboardInput) hcl.Diagnostics 
 		// add inputs to beginning of our existing inputs (if any)
 		d.Inputs = append(inheritedInputs, d.Inputs...)
 		// add inputs to beginning of our children
-		d.children = append(inheritedChildren, d.children...)
+		d.GetChildren() = append(inheritedChildren, d.GetChildren()...)
 		d.setInputMap()
 	}
 

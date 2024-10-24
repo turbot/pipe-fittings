@@ -29,8 +29,8 @@ func NewModVariableMap(mod ModI) (*ModVariableMap, error) {
 	}
 
 	// add variables into map, modifying the key to be the variable short name
-	for name, variable := range mod.ResourceMaps.Variables {
-		if variable.Mod.ShortName != mod.ShortName {
+	for name, variable := range mod.GetResourceMaps().GetVariables() {
+		if variable.Mod.GetShortName() != mod.GetShortName() {
 			continue
 		}
 		k, err := buildVariableMapKey(name)
@@ -41,14 +41,14 @@ func NewModVariableMap(mod ModI) (*ModVariableMap, error) {
 	}
 
 	// now traverse all dependency mods
-	for _, depMod := range mod.ResourceMaps.Mods {
+	for _, depMod := range mod.GetResourceMaps().GetMods() {
 		// todo for some reason the mod appears in its own resource maps?
 		if depMod.Name() != mod.Name() {
 			depMap, err := NewModVariableMap(depMod)
 			if err != nil {
 				return nil, err
 			}
-			m.DependencyVariables[depMod.DependencyName] = depMap
+			m.DependencyVariables[depMod.GetDependencyName()] = depMap
 		}
 	}
 

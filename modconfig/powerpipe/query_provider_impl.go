@@ -31,7 +31,7 @@ type QueryProviderImpl struct {
 	paramsInheritedFromBase bool
 }
 
-func NewQueryProviderImpl(block *hcl.Block, mod *modconfig.Mod, shortName string) QueryProviderImpl {
+func NewQueryProviderImpl(block *hcl.Block, mod *Mod, shortName string) QueryProviderImpl {
 	return QueryProviderImpl{
 		RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
 			ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
@@ -79,7 +79,7 @@ func (q *QueryProviderImpl) ValidateQuery() hcl.Diagnostics {
 	// only used as base for a nested resource.
 	// Therefore only nested resources, controls and queries MUST have sql or a query defined
 	queryRequired := !q.IsTopLevel() ||
-		helpers.StringSliceContains([]string{schema.BlockTypeQuery, schema.BlockTypeControl}, q.BlockType())
+		helpers.StringSliceContains([]string{schema.BlockTypeQuery, schema.BlockTypeControl}, q.GetBlockType())
 
 	if !queryRequired {
 		return nil
@@ -165,8 +165,8 @@ func (q *QueryProviderImpl) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(q)
 }
 
-func (q *QueryProviderImpl) setBaseProperties() {
-	q.RuntimeDependencyProviderImpl.setBaseProperties()
+func (q *QueryProviderImpl) SetBaseProperties() {
+	q.RuntimeDependencyProviderImpl.SetBaseProperties()
 	if q.SQL == nil {
 		q.SQL = q.getBaseImpl().SQL
 	}

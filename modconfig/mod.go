@@ -2,6 +2,8 @@ package modconfig
 
 import (
 	"fmt"
+	"golang.org/x/exp/maps"
+
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,14 +21,6 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
-
-type ModI interface {
-	GetShortName() string
-	GetDependencyPath() *string
-	GetModPath() string
-	IsDefaultMod() bool
-	GetFullName() string
-}
 
 // mod name used if a default mod is created for a workspace which does not define one explicitly
 const defaultModName = "local"
@@ -83,7 +77,7 @@ func NewMod[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *Mod
 				FullName:        name,
 				UnqualifiedName: name,
 				DeclRange:       defRange,
-				blockType:       schema.BlockTypeMod,
+				BlockType:       schema.BlockTypeMod,
 			},
 		},
 		ModPath: modPath,
@@ -220,11 +214,11 @@ func (m *ModBase[T]) AddReference(ref *ResourceReference) {
 
 // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 func (m *ModBase[T]) GetReferences() []*ResourceReference {
-	return m.ResourceMaps.GetReferences()
+	return maps.Values(m.ResourceMaps.GetReferences())
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (m *ModBase[T]) GetResourceMaps() T {
+func (m *ModBase[T]) GetResourceMaps() ResourceMapsI {
 	return m.ResourceMaps
 }
 
@@ -441,6 +435,9 @@ func (m *ModBase[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (s
 	return constants.DefaultSteampipeConnectionString, nil
 }
 
+func (m *ModBase[T]) GetDependencyName() string {
+	return m.DependencyName
+}
 func (m *ModBase[T]) GetDependencyPath() *string {
 	return m.DependencyPath
 }

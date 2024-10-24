@@ -29,7 +29,7 @@ type DashboardTable struct {
 	Base       *DashboardTable                  `hcl:"base" json:"-"`
 }
 
-func NewDashboardTable(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardTable(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	t := &DashboardTable{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
@@ -78,7 +78,7 @@ func (t *DashboardTable) Equals(other *DashboardTable) bool {
 
 // OnDecoded implements HclResource
 func (t *DashboardTable) OnDecoded(block *hcl.Block, resourceMapProvider modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	t.setBaseProperties()
+	t.SetBaseProperties()
 	// populate columns map
 	if len(t.ColumnList) > 0 {
 		t.Columns = make(map[string]*DashboardTableColumn, len(t.ColumnList))
@@ -109,9 +109,9 @@ func (t *DashboardTable) Diff(other *DashboardTable) *modconfig.ModTreeItemDiffs
 		}
 	}
 
-	res.populateChildDiffs(t, other)
-	res.queryProviderDiff(t, other)
-	res.dashboardLeafNodeDiff(t, other)
+	res.PopulateChildDiffs(t, other)
+	res.Merge(t.QueryProviderImpl.Diff(other))
+	res.Merge(dashboardLeafNodeDiff(t, other))
 
 	return res
 }
@@ -144,14 +144,15 @@ func (t *DashboardTable) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(t)
 }
 
-func (t *DashboardTable) setBaseProperties() {
+func (t *DashboardTable) SetBaseProperties() {
 	if t.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	t.base = t.Base
-	// call into parent nested struct setBaseProperties
-	t.QueryProviderImpl.setBaseProperties()
+	t.HclResourceImpl.SetBase(t.Base)
+
+	// call into parent nested struct SetBaseProperties
+	t.QueryProviderImpl.SetBaseProperties()
 
 	if t.Width == nil {
 		t.Width = t.Base.Width

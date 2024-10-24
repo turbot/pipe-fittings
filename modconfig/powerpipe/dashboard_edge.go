@@ -19,7 +19,7 @@ type DashboardEdge struct {
 	Base     *DashboardEdge     `hcl:"base" json:"-"`
 }
 
-func NewDashboardEdge(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardEdge(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	e := &DashboardEdge{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
@@ -35,7 +35,7 @@ func (e *DashboardEdge) Equals(other *DashboardEdge) bool {
 
 // OnDecoded implements HclResource
 func (e *DashboardEdge) OnDecoded(_ *hcl.Block, resourceMapProvider modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	e.setBaseProperties()
+	e.SetBaseProperties()
 
 	// when we reference resources (i.e. category),
 	// not all properties are retrieved as they are no cty serialisable
@@ -63,9 +63,9 @@ func (e *DashboardEdge) Diff(other *DashboardEdge) *modconfig.ModTreeItemDiffs {
 		res.AddPropertyDiff("Category")
 	}
 
-	res.populateChildDiffs(e, other)
-	res.queryProviderDiff(e, other)
-	res.dashboardLeafNodeDiff(e, other)
+	res.PopulateChildDiffs(e, other)
+	res.Merge(e.QueryProviderImpl.Diff(other))
+	res.Merge(dashboardLeafNodeDiff(e, other))
 
 	return res
 }
@@ -95,14 +95,15 @@ func (e *DashboardEdge) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(e)
 }
 
-func (e *DashboardEdge) setBaseProperties() {
+func (e *DashboardEdge) SetBaseProperties() {
 	if e.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	e.base = e.Base
-	// call into parent nested struct setBaseProperties
-	e.QueryProviderImpl.setBaseProperties()
+	e.HclResourceImpl.SetBase(e.Base)
+
+	// call into parent nested struct SetBaseProperties
+	e.QueryProviderImpl.SetBaseProperties()
 
 	if e.Category == nil {
 		e.Category = e.Base.Category

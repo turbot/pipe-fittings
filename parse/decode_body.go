@@ -29,7 +29,7 @@ func DecodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider mod
 	// get the schema for this resource
 	schema := getResourceSchema(resource, nestedStructs)
 	// handle invalid block types
-	moreDiags = validateHcl(resource.BlockType(), body.(*hclsyntax.Body), schema)
+	moreDiags = validateHcl(resource.GetBlockType(), body.(*hclsyntax.Body), schema)
 	diags = append(diags, moreDiags...)
 
 	moreDiags = decodeHclBodyIntoStruct(body, evalCtx, resourceProvider, resource)
@@ -100,7 +100,7 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 	}
 
 	// special cases for manually parsed attributes and blocks
-	switch resource.BlockType() {
+	switch resource.GetBlockType() {
 	case schema.BlockTypeMod:
 		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeRequire})
 	case schema.BlockTypeDashboard, schema.BlockTypeContainer:
@@ -132,7 +132,7 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 	if _, ok := resource.(powerpipe.QueryProvider); ok {
 		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeParam})
 		// if this is NOT query, add args
-		if resource.BlockType() != schema.BlockTypeQuery {
+		if resource.GetBlockType() != schema.BlockTypeQuery {
 			res.Attributes = append(res.Attributes, hcl.AttributeSchema{Name: schema.AttributeTypeArgs})
 		}
 	}

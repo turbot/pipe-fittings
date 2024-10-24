@@ -35,7 +35,7 @@ type DashboardFlow struct {
 	Base *DashboardFlow `hcl:"base" json:"-"`
 }
 
-func NewDashboardFlow(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardFlow(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	f := &DashboardFlow{
 		Categories:        make(map[string]*DashboardCategory),
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
@@ -51,7 +51,7 @@ func (f *DashboardFlow) Equals(other *DashboardFlow) bool {
 
 // OnDecoded implements HclResource
 func (f *DashboardFlow) OnDecoded(block *hcl.Block, resourceMapProvider modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	f.setBaseProperties()
+	f.SetBaseProperties()
 	if len(f.Nodes) > 0 {
 		f.NodeNames = f.Nodes.Names()
 	}
@@ -96,9 +96,9 @@ func (f *DashboardFlow) Diff(other *DashboardFlow) *modconfig.ModTreeItemDiffs {
 		}
 	}
 
-	res.populateChildDiffs(f, other)
-	res.queryProviderDiff(f, other)
-	res.dashboardLeafNodeDiff(f, other)
+	res.PopulateChildDiffs(f, other)
+	res.Merge(f.QueryProviderImpl.Diff(other))
+	res.Merge(dashboardLeafNodeDiff(f, other))
 
 	return res
 }
@@ -172,7 +172,7 @@ func (f *DashboardFlow) AddChild(child modconfig.HclResource) hcl.Diagnostics {
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("DashboardFlow does not support children of type %s", child.BlockType()),
+			Summary:  fmt.Sprintf("DashboardFlow does not support children of type %s", child.GetBlockType()),
 			Subject:  f.GetDeclRange(),
 		})
 		return diags
@@ -196,14 +196,15 @@ func (f *DashboardFlow) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(f)
 }
 
-func (f *DashboardFlow) setBaseProperties() {
+func (f *DashboardFlow) SetBaseProperties() {
 	if f.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	f.base = f.Base
-	// call into parent nested struct setBaseProperties
-	f.QueryProviderImpl.setBaseProperties()
+	f.HclResourceImpl.SetBase(f.Base)
+
+	// call into parent nested struct SetBaseProperties
+	f.QueryProviderImpl.SetBaseProperties()
 
 	if f.Type == nil {
 		f.Type = f.Base.Type

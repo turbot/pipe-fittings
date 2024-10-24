@@ -24,10 +24,10 @@ type DashboardText struct {
 	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardText `hcl:"base" json:"-"`
-	Mod  *modconfig.Mod `cty:"mod" json:"-"`
+	Mod  *Mod           `cty:"mod" json:"-"`
 }
 
-func NewDashboardText(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardText(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	t := &DashboardText{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}
@@ -42,7 +42,7 @@ func (t *DashboardText) Equals(other *DashboardText) bool {
 
 // OnDecoded implements HclResource
 func (t *DashboardText) OnDecoded(*hcl.Block, modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	t.setBaseProperties()
+	t.SetBaseProperties()
 	return nil
 }
 
@@ -60,8 +60,8 @@ func (t *DashboardText) Diff(other *DashboardText) *modconfig.ModTreeItemDiffs {
 		res.AddPropertyDiff("Value")
 	}
 
-	res.populateChildDiffs(t, other)
-	res.dashboardLeafNodeDiff(t, other)
+	res.PopulateChildDiffs(t, other)
+	res.Merge(dashboardLeafNodeDiff(t, other))
 	return res
 }
 
@@ -93,7 +93,7 @@ func (t *DashboardText) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(t)
 }
 
-func (t *DashboardText) setBaseProperties() {
+func (t *DashboardText) SetBaseProperties() {
 	if t.Base == nil {
 		return
 	}

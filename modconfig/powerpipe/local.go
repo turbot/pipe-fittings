@@ -19,7 +19,7 @@ type Local struct {
 	Value cty.Value
 }
 
-func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *modconfig.Mod) *Local {
+func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local {
 	fullName := fmt.Sprintf("%s.local.%s", mod.ShortName, name)
 	// create a fake block to pass to NewHclResourceImpl
 	b := &hcl.Block{Body: &hclsyntax.Body{SrcRange: declRange}}
@@ -53,6 +53,6 @@ func (l *Local) Diff(other *Local) *modconfig.ModTreeItemDiffs {
 		res.AddPropertyDiff("Value")
 	}
 
-	res.populateChildDiffs(l, other)
+	res.PopulateChildDiffs(l, other)
 	return res
 }

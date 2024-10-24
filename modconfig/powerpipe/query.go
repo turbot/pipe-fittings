@@ -25,7 +25,7 @@ type Query struct {
 	Unused string `cty:"unused" json:"-"`
 }
 
-func NewQuery(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewQuery(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	// queries cannot be anonymous
 	return &Query{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
@@ -113,8 +113,8 @@ func (q *Query) Diff(other *Query) *modconfig.ModTreeItemDiffs {
 		res.AddPropertyDiff("Name")
 	}
 
-	res.populateChildDiffs(q, other)
-	res.queryProviderDiff(q, other)
+	res.PopulateChildDiffs(q, other)
+	res.Merge(q.QueryProviderImpl.Diff(other))
 
 	return res
 }

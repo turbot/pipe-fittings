@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -14,9 +15,10 @@ type HclResource interface {
 	GetTitle() string
 	GetUnqualifiedName() string
 	GetShortName() string
+	GetFullName() string
 	OnDecoded(*hcl.Block, ResourceMapsProvider) hcl.Diagnostics
 	GetDeclRange() *hcl.Range
-	BlockType() string
+	GetBlockType() string
 	GetDescription() string
 	GetDocumentation() string
 	GetTags() map[string]string
@@ -24,6 +26,19 @@ type HclResource interface {
 	IsTopLevel() bool
 	GetBase() HclResource
 	GetHclResourceImpl() *HclResourceImpl
+}
+
+// TODO K make generic??
+// type ModI[T ResourceMapsI] interface {
+type ModI interface {
+	HclResource
+	GetDependencyName() string
+	GetDependencyPath() *string
+	GetModPath() string
+	IsDefaultMod() bool
+	GetResourceMaps() ResourceMapsI
+	GetInstallCacheKey() string
+	AddResource(input *powerpipe.DashboardInput) interface{}
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy
@@ -77,7 +92,9 @@ type ResourceMapsI interface {
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 	Equals(other ResourceMapsI) bool
 	AddReference(ref *ResourceReference)
-	GetReferences() []*ResourceReference
+	GetReferences() map[string]*ResourceReference
+	GetVariables() map[string]*Variable
+	GetMods() map[string]ModI
 }
 
 type ResourceMapsProvider interface {

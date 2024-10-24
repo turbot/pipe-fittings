@@ -33,7 +33,7 @@ type Control struct {
 	parents []modconfig.ModTreeItem
 }
 
-func NewControl(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewControl(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	control := &Control{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}
@@ -148,7 +148,7 @@ func (c *Control) GetParentNames() []string {
 
 // OnDecoded implements HclResource
 func (c *Control) OnDecoded(block *hcl.Block, resourceMapProvider modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	c.setBaseProperties()
+	c.SetBaseProperties()
 
 	return c.QueryProviderImpl.OnDecoded(block, resourceMapProvider)
 }
@@ -196,8 +196,8 @@ func (c *Control) Diff(other *Control) *modconfig.ModTreeItemDiffs {
 		}
 	}
 
-	res.dashboardLeafNodeDiff(c, other)
-	res.queryProviderDiff(c, other)
+	res.Merge(dashboardLeafNodeDiff(c, other))
+	res.Merge(c.QueryProviderImpl.Diff(other))
 
 	return res
 }
@@ -207,14 +207,14 @@ func (c *Control) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(c)
 }
 
-func (c *Control) setBaseProperties() {
+func (c *Control) SetBaseProperties() {
 	if c.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	c.base = c.Base
-	// call into parent nested struct setBaseProperties
-	c.QueryProviderImpl.setBaseProperties()
+	c.HclResourceImpl.SetBase(c.Base)
+	// call into parent nested struct SetBaseProperties
+	c.QueryProviderImpl.SetBaseProperties()
 
 	if c.Severity == nil {
 		c.Severity = c.Base.Severity

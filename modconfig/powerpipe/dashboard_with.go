@@ -16,7 +16,7 @@ type DashboardWith struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 }
 
-func NewDashboardWith(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardWith(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	// with blocks cannot be anonymous
 	return &DashboardWith{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
@@ -39,7 +39,7 @@ func (w *DashboardWith) Diff(other *DashboardWith) *modconfig.ModTreeItemDiffs {
 		Name: w.Name(),
 	}
 
-	res.queryProviderDiff(w, other)
+	res.Merge(w.QueryProviderImpl.Diff(other))
 
 	return res
 }

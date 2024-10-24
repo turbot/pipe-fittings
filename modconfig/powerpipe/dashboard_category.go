@@ -17,7 +17,7 @@ type DashboardCategory struct {
 
 	// TACTICAL: include a title property (with a different name to the property in HclResourceImpl  for clarity)
 	// This is purely to ensure the title is included in the panel properties of snapshots
-	// Note: this will be parsed from HCL, but we must set this explicitly in setBaseProperties if there is a base
+	// Note: this will be parsed from HCL, but we must set this explicitly in SetBaseProperties if there is a base
 	CategoryTitle *string                               `cty:"title" hcl:"title" snapshot:"title" json:"-"`
 	CategoryName  string                                `snapshot:"name" json:"-"`
 	Color         *string                               `cty:"color" hcl:"color" snapshot:"color" json:"color,omitempty"`
@@ -31,7 +31,7 @@ type DashboardCategory struct {
 	Base          *DashboardCategory                    `hcl:"base" json:"base,omitempty"`
 }
 
-func NewDashboardCategory(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardCategory(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	c := &DashboardCategory{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}
@@ -41,7 +41,7 @@ func NewDashboardCategory(block *hcl.Block, mod *modconfig.Mod, shortName string
 
 // OnDecoded implements HclResource
 func (c *DashboardCategory) OnDecoded(block *hcl.Block, _ modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	c.setBaseProperties()
+	c.SetBaseProperties()
 	// populate properties map
 	if len(c.PropertyList) > 0 {
 		c.Properties = make(map[string]*DashboardCategoryProperty, len(c.PropertyList))
@@ -60,14 +60,14 @@ func (c *DashboardCategory) Equals(other *DashboardCategory) bool {
 	return !c.Diff(other).HasChanges()
 }
 
-func (c *DashboardCategory) setBaseProperties() {
+func (c *DashboardCategory) SetBaseProperties() {
 	if c.Base == nil {
 		return
 	}
 	// copy base into the HclResourceImpl 'base' property so it is accessible to all nested structs
-	c.base = c.Base
-	// call into parent nested struct setBaseProperties
-	c.ModTreeItemImpl.setBaseProperties()
+	c.HclResourceImpl.SetBase(c.Base)
+	// call into parent nested struct SetBaseProperties
+	c.ModTreeItemImpl.SetBaseProperties()
 
 	// TACTICAL: DashboardCategory overrides the title property to ensure is included in the snapshot
 	c.CategoryTitle = c.Title

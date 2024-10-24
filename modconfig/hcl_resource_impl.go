@@ -31,7 +31,7 @@ type HclResourceImpl struct {
 	MaxConcurrency *int `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource
-	blockType           string
+	BlockType           string
 	disableCtySerialise bool
 	isTopLevel          bool
 }
@@ -56,7 +56,7 @@ func NewHclResourceImpl(block *hcl.Block, fullName string, opts ...HclResourceIm
 		FullName:        fullName,
 		UnqualifiedName: fmt.Sprintf("%s.%s", block.Type, shortName),
 		DeclRange:       hclhelpers.BlockRange(block),
-		blockType:       block.Type,
+		BlockType:       block.Type,
 	}
 
 	for _, opt := range opts {
@@ -120,7 +120,7 @@ func (h *HclResourceImpl) Equals(other *HclResourceImpl) bool {
 	}
 
 	// Compare other fields (blockType, disableCtySerialise, isTopLevel)
-	if h.blockType != other.blockType || h.disableCtySerialise != other.disableCtySerialise || h.isTopLevel != other.isTopLevel {
+	if h.BlockType != other.BlockType || h.disableCtySerialise != other.disableCtySerialise || h.isTopLevel != other.isTopLevel {
 		return false
 	}
 
@@ -163,9 +163,9 @@ func (h *HclResourceImpl) GetDeclRange() *hcl.Range {
 	return &h.DeclRange
 }
 
-// BlockType implements HclResource
-func (h *HclResourceImpl) BlockType() string {
-	return h.blockType
+// GetBlockType implements HclResource
+func (h *HclResourceImpl) GetBlockType() string {
+	return h.BlockType
 }
 
 // GetDescription implements HclResource
@@ -209,6 +209,11 @@ func (h *HclResourceImpl) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(h)
 }
 
+func (h *HclResourceImpl) SetBase(base HclResource) {
+	h.base = base
+	h.SetBaseProperties()
+}
+
 // GetBase implements HclResource
 func (h *HclResourceImpl) GetBase() HclResource {
 	return h.base
@@ -232,7 +237,7 @@ func (h *HclResourceImpl) GetListData() *printers.RowData {
 	)
 }
 
-func (h *HclResourceImpl) setBaseProperties() {
+func (h *HclResourceImpl) SetBaseProperties() {
 	if h.Title == nil {
 		h.Title = h.getBaseImpl().Title
 	}

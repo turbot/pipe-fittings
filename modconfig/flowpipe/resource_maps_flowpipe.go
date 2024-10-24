@@ -11,18 +11,18 @@ import (
 // This is provided to avoid db needing to reference workspace package
 type FlowpipeResourceMaps struct {
 	// the parent mod
-	Mod *modconfig.Mod
+	Mod modconfig.ModI
 
 	Variables map[string]*modconfig.Variable
 	// all mods (including deps)
-	Mods       map[string]*modconfig.Mod
+	Mods       map[string]modconfig.ModI
 	References map[string]*modconfig.ResourceReference
 	// flowpipe
 	Pipelines map[string]*Pipeline
 	Triggers  map[string]*Trigger
 }
 
-func NewFlowpipeResourceMaps(mod *modconfig.Mod, sourceMaps ...*FlowpipeResourceMaps) *FlowpipeResourceMaps {
+func NewFlowpipeResourceMaps(mod modconfig.ModI, sourceMaps ...*FlowpipeResourceMaps) *FlowpipeResourceMaps {
 	res := emptyFlowpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -33,7 +33,7 @@ func NewFlowpipeResourceMaps(mod *modconfig.Mod, sourceMaps ...*FlowpipeResource
 func emptyFlowpipeModResources() *FlowpipeResourceMaps {
 	return &FlowpipeResourceMaps{
 
-		Mods:      make(map[string]*modconfig.Mod),
+		Mods:      make(map[string]modconfig.ModI),
 		Variables: make(map[string]*modconfig.Variable),
 
 		// Flowpipe
@@ -121,7 +121,7 @@ func (m *FlowpipeResourceMaps) Equals(o modconfig.ResourceMapsI) bool {
 func (m *FlowpipeResourceMaps) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	modName := parsedName.Mod
 	if modName == "" {
-		modName = m.Mod.ShortName
+		modName = m.Mod.GetShortName()
 	}
 	longName := fmt.Sprintf("%s.%s.%s", modName, parsedName.ItemType, parsedName.Name)
 
@@ -137,7 +137,7 @@ func (m *FlowpipeResourceMaps) GetResource(parsedName *modconfig.ParsedResourceN
 		resource, found = m.Triggers[longName]
 	case schema.BlockTypeMod:
 		for _, mod := range m.Mods {
-			if mod.ShortName == parsedName.Name {
+			if mod.GetShortName() == parsedName.Name {
 				resource = mod
 				found = true
 				break
@@ -192,7 +192,7 @@ func (m *FlowpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diagn
 	case *Pipeline:
 		name := r.Name()
 		if existing, ok := m.Pipelines[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Pipelines[name] = r
@@ -200,7 +200,7 @@ func (m *FlowpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diagn
 	case *Trigger:
 		name := r.Name()
 		if existing, ok := m.Triggers[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Triggers[name] = r
@@ -230,6 +230,13 @@ func (m *FlowpipeResourceMaps) AddReference(ref *modconfig.ResourceReference) {
 	m.References[ref.String()] = ref
 }
 
-func (m *FlowpipeResourceMaps) GetReferences() []*modconfig.ResourceReference {
-	return maps.Values(m.References)
+func (m *FlowpipeResourceMaps) GetReferences() map[string]*modconfig.ResourceReference {
+	return m.References
+}
+
+func (m *FlowpipeResourceMaps) GetVariables() map[string]*modconfig.Variable {
+	return m.Variables
+}
+func (m *FlowpipeResourceMaps) GetMods() map[string]modconfig.ModI {
+	return m.Mods
 }

@@ -128,7 +128,7 @@ func (m *ModBase[T]) addItemIntoResourceTree(item ModTreeItem, childParentLookup
 // check whether a resource with the same name has already been added to the mod
 // (it is possible to add the same resource to a mod more than once as the parent resource
 // may have dependency errors and so be decoded again)
-func checkForDuplicate(existing, new HclResource) hcl.Diagnostics {
+func CheckForDuplicate(existing, new HclResource) hcl.Diagnostics {
 	if existing.GetDeclRange().String() == new.GetDeclRange().String() {
 		// decl range is the same - this is the same resource - allowable
 		return nil

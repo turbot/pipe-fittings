@@ -27,7 +27,7 @@ func (d *ModTreeItemDiffs) AddRemovedItem(name string) {
 	d.RemovedItems = append(d.RemovedItems, name)
 }
 
-func (d *ModTreeItemDiffs) populateChildDiffs(old ModTreeItem, new ModTreeItem) {
+func (d *ModTreeItemDiffs) PopulateChildDiffs(old ModTreeItem, new ModTreeItem) {
 	// build map of child names
 	oldChildMap := make(map[string]ModTreeItem)
 	newChildMap := make(map[string]ModTreeItem)

@@ -69,7 +69,7 @@ func (m ResourceReferenceMap) Add(reference *ResourceReference) {
 }
 
 func (r *ResourceReference) String() string {
-	return fmt.Sprintf("To: %s\nFrom: %s\nBlockType: %s\nBlockName: %s\nAttribute: %s",
+	return fmt.Sprintf("To: %s\nFrom: %s\nGetBlockType: %s\nBlockName: %s\nAttribute: %s",
 		r.To,
 		r.From,
 		r.BlockType,
@@ -92,7 +92,7 @@ func (r *ResourceReference) GetShowData() *printers.RowData {
 	res := printers.NewRowData(
 		printers.NewFieldValue("To", r.To),
 		printers.NewFieldValue("From", r.From),
-		printers.NewFieldValue("BlockType", r.BlockType),
+		printers.NewFieldValue("GetBlockType", r.BlockType),
 		printers.NewFieldValue("BlockName", r.BlockName),
 		printers.NewFieldValue("Attribute", r.Attribute),
 	)

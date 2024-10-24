@@ -2,12 +2,10 @@ package powerpipe
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig"
-	"golang.org/x/exp/maps"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 )
@@ -45,7 +43,7 @@ type PowerpipeResourceMaps struct {
 	Snapshots map[string]string
 }
 
-func NewResourceMaps(mod *modconfig.Mod, sourceMaps ...*PowerpipeResourceMaps) *PowerpipeResourceMaps {
+func NewResourceMaps(mod *Mod, sourceMaps ...*PowerpipeResourceMaps) *PowerpipeResourceMaps {
 	res := emptyPowerpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -79,7 +77,7 @@ func emptyPowerpipeModResources() *PowerpipeResourceMaps {
 		DashboardCategories:   make(map[string]*DashboardCategory),
 		GlobalDashboardInputs: make(map[string]*DashboardInput),
 		Locals:                make(map[string]*Local),
-		Mods:                  make(map[string]*modconfig.Mod),
+		Mods:                  make(map[string]*Mod),
 		Queries:               make(map[string]*Query),
 		References:            make(map[string]*modconfig.ResourceReference),
 		Snapshots:             make(map[string]string),
@@ -450,7 +448,7 @@ func (m *PowerpipeResourceMaps) GetResource(parsedName *modconfig.ParsedResource
 		resource, found = m.Variables[longName]
 	case schema.BlockTypeMod:
 		for _, mod := range m.Mods {
-			if mod.ShortName == parsedName.Name {
+			if mod.GetShortName() == parsedName.Name {
 				resource = mod
 				found = true
 				break
@@ -545,7 +543,7 @@ func getWithRoot(rdp RuntimeDependencyProvider) WithProvider {
 	// (if our parent is the Mod, we are the root resource, otherwise traverse up until we find the mod
 	parent := rdp.GetParents()[0]
 
-	for parent.BlockType() != schema.BlockTypeMod {
+	for parent.GetBlockType() != schema.BlockTypeMod {
 		if wp, ok := parent.(WithProvider); ok {
 			withRoot = wp
 		}
@@ -989,6 +987,14 @@ func (m *PowerpipeResourceMaps) AddReference(ref *modconfig.ResourceReference) {
 	m.References[ref.String()] = ref
 }
 
-func (m *PowerpipeResourceMaps) GetReferences() []*modconfig.ResourceReference {
-	return maps.Values(m.References)
+func (m *PowerpipeResourceMaps) GetReferences() map[string]*modconfig.ResourceReference {
+	return m.References
+}
+
+func (m *PowerpipeResourceMaps) GetVariables() map[string]*modconfig.Variable {
+	return m.Variables
+}
+
+func (m *PowerpipeResourceMaps) GetMods() map[string]modconfig.ModI {
+	return m.Mods
 }

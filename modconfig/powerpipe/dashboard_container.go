@@ -31,7 +31,7 @@ type DashboardContainer struct {
 	runtimeDependencyGraph *topsort.Graph
 }
 
-func NewDashboardContainer(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
+func NewDashboardContainer(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
 	c := &DashboardContainer{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}
@@ -47,8 +47,8 @@ func (c *DashboardContainer) Equals(other *DashboardContainer) bool {
 
 // OnDecoded implements HclResource
 func (c *DashboardContainer) OnDecoded(block *hcl.Block, _ modconfig.ResourceMapsProvider) hcl.Diagnostics {
-	c.ChildNames = make([]string, len(c.children))
-	for i, child := range c.children {
+	c.ChildNames = make([]string, len(c.GetChildren()))
+	for i, child := range c.GetChildren() {
 		c.ChildNames[i] = child.Name()
 	}
 	return nil
@@ -94,16 +94,8 @@ func (c *DashboardContainer) Diff(other *DashboardContainer) *modconfig.ModTreeI
 		res.AddPropertyDiff("Display")
 	}
 
-	res.populateChildDiffs(c, other)
+	res.PopulateChildDiffs(c, other)
 	return res
-}
-
-func (c *DashboardContainer) SetChildren(children []modconfig.ModTreeItem) {
-	c.children = children
-}
-
-func (c *DashboardContainer) AddChild(child modconfig.ModTreeItem) {
-	c.children = append(c.children, child)
 }
 
 func (c *DashboardContainer) WalkResources(resourceFunc func(resource modconfig.HclResource) (bool, error)) error {

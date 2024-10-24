@@ -47,12 +47,12 @@ type Variable struct {
 	Format                     string              `json:"-"`
 }
 
-func NewVariable(v *RawVariable, mod *Mod) *Variable {
+func NewVariable(v *RawVariable, mod ModI) *Variable {
 	var defaultGo interface{} = nil
 	if !v.Default.IsNull() {
 		defaultGo, _ = hclhelpers.CtyToGo(v.Default)
 	}
-	fullName := fmt.Sprintf("%s.var.%s", mod.ShortName, v.Name)
+	fullName := fmt.Sprintf("%s.var.%s", mod.GetShortName(), v.Name)
 	res := &Variable{
 		ModTreeItemImpl: ModTreeItemImpl{
 			HclResourceImpl: HclResourceImpl{
@@ -61,7 +61,7 @@ func NewVariable(v *RawVariable, mod *Mod) *Variable {
 				FullName:        fullName,
 				DeclRange:       v.DeclRange,
 				UnqualifiedName: fmt.Sprintf("var.%s", v.Name),
-				blockType:       schema.BlockTypeVariable,
+				BlockType:       schema.BlockTypeVariable,
 			},
 			Mod: mod,
 		},
@@ -73,7 +73,7 @@ func NewVariable(v *RawVariable, mod *Mod) *Variable {
 
 		Type:        v.Type,
 		ParsingMode: v.ParsingMode,
-		ModName:     mod.ShortName,
+		ModName:     mod.GetShortName(),
 		Enum:        v.Enum,
 		EnumGo:      v.EnumGo,
 		Format:      v.Format,
@@ -164,7 +164,7 @@ func (v *Variable) Diff(other *Variable) *ModTreeItemDiffs {
 		res.AddPropertyDiff("Value")
 	}
 
-	res.populateChildDiffs(v, other)
+	res.PopulateChildDiffs(v, other)
 	return res
 }
 

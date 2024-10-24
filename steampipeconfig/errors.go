@@ -15,10 +15,10 @@ import (
 type MissingVariableError struct {
 	MissingVariables           []*modconfig.Variable
 	MissingTransitiveVariables map[DependencyPathKey][]*modconfig.Variable
-	workspaceMod               *modconfig.Mod
+	workspaceMod               modconfig.ModI
 }
 
-func NewMissingVarsError(workspaceMod *modconfig.Mod) MissingVariableError {
+func NewMissingVarsError(workspaceMod modconfig.ModI) MissingVariableError {
 	return MissingVariableError{
 		MissingTransitiveVariables: make(map[DependencyPathKey][]*modconfig.Variable),
 		workspaceMod:               workspaceMod,
@@ -99,7 +99,7 @@ func (m MissingVariableError) getVariableName(v *modconfig.Variable) string {
 	if v.Mod.Name() == m.workspaceMod.Name() {
 		return v.ShortName
 	}
-	return fmt.Sprintf("%s.%s", v.Mod.ShortName, v.ShortName)
+	return fmt.Sprintf("%s.%s", v.Mod.GetShortName(), v.ShortName)
 }
 
 type VariableValidationFailedError struct {
