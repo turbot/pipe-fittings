@@ -36,7 +36,7 @@ type PowerpipeResourceMaps struct {
 	Locals                map[string]*Local
 	Variables             map[string]*modconfig.Variable
 	// all mods (including deps)
-	Mods       map[string]*Mod
+	Mods       map[string]modconfig.ModI
 	Queries    map[string]*Query
 	References map[string]*modconfig.ResourceReference
 	// map of snapshot paths, keyed by snapshot name
@@ -77,7 +77,7 @@ func emptyPowerpipeModResources() *PowerpipeResourceMaps {
 		DashboardCategories:   make(map[string]*DashboardCategory),
 		GlobalDashboardInputs: make(map[string]*DashboardInput),
 		Locals:                make(map[string]*Local),
-		Mods:                  make(map[string]*Mod),
+		Mods:                  make(map[string]modconfig.ModI),
 		Queries:               make(map[string]*Query),
 		References:            make(map[string]*modconfig.ResourceReference),
 		Snapshots:             make(map[string]string),
@@ -109,7 +109,7 @@ func (m *PowerpipeResourceMaps) TopLevelResources() *PowerpipeResourceMaps {
 
 	f := func(item modconfig.HclResource) (bool, error) {
 		if modItem, ok := item.(modconfig.ModItem); ok {
-			if mod := modItem.GetMod(); mod != nil && mod.FullName == m.Mod.FullName {
+			if mod := modItem.GetMod(); mod != nil && mod.GetFullName() == m.Mod.FullName {
 				// the only error we expect is a duplicate item error - ignore
 				_ = res.AddResource(item)
 			}
@@ -711,7 +711,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *Query:
 		name := r.Name()
 		if existing, ok := m.Queries[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Queries[name] = r
@@ -719,7 +719,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *Control:
 		name := r.Name()
 		if existing, ok := m.Controls[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Controls[name] = r
@@ -727,7 +727,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *Benchmark:
 		name := r.Name()
 		if existing, ok := m.Benchmarks[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Benchmarks[name] = r
@@ -735,7 +735,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *Dashboard:
 		name := r.Name()
 		if existing, ok := m.Dashboards[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Dashboards[name] = r
@@ -743,7 +743,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardContainer:
 		name := r.Name()
 		if existing, ok := m.DashboardContainers[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardContainers[name] = r
@@ -751,7 +751,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardCard:
 		name := r.Name()
 		if existing, ok := m.DashboardCards[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		} else {
 			m.DashboardCards[name] = r
@@ -760,7 +760,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardChart:
 		name := r.Name()
 		if existing, ok := m.DashboardCharts[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardCharts[name] = r
@@ -768,7 +768,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardFlow:
 		name := r.Name()
 		if existing, ok := m.DashboardFlows[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardFlows[name] = r
@@ -776,7 +776,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardGraph:
 		name := r.Name()
 		if existing, ok := m.DashboardGraphs[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardGraphs[name] = r
@@ -784,7 +784,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardHierarchy:
 		name := r.Name()
 		if existing, ok := m.DashboardHierarchies[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardHierarchies[name] = r
@@ -792,7 +792,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardNode:
 		name := r.Name()
 		if existing, ok := m.DashboardNodes[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardNodes[name] = r
@@ -800,7 +800,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardEdge:
 		name := r.Name()
 		if existing, ok := m.DashboardEdges[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardEdges[name] = r
@@ -808,7 +808,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardCategory:
 		name := r.Name()
 		if existing, ok := m.DashboardCategories[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardCategories[name] = r
@@ -816,7 +816,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardImage:
 		name := r.Name()
 		if existing, ok := m.DashboardImages[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardImages[name] = r
@@ -837,7 +837,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 
 		// so Dashboard Input must be global
 		if existing, ok := m.GlobalDashboardInputs[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.GlobalDashboardInputs[name] = r
@@ -845,7 +845,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardTable:
 		name := r.Name()
 		if existing, ok := m.DashboardTables[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardTables[name] = r
@@ -853,7 +853,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *DashboardText:
 		name := r.Name()
 		if existing, ok := m.DashboardTexts[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.DashboardTexts[name] = r
@@ -861,7 +861,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *modconfig.Variable:
 		name := r.Name()
 		if existing, ok := m.Variables[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Variables[name] = r
@@ -869,7 +869,7 @@ func (m *PowerpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diag
 	case *Local:
 		name := r.Name()
 		if existing, ok := m.Locals[name]; ok {
-			diags = append(diags, modconfig.checkForDuplicate(existing, item)...)
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
 			break
 		}
 		m.Locals[name] = r

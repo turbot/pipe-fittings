@@ -11,18 +11,18 @@ import (
 // This is provided to avoid db needing to reference workspace package
 type FlowpipeResourceMaps struct {
 	// the parent mod
-	Mod ModI
+	Mod modconfig.ModI
 
 	Variables map[string]*modconfig.Variable
 	// all mods (including deps)
-	Mods       map[string]ModI
+	Mods       map[string]modconfig.ModI
 	References map[string]*modconfig.ResourceReference
 	// flowpipe
 	Pipelines map[string]*Pipeline
 	Triggers  map[string]*Trigger
 }
 
-func NewFlowpipeResourceMaps(mod ModI, sourceMaps ...*FlowpipeResourceMaps) *FlowpipeResourceMaps {
+func NewFlowpipeResourceMaps(mod modconfig.ModI, sourceMaps ...*FlowpipeResourceMaps) *FlowpipeResourceMaps {
 	res := emptyFlowpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -33,7 +33,7 @@ func NewFlowpipeResourceMaps(mod ModI, sourceMaps ...*FlowpipeResourceMaps) *Flo
 func emptyFlowpipeModResources() *FlowpipeResourceMaps {
 	return &FlowpipeResourceMaps{
 
-		Mods:      make(map[string]ModI),
+		Mods:      make(map[string]modconfig.ModI),
 		Variables: make(map[string]*modconfig.Variable),
 
 		// Flowpipe
@@ -237,6 +237,6 @@ func (m *FlowpipeResourceMaps) GetReferences() map[string]*modconfig.ResourceRef
 func (m *FlowpipeResourceMaps) GetVariables() map[string]*modconfig.Variable {
 	return m.Variables
 }
-func (m *FlowpipeResourceMaps) GetMods() map[string]ModI {
+func (m *FlowpipeResourceMaps) GetMods() map[string]modconfig.ModI {
 	return m.Mods
 }

@@ -116,7 +116,7 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 // 	return CoerceParams(p, params, evalCtx)
 // }
 
-// Implements ModItem interface
+// Implements modconfig.ModItem interface
 func (p *Pipeline) GetMod() *Mod {
 	return p.mod
 }

@@ -265,7 +265,7 @@ func (q *QueryProviderImpl) Diff(other QueryProvider) *modconfig.ModTreeItemDiff
 	}
 
 	// with
-	if lwp, ok := q.(WithProvider); ok {
+	if lwp, ok := any(q).(WithProvider); ok {
 		rwp := other.(WithProvider)
 		lWiths := lwp.GetWiths()
 		rWiths := rwp.GetWiths()
