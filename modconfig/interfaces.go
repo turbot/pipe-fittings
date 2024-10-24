@@ -31,6 +31,7 @@ type HclResource interface {
 // type ModI[T ResourceMapsI] interface {
 type ModI interface {
 	HclResource
+	ResourceProvider
 	GetDependencyName() string
 	GetDependencyPath() *string
 	GetModPath() string
@@ -40,6 +41,10 @@ type ModI interface {
 	AddResource(item HclResource) hcl.Diagnostics
 	GetRequire() *Require
 	HasDependentMods() bool
+	WalkResources(resourceFunc func(item HclResource) (bool, error)) error
+	SetDatabase(*string)
+	SetSearchPath([]string)
+	SetSearchPathPrefix([]string)
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy
@@ -96,6 +101,8 @@ type ResourceMapsI interface {
 	GetReferences() map[string]*ResourceReference
 	GetVariables() map[string]*Variable
 	GetMods() map[string]ModI
+	TopLevelResources() ResourceMapsI
+	AddMaps(i ...ResourceMapsI)
 }
 
 type ResourceMapsProvider interface {

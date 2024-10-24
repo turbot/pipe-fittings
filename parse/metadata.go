@@ -7,7 +7,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func GetMetadataForParsedResource(resourceName string, srcRange hcl.Range, fileData map[string][]byte, mod *modconfig.Mod) (*modconfig.ResourceMetadata, error) {
+func GetMetadataForParsedResource(resourceName string, srcRange hcl.Range, fileData map[string][]byte, mod modconfig.ModI) (*modconfig.ResourceMetadata, error) {
 	// convert the name into a short name
 	parsedName, err := modconfig.ParseResourceName(resourceName)
 	if err != nil {

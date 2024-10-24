@@ -53,7 +53,7 @@ func NewRootBenchmarkWithChildren(mod *Mod, children []modconfig.ModTreeItem) mo
 	return benchmark
 }
 
-func NewBenchmark(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewBenchmark(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	benchmark := &Benchmark{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}

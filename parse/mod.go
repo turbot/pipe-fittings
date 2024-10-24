@@ -17,7 +17,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func LoadModfile(modPath string) (*modconfig.Mod, error) {
+func LoadModfile(modPath string) (modconfig.ModI, error) {
 	modFilePath, exists := ModFileExists(modPath)
 	if !exists {
 		return nil, nil
@@ -42,7 +42,7 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 // this is called before parsing the workspace to, for example, identify dependency mods
 //
 // This function only parse the "mod" block, and does not parse any resources in the mod file
-func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
+func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (modconfig.ModI, *DecodeResult) {
 	res := NewDecodeResult()
 
 	fileData, diags := LoadFileData(modFilePath)
@@ -92,7 +92,7 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfi
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
 // NOTE: the mod definition has already been parsed (or a default created) and is in opts.RunCtx.RootMod
-func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("ParseMod %s start", parseCtx.CurrentMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("ParseMod %s end", parseCtx.CurrentMod.Name()))
 

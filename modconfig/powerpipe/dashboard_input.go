@@ -34,7 +34,7 @@ type DashboardInput struct {
 	dashboard *Dashboard
 }
 
-func NewDashboardInput(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardInput(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	// input cannot be anonymous
 	i := &DashboardInput{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),

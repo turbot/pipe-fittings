@@ -16,7 +16,7 @@ type DashboardWith struct {
 	Remain hcl.Body `hcl:",remain" json:"-"`
 }
 
-func NewDashboardWith(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardWith(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	// with blocks cannot be anonymous
 	return &DashboardWith{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),

@@ -1,8 +1,9 @@
-package parse
+package flowpipe
 
 import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/turbot/pipe-fittings/parse"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -18,7 +19,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
+func decodeStep(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
 
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
@@ -168,7 +169,7 @@ func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
 	}
 }
 
-func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.PipelineParam, hcl.Diagnostics) {
+func decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.PipelineParam, hcl.Diagnostics) {
 	o := &flowpipe.PipelineParam{
 		Name: block.Labels[0],
 	}
@@ -186,7 +187,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeType]; exists {
-		ty, diags := decodeTypeExpression(attr)
+		ty, diags := parse.decodeTypeExpression(attr)
 		if diags.HasErrors() {
 			return o, diags
 		}
@@ -283,12 +284,12 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe
 	}
 
 	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {
-		valDiags := decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
+		valDiags := parse.decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
 		diags = append(diags, valDiags...)
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeFormat]; exists {
-		formatVal, moreDiags := DecodeVarFormat(o.Type, attr, parseCtx)
+		formatVal, moreDiags := parse.DecodeVarFormat(o.Type, attr, parseCtx)
 		diags = append(diags, moreDiags...)
 		if diags.HasErrors() {
 			return o, diags
@@ -302,7 +303,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe
 	return o, diags
 }
 
-func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.PipelineOutput, hcl.Diagnostics) {
+func decodeOutput(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.PipelineOutput, hcl.Diagnostics) {
 
 	o := &flowpipe.PipelineOutput{
 		Name:  block.Labels[0],
@@ -368,9 +369,9 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.Pipeli
 	return o, diags
 }
 
-func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.Trigger, *DecodeResult) {
+func decodeTrigger(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.Trigger, *parse.DecodeResult) {
 
-	res := NewDecodeResult()
+	res := parse.NewDecodeResult()
 
 	if len(block.Labels) != 2 {
 		res.HandleDecodeDiags(hcl.Diagnostics{
@@ -461,8 +462,8 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 
 // TODO: validation - if you specify invalid depends_on it doesn't error out
 // TODO: validation - invalid name?
-func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.Pipeline, *DecodeResult) {
-	res := NewDecodeResult()
+func decodePipeline(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.Pipeline, *parse.DecodeResult) {
+	res := parse.NewDecodeResult()
 
 	// get shell pipelineHcl
 	pipelineHcl := flowpipe.NewPipeline(mod, block)
@@ -769,7 +770,7 @@ func validatePipelineDependencies(pipelineHcl *flowpipe.Pipeline, credentials ma
 	return diags
 }
 
-func handlePipelineDecodeResult(resource *flowpipe.Pipeline, res *DecodeResult, block *hcl.Block, parseCtx *ModParseContext) {
+func handlePipelineDecodeResult(resource *flowpipe.Pipeline, res *parse.DecodeResult, block *hcl.Block, parseCtx *parse.ModParseContext) {
 	if res.Success() {
 		// call post decode hook
 		// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property

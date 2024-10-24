@@ -436,7 +436,7 @@ func (m *ModBase[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (s
 }
 
 func (m *ModBase[T]) GetDependencyName() string {
-	return m.DependencyName
+	return m.GetDependencyName()
 }
 func (m *ModBase[T]) GetDependencyPath() *string {
 	return m.DependencyPath

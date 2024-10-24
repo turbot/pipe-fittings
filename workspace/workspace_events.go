@@ -51,7 +51,7 @@ func (w *WorkspaceBase) reloadResourceMaps(ctx context.Context) (*powerpipe.Powe
 	prevResourceMaps := w.Mod.ResourceMaps
 	// if there is an outstanding watcher error, set prevResourceMaps to empty to force refresh
 	if w.watcherError != nil {
-		prevResourceMaps = powerpipe.NewResourceMaps(w.Mod)
+		prevResourceMaps = powerpipe.NewPowerpipeResourceMaps(w.Mod)
 	}
 
 	// now reload the workspace

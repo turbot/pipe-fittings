@@ -9,7 +9,7 @@ import (
 
 // BuildResourceTree builds the control tree structure by setting the parent property for each control and benchmark
 // NOTE: this also builds the sorted benchmark list
-func (m *ModBase[T]) BuildResourceTree(loadedDependencyMods ModMap[T]) (err error) {
+func (m *ModBase[T]) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
 	utils.LogTime(fmt.Sprintf("BuildResourceTree %s start", m.Name()))
 	defer utils.LogTime(fmt.Sprintf("BuildResourceTree %s end", m.Name()))
 	defer func() {
@@ -38,6 +38,7 @@ func (m *ModBase[T]) BuildResourceTree(loadedDependencyMods ModMap[T]) (err erro
 		if !ok {
 			return fmt.Errorf("dependency mod %s is not loaded", requiredMod.Name)
 		}
+
 		if err := m.addResourcesIntoTree(depMod, childrenLookup); err != nil {
 			return err
 		}
@@ -66,7 +67,7 @@ func (m *ModBase[T]) getChildParentsLookup() (map[string][]ModTreeItem, error) {
 }
 
 // add all resource in sourceMod into _our_ resource tree
-func (m *ModBase[T]) addResourcesIntoTree(sourceMod *ModBase[T], childParentLookup map[string][]ModTreeItem) error {
+func (m *ModBase[T]) addResourcesIntoTree(sourceMod ModI, childParentLookup map[string][]ModTreeItem) error {
 	utils.LogTime(fmt.Sprintf("addResourcesIntoTree %s source %s start", m.Name(), sourceMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("addResourcesIntoTree %s source %s end", m.Name(), sourceMod.Name()))
 

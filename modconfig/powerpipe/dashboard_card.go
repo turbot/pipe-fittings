@@ -29,7 +29,7 @@ type DashboardCard struct {
 	Base    *DashboardCard `hcl:"base" json:"-"`
 }
 
-func NewDashboardCard(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardCard(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	c := &DashboardCard{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

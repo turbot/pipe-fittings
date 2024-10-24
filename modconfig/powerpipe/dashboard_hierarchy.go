@@ -34,7 +34,7 @@ type DashboardHierarchy struct {
 	Base *DashboardHierarchy `hcl:"base" json:"-"`
 }
 
-func NewDashboardHierarchy(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardHierarchy(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	h := &DashboardHierarchy{
 		Categories:        make(map[string]*DashboardCategory),
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),

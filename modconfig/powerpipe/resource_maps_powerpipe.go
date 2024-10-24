@@ -43,7 +43,7 @@ type PowerpipeResourceMaps struct {
 	Snapshots map[string]string
 }
 
-func NewResourceMaps(mod *Mod, sourceMaps ...*PowerpipeResourceMaps) *PowerpipeResourceMaps {
+func NewPowerpipeResourceMaps(mod *Mod, sourceMaps ...modconfig.ResourceMapsI) *PowerpipeResourceMaps {
 	res := emptyPowerpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -104,8 +104,8 @@ func (m *PowerpipeResourceMaps) QueryProviders() []QueryProvider {
 }
 
 // TopLevelResources returns a new PowerpipeResourceMaps containing only top level resources (i.e. no dependencies)
-func (m *PowerpipeResourceMaps) TopLevelResources() *PowerpipeResourceMaps {
-	res := NewResourceMaps(m.Mod)
+func (m *PowerpipeResourceMaps) TopLevelResources() modconfig.ResourceMapsI {
+	res := NewPowerpipeResourceMaps(m.Mod)
 
 	f := func(item modconfig.HclResource) (bool, error) {
 		if modItem, ok := item.(modconfig.ModItem); ok {
@@ -885,8 +885,9 @@ func (m *PowerpipeResourceMaps) AddSnapshots(snapshotPaths []string) {
 	}
 }
 
-func (m *PowerpipeResourceMaps) AddMaps(sourceMaps ...*PowerpipeResourceMaps) {
-	for _, source := range sourceMaps {
+func (m *PowerpipeResourceMaps) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
+	for _, s := range sourceMaps {
+		source := s.(*PowerpipeResourceMaps)
 		for k, v := range source.Benchmarks {
 			m.Benchmarks[k] = v
 		}

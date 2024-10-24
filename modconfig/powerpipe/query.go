@@ -25,7 +25,7 @@ type Query struct {
 	Unused string `cty:"unused" json:"-"`
 }
 
-func NewQuery(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewQuery(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	// queries cannot be anonymous
 	return &Query{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),

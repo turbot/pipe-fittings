@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
+	"github.com/turbot/pipe-fittings/parse/flowpipe"
 	"log/slog"
 	"strings"
 
@@ -30,7 +31,7 @@ var missingVariableErrors = []string{
 	"Missing map element",
 }
 
-func decode[T modconfig.ResourceMapsI](parseCtx *ModParseContext[T]) hcl.Diagnostics {
+func decode[T modconfig.ResourceMapsI](parseCtx *ModParseContext) hcl.Diagnostics {
 	utils.LogTime(fmt.Sprintf("decode %s start", parseCtx.CurrentMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("decode %s end", parseCtx.CurrentMod.Name()))
 
@@ -86,7 +87,7 @@ func addResourceToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx
 func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) bool {
 	switch resource.(type) {
 	// do not add mods, withs
-	case *modconfig.Mod, *powerpipe.DashboardWith:
+	case modconfig.ModI, *powerpipe.DashboardWith:
 		return false
 
 	case *powerpipe.DashboardCategory, *powerpipe.DashboardInput:
@@ -158,9 +159,9 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 		case schema.BlockTypeBenchmark:
 			resource, res = decodeBenchmark(block, parseCtx)
 		case schema.BlockTypePipeline:
-			resource, res = decodePipeline(parseCtx.CurrentMod, block, parseCtx)
+			resource, res = flowpipe.decodePipeline(parseCtx.CurrentMod, block, parseCtx)
 		case schema.BlockTypeTrigger:
-			resource, res = decodeTrigger(parseCtx.CurrentMod, block, parseCtx)
+			resource, res = flowpipe.decodeTrigger(parseCtx.CurrentMod, block, parseCtx)
 		default:
 			// all other blocks are treated the same:
 			resource, res = decodeResource(block, parseCtx)
@@ -177,7 +178,7 @@ func decodeBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclReso
 	return resource, res
 }
 
-func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (*modconfig.Mod, *DecodeResult) {
+func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod modconfig.ModI) (modconfig.ModI, *DecodeResult) {
 	res := NewDecodeResult()
 
 	// decode the database attribute separately
@@ -197,13 +198,14 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 
 	// if connection string or search path was specified (by the mod referencing a connection), set them
 	if connectionString != nil {
-		mod.Database = connectionString
+		mod.SetDatabase(connectionString)
 	}
 	if searchPath != nil {
-		mod.SearchPath = searchPath
+		mod.SetSearchPath(searchPath)
 	}
 	if searchPathPrefix != nil {
-		mod.SearchPathPrefix = searchPathPrefix
+		mod.SetSearchPathPrefix(searchPathPrefix)
+
 	}
 
 	return mod, res
@@ -244,9 +246,9 @@ func resourceForBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.Hc
 	mod := parseCtx.CurrentMod
 	blockName := parseCtx.DetermineBlockName(block)
 
-	factoryFuncs := map[string]func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource{
+	factoryFuncs := map[string]func(*hcl.Block, modconfig.ModI, string) modconfig.HclResource{
 		// for block type mod, just use the current mod
-		schema.BlockTypeMod:       func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource { return mod },
+		schema.BlockTypeMod:       func(*hcl.Block, modconfig.ModI, string) modconfig.HclResource { return mod },
 		schema.BlockTypeQuery:     powerpipe.NewQuery,
 		schema.BlockTypeControl:   powerpipe.NewControl,
 		schema.BlockTypeBenchmark: powerpipe.NewBenchmark,
@@ -330,7 +332,7 @@ func decodeVariable(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Var
 	// if a type property was specified, extract type string from the hcl source
 	if attr, exists := content.Attributes[schema.AttributeTypeType]; exists {
 		src := parseCtx.FileData[attr.Expr.Range().Filename]
-		variable.TypeString = extractExpressionString(attr.Expr, src)
+		variable.TypeString = flowpipe.extractExpressionString(attr.Expr, src)
 	}
 
 	diags = decodeProperty(content, "tags", &variable.Tags, parseCtx.EvalCtx)

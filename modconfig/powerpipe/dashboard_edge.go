@@ -19,7 +19,7 @@ type DashboardEdge struct {
 	Base     *DashboardEdge     `hcl:"base" json:"-"`
 }
 
-func NewDashboardEdge(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardEdge(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	e := &DashboardEdge{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

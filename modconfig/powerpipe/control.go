@@ -33,7 +33,7 @@ type Control struct {
 	parents []modconfig.ModTreeItem
 }
 
-func NewControl(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewControl(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	control := &Control{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

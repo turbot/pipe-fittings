@@ -19,7 +19,7 @@ type DashboardNode struct {
 	Base     *DashboardNode     `hcl:"base" json:"-"`
 }
 
-func NewDashboardNode(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardNode(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	n := &DashboardNode{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

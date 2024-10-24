@@ -29,7 +29,7 @@ type DashboardTable struct {
 	Base       *DashboardTable                  `hcl:"base" json:"-"`
 }
 
-func NewDashboardTable(block *hcl.Block, mod *Mod, shortName string) modconfig.HclResource {
+func NewDashboardTable(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
 	t := &DashboardTable{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

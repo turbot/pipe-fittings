@@ -1,4 +1,4 @@
 package modconfig
 
 // ModMap is a map of mod name to mod
-type ModMap[T ResourceMapsI] map[string]*ModBase[T]
+type ModMap map[string]ModI

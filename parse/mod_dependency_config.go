@@ -12,10 +12,10 @@ type ModDependencyConfig struct {
 	DependencyPath *string
 }
 
-func (c ModDependencyConfig) SetModProperties(mod *modconfig.Mod) {
+func (c ModDependencyConfig) SetModProperties(mod modconfig.ModI) {
 	mod.Version = &c.ModDependency.DependencyVersion
 	mod.DependencyPath = c.DependencyPath
-	mod.DependencyName = c.ModDependency.Name
+	mod.GetDependencyName() = c.ModDependency.Name
 }
 
 func NewDependencyConfig(modDependency *versionmap.ResolvedVersionConstraint) *ModDependencyConfig {

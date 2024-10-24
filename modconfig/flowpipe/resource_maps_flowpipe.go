@@ -22,7 +22,7 @@ type FlowpipeResourceMaps struct {
 	Triggers  map[string]*Trigger
 }
 
-func NewFlowpipeResourceMaps(mod modconfig.ModI, sourceMaps ...*FlowpipeResourceMaps) *FlowpipeResourceMaps {
+func NewFlowpipeResourceMaps(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) *FlowpipeResourceMaps {
 	res := emptyFlowpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -209,8 +209,9 @@ func (m *FlowpipeResourceMaps) AddResource(item modconfig.HclResource) hcl.Diagn
 	return diags
 }
 
-func (m *FlowpipeResourceMaps) AddMaps(sourceMaps ...*FlowpipeResourceMaps) {
-	for _, source := range sourceMaps {
+func (m *FlowpipeResourceMaps) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
+	for _, s := range sourceMaps {
+		source := s.(*FlowpipeResourceMaps)
 		for k, v := range source.Pipelines {
 			m.Pipelines[k] = v
 		}
@@ -239,4 +240,24 @@ func (m *FlowpipeResourceMaps) GetVariables() map[string]*modconfig.Variable {
 }
 func (m *FlowpipeResourceMaps) GetMods() map[string]modconfig.ModI {
 	return m.Mods
+}
+
+// TopLevelResources returns a new PowerpipeResourceMaps containing only top level resources (i.e. no dependencies)
+func (m *FlowpipeResourceMaps) TopLevelResources() modconfig.ResourceMapsI {
+	res := NewFlowpipeResourceMaps(m.Mod)
+
+	f := func(item modconfig.HclResource) (bool, error) {
+		if modItem, ok := item.(modconfig.ModItem); ok {
+			if mod := modItem.GetMod(); mod != nil && mod.GetFullName() == m.Mod.GetFullName() {
+				// the only error we expect is a duplicate item error - ignore
+				_ = res.AddResource(item)
+			}
+		}
+		return true, nil
+	}
+
+	// resource func does not return an error
+	_ = m.WalkResources(f)
+
+	return res
 }

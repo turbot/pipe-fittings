@@ -19,8 +19,8 @@ type Local struct {
 	Value cty.Value
 }
 
-func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local {
-	fullName := fmt.Sprintf("%s.local.%s", mod.ShortName, name)
+func NewLocal(name string, val cty.Value, declRange hcl.Range, mod modconfig.ModI) *Local {
+	fullName := fmt.Sprintf("%s.local.%s", mod.GetShortName(), name)
 	// create a fake block to pass to NewHclResourceImpl
 	b := &hcl.Block{Body: &hclsyntax.Body{SrcRange: declRange}}
 
