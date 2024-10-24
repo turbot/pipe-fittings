@@ -2,7 +2,7 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/dashboard"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -15,9 +15,9 @@ import (
 	"github.com/zclconf/go-cty/cty/gocty"
 )
 
-func decodeArgs(attr *hcl.Attribute, evalCtx *hcl.EvalContext, resource dashboard.QueryProvider) (*dashboard.QueryArgs, []*dashboard.RuntimeDependency, hcl.Diagnostics) {
-	var runtimeDependencies []*dashboard.RuntimeDependency
-	var args = dashboard.NewQueryArgs()
+func decodeArgs(attr *hcl.Attribute, evalCtx *hcl.EvalContext, resource powerpipe.QueryProvider) (*powerpipe.QueryArgs, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
+	var runtimeDependencies []*powerpipe.RuntimeDependency
+	var args = powerpipe.NewQueryArgs()
 	var diags hcl.Diagnostics
 
 	v, valDiags := attr.Expr.Value(evalCtx)
@@ -66,13 +66,13 @@ func decodeArgs(attr *hcl.Attribute, evalCtx *hcl.EvalContext, resource dashboar
 	return args, runtimeDependencies, diags
 }
 
-func ctyTupleToArgArray(attr *hcl.Attribute, val cty.Value) ([]any, []*dashboard.RuntimeDependency, error) {
+func ctyTupleToArgArray(attr *hcl.Attribute, val cty.Value) ([]any, []*powerpipe.RuntimeDependency, error) {
 	// convert the attribute to a slice
 	values := val.AsValueSlice()
 
 	// build output array
 	res := make([]any, len(values))
-	var runtimeDependencies []*dashboard.RuntimeDependency
+	var runtimeDependencies []*powerpipe.RuntimeDependency
 
 	for idx, v := range values {
 		// if the value is unknown, this is a runtime dependency
@@ -97,9 +97,9 @@ func ctyTupleToArgArray(attr *hcl.Attribute, val cty.Value) ([]any, []*dashboard
 	return res, runtimeDependencies, nil
 }
 
-func ctyObjectToArgMap(attr *hcl.Attribute, val cty.Value, evalCtx *hcl.EvalContext) (map[string]any, []*dashboard.RuntimeDependency, error) {
+func ctyObjectToArgMap(attr *hcl.Attribute, val cty.Value, evalCtx *hcl.EvalContext) (map[string]any, []*powerpipe.RuntimeDependency, error) {
 	res := make(map[string]any)
-	var runtimeDependencies []*dashboard.RuntimeDependency
+	var runtimeDependencies []*powerpipe.RuntimeDependency
 	it := val.ElementIterator()
 	for it.Next() {
 		k, v := it.Element()
@@ -152,7 +152,7 @@ func getWrappedUnknownVal(v cty.Value) bool {
 	return false
 }
 
-func identifyRuntimeDependenciesFromObject(attr *hcl.Attribute, targetProperty, parentProperty string, evalCtx *hcl.EvalContext) (*dashboard.RuntimeDependency, error) {
+func identifyRuntimeDependenciesFromObject(attr *hcl.Attribute, targetProperty, parentProperty string, evalCtx *hcl.EvalContext) (*powerpipe.RuntimeDependency, error) {
 	// find the expression for this key
 	argsExpr, ok := attr.Expr.(*hclsyntax.ObjectConsExpr)
 	if !ok {
@@ -179,7 +179,7 @@ func identifyRuntimeDependenciesFromObject(attr *hcl.Attribute, targetProperty, 
 	return nil, fmt.Errorf("could not extract runtime dependency for arg %s - not found in attribute map", targetProperty)
 }
 
-func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProperty string) (*dashboard.RuntimeDependency, error) {
+func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProperty string) (*powerpipe.RuntimeDependency, error) {
 	isArray, propertyPath, err := modconfig.PropertyPathFromExpression(expr)
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProp
 			return nil, err
 		}
 	}
-	ret := &dashboard.RuntimeDependency{
+	ret := &powerpipe.RuntimeDependency{
 		PropertyPath:       propertyPath,
 		ParentPropertyName: parentProperty,
 		TargetPropertyName: &targetProperty,
@@ -200,7 +200,7 @@ func getRuntimeDepFromExpression(expr hcl.Expression, targetProperty, parentProp
 	return ret, nil
 }
 
-func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentProperty string) (*dashboard.RuntimeDependency, error) {
+func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentProperty string) (*powerpipe.RuntimeDependency, error) {
 	// find the expression for this key
 	argsExpr, ok := attr.Expr.(*hclsyntax.TupleConsExpr)
 	if !ok {
@@ -218,7 +218,7 @@ func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentPr
 					return nil, err
 				}
 			}
-			ret := &dashboard.RuntimeDependency{
+			ret := &powerpipe.RuntimeDependency{
 				PropertyPath:        propertyPath,
 				ParentPropertyName:  parentProperty,
 				TargetPropertyIndex: &idx,
@@ -235,15 +235,15 @@ func identifyRuntimeDependenciesFromArray(attr *hcl.Attribute, idx int, parentPr
 // TODO - include this with the main runtime dependency validation, when it is rewritten https://github.com/turbot/steampipe/issues/2925
 func validateInputRuntimeDependency(propertyPath *modconfig.ParsedPropertyPath) error {
 	// input references must be of form self.input.<input_name>.value
-	if propertyPath.Scope != dashboard.RuntimeDependencyDashboardScope {
+	if propertyPath.Scope != powerpipe.RuntimeDependencyDashboardScope {
 		return fmt.Errorf("could not resolve runtime dependency resource %s", propertyPath.Original)
 	}
 	return nil
 }
 
-func decodeParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.ParamDef, []*dashboard.RuntimeDependency, hcl.Diagnostics) {
+func decodeParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.ParamDef, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
 	def := modconfig.NewParamDef(block)
-	var runtimeDependencies []*dashboard.RuntimeDependency
+	var runtimeDependencies []*powerpipe.RuntimeDependency
 	content, diags := block.Body.Content(ParamDefBlockSchema)
 
 	if attr, exists := content.Attributes["description"]; exists {
@@ -270,7 +270,7 @@ func decodeParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.ParamD
 	return def, runtimeDependencies, diags
 }
 
-func decodeParamDefault(attr *hcl.Attribute, parseCtx *ModParseContext, paramName string) (any, []*dashboard.RuntimeDependency, hcl.Diagnostics) {
+func decodeParamDefault(attr *hcl.Attribute, parseCtx *ModParseContext, paramName string) (any, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
 	v, diags := attr.Expr.Value(parseCtx.EvalCtx)
 
 	if v.IsKnown() {
@@ -307,5 +307,5 @@ func decodeParamDefault(attr *hcl.Attribute, parseCtx *ModParseContext, paramNam
 	}
 
 	// so we have a runtime dependency
-	return nil, []*dashboard.RuntimeDependency{runtimeDependency}, nil
+	return nil, []*powerpipe.RuntimeDependency{runtimeDependency}, nil
 }

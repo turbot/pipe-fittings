@@ -75,3 +75,6 @@ var PluginHub string
 // OciInstaller
 var DefaultImageRepoActualURL string
 var DefaultImageRepoDisplayURL string
+
+// Custom types
+var CustomTypes []string

@@ -2,15 +2,15 @@ package workspace
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"log/slog"
 
 	"github.com/turbot/pipe-fittings/error_helpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 var EventCount int64 = 0
 
-func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
+func (w *WorkspaceBase) handleFileWatcherEvent(ctx context.Context) {
 	slog.Debug("handleFileWatcherEvent")
 	prevResourceMaps, resourceMaps, errAndWarnings := w.reloadResourceMaps(ctx)
 
@@ -38,11 +38,11 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	}
 }
 
-func (w *Workspace) ReloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, error_helpers.ErrorAndWarnings) {
+func (w *WorkspaceBase) ReloadResourceMaps(ctx context.Context) (*powerpipe.PowerpipeResourceMaps, *powerpipe.PowerpipeResourceMaps, error_helpers.ErrorAndWarnings) {
 	return w.reloadResourceMaps(ctx)
 }
 
-func (w *Workspace) reloadResourceMaps(ctx context.Context) (*modconfig.ResourceMaps, *modconfig.ResourceMaps, error_helpers.ErrorAndWarnings) {
+func (w *WorkspaceBase) reloadResourceMaps(ctx context.Context) (*powerpipe.PowerpipeResourceMaps, *powerpipe.PowerpipeResourceMaps, error_helpers.ErrorAndWarnings) {
 	w.loadLock.Lock()
 	defer w.loadLock.Unlock()
 
@@ -51,11 +51,11 @@ func (w *Workspace) reloadResourceMaps(ctx context.Context) (*modconfig.Resource
 	prevResourceMaps := w.Mod.ResourceMaps
 	// if there is an outstanding watcher error, set prevResourceMaps to empty to force refresh
 	if w.watcherError != nil {
-		prevResourceMaps = modconfig.NewResourceMaps(w.Mod)
+		prevResourceMaps = powerpipe.NewResourceMaps(w.Mod)
 	}
 
 	// now reload the workspace
-	errAndWarnings := w.loadWorkspaceMod(ctx)
+	errAndWarnings := w.LoadWorkspaceMod(ctx)
 	if errAndWarnings.GetError() != nil {
 		// check the existing watcher error - if we are already in an error state, do not show error
 		if w.watcherError == nil {

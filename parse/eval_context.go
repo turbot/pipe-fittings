@@ -2,15 +2,15 @@ package parse
 
 import (
 	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"log/slog"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/connection"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
 
-func BuildNotifierMapForEvalContext(notifiers map[string]modconfig.Notifier) (map[string]cty.Value, error) {
+func BuildNotifierMapForEvalContext(notifiers map[string]flowpipe.Notifier) (map[string]cty.Value, error) {
 
 	varValueNotifierMap := make(map[string]cty.Value)
 

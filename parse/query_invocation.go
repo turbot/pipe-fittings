@@ -2,7 +2,7 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/dashboard"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -19,8 +19,8 @@ import (
 //
 // 2) named args
 // query.my_query(my_arg1 => "test", my_arg2 => "test2")
-func ParseQueryInvocation(arg string) (string, *dashboard.QueryArgs, error) {
-	var args *dashboard.QueryArgs
+func ParseQueryInvocation(arg string) (string, *powerpipe.QueryArgs, error) {
+	var args *powerpipe.QueryArgs
 
 	arg = strings.TrimSpace(arg)
 	query := arg
@@ -43,8 +43,8 @@ func ParseQueryInvocation(arg string) (string, *dashboard.QueryArgs, error) {
 //
 // 2) named args
 // my_arg1 => "val1", my_arg2 => "val2"
-func parseArgs(argsString string) (*dashboard.QueryArgs, error) {
-	res := dashboard.NewQueryArgs()
+func parseArgs(argsString string) (*powerpipe.QueryArgs, error) {
+	res := powerpipe.NewQueryArgs()
 	if len(argsString) == 0 {
 		return res, nil
 	}

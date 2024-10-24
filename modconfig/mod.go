@@ -20,6 +20,14 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
+type ModI interface {
+	GetShortName() string
+	GetDependencyPath() *string
+	GetModPath() string
+	IsDefaultMod() bool
+	GetFullName() string
+}
+
 // mod name used if a default mod is created for a workspace which does not define one explicitly
 const defaultModName = "local"
 
@@ -81,7 +89,8 @@ func NewMod[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *Mod
 		ModPath: modPath,
 		Require: NewRequire(),
 	}
-	mod.ResourceMaps = NewResourceMaps(mod)
+	// TODO K how???
+	//mod.ResourceMaps = powerpipe.NewResourceMaps(mod)
 
 	return mod
 }
@@ -188,16 +197,16 @@ func (m *ModBase[T]) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Dia
 }
 
 //	func (m *ModBase[T]) AddReference(ref *ResourceReference) {
-//		m.ResourceMaps.References[ref.Name()] = ref
+//		m.PowerpipeResourceMaps.References[ref.Name()] = ref
 //	}
 //
 // // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 //
 //	func (m *ModBase[T]) GetReferences() []*ResourceReference {
-//		var res = make([]*ResourceReference, len(m.ResourceMaps.References))
+//		var res = make([]*ResourceReference, len(m.PowerpipeResourceMaps.References))
 //		// convert from map to array
 //		idx := 0
-//		for _, ref := range m.ResourceMaps.References {
+//		for _, ref := range m.PowerpipeResourceMaps.References {
 //			res[idx] = ref
 //			idx++
 //		}
@@ -212,14 +221,6 @@ func (m *ModBase[T]) AddReference(ref *ResourceReference) {
 // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 func (m *ModBase[T]) GetReferences() []*ResourceReference {
 	return m.ResourceMaps.GetReferences()
-	var res = make([]*ResourceReference, len(m.ResourceMaps.References))
-	// convert from map to array
-	idx := 0
-	for _, ref := range m.ResourceMaps.References {
-		res[idx] = ref
-		idx++
-	}
-	return res
 }
 
 // GetResourceMaps implements ResourceMapsProvider
@@ -438,4 +439,12 @@ func (m *ModBase[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (s
 	}
 	// if no database is set on mod, use the default steampipe connection
 	return constants.DefaultSteampipeConnectionString, nil
+}
+
+func (m *ModBase[T]) GetDependencyPath() *string {
+	return m.DependencyPath
+}
+
+func (m *ModBase[T]) GetModPath() string {
+	return m.ModPath
 }

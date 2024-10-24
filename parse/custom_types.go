@@ -5,14 +5,14 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 	"reflect"
 	"strings"
 )
 
-var BaseNotifierCtyType = cty.Capsule("BaseNotifierCtyType", reflect.TypeOf(&modconfig.NotifierImpl{}))
+var BaseNotifierCtyType = cty.Capsule("BaseNotifierCtyType", reflect.TypeOf(&flowpipe.NotifierImpl{}))
 
 // customTypeFunc is a function that returns a custom cty.Type for a given subtype
 type customTypeFunc func(string) cty.Type

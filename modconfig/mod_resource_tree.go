@@ -9,7 +9,7 @@ import (
 
 // BuildResourceTree builds the control tree structure by setting the parent property for each control and benchmark
 // NOTE: this also builds the sorted benchmark list
-func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
+func (m *ModBase[T]) BuildResourceTree(loadedDependencyMods ModMap[T]) (err error) {
 	utils.LogTime(fmt.Sprintf("BuildResourceTree %s start", m.Name()))
 	defer utils.LogTime(fmt.Sprintf("BuildResourceTree %s end", m.Name()))
 	defer func() {
@@ -46,7 +46,7 @@ func (m *Mod) BuildResourceTree(loadedDependencyMods ModMap) (err error) {
 	return nil
 }
 
-func (m *Mod) getChildParentsLookup() (map[string][]ModTreeItem, error) {
+func (m *ModBase[T]) getChildParentsLookup() (map[string][]ModTreeItem, error) {
 	// build lookup of all children
 	childrenLookup := make(map[string][]ModTreeItem)
 	resourceFunc := func(parent HclResource) (bool, error) {
@@ -66,7 +66,7 @@ func (m *Mod) getChildParentsLookup() (map[string][]ModTreeItem, error) {
 }
 
 // add all resource in sourceMod into _our_ resource tree
-func (m *Mod) addResourcesIntoTree(sourceMod *Mod, childParentLookup map[string][]ModTreeItem) error {
+func (m *ModBase[T]) addResourcesIntoTree(sourceMod *ModBase[T], childParentLookup map[string][]ModTreeItem) error {
 	utils.LogTime(fmt.Sprintf("addResourcesIntoTree %s source %s start", m.Name(), sourceMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("addResourcesIntoTree %s source %s end", m.Name(), sourceMod.Name()))
 
@@ -75,7 +75,7 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod, childParentLookup map[string]
 
 	resourceFunc := func(item HclResource) (bool, error) {
 		// skip mods
-		if _, ok := item.(*Mod); ok {
+		if _, ok := item.(*ModBase[T]); ok {
 			return true, nil
 		}
 
@@ -107,7 +107,7 @@ func (m *Mod) addResourcesIntoTree(sourceMod *Mod, childParentLookup map[string]
 	return nil
 }
 
-func (m *Mod) addItemIntoResourceTree(item ModTreeItem, childParentLookup map[string][]ModTreeItem) error {
+func (m *ModBase[T]) addItemIntoResourceTree(item ModTreeItem, childParentLookup map[string][]ModTreeItem) error {
 	parents := childParentLookup[item.Name()]
 	if len(parents) == 0 {
 		parents = []ModTreeItem{m}
@@ -140,6 +140,6 @@ func checkForDuplicate(existing, new HclResource) hcl.Diagnostics {
 	}}
 }
 
-func (m *Mod) AddResource(item HclResource) hcl.Diagnostics {
+func (m *ModBase[T]) AddResource(item HclResource) hcl.Diagnostics {
 	return m.ResourceMaps.AddResource(item)
 }

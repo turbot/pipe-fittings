@@ -2,11 +2,11 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 )
 
@@ -40,7 +40,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 	assert.Equal(false, *scheduleTrigger.Enabled)
 
-	st, ok := scheduleTrigger.Config.(*modconfig.TriggerSchedule)
+	st, ok := scheduleTrigger.Config.(*flowpipe.TriggerSchedule)
 	if !ok {
 		assert.Fail("my_hourly_trigger trigger is not a schedule trigger")
 		return
@@ -55,7 +55,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 	assert.Equal(true, *scheduleTrigger.Enabled)
 
-	st, ok = scheduleTrigger.Config.(*modconfig.TriggerSchedule)
+	st, ok = scheduleTrigger.Config.(*flowpipe.TriggerSchedule)
 	if !ok {
 		assert.Fail("my_hourly_trigger trigger is not a schedule trigger")
 		return
@@ -70,7 +70,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 	assert.Nil(triggerWithArgs.Enabled)
 
-	twa, ok := triggerWithArgs.Config.(*modconfig.TriggerSchedule)
+	twa, ok := triggerWithArgs.Config.(*flowpipe.TriggerSchedule)
 	if !ok {
 		assert.Fail("trigger_with_args trigger is not a schedule trigger")
 		return
@@ -84,7 +84,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
-	qt, ok := queryTrigger.Config.(*modconfig.TriggerQuery)
+	qt, ok := queryTrigger.Config.(*flowpipe.TriggerQuery)
 	if !ok {
 		assert.Fail("query_trigger trigger is not a query trigger")
 		return
@@ -100,7 +100,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 	assert.Equal(true, *httpTriggerWithArgs.Enabled)
 
-	httpTrigConfig, ok := httpTriggerWithArgs.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithArgs.Config.(*flowpipe.TriggerHttp)
 	if !ok {
 		assert.Fail("trigger_with_args trigger is not a HTTP trigger")
 		return
@@ -128,7 +128,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 	}
 	assert.Equal(true, *queryTrigger.Enabled)
 
-	qt, ok = queryTrigger.Config.(*modconfig.TriggerQuery)
+	qt, ok = queryTrigger.Config.(*flowpipe.TriggerQuery)
 	if !ok {
 		assert.Fail("query_trigger trigger is not a query trigger")
 		return
@@ -144,7 +144,7 @@ func TestPipelineWithTrigger(t *testing.T) {
 		return
 	}
 
-	trig, ok := triggerWithExecutionMode.Config.(*modconfig.TriggerHttp)
+	trig, ok := triggerWithExecutionMode.Config.(*flowpipe.TriggerHttp)
 	if !ok {
 		assert.Fail("trigger_with_execution_mode trigger is not a http trigger")
 		return

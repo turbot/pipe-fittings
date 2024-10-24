@@ -2,6 +2,7 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/workspace/flowpipe"
 	"os"
 	"path"
 	"testing"
@@ -595,7 +596,7 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 				return
 			}
 
-			wA, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigA.Credentials), workspace.WithIntegrations(flowpipeConfigA.Integrations), workspace.WithNotifiers(flowpipeConfigA.Notifiers))
+			wA, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, flowpipe.WithCredentials(flowpipeConfigA.Credentials), flowpipe.WithIntegrations(flowpipeConfigA.Integrations), flowpipe.WithNotifiers(flowpipeConfigA.Notifiers))
 			assert.NotNil(wA)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))
@@ -609,7 +610,7 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 				return
 			}
 
-			wB, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigB.Credentials), workspace.WithIntegrations(flowpipeConfigB.Integrations), workspace.WithNotifiers(flowpipeConfigB.Notifiers))
+			wB, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, flowpipe.WithCredentials(flowpipeConfigB.Credentials), flowpipe.WithIntegrations(flowpipeConfigB.Integrations), flowpipe.WithNotifiers(flowpipeConfigB.Notifiers))
 			assert.NotNil(wB)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))

@@ -3,6 +3,7 @@ package load_mod
 import (
 	"context"
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"os"
 	"path/filepath"
 
@@ -28,15 +29,15 @@ func ToError(val interface{}) error {
 // # The automated tests were initially created before the concept of Mod is introduced in Flowpipe
 //
 // We can potentially remove this function, but we have to refactor all our test cases
-func LoadPipelines(ctx context.Context, configPath string) (map[string]*modconfig.Pipeline, map[string]*modconfig.Trigger, error) {
+func LoadPipelines(ctx context.Context, configPath string) (map[string]*flowpipe.Pipeline, map[string]*flowpipe.Trigger, error) {
 
 	mod, err := LoadPipelinesReturningItsMod(ctx, configPath)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var pipelines map[string]*modconfig.Pipeline
-	var triggers map[string]*modconfig.Trigger
+	var pipelines map[string]*flowpipe.Pipeline
+	var triggers map[string]*flowpipe.Trigger
 
 	if mod != nil && mod.ResourceMaps != nil {
 		pipelines = mod.ResourceMaps.Pipelines

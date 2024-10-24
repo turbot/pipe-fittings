@@ -48,7 +48,7 @@ func hiddenOpt() FlagOption {
 
 func deprecatedOpt(replacement string) FlagOption {
 	return func(c *cobra.Command, name, _ string) {
-		c.Flag(name).Deprecated = fmt.Sprintf("please use %s", replacement)
+		c.Flag(name).Deprecated = fmt.Sprintf(" %s", replacement)
 	}
 }
 

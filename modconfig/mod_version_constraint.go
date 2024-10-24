@@ -47,12 +47,12 @@ type ModVersionConstraint struct {
 	VersionRange hcl.Range
 }
 
-func NewFilepathModVersionConstraint(mod *Mod) *ModVersionConstraint {
+func NewFilepathModVersionConstraint(mod ModI) *ModVersionConstraint {
 	return &ModVersionConstraint{
 		Args: make(map[string]cty.Value),
 		// set name and filepath to the same value
-		Name:     mod.ModPath,
-		FilePath: mod.ModPath,
+		Name:     mod.GetModPath(),
+		FilePath: mod.GetModPath(),
 	}
 }
 

@@ -2,7 +2,8 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/dashboard"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"log/slog"
 	"maps"
 	"strings"
@@ -51,8 +52,8 @@ type ModParseContext struct {
 	ParseContext
 
 	// PipelineHcls map[string]*modconfig.Pipeline
-	TriggerHcls     map[string]*modconfig.Trigger
-	IntegrationHcls map[string]modconfig.Integration
+	TriggerHcls     map[string]*flowpipe.Trigger
+	IntegrationHcls map[string]flowpipe.Integration
 
 	// the mod which is currently being parsed
 	CurrentMod *modconfig.Mod
@@ -74,8 +75,8 @@ type ModParseContext struct {
 	CredentialImports   map[string]credential.CredentialImport
 	PipelingConnections map[string]connection.PipelingConnection
 	ConnectionImports   map[string]modconfig.ConnectionImport
-	Integrations        map[string]modconfig.Integration
-	Notifiers           map[string]modconfig.Notifier
+	Integrations        map[string]flowpipe.Integration
+	Notifiers           map[string]flowpipe.Notifier
 
 	ParentParseCtx *ModParseContext
 
@@ -98,7 +99,7 @@ type ModParseContext struct {
 	topLevelDependencyMods modconfig.ModMap
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
-	resourceMaps     *modconfig.ResourceMaps
+	resourceMaps     *powerpipe.PowerpipeResourceMaps
 	// map of late binding variable values
 	// - this is added to the eval context if includeLateBindingResourcesInEvalContext is true
 	lateBindingVars map[string]cty.Value
@@ -124,8 +125,8 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 		// TODO: fix this issue
 		// TODO: temporary mapping until we sort out merging Flowpipe and Steampipe
 		// PipelineHcls: make(map[string]*modconfig.Pipeline),
-		TriggerHcls:     make(map[string]*modconfig.Trigger),
-		IntegrationHcls: make(map[string]modconfig.Integration),
+		TriggerHcls:     make(map[string]*flowpipe.Trigger),
+		IntegrationHcls: make(map[string]flowpipe.Integration),
 
 		WorkspaceLock: workspaceLock,
 
@@ -426,7 +427,7 @@ func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
 	return nil
 }
 
-func (m *ModParseContext) GetResourceMaps() *modconfig.ResourceMaps {
+func (m *ModParseContext) GetResourceMaps() *powerpipe.PowerpipeResourceMaps {
 	if m.resourceMaps != nil {
 		return m.resourceMaps
 
@@ -444,7 +445,7 @@ func (m *ModParseContext) setResourceMaps() {
 	deps := m.GetTopLevelDependencyMods()
 
 	// use the current mod as the base resource map
-	sourceResourceMaps := make([]*modconfig.ResourceMaps, 0, len(deps)+1)
+	sourceResourceMaps := make([]*powerpipe.PowerpipeResourceMaps, 0, len(deps)+1)
 
 	sourceResourceMaps = append(sourceResourceMaps, m.CurrentMod.GetResourceMaps())
 
@@ -453,7 +454,7 @@ func (m *ModParseContext) setResourceMaps() {
 		sourceResourceMaps = append(sourceResourceMaps, dep.GetResourceMaps().TopLevelResources())
 	}
 
-	m.resourceMaps = modconfig.NewResourceMaps(m.CurrentMod, sourceResourceMaps...)
+	m.resourceMaps = powerpipe.NewResourceMaps(m.CurrentMod, sourceResourceMaps...)
 }
 
 func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
@@ -577,7 +578,7 @@ func (m *ModParseContext) getResourceCtyValue(resource modconfig.HclResource) (c
 		return cty.Zero, m.errToCtyValueDiags(resource, err)
 	}
 
-	if qp, ok := resource.(dashboard.QueryProvider); ok {
+	if qp, ok := resource.(powerpipe.QueryProvider); ok {
 		base := qp.GetQueryProviderImpl()
 		if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
 			return cty.Zero, m.errToCtyValueDiags(resource, err)
@@ -883,7 +884,7 @@ func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
 
 // TODO: transition period
 // AddPipeline stores this resource as a variable to be added to the eval context. It alse
-func (m *ModParseContext) AddPipeline(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
+func (m *ModParseContext) AddPipeline(pipelineHcl *flowpipe.Pipeline) hcl.Diagnostics {
 
 	// Split and get the last part for pipeline name
 	// pipelineFullName := pipelineHcl.Name()
@@ -913,7 +914,7 @@ func (m *ModParseContext) AddPipeline(pipelineHcl *modconfig.Pipeline) hcl.Diagn
 	return nil
 }
 
-func (m *ModParseContext) AddTrigger(trigger *modconfig.Trigger) hcl.Diagnostics {
+func (m *ModParseContext) AddTrigger(trigger *flowpipe.Trigger) hcl.Diagnostics {
 
 	// Split and get the last part for pipeline name
 	parts := strings.Split(trigger.Name(), ".")

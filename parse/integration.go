@@ -2,11 +2,11 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -25,7 +25,7 @@ var integrationBlockSchema = &hcl.BodySchema{
 	Blocks: []hcl.BlockHeaderSchema{},
 }
 
-func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integration, hcl.Diagnostics) {
+func DecodeIntegration(configPath string, block *hcl.Block) (flowpipe.Integration, hcl.Diagnostics) {
 	if len(block.Labels) != 2 {
 		diags := hcl.Diagnostics{
 			{
@@ -39,7 +39,7 @@ func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integrati
 
 	integrationType := block.Labels[0]
 
-	integration := modconfig.NewIntegrationFromBlock(block)
+	integration := flowpipe.NewIntegrationFromBlock(block)
 	if integration == nil {
 		diags := hcl.Diagnostics{
 			{
@@ -68,7 +68,7 @@ func DecodeIntegration(configPath string, block *hcl.Block) (modconfig.Integrati
 		return nil, diags
 	}
 
-	diags = modconfig.HclImplFromAttributes(integration.GetHclResourceImpl(), hclImplBody.Attributes, evalCtx)
+	diags = flowpipe.HclImplFromAttributes(integration.GetHclResourceImpl(), hclImplBody.Attributes, evalCtx)
 	if len(diags) > 0 {
 		return nil, diags
 	}

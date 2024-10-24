@@ -2,11 +2,11 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
-	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 // TODO: a comprehensive query trigger test
@@ -25,7 +25,7 @@ func TestQueryTriggerParse(t *testing.T) {
 		return
 	}
 
-	st, ok := queryTrigger.Config.(*modconfig.TriggerQuery)
+	st, ok := queryTrigger.Config.(*flowpipe.TriggerQuery)
 	if !ok {
 		assert.Fail("query_trigger_no_schedule trigger is not a query trigger")
 		return

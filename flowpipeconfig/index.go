@@ -2,6 +2,7 @@ package flowpipeconfig
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"log/slog"
 	"sync"
 
@@ -20,8 +21,8 @@ type FlowpipeConfig struct {
 
 	CredentialImports   map[string]credential.CredentialImport
 	Credentials         map[string]credential.Credential
-	Integrations        map[string]modconfig.Integration
-	Notifiers           map[string]modconfig.Notifier
+	Integrations        map[string]flowpipe.Integration
+	Notifiers           map[string]flowpipe.Notifier
 	ConnectionImports   map[string]modconfig.ConnectionImport
 	PipelingConnections map[string]connection.PipelingConnection
 
@@ -197,13 +198,13 @@ func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {
 		return nil
 	}
 
-	defaultIntegrations, err := modconfig.DefaultIntegrations()
+	defaultIntegrations, err := flowpipe.DefaultIntegrations()
 	if err != nil {
 		slog.Error("Unable to create default integrations", "error", err)
 		return nil
 	}
 
-	defaultNotifiers, err := modconfig.DefaultNotifiers(defaultIntegrations["http.default"])
+	defaultNotifiers, err := flowpipe.DefaultNotifiers(defaultIntegrations["http.default"])
 	if err != nil {
 		slog.Error("Unable to create default notifiers", "error", err)
 		return nil

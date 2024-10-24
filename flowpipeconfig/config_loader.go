@@ -2,6 +2,7 @@ package flowpipeconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"log/slog"
 	"maps"
 	"path/filepath"
@@ -18,7 +19,6 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/funcs"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
@@ -424,7 +424,7 @@ func (f *FlowpipeConfig) loadFlowpipeConfigBlocks(configPath string, opts *loadC
 	return diags
 }
 
-func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[string]modconfig.Integration) (*hcl.EvalContext, hcl.Diagnostics) {
+func buildEvalContextWithIntegrationsOnly(configPath string, integrations map[string]flowpipe.Integration) (*hcl.EvalContext, hcl.Diagnostics) {
 
 	diags := hcl.Diagnostics{}
 	variables := make(map[string]cty.Value)

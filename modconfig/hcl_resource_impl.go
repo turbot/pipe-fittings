@@ -65,62 +65,62 @@ func NewHclResourceImpl(block *hcl.Block, fullName string, opts ...HclResourceIm
 	return res
 }
 
-func (b *HclResourceImpl) Equals(other *HclResourceImpl) bool {
-	if b == nil || other == nil {
+func (h *HclResourceImpl) Equals(other *HclResourceImpl) bool {
+	if h == nil || other == nil {
 		return false
 	}
 
 	// Compare FullName
-	if b.FullName != other.FullName {
+	if h.FullName != other.FullName {
 		return false
 	}
 
 	// Compare Title (if not nil)
-	if (b.Title == nil && other.Title != nil) || (b.Title != nil && other.Title == nil) {
+	if (h.Title == nil && other.Title != nil) || (h.Title != nil && other.Title == nil) {
 		return false
 	}
-	if b.Title != nil && other.Title != nil && *b.Title != *other.Title {
+	if h.Title != nil && other.Title != nil && *h.Title != *other.Title {
 		return false
 	}
 
 	// Compare ShortName
-	if b.ShortName != other.ShortName {
+	if h.ShortName != other.ShortName {
 		return false
 	}
 
 	// Compare UnqualifiedName
-	if b.UnqualifiedName != other.UnqualifiedName {
+	if h.UnqualifiedName != other.UnqualifiedName {
 		return false
 	}
 
 	// Compare Description (if not nil)
-	if (b.Description == nil && other.Description != nil) || (b.Description != nil && other.Description == nil) {
+	if (h.Description == nil && other.Description != nil) || (h.Description != nil && other.Description == nil) {
 		return false
 	}
-	if b.Description != nil && other.Description != nil && *b.Description != *other.Description {
+	if h.Description != nil && other.Description != nil && *h.Description != *other.Description {
 		return false
 	}
 
 	// Compare Documentation (if not nil)
-	if (b.Documentation == nil && other.Documentation != nil) || (b.Documentation != nil && other.Documentation == nil) {
+	if (h.Documentation == nil && other.Documentation != nil) || (h.Documentation != nil && other.Documentation == nil) {
 		return false
 	}
-	if b.Documentation != nil && other.Documentation != nil && *b.Documentation != *other.Documentation {
+	if h.Documentation != nil && other.Documentation != nil && *h.Documentation != *other.Documentation {
 		return false
 	}
 
 	// Compare Tags
-	if len(b.Tags) != len(other.Tags) {
+	if len(h.Tags) != len(other.Tags) {
 		return false
 	}
-	for key, value := range b.Tags {
+	for key, value := range h.Tags {
 		if otherValue, ok := other.Tags[key]; !ok || value != otherValue {
 			return false
 		}
 	}
 
 	// Compare other fields (blockType, disableCtySerialise, isTopLevel)
-	if b.blockType != other.blockType || b.disableCtySerialise != other.disableCtySerialise || b.isTopLevel != other.isTopLevel {
+	if h.blockType != other.blockType || h.disableCtySerialise != other.disableCtySerialise || h.isTopLevel != other.isTopLevel {
 		return false
 	}
 
@@ -129,116 +129,121 @@ func (b *HclResourceImpl) Equals(other *HclResourceImpl) bool {
 
 // Name implements HclResource
 // return name in format: '<blocktype>.<shortName>'
-func (b *HclResourceImpl) Name() string {
-	return b.FullName
+func (h *HclResourceImpl) Name() string {
+	return h.FullName
 }
 
 // GetTitle implements HclResource
-func (b *HclResourceImpl) GetTitle() string {
-	return typehelpers.SafeString(b.Title)
+func (h *HclResourceImpl) GetTitle() string {
+	return typehelpers.SafeString(h.Title)
 }
 
 // GetUnqualifiedName implements DashboardLeafNode, ModTreeItem
-func (b *HclResourceImpl) GetUnqualifiedName() string {
-	return b.UnqualifiedName
+func (h *HclResourceImpl) GetUnqualifiedName() string {
+	return h.UnqualifiedName
 }
 
 // GetShortName implements HclResource
-func (b *HclResourceImpl) GetShortName() string {
-	return b.ShortName
+func (h *HclResourceImpl) GetShortName() string {
+	return h.ShortName
+}
+
+// GetFullName implements ModI
+func (h *HclResourceImpl) GetFullName() string {
+	return h.FullName
 }
 
 // OnDecoded implements HclResource
-func (b *HclResourceImpl) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
+func (h *HclResourceImpl) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
 	return nil
 }
 
 // GetDeclRange implements HclResource
-func (b *HclResourceImpl) GetDeclRange() *hcl.Range {
-	return &b.DeclRange
+func (h *HclResourceImpl) GetDeclRange() *hcl.Range {
+	return &h.DeclRange
 }
 
 // BlockType implements HclResource
-func (b *HclResourceImpl) BlockType() string {
-	return b.blockType
+func (h *HclResourceImpl) BlockType() string {
+	return h.blockType
 }
 
 // GetDescription implements HclResource
-func (b *HclResourceImpl) GetDescription() string {
-	return typehelpers.SafeString(b.Description)
+func (h *HclResourceImpl) GetDescription() string {
+	return typehelpers.SafeString(h.Description)
 }
 
 // GetDocumentation implements HclResource
-func (b *HclResourceImpl) GetDocumentation() string {
-	return typehelpers.SafeString(b.Documentation)
+func (h *HclResourceImpl) GetDocumentation() string {
+	return typehelpers.SafeString(h.Documentation)
 }
 
 // GetTags implements HclResource
-func (b *HclResourceImpl) GetTags() map[string]string {
-	if b.Tags != nil {
-		return b.Tags
+func (h *HclResourceImpl) GetTags() map[string]string {
+	if h.Tags != nil {
+		return h.Tags
 	}
 	return map[string]string{}
 }
 
 // GetHclResourceImpl implements HclResource
-func (b *HclResourceImpl) GetHclResourceImpl() *HclResourceImpl {
-	return b
+func (h *HclResourceImpl) GetHclResourceImpl() *HclResourceImpl {
+	return h
 }
 
 // SetTopLevel implements HclResource
-func (b *HclResourceImpl) SetTopLevel(isTopLevel bool) {
-	b.isTopLevel = isTopLevel
+func (h *HclResourceImpl) SetTopLevel(isTopLevel bool) {
+	h.isTopLevel = isTopLevel
 }
 
 // IsTopLevel implements HclResource
-func (b *HclResourceImpl) IsTopLevel() bool {
-	return b.isTopLevel
+func (h *HclResourceImpl) IsTopLevel() bool {
+	return h.isTopLevel
 }
 
 // CtyValue implements CtyValueProvider
-func (b *HclResourceImpl) CtyValue() (cty.Value, error) {
-	if b.disableCtySerialise {
+func (h *HclResourceImpl) CtyValue() (cty.Value, error) {
+	if h.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return cty_helpers.GetCtyValue(b)
+	return cty_helpers.GetCtyValue(h)
 }
 
 // GetBase implements HclResource
-func (b *HclResourceImpl) GetBase() HclResource {
-	return b.base
+func (h *HclResourceImpl) GetBase() HclResource {
+	return h.base
 }
 
 // GetShowData implements printers.Showable
-func (b *HclResourceImpl) GetShowData() *printers.RowData {
+func (h *HclResourceImpl) GetShowData() *printers.RowData {
 	return printers.NewRowData(
-		printers.NewFieldValue("Name", b.Name()),
-		printers.NewFieldValue("Title", b.GetTitle()),
-		printers.NewFieldValue("Description", b.GetDescription()),
-		printers.NewFieldValue("Documentation", b.GetDocumentation()),
-		printers.NewFieldValue("Tags", b.GetTags()),
+		printers.NewFieldValue("Name", h.Name()),
+		printers.NewFieldValue("Title", h.GetTitle()),
+		printers.NewFieldValue("Description", h.GetDescription()),
+		printers.NewFieldValue("Documentation", h.GetDocumentation()),
+		printers.NewFieldValue("Tags", h.GetTags()),
 	)
 }
 
 // GetListData implements printers.Showable
-func (b *HclResourceImpl) GetListData() *printers.RowData {
+func (h *HclResourceImpl) GetListData() *printers.RowData {
 	return printers.NewRowData(
-		printers.NewFieldValue("NAME", b.Name()),
+		printers.NewFieldValue("NAME", h.Name()),
 	)
 }
 
-func (b *HclResourceImpl) setBaseProperties() {
-	if b.Title == nil {
-		b.Title = b.getBaseImpl().Title
+func (h *HclResourceImpl) setBaseProperties() {
+	if h.Title == nil {
+		h.Title = h.getBaseImpl().Title
 	}
-	if b.Description == nil {
-		b.Description = b.getBaseImpl().Description
+	if h.Description == nil {
+		h.Description = h.getBaseImpl().Description
 	}
 
-	b.Tags = utils.MergeMaps(b.Tags, b.getBaseImpl().Tags)
+	h.Tags = utils.MergeMaps(h.Tags, h.getBaseImpl().Tags)
 
 }
 
-func (b *HclResourceImpl) getBaseImpl() *HclResourceImpl {
-	return b.base.GetHclResourceImpl()
+func (h *HclResourceImpl) getBaseImpl() *HclResourceImpl {
+	return h.base.GetHclResourceImpl()
 }

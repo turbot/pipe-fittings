@@ -2,14 +2,14 @@ package workspace
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/dashboard"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"log/slog"
 
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func (w *Workspace) GetQueryProvider(queryName string) (dashboard.QueryProvider, bool) {
+func (w *Workspace) GetQueryProvider(queryName string) (powerpipe.QueryProvider, bool) {
 	parsedName, err := modconfig.ParseResourceName(queryName)
 	if err != nil {
 		return nil, false
@@ -17,7 +17,7 @@ func (w *Workspace) GetQueryProvider(queryName string) (dashboard.QueryProvider,
 	// try to find the resource
 	if resource, ok := w.GetResource(parsedName); ok {
 		// found a resource - is it a query provider
-		if qp := resource.(dashboard.QueryProvider); ok {
+		if qp := resource.(powerpipe.QueryProvider); ok {
 			return qp, true
 		}
 		slog.Debug("GetQueryProviderImpl found a mod resource resource for query but it is not a query provider", "resourceName", queryName)
@@ -27,13 +27,13 @@ func (w *Workspace) GetQueryProvider(queryName string) (dashboard.QueryProvider,
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (w *Workspace) GetResourceMaps() *modconfig.ResourceMaps {
+func (w *Workspace) GetResourceMaps() *powerpipe.PowerpipeResourceMaps {
 	w.loadLock.Lock()
 	defer w.loadLock.Unlock()
 
-	// if this a source snapshot workspace, create a ResourceMaps containing ONLY source snapshot paths
+	// if this a source snapshot workspace, create a PowerpipeResourceMaps containing ONLY source snapshot paths
 	if len(w.SourceSnapshots) != 0 {
-		return modconfig.NewSourceSnapshotModResources(w.SourceSnapshots)
+		return powerpipe.NewSourceSnapshotModResources(w.SourceSnapshots)
 	}
 	return w.Mod.ResourceMaps
 }
@@ -43,7 +43,7 @@ func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resou
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
-func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider dashboard.QueryProvider, runtimeArgs *dashboard.QueryArgs) (*dashboard.ResolvedQuery, error) {
+func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider powerpipe.QueryProvider, runtimeArgs *powerpipe.QueryArgs) (*powerpipe.ResolvedQuery, error) {
 	slog.Debug("ResolveQueryFromQueryProvider", "resourceName", queryProvider.Name())
 
 	query := queryProvider.GetQuery()
@@ -53,7 +53,7 @@ func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider dashboard.QueryP
 
 	// merge the base args with the runtime args
 	var err error
-	runtimeArgs, err = dashboard.MergeArgs(queryProvider, runtimeArgs)
+	runtimeArgs, err = powerpipe.MergeArgs(queryProvider, runtimeArgs)
 	if err != nil {
 		return nil, err
 	}

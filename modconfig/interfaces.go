@@ -53,7 +53,7 @@ type DatabaseItem interface {
 }
 
 type ModItem interface {
-	GetMod() *Mod
+	GetMod() ModI
 }
 
 type CtyValueProvider interface {
@@ -71,8 +71,17 @@ type ResourceWithMetadata interface {
 	GetReferences() []*ResourceReference
 }
 
+type ResourceMapsI interface {
+	WalkResources(resourceFunc func(item HclResource) (bool, error)) error
+	AddResource(item HclResource) hcl.Diagnostics
+	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
+	Equals(other ResourceMapsI) bool
+	AddReference(ref *ResourceReference)
+	GetReferences() []*ResourceReference
+}
+
 type ResourceMapsProvider interface {
-	GetResourceMaps() *ResourceMaps
+	GetResourceMaps() ResourceMapsI
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }
 

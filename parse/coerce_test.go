@@ -1,29 +1,29 @@
 package parse
 
 import (
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"reflect"
 	"testing"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/connection"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type coerceValueTest struct {
 	title         string
-	resource      modconfig.ResourceWithParam
+	resource      flowpipe.ResourceWithParam
 	input         map[string]string
 	expected      map[string]interface{}
 	errorExpected bool
 }
 
 type resourceWithParams struct {
-	Params []modconfig.PipelineParam
+	Params []flowpipe.PipelineParam
 }
 
-func (r *resourceWithParams) GetParam(name string) *modconfig.PipelineParam {
+func (r *resourceWithParams) GetParam(name string) *flowpipe.PipelineParam {
 	for _, p := range r.Params {
 		if p.Name == name {
 			return &p
@@ -32,7 +32,7 @@ func (r *resourceWithParams) GetParam(name string) *modconfig.PipelineParam {
 	return nil
 }
 
-func (r *resourceWithParams) GetParams() []modconfig.PipelineParam {
+func (r *resourceWithParams) GetParams() []flowpipe.PipelineParam {
 	return r.Params
 }
 
@@ -40,7 +40,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "Coerce string value",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_string",
 					Type: cty.String,
@@ -57,7 +57,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "Coerce int value",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_int",
 					Type: cty.Number,
@@ -74,7 +74,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "Coerce bool value",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_bool",
 					Type: cty.Bool,
@@ -91,7 +91,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "Coerce bool value - invalid",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_bool",
 					Type: cty.Bool,
@@ -106,7 +106,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "Coerce connection",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{})),
@@ -128,10 +128,10 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "Coerce notifier",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_notifier",
-					Type: cty.Capsule("notifier", reflect.TypeOf(&modconfig.NotifierImpl{})),
+					Type: cty.Capsule("notifier", reflect.TypeOf(&flowpipe.NotifierImpl{})),
 				},
 			},
 		},
@@ -148,7 +148,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "list of connections",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -178,7 +178,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "list of connections - invalid name",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -193,7 +193,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "list of connections - invalid type",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -208,7 +208,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "list of connection but just one",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.List(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -232,7 +232,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "map of connections",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -262,7 +262,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "map of connections - invalid name",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -277,7 +277,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "map of connections - invalid type",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.Map(cty.Capsule("aws", reflect.TypeOf(connection.AwsConnection{}))),
@@ -292,7 +292,7 @@ var coerceValueTests = []coerceValueTest{
 	{
 		title: "object of different types",
 		resource: &resourceWithParams{
-			Params: []modconfig.PipelineParam{
+			Params: []flowpipe.PipelineParam{
 				{
 					Name: "param_connection",
 					Type: cty.Object(map[string]cty.Type{

@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -27,7 +28,7 @@ var notifierBlockSchema = &hcl.BodySchema{
 	},
 }
 
-func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.NotifierImpl, hcl.Diagnostics) {
+func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContext) (*flowpipe.NotifierImpl, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	if len(block.Labels) != 1 {
 		diags = hcl.Diagnostics{
@@ -42,7 +43,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 
 	notifierName := block.Labels[0]
 
-	notifier := modconfig.NotifierImpl{
+	notifier := flowpipe.NotifierImpl{
 		HclResourceImpl: modconfig.HclResourceImpl{
 			FullName:        notifierName,
 			ShortName:       notifierName,
@@ -60,7 +61,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 	for _, b := range content.Blocks {
 		switch b.Type {
 		case schema.BlockTypeNotify:
-			notify := modconfig.Notify{}
+			notify := flowpipe.Notify{}
 			moreDiags := gohcl.DecodeBody(b.Body, evalCtx, &notify)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
@@ -89,7 +90,7 @@ func DecodeNotifier(configPath string, block *hcl.Block, evalCtx *hcl.EvalContex
 		}
 	}
 
-	moreDiags := modconfig.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx)
+	moreDiags := flowpipe.HclImplFromAttributes(&notifier.HclResourceImpl, content.Attributes, evalCtx)
 	if len(moreDiags) > 0 {
 		diags = append(diags, moreDiags...)
 	}

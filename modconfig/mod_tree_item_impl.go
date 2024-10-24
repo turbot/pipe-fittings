@@ -16,7 +16,7 @@ type ModTreeItemImpl struct {
 	// required to allow partial decoding
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
-	Mod              *Mod     `cty:"mod" json:"-"`
+	Mod              ModI     `cty:"mod" json:"-"`
 	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
@@ -29,8 +29,8 @@ type ModTreeItemImpl struct {
 	children []ModTreeItem
 }
 
-func NewModTreeItemImpl(block *hcl.Block, mod *Mod, shortName string) ModTreeItemImpl {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
+func NewModTreeItemImpl(block *hcl.Block, mod ModI, shortName string) ModTreeItemImpl {
+	fullName := fmt.Sprintf("%s.%s.%s", mod.GetShortName(), block.Type, shortName)
 
 	return ModTreeItemImpl{
 		HclResourceImpl: NewHclResourceImpl(block, fullName),
@@ -81,7 +81,7 @@ func (b *ModTreeItemImpl) SetPaths() {
 }
 
 // GetMod implements ModItem, ModTreeItem
-func (b *ModTreeItemImpl) GetMod() *Mod {
+func (b *ModTreeItemImpl) GetMod() ModI {
 	return b.Mod
 }
 
@@ -174,7 +174,7 @@ func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 		printers.NewFieldValue("Name", name),
 	)
 	if b.Mod != nil {
-		res.AddField(printers.NewFieldValue("Mod", b.Mod.ShortName))
+		res.AddField(printers.NewFieldValue("Mod", b.Mod.GetShortName()))
 	}
 	res.AddField(printers.NewFieldValue("Database", b.Database))
 
@@ -191,7 +191,7 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	}
 	res := printers.NewRowData()
 	if b.Mod != nil {
-		res.AddField(printers.NewFieldValue("MOD", b.Mod.ShortName))
+		res.AddField(printers.NewFieldValue("MOD", b.Mod.GetShortName()))
 	}
 
 	res.AddField(printers.NewFieldValue("NAME", name))
@@ -202,5 +202,5 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 }
 
 func (b *ModTreeItemImpl) IsDependencyResource() bool {
-	return b.GetMod().DependencyPath != nil
+	return b.GetMod().GetDependencyPath() != nil
 }

@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"reflect"
 	"strings"
 
@@ -10,14 +11,13 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 )
 
-func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interface{}, evalCtx *hcl.EvalContext) []error {
+func ValidateParams(p flowpipe.ResourceWithParam, inputParams map[string]interface{}, evalCtx *hcl.EvalContext) []error {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value
@@ -96,7 +96,7 @@ func ValidateParams(p modconfig.ResourceWithParam, inputParams map[string]interf
 	return errors
 }
 
-func validateParam(param *modconfig.PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
+func validateParam(param *flowpipe.PipelineParam, inputParam interface{}, evalCtx *hcl.EvalContext) error {
 	var valToValidate cty.Value
 	var err error
 	if !hclhelpers.IsComplexType(param.Type) && !param.Type.HasDynamicTypes() {
@@ -126,7 +126,7 @@ func validateParam(param *modconfig.PipelineParam, inputParam interface{}, evalC
 // This is inefficient because we are coercing the value from string -> Go using Cty (because that's how the pipeline is defined)
 // and again we convert from Go -> Cty when we're executing the pipeline to build EvalContext when we're evaluating
 // data are not resolved during parse time.
-func CoerceParams(p modconfig.ResourceWithParam, inputParams map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
+func CoerceParams(p flowpipe.ResourceWithParam, inputParams map[string]string, evalCtx *hcl.EvalContext) (map[string]interface{}, []error) {
 	errors := []error{}
 
 	// Lists out all the pipeline params that don't have a default value

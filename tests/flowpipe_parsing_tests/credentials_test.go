@@ -10,7 +10,7 @@ package pipeline_test
 // 		return
 // 	}
 
-// 	credential := mod.ResourceMaps.Credentials["local.credential.aws.aws_static"]
+// 	credential := mod.ResourceMaps.credentials["local.credential.aws.aws_static"]
 // 	if credential == nil {
 // 		assert.Fail("Credential not found")
 // 		return

@@ -2,11 +2,11 @@ package pipeline_test
 
 import (
 	"context"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 )
 
@@ -40,7 +40,7 @@ func TestPipelineWithoutHTTPTriggerMethod(t *testing.T) {
 	}
 	assert.Equal(true, *httpTriggerWithoutMethod.Enabled)
 
-	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*flowpipe.TriggerHttp)
 	if !ok {
 		assert.Fail("trigger_without_method_block trigger is not a HTTP trigger")
 		return
@@ -93,7 +93,7 @@ func TestPipelineWithHTTPGetMethod(t *testing.T) {
 	}
 	assert.Equal(true, *httpTriggerWithoutMethod.Enabled)
 
-	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*flowpipe.TriggerHttp)
 	if !ok {
 		assert.Fail("trigger_with_get_method trigger is not a HTTP trigger")
 		return
@@ -146,7 +146,7 @@ func TestPipelineWithHTTPTriggerMethodMultiple(t *testing.T) {
 	}
 	assert.Equal(true, *httpTriggerWithoutMethod.Enabled)
 
-	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*flowpipe.TriggerHttp)
 	if !ok {
 		assert.Fail("trigger_with_multiple_method trigger is not a HTTP trigger")
 		return
@@ -212,7 +212,7 @@ func TestPipelineWithHTTPTriggerPrecedence(t *testing.T) {
 	}
 	assert.Equal(true, *httpTriggerWithoutMethod.Enabled)
 
-	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*modconfig.TriggerHttp)
+	httpTrigConfig, ok := httpTriggerWithoutMethod.Config.(*flowpipe.TriggerHttp)
 	if !ok {
 		assert.Fail("test_method_precedence trigger is not a HTTP trigger")
 		return

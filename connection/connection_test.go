@@ -1140,7 +1140,7 @@ func TestGcpConnectionEquals(t *testing.T) {
 	}
 	assert.False(conn1.Equals(nil), "One connection is nil, should return false")
 
-	// Case 3: Both connections have the same Credentials, Ttl, and AccessToken
+	// Case 3: Both connections have the same credentials, Ttl, and AccessToken
 	credentials := "credentials_value"
 	ttl := 3600
 	accessToken := "access_token_value"
@@ -1163,15 +1163,15 @@ func TestGcpConnectionEquals(t *testing.T) {
 		AccessToken: &accessToken,
 	}
 
-	assert.True(conn1.Equals(conn2), "Both connections have the same Credentials, Ttl, and AccessToken, and should be equal")
+	assert.True(conn1.Equals(conn2), "Both connections have the same credentials, Ttl, and AccessToken, and should be equal")
 
-	// Case 4: Connections have different Credentials
+	// Case 4: Connections have different credentials
 	differentCredentials := "different_credentials_value"
 	conn2.Credentials = &differentCredentials
-	assert.False(conn1.Equals(conn2), "Connections have different Credentials, should return false")
+	assert.False(conn1.Equals(conn2), "Connections have different credentials, should return false")
 
 	// Case 5: Connections have different Ttl
-	conn2.Credentials = &credentials // Reset Credentials to match conn1
+	conn2.Credentials = &credentials // Reset credentials to match conn1
 	differentTtl := 7200
 	conn2.Ttl = differentTtl
 	assert.False(conn1.Equals(conn2), "Connections have different Ttl, should return false")

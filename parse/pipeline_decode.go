@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -17,12 +18,12 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *modconfig.Pipeline) (modconfig.PipelineStep, hcl.Diagnostics) {
+func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
 
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
 
-	step := modconfig.NewPipelineStep(stepType, stepName, pipelineHcl)
+	step := flowpipe.NewPipelineStep(stepType, stepName, pipelineHcl)
 	if step == nil {
 		return nil, hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,
@@ -58,7 +59,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 		diags = append(diags, moreDiags...)
 	}
 
-	stepOutput := map[string]*modconfig.PipelineOutput{}
+	stepOutput := map[string]*flowpipe.PipelineOutput{}
 
 	outputBlocks := stepOptions.Blocks.ByType()[schema.BlockTypePipelineOutput]
 	for _, outputBlock := range outputBlocks {
@@ -70,7 +71,7 @@ func decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext,
 
 		if attr, exists := attributes[schema.AttributeTypeValue]; exists {
 
-			o := &modconfig.PipelineOutput{
+			o := &flowpipe.PipelineOutput{
 				Name: outputBlock.Labels[0],
 			}
 
@@ -167,8 +168,8 @@ func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
 	}
 }
 
-func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineParam, hcl.Diagnostics) {
-	o := &modconfig.PipelineParam{
+func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.PipelineParam, hcl.Diagnostics) {
+	o := &flowpipe.PipelineParam{
 		Name: block.Labels[0],
 	}
 
@@ -178,7 +179,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 	// be sure to revert the eval context to remove the temporary connections again
 	defer parseCtx.SetIncludeLateBindingResources(false)
 
-	paramOptions, diags := block.Body.Content(modconfig.PipelineParamBlockSchema)
+	paramOptions, diags := block.Body.Content(flowpipe.PipelineParamBlockSchema)
 
 	if diags.HasErrors() {
 		return o, diags
@@ -301,14 +302,14 @@ func decodePipelineParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfi
 	return o, diags
 }
 
-func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.PipelineOutput, hcl.Diagnostics) {
+func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.PipelineOutput, hcl.Diagnostics) {
 
-	o := &modconfig.PipelineOutput{
+	o := &flowpipe.PipelineOutput{
 		Name:  block.Labels[0],
 		Range: block.DefRange.Ptr(),
 	}
 
-	outputOptions, diags := block.Body.Content(modconfig.PipelineOutputBlockSchema)
+	outputOptions, diags := block.Body.Content(flowpipe.PipelineOutputBlockSchema)
 
 	if diags.HasErrors() {
 		return o, diags
@@ -367,7 +368,7 @@ func decodeOutput(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipel
 	return o, diags
 }
 
-func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Trigger, *DecodeResult) {
+func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.Trigger, *DecodeResult) {
 
 	res := NewDecodeResult()
 
@@ -385,7 +386,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 	triggerType := block.Labels[0]
 	triggerName := block.Labels[1]
 
-	triggerHcl := modconfig.NewTrigger(block, mod, triggerType, triggerName)
+	triggerHcl := flowpipe.NewTrigger(block, mod, triggerType, triggerName)
 
 	triggerSchema := GetTriggerBlockSchema(triggerType)
 	if triggerSchema == nil {
@@ -429,7 +430,7 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 		return triggerHcl, res
 	}
 
-	var triggerParams []modconfig.PipelineParam
+	var triggerParams []flowpipe.PipelineParam
 	for _, block := range triggerOptions.Blocks {
 		if block.Type == schema.BlockTypeParam {
 			param, diags := decodePipelineParam(block, parseCtx)
@@ -460,13 +461,13 @@ func decodeTrigger(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseConte
 
 // TODO: validation - if you specify invalid depends_on it doesn't error out
 // TODO: validation - invalid name?
-func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*modconfig.Pipeline, *DecodeResult) {
+func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseContext) (*flowpipe.Pipeline, *DecodeResult) {
 	res := NewDecodeResult()
 
 	// get shell pipelineHcl
-	pipelineHcl := modconfig.NewPipeline(mod, block)
+	pipelineHcl := flowpipe.NewPipeline(mod, block)
 
-	pipelineOptions, diags := block.Body.Content(modconfig.PipelineBlockSchema)
+	pipelineOptions, diags := block.Body.Content(flowpipe.PipelineBlockSchema)
 	if diags.HasErrors() {
 		res.HandleDecodeDiags(diags)
 		return pipelineHcl, res
@@ -600,7 +601,7 @@ func decodePipeline(mod *modconfig.Mod, block *hcl.Block, parseCtx *ModParseCont
 	return pipelineHcl, res
 }
 
-func validatePipelineSteps(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
+func validatePipelineSteps(pipelineHcl *flowpipe.Pipeline) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	stepMap := map[string]bool{}
@@ -628,7 +629,7 @@ func validatePipelineSteps(pipelineHcl *modconfig.Pipeline) hcl.Diagnostics {
 	return diags
 }
 
-func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials map[string]credential.Credential, connections map[string]connection.PipelingConnection) hcl.Diagnostics {
+func validatePipelineDependencies(pipelineHcl *flowpipe.Pipeline, credentials map[string]credential.Credential, connections map[string]connection.PipelingConnection) hcl.Diagnostics {
 	var diags hcl.Diagnostics
 
 	var stepRegisters []string
@@ -768,7 +769,7 @@ func validatePipelineDependencies(pipelineHcl *modconfig.Pipeline, credentials m
 	return diags
 }
 
-func handlePipelineDecodeResult(resource *modconfig.Pipeline, res *DecodeResult, block *hcl.Block, parseCtx *ModParseContext) {
+func handlePipelineDecodeResult(resource *flowpipe.Pipeline, res *DecodeResult, block *hcl.Block, parseCtx *ModParseContext) {
 	if res.Success() {
 		// call post decode hook
 		// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property
@@ -790,25 +791,25 @@ func handlePipelineDecodeResult(resource *modconfig.Pipeline, res *DecodeResult,
 func GetPipelineStepBlockSchema(stepType string) *hcl.BodySchema {
 	switch stepType {
 	case schema.BlockTypePipelineStepHttp:
-		return modconfig.PipelineStepHttpBlockSchema
+		return flowpipe.PipelineStepHttpBlockSchema
 	case schema.BlockTypePipelineStepSleep:
-		return modconfig.PipelineStepSleepBlockSchema
+		return flowpipe.PipelineStepSleepBlockSchema
 	case schema.BlockTypePipelineStepEmail:
-		return modconfig.PipelineStepEmailBlockSchema
+		return flowpipe.PipelineStepEmailBlockSchema
 	case schema.BlockTypePipelineStepTransform:
-		return modconfig.PipelineStepTransformBlockSchema
+		return flowpipe.PipelineStepTransformBlockSchema
 	case schema.BlockTypePipelineStepQuery:
-		return modconfig.PipelineStepQueryBlockSchema
+		return flowpipe.PipelineStepQueryBlockSchema
 	case schema.BlockTypePipelineStepPipeline:
-		return modconfig.PipelineStepPipelineBlockSchema
+		return flowpipe.PipelineStepPipelineBlockSchema
 	case schema.BlockTypePipelineStepFunction:
-		return modconfig.PipelineStepFunctionBlockSchema
+		return flowpipe.PipelineStepFunctionBlockSchema
 	case schema.BlockTypePipelineStepContainer:
-		return modconfig.PipelineStepContainerBlockSchema
+		return flowpipe.PipelineStepContainerBlockSchema
 	case schema.BlockTypePipelineStepInput:
-		return modconfig.PipelineStepInputBlockSchema
+		return flowpipe.PipelineStepInputBlockSchema
 	case schema.BlockTypePipelineStepMessage:
-		return modconfig.PipelineStepMessageBlockSchema
+		return flowpipe.PipelineStepMessageBlockSchema
 	default:
 		return nil
 	}
@@ -817,11 +818,11 @@ func GetPipelineStepBlockSchema(stepType string) *hcl.BodySchema {
 func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 	switch triggerType {
 	case schema.TriggerTypeSchedule:
-		return modconfig.TriggerScheduleBlockSchema
+		return flowpipe.TriggerScheduleBlockSchema
 	case schema.TriggerTypeQuery:
-		return modconfig.TriggerQueryBlockSchema
+		return flowpipe.TriggerQueryBlockSchema
 	case schema.TriggerTypeHttp:
-		return modconfig.TriggerHttpBlockSchema
+		return flowpipe.TriggerHttpBlockSchema
 	default:
 		return nil
 	}
@@ -830,11 +831,11 @@ func GetTriggerBlockSchema(triggerType string) *hcl.BodySchema {
 func GetIntegrationBlockSchema(integrationType string) *hcl.BodySchema {
 	switch integrationType {
 	case schema.IntegrationTypeSlack:
-		return modconfig.IntegrationSlackBlockSchema
+		return flowpipe.IntegrationSlackBlockSchema
 	case schema.IntegrationTypeEmail:
-		return modconfig.IntegrationEmailBlockSchema
+		return flowpipe.IntegrationEmailBlockSchema
 	case schema.IntegrationTypeMsTeams:
-		return modconfig.IntegrationTeamsBlockSchema
+		return flowpipe.IntegrationTeamsBlockSchema
 	default:
 		return nil
 	}

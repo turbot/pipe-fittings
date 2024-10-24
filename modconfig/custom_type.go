@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"fmt"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
@@ -10,9 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
-
-var notifierImpl *NotifierImpl
-var notifierImplTypeName = reflect.TypeOf(notifierImpl).String()
 
 // customType is an interface that custom cty types must implement
 type customType interface {
@@ -157,15 +155,21 @@ func customTypeCheckResourceTypeCorrect(ctyVal cty.Value, encapsulatedGoType ref
 	}
 	if isConnection {
 		return diags
-	} else if encapsulatedGoType.String() == notifierImplTypeName {
-		diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
-		if len(diags) > 0 {
-			return diags
+	} else {
+		// handle any app specific custom types
+		for _, customTypeName := range app_specific.CustomTypes {
+			if encapsulatedGoType.String() == customTypeName {
+				diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
+				if len(diags) > 0 {
+					return diags
+				}
+
+				if valueMap["resource_type"].AsString() == schema.BlockTypeNotifier {
+					return diags
+				}
+			}
 		}
 
-		if valueMap["resource_type"].AsString() == schema.BlockTypeNotifier {
-			return diags
-		}
 	}
 
 	diag := &hcl.Diagnostic{

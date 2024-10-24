@@ -1,7 +1,7 @@
 package parse
 
 import (
-	"github.com/turbot/pipe-fittings/modconfig/dashboard"
+	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"reflect"
 	"strings"
 
@@ -129,20 +129,20 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 		res = querySchema
 	}
 
-	if _, ok := resource.(dashboard.QueryProvider); ok {
+	if _, ok := resource.(powerpipe.QueryProvider); ok {
 		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeParam})
 		// if this is NOT query, add args
 		if resource.BlockType() != schema.BlockTypeQuery {
 			res.Attributes = append(res.Attributes, hcl.AttributeSchema{Name: schema.AttributeTypeArgs})
 		}
 	}
-	if _, ok := resource.(dashboard.NodeAndEdgeProvider); ok {
+	if _, ok := resource.(powerpipe.NodeAndEdgeProvider); ok {
 		res.Blocks = append(res.Blocks,
 			hcl.BlockHeaderSchema{Type: schema.BlockTypeCategory},
 			hcl.BlockHeaderSchema{Type: schema.BlockTypeNode},
 			hcl.BlockHeaderSchema{Type: schema.BlockTypeEdge})
 	}
-	if _, ok := resource.(dashboard.WithProvider); ok {
+	if _, ok := resource.(powerpipe.WithProvider); ok {
 		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeWith})
 	}
 	return res
