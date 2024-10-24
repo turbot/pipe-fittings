@@ -2,6 +2,7 @@ package app_specific
 
 import (
 	"github.com/Masterminds/semver/v3"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"path/filepath"
 )
 
@@ -78,3 +79,6 @@ var DefaultImageRepoDisplayURL string
 
 // Custom types
 var CustomTypes []string
+
+// funcs
+var NewResourceMapsFunc func(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI

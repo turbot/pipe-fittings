@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
+	"github.com/turbot/pipe-fittings/connection"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -50,14 +50,21 @@ import (
 //	return w, nil
 //}
 
-type WorkspaceI interface{}
+type WorkspaceI interface {
+	GetResourceMaps() modconfig.ResourceMapsI
+	GetMod() modconfig.ModI
+	GetPath() string
+	GetResource(name *modconfig.ParsedResourceName) (interface{}, interface{})
+}
 
-type WorkspaceBase[T modconfig.ModI] struct {
+type WorkspaceBase[T modconfig.ResourceMapsI] struct {
 	Path                string
 	ModInstallationPath string
-	Mod                 T
+	Mod                 modconfig.ModI
 
-	Mods map[string]*modconfig.ModI
+	PipelingConnections map[string]connection.PipelingConnection
+
+	Mods map[string]modconfig.ModI
 
 	// the input variables used in the parse
 	VariableValues map[string]string
@@ -71,45 +78,22 @@ type WorkspaceBase[T modconfig.ModI] struct {
 	SourceSnapshots []string
 
 	watcher     *filewatcher.FileWatcher
-	loadLock    sync.Mutex
+	LoadLock    sync.Mutex
 	exclusions  []string
 	modFilePath string
 
-	fileWatcherErrorHandler func(context.Context, error)
-	watcherError            error
+	FileWatcherErrorHandler func(context.Context, error)
+	WatcherError            error
 	// callback function called when there is a file watcher event
 	onFileWatcherEventMessages func()
 
 	// hooks
 	OnFileWatcherError  func(context.Context, error)
-	OnFileWatcherEvent  func(context.Context, *powerpipe.PowerpipeResourceMaps, *powerpipe.PowerpipeResourceMaps)
+	OnFileWatcherEvent  func(context.Context, modconfig.ResourceMapsI, modconfig.ResourceMapsI)
 	BlockTypeInclusions []string
 	ValidateVariables   bool
 	SupportLateBinding  bool
 }
-
-// Load_ creates a Workspace and loads the workspace mod
-
-//func createShellWorkspace(workspacePath string) (*Workspace, error) {
-//	// create shell workspace
-//	w := &Workspace{
-//		Path:              workspacePath,
-//		VariableValues:    make(map[string]string),
-//		ValidateVariables: true,
-//		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
-//	}
-//
-//	// check whether the workspace contains a modfile
-//	// this will determine whether we load files recursively, and create pseudo resources for sql files
-//	w.SetModfileExists()
-//
-//	// load the .steampipe ignore file
-//	if err := w.LoadExclusions(); err != nil {
-//		return nil, err
-//	}
-//
-//	return w, nil
-//}
 
 func (w *WorkspaceBase[T]) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
@@ -136,7 +120,7 @@ func (w *WorkspaceBase[T]) SetupWatcher(ctx context.Context, errorHandler func(c
 
 	// set the file watcher error handler, which will get called when there are parsing errors
 	// after a file watcher event
-	w.fileWatcherErrorHandler = errorHandler
+	w.FileWatcherErrorHandler = errorHandler
 
 	return nil
 }
@@ -188,7 +172,7 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 		return ew
 	}
 	// build run context which we use to load the workspace
-	parseCtx, err := w.getParseContext(ctx)
+	parseCtx, err := w.GetParseContext(ctx)
 	if err != nil {
 		ew.Error = err
 		return ew
@@ -209,7 +193,7 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 	}
 
 	// load the workspace mod
-	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
+	m, otherErrorAndWarning := load_mod.LoadMod[T](ctx, w.Path, parseCtx)
 	ew.Merge(otherErrorAndWarning)
 	if ew.Error != nil {
 		return ew
@@ -217,7 +201,7 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 
 	// now set workspace properties
 	// populate the mod references map references
-	m.ResourceMaps.PopulateReferences()
+	m.GetResourceMaps().PopulateReferences()
 
 	// set the mod
 	w.Mod = m
@@ -226,10 +210,15 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 	// NOTE: add in the workspace mod to the dependency mods
 	w.Mods[w.Mod.Name()] = w.Mod
 
-	// verify all runtime dependencies can be resolved
-	ew.Error = w.verifyResourceRuntimeDependencies()
-
 	return ew
+}
+
+func (w WorkspaceBase[T]) GetMod() modconfig.ModI {
+	return w.Mod
+}
+
+func (w WorkspaceBase[T]) GetPath() string {
+	return w.Path
 }
 
 // resolve values of all input variables
@@ -291,7 +280,7 @@ func getVariableDependencyCount(ew error_helpers.ErrorAndWarnings) int {
 
 func (w *WorkspaceBase[T]) getVariablesParseContext(ctx context.Context, inputVariable *modconfig.ModVariableMap) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
 	// build a run context just to use to load variable definitions
-	variablesParseCtx, err := w.getParseContext(ctx)
+	variablesParseCtx, err := w.GetParseContext(ctx)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -324,7 +313,7 @@ func (w *WorkspaceBase[T]) getVariableValues(ctx context.Context, variablesParse
 }
 
 // build options used to load workspace
-func (w *WorkspaceBase[T]) getParseContext(ctx context.Context) (*parse.ModParseContext, error) {
+func (w *WorkspaceBase[T]) GetParseContext(ctx context.Context) (*parse.ModParseContext, error) {
 	workspaceLock, err := w.loadWorkspaceLock(ctx)
 	if err != nil {
 		return nil, err
@@ -346,12 +335,6 @@ func (w *WorkspaceBase[T]) getParseContext(ctx context.Context) (*parse.ModParse
 		return nil, err
 	}
 
-	parseCtx.Credentials = w.Credentials
-	parseCtx.Integrations = w.Integrations
-	parseCtx.Notifiers = w.Notifiers
-
-	// I don't think we need CredentialImports here .. it's fully resolved to credentials at startup
-
 	return parseCtx, nil
 }
 
@@ -364,24 +347,18 @@ func (w *WorkspaceBase[T]) loadWorkspaceLock(ctx context.Context) (*versionmap.W
 
 	// if this is the old format, migrate by reinstalling dependencies
 	if workspaceLock.StructVersion() != versionmap.WorkspaceLockStructVersion {
-		// NOTE - this migration will be occurring when we are loading the variable values, i.e. we have not
-		// loaded the full mod definition yet - so we have not loaded the require block yet
-		// Load the require block, ignoring any variable errors
-		if w.ModfileExists() {
-			require, modShortName, _ := parse.ParseModRequireAndShortName(w.modFilePath)
-			// ignore any errors loading the require block
-			w.Mod.Require = require
-			w.Mod.ShortName = modShortName
-		}
-
-		opts := &modinstaller.InstallOpts{WorkspaceMod: w.Mod, UpdateStrategy: constants.ModUpdateMinimal}
-
-		installData, err := modinstaller.InstallWorkspaceDependencies(ctx, opts)
-		if err != nil {
-			return nil, err
-		}
-		workspaceLock = installData.NewLock
+		// TODO K removed migration - check an install will work
+		return nil, fmt.Errorf("workspace lock file is out of date, please run 'steampipe install' to update")
 	}
+
+	opts := &modinstaller.InstallOpts{WorkspaceMod: w.Mod, UpdateStrategy: constants.ModUpdateMinimal}
+
+	installData, err := modinstaller.InstallWorkspaceDependencies(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	workspaceLock = installData.NewLock
+
 	return workspaceLock, nil
 }
 
@@ -422,20 +399,11 @@ func (w *WorkspaceBase[T]) LoadExclusions() error {
 	return nil
 }
 
-func (w *WorkspaceBase[T]) verifyResourceRuntimeDependencies() error {
-	for _, d := range w.Mod.ResourceMaps.Dashboards {
-		if err := d.ValidateRuntimeDependencies(w); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // populate the mod resource maps with variables from the parse context
 func (w *WorkspaceBase[T]) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) error_helpers.ErrorAndWarnings {
 	var diags hcl.Diagnostics
 	for _, v := range parseCtx.Variables.ToArray() {
-		diags = append(diags, w.Mod.ResourceMaps.AddResource(v)...)
+		diags = append(diags, w.Mod.GetResourceMaps().AddResource(v)...)
 	}
 	return error_helpers.DiagsToErrorsAndWarnings("", diags)
 }

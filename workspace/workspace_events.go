@@ -2,7 +2,8 @@ package workspace
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
+	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"log/slog"
 
 	"github.com/turbot/pipe-fittings/error_helpers"
@@ -10,9 +11,9 @@ import (
 
 var EventCount int64 = 0
 
-func (w *WorkspaceBase) handleFileWatcherEvent(ctx context.Context) {
+func (w *WorkspaceBase[T]) handleFileWatcherEvent(ctx context.Context) {
 	slog.Debug("handleFileWatcherEvent")
-	prevResourceMaps, resourceMaps, errAndWarnings := w.reloadResourceMaps(ctx)
+	prevResourceMaps, resourceMaps, errAndWarnings := w.ReloadResourceMaps(ctx)
 
 	if errAndWarnings.GetError() != nil {
 		slog.Debug("handleFileWatcherEvent reloadResourceMaps returned error - call PublishDashboardEvent")
@@ -38,38 +39,34 @@ func (w *WorkspaceBase) handleFileWatcherEvent(ctx context.Context) {
 	}
 }
 
-func (w *WorkspaceBase) ReloadResourceMaps(ctx context.Context) (*powerpipe.PowerpipeResourceMaps, *powerpipe.PowerpipeResourceMaps, error_helpers.ErrorAndWarnings) {
-	return w.reloadResourceMaps(ctx)
-}
-
-func (w *WorkspaceBase) reloadResourceMaps(ctx context.Context) (*powerpipe.PowerpipeResourceMaps, *powerpipe.PowerpipeResourceMaps, error_helpers.ErrorAndWarnings) {
-	w.loadLock.Lock()
-	defer w.loadLock.Unlock()
+func (w *WorkspaceBase[T]) ReloadResourceMaps(ctx context.Context) (modconfig.ResourceMapsI, modconfig.ResourceMapsI, error_helpers.ErrorAndWarnings) {
+	w.LoadLock.Lock()
+	defer w.LoadLock.Unlock()
 
 	// get the pre-load resource maps
-	// NOTE: do not call GetResourceMaps - we DO NOT want to lock loadLock
-	prevResourceMaps := w.Mod.ResourceMaps
+	// NOTE: do not call GetResourceMaps - we DO NOT want to lock LoadLock
+	prevResourceMaps := w.Mod.GetResourceMaps()
 	// if there is an outstanding watcher error, set prevResourceMaps to empty to force refresh
-	if w.watcherError != nil {
-		prevResourceMaps = powerpipe.NewPowerpipeResourceMaps(w.Mod)
+	if w.WatcherError != nil {
+		prevResourceMaps = app_specific.NewResourceMapsFunc(w.Mod)
 	}
 
 	// now reload the workspace
 	errAndWarnings := w.LoadWorkspaceMod(ctx)
 	if errAndWarnings.GetError() != nil {
 		// check the existing watcher error - if we are already in an error state, do not show error
-		if w.watcherError == nil {
-			w.fileWatcherErrorHandler(ctx, error_helpers.PrefixError(errAndWarnings.GetError(), "failed to reload workspace"))
+		if w.WatcherError == nil {
+			w.FileWatcherErrorHandler(ctx, error_helpers.PrefixError(errAndWarnings.GetError(), "failed to reload workspace"))
 		}
 		// now set watcher error to new error
-		w.watcherError = errAndWarnings.GetError()
+		w.WatcherError = errAndWarnings.GetError()
 		return nil, nil, errAndWarnings
 	}
 	// clear watcher error
-	w.watcherError = nil
+	w.WatcherError = nil
 
 	// reload the resource maps
-	resourceMaps := w.Mod.ResourceMaps
+	resourceMaps := w.Mod.GetResourceMaps()
 
 	return prevResourceMaps, resourceMaps, errAndWarnings
 

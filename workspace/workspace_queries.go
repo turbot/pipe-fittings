@@ -9,7 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func (w *Workspace) GetQueryProvider(queryName string) (powerpipe.QueryProvider, bool) {
+func (w *WorkspaceBase[T]) GetQueryProvider(queryName string) (powerpipe.QueryProvider, bool) {
 	parsedName, err := modconfig.ParseResourceName(queryName)
 	if err != nil {
 		return nil, false
@@ -27,23 +27,23 @@ func (w *Workspace) GetQueryProvider(queryName string) (powerpipe.QueryProvider,
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (w *Workspace) GetResourceMaps() *powerpipe.PowerpipeResourceMaps {
-	w.loadLock.Lock()
-	defer w.loadLock.Unlock()
+func (w *WorkspaceBase[T]) GetResourceMaps() modconfig.ResourceMapsI {
+	w.LoadLock.Lock()
+	defer w.LoadLock.Unlock()
 
 	// if this a source snapshot workspace, create a PowerpipeResourceMaps containing ONLY source snapshot paths
 	if len(w.SourceSnapshots) != 0 {
 		return powerpipe.NewSourceSnapshotModResources(w.SourceSnapshots)
 	}
-	return w.Mod.ResourceMaps
+	return w.Mod.GetResourceMaps()
 }
 
-func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
+func (w *WorkspaceBase[T]) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	return w.GetResourceMaps().GetResource(parsedName)
 }
 
 // ResolveQueryFromQueryProvider resolves the query for the given QueryProvider
-func (w *Workspace) ResolveQueryFromQueryProvider(queryProvider powerpipe.QueryProvider, runtimeArgs *powerpipe.QueryArgs) (*powerpipe.ResolvedQuery, error) {
+func (w *WorkspaceBase[T]) ResolveQueryFromQueryProvider(queryProvider powerpipe.QueryProvider, runtimeArgs *powerpipe.QueryArgs) (*powerpipe.ResolvedQuery, error) {
 	slog.Debug("ResolveQueryFromQueryProvider", "resourceName", queryProvider.Name())
 
 	query := queryProvider.GetQuery()

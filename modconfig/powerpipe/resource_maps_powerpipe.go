@@ -43,9 +43,9 @@ type PowerpipeResourceMaps struct {
 	Snapshots map[string]string
 }
 
-func NewPowerpipeResourceMaps(mod *Mod, sourceMaps ...modconfig.ResourceMapsI) *PowerpipeResourceMaps {
+func NewPowerpipeResourceMaps(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
 	res := emptyPowerpipeModResources()
-	res.Mod = mod
+	res.Mod = mod.(*Mod)
 	res.Mods[mod.GetInstallCacheKey()] = mod
 	res.AddMaps(sourceMaps...)
 	return res

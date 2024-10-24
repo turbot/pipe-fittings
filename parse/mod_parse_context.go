@@ -69,14 +69,16 @@ type ModParseContext struct {
 	// Variables is a tree of maps of the variables in the current mod and child dependency mods
 	Variables *modconfig.ModVariableMap
 
+	PipelingConnections map[string]connection.PipelingConnection
+
+	// TODO K make an interface for parse context and have a flowpipe implementation with these in
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials         map[string]credential.Credential
-	CredentialImports   map[string]credential.CredentialImport
-	PipelingConnections map[string]connection.PipelingConnection
-	ConnectionImports   map[string]modconfig.ConnectionImport
-	Integrations        map[string]flowpipe.Integration
-	Notifiers           map[string]flowpipe.Notifier
+	Credentials       map[string]credential.Credential
+	Notifiers         map[string]flowpipe.Notifier
+	ConnectionImports map[string]modconfig.ConnectionImport
+	Integrations      map[string]flowpipe.Integration
+	CredentialImports map[string]credential.CredentialImport
 
 	ParentParseCtx *ModParseContext
 

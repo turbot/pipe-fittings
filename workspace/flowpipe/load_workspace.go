@@ -46,7 +46,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 	defer utils.LogTime("w.Load end")
 
 	w = &FlowpipeWorkspace{
-		WorkspaceBase: workspace.WorkspaceBase[*flowpipe.Mod]{
+		WorkspaceBase: workspace.WorkspaceBase[*flowpipe.FlowpipeResourceMaps]{
 			Path:              workspacePath,
 			VariableValues:    make(map[string]string),
 			ValidateVariables: true,

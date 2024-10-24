@@ -84,7 +84,7 @@ func NewMod[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *Mod
 		Require: NewRequire(),
 	}
 	// TODO K how???
-	//mod.ResourceMaps = powerpipe.NewResourceMaps(mod)
+	mod.ResourceMaps = app_specific.NewResourceMaps(mod)
 
 	return mod
 }
@@ -145,7 +145,7 @@ func (m *ModBase[T]) CacheKey() string {
 }
 
 // CreateDefaultMod creates a default mod created for a workspace with no mod definition
-func CreateDefaultMod[T ResourceMapsI](modPath string) *ModBase[T] {
+func CreateDefaultMod[T ResourceMapsI](modPath string) ModI {
 	m := NewMod[T](defaultModName, modPath, hcl.Range{})
 	folderName := filepath.Base(modPath)
 	m.Title = &folderName
@@ -220,6 +220,10 @@ func (m *ModBase[T]) GetReferences() []*ResourceReference {
 // GetResourceMaps implements ResourceMapsProvider
 func (m *ModBase[T]) GetResourceMaps() ResourceMapsI {
 	return m.ResourceMaps
+}
+
+func (m *ModBase[T]) SetResourceMaps(resourceMaps ResourceMapsI) {
+	m.ResourceMaps = resourceMaps.(T)
 }
 
 func (m *ModBase[T]) GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool) {

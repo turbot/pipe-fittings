@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -32,11 +33,14 @@ type HclResource interface {
 type ModI interface {
 	HclResource
 	ResourceProvider
+	ResourceWithMetadata
 	GetDependencyName() string
 	GetDependencyPath() *string
 	GetModPath() string
+	SetFilePath(string)
 	IsDefaultMod() bool
 	GetResourceMaps() ResourceMapsI
+	SetResourceMaps(maps ResourceMapsI)
 	GetInstallCacheKey() string
 	AddResource(item HclResource) hcl.Diagnostics
 	GetRequire() *Require
@@ -45,6 +49,7 @@ type ModI interface {
 	SetDatabase(*string)
 	SetSearchPath([]string)
 	SetSearchPathPrefix([]string)
+	ValidateRequirements(versionMap *plugin.PluginVersionMap) []error
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy
@@ -103,6 +108,7 @@ type ResourceMapsI interface {
 	GetMods() map[string]ModI
 	TopLevelResources() ResourceMapsI
 	AddMaps(i ...ResourceMapsI)
+	PopulateReferences()
 }
 
 type ResourceMapsProvider interface {

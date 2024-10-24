@@ -15,7 +15,7 @@ import (
 )
 
 // ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a resource of type T and (optionally) query args
-func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w *Workspace) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
+func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w WorkspaceI) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
 	var err error
 	var empty T
 
@@ -34,13 +34,13 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 	// so we failed to resolve the resource from the input string
 	// check whether it _looks_ like a resource name (i.e. mod.type.name OR type.name)
 	if name, looksLikeResource := SqlLooksLikeExecutableResource(sqlString); looksLikeResource {
-		return empty, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.Mod.Name(), w.Path)
+		return empty, nil, fmt.Errorf("'%s' not found in %s (%s)", name, w.GetMod().Name(), w.GetPath())
 	}
 	switch any(empty).(type) {
 	case *powerpipe.Query:
 		// if the desired type is a query,  and the sqlString DOES NOT look like a resource name,
 		// treat it as a raw query and create a Query to wrap it
-		q := createQueryResourceForCommandLineQuery(sqlString, w.Mod)
+		q := createQueryResourceForCommandLineQuery(sqlString, w.GetMod())
 
 		// add to the workspace mod so the dashboard execution code can find it
 		if err := w.Mod.AddResource(q); err != nil {
@@ -57,7 +57,7 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 
 // does the input look like a resource which can be executed as a query
 // Note: if anything fails just return nil values
-func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w *Workspace) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
+func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w WorkspaceI) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
 	// can we extract a resource name from the string
 	parsedResourceName, err := extractResourceNameFromQuery[T](input)
 	if err != nil {
@@ -90,7 +90,7 @@ func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w *Wo
 
 // convert the given command line query into a query resource and add to workspace
 // this is to allow us to use existing dashboard execution code
-func createQueryResourceForCommandLineQuery(queryString string, mod *modconfig.Mod) *powerpipe.Query {
+func createQueryResourceForCommandLineQuery(queryString string, mod modconfig.ModI) *powerpipe.Query {
 	// build name
 	shortName := "command_line_query"
 

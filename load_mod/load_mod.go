@@ -21,7 +21,7 @@ import (
 // LoadMod parses all hcl files in modPath and returns a single mod
 // NOTE: it is an error if there is more than 1 mod defined, however zero mods is acceptable
 // - a default mod will be created assuming there are any resource files
-func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, ew error_helpers.ErrorAndWarnings) {
+func LoadMod[T modconfig.ResourceMapsI](ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod modconfig.ModI, ew error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("LoadMod start: %s", modPath))
 	defer utils.LogTime(fmt.Sprintf("LoadMod end: %s", modPath))
 
@@ -31,7 +31,7 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 		}
 	}()
 
-	mod, ew = loadModDefinition(modPath, parseCtx)
+	mod, ew = loadModDefinition[T](modPath, parseCtx)
 	if ew.Error != nil {
 		return nil, ew
 	}
@@ -47,12 +47,12 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 	}
 
 	// load the mod dependencies
-	if ew.Error = loadModDependenciesAsync(ctx, mod, parseCtx); ew.Error != nil {
+	if ew.Error = loadModDependenciesAsync[T](ctx, mod, parseCtx); ew.Error != nil {
 		return nil, ew
 	}
 
 	// populate the resource maps of the current mod using the dependency mods
-	mod.ResourceMaps = parseCtx.GetResourceMaps()
+	mod.SetResourceMaps(parseCtx.GetResourceMaps())
 
 	// now load the mod resource hcl (
 	var resourceResult error_helpers.ErrorAndWarnings
@@ -62,11 +62,11 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 	return mod, ew
 }
 
-func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+func loadModDefinition[T modconfig.ResourceMapsI](modPath string, parseCtx *parse.ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("loadModDefinition start: %s", modPath))
 	defer utils.LogTime(fmt.Sprintf("loadModDefinition end: %s", modPath))
 
-	var mod *modconfig.Mod
+	var mod modconfig.ModI
 	ew := error_helpers.ErrorAndWarnings{}
 
 	// verify the mod folder exists
@@ -90,7 +90,7 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 			return nil, ew
 		}
 		// just create a default mod
-		mod = modconfig.CreateDefaultMod(modPath)
+		mod = modconfig.CreateDefaultMod[T](modPath)
 	}
 	// add metadata
 	// NOTE: set the current mod on the parse context before adding metadata
@@ -102,11 +102,12 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 	return mod, ew
 }
 
-func loadModDependenciesAsync(ctx context.Context, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
-	utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s start", parent.ModPath))
-	defer utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s end", parent.ModPath))
+func loadModDependenciesAsync[T modconfig.ResourceMapsI](ctx context.Context, parent modconfig.ModI, parseCtx *parse.ModParseContext) error {
+	utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s start", parent.GetModPath()))
+	defer utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s end", parent.GetModPath()))
 
-	if parent.Require == nil || len(parent.Require.Mods) == 0 {
+	parentRequire := parent.GetRequire()
+	if parentRequire == nil || len(parentRequire.Mods) == 0 {
 		return nil
 	}
 
@@ -118,13 +119,13 @@ func loadModDependenciesAsync(ctx context.Context, parent *modconfig.Mod, parseC
 
 	var errors []error
 	var wg sync.WaitGroup
-	var errChan = make(chan error, len(parent.Require.Mods))
+	var errChan = make(chan error, len(parentRequire.Mods))
 
-	for _, r := range parent.Require.Mods {
+	for _, r := range parentRequire.Mods {
 		wg.Add(1)
 		go func(requiredModVersion *modconfig.ModVersionConstraint) {
 			defer wg.Done()
-			if err := loadModDependency(ctx, requiredModVersion, parent, parseCtx); err != nil {
+			if err := loadModDependency[T](ctx, requiredModVersion, parent, parseCtx); err != nil {
 				errChan <- err
 			}
 		}(r)
@@ -141,7 +142,7 @@ func loadModDependenciesAsync(ctx context.Context, parent *modconfig.Mod, parseC
 	return error_helpers.CombineErrors(errors...)
 }
 
-func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
+func loadModDependency[T modconfig.ResourceMapsI](ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent modconfig.ModI, parseCtx *parse.ModParseContext) error {
 	// get the locked version of this dependency
 	modDependency, err := parseCtx.WorkspaceLock.GetLockedModVersion(requiredModVersion, parent)
 	if err != nil {
@@ -172,7 +173,7 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 	}
 
 	// NOTE: pass in the version and dependency path of the mod - these must be set before it loads its dependencies
-	dependencyMod, errAndWarnings := LoadMod(ctx, dependencyDir, childParseCtx)
+	dependencyMod, errAndWarnings := LoadMod[T](ctx, dependencyDir, childParseCtx)
 	if errAndWarnings.GetError() != nil {
 		return errAndWarnings.GetError()
 	}
@@ -183,12 +184,12 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 	return nil
 }
 
-func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
-	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.ModPath))
-	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.ModPath))
+func loadModResources(ctx context.Context, mod modconfig.ModI, parseCtx *parse.ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
+	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.GetModPath()))
+	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.GetModPath()))
 
 	// get the source files
-	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
+	sourcePaths, err := getSourcePaths(ctx, mod.GetModPath(), parseCtx.ListOptions)
 	if err != nil {
 		slog.Warn("LoadMod: failed to get mod file paths", "error", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)
@@ -226,14 +227,14 @@ func getSourcePaths(ctx context.Context, modPath string, listOpts filehelpers.Li
 
 // Deprecated
 // TODO this function is included for backwards compatibility - it is used for Flowpipe LoadPipelines
-func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+func LoadModWithFileName[T modconfig.ResourceMapsI](ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod modconfig.ModI, errorsAndWarnings error_helpers.ErrorAndWarnings) {
 	defer func() {
 		if r := recover(); r != nil {
 			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
 		}
 	}()
 
-	mod, loadModResult := loadModDefinitionWithFileName(modPath, modFile, parseCtx)
+	mod, loadModResult := loadModDefinitionWithFileName[T](modPath, modFile, parseCtx)
 	if loadModResult.Error != nil {
 		return nil, loadModResult
 	}
@@ -249,12 +250,12 @@ func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx 
 	}
 
 	// load the mod dependencies
-	if err := loadModDependenciesAsync(ctx, mod, parseCtx); err != nil {
+	if err := loadModDependenciesAsync[T](ctx, mod, parseCtx); err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
 	// populate the resource maps of the current mod using the dependency mods
-	mod.ResourceMaps = parseCtx.GetResourceMaps()
+	mod.SetResourceMaps(parseCtx.GetResourceMaps())
 	// now load the mod resource hcl (
 	mod, errorsAndWarnings = loadModResources(ctx, mod, parseCtx)
 
@@ -263,14 +264,14 @@ func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx 
 	return mod, errorsAndWarnings
 }
 
-func loadModDefinitionWithFileName(modPath, modFileName string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+func loadModDefinitionWithFileName[T modconfig.ResourceMapsI](modPath, modFileName string, parseCtx *parse.ModParseContext) (mod modconfig.ModI, errorsAndWarnings error_helpers.ErrorAndWarnings) {
 	modFilePath := filepath.Join(modPath, modFileName)
 
 	// only create transient local mod if the mod file does not exist
 	filehelpers.FileExists(modFilePath)
 	modFileFound := filehelpers.FileExists(modFilePath)
 	if parseCtx.ShouldCreateDefaultMod() && !modFileFound {
-		mod = modconfig.NewMod("local", modPath, hcl.Range{})
+		mod = modconfig.NewMod[T]("local", modPath, hcl.Range{})
 		return mod, errorsAndWarnings
 	}
 
@@ -289,7 +290,7 @@ func loadModDefinitionWithFileName(modPath, modFileName string, parseCtx *parse.
 			return nil, errorsAndWarnings
 		}
 		// just create a default mod
-		mod = modconfig.CreateDefaultMod(modPath)
+		mod = modconfig.CreateDefaultMod[T](modPath)
 
 	}
 	return mod, errorsAndWarnings
