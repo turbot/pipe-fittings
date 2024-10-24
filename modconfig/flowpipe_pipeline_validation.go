@@ -23,7 +23,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 	if !hclhelpers.IsMapLike(setting.Type()) {
 		diag := &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  "The value for param must be an object",
+			Summary:  "The value for param must be an object: " + name,
 		}
 		return hcl.Diagnostics{diag}
 	}
@@ -38,7 +38,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 		if settingValueMap["type"].IsNull() {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "The value for param must have a 'type' key",
+				Summary:  "The value for param must have a 'type' key: " + name,
 			}
 			return hcl.Diagnostics{diag}
 		}
@@ -48,7 +48,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 		if allConnections == cty.NilVal {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "No connection found",
+				Summary:  "No connection found: " + name,
 			}
 			return hcl.Diagnostics{diag}
 		}
@@ -56,14 +56,14 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 		if !ok {
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "The value for param must have a 'type' key",
+				Summary:  "The value for param must have a 'type' key: " + name,
 			}}
 		}
 		connectionName, ok := cty_helpers.StringValueFromCtyMap(settingValueMap, "short_name")
 		if !ok {
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "The value for param must have a 'short_name' key",
+				Summary:  "The value for param must have a 'short_name' key: " + name,
 			}}
 		}
 
@@ -95,7 +95,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 		if allNotifiers == cty.NilVal {
 			diag := &hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "No notifier found",
+				Summary:  "No notifier found: " + name,
 			}
 			return hcl.Diagnostics{diag}
 		}
@@ -104,7 +104,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 		if !ok {
 			return hcl.Diagnostics{&hcl.Diagnostic{
 				Severity: hcl.DiagError,
-				Summary:  "The value for param must have a 'name' key",
+				Summary:  "The value for param must have a 'name' key: " + name,
 			}}
 		}
 
@@ -114,7 +114,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 			if allNotifiersMap[notifierName].IsNull() {
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "No noitifier found for the given notifier name",
+					Summary:  "No notifier found for the given notifier name: " + notifierName,
 				}
 				return hcl.Diagnostics{diag}
 			} else {
@@ -128,7 +128,7 @@ func CustomValueValidation(name string, setting cty.Value, evalCtx *hcl.EvalCont
 			if v.IsNull() {
 				diag := &hcl.Diagnostic{
 					Severity: hcl.DiagError,
-					Summary:  "The value for param must not have a null value",
+					Summary:  "The value for param must not have a null value: " + name,
 				}
 				return hcl.Diagnostics{diag}
 			}

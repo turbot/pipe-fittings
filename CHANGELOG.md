@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.6.5 [tbd]
+
+_Bug fixes_
+
+* Typos in error messages.
+
 ## v1.6.4 [2024-10-24]
 
 _Bug fixes_
