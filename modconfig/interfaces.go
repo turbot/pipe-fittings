@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -38,7 +37,7 @@ type ModI interface {
 	IsDefaultMod() bool
 	GetResourceMaps() ResourceMapsI
 	GetInstallCacheKey() string
-	AddResource(input *powerpipe.DashboardInput) interface{}
+	//AddResource(input *powerpipe.DashboardInput) interface{}
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy

@@ -6,7 +6,7 @@ import (
 )
 
 type Mod struct {
-	*modconfig.ModBase[*FlowpipeResourceMaps]
+	*ModBase[*FlowpipeResourceMaps]
 }
 
 func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {

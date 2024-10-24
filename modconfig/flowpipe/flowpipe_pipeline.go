@@ -16,7 +16,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func NewPipeline(mod *modconfig.Mod, block *hcl.Block) *Pipeline {
+func NewPipeline(mod *Mod, block *hcl.Block) *Pipeline {
 
 	pipelineFullName := block.Labels[0]
 
@@ -40,7 +40,7 @@ func NewPipeline(mod *modconfig.Mod, block *hcl.Block) *Pipeline {
 			ShortName:       block.Labels[0],
 			UnqualifiedName: "pipeline." + block.Labels[0],
 			DeclRange:       block.DefRange,
-			blockType:       block.Type,
+			BlockType:       block.Type,
 		},
 		// TODO: hack to serialise pipeline name because HclResourceImpl is not serialised
 		PipelineName:   pipelineFullName,
@@ -66,7 +66,7 @@ type Pipeline struct {
 	modconfig.HclResourceImpl
 	modconfig.ResourceWithMetadataImpl
 
-	mod *modconfig.Mod
+	mod *Mod
 
 	// TODO: hack to serialise pipeline name because HclResourceImpl is not serialised
 	PipelineName string `json:"pipeline_name"`
@@ -117,7 +117,7 @@ func (p *Pipeline) SetFileReference(fileName string, startLineNumber int, endLin
 // }
 
 // Implements ModItem interface
-func (p *Pipeline) GetMod() *modconfig.Mod {
+func (p *Pipeline) GetMod() *Mod {
 	return p.mod
 }
 
