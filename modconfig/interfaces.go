@@ -39,6 +39,7 @@ type ModI interface {
 	GetInstallCacheKey() string
 	AddResource(item HclResource) hcl.Diagnostics
 	GetRequire() *Require
+	HasDependentMods() bool
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy

@@ -3,30 +3,31 @@ package parse
 import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-type ModParseContextOption func(*ModParseContext)
+type ModParseContextOption[T modconfig.ResourceMapsI] func(*ModParseContext[T])
 
-func WithParseFlags(flags ParseModFlag) ModParseContextOption {
-	return func(m *ModParseContext) {
+func WithParseFlags[T modconfig.ResourceMapsI](flags ParseModFlag) ModParseContextOption[T] {
+	return func(m *ModParseContext[T]) {
 		m.Flags = flags
 	}
 }
 
-func WithListOptions(listOptions filehelpers.ListOptions) ModParseContextOption {
-	return func(m *ModParseContext) {
+func WithListOptions[T modconfig.ResourceMapsI](listOptions filehelpers.ListOptions) ModParseContextOption[T] {
+	return func(m *ModParseContext[T]) {
 		m.ListOptions = listOptions
 	}
 }
 
-func WithLateBinding(enabled bool) ModParseContextOption {
-	return func(m *ModParseContext) {
+func WithLateBinding[T modconfig.ResourceMapsI](enabled bool) ModParseContextOption[T] {
+	return func(m *ModParseContext[T]) {
 		m.supportLateBinding = enabled
 	}
 }
 
-func WithConnections(connections map[string]connection.PipelingConnection) ModParseContextOption {
-	return func(m *ModParseContext) {
+func WithConnections[T modconfig.ResourceMapsI](connections map[string]connection.PipelingConnection) ModParseContextOption[T] {
+	return func(m *ModParseContext[T]) {
 		m.PipelingConnections = connections
 	}
 }

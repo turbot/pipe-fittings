@@ -868,7 +868,7 @@ func NewIntegrationFromBlock(block *hcl.Block) Integration {
 		UnqualifiedName: integrationFullName,
 		ShortName:       integrationName,
 		DeclRange:       block.DefRange,
-		blockType:       block.Type,
+		BlockType:       block.Type,
 	}
 
 	switch integrationType {
@@ -989,7 +989,7 @@ type MsTeamsIntegration struct {
 	modconfig.ResourceWithMetadataImpl `json:"-"`
 	IntegrationImpl                    `json:"-"`
 	Type                               string `json:"type" cty:"type" hcl:"type,label"`
-	IntegrationName          string `json:"integration_name" cty:"integration_name"`
+	IntegrationName                    string `json:"integration_name" cty:"integration_name"`
 
 	// teams
 	WebhookUrl *string `json:"webhook_url,omitempty" cty:"webhook_url" hcl:"webhook_url,optional"`

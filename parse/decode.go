@@ -30,7 +30,7 @@ var missingVariableErrors = []string{
 	"Missing map element",
 }
 
-func decode(parseCtx *ModParseContext) hcl.Diagnostics {
+func decode[T modconfig.ResourceMapsI](parseCtx *ModParseContext[T]) hcl.Diagnostics {
 	utils.LogTime(fmt.Sprintf("decode %s start", parseCtx.CurrentMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("decode %s end", parseCtx.CurrentMod.Name()))
 

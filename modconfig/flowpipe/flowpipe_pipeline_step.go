@@ -26,9 +26,9 @@ import (
 
 type StepForEach struct {
 	ForEachStep bool                 `json:"for_each_step"`
-	Key         string  `json:"key"  binding:"required"`
-	Output      *Output `json:"output,omitempty"`
-	TotalCount  int     `json:"total_count" binding:"required"`
+	Key         string               `json:"key"  binding:"required"`
+	Output      *Output              `json:"output,omitempty"`
+	TotalCount  int                  `json:"total_count" binding:"required"`
 	Each        json.SimpleJSONValue `json:"each" swaggerignore:"true"`
 }
 
@@ -346,9 +346,9 @@ type PipelineStepBase struct {
 	RetryConfig         *RetryConfig   `json:"retry,omitempty"`
 	ThrowConfig         []*ThrowConfig `json:"throw,omitempty"`
 	// TODO: we should serialise this, it's used in PipelineLoaded event to have a record the exact pipeline config loaded. There's no further need apart from record keeping, so it's OK to have it unserializeable for now.
-	LoopConfig   LoopDefn                   `json:"-"`
-	OutputConfig map[string]*PipelineOutput `json:"-"`
-	FileName     string                     `json:"file_name"`
+	LoopConfig      LoopDefn                   `json:"-"`
+	OutputConfig    map[string]*PipelineOutput `json:"-"`
+	FileName        string                     `json:"file_name"`
 	StartLineNumber int                        `json:"start_line_number"`
 	EndLineNumber   int                        `json:"end_line_number"`
 	MaxConcurrency  *int                       `json:"max_concurrency,omitempty"`
@@ -1928,7 +1928,7 @@ func dependsOnFromExpressionsWithResultControl(attr *hcl.Attribute, evalContext 
 					stepResultError(e, resultsReference) {
 					resolvedDiags++
 					// is the error caused by referencing a variable whose value will be resolved at runtime
-				} else if resourceNames := modconfig.resourceNamesFromLateBindingVarValueError(e, evalContext); len(resourceNames) > 0 {
+				} else if resourceNames := modconfig.ResourceNamesFromLateBindingVarValueError(e, evalContext); len(resourceNames) > 0 {
 					p.AppendConnectionDependsOn(resourceNames...)
 					resolvedDiags++
 				} else {

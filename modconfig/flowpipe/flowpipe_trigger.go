@@ -1248,7 +1248,7 @@ func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Tr
 			FullName:        triggerFullName,
 			UnqualifiedName: "trigger." + triggerName,
 			DeclRange:       block.DefRange,
-			blockType:       block.Type,
+			BlockType:       block.Type,
 		},
 		mod: mod,
 	}

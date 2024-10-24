@@ -10,7 +10,7 @@ import (
 
 // ResourceNamesFromLateBindingVarValueError checks if the error is due to a late binding variable
 // (late binding variables are not added to the eval context as they are evaluated at run time)
-func resourceNamesFromLateBindingVarValueError(e *hcl.Diagnostic, evalContext *hcl.EvalContext) []string {
+func ResourceNamesFromLateBindingVarValueError(e *hcl.Diagnostic, evalContext *hcl.EvalContext) []string {
 	var resourceNames []string
 	if e.Summary == "Unsupported attribute" {
 
