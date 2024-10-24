@@ -92,7 +92,7 @@ func (c *SteampipeConnection) String() string {
 
 // Validate verifies the Type property is valid,
 // if this is an aggregator connection, there must be at least one child, and no duplicates
-// if this is NOT an aggregator, there must be no children
+// if this is NOT an aggregator, there must be no Children
 func (c *SteampipeConnection) Validate(map[string]*SteampipeConnection) (warnings []string, errors []string) {
 	validConnectionTypes := []string{ConnectionTypePlugin, ConnectionTypeAggregator}
 	if !helpers.StringSliceContains(validConnectionTypes, c.Type) {
@@ -103,11 +103,11 @@ func (c *SteampipeConnection) Validate(map[string]*SteampipeConnection) (warning
 		return c.ValidateAggregatorConnection()
 	}
 
-	// this is NOT an aggregator group - there should be no children
+	// this is NOT an aggregator group - there should be no Children
 	var validationErrors []string
 
 	if len(c.ConnectionNames) != 0 {
-		validationErrors = append(validationErrors, fmt.Sprintf("connection '%s' has %d children, but is not of type 'aggregator'", c.Name, len(c.ConnectionNames)))
+		validationErrors = append(validationErrors, fmt.Sprintf("connection '%s' has %d Children, but is not of type 'aggregator'", c.Name, len(c.ConnectionNames)))
 	}
 	validImportSchemaValues := utils.SliceToLookup(ValidImportSchemaValues)
 	if _, isValid := validImportSchemaValues[c.ImportSchema]; !isValid {

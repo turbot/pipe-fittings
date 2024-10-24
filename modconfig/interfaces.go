@@ -37,7 +37,8 @@ type ModI interface {
 	IsDefaultMod() bool
 	GetResourceMaps() ResourceMapsI
 	GetInstallCacheKey() string
-	//AddResource(input *powerpipe.DashboardInput) interface{}
+	AddResource(item HclResource) hcl.Diagnostics
+	GetRequire() *Require
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy

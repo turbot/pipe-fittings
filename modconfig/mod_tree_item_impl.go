@@ -26,7 +26,7 @@ type ModTreeItemImpl struct {
 	// node may have multiple parents
 	// use a map to avoid dupes
 	parents  map[string]ModTreeItem
-	children []ModTreeItem
+	Children []ModTreeItem
 }
 
 func NewModTreeItemImpl(block *hcl.Block, mod ModI, shortName string) ModTreeItemImpl {
@@ -60,15 +60,15 @@ func (b *ModTreeItemImpl) GetParents() []ModTreeItem {
 
 // GetChildren implements ModTreeItem
 func (b *ModTreeItemImpl) GetChildren() []ModTreeItem {
-	return b.children
+	return b.Children
 }
 
 func (b *ModTreeItemImpl) SetChildren(children []ModTreeItem) {
-	b.children = children
+	b.Children = children
 }
 
 func (b *ModTreeItemImpl) AddChild(children ...ModTreeItem) {
-	b.children = append(b.children, children...)
+	b.Children = append(b.Children, children...)
 }
 
 func (b *ModTreeItemImpl) GetPaths() []NodePath {

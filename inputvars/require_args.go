@@ -11,10 +11,10 @@ import (
 
 const ValueFromModFile terraform.ValueSourceType = 'M'
 
-func CollectVariableValuesFromModRequire(m *modconfig.Mod, lock *versionmap.WorkspaceLock) (terraform.InputValues, error) {
+func CollectVariableValuesFromModRequire(m modconfig.ModI, lock *versionmap.WorkspaceLock) (terraform.InputValues, error) {
 	res := make(terraform.InputValues)
-	if m.Require != nil {
-		for _, depModConstraint := range m.Require.Mods {
+	if require := m.GetRequire(); require != nil {
+		for _, depModConstraint := range require.Mods {
 			if args := depModConstraint.Args; args != nil {
 				// find the loaded dep mod which satisfies this constraint
 				resolvedConstraint := lock.GetMod(depModConstraint.Name, m)
@@ -25,16 +25,16 @@ func CollectVariableValuesFromModRequire(m *modconfig.Mod, lock *versionmap.Work
 					varFullName := fmt.Sprintf("%s.var.%s", resolvedConstraint.Alias, varName)
 
 					sourceRange := tfdiags.SourceRange{
-						Filename: m.Require.DeclRange.Filename,
+						Filename: require.DeclRange.Filename,
 						Start: tfdiags.SourcePos{
-							Line:   m.Require.DeclRange.Start.Line,
-							Column: m.Require.DeclRange.Start.Column,
-							Byte:   m.Require.DeclRange.Start.Byte,
+							Line:   require.DeclRange.Start.Line,
+							Column: require.DeclRange.Start.Column,
+							Byte:   require.DeclRange.Start.Byte,
 						},
 						End: tfdiags.SourcePos{
-							Line:   m.Require.DeclRange.End.Line,
-							Column: m.Require.DeclRange.End.Column,
-							Byte:   m.Require.DeclRange.End.Byte,
+							Line:   require.DeclRange.End.Line,
+							Column: require.DeclRange.End.Column,
+							Byte:   require.DeclRange.End.Byte,
 						},
 					}
 

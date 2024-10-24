@@ -610,7 +610,7 @@ func decodeDashboard(block *hcl.Block, parseCtx *ModParseContext) (*powerpipe.Da
 		// TACTICAL: we should be passing in the block for the Base resource - but this is only used for diags
 		// and we do not expect to get any (as this function has already succeeded when the base was originally parsed)
 		children, _ := resolveChildrenFromNames(dashboard.Base.ChildNames, block, supportedChildren, parseCtx)
-		dashboard.Base.SetChildren(children)
+		dashboard.Base.Children = children
 	}
 	if !res.Success() {
 		return dashboard, res
@@ -756,7 +756,7 @@ func decodeBenchmark(block *hcl.Block, parseCtx *ModParseContext) (*powerpipe.Be
 		res.HandleDecodeDiags(diags)
 
 		// now set children and child name strings
-		benchmark.SetChildren(children)
+		benchmark.Children = children
 		benchmark.ChildNameStrings = getChildNameStringsFromModTreeItem(children)
 	}
 
@@ -767,7 +767,7 @@ func decodeBenchmark(block *hcl.Block, parseCtx *ModParseContext) (*powerpipe.Be
 		// TACTICAL: we should be passing in the block for the Base resource - but this is only used for diags
 		// and we do not expect to get any (as this function has already succeeded when the base was originally parsed)
 		children, _ := resolveChildrenFromNames(benchmark.Base.ChildNameStrings, block, supportedChildren, parseCtx)
-		benchmark.Base.SetChildren(children)
+		benchmark.Children = children
 	}
 	diags = decodeProperty(content, "width", &benchmark.Width, parseCtx.EvalCtx)
 	res.HandleDecodeDiags(diags)

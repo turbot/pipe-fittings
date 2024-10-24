@@ -18,7 +18,7 @@ func (m *ModBase[T]) BuildResourceTree(loadedDependencyMods ModMap[T]) (err erro
 		}
 	}()
 
-	// build lookup of children and parents
+	// build lookup of Children and parents
 	childrenLookup, err := m.getChildParentsLookup()
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (m *ModBase[T]) BuildResourceTree(loadedDependencyMods ModMap[T]) (err erro
 }
 
 func (m *ModBase[T]) getChildParentsLookup() (map[string][]ModTreeItem, error) {
-	// build lookup of all children
+	// build lookup of all Children
 	childrenLookup := make(map[string][]ModTreeItem)
 	resourceFunc := func(parent HclResource) (bool, error) {
 		if treeItem, ok := parent.(ModTreeItem); ok {
@@ -118,7 +118,7 @@ func (m *ModBase[T]) addItemIntoResourceTree(item ModTreeItem, childParentLookup
 			return err
 		}
 		if p == m {
-			m.children = append(m.children, item)
+			m.Children = append(m.Children, item)
 		}
 	}
 

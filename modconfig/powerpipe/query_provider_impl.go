@@ -184,7 +184,7 @@ func (q *QueryProviderImpl) SetBaseProperties() {
 }
 
 func (q *QueryProviderImpl) getBaseImpl() *QueryProviderImpl {
-	return q.base.(QueryProvider).GetQueryProviderImpl()
+	return q.GetBase().(QueryProvider).GetQueryProviderImpl()
 }
 
 func (q *QueryProviderImpl) OnDecoded(block *hcl.Block, _ modconfig.ResourceMapsProvider) hcl.Diagnostics {

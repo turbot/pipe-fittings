@@ -445,3 +445,7 @@ func (m *ModBase[T]) GetDependencyPath() *string {
 func (m *ModBase[T]) GetModPath() string {
 	return m.ModPath
 }
+
+func (m *ModBase[T]) GetRequire() *Require {
+	return m.Require
+}

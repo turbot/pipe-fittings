@@ -87,7 +87,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 	if err != nil {
 		return nil, err
 	}
-	dashboard.SetChildren([]modconfig.ModTreeItem{table})
+	dashboard.Children = []modconfig.ModTreeItem{table}
 
 	return dashboard, nil
 }
@@ -414,8 +414,8 @@ func (d *Dashboard) SetBaseProperties() hcl.Diagnostics {
 		d.Width = d.Base.Width
 	}
 
-	if len(d.children) == 0 {
-		d.GetChildren() = d.Base.children
+	if len(d.GetChildren()) == 0 {
+		d.Children = d.Base.Children
 		d.ChildNames = d.Base.ChildNames
 	}
 
@@ -446,7 +446,7 @@ func (d *Dashboard) addBaseInputs(baseInputs []*DashboardInput) hcl.Diagnostics 
 		// add inputs to beginning of our existing inputs (if any)
 		d.Inputs = append(inheritedInputs, d.Inputs...)
 		// add inputs to beginning of our children
-		d.GetChildren() = append(inheritedChildren, d.GetChildren()...)
+		d.Children = append(inheritedChildren, d.Children...)
 		d.setInputMap()
 	}
 

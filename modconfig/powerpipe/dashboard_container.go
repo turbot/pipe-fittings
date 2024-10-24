@@ -99,7 +99,7 @@ func (c *DashboardContainer) Diff(other *DashboardContainer) *modconfig.ModTreeI
 }
 
 func (c *DashboardContainer) WalkResources(resourceFunc func(resource modconfig.HclResource) (bool, error)) error {
-	for _, child := range c.children {
+	for _, child := range c.Children {
 		continueWalking, err := resourceFunc(child.(modconfig.HclResource))
 		if err != nil {
 			return err

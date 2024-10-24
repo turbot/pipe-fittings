@@ -226,7 +226,7 @@ func (b *Benchmark) SetBaseProperties() {
 	}
 
 	if len(b.GetChildren()) == 0 {
-		b.SetChildren(b.Base.GetChildren())
+		b.Children = b.Base.Children
 		b.ChildNameStrings = b.Base.ChildNameStrings
 		b.ChildNames = b.Base.ChildNames
 	}

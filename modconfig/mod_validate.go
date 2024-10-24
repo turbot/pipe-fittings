@@ -6,7 +6,7 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
-// ensure we have resolved all children in the resource tree
+// ensure we have resolved all Children in the resource tree
 func (m *ModBase[T]) validateResourceTree() error {
 	var errors []error
 	for _, child := range m.GetChildren() {
@@ -14,7 +14,7 @@ func (m *ModBase[T]) validateResourceTree() error {
 			errors = append(errors, err)
 		}
 	}
-	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("failed to resolve children for %d resources", len(errors)), errors...)
+	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("failed to resolve Children for %d resources", len(errors)), errors...)
 }
 
 func (m *ModBase[T]) validateChildren(item ModTreeItem) error {
@@ -26,7 +26,7 @@ func (m *ModBase[T]) validateChildren(item ModTreeItem) error {
 		}
 	}
 	if missing > 0 {
-		return fmt.Errorf("%s has %d unresolved children", item.Name(), missing)
+		return fmt.Errorf("%s has %d unresolved Children", item.Name(), missing)
 	}
 	return nil
 }
