@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.6.6 [TBD]
+
+_Bug fixes_
+
+* Update uploaded pipes snapshot URL to include `/powerpipe`.
+
 ## v1.6.5 [2024-10-25]
 
 _Bug fixes_

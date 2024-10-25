@@ -110,7 +110,7 @@ func uploadSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSnap
 	}
 
 	snapshotId := uploadedSnapshot.Id
-	snapshotUrl := fmt.Sprintf("https://%s/%s/%s/workspace/%s/snapshot/%s",
+	snapshotUrl := fmt.Sprintf("https://%s/%s/%s/workspace/%s/powerpipe/snapshot/%s",
 		viper.GetString(constants.ArgPipesHost),
 		workspaceType,
 		identityHandle,
