@@ -374,7 +374,7 @@ func (d *FlowpipeModDecoder) decodeTrigger(block *hcl.Block, parseCtx *parse.Mod
 		return nil, res
 	}
 
-	mod := parseCtx.CurrentMod.(*flowpipe.Mod)
+	mod := parseCtx.CurrentMod
 	triggerType := block.Labels[0]
 	triggerName := block.Labels[1]
 
@@ -456,7 +456,7 @@ func (d *FlowpipeModDecoder) decodeTrigger(block *hcl.Block, parseCtx *parse.Mod
 func (d *FlowpipeModDecoder) decodePipeline(block *hcl.Block, parseCtx *parse.ModParseContext) (modconfig.HclResource, *parse.DecodeResult) {
 	res := parse.NewDecodeResult()
 
-	mod := parseCtx.CurrentMod.(*flowpipe.Mod)
+	mod := parseCtx.CurrentMod
 	// get shell pipelineHcl
 	pipelineHcl := flowpipe.NewPipeline(mod, block)
 

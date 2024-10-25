@@ -2,6 +2,7 @@ package parse
 
 import (
 	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 	"reflect"
 	"testing"
 
@@ -322,6 +323,7 @@ var coerceValueTests = []coerceValueTest{
 }
 
 func TestCoerceCustomValue(tm *testing.T) {
+	test_init.SetAppSpecificConstants()
 	variables := map[string]cty.Value{
 		"connection": cty.ObjectVal(map[string]cty.Value{
 			"aws": cty.ObjectVal(map[string]cty.Value{

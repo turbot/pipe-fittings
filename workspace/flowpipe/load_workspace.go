@@ -3,6 +3,7 @@ package flowpipe
 import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
@@ -50,7 +51,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 			Path:              workspacePath,
 			VariableValues:    make(map[string]string),
 			ValidateVariables: true,
-			Mod:               flowpipe.NewMod("local", workspacePath, hcl.Range{}),
+			Mod:               modconfig.NewModBase[*flowpipe.FlowpipeResourceMaps]("local", workspacePath, hcl.Range{}),
 		},
 	}
 	// check whether the workspace contains a modfile

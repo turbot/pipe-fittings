@@ -27,7 +27,7 @@ type Trigger struct {
 	modconfig.HclResourceImpl
 	modconfig.ResourceWithMetadataImpl
 
-	mod *Mod
+	mod modconfig.ModI
 
 	FileName        string          `json:"file_name"`
 	StartLineNumber int             `json:"start_line_number"`
@@ -54,7 +54,7 @@ type Trigger struct {
 }
 
 // Implements the ModTreeItem interface
-func (t *Trigger) GetMod() *Mod {
+func (t *Trigger) GetMod() modconfig.ModI {
 	return t.mod
 }
 
@@ -180,7 +180,7 @@ func (t *Trigger) IsBaseAttribute(name string) bool {
 	return slices.Contains[[]string, string](ValidBaseTriggerAttributes, name)
 }
 
-func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *Trigger) SetBaseAttributes(mod modconfig.ModI, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
 	var diags hcl.Diagnostics
 
@@ -265,12 +265,12 @@ func (t *Trigger) SetBaseAttributes(mod *Mod, hclAttributes hcl.Attributes, eval
 }
 
 type TriggerConfig interface {
-	SetAttributes(*Mod, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
+	SetAttributes(modconfig.ModI, *Trigger, hcl.Attributes, *hcl.EvalContext) hcl.Diagnostics
 	GetUnresolvedAttributes() map[string]hcl.Expression
-	SetBlocks(*Mod, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
+	SetBlocks(modconfig.ModI, *Trigger, hcl.Blocks, *hcl.EvalContext) hcl.Diagnostics
 	Equals(other TriggerConfig) bool
 	GetType() string
-	GetConfig(*hcl.EvalContext, *Mod) (TriggerConfig, error)
+	GetConfig(*hcl.EvalContext, modconfig.ModI) (TriggerConfig, error)
 	GetConnectionDependsOn() []string
 }
 
@@ -280,7 +280,7 @@ type TriggerSchedule struct {
 	ConnectionDependsOn  []string                  `json:"connection_depends_on,omitempty"`
 }
 
-func (t *TriggerSchedule) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (TriggerConfig, error) {
+func (t *TriggerSchedule) GetConfig(evalContext *hcl.EvalContext, mod modconfig.ModI) (TriggerConfig, error) {
 	return t, nil
 }
 
@@ -355,7 +355,7 @@ func (t *TriggerSchedule) Equals(other TriggerConfig) bool {
 	return t.Schedule == otherTrigger.Schedule
 }
 
-func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *TriggerSchedule) SetAttributes(mod modconfig.ModI, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
 	if diags.HasErrors() {
 		return diags
@@ -410,7 +410,7 @@ func (t *TriggerSchedule) SetAttributes(mod *Mod, trigger *Trigger, hclAttribute
 	return diags
 }
 
-func (t *TriggerSchedule) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *TriggerSchedule) SetBlocks(mod modconfig.ModI, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 	return diags
 }
@@ -470,7 +470,7 @@ func (t *TriggerQuery) GetType() string {
 	return schema.TriggerTypeQuery
 }
 
-func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext, mod *Mod) (TriggerConfig, error) {
+func (t *TriggerQuery) GetConfig(evalContext *hcl.EvalContext, mod modconfig.ModI) (TriggerConfig, error) {
 
 	var database string
 
@@ -637,7 +637,7 @@ func (c *TriggerQueryCapture) Equals(other *TriggerQueryCapture) bool {
 	return true
 }
 
-func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *TriggerQuery) SetAttributes(mod modconfig.ModI, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := trigger.SetBaseAttributes(mod, hclAttributes, evalContext)
 	if diags.HasErrors() {
 		return diags
@@ -747,7 +747,7 @@ func (t *TriggerQuery) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes h
 
 var validCaptureBlockTypes = []string{"insert", "update", "delete"}
 
-func (t *TriggerQuery) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *TriggerQuery) SetBlocks(mod modconfig.ModI, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	t.Captures = make(map[string]*TriggerQueryCapture)
@@ -912,7 +912,7 @@ func (t *TriggerHttp) GetType() string {
 	return schema.TriggerTypeHttp
 }
 
-func (t *TriggerHttp) GetConfig(*hcl.EvalContext, *Mod) (TriggerConfig, error) {
+func (t *TriggerHttp) GetConfig(*hcl.EvalContext, modconfig.ModI) (TriggerConfig, error) {
 	return t, nil
 }
 
@@ -1002,7 +1002,7 @@ func (c *TriggerHTTPMethod) Equals(other *TriggerHTTPMethod) bool {
 var validExecutionMode = []string{"synchronous", "asynchronous"}
 var validMethodBlockTypes = []string{"post", "get"}
 
-func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *TriggerHttp) SetAttributes(mod modconfig.ModI, trigger *Trigger, hclAttributes hcl.Attributes, evalContext *hcl.EvalContext) hcl.Diagnostics {
 
 	// None of the Trigger Http attributes should be unresolved at parse time. It doesn't make sense to have params for the URL for example
 
@@ -1055,7 +1055,7 @@ func (t *TriggerHttp) SetAttributes(mod *Mod, trigger *Trigger, hclAttributes hc
 	return diags
 }
 
-func (t *TriggerHttp) SetBlocks(mod *Mod, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
+func (t *TriggerHttp) SetBlocks(mod modconfig.ModI, trigger *Trigger, hclBlocks hcl.Blocks, evalContext *hcl.EvalContext) hcl.Diagnostics {
 	diags := hcl.Diagnostics{}
 
 	t.Methods = make(map[string]*TriggerHTTPMethod)
@@ -1229,7 +1229,7 @@ func (c *TriggerHTTPMethod) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Di
 	return retVal, diags
 }
 
-func NewTrigger(block *hcl.Block, mod *Mod, triggerType, triggerName string) *Trigger {
+func NewTrigger(block *hcl.Block, mod modconfig.ModI, triggerType, triggerName string) *Trigger {
 
 	triggerFullName := triggerType + "." + triggerName
 

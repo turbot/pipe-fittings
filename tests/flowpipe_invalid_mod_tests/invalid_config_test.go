@@ -3,7 +3,6 @@ package invalid_mod_tests
 import (
 	"context"
 	"errors"
-	"github.com/turbot/pipe-fittings/workspace/flowpipe"
 	"os"
 	"path"
 	"testing"
@@ -15,7 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/tests/test_init"
-	"github.com/turbot/pipe-fittings/workspace"
+	fworkspace "github.com/turbot/pipe-fittings/workspace/flowpipe"
 )
 
 type FlowpipeSimpleInvalidConfigTestSuite struct {
@@ -211,7 +210,7 @@ func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {
 			}
 
 			if test.modDir != "" {
-				_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, flowpipe.WithCredentials(map[string]credential.Credential{}), flowpipe.WithNotifiers(fpConfig.Notifiers))
+				_, errorAndWarning := fworkspace.Load(suite.ctx, test.modDir, fworkspace.WithCredentials(map[string]credential.Credential{}), fworkspace.WithNotifiers(fpConfig.Notifiers))
 				assert.NotNil(errorAndWarning.Error)
 				if errorAndWarning.Error != nil {
 					assert.Contains(errorAndWarning.Error.Error(), test.containsError)

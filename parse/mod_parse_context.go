@@ -455,7 +455,7 @@ func (m *ModParseContext) setResourceMaps() {
 		sourceResourceMaps = append(sourceResourceMaps, dep.GetResourceMaps().TopLevelResources())
 	}
 
-	m.resourceMaps = powerpipe.NewPowerpipeResourceMaps(m.CurrentMod, sourceResourceMaps...)
+	m.resourceMaps = modconfig.NewResourceMaps(m.CurrentMod, sourceResourceMaps...)
 }
 
 func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {

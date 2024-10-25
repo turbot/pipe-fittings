@@ -3,8 +3,6 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
-	flowpipe2 "github.com/turbot/pipe-fittings/workspace/flowpipe"
 	"os"
 	"path"
 	"slices"
@@ -22,11 +20,12 @@ import (
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/pipe-fittings/workspace"
+	fworkspace "github.com/turbot/pipe-fittings/workspace/flowpipe"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -91,12 +90,12 @@ func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_throw_config", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_throw_config", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipelines := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 
 	pipeline := pipelines["throw_config.pipeline.error_with_throw_does_not_ignore"]
 
@@ -110,7 +109,7 @@ func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_with_tags", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./pipeline_with_tags", fworkspace.WithCredentials(map[string]credential.Credential{}))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -119,20 +118,21 @@ func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 		assert.Fail("mod is nil")
 		return
 	}
+	resourceMaps := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps)
 
-	pipeline := mod.ResourceMaps.Pipelines["test_mod.pipeline.simple_tags"]
+	pipeline := resourceMaps.Pipelines["test_mod.pipeline.simple_tags"]
 	assert.NotNil(pipeline)
 	assert.Equal(2, len(pipeline.Tags))
 	assert.Equal("Bar", pipeline.Tags["Foo"])
 	assert.Equal("Qux", pipeline.Tags["Baz"])
 
-	pipeline = mod.ResourceMaps.Pipelines["test_mod.pipeline.merging_tags"]
+	pipeline = resourceMaps.Pipelines["test_mod.pipeline.merging_tags"]
 	assert.NotNil(pipeline)
 	assert.Equal(4, len(pipeline.Tags))
 	assert.Equal("unused", pipeline.Tags["class"])
 	assert.Equal("Cost", pipeline.Tags["category"])
 
-	trigger := mod.ResourceMaps.Triggers["test_mod.trigger.schedule.every_hour_trigger_on_if"]
+	trigger := resourceMaps.Triggers["test_mod.trigger.schedule.every_hour_trigger_on_if"]
 	assert.NotNil(trigger)
 	assert.Equal("## Hello World\n\nThis is a markdown **text** in a heredoc!\n", *trigger.Documentation)
 	assert.Equal(4, len(trigger.Tags))
@@ -146,7 +146,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_dependencies"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_dependencies", flowpipe2.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./trigger_dependencies", fworkspace.WithCredentials(flowpipeConfig.Credentials))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -156,9 +156,9 @@ func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
 		return
 	}
 
-	assert.Equal(4, len(rootMod.ResourceMaps.Triggers), "Expected 4 triggers. 3 in the root mod and 1 mod_depend_a. The trigger in mod_depend_a_1 should be here. Only list one level down")
-	assert.Equal(1, len(w.Mods["mod_depend_a"].ResourceMaps.Triggers), "Expected 1 trigger in mod_depend_a")
-	assert.Equal(0, len(w.Mods["mod_depend_b"].ResourceMaps.Triggers), "Expected 0 trigger in mod_depend_a")
+	assert.Equal(4, len(rootMod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers), "Expected 4 triggers. 3 in the root mod and 1 mod_depend_a. The trigger in mod_depend_a_1 should be here. Only list one level down")
+	assert.Equal(1, len(w.Mods["mod_depend_a"].GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers), "Expected 1 trigger in mod_depend_a")
+	assert.Equal(0, len(w.Mods["mod_depend_b"].GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers), "Expected 0 trigger in mod_depend_a")
 }
 
 func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
@@ -167,7 +167,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_with_param"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_with_param", flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./trigger_with_param", fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 
@@ -177,7 +177,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 		return
 	}
 
-	trigger := rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_param"]
+	trigger := rootMod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers["trigger_with_param.trigger.query.with_param"]
 	if trigger == nil {
 		assert.Fail("trigger not found")
 		return
@@ -204,7 +204,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 	unresolvedAttributes := trigger.Config.GetUnresolvedAttributes()
 	assert.Equal(3, len(unresolvedAttributes))
 
-	trigger = rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_connection"]
+	trigger = rootMod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers["trigger_with_param.trigger.query.with_connection"]
 	if trigger == nil {
 		assert.Fail("trigger not found")
 		return
@@ -226,7 +226,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 	assert.Equal(1, len(conns))
 	assert.Equal("steampipe.default", conns[0])
 
-	trigger = rootMod.ResourceMaps.Triggers["trigger_with_param.trigger.query.with_connection_in_param"]
+	trigger = rootMod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers["trigger_with_param.trigger.query.with_connection_in_param"]
 	if trigger == nil {
 		assert.Fail("trigger not found")
 		return
@@ -253,7 +253,7 @@ func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./tags_multiple_files"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./tags_multiple_files", flowpipe2.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./tags_multiple_files", fworkspace.WithCredentials(flowpipeConfig.Credentials))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -268,7 +268,7 @@ func (suite *FlowpipeModTestSuite) TestModWithDocs() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./with_docs", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./with_docs", fworkspace.WithCredentials(map[string]credential.Credential{}))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -278,11 +278,11 @@ func (suite *FlowpipeModTestSuite) TestModWithDocs() {
 		return
 	}
 
-	pipeline := mod.ResourceMaps.Pipelines["test_mod.pipeline.doc_from_file"]
+	pipeline := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test_mod.pipeline.doc_from_file"]
 	assert.NotNil(pipeline)
 	assert.Equal("## Hello World\n\nThis is a markdown **text** in a heredoc!\n", *pipeline.Documentation)
 
-	trigger := mod.ResourceMaps.Triggers["test_mod.trigger.query.t"]
+	trigger := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers["test_mod.trigger.query.t"]
 	assert.NotNil(trigger)
 	assert.Equal("## Hello World Two\n\nThis is a markdown **text** in a heredoc!\n", *trigger.Documentation)
 }
@@ -291,7 +291,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./good_mod", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./good_mod", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -302,11 +302,11 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 		return
 	}
 
-	assert.Equal("0.1.0", mod.Require.Flowpipe.MinVersionString)
-	assert.Equal("day", mod.Tags["green"])
+	assert.Equal("0.1.0", mod.GetRequire().Flowpipe.MinVersionString)
+	assert.Equal("day", mod.GetTags()["green"])
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 
 	jsonForPipeline := pipelines["test_mod.pipeline.json_for"]
 	if jsonForPipeline == nil {
@@ -322,7 +322,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert.Equal(jsonForPipeline.Steps[1].GetType(), "transform", "wrong step type")
 
 	// check if all triggers are there
-	triggers := mod.ResourceMaps.Triggers
+	triggers := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers
 	assert.Equal(1, len(triggers), "wrong number of triggers")
 	assert.Equal("test_mod.trigger.schedule.my_hourly_trigger", triggers["test_mod.trigger.schedule.my_hourly_trigger"].FullName, "wrong trigger name")
 
@@ -366,7 +366,7 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_references", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_references", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -378,7 +378,7 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 	assert.Equal(2, len(pipelines), "wrong number of pipelines")
 	assert.NotNil(pipelines["pipeline_with_references.pipeline.foo"])
@@ -426,7 +426,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert.Equal("abc1", *slackConn.Token)
 
 	// Check that the connection is loaded in the workspace
-	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connections", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./config_dir_connections", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -443,7 +443,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	}
 	assert.Equal("prod1", *awsConn.Profile)
 
-	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipelines := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	pipeline := pipelines["mod_with_connections.pipeline.static_creds_test"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
@@ -538,7 +538,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", flowpipe2.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds_using_context_function", fworkspace.WithCredentials(flowpipeConfig.Credentials))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -563,7 +563,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnWithContextFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_using_context_function", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn_using_context_function", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -586,7 +586,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_output"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_output", flowpipe2.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds_output", fworkspace.WithCredentials(flowpipeConfig.Credentials))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -599,14 +599,14 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 	accessKeyVal := credsMap["access_key"].AsString()
 	assert.Equal("ASIAQGDFAKEKGUI5MCEU", accessKeyVal)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.cred_in_step_output"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test_mod.pipeline.cred_in_step_output"]
 	assert.NotNil(pipeline)
 
 	step := pipeline.Steps[0]
 	assert.Equal(1, len(step.GetCredentialDependsOn()))
 	assert.Equal("aws.example", step.GetCredentialDependsOn()[0])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.cred_in_output"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test_mod.pipeline.cred_in_output"]
 	assert.NotNil(pipeline)
 
 	assert.Equal(1, len(pipeline.OutputConfig))
@@ -621,7 +621,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnInOutput() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_output"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_output", flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn_output", fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -634,14 +634,14 @@ func (suite *FlowpipeModTestSuite) TestModWithConnInOutput() {
 	accessKeyVal := credsMap["access_key"].AsString()
 	assert.Equal("ASIAQGDFAKEKGUI5MCEU", accessKeyVal)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.conn_in_step_output"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test_mod.pipeline.conn_in_step_output"]
 	assert.NotNil(pipeline)
 
 	step := pipeline.Steps[0]
 	assert.Equal(1, len(step.GetConnectionDependsOn()))
 	assert.Equal("aws.example", step.GetConnectionDependsOn()[0])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test_mod.pipeline.conn_in_output"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test_mod.pipeline.conn_in_output"]
 	assert.NotNil(pipeline)
 
 	assert.Equal(1, len(pipeline.OutputConfig))
@@ -656,11 +656,11 @@ func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_integration_notifier_param"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_integration_notifier_param", flowpipe2.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_integration_notifier_param", fworkspace.WithCredentials(flowpipeConfig.Credentials))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["mod_integration_notifier_param.pipeline.integration_pipe_default_with_param"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_integration_notifier_param.pipeline.integration_pipe_default_with_param"]
 	unresolvedAttributes := pipeline.Steps[0].GetUnresolvedAttributes()
 	assert.Equal(1, len(unresolvedAttributes))
 	assert.NotNil(unresolvedAttributes["notifier"])
@@ -673,11 +673,11 @@ func (suite *FlowpipeModTestSuite) TestModSimpleInputStep() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_input_step_simple"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_input_step_simple", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_input_step_simple", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["mod_with_input_step_simple.pipeline.simple_input_step"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_with_input_step_simple.pipeline.simple_input_step"]
 
 	step := pipeline.Steps[0]
 	inputStep := step.(*flowpipe.PipelineStepInput)
@@ -687,7 +687,7 @@ func (suite *FlowpipeModTestSuite) TestModSimpleInputStep() {
 	assert.Equal("Approve", *inputStep.OptionList[0].OptionLabel)
 	assert.Equal("Deny", *inputStep.OptionList[1].OptionLabel)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["mod_with_input_step_simple.pipeline.simple_input_step_with_option_list"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_with_input_step_simple.pipeline.simple_input_step_with_option_list"]
 
 	step = pipeline.Steps[0]
 	inputStep = step.(*flowpipe.PipelineStepInput)
@@ -776,12 +776,12 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 		return
 	}
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithIntegrations(flowpipeConfig.Integrations), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_integration", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 	assert.Equal(5, len(w.Integrations))
 
-	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipelines := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
 	if pipeline == nil {
 		assert.Fail("pipeline approval_with_notifies not found")
@@ -1671,7 +1671,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal(2, len(devsNotifiesSlice))
 	assert.Equal("#devs", devsNotifiesSlice[0].AsValueMap()["channel"].AsString())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithIntegrations(flowpipeConfig.Integrations), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_integration", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 	assert.Equal(2, len(w.Integrations))
@@ -1683,7 +1683,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 		assert.Equal("#infosec", *i.Channel)
 	}
 
-	pipelines := w.Mod.ResourceMaps.Pipelines
+	pipelines := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
 	if pipeline == nil {
 		assert.Fail("pipeline approval_with_notifies not found")
@@ -1786,7 +1786,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	}
 
 	os.Setenv("ACCESS_KEY", "foobarbaz")
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", flowpipe2.WithCredentials(credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds", fworkspace.WithCredentials(credentials))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1798,7 +1798,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
@@ -1829,7 +1829,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	}
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", flowpipe2.WithCredentials(credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds", fworkspace.WithCredentials(credentials))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1841,7 +1841,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_creds.pipeline.with_creds"]
@@ -1868,7 +1868,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	os.Setenv("ACCESS_KEY", "foobarbaz")
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", flowpipe2.WithPipelingConnections(connections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn", fworkspace.WithPipelingConnections(connections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1880,7 +1880,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_conn.pipeline.with_conn"]
@@ -1906,7 +1906,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	}
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", flowpipe2.WithPipelingConnections(connections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn", fworkspace.WithPipelingConnections(connections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1918,7 +1918,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_conn.pipeline.with_conn"]
@@ -1946,7 +1946,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 		},
 	}
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_creds", flowpipe2.WithCredentials(credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_dynamic_creds", fworkspace.WithCredentials(credentials))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1958,7 +1958,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_dynamic_creds.pipeline.cred_aws"]
@@ -1979,7 +1979,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 		},
 	}
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_conn", flowpipe2.WithPipelingConnections(connections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_dynamic_conn", fworkspace.WithPipelingConnections(connections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1991,7 +1991,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_dynamic_conn.pipeline.conn_aws"]
@@ -2021,7 +2021,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 		},
 	}
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_resolved", flowpipe2.WithCredentials(credentials))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds_resolved", fworkspace.WithCredentials(credentials))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2033,7 +2033,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 
 	pipeline := pipelines["mod_with_creds_resolved.pipeline.static_creds_test"]
@@ -2061,7 +2061,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_step_output", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_step_output", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2073,7 +2073,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	}
 
 	// check if all pipelines are there
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	assert.NotNil(pipelines, "pipelines is nil")
 	assert.Equal(1, len(pipelines), "wrong number of pipelines")
 
@@ -2087,7 +2087,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_one", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_dep_one", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2098,7 +2098,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 		return
 	}
 
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 
 	assert.NotNil(mod, "mod is nil")
 	jsonForPipeline := pipelines["mod_parent.pipeline.json"]
@@ -2131,14 +2131,14 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 		return
 	}
 
-	childModA := mod.ResourceMaps.Mods["mod_child_a@v1.0.0"]
+	childModA := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Mods["mod_child_a@v1.0.0"]
 	assert.NotNil(childModA)
 
-	thisPipelineIsInTheChildPipelineModA := childModA.ResourceMaps.Pipelines["mod_child_a.pipeline.this_pipeline_is_in_the_child"]
+	thisPipelineIsInTheChildPipelineModA := childModA.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_child_a.pipeline.this_pipeline_is_in_the_child"]
 	assert.NotNil(thisPipelineIsInTheChildPipelineModA)
 
 	// check for the triggers
-	triggers := mod.ResourceMaps.Triggers
+	triggers := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers
 	myHourlyTrigger := triggers["mod_parent.trigger.schedule.my_hourly_trigger"]
 	if myHourlyTrigger == nil {
 		assert.Fail("my_hourly_trigger not found")
@@ -2151,7 +2151,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_simple", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_dep_simple", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2162,7 +2162,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 		return
 	}
 
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	jsonForPipeline := pipelines["mod_parent.pipeline.json"]
 	if jsonForPipeline == nil {
 		assert.Fail("json pipeline not found")
@@ -2214,7 +2214,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	os.Setenv("FP_VAR_var_six", "set from env var")
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_variable", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_variable", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2226,18 +2226,18 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	}
 
 	// Check variable definition
-	assert.Equal(42, mod.ResourceMaps.Variables["test_mod.var.var_number"].ValueGo)
-	assert.Equal("variable with number default 42", *mod.ResourceMaps.Variables["test_mod.var.var_number"].Title)
-	assert.Equal([]interface{}{"Environment", "Owner"}, mod.ResourceMaps.Variables["test_mod.var.mandatory_tag_keys"].ValueGo)
-	assert.Equal(map[string]interface{}{"key1": "value1", "key2": "value2"}, mod.ResourceMaps.Variables["test_mod.var.var_map"].ValueGo)
-	assert.Equal("enum2", mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].ValueGo)
-	assert.Equal(2, len(mod.ResourceMaps.Variables["test_mod.var.string_with_enum"].EnumGo))
-	assert.Equal(3, mod.ResourceMaps.Variables["test_mod.var.number_with_enum"].ValueGo)
-	assert.Equal("text", mod.ResourceMaps.Variables["test_mod.var.text_format"].Format)
-	assert.Equal("text", mod.ResourceMaps.Variables["test_mod.var.format_implicit"].Format)
-	assert.Equal("multiline", mod.ResourceMaps.Variables["test_mod.var.multiline_format"].Format)
+	assert.Equal(42, mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.var_number"].ValueGo)
+	assert.Equal("variable with number default 42", *mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.var_number"].Title)
+	assert.Equal([]interface{}{"Environment", "Owner"}, mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.mandatory_tag_keys"].ValueGo)
+	assert.Equal(map[string]interface{}{"key1": "value1", "key2": "value2"}, mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.var_map"].ValueGo)
+	assert.Equal("enum2", mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.string_with_enum"].ValueGo)
+	assert.Equal(2, len(mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.string_with_enum"].EnumGo))
+	assert.Equal(3, mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.number_with_enum"].ValueGo)
+	assert.Equal("text", mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.text_format"].Format)
+	assert.Equal("text", mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.format_implicit"].Format)
+	assert.Equal("multiline", mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["test_mod.var.multiline_format"].Format)
 
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	pipelineOne := pipelines["test_mod.pipeline.one"]
 	if pipelineOne == nil {
 		assert.Fail("pipeline one not found")
@@ -2283,7 +2283,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 	assert.Equal("cty.String", githubGetIssueWithNumber.GetParam("github_token").Type.GoString())
 	assert.Equal("cty.Number", githubGetIssueWithNumber.GetParam("github_issue_number").Type.GoString())
 
-	triggers := mod.ResourceMaps.Triggers
+	triggers := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers
 
 	if len(triggers) == 0 {
 		assert.Fail("triggers not loaded")
@@ -2346,8 +2346,8 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_message_step"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_message_step", flowpipe2.WithCredentials(flowpipeConfig.Credentials),
-		flowpipe2.WithIntegrations(flowpipeConfig.Integrations), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_message_step", fworkspace.WithCredentials(flowpipeConfig.Credentials),
+		fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2361,7 +2361,7 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 		return
 	}
 
-	pipeline := mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_one"]
+	pipeline := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_message_step.pipeline.message_step_one"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
 		return
@@ -2381,7 +2381,7 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 
 	assert.Equal("Hello World", messageStep.Text)
 
-	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_overrides"]
+	pipeline = mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_message_step.pipeline.message_step_with_overrides"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
 		return
@@ -2404,7 +2404,7 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"foo", "baz"}, messageStep.Cc))
 	assert.True(helpers.StringSliceEqualIgnoreOrder([]string{"bar"}, messageStep.Bcc))
 
-	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_throw"]
+	pipeline = mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_message_step.pipeline.message_step_with_throw"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
 		return
@@ -2418,7 +2418,7 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 
 	assert.Equal(1, len(messageStepInterface.GetThrowConfig()))
 
-	pipeline = mod.ResourceMaps.Pipelines["mod_message_step.pipeline.message_step_with_error"]
+	pipeline = mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["mod_message_step.pipeline.message_step_with_error"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
 		return
@@ -2440,8 +2440,8 @@ func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_dynamic_pipeline_ref"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dynamic_pipeline_ref", flowpipe2.WithCredentials(flowpipeConfig.Credentials),
-		flowpipe2.WithIntegrations(flowpipeConfig.Integrations), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_dynamic_pipeline_ref", fworkspace.WithCredentials(flowpipeConfig.Credentials),
+		fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2455,7 +2455,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 		return
 	}
 
-	pipeline := mod.ResourceMaps.Pipelines["dynamic_pipe_ref.pipeline.top_dynamic"]
+	pipeline := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["dynamic_pipe_ref.pipeline.top_dynamic"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
 		return
@@ -2475,33 +2475,33 @@ func (suite *FlowpipeModTestSuite) TestModTryFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_try_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_try_function", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_try_function", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.try_function"]
 	assert.NotNil(pipeline)
 
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.max_function"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.max_function"]
 	assert.NotNil(pipeline)
 
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_no_for_each"]
-	assert.NotNil(pipeline)
-	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
-	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["value"])
-	assert.Equal("transform.first", pipeline.Steps[1].GetDependsOn()[0])
-
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_no_for_each_combination_1"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.try_function_no_for_each"]
 	assert.NotNil(pipeline)
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
 	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["value"])
 	assert.Equal("transform.first", pipeline.Steps[1].GetDependsOn()[0])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_no_for_each_combination_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.try_function_no_for_each_combination_1"]
+	assert.NotNil(pipeline)
+	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
+	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["value"])
+	assert.Equal("transform.first", pipeline.Steps[1].GetDependsOn()[0])
+
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.try_function_no_for_each_combination_2"]
 	assert.NotNil(pipeline)
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
 	// the second step (number) should not have any unresolved attributes
@@ -2511,14 +2511,14 @@ func (suite *FlowpipeModTestSuite) TestModTryFunction() {
 	assert.Equal("transform.first", pipeline.Steps[2].GetDependsOn()[0])
 	assert.Equal("transform.number", pipeline.Steps[2].GetDependsOn()[1])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_within_json_encode"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.try_function_within_json_encode"]
 	assert.NotNil(pipeline)
 	// step 0 -> transform.nexus
 	// step 1 -> the http step
 	assert.NotNil(pipeline.Steps[1].GetUnresolvedAttributes()["request_body"])
 	assert.Equal("transform.nexus", pipeline.Steps[1].GetDependsOn()[0])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.try_function_from_param"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.try_function_from_param"]
 	assert.NotNil(pipeline)
 	assert.NotNil(pipeline.Steps[0].GetUnresolvedAttributes()["value"])
 }
@@ -2530,7 +2530,7 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithThrow() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_throw"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_throw", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./input_step_with_throw", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 }
@@ -2542,11 +2542,11 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_loop"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_loop", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./input_step_with_loop", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.input_with_loop_2"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.input_with_loop_2"]
 
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
@@ -2565,59 +2565,59 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_loop_various"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_loop_various", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_loop_various", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.sleep"]
 	assert.NotNil(pipeline)
 	step := pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.sleep_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Equal("10s", *step.GetLoopConfig().(*flowpipe.LoopSleepStep).Duration)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_3"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.sleep_3"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.sleep_4"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.sleep_4"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeDuration])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.http"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.http"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Equal("https://bar", *step.GetLoopConfig().(*flowpipe.LoopHttpStep).URL)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.http_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.http_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUrl])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.container"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.container_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeMemory])
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopContainerStep).Cmd)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_3"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.container_3"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
@@ -2626,7 +2626,7 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal([]string{"1", "2"}, *step.GetLoopConfig().(*flowpipe.LoopContainerStep).Entrypoint)
 	assert.Equal(int64(4), *step.GetLoopConfig().(*flowpipe.LoopContainerStep).CpuShares)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.container_4"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.container_4"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
@@ -2636,60 +2636,60 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal(int64(4), *step.GetLoopConfig().(*flowpipe.LoopContainerStep).CpuShares)
 	assert.Equal(map[string]string{"bar": "baz"}, *step.GetLoopConfig().(*flowpipe.LoopContainerStep).Env)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.pipeline"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.pipeline_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*flowpipe.LoopPipelineStep).Args.(map[string]interface{}))
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.pipeline_3"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.pipeline_3"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 	assert.Equal(map[string]interface{}{"a": "foo_10", "c": 44}, step.GetLoopConfig().(*flowpipe.LoopPipelineStep).Args.(map[string]interface{}))
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.query"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.query"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Nil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 	assert.Equal([]interface{}{"bar"}, *step.GetLoopConfig().(*flowpipe.LoopQueryStep).Args)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.query_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.query_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeArgs])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.message"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*flowpipe.LoopMessageStep).Text)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_2"]
-	assert.NotNil(pipeline)
-	step = pipeline.Steps[0]
-	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
-	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*flowpipe.LoopMessageStep).Text)
-	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopMessageStep).To)
-
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_3"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.message_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*flowpipe.LoopMessageStep).Text)
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopMessageStep).To)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_4"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.message_3"]
+	assert.NotNil(pipeline)
+	step = pipeline.Steps[0]
+	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
+	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*flowpipe.LoopMessageStep).Text)
+	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopMessageStep).To)
+
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.message_4"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
@@ -2697,7 +2697,7 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*flowpipe.LoopMessageStep).Text)
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopMessageStep).To)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_5"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.message_5"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
@@ -2706,7 +2706,7 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopMessageStep).To)
 	assert.Equal("new", step.GetLoopConfig().(*flowpipe.LoopMessageStep).Notifier.GetHclResourceImpl().FullName)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.message_6"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.message_6"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
@@ -2715,32 +2715,32 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert.Equal("I'm a sample message two", *step.GetLoopConfig().(*flowpipe.LoopMessageStep).Text)
 	assert.Equal([]string{"a", "b", "c"}, *step.GetLoopConfig().(*flowpipe.LoopMessageStep).To)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.input"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.input"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Equal("Shall we play a game 2?", *step.GetLoopConfig().(*flowpipe.LoopInputStep).Prompt)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.input_2"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.input_2"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeNotifier])
 	assert.Equal("Shall we play a game 2?", *step.GetLoopConfig().(*flowpipe.LoopInputStep).Prompt)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.function"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function_3"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.function_3"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
 	assert.Equal(map[string]string{"restrictedActions": "def", "foo": "bar"}, *step.GetLoopConfig().(*flowpipe.LoopFunctionStep).Env)
 	assert.Equal(map[string]interface{}{"a": "c", "c": 44}, *step.GetLoopConfig().(*flowpipe.LoopFunctionStep).Event)
 
-	pipeline = w.Mod.ResourceMaps.Pipelines["test.pipeline.function_4"]
+	pipeline = w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["test.pipeline.function_4"]
 	assert.NotNil(pipeline)
 	step = pipeline.Steps[0]
 	assert.NotNil(step.GetLoopConfig().GetUnresolvedAttributes()[schema.AttributeTypeUntil])
@@ -2752,7 +2752,7 @@ func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_param_order", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./pipeline_param_order", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2763,7 +2763,7 @@ func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
 		return
 	}
 
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	pipeline := pipelines["test_mod.pipeline.github_issue"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
@@ -2780,7 +2780,7 @@ func (suite *FlowpipeModTestSuite) TestModTriggers() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./triggers", flowpipe2.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./triggers", fworkspace.WithCredentials(map[string]credential.Credential{}))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2791,7 +2791,7 @@ func (suite *FlowpipeModTestSuite) TestModTriggers() {
 		return
 	}
 
-	triggers := w.Mod.ResourceMaps.Triggers
+	triggers := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Triggers
 	reportTrigger := triggers["test_mod.trigger.schedule.report_trigger"]
 	if reportTrigger == nil {
 		assert.Fail("report_trigger not found")
@@ -2835,7 +2835,7 @@ func (suite *FlowpipeModTestSuite) TestEnumParam() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./enum_param")
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./enum_param")
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -2850,7 +2850,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./tags")
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./tags")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2861,7 +2861,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 		return
 	}
 
-	pipelines := mod.ResourceMaps.Pipelines
+	pipelines := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines
 	pipeline := pipelines["tags.pipeline.with_tags"]
 	if pipeline == nil {
 		assert.Fail("pipeline not found")
@@ -2896,7 +2896,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 	assert.Equal("value3", tagParam.Tags["tag3"])
 	assert.Equal("value4", tagParam.Tags["tag4"])
 
-	vars := mod.ResourceMaps.Variables
+	vars := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables
 	if vars == nil {
 		assert.Fail("vars is nil")
 		return
@@ -3316,7 +3316,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_two"})
 	require.Nil(errAndWarning.Error)
 
-	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_two", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections), flowpipe2.WithNotifiers(flowpipeConfig.Notifiers))
+	w, errAndWarning := fworkspace.Load(suite.ctx, "./custom_type_two", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
 
 	require.NotNil(w)
 	require.Nil(errAndWarning.Error)
@@ -3343,7 +3343,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 		Functions: funcs.ContextFunctions("./"),
 	}
 
-	customTypePipeline := w.Mod.ResourceMaps.Pipelines["custom_type_two.pipeline.custom_type_two"]
+	customTypePipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["custom_type_two.pipeline.custom_type_two"]
 
 	if customTypePipeline == nil {
 		assert.Fail("custom_type_two pipeline not found")
@@ -3383,11 +3383,11 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_three"})
 	require.Nil(errAndWarning.Error)
 
-	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_three", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errAndWarning := fworkspace.Load(suite.ctx, "./custom_type_three", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["custom_type_three.pipeline.custom_type_three"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["custom_type_three.pipeline.custom_type_three"]
 
 	for _, p := range pipeline.Params {
 		if p.Name == "conn" {
@@ -3413,7 +3413,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeFour() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_four"})
 	require.Nil(errAndWarning.Error)
 
-	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_four", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errAndWarning := fworkspace.Load(suite.ctx, "./custom_type_four", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errAndWarning.Error)
@@ -3426,7 +3426,7 @@ func (suite *FlowpipeModTestSuite) TestCustomType() {
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type"})
 	assert.Nil(errAndWarning.Error)
-	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./custom_type", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -3440,12 +3440,12 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_notifier"})
 	assert.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type_notifier", flowpipe2.WithNotifiers(flowpipeConfig.Notifiers), flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./custom_type_notifier", fworkspace.WithNotifiers(flowpipeConfig.Notifiers), fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipeline := w.Mod.ResourceMaps.Pipelines["custom_type_notifier.pipeline.notifier"]
+	pipeline := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Pipelines["custom_type_notifier.pipeline.notifier"]
 
 	assert.NotNil(pipeline)
 
@@ -3471,12 +3471,12 @@ func (suite *FlowpipeModTestSuite) TestComplexVariable() {
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./complex_variable"})
 	assert.Nil(errAndWarning.Error)
-	w, errorAndWarning := workspace.Load(suite.ctx, "./complex_variable", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./complex_variable", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	modVar := w.Mod.ResourceMaps.Variables["complex_variable.var.base_tag_rules"]
+	modVar := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["complex_variable.var.base_tag_rules"]
 	assert.NotNil(modVar)
 	mapVal, ok := modVar.ValueGo.(map[string]interface{})
 	assert.True(ok)
@@ -3490,12 +3490,12 @@ func (suite *FlowpipeModTestSuite) XTestForEach() {
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./for_each"})
 	assert.Nil(errAndWarning.Error)
-	w, errorAndWarning := workspace.Load(suite.ctx, "./for_each", flowpipe2.WithCredentials(flowpipeConfig.Credentials), flowpipe2.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := fworkspace.Load(suite.ctx, "./for_each", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	modVar := w.Mod.ResourceMaps.Variables["for_each.var.foreach_with_conn"]
+	modVar := w.Mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps).Variables["for_each.var.foreach_with_conn"]
 	assert.NotNil(modVar)
 	mapVal, ok := modVar.ValueGo.(map[string]interface{})
 	assert.True(ok)

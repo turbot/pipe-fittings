@@ -5,6 +5,11 @@ import (
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/turbot/pipe-fittings/parse"
+	fparse "github.com/turbot/pipe-fittings/parse/flowpipe"
+	"reflect"
 )
 
 func SetAppSpecificConstants() {
@@ -31,6 +36,16 @@ func SetAppSpecificConstants() {
 	//app_specific.ServiceConnectionAppNamePrefix
 	app_specific.WorkspaceIgnoreFile = ".flowpipeignore"
 	app_specific.WorkspaceDataDir = ".flowpipe"
+
+	// set custom types
+	var notifierImpl *flowpipe.NotifierImpl
+	var notifierImplTypeName = reflect.TypeOf(notifierImpl).String()
+	app_specific.CustomTypes = []string{notifierImplTypeName}
+
+	// set parse related constants
+	parse.ModDecoderFunc = fparse.NewFlowpipeModDecoder
+	modconfig.AppSpecificNewResourceMapsFunc = flowpipe.NewFlowpipeResourceMaps
+
 	app_specific_connection.RegisterConnections(
 		connection.NewAbuseIPDBConnection,
 		connection.NewAlicloudConnection,

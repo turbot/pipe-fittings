@@ -12,7 +12,7 @@ import (
 // This is provided to avoid db needing to reference workspace package
 type PowerpipeResourceMaps struct {
 	// the parent mod
-	Mod *Mod
+	Mod modconfig.ModI
 
 	Benchmarks            map[string]*Benchmark
 	Controls              map[string]*Control
@@ -43,7 +43,7 @@ type PowerpipeResourceMaps struct {
 
 func NewPowerpipeResourceMaps(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
 	res := emptyPowerpipeModResources()
-	res.Mod = mod.(*Mod)
+	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
 	res.AddMaps(sourceMaps...)
 	return res

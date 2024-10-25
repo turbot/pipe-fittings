@@ -63,6 +63,8 @@ type ModI interface {
 	AddModDependencies(mods map[string]*ModVersionConstraint)
 	GetVersion() *DependencyVersion
 	Save() error
+	CacheKey() string
+	GetDefaultConnectionString(context *hcl.EvalContext) (string, error)
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy

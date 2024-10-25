@@ -83,9 +83,8 @@ func NewModBase[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) 
 		ModPath: modPath,
 		Require: NewRequire(),
 	}
-
-	mod.ResourceMaps = NewResourceMapsFunc(mod).(T)
-
+	// call the app specific resource maps constructor to make an empty resource maps
+	mod.ResourceMaps = NewResourceMaps(mod).(T)
 	return mod
 }
 
