@@ -231,11 +231,12 @@ const (
 )
 
 type NextStep struct {
-	StepName    string         `json:"step_name"`
-	Action      NextStepAction `json:"action"`
-	StepForEach *StepForEach   `json:"step_for_each,omitempty"`
-	StepLoop    *StepLoop      `json:"step_loop,omitempty"`
-	Input       Input          `json:"input"`
+	StepName       string         `json:"step_name"`
+	Action         NextStepAction `json:"action"`
+	StepForEach    *StepForEach   `json:"step_for_each,omitempty"`
+	StepLoop       *StepLoop      `json:"step_loop,omitempty"`
+	Input          Input          `json:"input"`
+	MaxConcurrency *int           `json:"max_concurrency,omitempty"`
 }
 
 func NewPipelineStep(stepType, stepName string, pipeline *Pipeline) PipelineStep {
