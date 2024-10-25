@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"reflect"
 	"slices"
 	"testing"
 
@@ -3449,16 +3450,19 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 
 	assert.NotNil(pipeline)
 
+	var notifierImpl *flowpipe.NotifierImpl
+	var notifierImplTypeName = reflect.TypeOf(notifierImpl).String()
+
 	for _, p := range pipeline.Params {
 		if p.Name == "notifier" {
 			assert.Equal(true, modconfig.IsCustomType(p.Type))
-			assert.Equal("*modconfig.NotifierImpl", p.Type.EncapsulatedType().String())
+			assert.Equal(notifierImplTypeName, p.Type.EncapsulatedType().String())
 		} else if p.Name == "list_of_notifiers" {
 			assert.Equal(true, modconfig.IsCustomType(p.Type))
-			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
+			assert.Equal(notifierImplTypeName, p.Type.ListElementType().EncapsulatedType().String())
 		} else if p.Name == "list_of_notifiers_more" {
 			assert.Equal(true, modconfig.IsCustomType(p.Type))
-			assert.Equal("*modconfig.NotifierImpl", p.Type.ListElementType().EncapsulatedType().String())
+			assert.Equal(notifierImplTypeName, p.Type.ListElementType().EncapsulatedType().String())
 		} else {
 			assert.Fail("unexpected param")
 		}

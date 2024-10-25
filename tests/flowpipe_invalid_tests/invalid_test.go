@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/turbot/pipe-fittings/load_mod"
+	"github.com/turbot/pipe-fittings/tests/test_init"
 )
 
 type testSetup struct {
@@ -300,6 +301,7 @@ var tests = []testSetup{
 // more complex error message expectations or complex structure such as mod & var
 func TestSimpleInvalidResources(t *testing.T) {
 
+	test_init.SetAppSpecificConstants()
 	ctx := context.TODO()
 
 	for _, test := range tests {
