@@ -41,7 +41,12 @@ func (p StringPrinter[T]) PrintResource(_ context.Context, r PrintableResource[T
 				JsonFormatter:  color.NewJsonFormatter(!enableColor),
 			}
 
-			str := item.String(sanitize.Instance, colorOpts)
+			var str string
+			if p.Sanitizer != nil {
+				str = item.String(p.Sanitizer, colorOpts)
+			} else {
+				str = item.String(sanitize.Instance, colorOpts)
+			}
 
 			if _, err := writer.Write([]byte(str)); err != nil {
 				return fmt.Errorf("error printing resource")
