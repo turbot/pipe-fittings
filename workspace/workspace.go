@@ -24,7 +24,6 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/load_mod"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/modinstaller"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -368,14 +367,6 @@ func (w *WorkspaceBase[T]) loadWorkspaceLock(ctx context.Context) (*versionmap.W
 		// TODO K removed migration - check an install will work
 		return nil, fmt.Errorf("workspace lock file is out of date, please run 'steampipe install' to update")
 	}
-
-	opts := &modinstaller.InstallOpts[T]{WorkspaceMod: w.Mod, UpdateStrategy: constants.ModUpdateMinimal}
-
-	installData, err := modinstaller.InstallWorkspaceDependencies(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	workspaceLock = installData.NewLock
 
 	return workspaceLock, nil
 }
