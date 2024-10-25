@@ -62,6 +62,7 @@ type ModI interface {
 	RemoveModDependencies(mods map[string]*ModVersionConstraint)
 	AddModDependencies(mods map[string]*ModVersionConstraint)
 	GetVersion() *DependencyVersion
+	Save() error
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy
