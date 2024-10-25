@@ -24,7 +24,7 @@ type DashboardText struct {
 	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardText `hcl:"base" json:"-"`
-	Mod  *Mod           `cty:"mod" json:"-"`
+	Mod  modconfig.ModI `cty:"mod" json:"-"`
 }
 
 func NewDashboardText(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {

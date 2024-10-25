@@ -47,11 +47,11 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 	defer utils.LogTime("w.Load end")
 
 	w = &FlowpipeWorkspace{
-		WorkspaceBase: workspace.WorkspaceBase[*flowpipe.FlowpipeResourceMaps]{
+		WorkspaceBase: workspace.WorkspaceBase[*flowpipe.ModResources]{
 			Path:              workspacePath,
 			VariableValues:    make(map[string]string),
 			ValidateVariables: true,
-			Mod:               modconfig.NewModBase[*flowpipe.FlowpipeResourceMaps]("local", workspacePath, hcl.Range{}),
+			Mod:               modconfig.NewModBase[*flowpipe.ModResources]("local", workspacePath, hcl.Range{}),
 		},
 	}
 	// check whether the workspace contains a modfile

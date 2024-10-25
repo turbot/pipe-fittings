@@ -1,7 +1,8 @@
-package parse
+package tests
 
 import (
 	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"reflect"
 	"testing"
@@ -362,7 +363,7 @@ func TestCoerceCustomValue(tm *testing.T) {
 
 			// pass nil evalCtx so it will not validate the actual connection/notifier against the
 			// config
-			result, err := CoerceParams(tc.resource, tc.input, evalCtx)
+			result, err := parse.CoerceParams(tc.resource, tc.input, evalCtx)
 
 			if tc.errorExpected && len(err) == 0 {
 				assert.Fail("Expected error but got none")

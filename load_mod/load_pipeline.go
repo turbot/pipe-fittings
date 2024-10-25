@@ -40,7 +40,7 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*flowpipe
 	var triggers map[string]*flowpipe.Trigger
 
 	if mod != nil && mod.GetResourceMaps() != nil {
-		resourceMaps := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps)
+		resourceMaps := mod.GetResourceMaps().(*flowpipe.ModResources)
 		pipelines = resourceMaps.Pipelines
 		triggers = resourceMaps.Triggers
 	}
@@ -104,7 +104,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (modco
 	if err != nil {
 		return nil, err
 	}
-	mod, errorsAndWarnings := LoadModWithFileName[*flowpipe.FlowpipeResourceMaps](ctx, modDir, modFileNameToLoad, parseCtx)
+	mod, errorsAndWarnings := LoadModWithFileName[*flowpipe.ModResources](ctx, modDir, modFileNameToLoad, parseCtx)
 
 	if errorsAndWarnings.Error != nil {
 		return nil, errorsAndWarnings.Error

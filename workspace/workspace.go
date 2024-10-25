@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/turbot/pipe-fittings/connection"
+	"github.com/turbot/pipe-fittings/credential"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -64,6 +66,12 @@ type WorkspaceBase[T modconfig.ResourceMapsI] struct {
 	Mod                 modconfig.ModI
 
 	PipelingConnections map[string]connection.PipelingConnection
+	// TODO K flowpiwp specific but needed for now as we must add them to the parse context and that is done by the base workspace
+	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
+	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
+	Credentials  map[string]credential.Credential
+	Integrations map[string]flowpipe.Integration
+	Notifiers    map[string]flowpipe.Notifier
 
 	Mods map[string]modconfig.ModI
 
@@ -339,6 +347,11 @@ func (w *WorkspaceBase[T]) GetParseContext(ctx context.Context) (*parse.ModParse
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO K we need another way to add these - maybe base workspace needs to call into derived workspace???
+	parseCtx.Credentials = w.Credentials
+	parseCtx.Integrations = w.Integrations
+	parseCtx.Notifiers = w.Notifiers
 
 	return parseCtx, nil
 }

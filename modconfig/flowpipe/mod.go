@@ -3,13 +3,13 @@ package flowpipe
 //)
 //
 //type Mod struct {
-//	*modconfig.ModBase[*FlowpipeResourceMaps]
+//	*modconfig.ModBase[*ModResources]
 //}
 //
 //func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 //	m := &Mod{
-//		ModBase: modconfig.NewModBase[*FlowpipeResourceMaps](shortName, modPath, defRange),
+//		ModBase: modconfig.NewModBase[*ModResources](shortName, modPath, defRange),
 //	}
-//	m.ResourceMaps = NewFlowpipeResourceMaps(m).(*FlowpipeResourceMaps)
+//	m.ResourceMaps = NewModResources(m).(*ModResources)
 //	return m
 //}

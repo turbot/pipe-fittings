@@ -29,7 +29,7 @@ func (w *WorkspaceBase[T]) GetResourceMaps() modconfig.ResourceMapsI {
 	w.LoadLock.Lock()
 	defer w.LoadLock.Unlock()
 
-	// if this a source snapshot workspace, create a PowerpipeResourceMaps containing ONLY source snapshot paths
+	// if this a source snapshot workspace, create a ModResources containing ONLY source snapshot paths
 	if len(w.SourceSnapshots) != 0 {
 		return powerpipe.NewSourceSnapshotModResources(w.SourceSnapshots)
 	}

@@ -51,10 +51,6 @@ type ReferenceTypeValueMap map[string]map[string]cty.Value
 type ModParseContext struct {
 	ParseContext
 
-	// PipelineHcls map[string]*modconfig.Pipeline
-	TriggerHcls     map[string]*flowpipe.Trigger
-	IntegrationHcls map[string]flowpipe.Integration
-
 	// the mod which is currently being parsed
 	CurrentMod modconfig.ModI
 	// the workspace lock data
@@ -71,13 +67,23 @@ type ModParseContext struct {
 
 	PipelingConnections map[string]connection.PipelingConnection
 
-	// TODO K make an interface for parse context and have a flowpipe implementation with these in
+	// TODO K these are flowpipe only
+	// TODO K are these even needed?
+	// PipelineHcls map[string]*modconfig.Pipeline
+	TriggerHcls     map[string]*flowpipe.Trigger
+	IntegrationHcls map[string]flowpipe.Integration
+
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	Credentials       map[string]credential.Credential
-	Notifiers         map[string]flowpipe.Notifier
+	// TODO K instead of storing these on parse context, the app registers functions to add value maps into the parse context
+
+	Credentials map[string]credential.Credential
+	Notifiers   map[string]flowpipe.Notifier
+	// TODO K IS THIS NEEDED
 	ConnectionImports map[string]modconfig.ConnectionImport
-	Integrations      map[string]flowpipe.Integration
+	// TODO K IS THIS NEEDED
+	Integrations map[string]flowpipe.Integration
+	// TODO K IS THIS NEEDED
 	CredentialImports map[string]credential.CredentialImport
 
 	ParentParseCtx *ModParseContext

@@ -44,7 +44,7 @@ func SetAppSpecificConstants() {
 
 	// set parse related constants
 	parse.ModDecoderFunc = fparse.NewFlowpipeModDecoder
-	modconfig.AppSpecificNewResourceMapsFunc = flowpipe.NewFlowpipeResourceMaps
+	modconfig.AppSpecificNewResourceMapsFunc = flowpipe.NewModResources
 
 	app_specific_connection.RegisterConnections(
 		connection.NewAbuseIPDBConnection,
