@@ -7,7 +7,7 @@ import (
 	"github.com/turbot/pipe-fittings/parse"
 )
 
-func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[string]*modconfig.ModVersionConstraint, error) {
+func (i *ModInstaller[T]) GetRequiredModVersionsFromArgs(modsArgs []string) (map[string]*modconfig.ModVersionConstraint, error) {
 	var errors []error
 	mods := make(map[string]*modconfig.ModVersionConstraint, len(modsArgs))
 	for _, modArg := range modsArgs {
@@ -17,7 +17,7 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 		var err error
 		// check is this a file path
 		// if modArg IS a filepath, argToFilePath will return the absolute path
-		if filePath := i.toAbsoluteFilepath(modArg, i.workspaceMod.ModPath); filePath != "" {
+		if filePath := i.toAbsoluteFilepath(modArg, i.workspaceMod.GetModPath()); filePath != "" {
 			// special case for file paths
 			modVersion, err = i.newFilepathModVersionConstraint(filePath)
 
@@ -52,9 +52,9 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 	return mods, nil
 }
 
-func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.ModVersionConstraint, error) {
+func (i *ModInstaller[T]) newFilepathModVersionConstraint(arg string) (*modconfig.ModVersionConstraint, error) {
 	// try to load the mod definition
-	modDef, err := parse.LoadModfile(arg)
+	modDef, err := parse.LoadModfile[T](arg)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (i *ModInstaller) newFilepathModVersionConstraint(arg string) (*modconfig.M
 	return modconfig.NewFilepathModVersionConstraint(modDef), nil
 }
 
-func (i *ModInstaller) getUpdateVersion(modArg string, modVersion *modconfig.ModVersionConstraint) (*modconfig.ModVersionConstraint, error) {
+func (i *ModInstaller[T]) getUpdateVersion(modArg string, modVersion *modconfig.ModVersionConstraint) (*modconfig.ModVersionConstraint, error) {
 	// verify the mod is already installed
 	if i.installData.Lock.GetMod(modVersion.Name, i.workspaceMod) == nil {
 		return nil, fmt.Errorf("cannot update '%s' as it is not a direct dependency of this workspace", modArg)

@@ -1,5 +1,6 @@
 package parse
 
+import "C"
 import (
 	"fmt"
 
@@ -13,9 +14,7 @@ type ModDependencyConfig struct {
 }
 
 func (c ModDependencyConfig) SetModProperties(mod modconfig.ModI) {
-	mod.Version = &c.ModDependency.DependencyVersion
-	mod.DependencyPath = c.DependencyPath
-	mod.GetDependencyName() = c.ModDependency.Name
+	mod.SetDependencyConfig(&c.ModDependency.DependencyVersion, c.DependencyPath, c.ModDependency.Name)
 }
 
 func NewDependencyConfig(modDependency *versionmap.ResolvedVersionConstraint) *ModDependencyConfig {

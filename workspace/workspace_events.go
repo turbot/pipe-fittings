@@ -2,11 +2,10 @@ package workspace
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/app_specific"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"log/slog"
 
 	"github.com/turbot/pipe-fittings/error_helpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 )
 
 var EventCount int64 = 0
@@ -48,7 +47,7 @@ func (w *WorkspaceBase[T]) ReloadResourceMaps(ctx context.Context) (modconfig.Re
 	prevResourceMaps := w.Mod.GetResourceMaps()
 	// if there is an outstanding watcher error, set prevResourceMaps to empty to force refresh
 	if w.WatcherError != nil {
-		prevResourceMaps = app_specific.NewResourceMapsFunc(w.Mod)
+		prevResourceMaps = modconfig.NewResourceMapsFunc(w.Mod)
 	}
 
 	// now reload the workspace

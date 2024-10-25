@@ -58,7 +58,7 @@ func NewQueryDashboardTable(qp QueryProvider) (*DashboardTable, error) {
 						BlockType:       schema.BlockTypeTable,
 					},
 					Database: qp.GetDatabase(),
-					Mod:      qp.GetMod(),
+					Mod:      qp.(modconfig.ModItem).GetMod(),
 				},
 			},
 			Query:  qp.GetQuery(),

@@ -5,7 +5,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-func (i *ModInstaller) openRepo(modPath string) (*git.Repository, error) {
+func (i *ModInstaller[T]) openRepo(modPath string) (*git.Repository, error) {
 	repo, err := git.PlainOpen(modPath)
 	if err != nil {
 		return nil, err
@@ -13,7 +13,7 @@ func (i *ModInstaller) openRepo(modPath string) (*git.Repository, error) {
 	return repo, nil
 }
 
-func (i *ModInstaller) cloneRepo(gitUrl string, gitRefName plumbing.ReferenceName, installPath string) (*git.Repository, error) {
+func (i *ModInstaller[T]) cloneRepo(gitUrl string, gitRefName plumbing.ReferenceName, installPath string) (*git.Repository, error) {
 	gitHubToken := getGitToken()
 	cloneOptions := git.CloneOptions{
 		URL:           gitUrl,

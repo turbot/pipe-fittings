@@ -15,7 +15,7 @@ import (
 	"github.com/zclconf/go-cty/cty/gocty"
 )
 
-func decodeArgs(attr *hcl.Attribute, evalCtx *hcl.EvalContext, resource powerpipe.QueryProvider) (*powerpipe.QueryArgs, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
+func DecodeArgs(attr *hcl.Attribute, evalCtx *hcl.EvalContext, resource powerpipe.QueryProvider) (*powerpipe.QueryArgs, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
 	var runtimeDependencies []*powerpipe.RuntimeDependency
 	var args = powerpipe.NewQueryArgs()
 	var diags hcl.Diagnostics
@@ -241,7 +241,7 @@ func validateInputRuntimeDependency(propertyPath *modconfig.ParsedPropertyPath) 
 	return nil
 }
 
-func decodeParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.ParamDef, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
+func DecodeParam(block *hcl.Block, parseCtx *ModParseContext) (*modconfig.ParamDef, []*powerpipe.RuntimeDependency, hcl.Diagnostics) {
 	def := modconfig.NewParamDef(block)
 	var runtimeDependencies []*powerpipe.RuntimeDependency
 	content, diags := block.Body.Content(ParamDefBlockSchema)

@@ -262,6 +262,10 @@ func (r *Require) ContainsMod(requiredModVersion *ModVersionConstraint) bool {
 }
 
 func (r *Require) Empty() bool {
+	if r == nil {
+		return true
+	}
+
 	return r.AppVersionConstraint() == nil && len(r.Mods) == 0 && len(r.Plugins) == 0
 }
 

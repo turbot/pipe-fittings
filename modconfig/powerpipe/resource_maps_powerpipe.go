@@ -3,8 +3,6 @@ package powerpipe
 import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
@@ -109,7 +107,7 @@ func (m *PowerpipeResourceMaps) TopLevelResources() modconfig.ResourceMapsI {
 
 	f := func(item modconfig.HclResource) (bool, error) {
 		if modItem, ok := item.(modconfig.ModItem); ok {
-			if mod := modItem.GetMod(); mod != nil && mod.GetFullName() == m.Mod.FullName {
+			if mod := modItem.GetMod(); mod != nil && mod.GetFullName() == m.Mod.GetFullName() {
 				// the only error we expect is a duplicate item error - ignore
 				_ = res.AddResource(item)
 			}
@@ -400,7 +398,7 @@ func (m *PowerpipeResourceMaps) Equals(o modconfig.ResourceMapsI) bool {
 func (m *PowerpipeResourceMaps) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	modName := parsedName.Mod
 	if modName == "" {
-		modName = m.Mod.ShortName
+		modName = m.Mod.GetShortName()
 	}
 	longName := fmt.Sprintf("%s.%s.%s", modName, parsedName.ItemType, parsedName.Name)
 
@@ -459,36 +457,37 @@ func (m *PowerpipeResourceMaps) GetResource(parsedName *modconfig.ParsedResource
 	return resource, found
 }
 
-func (m *PowerpipeResourceMaps) PopulateReferences() {
-	utils.LogTime("PowerpipeResourceMaps.PopulateReferences")
-	defer utils.LogTime("PowerpipeResourceMaps.PopulateReferences end")
-
-	// only populate references if introspection is enabled
-	switch viper.GetString(constants.ArgIntrospection) {
-	case constants.IntrospectionInfo:
-		m.References = make(map[string]*modconfig.ResourceReference)
-
-		resourceFunc := func(resource modconfig.HclResource) (bool, error) {
-			if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
-				for _, ref := range resourceWithMetadata.GetReferences() {
-					m.References[ref.String()] = ref
-				}
-
-				// if this resource is a RuntimeDependencyProvider, add references from any 'withs'
-				if nep, ok := resource.(NodeAndEdgeProvider); ok {
-					m.populateNodeEdgeProviderRefs(nep)
-				} else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
-					m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
-				}
-			}
-
-			// continue walking
-			return true, nil
-		}
-		// resource func does not return an error
-		_ = m.WalkResources(resourceFunc)
-	}
-}
+// TODO K is this needed
+//func (m *PowerpipeResourceMaps) PopulateReferences() {
+//	utils.LogTime("PowerpipeResourceMaps.PopulateReferences")
+//	defer utils.LogTime("PowerpipeResourceMaps.PopulateReferences end")
+//
+//	// only populate references if introspection is enabled
+//	switch viper.GetString(constants.ArgIntrospection) {
+//	case constants.IntrospectionInfo:
+//		m.References = make(map[string]*modconfig.ResourceReference)
+//
+//		resourceFunc := func(resource modconfig.HclResource) (bool, error) {
+//			if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
+//				for _, ref := range resourceWithMetadata.GetReferences() {
+//					m.References[ref.String()] = ref
+//				}
+//
+//				// if this resource is a RuntimeDependencyProvider, add references from any 'withs'
+//				if nep, ok := resource.(NodeAndEdgeProvider); ok {
+//					m.populateNodeEdgeProviderRefs(nep)
+//				} else if rdp, ok := resource.(RuntimeDependencyProvider); ok {
+//					m.populateWithRefs(resource.GetUnqualifiedName(), rdp, getWithRoot(rdp))
+//				}
+//			}
+//
+//			// continue walking
+//			return true, nil
+//		}
+//		// resource func does not return an error
+//		_ = m.WalkResources(resourceFunc)
+//	}
+//}
 
 // populate references for any nodes/edges which have reference a 'with'
 func (m *PowerpipeResourceMaps) populateNodeEdgeProviderRefs(nep NodeAndEdgeProvider) {
@@ -954,7 +953,7 @@ func (m *PowerpipeResourceMaps) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
 		for k, v := range source.Variables {
 			// TODO check why this was necessary and test variables thoroughly
 			// NOTE: only include variables from root mod  - we add in the others separately
-			//if v.Mod.FullName == m.Mod.FullName {
+			//if v.Mod.GetFullName() == m.Mod.GetFullName() {
 			m.Variables[k] = v
 			//}
 		}

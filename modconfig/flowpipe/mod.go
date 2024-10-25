@@ -11,6 +11,6 @@ type Mod struct {
 
 func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 	return &Mod{
-		ModBase: modconfig.NewMod[*FlowpipeResourceMaps](shortName, modPath, defRange),
+		ModBase: modconfig.NewModBase[*FlowpipeResourceMaps](shortName, modPath, defRange),
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-type InstallOpts struct {
+type InstallOpts[T modconfig.ResourceMapsI] struct {
 	WorkspaceMod   modconfig.ModI
 	Command        string
 	ModArgs        []string
@@ -19,7 +19,7 @@ type InstallOpts struct {
 	UpdateStrategy string
 }
 
-func NewInstallOpts(workspaceMod modconfig.ModI, modsToInstall ...string) *InstallOpts {
+func NewInstallOpts[T modconfig.ResourceMapsI](workspaceMod modconfig.ModI, modsToInstall ...string) *InstallOpts[T] {
 	cmdName := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command).Name()
 
 	// for install command, if there is a target mod, and if the pull strategy has not been explicitly set, set it to latest
@@ -31,7 +31,7 @@ func NewInstallOpts(workspaceMod modconfig.ModI, modsToInstall ...string) *Insta
 		viper.Set(constants.ArgPull, constants.ModUpdateIdMinimal)
 	}
 
-	opts := &InstallOpts{
+	opts := &InstallOpts[T]{
 		WorkspaceMod:   workspaceMod,
 		DryRun:         viper.GetBool(constants.ArgDryRun),
 		Force:          viper.GetBool(constants.ArgForce),

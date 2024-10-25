@@ -2,7 +2,6 @@ package powerpipe
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
@@ -11,6 +10,7 @@ import (
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
@@ -77,7 +77,7 @@ func NewQueryDashboard(qp QueryProvider) (*Dashboard, error) {
 				BlockType:       schema.BlockTypeDashboard,
 				DeclRange:       *qp.GetDeclRange(),
 			},
-			Mod: qp.GetMod(),
+			Mod: qp.(modconfig.ModItem).GetMod(),
 		},
 	}
 

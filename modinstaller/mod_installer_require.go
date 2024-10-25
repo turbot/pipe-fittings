@@ -12,14 +12,14 @@ import (
 )
 
 // updates the 'require' block in 'mod.sp'
-func (i *ModInstaller) updateModFile() error {
+func (i *ModInstaller[T]) updateModFile() error {
 	contents, err := i.loadModFileBytes()
 	if err != nil {
 		return err
 	}
 
 	oldRequire := i.oldRequire
-	newRequire := i.workspaceMod.Require
+	newRequire := i.workspaceMod.GetRequire()
 
 	// fill these requires in with empty requires
 	// so that we don't have to do nil checks everywhere
@@ -54,24 +54,24 @@ func (i *ModInstaller) updateModFile() error {
 	// strip blank lines
 	modData := []byte(helpers.TrimBlankLines(string(contents.Bytes())))
 
-	return os.WriteFile(i.workspaceMod.FilePath(), modData, 0644) //nolint:gosec // TODO: check file permission
+	return os.WriteFile(i.workspaceMod.GetFilePath(), modData, 0644) //nolint:gosec // TODO: check file permission
 }
 
 // loads the contents of the mod.sp file and wraps it with a thin wrapper
 // to assist in byte sequence manipulation
-func (i *ModInstaller) loadModFileBytes() (*ByteSequence, error) {
-	modFileBytes, err := os.ReadFile(i.workspaceMod.FilePath())
+func (i *ModInstaller[T]) loadModFileBytes() (*ByteSequence, error) {
+	modFileBytes, err := os.ReadFile(i.workspaceMod.GetFilePath())
 	if err != nil {
 		return nil, err
 	}
 	return NewByteSequence(modFileBytes), nil
 }
 
-func (i *ModInstaller) shouldDeleteRequireBlock(oldRequire *modconfig.Require, newRequire *modconfig.Require) bool {
+func (i *ModInstaller[T]) shouldDeleteRequireBlock(oldRequire *modconfig.Require, newRequire *modconfig.Require) bool {
 	return newRequire.Empty() && !oldRequire.Empty()
 }
 
-func (i *ModInstaller) shouldCreateRequireBlock(oldRequire *modconfig.Require, newRequire *modconfig.Require) bool {
+func (i *ModInstaller[T]) shouldCreateRequireBlock(oldRequire *modconfig.Require, newRequire *modconfig.Require) bool {
 	// NOTE;: only create a new require block if there is NO require block currently
 	// if there is an mepty require block we just update it
 	// we can detect no require block by examining the TypeRange
@@ -80,7 +80,7 @@ func (i *ModInstaller) shouldCreateRequireBlock(oldRequire *modconfig.Require, n
 	return !newRequire.Empty() && !currentModHasRequireBlock
 }
 
-func (i *ModInstaller) buildChangeSetForRequireDelete(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+func (i *ModInstaller[T]) buildChangeSetForRequireDelete(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	return NewChangeSet(&Change{
 		Operation:   Delete,
 		OffsetStart: oldRequire.TypeRange.Start.Byte,
@@ -88,7 +88,7 @@ func (i *ModInstaller) buildChangeSetForRequireDelete(oldRequire *modconfig.Requ
 	})
 }
 
-func (i *ModInstaller) buildChangeSetForRequireCreate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+func (i *ModInstaller[T]) buildChangeSetForRequireCreate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	// if the new require is not empty, but the old one is
 	// add a new require block with the new stuff
 	// by generating the HCL string that goes in
@@ -100,7 +100,7 @@ func (i *ModInstaller) buildChangeSetForRequireCreate(oldRequire *modconfig.Requ
 	// we don't have a require block at all
 	// let's create one to append to
 	body = f.Body().AppendNewBlock("require", nil).Body()
-	insertOffset = i.workspaceMod.DeclRange.End.Byte - 1
+	insertOffset = i.workspaceMod.GetDeclRange().End.Byte - 1
 
 	for _, mvc := range newRequire.Mods {
 		newBlock := i.createNewModRequireBlock(mvc)
@@ -121,7 +121,7 @@ func (i *ModInstaller) buildChangeSetForRequireCreate(oldRequire *modconfig.Requ
 	})
 }
 
-func (i *ModInstaller) calculateChangeSet(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+func (i *ModInstaller[T]) calculateChangeSet(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	if oldRequire.Empty() && newRequire.Empty() {
 		// both are empty
 		// nothing to do
@@ -140,7 +140,7 @@ func (i *ModInstaller) calculateChangeSet(oldRequire *modconfig.Require, newRequ
 }
 
 // creates a new "mod" block which can be written as part of the "require" block in mod.sp
-func (i *ModInstaller) createNewModRequireBlock(modVersion *modconfig.ModVersionConstraint) *hclwrite.Block {
+func (i *ModInstaller[T]) createNewModRequireBlock(modVersion *modconfig.ModVersionConstraint) *hclwrite.Block {
 	modRequireBlock := hclwrite.NewBlock("mod", []string{modVersion.Name})
 	if modVersion.BranchName != "" {
 		modRequireBlock.Body().SetAttributeValue("branch", cty.StringVal(modVersion.BranchName))
@@ -157,7 +157,7 @@ func (i *ModInstaller) createNewModRequireBlock(modVersion *modconfig.ModVersion
 }
 
 // calculates changes required in mod.sp to reflect uninstalls
-func (i *ModInstaller) calcChangesForUninstall(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+func (i *ModInstaller[T]) calcChangesForUninstall(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	changes := ChangeSet{}
 	for _, requiredMod := range oldRequire.Mods {
 		// check if this mod is still a dependency
@@ -173,7 +173,7 @@ func (i *ModInstaller) calcChangesForUninstall(oldRequire *modconfig.Require, ne
 }
 
 // calculates changes required in mod.sp to reflect new installs
-func (i *ModInstaller) calcChangesForInstall(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+func (i *ModInstaller[T]) calcChangesForInstall(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	modsToAdd := []*modconfig.ModVersionConstraint{}
 	for _, requiredMod := range newRequire.Mods {
 		if modInOld := oldRequire.GetModDependency(requiredMod.Name); modInOld == nil {
@@ -204,7 +204,7 @@ func (i *ModInstaller) calcChangesForInstall(oldRequire *modconfig.Require, newR
 }
 
 // calculates the changes required in mod.sp to reflect updates
-func (i *ModInstaller) calcChangesForUpdate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
+func (i *ModInstaller[T]) calcChangesForUpdate(oldRequire *modconfig.Require, newRequire *modconfig.Require) ChangeSet {
 	changes := ChangeSet{}
 	for _, oldRequiredMod := range oldRequire.Mods {
 		newRequiredMod := newRequire.GetModDependency(oldRequiredMod.Name)

@@ -22,7 +22,7 @@ type FlowpipeResourceMaps struct {
 	Triggers  map[string]*Trigger
 }
 
-func NewFlowpipeResourceMaps(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) *FlowpipeResourceMaps {
+func NewFlowpipeResourceMaps(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
 	res := emptyFlowpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -48,7 +48,7 @@ func emptyFlowpipeModResources() *FlowpipeResourceMaps {
 //
 //	f := func(item HclResource) (bool, error) {
 //		if modItem, ok := item.(ModItem); ok {
-//			if mod := modItem.GetMod(); mod != nil && mod.FullName == m.Mod.FullName {
+//			if mod := modItem.GetMod(); mod != nil && mod.GetFullName() == m.Mod.GetFullName() {
 //				// the only error we expect is a duplicate item error - ignore
 //				_ = res.AddResource(item)
 //			}
@@ -221,7 +221,7 @@ func (m *FlowpipeResourceMaps) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
 		for k, v := range source.Variables {
 			// TODO check why this was necessary and test variables thoroughly
 			// NOTE: only include variables from root mod  - we add in the others separately
-			//if v.Mod.FullName == m.Mod.FullName {
+			//if v.Mod.GetFullName() == m.Mod.GetFullName() {
 			m.Variables[k] = v
 			//}
 		}

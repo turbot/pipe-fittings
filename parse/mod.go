@@ -17,7 +17,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func LoadModfile(modPath string) (modconfig.ModI, error) {
+func LoadModfile[T modconfig.ResourceMapsI](modPath string) (modconfig.ModI, error) {
 	modFilePath, exists := ModFileExists(modPath)
 	if !exists {
 		return nil, nil
@@ -29,7 +29,7 @@ func LoadModfile(modPath string) (modconfig.ModI, error) {
 		Variables: make(map[string]cty.Value),
 	}
 
-	mod, res := ParseModDefinition(modFilePath, evalCtx)
+	mod, res := ParseModDefinition[T](modFilePath, evalCtx)
 	if res.Diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load mod", res.Diags)
 	}
@@ -42,7 +42,7 @@ func LoadModfile(modPath string) (modconfig.ModI, error) {
 // this is called before parsing the workspace to, for example, identify dependency mods
 //
 // This function only parse the "mod" block, and does not parse any resources in the mod file
-func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (modconfig.ModI, *DecodeResult) {
+func ParseModDefinition[T modconfig.ResourceMapsI](modFilePath string, evalCtx *hcl.EvalContext) (modconfig.ModI, *DecodeResult) {
 	res := NewDecodeResult()
 
 	fileData, diags := LoadFileData(modFilePath)
@@ -72,11 +72,12 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (modconfig
 		return nil, res
 	}
 	var defRange = hclhelpers.BlockRange(block)
-	mod := modconfig.NewMod(block.Labels[0], path.Dir(modFilePath), defRange)
+	modBase := modconfig.NewModBase[T](block.Labels[0], path.Dir(modFilePath), defRange)
 	// set modFilePath
-	mod.SetFilePath(modFilePath)
+	modBase.SetFilePath(modFilePath)
 
-	mod, res = decodeMod(block, evalCtx, mod)
+	mod, decodeRes := decodeMod(block, evalCtx, modBase)
+	res.Merge(decodeRes)
 	if res.Diags.HasErrors() {
 		return nil, res
 	}
@@ -92,9 +93,15 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (modconfig
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
 // NOTE: the mod definition has already been parsed (or a default created) and is in opts.RunCtx.RootMod
-func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
+func ParseMod[T modconfig.ResourceMapsI](_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("ParseMod %s start", parseCtx.CurrentMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("ParseMod %s end", parseCtx.CurrentMod.Name()))
+
+	// verify the modDecoder is set
+	if ModDecoderFunc == nil {
+		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("ModDecoderFunc not set - app should populate as part of app_specific init"))
+	}
+	modDecoder := ModDecoderFunc()
 
 	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
@@ -149,7 +156,7 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	// continue decoding as long as the number of unresolved blocks decreases
 	prevUnresolvedBlocks := 0
 	for attempts := 0; ; attempts++ {
-		diags = decode(parseCtx)
+		diags = modDecoder.Decode(parseCtx)
 		if diags.HasErrors() {
 			return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to decode mod", diags))
 		}
@@ -178,46 +185,48 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	return mod, res
 }
 
-// ParseModRequireAndShortName is used when migrating the workspace lock
-// It loads the require block from the mod file and returns the require object, as well as the mod short name
-// The migration occurs the first time the workspace lock is loaded - this will be when we load the variables
-// the migration is done by simply installing the workspace dependencies
-// At this point we have not yet loaded the full mod definition so the require block is not yet loaded -
-// we need to manually load the require block, as well as the mod short name, which is used as a key in the workspace lock
-func ParseModRequireAndShortName(modFilePath string) (*modconfig.Require, string, hcl.Diagnostics) {
-	fileData, diags := LoadFileData(modFilePath)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	body, diags := ParseHclFiles(fileData)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	workspaceContent, diags := body.Content(WorkspaceBlockSchema)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	// tactical - we also return the mod short name
-	modBlock := hclhelpers.GetFirstBlockOfType(workspaceContent.Blocks, schema.BlockTypeMod)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-	modShortName := modBlock.Labels[0]
-
-	requireBlock, diags := modconfig.FindRequireBlock(modBlock)
-	if diags.HasErrors() {
-		return nil, "", diags
-	}
-
-	require, diags := DecodeRequire(requireBlock, &hcl.EvalContext{})
-	// ignore errors - all was care about is whether the require is non-nil
-	if require != nil {
-		moreDiags := require.InitialiseConstraints(requireBlock)
-		diags = append(diags, moreDiags...)
-
-	}
-	return require, modShortName, diags
-}
+// TODO K only needed for require migration
+//
+//// ParseModRequireAndShortName is used when migrating the workspace lock
+//// It loads the require block from the mod file and returns the require object, as well as the mod short name
+//// The migration occurs the first time the workspace lock is loaded - this will be when we load the variables
+//// the migration is done by simply installing the workspace dependencies
+//// At this point we have not yet loaded the full mod definition so the require block is not yet loaded -
+//// we need to manually load the require block, as well as the mod short name, which is used as a key in the workspace lock
+//func ParseModRequireAndShortName(modFilePath string) (*modconfig.Require, string, hcl.Diagnostics) {
+//	fileData, diags := LoadFileData(modFilePath)
+//	if diags.HasErrors() {
+//		return nil, "", diags
+//	}
+//
+//	body, diags := ParseHclFiles(fileData)
+//	if diags.HasErrors() {
+//		return nil, "", diags
+//	}
+//
+//	workspaceContent, diags := body.Content(WorkspaceBlockSchema)
+//	if diags.HasErrors() {
+//		return nil, "", diags
+//	}
+//
+//	// tactical - we also return the mod short name
+//	modBlock := hclhelpers.GetFirstBlockOfType(workspaceContent.Blocks, schema.BlockTypeMod)
+//	if diags.HasErrors() {
+//		return nil, "", diags
+//	}
+//	modShortName := modBlock.Labels[0]
+//
+//	requireBlock, diags := modconfig.FindRequireBlock(modBlock)
+//	if diags.HasErrors() {
+//		return nil, "", diags
+//	}
+//
+//	require, diags := DecodeRequire(requireBlock, &hcl.EvalContext{})
+//	// ignore errors - all was care about is whether the require is non-nil
+//	if require != nil {
+//		moreDiags := require.InitialiseConstraints(requireBlock)
+//		diags = append(diags, moreDiags...)
+//
+//	}
+//	return require, modShortName, diags
+//}

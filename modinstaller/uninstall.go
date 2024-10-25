@@ -3,12 +3,13 @@ package modinstaller
 import (
 	"context"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/modconfig"
 
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-func UninstallWorkspaceDependencies(ctx context.Context, opts *InstallOpts) (_ *InstallData, err error) {
+func UninstallWorkspaceDependencies[T modconfig.ResourceMapsI](ctx context.Context, opts *InstallOpts[T]) (_ *InstallData, err error) {
 	utils.LogTime("cmd.UninstallWorkspaceDependencies")
 	defer func() {
 		utils.LogTime("cmd.UninstallWorkspaceDependencies end")

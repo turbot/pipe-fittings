@@ -46,7 +46,7 @@ func DecodeVariableBlock(block *hcl.Block, content *hcl.BodyContent, parseCtx *M
 	}
 
 	if attr, exists := content.Attributes[schema.AttributeTypeType]; exists {
-		ty, tyDiags := decodeTypeExpression(attr)
+		ty, tyDiags := DecodeTypeExpression(attr)
 
 		// determine the parse mode - everything but primitive types use HCL parsing
 		parseMode := modconfig.VariableParseHCL

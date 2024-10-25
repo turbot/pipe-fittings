@@ -43,7 +43,7 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 		q := createQueryResourceForCommandLineQuery(sqlString, w.GetMod())
 
 		// add to the workspace mod so the dashboard execution code can find it
-		if err := w.Mod.AddResource(q); err != nil {
+		if err := w.GetMod().AddResource(q); err != nil {
 			return empty, nil, err
 		}
 

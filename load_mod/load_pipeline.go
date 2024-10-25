@@ -39,16 +39,17 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*flowpipe
 	var pipelines map[string]*flowpipe.Pipeline
 	var triggers map[string]*flowpipe.Trigger
 
-	if mod != nil && mod.ResourceMaps != nil {
-		pipelines = mod.ResourceMaps.Pipelines
-		triggers = mod.ResourceMaps.Triggers
+	if mod != nil && mod.GetResourceMaps() != nil {
+		resourceMaps := mod.GetResourceMaps().(*flowpipe.FlowpipeResourceMaps)
+		pipelines = resourceMaps.Pipelines
+		triggers = resourceMaps.Triggers
 	}
 
 	return pipelines, triggers, err
 }
 
 // TODO update this to NOT use deprecated LoadModWithFileName
-func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modconfig.Mod, error) {
+func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (modconfig.ModI, error) {
 	var modDir string
 	var fileName string
 	var modFileNameToLoad string
@@ -103,7 +104,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 	if err != nil {
 		return nil, err
 	}
-	mod, errorsAndWarnings := LoadModWithFileName(ctx, modDir, modFileNameToLoad, parseCtx)
+	mod, errorsAndWarnings := LoadModWithFileName[*flowpipe.FlowpipeResourceMaps](ctx, modDir, modFileNameToLoad, parseCtx)
 
 	if errorsAndWarnings.Error != nil {
 		return nil, errorsAndWarnings.Error

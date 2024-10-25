@@ -9,7 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
-func makeControl(mod *modconfig.Mod, name, title, description, sql string, tags map[string]string) *powerpipe.Control {
+func makeControl(mod modconfig.ModI, name, title, description, sql string, tags map[string]string) *powerpipe.Control {
 	control := powerpipe.NewControl(&hcl.Block{Type: "control"}, mod, name).(*powerpipe.Control)
 	control.Title = &title
 	control.Description = &description
@@ -26,7 +26,7 @@ type testCase[T modconfig.HclResource] struct {
 
 func TestFilterWorkspaceResourcesOfType(t *testing.T) {
 
-	var mod = modconfig.NewMod("test_mod", ".", hcl.Range{})
+	var mod = modconfig.NewModBase("test_mod", ".", hcl.Range{})
 	mod.ResourceMaps = &powerpipe.PowerpipeResourceMaps{
 		Benchmarks: map[string]*powerpipe.Benchmark{},
 		Controls: map[string]*powerpipe.Control{

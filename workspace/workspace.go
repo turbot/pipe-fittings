@@ -35,7 +35,7 @@ import (
 //		Path:              workspacePath,
 //		VariableValues:    make(map[string]string),
 //		ValidateVariables: true,
-//		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
+//		Mod:               modconfig.NewModBase("local", workspacePath, hcl.Range{}),
 //	}
 //
 //	// check whether the workspace contains a modfile
@@ -54,7 +54,8 @@ type WorkspaceI interface {
 	GetResourceMaps() modconfig.ResourceMapsI
 	GetMod() modconfig.ModI
 	GetPath() string
-	GetResource(name *modconfig.ParsedResourceName) (interface{}, interface{})
+	GetResource(name *modconfig.ParsedResourceName) (modconfig.HclResource, bool)
+	GetMods() map[string]modconfig.ModI
 }
 
 type WorkspaceBase[T modconfig.ResourceMapsI] struct {
@@ -201,7 +202,7 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 
 	// now set workspace properties
 	// populate the mod references map references
-	m.GetResourceMaps().PopulateReferences()
+	//m.GetResourceMaps().PopulateReferences()
 
 	// set the mod
 	w.Mod = m
@@ -215,6 +216,10 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 
 func (w WorkspaceBase[T]) GetMod() modconfig.ModI {
 	return w.Mod
+}
+
+func (w WorkspaceBase[T]) GetMods() map[string]modconfig.ModI {
+	return w.Mods
 }
 
 func (w WorkspaceBase[T]) GetPath() string {
@@ -302,7 +307,7 @@ func (w *WorkspaceBase[T]) getVariableValues(ctx context.Context, variablesParse
 	defer utils.LogTime("getInputVariables end")
 
 	// load variable definitions
-	variableMap, ew := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
+	variableMap, ew := load_mod.LoadVariableDefinitions[T](ctx, w.Path, variablesParseCtx)
 	if ew.Error != nil {
 		return nil, ew
 	}
@@ -351,7 +356,7 @@ func (w *WorkspaceBase[T]) loadWorkspaceLock(ctx context.Context) (*versionmap.W
 		return nil, fmt.Errorf("workspace lock file is out of date, please run 'steampipe install' to update")
 	}
 
-	opts := &modinstaller.InstallOpts{WorkspaceMod: w.Mod, UpdateStrategy: constants.ModUpdateMinimal}
+	opts := &modinstaller.InstallOpts[T]{WorkspaceMod: w.Mod, UpdateStrategy: constants.ModUpdateMinimal}
 
 	installData, err := modinstaller.InstallWorkspaceDependencies(ctx, opts)
 	if err != nil {

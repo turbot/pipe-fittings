@@ -32,31 +32,42 @@ type HclResource interface {
 // type ModI[T ResourceMapsI] interface {
 type ModI interface {
 	HclResource
+	ModTreeItem
 	ResourceProvider
 	ResourceWithMetadata
 	GetDependencyName() string
 	GetDependencyPath() *string
 	GetModPath() string
 	SetFilePath(string)
+	GetFilePath() string
 	IsDefaultMod() bool
 	GetResourceMaps() ResourceMapsI
 	SetResourceMaps(maps ResourceMapsI)
 	GetInstallCacheKey() string
 	AddResource(item HclResource) hcl.Diagnostics
 	GetRequire() *Require
+	SetRequire(*Require)
 	HasDependentMods() bool
 	WalkResources(resourceFunc func(item HclResource) (bool, error)) error
 	SetDatabase(*string)
 	SetSearchPath([]string)
 	SetSearchPathPrefix([]string)
 	ValidateRequirements(versionMap *plugin.PluginVersionMap) []error
+	SetTitle(string)
+	BuildResourceTree(mods ModMap) error
+	SetDependencyConfigFromPath(dependencyPath string) error
+	SetDependencyConfig(*DependencyVersion, *string, string)
+	GetModDependency(modName string) *ModVersionConstraint
+	RemoveAllModDependencies()
+	RemoveModDependencies(mods map[string]*ModVersionConstraint)
+	AddModDependencies(mods map[string]*ModVersionConstraint)
+	GetVersion() *DependencyVersion
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy
 // i.e. Control, Benchmark, Dashboard
 type ModTreeItem interface {
 	HclResource
-	ModItem
 	DatabaseItem
 
 	AddParent(ModTreeItem) error
@@ -95,6 +106,7 @@ type ResourceWithMetadata interface {
 	IsAnonymous() bool
 	AddReference(ref *ResourceReference)
 	GetReferences() []*ResourceReference
+	GetResourceWithMetadataRemain() hcl.Body
 }
 
 type ResourceMapsI interface {
@@ -108,7 +120,6 @@ type ResourceMapsI interface {
 	GetMods() map[string]ModI
 	TopLevelResources() ResourceMapsI
 	AddMaps(i ...ResourceMapsI)
-	PopulateReferences()
 }
 
 type ResourceMapsProvider interface {

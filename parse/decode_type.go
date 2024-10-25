@@ -6,7 +6,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func decodeTypeExpression(attr *hcl.Attribute) (cty.Type, hcl.Diagnostics) {
+func DecodeTypeExpression(attr *hcl.Attribute) (cty.Type, hcl.Diagnostics) {
 	expr := attr.Expr
 
 	ty, diags := typeexpr.TypeConstraint(expr)

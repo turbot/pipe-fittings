@@ -874,7 +874,7 @@ func (m *ModParseContext) getErrorStringForUnresolvedArg(parsedVarName *modconfi
 }
 
 func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
-	for _, b := range m.CurrentMod.ResourceWithMetadataImplRemain.(*hclsyntax.Body).Blocks {
+	for _, b := range m.CurrentMod.GetResourceWithMetadataRemain().(*hclsyntax.Body).Blocks {
 		if b.Type == schema.BlockTypeRequire {
 			return b
 		}
@@ -943,7 +943,7 @@ func (m *ModParseContext) LoadVariablesOnly() bool {
 func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
 	m.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
 	for _, t := range blockTypes {
-		m.blockTypeExclusions = struct{}{}
+		m.blockTypeExclusions[t] = struct{}{}
 	}
 }
 

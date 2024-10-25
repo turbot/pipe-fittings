@@ -20,10 +20,10 @@ type InstallData struct {
 	Upgraded    [][]string
 	Downgraded  [][]string
 
-	WorkspaceMod *modconfig.Mod
+	WorkspaceMod modconfig.ModI
 }
 
-func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modconfig.Mod) *InstallData {
+func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod modconfig.ModI) *InstallData {
 	return &InstallData{
 		Lock:         workspaceLock,
 		WorkspaceMod: workspaceMod,
@@ -33,7 +33,7 @@ func NewInstallData(workspaceLock *versionmap.WorkspaceLock, workspaceMod *modco
 }
 
 // onModInstalled is called when a dependency is satisfied by installing a mod version
-func (d *InstallData) onModInstalled(installedMod *DependencyMod, parent *modconfig.Mod) {
+func (d *InstallData) onModInstalled(installedMod *DependencyMod, parent modconfig.ModI) {
 	parentPath := parent.GetInstallCacheKey()
 	// update lock
 	d.NewLock.InstallCache.AddDependency(parentPath, installedMod.InstalledVersion)
@@ -41,7 +41,7 @@ func (d *InstallData) onModInstalled(installedMod *DependencyMod, parent *modcon
 
 // addExisting is called when a dependency is satisfied by a mod which is already installed
 // (perhaps as a dependency of another mod)
-func (d *InstallData) addExisting(existingDep *DependencyMod, parent *modconfig.Mod) {
+func (d *InstallData) addExisting(existingDep *DependencyMod, parent modconfig.ModI) {
 	// update lock
 	parentPath := parent.GetInstallCacheKey()
 	d.NewLock.InstallCache.AddDependency(parentPath, existingDep.InstalledVersion)

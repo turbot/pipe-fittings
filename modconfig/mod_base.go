@@ -68,7 +68,7 @@ type ModBase[T ResourceMapsI] struct {
 	modFilePath string
 }
 
-func NewMod[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *ModBase[T] {
+func NewModBase[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *ModBase[T] {
 	name := fmt.Sprintf("mod.%s", shortName)
 	mod := &ModBase[T]{
 		ModTreeItemImpl: ModTreeItemImpl{
@@ -83,8 +83,8 @@ func NewMod[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *Mod
 		ModPath: modPath,
 		Require: NewRequire(),
 	}
-	// TODO K how???
-	mod.ResourceMaps = app_specific.NewResourceMaps(mod)
+
+	mod.ResourceMaps = NewResourceMapsFunc(mod).(T)
 
 	return mod
 }
@@ -146,9 +146,9 @@ func (m *ModBase[T]) CacheKey() string {
 
 // CreateDefaultMod creates a default mod created for a workspace with no mod definition
 func CreateDefaultMod[T ResourceMapsI](modPath string) ModI {
-	m := NewMod[T](defaultModName, modPath, hcl.Range{})
+	m := NewModBase[T](defaultModName, modPath, hcl.Range{})
 	folderName := filepath.Base(modPath)
-	m.Title = &folderName
+	m.SetTitle(folderName)
 	return m
 }
 
@@ -338,6 +338,9 @@ func (m *ModBase[T]) WalkResources(resourceFunc func(item HclResource) (bool, er
 func (m *ModBase[T]) SetFilePath(modFilePath string) {
 	m.modFilePath = modFilePath
 }
+func (m *ModBase[T]) GetFilePath() string {
+	return m.modFilePath
+}
 
 // ValidateRequirements validates that the current steampipe CLI and the installed plugins is compatible with the mod
 func (m *ModBase[T]) ValidateRequirements(pluginVersionMap *plugin.PluginVersionMap) []error {
@@ -387,8 +390,8 @@ func (m *ModBase[T]) GetInstallCacheKey() string {
 	return m.ShortName
 }
 
-// SetDependencyConfig sets DependencyPath, DependencyName and Version
-func (m *ModBase[T]) SetDependencyConfig(dependencyPath string) error {
+// SetDependencyConfigFromPath sets DependencyPath, DependencyName and Version
+func (m *ModBase[T]) SetDependencyConfigFromPath(dependencyPath string) error {
 	// parse the dependency path to get the dependency name and version
 	dependencyName, dependencyVersion, err := ParseModDependencyPath(dependencyPath)
 	if err != nil {
@@ -398,6 +401,12 @@ func (m *ModBase[T]) SetDependencyConfig(dependencyPath string) error {
 	m.DependencyName = dependencyName
 	m.Version = dependencyVersion
 	return nil
+}
+
+func (m *ModBase[T]) SetDependencyConfig(dependencyVersion *DependencyVersion, dependencyPath *string, dependencyName string) {
+	m.DependencyPath = dependencyPath
+	m.DependencyName = dependencyName
+	m.Version = dependencyVersion
 }
 
 // RequireHasUnresolvedArgs returns whether the mod has any mod requirements which have unresolved args
@@ -452,4 +461,14 @@ func (m *ModBase[T]) GetModPath() string {
 
 func (m *ModBase[T]) GetRequire() *Require {
 	return m.Require
+}
+func (m *ModBase[T]) SetRequire(require *Require) {
+	m.Require = require
+}
+
+func (m *ModBase[T]) SetTitle(title string) {
+	m.Title = &title
+}
+func (m *ModBase[T]) GetVersion() *DependencyVersion {
+	return m.Version
 }

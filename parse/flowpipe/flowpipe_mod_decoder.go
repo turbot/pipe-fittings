@@ -2,10 +2,6 @@ package flowpipe
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
-	"github.com/turbot/pipe-fittings/parse"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -15,11 +11,29 @@ import (
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/schema"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/turbot/pipe-fittings/parse"
 	"github.com/zclconf/go-cty/cty"
+	"strings"
+
+	"github.com/turbot/pipe-fittings/schema"
 )
 
-func decodeStep(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
+type FlowpipeModDecoder struct {
+	parse.DecoderImpl
+}
+
+func NewFlowpipeModDecoder() parse.Decoder {
+	d := &FlowpipeModDecoder{
+		DecoderImpl: parse.NewDecoderImpl(),
+	}
+	d.DecodeFuncs[schema.BlockTypePipeline] = d.decodePipeline
+	d.DecodeFuncs[schema.BlockTypeTrigger] = d.decodeTrigger
+
+	return d
+}
+
+func (d *FlowpipeModDecoder) decodeStep(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
 
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
@@ -145,31 +159,7 @@ func decodeStep(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseCo
 	return step, diags
 }
 
-func extractExpressionString(expr hcl.Expression, src []byte) string {
-	rng := expr.Range()
-	return string(src[rng.Start.Byte:rng.End.Byte])
-}
-
-// Checks if the given type is in the allowed list
-func containsType(allowedTypes []cty.Type, typ cty.Type) bool {
-	for _, t := range allowedTypes {
-		if t == typ {
-			return true
-		}
-	}
-	return false
-}
-
-// Creates an HCL error diagnostic
-func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
-	return &hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  summary,
-		Subject:  subject,
-	}
-}
-
-func decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.PipelineParam, hcl.Diagnostics) {
+func (d *FlowpipeModDecoder) decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.PipelineParam, hcl.Diagnostics) {
 	o := &flowpipe.PipelineParam{
 		Name: block.Labels[0],
 	}
@@ -187,7 +177,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*fl
 	}
 
 	if attr, exists := paramOptions.Attributes[schema.AttributeTypeType]; exists {
-		ty, diags := parse.decodeTypeExpression(attr)
+		ty, diags := parse.DecodeTypeExpression(attr)
 		if diags.HasErrors() {
 			return o, diags
 		}
@@ -196,7 +186,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*fl
 		// get source data from eval context
 		src := parseCtx.FileData[attr.Expr.Range().Filename]
 
-		o.TypeString = extractExpressionString(attr.Expr, src)
+		o.TypeString = parse.ExtractExpressionString(attr.Expr, src)
 	} else {
 		o.Type = cty.DynamicPseudoType
 		o.TypeString = "any"
@@ -284,7 +274,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*fl
 	}
 
 	if _, exists := paramOptions.Attributes[schema.AttributeTypeTags]; exists {
-		valDiags := parse.decodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
+		valDiags := parse.DecodeProperty(paramOptions, "tags", &o.Tags, parseCtx.EvalCtx)
 		diags = append(diags, valDiags...)
 	}
 
@@ -303,7 +293,7 @@ func decodePipelineParam(block *hcl.Block, parseCtx *parse.ModParseContext) (*fl
 	return o, diags
 }
 
-func decodeOutput(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.PipelineOutput, hcl.Diagnostics) {
+func (d *FlowpipeModDecoder) decodeOutput(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.PipelineOutput, hcl.Diagnostics) {
 
 	o := &flowpipe.PipelineOutput{
 		Name:  block.Labels[0],
@@ -369,7 +359,7 @@ func decodeOutput(block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.
 	return o, diags
 }
 
-func decodeTrigger(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.Trigger, *parse.DecodeResult) {
+func (d *FlowpipeModDecoder) decodeTrigger(block *hcl.Block, parseCtx *parse.ModParseContext) (modconfig.HclResource, *parse.DecodeResult) {
 
 	res := parse.NewDecodeResult()
 
@@ -384,6 +374,7 @@ func decodeTrigger(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPars
 		return nil, res
 	}
 
+	mod := parseCtx.CurrentMod.(*flowpipe.Mod)
 	triggerType := block.Labels[0]
 	triggerName := block.Labels[1]
 
@@ -434,7 +425,7 @@ func decodeTrigger(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPars
 	var triggerParams []flowpipe.PipelineParam
 	for _, block := range triggerOptions.Blocks {
 		if block.Type == schema.BlockTypeParam {
-			param, diags := decodePipelineParam(block, parseCtx)
+			param, diags := d.decodePipelineParam(block, parseCtx)
 			if len(diags) > 0 {
 				res.HandleDecodeDiags(diags)
 				return triggerHcl, res
@@ -462,9 +453,10 @@ func decodeTrigger(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPars
 
 // TODO: validation - if you specify invalid depends_on it doesn't error out
 // TODO: validation - invalid name?
-func decodePipeline(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext) (*flowpipe.Pipeline, *parse.DecodeResult) {
+func (d *FlowpipeModDecoder) decodePipeline(block *hcl.Block, parseCtx *parse.ModParseContext) (modconfig.HclResource, *parse.DecodeResult) {
 	res := parse.NewDecodeResult()
 
+	mod := parseCtx.CurrentMod.(*flowpipe.Mod)
 	// get shell pipelineHcl
 	pipelineHcl := flowpipe.NewPipeline(mod, block)
 
@@ -487,7 +479,7 @@ func decodePipeline(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPar
 	for _, block := range pipelineOptions.Blocks {
 		switch block.Type {
 		case schema.BlockTypePipelineStep:
-			step, diags := decodeStep(mod, block, parseCtx, pipelineHcl)
+			step, diags := d.decodeStep(mod, block, parseCtx, pipelineHcl)
 			if diags.HasErrors() {
 				res.HandleDecodeDiags(diags)
 
@@ -508,7 +500,7 @@ func decodePipeline(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPar
 			pipelineHcl.Steps = append(pipelineHcl.Steps, step)
 
 		case schema.BlockTypePipelineOutput:
-			output, cfgDiags := decodeOutput(block, parseCtx)
+			output, cfgDiags := d.decodeOutput(block, parseCtx)
 			diags = append(diags, cfgDiags...)
 			if len(diags) > 0 {
 				res.HandleDecodeDiags(diags)
@@ -536,7 +528,7 @@ func decodePipeline(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPar
 			}
 
 		case schema.BlockTypeParam:
-			pipelineParam, moreDiags := decodePipelineParam(block, parseCtx)
+			pipelineParam, moreDiags := d.decodePipelineParam(block, parseCtx)
 			if len(moreDiags) > 0 {
 				diags = append(diags, moreDiags...)
 				res.HandleDecodeDiags(diags)
@@ -600,6 +592,25 @@ func decodePipeline(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModPar
 	}
 
 	return pipelineHcl, res
+}
+
+// Checks if the given type is in the allowed list
+func containsType(allowedTypes []cty.Type, typ cty.Type) bool {
+	for _, t := range allowedTypes {
+		if t == typ {
+			return true
+		}
+	}
+	return false
+}
+
+// Creates an HCL error diagnostic
+func createErrorDiagnostic(summary string, subject *hcl.Range) *hcl.Diagnostic {
+	return &hcl.Diagnostic{
+		Severity: hcl.DiagError,
+		Summary:  summary,
+		Subject:  subject,
+	}
 }
 
 func validatePipelineSteps(pipelineHcl *flowpipe.Pipeline) hcl.Diagnostics {

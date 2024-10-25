@@ -56,7 +56,7 @@ func LoadMod[T modconfig.ResourceMapsI](ctx context.Context, modPath string, par
 
 	// now load the mod resource hcl (
 	var resourceResult error_helpers.ErrorAndWarnings
-	mod, resourceResult = loadModResources(ctx, mod, parseCtx)
+	mod, resourceResult = loadModResources[T](ctx, mod, parseCtx)
 
 	ew.Merge(resourceResult)
 	return mod, ew
@@ -74,7 +74,7 @@ func loadModDefinition[T modconfig.ResourceMapsI](modPath string, parseCtx *pars
 	if exists {
 		// load the mod definition to get the dependencies
 		var res *parse.DecodeResult
-		mod, res = parse.ParseModDefinition(modFilePath, parseCtx.EvalCtx)
+		mod, res = parse.ParseModDefinition[T](modFilePath, parseCtx.EvalCtx)
 		if res.Diags.HasErrors() {
 			ew.Error = error_helpers.HclDiagsToError("mod load failed", res.Diags)
 			return nil, ew
@@ -184,7 +184,7 @@ func loadModDependency[T modconfig.ResourceMapsI](ctx context.Context, requiredM
 	return nil
 }
 
-func loadModResources(ctx context.Context, mod modconfig.ModI, parseCtx *parse.ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
+func loadModResources[T modconfig.ResourceMapsI](ctx context.Context, mod modconfig.ModI, parseCtx *parse.ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.GetModPath()))
 	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.GetModPath()))
 
@@ -202,7 +202,7 @@ func loadModResources(ctx context.Context, mod modconfig.ModI, parseCtx *parse.M
 	}
 
 	// parse all hcl files (NOTE - this reads the CurrentMod out of ParseContext and adds to it)
-	mod, errAndWarnings := parse.ParseMod(ctx, fileData, parseCtx)
+	mod, errAndWarnings := parse.ParseMod[T](ctx, fileData, parseCtx)
 
 	return mod, errAndWarnings
 }
@@ -257,7 +257,7 @@ func LoadModWithFileName[T modconfig.ResourceMapsI](ctx context.Context, modPath
 	// populate the resource maps of the current mod using the dependency mods
 	mod.SetResourceMaps(parseCtx.GetResourceMaps())
 	// now load the mod resource hcl (
-	mod, errorsAndWarnings = loadModResources(ctx, mod, parseCtx)
+	mod, errorsAndWarnings = loadModResources[T](ctx, mod, parseCtx)
 
 	// add in any warnings from mod load
 	errorsAndWarnings.AddWarning(loadModResult.Warnings...)
@@ -271,14 +271,14 @@ func loadModDefinitionWithFileName[T modconfig.ResourceMapsI](modPath, modFileNa
 	filehelpers.FileExists(modFilePath)
 	modFileFound := filehelpers.FileExists(modFilePath)
 	if parseCtx.ShouldCreateDefaultMod() && !modFileFound {
-		mod = modconfig.NewMod[T]("local", modPath, hcl.Range{})
+		mod = modconfig.NewModBase[T]("local", modPath, hcl.Range{})
 		return mod, errorsAndWarnings
 	}
 
 	if modFileFound {
 		// load the mod definition to get the dependencies
 		var res *parse.DecodeResult
-		mod, res = parse.ParseModDefinition(modFilePath, parseCtx.EvalCtx)
+		mod, res = parse.ParseModDefinition[T](modFilePath, parseCtx.EvalCtx)
 		if res.Diags.HasErrors() {
 			return nil, error_helpers.DiagsToErrorsAndWarnings("mod load failed", res.Diags)
 		}

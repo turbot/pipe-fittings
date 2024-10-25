@@ -44,3 +44,8 @@ func (b *ResourceWithMetadataImpl) AddReference(ref *ResourceReference) {
 func (b *ResourceWithMetadataImpl) GetReferences() []*ResourceReference {
 	return b.References
 }
+
+// GetRemain implements ResourceWithMetadata
+func (b *ResourceWithMetadataImpl) GetResourceWithMetadataRemain() hcl.Body {
+	return b.ResourceWithMetadataImplRemain
+}
