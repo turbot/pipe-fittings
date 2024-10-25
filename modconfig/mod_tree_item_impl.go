@@ -16,7 +16,8 @@ type ModTreeItemImpl struct {
 	// required to allow partial decoding
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
-	Mod              ModI     `cty:"mod" json:"-"`
+	// TODO K for some reason the auto cty serialisation fails for this struct with a NRE so we manually serialise
+	Mod              ModI     `cty:"-" json:"-"`
 	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
@@ -167,7 +168,18 @@ func (b *ModTreeItemImpl) CtyValue() (cty.Value, error) {
 	if b.disableCtySerialise {
 		return cty.Zero, nil
 	}
-	return cty_helpers.GetCtyValue(b)
+	val, err := cty_helpers.GetCtyValue(b)
+	if err != nil {
+		return cty.NilVal, err
+	}
+	vm := val.AsValueMap()
+	if b.Mod != nil {
+		vm["mod"], err = b.Mod.CtyValue()
+		if err != nil {
+			return cty.NilVal, err
+		}
+	}
+	return cty.ObjectVal(vm), nil
 }
 
 // GetShowData implements printers.Showable
