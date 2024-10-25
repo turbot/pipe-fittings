@@ -39,8 +39,8 @@ func (w *WorkspaceBase[T]) handleFileWatcherEvent(ctx context.Context) {
 }
 
 func (w *WorkspaceBase[T]) ReloadResourceMaps(ctx context.Context) (modconfig.ResourceMapsI, modconfig.ResourceMapsI, error_helpers.ErrorAndWarnings) {
-	w.LoadLock.Lock()
-	defer w.LoadLock.Unlock()
+	w.LoadLock()
+	defer w.LoadUnlock()
 
 	// get the pre-load resource maps
 	// NOTE: do not call GetResourceMaps - we DO NOT want to lock LoadLock

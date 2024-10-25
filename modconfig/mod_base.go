@@ -448,7 +448,7 @@ func (m *ModBase[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (s
 }
 
 func (m *ModBase[T]) GetDependencyName() string {
-	return m.GetDependencyName()
+	return m.DependencyName
 }
 func (m *ModBase[T]) GetDependencyPath() *string {
 	return m.DependencyPath
@@ -461,6 +461,7 @@ func (m *ModBase[T]) GetModPath() string {
 func (m *ModBase[T]) GetRequire() *Require {
 	return m.Require
 }
+
 func (m *ModBase[T]) SetRequire(require *Require) {
 	m.Require = require
 }

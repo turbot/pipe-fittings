@@ -49,26 +49,27 @@ func (d *ModTreeItemDiffs) PopulateChildDiffs(old ModTreeItem, new ModTreeItem) 
 	for childName /*prevChild*/ := range oldChildMap {
 		if _ /*child*/, existInNew := newChildMap[childName]; !existInNew {
 			d.AddRemovedItem(childName)
-		} else {
-			// TODO K sort out referencing
-			// so this resource exists on old and new
-
-			//// TACTICAL
-			//// some child resources are not added to the mod but we must consider them for the diff
-			//var childDiff = &ModTreeItemDiffs{}
-			//switch t := child.(type) {
-			//case *dashboard.DashboardWith:
-			//	childDiff = t.Diff(prevChild.(*dashboard.DashboardWith))
-			//case *dashboard.DashboardNode:
-			//	childDiff = t.Diff(prevChild.(*dashboard.DashboardNode))
-			//case *dashboard.DashboardEdge:
-			//	childDiff = t.Diff(prevChild.(*dashboard.DashboardEdge))
-			//}
-			//if childDiff.HasChanges() {
-			//	d.AddPropertyDiff("Children")
-			//}
-
 		}
+		//else {
+		// TODO K INCOMPLETE sort out referencing
+		// so this resource exists on old and new
+
+		//// TACTICAL
+		//// some child resources are not added to the mod but we must consider them for the diff
+		//var childDiff = &ModTreeItemDiffs{}
+		//switch t := child.(type) {
+		//case *dashboard.DashboardWith:
+		//	childDiff = t.Diff(prevChild.(*dashboard.DashboardWith))
+		//case *dashboard.DashboardNode:
+		//	childDiff = t.Diff(prevChild.(*dashboard.DashboardNode))
+		//case *dashboard.DashboardEdge:
+		//	childDiff = t.Diff(prevChild.(*dashboard.DashboardEdge))
+		//}
+		//if childDiff.HasChanges() {
+		//	d.AddPropertyDiff("Children")
+		//}
+
+		//}
 	}
 	for childName := range newChildMap {
 		if _, existsInOld := oldChildMap[childName]; !existsInOld {

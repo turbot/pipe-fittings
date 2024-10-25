@@ -220,7 +220,8 @@ func (m *ModResources) AddResource(item modconfig.HclResource) hcl.Diagnostics {
 func (m *ModResources) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
 	for _, s := range sourceMaps {
 		source := s.(*ModResources)
-		for k, v := range source.Pipelines {
+		for k, v := range source.
+			Pipelines {
 			m.Pipelines[k] = v
 		}
 		for k, v := range source.Triggers {
@@ -233,6 +234,10 @@ func (m *ModResources) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
 			m.Variables[k] = v
 			//}
 		}
+		for k, v := range source.Mods {
+			m.Mods[k] = v
+		}
+
 	}
 }
 func (m *ModResources) AddReference(ref *modconfig.ResourceReference) {

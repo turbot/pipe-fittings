@@ -26,8 +26,9 @@ func (w *WorkspaceBase[T]) GetQueryProvider(queryName string) (powerpipe.QueryPr
 
 // GetResourceMaps implements ResourceMapsProvider
 func (w *WorkspaceBase[T]) GetResourceMaps() modconfig.ResourceMapsI {
-	w.LoadLock.Lock()
-	defer w.LoadLock.Unlock()
+
+	w.LoadLock()
+	defer w.LoadUnlock()
 
 	// if this a source snapshot workspace, create a ModResources containing ONLY source snapshot paths
 	if len(w.SourceSnapshots) != 0 {

@@ -86,7 +86,7 @@ type WorkspaceBase[T modconfig.ResourceMapsI] struct {
 	SourceSnapshots []string
 
 	watcher     *filewatcher.FileWatcher
-	LoadLock    sync.Mutex
+	loadLock    *sync.Mutex
 	exclusions  []string
 	modFilePath string
 
@@ -221,15 +221,15 @@ func (w *WorkspaceBase[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.E
 	return ew
 }
 
-func (w WorkspaceBase[T]) GetMod() modconfig.ModI {
+func (w *WorkspaceBase[T]) GetMod() modconfig.ModI {
 	return w.Mod
 }
 
-func (w WorkspaceBase[T]) GetMods() map[string]modconfig.ModI {
+func (w *WorkspaceBase[T]) GetMods() map[string]modconfig.ModI {
 	return w.Mods
 }
 
-func (w WorkspaceBase[T]) GetPath() string {
+func (w *WorkspaceBase[T]) GetPath() string {
 	return w.Path
 }
 
@@ -415,4 +415,15 @@ func (w *WorkspaceBase[T]) populateVariablesOnlyMod(parseCtx *parse.ModParseCont
 		diags = append(diags, w.Mod.GetResourceMaps().AddResource(v)...)
 	}
 	return error_helpers.DiagsToErrorsAndWarnings("", diags)
+}
+
+func (w *WorkspaceBase[T]) LoadLock() {
+	if w.loadLock == nil {
+		w.loadLock = &sync.Mutex{}
+	}
+	w.loadLock.Lock()
+}
+
+func (w *WorkspaceBase[T]) LoadUnlock() {
+	w.loadLock.Unlock()
 }
