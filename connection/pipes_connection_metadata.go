@@ -20,7 +20,7 @@ const (
 	prodCoudHost   = "pipes.turbot.com"
 	stgCloudHost   = "pipes.turbot-stg.com"
 	devCloudHost   = "pipes.turbot-dev.com"
-	localCloudHost = "pipes.turbot-local.com:8080"
+	localCloudHost = "pipes.turbot-local.com"
 	mockCloudHost  = "localhost:7104"
 )
 

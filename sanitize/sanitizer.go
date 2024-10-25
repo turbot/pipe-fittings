@@ -82,6 +82,81 @@ var Instance = NewSanitizer(SanitizerOptions{
 		"turbot_secret_key",
 		"servicenow_password",
 		"jumpcloud_api_key",
+		"form_url",
+	},
+	ExcludePatterns: []string{
+		`SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}`,   // sendgrid
+		`AccountKey=[a-zA-Z0-9+/=]{88}`,              // azure storage account key
+		`(?m)(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{36}`, // github_personal_access_token
+	},
+	ImportCodeMatchers: true,
+})
+
+var ServerInstance = NewSanitizer(SanitizerOptions{
+	ExcludeFields: []string{
+		"password",
+		"secretaccesskey",
+		"sessiontoken",
+		"smtp_password",
+		"api_key",
+		"app_key",
+		"api_token",
+		"alert_api_key",
+		"incident_api_key",
+		// "key", // we can't sanitize key because of each.key
+		"token",
+		"cloud_token",
+		"aws_access_key_id",
+		"aws_secret_access_key",
+		"aws_session_token",
+		"clientsecret",
+		"access_token",
+		"access_key",
+		"accesskey",
+		"secret_key",
+		"secretkey",
+		"client_id",
+		"client_secret",
+		"tenant_id",
+		"sourcerecord",
+		"cert",
+		"privatekey",
+		"secretvalue",
+		"slack_token",
+		"abuseipdb_api_key",
+		"sendgrid_api_key",
+		"vtcli_apikey",
+		"zendesk_token",
+		"trello_api_key",
+		"trello_token",
+		"okta_token",
+		"uptimerobot_api_key",
+		"urlscan_api_key",
+		"clickup_token",
+		"pagerduty_token",
+		"discord_token",
+		"ip2locationio_api_key",
+		"ipstack_access_key",
+		"teams_access_token",
+		"pipes_token",
+		"github_token",
+		"gitlab_token",
+		"vault_token",
+		"jira_api_token",
+		"opsgenie_alert_api_key",
+		"opsgenie_incident_api_key",
+		"openai_api_key",
+		"azure_client_id",
+		"azure_client_secret",
+		"azure_tenent_id",
+		"bitbucket_password",
+		"dd_client_api_key",
+		"dd_client_app_key",
+		"freshdesk_api_key",
+		"turbot_access_key",
+		"turbot_secret_key",
+		"servicenow_password",
+		"jumpcloud_api_key",
 	},
 	ExcludePatterns: []string{
 		`SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}`,   // sendgrid
@@ -228,13 +303,15 @@ func (s *Sanitizer) SanitizeString(v string) string {
 		v = v[:r.start] + RedactedStr + v[r.end:]
 	}
 
-	v = redactDbConnectionPassword(v)
+	// found some cases that it causes a JSON string to be invalid, removing for now. The db connection string
+	// should be redacted by Basic Auth redaction anyway.
+	// v = redactDbConnectionPassword(v)
 	return v
 }
 
 // The database connection string is also redacted by the Basic Auth redaction, it will actually redact more than the
 // plain db redaction
-func redactDbConnectionPassword(connectionString string) string {
+func RedactDbConnectionPassword(connectionString string) string {
 	// Define the regex to match and capture only the password part
 	re := regexp.MustCompile(`(?P<protocol>[^:]+://)(?P<username>[^:]+):(?P<password>[^@]+)(?P<rest>@.+)`)
 	// Replace only the password part with "REDACTED"

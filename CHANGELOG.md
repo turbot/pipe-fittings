@@ -2,6 +2,38 @@
 
 Shared Pipes Component
 
+## v1.6.5 [tbd]
+
+_Bug fixes_
+
+* Typos in error messages.
+* Crashes in Go to HCL conversion for complex types.
+
+## v1.6.4 [2024-10-24]
+
+_Bug fixes_
+
+* Coerce input variable entered from terminal to the correct type. ([#595](https://github.com/turbot/pipe-fittings/issues/595)).
+
+## v1.6.3 [2024-10-23]
+
+_Bug fixes_
+
+* `form_url` should be sanitized.
+
+## v1.6.2 [2024-10-22]
+
+_Bug fixes_
+
+* Removed buggy database connection string redaction that may cause some JSON string to be invalid. ([#594](https://github.com/turbot/pipe-fittings/issues/594)).
+
+## v1.6.1 [2024-10-22]
+
+_What's new_
+
+ * Support setting a variable of type Connection using a connection string or cloud workspace handle. ([#592](https://github.com/turbot/pipe-fittings/issues/592)).
+
+
 ## v1.6.0 [2024-10-22]
 
 _What's new_

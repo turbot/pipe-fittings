@@ -17,6 +17,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
+	"github.com/zclconf/go-cty/cty"
 )
 
 // CollectVariableValues inspects the various places that configuration input variable
@@ -49,7 +50,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 			name := raw[:eq]
 			rawVal := raw[eq+1:]
 
-			ret[name] = unparsedVariableValueString{
+			ret[name] = UnparsedVariableValueString{
 				str:        rawVal,
 				name:       name,
 				sourceType: terraform.ValueFromEnvVar,
@@ -122,7 +123,7 @@ func CollectVariableValues(workspacePath string, variableFileArgs []string, vari
 
 		name := raw[:eq]
 		rawVal := raw[eq+1:]
-		ret[name] = unparsedVariableValueString{
+		ret[name] = UnparsedVariableValueString{
 			str:        rawVal,
 			name:       name,
 			sourceType: terraform.ValueFromCLIArg,
@@ -300,17 +301,25 @@ func (v unparsedVariableValueExpression) ParseVariableValue(evalCtx *hcl.EvalCon
 	}, diags
 }
 
-// unparsedVariableValueString is a UnparsedVariableValue
+func (v unparsedVariableValueExpression) ParseVariableValueToType(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode, targetType cty.Type) (*terraform.InputValue, tfdiags.Diagnostics) {
+	return v.ParseVariableValue(evalCtx, mode)
+}
+
+// UnparsedVariableValueString is a UnparsedVariableValue
 // implementation that parses its value from a string. This can be used
 // to deal with values given directly on the command line and via environment
 // variables.
-type unparsedVariableValueString struct {
+type UnparsedVariableValueString struct {
 	str        string
 	name       string
 	sourceType terraform.ValueSourceType
 }
 
-func (v unparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
+func (v UnparsedVariableValueString) Raw() string {
+	return v.str
+}
+
+func (v UnparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode) (*terraform.InputValue, tfdiags.Diagnostics) {
 	var diags tfdiags.Diagnostics
 
 	val, hclDiags := mode.Parse(evalCtx, v.name, v.str)
@@ -320,6 +329,10 @@ func (v unparsedVariableValueString) ParseVariableValue(evalCtx *hcl.EvalContext
 		Value:      val,
 		SourceType: v.sourceType,
 	}, diags
+}
+
+func (v UnparsedVariableValueString) ParseVariableValueToType(evalCtx *hcl.EvalContext, mode modconfig.VariableParsingMode, targetType cty.Type) (*terraform.InputValue, tfdiags.Diagnostics) {
+	return v.ParseVariableValue(evalCtx, mode)
 }
 
 // isAutoVarFile determines if the file ends with .auto.spvars or .auto.spvars.json
