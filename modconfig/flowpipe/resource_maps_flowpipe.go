@@ -204,6 +204,14 @@ func (m *ModResources) AddResource(item modconfig.HclResource) hcl.Diagnostics {
 			break
 		}
 		m.Triggers[name] = r
+	case *modconfig.Variable:
+		name := r.Name()
+		if existing, ok := m.Variables[name]; ok {
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
+			break
+		}
+		m.Variables[name] = r
+
 	}
 
 	return diags
@@ -238,6 +246,7 @@ func (m *ModResources) GetReferences() map[string]*modconfig.ResourceReference {
 func (m *ModResources) GetVariables() map[string]*modconfig.Variable {
 	return m.Variables
 }
+
 func (m *ModResources) GetMods() map[string]modconfig.ModI {
 	return m.Mods
 }
