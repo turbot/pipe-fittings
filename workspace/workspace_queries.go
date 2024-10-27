@@ -7,7 +7,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-func (w *WorkspaceBase[T]) GetQueryProvider(queryName string) (powerpipe.QueryProvider, bool) {
+func (w *Workspace[T]) GetQueryProvider(queryName string) (powerpipe.QueryProvider, bool) {
 	parsedName, err := modconfig.ParseResourceName(queryName)
 	if err != nil {
 		return nil, false
@@ -25,7 +25,7 @@ func (w *WorkspaceBase[T]) GetQueryProvider(queryName string) (powerpipe.QueryPr
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (w *WorkspaceBase[T]) GetResourceMaps() modconfig.ResourceMapsI {
+func (w *Workspace[T]) GetResourceMaps() modconfig.ResourceMapsI {
 
 	w.LoadLock()
 	defer w.LoadUnlock()
@@ -37,6 +37,6 @@ func (w *WorkspaceBase[T]) GetResourceMaps() modconfig.ResourceMapsI {
 	return w.Mod.GetResourceMaps()
 }
 
-func (w *WorkspaceBase[T]) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
+func (w *Workspace[T]) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	return w.GetResourceMaps().GetResource(parsedName)
 }

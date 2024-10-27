@@ -31,7 +31,7 @@ type ModResources struct {
 	DashboardTexts        map[string]*DashboardText
 	DashboardNodes        map[string]*DashboardNode
 	GlobalDashboardInputs map[string]*DashboardInput
-	Locals                map[string]*Local
+	Locals                map[string]*modconfig.Local
 	Variables             map[string]*modconfig.Variable
 	// all mods (including deps)
 	Mods       map[string]modconfig.ModI
@@ -74,7 +74,7 @@ func emptyPowerpipeModResources() *ModResources {
 		DashboardNodes:        make(map[string]*DashboardNode),
 		DashboardCategories:   make(map[string]*DashboardCategory),
 		GlobalDashboardInputs: make(map[string]*DashboardInput),
-		Locals:                make(map[string]*Local),
+		Locals:                make(map[string]*modconfig.Local),
 		Mods:                  make(map[string]modconfig.ModI),
 		Queries:               make(map[string]*Query),
 		References:            make(map[string]*modconfig.ResourceReference),
@@ -865,7 +865,7 @@ func (m *ModResources) AddResource(item modconfig.HclResource) hcl.Diagnostics {
 		}
 		m.Variables[name] = r
 
-	case *Local:
+	case *modconfig.Local:
 		name := r.Name()
 		if existing, ok := m.Locals[name]; ok {
 			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)

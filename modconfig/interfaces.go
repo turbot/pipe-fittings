@@ -41,6 +41,7 @@ type ModI interface {
 	SetFilePath(string)
 	GetFilePath() string
 	IsDefaultMod() bool
+	// TODO K change name
 	GetResourceMaps() ResourceMapsI
 	SetResourceMaps(maps ResourceMapsI)
 	GetInstallCacheKey() string

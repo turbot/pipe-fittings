@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"log/slog"
@@ -89,7 +88,7 @@ func (d *DecoderImpl) decodeLocalsBlock(block *hcl.Block, parseCtx *ModParseCont
 		return nil, res
 	}
 
-	var locals []*powerpipe.Local
+	var locals []*modconfig.Local
 	locals, res = d.decodeLocals(block, parseCtx)
 	for _, local := range locals {
 		resources = append(resources, local)
@@ -154,7 +153,7 @@ func (d *DecoderImpl) decodeResource(block *hcl.Block, parseCtx *ModParseContext
 	return resource, res
 }
 
-func (d *DecoderImpl) decodeLocals(block *hcl.Block, parseCtx *ModParseContext) ([]*powerpipe.Local, *DecodeResult) {
+func (d *DecoderImpl) decodeLocals(block *hcl.Block, parseCtx *ModParseContext) ([]*modconfig.Local, *DecodeResult) {
 	res := NewDecodeResult()
 	attrs, diags := block.Body.JustAttributes()
 	if len(attrs) == 0 {
@@ -163,7 +162,7 @@ func (d *DecoderImpl) decodeLocals(block *hcl.Block, parseCtx *ModParseContext) 
 	}
 
 	// build list of locals
-	locals := make([]*powerpipe.Local, 0, len(attrs))
+	locals := make([]*modconfig.Local, 0, len(attrs))
 	for name, attr := range attrs {
 		if !hclsyntax.ValidIdentifier(name) {
 			res.Diags = append(res.Diags, &hcl.Diagnostic{
@@ -180,7 +179,7 @@ func (d *DecoderImpl) decodeLocals(block *hcl.Block, parseCtx *ModParseContext) 
 		res.HandleDecodeDiags(diags)
 
 		// add to our list
-		locals = append(locals, powerpipe.NewLocal(name, val, attr.Range, parseCtx.CurrentMod))
+		locals = append(locals, modconfig.NewLocal(name, val, attr.Range, parseCtx.CurrentMod))
 	}
 	return locals, res
 }

@@ -20,6 +20,7 @@ type ModResources struct {
 	// flowpipe
 	Pipelines map[string]*Pipeline
 	Triggers  map[string]*Trigger
+	Locals    map[string]*modconfig.Local
 }
 
 func NewModResources(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
@@ -98,7 +99,7 @@ func (m *ModResources) Equals(o modconfig.ResourceMapsI) bool {
 		}
 	}
 
-	// TODO: do we need integration & notifier here?
+	// TODO K: do we need integration & notifier here?
 
 	for name, trigger := range m.Triggers {
 		if otherTrigger, ok := other.Triggers[name]; !ok {
@@ -109,6 +110,12 @@ func (m *ModResources) Equals(o modconfig.ResourceMapsI) bool {
 	}
 	for name := range other.Triggers {
 		if _, ok := m.Triggers[name]; !ok {
+			return false
+		}
+	}
+
+	for name := range other.Locals {
+		if _, ok := m.Locals[name]; !ok {
 			return false
 		}
 	}
@@ -182,7 +189,11 @@ func (m *ModResources) WalkResources(resourceFunc func(item modconfig.HclResourc
 			return err
 		}
 	}
-
+	for _, r := range m.Locals {
+		if continueWalking, err := resourceFunc(r); err != nil || !continueWalking {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -211,7 +222,13 @@ func (m *ModResources) AddResource(item modconfig.HclResource) hcl.Diagnostics {
 			break
 		}
 		m.Variables[name] = r
-
+	case *modconfig.Local:
+		name := r.Name()
+		if existing, ok := m.Locals[name]; ok {
+			diags = append(diags, modconfig.CheckForDuplicate(existing, item)...)
+			break
+		}
+		m.Locals[name] = r
 	}
 
 	return diags
@@ -227,12 +244,18 @@ func (m *ModResources) AddMaps(sourceMaps ...modconfig.ResourceMapsI) {
 		for k, v := range source.Triggers {
 			m.Triggers[k] = v
 		}
+		for k, v := range source.Pipelines {
+			m.Pipelines[k] = v
+		}
 		for k, v := range source.Variables {
 			// TODO check why this was necessary and test variables thoroughly
 			// NOTE: only include variables from root mod  - we add in the others separately
 			//if v.Mod.GetFullName() == m.Mod.GetFullName() {
 			m.Variables[k] = v
 			//}
+		}
+		for k, v := range source.Locals {
+			m.Locals[k] = v
 		}
 		for k, v := range source.Mods {
 			m.Mods[k] = v

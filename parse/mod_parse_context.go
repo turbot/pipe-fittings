@@ -69,7 +69,7 @@ type ModParseContext struct {
 
 	// TODO K these are flowpipe only
 	// TODO K are these even needed?
-	// PipelineHcls map[string]*modconfig.Pipeline
+	// PipelineHcls map[string]*flowpipe.Pipeline
 	TriggerHcls     map[string]*flowpipe.Trigger
 	IntegrationHcls map[string]flowpipe.Integration
 
@@ -132,7 +132,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 
 		// TODO: fix this issue
 		// TODO: temporary mapping until we sort out merging Flowpipe and Steampipe
-		// PipelineHcls: make(map[string]*modconfig.Pipeline),
+		// PipelineHcls: make(map[string]*flowpipe.Pipeline),
 		TriggerHcls:     make(map[string]*flowpipe.Trigger),
 		IntegrationHcls: make(map[string]flowpipe.Integration),
 

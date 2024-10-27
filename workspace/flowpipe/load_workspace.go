@@ -13,7 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
-func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (*FlowpipeWorkspace, error_helpers.ErrorAndWarnings) {
+func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (*workspace.Workspace[*flowpipe.ModResources], error_helpers.ErrorAndWarnings) {
 	// do not load resources if there is no modfile
 	opts = append(opts, WithSkipResourceLoadIfNoModfile(true))
 
@@ -37,7 +37,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 
 // Load_ creates a Workspace and loads the workspace mod
 
-func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (w *FlowpipeWorkspace, ew error_helpers.ErrorAndWarnings) {
+func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (w *workspace.Workspace[*flowpipe.ModResources], ew error_helpers.ErrorAndWarnings) {
 	cfg := newLoadFlowpipeWorkspaceConfig()
 	for _, o := range opts {
 		o(cfg)
@@ -46,14 +46,13 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 	utils.LogTime("w.Load start")
 	defer utils.LogTime("w.Load end")
 
-	w = &FlowpipeWorkspace{
-		WorkspaceBase: workspace.WorkspaceBase[*flowpipe.ModResources]{
-			Path:              workspacePath,
-			VariableValues:    make(map[string]string),
-			ValidateVariables: true,
-			Mod:               modconfig.NewModBase[*flowpipe.ModResources]("local", workspacePath, hcl.Range{}),
-		},
+	w = &workspace.Workspace[*flowpipe.ModResources]{
+		Path:              workspacePath,
+		VariableValues:    make(map[string]string),
+		ValidateVariables: true,
+		Mod:               modconfig.NewModBase[*flowpipe.ModResources]("local", workspacePath, hcl.Range{}),
 	}
+
 	// check whether the workspace contains a modfile
 	// this will determine whether we load files recursively, and create pseudo resources for sql files
 	w.SetModfileExists()
