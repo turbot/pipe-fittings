@@ -23,6 +23,7 @@ type FlowpipeModDecoder struct {
 	parse.DecoderImpl
 }
 
+// TODO K PARR CREDENTIALS IN FROM CONFFIG
 func NewFlowpipeModDecoder() parse.Decoder {
 	d := &FlowpipeModDecoder{
 		DecoderImpl: parse.NewDecoderImpl(),

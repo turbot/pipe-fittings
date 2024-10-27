@@ -64,6 +64,7 @@ type WorkspaceBase[T modconfig.ResourceMapsI] struct {
 	ModInstallationPath string
 	Mod                 modconfig.ModI
 
+	// TODO remove and provide value maps from config somehow???
 	PipelingConnections map[string]connection.PipelingConnection
 	// TODO K flowpiwp specific but needed for now as we must add them to the parse context and that is done by the base workspace
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level

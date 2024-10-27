@@ -158,6 +158,8 @@ func NewCredential(block *hcl.Block) (Credential, error) {
 	credentialName := block.Labels[1]
 	fullName := fmt.Sprintf("%s.%s", credentialType, credentialName)
 	hclResourceImpl := modconfig.NewHclResourceImpl(block, fullName)
+	// update the unqualified name to include the credential type instead of just 'credential'
+	hclResourceImpl.UnqualifiedName = fullName
 
 	credential, err := instantiateCredential(credentialType, hclResourceImpl)
 	if err != nil {
