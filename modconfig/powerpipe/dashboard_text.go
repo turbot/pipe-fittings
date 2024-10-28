@@ -24,10 +24,10 @@ type DashboardText struct {
 	Display *string `cty:"display" hcl:"display" json:"display,omitempty"`
 
 	Base *DashboardText `hcl:"base" json:"-"`
-	Mod  modconfig.ModI `cty:"mod" json:"-"`
+	Mod  *modconfig.Mod `cty:"mod" json:"-"`
 }
 
-func NewDashboardText(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardText(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	t := &DashboardText{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}

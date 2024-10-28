@@ -11,12 +11,12 @@ import (
 // This is provided to avoid db needing to reference workspace package
 type ModResources struct {
 	// the parent mod
-	Mod *modconfig.Mod[*ModResources]
+	Mod *modconfig.Mod
 
 	Variables map[string]*modconfig.Variable
 	// all mods (including deps)
 	// TODO KAI store as interfaces so GetMods satisfies the interface
-	Mods       map[string]modconfig.ModI
+	Mods       map[string]*modconfig.Mod
 	References map[string]*modconfig.ResourceReference
 	// flowpipe
 	Pipelines map[string]*Pipeline
@@ -24,11 +24,7 @@ type ModResources struct {
 	Locals    map[string]*modconfig.Local
 }
 
-func NewModResources(m modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
-	// TODO K avoid need for this
-	// we know mod will be a flowpipe mod
-	mod := m.(*modconfig.Mod[*ModResources])
-
+func NewModResources(mod *modconfig.Mod, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
 	res := emptyFlowpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -39,7 +35,7 @@ func NewModResources(m modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) mo
 func emptyFlowpipeModResources() *ModResources {
 	return &ModResources{
 
-		Mods:      make(map[string]modconfig.ModI),
+		Mods:      make(map[string]*modconfig.Mod),
 		Variables: make(map[string]*modconfig.Variable),
 
 		// Flowpipe
@@ -280,7 +276,7 @@ func (m *ModResources) GetVariables() map[string]*modconfig.Variable {
 	return m.Variables
 }
 
-func (m *ModResources) GetMods() map[string]modconfig.ModI {
+func (m *ModResources) GetMods() map[string]*modconfig.Mod {
 
 	return m.Mods
 }

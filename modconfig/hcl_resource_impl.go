@@ -148,7 +148,7 @@ func (h *HclResourceImpl) GetShortName() string {
 	return h.ShortName
 }
 
-// GetFullName implements ModI
+// GetFullName implements *Mod
 func (h *HclResourceImpl) GetFullName() string {
 	return h.FullName
 }

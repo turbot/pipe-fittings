@@ -21,7 +21,7 @@ import (
 // LoadMod parses all hcl files in modPath and returns a single mod
 // NOTE: it is an error if there is more than 1 mod defined, however zero mods is acceptable
 // - a default mod will be created assuming there are any resource files
-func LoadMod[T modconfig.ResourceMapsI](ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod modconfig.ModI, ew error_helpers.ErrorAndWarnings) {
+func LoadMod[T modconfig.ResourceMapsI](ctx context.Context, modPath string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, ew error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("LoadMod start: %s", modPath))
 	defer utils.LogTime(fmt.Sprintf("LoadMod end: %s", modPath))
 
@@ -62,11 +62,11 @@ func LoadMod[T modconfig.ResourceMapsI](ctx context.Context, modPath string, par
 	return mod, ew
 }
 
-func loadModDefinition[T modconfig.ResourceMapsI](modPath string, parseCtx *parse.ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
+func loadModDefinition[T modconfig.ResourceMapsI](modPath string, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("loadModDefinition start: %s", modPath))
 	defer utils.LogTime(fmt.Sprintf("loadModDefinition end: %s", modPath))
 
-	var mod modconfig.ModI
+	var mod *modconfig.Mod
 	ew := error_helpers.ErrorAndWarnings{}
 
 	// verify the mod folder exists
@@ -90,19 +90,19 @@ func loadModDefinition[T modconfig.ResourceMapsI](modPath string, parseCtx *pars
 			return nil, ew
 		}
 		// just create a default mod
-		mod = modconfig.CreateDefaultMod[T](modPath)
-	}
-	// add metadata
-	// NOTE: set the current mod on the parse context before adding metadata
-	parseCtx.CurrentMod = mod
-	diags := parse.AddResourceMetadata(mod, mod.GetHclResourceImpl().DeclRange, parseCtx)
-	moreEw := error_helpers.DiagsToErrorsAndWarnings("", diags)
-	ew.Merge(moreEw)
+		mod = modconfig.CreateDefaultMod(modPath)
+}
+// add metadata
+// NOTE: set the current mod on the parse context before adding metadata
+parseCtx.CurrentMod = mod
+diags := parse.AddResourceMetadata(mod, mod.GetHclResourceImpl().DeclRange, parseCtx)
+moreEw := error_helpers.DiagsToErrorsAndWarnings("", diags)
+ew.Merge(moreEw)
 
-	return mod, ew
+return mod, ew
 }
 
-func loadModDependenciesAsync[T modconfig.ResourceMapsI](ctx context.Context, parent modconfig.ModI, parseCtx *parse.ModParseContext) error {
+func loadModDependenciesAsync[T modconfig.ResourceMapsI](ctx context.Context, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
 	utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s start", parent.GetModPath()))
 	defer utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s end", parent.GetModPath()))
 
@@ -142,7 +142,7 @@ func loadModDependenciesAsync[T modconfig.ResourceMapsI](ctx context.Context, pa
 	return error_helpers.CombineErrors(errors...)
 }
 
-func loadModDependency[T modconfig.ResourceMapsI](ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent modconfig.ModI, parseCtx *parse.ModParseContext) error {
+func loadModDependency[T modconfig.ResourceMapsI](ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
 	// get the locked version of this dependency
 	modDependency, err := parseCtx.WorkspaceLock.GetLockedModVersion(requiredModVersion, parent)
 	if err != nil {
@@ -184,7 +184,7 @@ func loadModDependency[T modconfig.ResourceMapsI](ctx context.Context, requiredM
 	return nil
 }
 
-func loadModResources[T modconfig.ResourceMapsI](ctx context.Context, mod modconfig.ModI, parseCtx *parse.ModParseContext) (modconfig.ModI, error_helpers.ErrorAndWarnings) {
+func loadModResources[T modconfig.ResourceMapsI](ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.GetModPath()))
 	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.GetModPath()))
 
@@ -227,7 +227,7 @@ func getSourcePaths(ctx context.Context, modPath string, listOpts filehelpers.Li
 
 // Deprecated
 // TODO this function is included for backwards compatibility - it is used for Flowpipe LoadPipelines
-func LoadModWithFileName[T modconfig.ResourceMapsI](ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod modconfig.ModI, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+func LoadModWithFileName[T modconfig.ResourceMapsI](ctx context.Context, modPath, modFile string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
 	defer func() {
 		if r := recover(); r != nil {
 			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
@@ -264,14 +264,14 @@ func LoadModWithFileName[T modconfig.ResourceMapsI](ctx context.Context, modPath
 	return mod, errorsAndWarnings
 }
 
-func loadModDefinitionWithFileName[T modconfig.ResourceMapsI](modPath, modFileName string, parseCtx *parse.ModParseContext) (mod modconfig.ModI, errorsAndWarnings error_helpers.ErrorAndWarnings) {
+func loadModDefinitionWithFileName[T modconfig.ResourceMapsI](modPath, modFileName string, parseCtx *parse.ModParseContext) (mod *modconfig.Mod, errorsAndWarnings error_helpers.ErrorAndWarnings) {
 	modFilePath := filepath.Join(modPath, modFileName)
 
 	// only create transient local mod if the mod file does not exist
 	filehelpers.FileExists(modFilePath)
 	modFileFound := filehelpers.FileExists(modFilePath)
 	if parseCtx.ShouldCreateDefaultMod() && !modFileFound {
-		mod = modconfig.NewModBase[T]("local", modPath, hcl.Range{})
+		mod = modconfig.NewMod("local", modPath, hcl.Range{})
 		return mod, errorsAndWarnings
 	}
 
@@ -290,8 +290,8 @@ func loadModDefinitionWithFileName[T modconfig.ResourceMapsI](modPath, modFileNa
 			return nil, errorsAndWarnings
 		}
 		// just create a default mod
-		mod = modconfig.CreateDefaultMod[T](modPath)
+		mod = modconfig.CreateDefaultMod(modPath)
 
-	}
-	return mod, errorsAndWarnings
+}
+return mod, errorsAndWarnings
 }

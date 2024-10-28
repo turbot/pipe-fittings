@@ -8,7 +8,7 @@ import (
 // ModVariableMap is a struct containing maps of variable definitions
 type ModVariableMap struct {
 	// which mod have these variables been loaded for?
-	Mod ModI
+	Mod *Mod
 	// top level variables, keyed by short name
 	RootVariables map[string]*Variable
 	// map of dependency variable maps, keyed by dependency NAME
@@ -21,7 +21,7 @@ type ModVariableMap struct {
 }
 
 // NewModVariableMap builds a ModVariableMap using the variables from a mod and its dependencies
-func NewModVariableMap(mod ModI) (*ModVariableMap, error) {
+func NewModVariableMap(mod *Mod) (*ModVariableMap, error) {
 	m := &ModVariableMap{
 		Mod:                 mod,
 		RootVariables:       make(map[string]*Variable),

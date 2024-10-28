@@ -13,7 +13,7 @@ type ModDependencyConfig struct {
 	DependencyPath *string
 }
 
-func (c ModDependencyConfig) SetModProperties(mod modconfig.ModI) {
+func (c ModDependencyConfig) SetModProperties(mod *modconfig.Mod) {
 	mod.SetDependencyConfig(&c.ModDependency.DependencyVersion, c.DependencyPath, c.ModDependency.Name)
 }
 

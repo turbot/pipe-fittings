@@ -10,7 +10,7 @@ import (
 )
 
 type InstallOpts[T modconfig.ResourceMapsI] struct {
-	WorkspaceMod   modconfig.ModI
+	WorkspaceMod   *modconfig.Mod
 	Command        string
 	ModArgs        []string
 	DryRun         bool
@@ -19,7 +19,7 @@ type InstallOpts[T modconfig.ResourceMapsI] struct {
 	UpdateStrategy string
 }
 
-func NewInstallOpts[T modconfig.ResourceMapsI](workspaceMod modconfig.ModI, modsToInstall ...string) *InstallOpts[T] {
+func NewInstallOpts[T modconfig.ResourceMapsI](workspaceMod *modconfig.Mod, modsToInstall ...string) *InstallOpts[T] {
 	cmdName := viper.Get(constants.ConfigKeyActiveCommand).(*cobra.Command).Name()
 
 	// for install command, if there is a target mod, and if the pull strategy has not been explicitly set, set it to latest

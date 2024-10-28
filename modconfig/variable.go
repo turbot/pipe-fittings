@@ -47,7 +47,7 @@ type Variable struct {
 	Format                     string              `json:"-"`
 }
 
-func NewVariable(v *RawVariable, mod ModI) *Variable {
+func NewVariable(v *RawVariable, mod *Mod) *Variable {
 	var defaultGo interface{} = nil
 	if !v.Default.IsNull() {
 		defaultGo, _ = hclhelpers.CtyToGo(v.Default)

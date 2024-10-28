@@ -11,7 +11,7 @@ import (
 
 const ValueFromModFile terraform.ValueSourceType = 'M'
 
-func CollectVariableValuesFromModRequire(m modconfig.ModI, lock *versionmap.WorkspaceLock) (terraform.InputValues, error) {
+func CollectVariableValuesFromModRequire(m *modconfig.Mod, lock *versionmap.WorkspaceLock) (terraform.InputValues, error) {
 	res := make(terraform.InputValues)
 	if require := m.GetRequire(); require != nil {
 		for _, depModConstraint := range require.Mods {

@@ -50,7 +50,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 		Path:              workspacePath,
 		VariableValues:    make(map[string]string),
 		ValidateVariables: true,
-		Mod:               modconfig.NewModBase[*flowpipe.ModResources]("local", workspacePath, hcl.Range{}),
+		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
 	}
 
 	// check whether the workspace contains a modfile

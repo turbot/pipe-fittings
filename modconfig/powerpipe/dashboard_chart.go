@@ -30,7 +30,7 @@ type DashboardChart struct {
 	Base       *DashboardChart                  `hcl:"base" json:"-"`
 }
 
-func NewDashboardChart(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardChart(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	c := &DashboardChart{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

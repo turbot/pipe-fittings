@@ -2,7 +2,6 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -28,47 +27,49 @@ type HclResource interface {
 	GetHclResourceImpl() *HclResourceImpl
 }
 
-// TODO K make generic??
-// type ModI[T ResourceMapsI] interface {
-type ModI interface {
-	HclResource
-	ModTreeItem
-	ResourceProvider
-	ResourceWithMetadata
-	GetDependencyName() string
-	GetDependencyPath() *string
-	GetModPath() string
-	SetFilePath(string)
-	GetFilePath() string
-	IsDefaultMod() bool
-	// TODO K change name
-	GetResourceMaps() ResourceMapsI
-	SetResourceMaps(maps ResourceMapsI)
-	GetInstallCacheKey() string
-	AddResource(item HclResource) hcl.Diagnostics
-	GetRequire() *Require
-	SetRequire(*Require)
-	HasDependentMods() bool
-	WalkResources(resourceFunc func(item HclResource) (bool, error)) error
-	SetDatabase(*string)
-	SetSearchPath([]string)
-	SetSearchPathPrefix([]string)
-	ValidateRequirements(versionMap *plugin.PluginVersionMap) []error
-	SetTitle(string)
-	BuildResourceTree(mods ModMap) error
-	SetDependencyConfigFromPath(dependencyPath string) error
-	SetDependencyConfig(*DependencyVersion, *string, string)
-	GetModDependency(modName string) *ModVersionConstraint
-	RemoveAllModDependencies()
-	RemoveModDependencies(mods map[string]*ModVersionConstraint)
-	AddModDependencies(mods map[string]*ModVersionConstraint)
-	GetVersion() *DependencyVersion
-	Save() error
-	CacheKey() string
-	GetDefaultConnectionString(context *hcl.EvalContext) (string, error)
-	CtyValue() (cty.Value, error)
-	GetConnectionDependsOn() []string
-}
+//
+//// TODO K make generic??
+//// type *Mod  interface {
+//type
+//*Mod interface {
+//HclResource
+//ModTreeItem
+//ResourceProvider
+//ResourceWithMetadata
+//GetDependencyName() string
+//GetDependencyPath() *string
+//GetModPath() string
+//SetFilePath(string)
+//GetFilePath() string
+//IsDefaultMod() bool
+//// TODO K change name
+//GetResourceMaps() ResourceMapsI
+//SetResourceMaps(maps ResourceMapsI)
+//GetInstallCacheKey() string
+//AddResource(item HclResource) hcl.Diagnostics
+//GetRequire() *Require
+//SetRequire(*Require)
+//HasDependentMods() bool
+//WalkResources(resourceFunc func (item HclResource) (bool, error)) error
+//SetDatabase(*string)
+//SetSearchPath([]string)
+//SetSearchPathPrefix([]string)
+//ValidateRequirements(versionMap *plugin.PluginVersionMap) []error
+//SetTitle(string)
+//BuildResourceTree(mods ModMap) error
+//SetDependencyConfigFromPath(dependencyPath string) error
+//SetDependencyConfig(*DependencyVersion, *string, string)
+//GetModDependency(modName string) *ModVersionConstraint
+//RemoveAllModDependencies()
+//RemoveModDependencies(mods map[string]*ModVersionConstraint)
+//AddModDependencies(mods map[string]*ModVersionConstraint)
+//GetVersion() *DependencyVersion
+//Save() error
+//CacheKey() string
+//GetDefaultConnectionString(context *hcl.EvalContext) (string, error)
+//CtyValue() (cty.Value, error)
+//GetConnectionDependsOn() []string
+//}
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy
 // i.e. Control, Benchmark, Dashboard
@@ -96,7 +97,7 @@ type DatabaseItem interface {
 }
 
 type ModItem interface {
-	GetMod() ModI
+	GetMod() *Mod
 }
 
 type CtyValueProvider interface {
@@ -123,7 +124,7 @@ type ResourceMapsI interface {
 	AddReference(ref *ResourceReference)
 	GetReferences() map[string]*ResourceReference
 	GetVariables() map[string]*Variable
-	GetMods() map[string]ModI
+	GetMods() map[string]*Mod
 	TopLevelResources() ResourceMapsI
 	AddMaps(i ...ResourceMapsI)
 }

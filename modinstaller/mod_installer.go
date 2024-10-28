@@ -31,7 +31,7 @@ type ModInstaller[T modconfig.ResourceMapsI] struct {
 	installData *InstallData
 
 	// this will be updated as changes are made to dependencies
-	workspaceMod modconfig.ModI
+	workspaceMod *modconfig.Mod
 
 	// since changes are made to workspaceMod, we need a copy of the Require as is on disk
 	// to be able to calculate changes
@@ -289,7 +289,7 @@ func (i *ModInstaller[T]) shouldCommitShadow(ctx context.Context, installError e
 	return installError == nil || i.force
 }
 
-func (i *ModInstaller[T]) installMods(ctx context.Context, parent modconfig.ModI) (err error) {
+func (i *ModInstaller[T]) installMods(ctx context.Context, parent *modconfig.Mod) (err error) {
 	defer func() {
 		var commitErr error
 		if i.shouldCommitShadow(ctx, err) {
@@ -354,7 +354,7 @@ func (i *ModInstaller[T]) buildInstallError(errors []error) error {
 	return err
 }
 
-func (i *ModInstaller[T]) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *DependencyMod, parent modconfig.ModI, commandTargettingParent bool) error {
+func (i *ModInstaller[T]) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *DependencyMod, parent *modconfig.Mod, commandTargettingParent bool) error {
 	if error_helpers.IsContextCanceled(ctx) {
 		// short circuit if the execution context has been cancelled
 		return ctx.Err()
@@ -400,8 +400,8 @@ func (i *ModInstaller[T]) installModDependenciesRecursively(ctx context.Context,
 	return nil
 }
 
-func (i *ModInstaller[T]) install(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent modconfig.ModI) (installedMod *DependencyMod, err error) {
-	var modDef modconfig.ModI
+func (i *ModInstaller[T]) install(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (installedMod *DependencyMod, err error) {
+	var modDef *modconfig.Mod
 	var resolvedRef *versionmap.ResolvedVersionConstraint
 
 	defer func() {
@@ -473,7 +473,7 @@ func (i *ModInstaller[T]) install(ctx context.Context, requiredModVersion *modco
 }
 
 // install a mod
-func (i *ModInstaller[T]) installFromTag(dependency *versionmap.ResolvedVersionConstraint) (modconfig.ModI, error) {
+func (i *ModInstaller[T]) installFromTag(dependency *versionmap.ResolvedVersionConstraint) (*modconfig.Mod, error) {
 	// get the temp location to install the mod to
 	dependencyPath := dependency.DependencyPath()
 	destPath := i.getDependencyShadowPath(dependencyPath)
@@ -506,7 +506,7 @@ func (i *ModInstaller[T]) installFromTag(dependency *versionmap.ResolvedVersionC
 	return modDef, nil
 }
 
-func (i *ModInstaller[T]) installFromBranch(_ context.Context, modVersion *modconfig.ModVersionConstraint) (*versionmap.ResolvedVersionConstraint, modconfig.ModI, error) {
+func (i *ModInstaller[T]) installFromBranch(_ context.Context, modVersion *modconfig.ModVersionConstraint) (*versionmap.ResolvedVersionConstraint, *modconfig.Mod, error) {
 	// build a DependencyVersion
 	var dependencyVersion = &modconfig.DependencyVersion{
 		Branch: modVersion.BranchName,
@@ -581,7 +581,7 @@ func (i *ModInstaller[T]) installFromGit(repoName string, gitRefName plumbing.Re
 	return repo, nil
 }
 
-func (i *ModInstaller[T]) installFromFilepath(_ context.Context, modVersion *modconfig.ModVersionConstraint, parent modconfig.ModI) (*versionmap.ResolvedVersionConstraint, modconfig.ModI, error) {
+func (i *ModInstaller[T]) installFromFilepath(_ context.Context, modVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*versionmap.ResolvedVersionConstraint, *modconfig.Mod, error) {
 	// build a DependencyVersion
 	// convert the filename to absolute
 	filePath := i.toAbsoluteFilepath(modVersion.FilePath, parent.GetModPath())
@@ -658,8 +658,8 @@ func (i *ModInstaller[T]) getModForRequirement(ctx context.Context, requiredModV
 
 // loadDependencyMod tries to load the mod definition from the shadow directory
 // and falls back to the 'mods' directory of the root mod
-func (i *ModInstaller[T]) loadDependencyMod(ctx context.Context, modVersion *versionmap.ResolvedVersionConstraint) (modconfig.ModI, error) {
-	var modDefinition modconfig.ModI
+func (i *ModInstaller[T]) loadDependencyMod(ctx context.Context, modVersion *versionmap.ResolvedVersionConstraint) (*modconfig.Mod, error) {
+	var modDefinition *modconfig.Mod
 
 	// construct the dependency path - this is the relative path of the dependency we are installing
 	dependencyPath := modVersion.DependencyPath()
@@ -700,7 +700,7 @@ func (i *ModInstaller[T]) loadDependencyMod(ctx context.Context, modVersion *ver
 	return modDefinition, nil
 }
 
-func (i *ModInstaller[T]) loadDependencyModFromRoot(ctx context.Context, modInstallRoot string, dependencyPath string) (modconfig.ModI, error) {
+func (i *ModInstaller[T]) loadDependencyModFromRoot(ctx context.Context, modInstallRoot string, dependencyPath string) (*modconfig.Mod, error) {
 	slog.Debug("loadDependencyModFromRoot", "dependencyPath", dependencyPath, "modInstallRoot", modInstallRoot)
 
 	modPath := path.Join(modInstallRoot, dependencyPath)
@@ -884,7 +884,7 @@ func (i *ModInstaller[T]) getDependencyShadowPath(dependencyFullName string) str
 }
 
 // set the mod dependency path
-func (i *ModInstaller[T]) setModDependencyConfig(mod modconfig.ModI, dependencyPath string) error {
+func (i *ModInstaller[T]) setModDependencyConfig(mod *modconfig.Mod, dependencyPath string) error {
 	return mod.SetDependencyConfigFromPath(dependencyPath)
 }
 

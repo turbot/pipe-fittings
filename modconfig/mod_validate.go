@@ -7,7 +7,7 @@ import (
 )
 
 // ensure we have resolved all Children in the resource tree
-func (m *Mod[T]) validateResourceTree() error {
+func (m *Mod) validateResourceTree() error {
 	var errors []error
 	for _, child := range m.GetChildren() {
 		if err := m.validateChildren(child); err != nil {
@@ -17,7 +17,7 @@ func (m *Mod[T]) validateResourceTree() error {
 	return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("failed to resolve Children for %d resources", len(errors)), errors...)
 }
 
-func (m *Mod[T]) validateChildren(item ModTreeItem) error {
+func (m *Mod) validateChildren(item ModTreeItem) error {
 	missing := 0
 	for _, child := range item.GetChildren() {
 		if child == nil {

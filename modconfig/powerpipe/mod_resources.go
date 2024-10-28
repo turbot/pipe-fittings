@@ -12,7 +12,7 @@ import (
 // This is provided to avoid db needing to reference workspace package
 type ModResources struct {
 	// the parent mod
-	Mod modconfig.ModI
+	Mod *modconfig.Mod
 
 	Benchmarks            map[string]*Benchmark
 	Controls              map[string]*Control
@@ -34,14 +34,14 @@ type ModResources struct {
 	Locals                map[string]*modconfig.Local
 	Variables             map[string]*modconfig.Variable
 	// all mods (including deps)
-	Mods       map[string]modconfig.ModI
+	Mods       map[string]*modconfig.Mod
 	Queries    map[string]*Query
 	References map[string]*modconfig.ResourceReference
 	// map of snapshot paths, keyed by snapshot name
 	Snapshots map[string]string
 }
 
-func NewModResources(mod modconfig.ModI, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
+func NewModResources(mod *modconfig.Mod, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
 	res := emptyPowerpipeModResources()
 	res.Mod = mod
 	res.Mods[mod.GetInstallCacheKey()] = mod
@@ -75,7 +75,7 @@ func emptyPowerpipeModResources() *ModResources {
 		DashboardCategories:   make(map[string]*DashboardCategory),
 		GlobalDashboardInputs: make(map[string]*DashboardInput),
 		Locals:                make(map[string]*modconfig.Local),
-		Mods:                  make(map[string]modconfig.ModI),
+		Mods:                  make(map[string]*modconfig.Mod),
 		Queries:               make(map[string]*Query),
 		References:            make(map[string]*modconfig.ResourceReference),
 		Snapshots:             make(map[string]string),
@@ -995,6 +995,6 @@ func (m *ModResources) GetVariables() map[string]*modconfig.Variable {
 	return m.Variables
 }
 
-func (m *ModResources) GetMods() map[string]modconfig.ModI {
+func (m *ModResources) GetMods() map[string]*modconfig.Mod {
 	return m.Mods
 }

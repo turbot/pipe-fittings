@@ -31,7 +31,7 @@ type DashboardContainer struct {
 	runtimeDependencyGraph *topsort.Graph
 }
 
-func NewDashboardContainer(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardContainer(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	c := &DashboardContainer{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}

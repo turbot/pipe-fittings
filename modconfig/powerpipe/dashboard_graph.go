@@ -37,7 +37,7 @@ type DashboardGraph struct {
 	Base *DashboardGraph `hcl:"base" json:"-"`
 }
 
-func NewDashboardGraph(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardGraph(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	g := &DashboardGraph{
 		Categories:        make(map[string]*DashboardCategory),
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),

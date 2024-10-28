@@ -28,7 +28,7 @@ type DashboardImage struct {
 	Base *DashboardImage `hcl:"base" json:"-"`
 }
 
-func NewDashboardImage(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardImage(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	i := &DashboardImage{
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),
 	}

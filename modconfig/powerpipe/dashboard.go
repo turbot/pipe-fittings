@@ -40,7 +40,7 @@ type Dashboard struct {
 	runtimeDependencyGraph *topsort.Graph
 }
 
-func NewDashboard(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboard(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	d := &Dashboard{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}

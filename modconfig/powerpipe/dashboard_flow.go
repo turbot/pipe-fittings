@@ -35,7 +35,7 @@ type DashboardFlow struct {
 	Base *DashboardFlow `hcl:"base" json:"-"`
 }
 
-func NewDashboardFlow(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardFlow(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	f := &DashboardFlow{
 		Categories:        make(map[string]*DashboardCategory),
 		QueryProviderImpl: NewQueryProviderImpl(block, mod, shortName),

@@ -85,7 +85,7 @@ func AddResourceToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx
 func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) bool {
 	switch resource.(type) {
 	// do not add mods, withs
-	case modconfig.ModI, *powerpipe.DashboardWith:
+	case *modconfig.Mod, *powerpipe.DashboardWith:
 		return false
 
 	case *powerpipe.DashboardCategory, *powerpipe.DashboardInput:
@@ -98,7 +98,7 @@ func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *
 	}
 }
 
-func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod modconfig.ModI) (modconfig.ModI, *DecodeResult) {
+func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (*modconfig.Mod, *DecodeResult) {
 	res := NewDecodeResult()
 
 	// decode the database attribute separately
@@ -149,9 +149,9 @@ func ResourceForBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.Hc
 	mod := parseCtx.CurrentMod
 	blockName := parseCtx.DetermineBlockName(block)
 
-	factoryFuncs := map[string]func(*hcl.Block, modconfig.ModI, string) modconfig.HclResource{
+	factoryFuncs := map[string]func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource{
 		// for block type mod, just use the current mod
-		schema.BlockTypeMod:       func(*hcl.Block, modconfig.ModI, string) modconfig.HclResource { return mod },
+		schema.BlockTypeMod:       func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource { return mod },
 		schema.BlockTypeQuery:     powerpipe.NewQuery,
 		schema.BlockTypeControl:   powerpipe.NewControl,
 		schema.BlockTypeBenchmark: powerpipe.NewBenchmark,

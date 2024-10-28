@@ -31,7 +31,7 @@ type DashboardCategory struct {
 	Base          *DashboardCategory                    `hcl:"base" json:"base,omitempty"`
 }
 
-func NewDashboardCategory(block *hcl.Block, mod modconfig.ModI, shortName string) modconfig.HclResource {
+func NewDashboardCategory(block *hcl.Block, mod *modconfig.Mod, shortName string) modconfig.HclResource {
 	c := &DashboardCategory{
 		ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),
 	}

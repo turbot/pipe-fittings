@@ -34,7 +34,7 @@ func NewFlowpipeModDecoder() parse.Decoder {
 	return d
 }
 
-func (d *FlowpipeModDecoder) decodeStep(mod modconfig.ModI, block *hcl.Block, parseCtx *parse.ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
+func (d *FlowpipeModDecoder) decodeStep(mod *modconfig.Mod, block *hcl.Block, parseCtx *parse.ModParseContext, pipelineHcl *flowpipe.Pipeline) (flowpipe.PipelineStep, hcl.Diagnostics) {
 
 	stepType := block.Labels[0]
 	stepName := block.Labels[1]
@@ -375,11 +375,10 @@ func (d *FlowpipeModDecoder) decodeTrigger(block *hcl.Block, parseCtx *parse.Mod
 		return nil, res
 	}
 
-	mod := parseCtx.CurrentMod.(*modconfig.Mod[*flowpipe.ModResources])
 	triggerType := block.Labels[0]
 	triggerName := block.Labels[1]
 
-	triggerHcl := flowpipe.NewTrigger(block, mod, triggerType, triggerName)
+	triggerHcl := flowpipe.NewTrigger(block, parseCtx.CurrentMod, triggerType, triggerName)
 
 	triggerSchema := GetTriggerBlockSchema(triggerType)
 	if triggerSchema == nil {
@@ -411,13 +410,13 @@ func (d *FlowpipeModDecoder) decodeTrigger(block *hcl.Block, parseCtx *parse.Mod
 		return nil, res
 	}
 
-	diags = triggerHcl.Config.SetAttributes(mod, triggerHcl, triggerOptions.Attributes, parseCtx.EvalCtx)
+	diags = triggerHcl.Config.SetAttributes(parseCtx.CurrentMod, triggerHcl, triggerOptions.Attributes, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.HandleDecodeDiags(diags)
 		return triggerHcl, res
 	}
 
-	diags = triggerHcl.Config.SetBlocks(mod, triggerHcl, triggerOptions.Blocks, parseCtx.EvalCtx)
+	diags = triggerHcl.Config.SetBlocks(parseCtx.CurrentMod, triggerHcl, triggerOptions.Blocks, parseCtx.EvalCtx)
 	if len(diags) > 0 {
 		res.HandleDecodeDiags(diags)
 		return triggerHcl, res
@@ -457,7 +456,7 @@ func (d *FlowpipeModDecoder) decodeTrigger(block *hcl.Block, parseCtx *parse.Mod
 func (d *FlowpipeModDecoder) decodePipeline(block *hcl.Block, parseCtx *parse.ModParseContext) (modconfig.HclResource, *parse.DecodeResult) {
 	res := parse.NewDecodeResult()
 
-	mod := parseCtx.CurrentMod.(*modconfig.Mod[*flowpipe.ModResources])
+	mod := parseCtx.CurrentMod
 	// get shell pipelineHcl
 	pipelineHcl := flowpipe.NewPipeline(mod, block)
 

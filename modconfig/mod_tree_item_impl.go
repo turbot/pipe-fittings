@@ -17,7 +17,7 @@ type ModTreeItemImpl struct {
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
 	// TODO K for some reason the auto cty serialisation fails for this struct with a NRE so we manually serialise
-	Mod              ModI     `cty:"-" json:"-"`
+	Mod              *Mod     `cty:"-" json:"-"`
 	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
@@ -30,7 +30,7 @@ type ModTreeItemImpl struct {
 	Children []ModTreeItem
 }
 
-func NewModTreeItemImpl(block *hcl.Block, mod ModI, shortName string) ModTreeItemImpl {
+func NewModTreeItemImpl(block *hcl.Block, mod *Mod, shortName string) ModTreeItemImpl {
 	fullName := fmt.Sprintf("%s.%s.%s", mod.GetShortName(), block.Type, shortName)
 
 	return ModTreeItemImpl{
@@ -90,7 +90,7 @@ func (b *ModTreeItemImpl) SetPaths() {
 }
 
 // GetMod implements ModItem, ModTreeItem
-func (b *ModTreeItemImpl) GetMod() ModI {
+func (b *ModTreeItemImpl) GetMod() *Mod {
 	return b.Mod
 }
 

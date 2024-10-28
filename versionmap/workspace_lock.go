@@ -222,7 +222,7 @@ func (l *WorkspaceLock) Delete() error {
 }
 
 // DeleteMods removes mods from the lock file then, if it is empty, deletes the file
-func (l *WorkspaceLock) DeleteMods(mods map[string]*modconfig.ModVersionConstraint, parent modconfig.ModI) {
+func (l *WorkspaceLock) DeleteMods(mods map[string]*modconfig.ModVersionConstraint, parent *modconfig.Mod) {
 	for modName := range mods {
 		if parentDependencies := l.InstallCache[parent.GetInstallCacheKey()]; parentDependencies != nil {
 			delete(parentDependencies, modName)
@@ -232,7 +232,7 @@ func (l *WorkspaceLock) DeleteMods(mods map[string]*modconfig.ModVersionConstrai
 
 // GetMod looks for a lock file entry matching the given mod dependency name
 // (e.g.github.com/turbot/steampipe-mod-azure-thrifty
-func (l *WorkspaceLock) GetMod(modDependencyName string, parent modconfig.ModI) *InstalledModVersion {
+func (l *WorkspaceLock) GetMod(modDependencyName string, parent *modconfig.Mod) *InstalledModVersion {
 	parentKey := parent.GetInstallCacheKey()
 
 	if parentDependencies := l.InstallCache[parentKey]; parentDependencies != nil {
@@ -255,7 +255,7 @@ func (l *WorkspaceLock) FindMod(dependencyName string) []*InstalledModVersion {
 
 // GetLockedModVersions builds a ResolvedVersionListMap with the resolved versions
 // for each item of the given versionConstraintMap found in the lock file
-func (l *WorkspaceLock) GetLockedModVersions(mods map[string]*modconfig.ModVersionConstraint, parent modconfig.ModI) (ResolvedVersionListMap, error) {
+func (l *WorkspaceLock) GetLockedModVersions(mods map[string]*modconfig.ModVersionConstraint, parent *modconfig.Mod) (ResolvedVersionListMap, error) {
 	var res = make(ResolvedVersionListMap)
 	for name, constraint := range mods {
 		resolvedConstraint, err := l.GetLockedModVersion(constraint, parent)
@@ -270,7 +270,7 @@ func (l *WorkspaceLock) GetLockedModVersions(mods map[string]*modconfig.ModVersi
 }
 
 // GetLockedModVersion looks for a lock file entry for the given parent matching the required constraint and returns nil if not found
-func (l *WorkspaceLock) GetLockedModVersion(requiredModVersion *modconfig.ModVersionConstraint, parent modconfig.ModI) (*InstalledModVersion, error) {
+func (l *WorkspaceLock) GetLockedModVersion(requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*InstalledModVersion, error) {
 	lockedVersion := l.GetMod(requiredModVersion.Name, parent)
 	if lockedVersion == nil {
 		return nil, nil
@@ -305,7 +305,7 @@ func (l *WorkspaceLock) FindLockedModVersion(requiredModVersion *modconfig.ModVe
 }
 
 // EnsureLockedModVersion looks for a lock file entry matching the required mod name
-func (l *WorkspaceLock) EnsureLockedModVersion(requiredModVersion *modconfig.ModVersionConstraint, parent modconfig.ModI) (*InstalledModVersion, error) {
+func (l *WorkspaceLock) EnsureLockedModVersion(requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*InstalledModVersion, error) {
 	lockedVersion := l.GetMod(requiredModVersion.Name, parent)
 	if lockedVersion == nil {
 		return nil, nil
@@ -324,7 +324,7 @@ func (l *WorkspaceLock) EnsureLockedModVersion(requiredModVersion *modconfig.Mod
 
 // GetLockedModVersionConstraint looks for a lock file entry matching the required mod version and if found,
 // returns it in the form of a ModVersionConstraint
-func (l *WorkspaceLock) GetLockedModVersionConstraint(requiredModVersion *modconfig.ModVersionConstraint, parent modconfig.ModI) (*modconfig.ModVersionConstraint, error) {
+func (l *WorkspaceLock) GetLockedModVersionConstraint(requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*modconfig.ModVersionConstraint, error) {
 	lockedVersion, err := l.EnsureLockedModVersion(requiredModVersion, parent)
 	if err != nil {
 		// EnsureLockedModVersion returns an error if the locked version does not satisfy the requirement

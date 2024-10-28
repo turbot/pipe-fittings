@@ -52,7 +52,7 @@ type ModParseContext struct {
 	ParseContext
 
 	// the mod which is currently being parsed
-	CurrentMod modconfig.ModI
+	CurrentMod *modconfig.Mod
 	// the workspace lock data
 	WorkspaceLock *versionmap.WorkspaceLock
 
@@ -219,7 +219,7 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 	return child, nil
 }
 
-func (m *ModParseContext) EnsureWorkspaceLock(mod modconfig.ModI) error {
+func (m *ModParseContext) EnsureWorkspaceLock(mod *modconfig.Mod) error {
 	// if the mod has dependencies, there must a workspace lock object in the run context
 	// (mod MUST be the workspace mod, not a dependency, as we would hit this error as soon as we parse it)
 	if mod.HasDependentMods() && (m.WorkspaceLock.Empty() || m.WorkspaceLock.Incomplete()) {
@@ -331,7 +331,7 @@ func (m *ModParseContext) addDependencyVariablesToReferenceMap() {
 }
 
 // AddModResources is used to add mod resources to the eval context
-func (m *ModParseContext) AddModResources(mod modconfig.ModI) hcl.Diagnostics {
+func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	if len(m.UnresolvedBlocks) > 0 {
 		// should never happen
 		panic("calling AddModResources on ModParseContext but there are unresolved blocks from a previous parse")
@@ -419,7 +419,7 @@ func (m *ModParseContext) AddResource(resource modconfig.HclResource) hcl.Diagno
 // GetMod finds the mod with given short name, looking only in first level dependencies
 // this is used to resolve resource references
 // specifically when the 'children' property of dashboards and benchmarks refers to resource in a dependency mod
-func (m *ModParseContext) GetMod(modShortName string) modconfig.ModI {
+func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
 	if modShortName == m.CurrentMod.GetShortName() {
 		return m.CurrentMod
 	}
@@ -651,7 +651,7 @@ func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, valu
 	typeString := parsedName.ItemType
 
 	// most resources will have a mod property - use this if available
-	var mod modconfig.ModI
+	var mod *modconfig.Mod
 	if modTreeItem, ok := resource.(modconfig.ModItem); ok {
 		mod = modTreeItem.GetMod()
 	}
@@ -718,7 +718,7 @@ func (m *ModParseContext) IsTopLevelBlock(block *hcl.Block) bool {
 	return isTopLevel
 }
 
-func (m *ModParseContext) AddLoadedDependencyMod(mod modconfig.ModI) {
+func (m *ModParseContext) AddLoadedDependencyMod(mod *modconfig.Mod) {
 	// lock the depLock as this is called async
 	m.depLock.Lock()
 	defer m.depLock.Unlock()
@@ -732,7 +732,7 @@ func (m *ModParseContext) GetTopLevelDependencyMods() modconfig.ModMap {
 	return m.topLevelDependencyMods
 }
 
-func (m *ModParseContext) SetCurrentMod(mod modconfig.ModI) error {
+func (m *ModParseContext) SetCurrentMod(mod *modconfig.Mod) error {
 	m.CurrentMod = mod
 	// populate the resource maps
 	m.setResourceMaps()

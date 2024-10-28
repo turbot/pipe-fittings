@@ -15,10 +15,10 @@ import (
 type MissingVariableError struct {
 	MissingVariables           []*modconfig.Variable
 	MissingTransitiveVariables map[DependencyPathKey][]*modconfig.Variable
-	workspaceMod               modconfig.ModI
+	workspaceMod               *modconfig.Mod
 }
 
-func NewMissingVarsError(workspaceMod modconfig.ModI) MissingVariableError {
+func NewMissingVarsError(workspaceMod *modconfig.Mod) MissingVariableError {
 	return MissingVariableError{
 		MissingTransitiveVariables: make(map[DependencyPathKey][]*modconfig.Variable),
 		workspaceMod:               workspaceMod,

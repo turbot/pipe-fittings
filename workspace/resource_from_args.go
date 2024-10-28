@@ -90,7 +90,7 @@ func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w Wor
 
 // convert the given command line query into a query resource and add to workspace
 // this is to allow us to use existing dashboard execution code
-func createQueryResourceForCommandLineQuery(queryString string, mod modconfig.ModI) *powerpipe.Query {
+func createQueryResourceForCommandLineQuery(queryString string, mod *modconfig.Mod) *powerpipe.Query {
 	// build name
 	shortName := "command_line_query"
 

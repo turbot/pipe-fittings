@@ -49,7 +49,7 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*flowpipe
 }
 
 // TODO update this to NOT use deprecated LoadModWithFileName
-func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (modconfig.ModI, error) {
+func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modconfig.Mod, error) {
 	var modDir string
 	var fileName string
 	var modFileNameToLoad string

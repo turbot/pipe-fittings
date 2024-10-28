@@ -516,7 +516,7 @@ package workspace
 //}
 //
 //// try to resolve mod resource children using their child names
-//func setChildren(mod modconfig.ModI) error {
+//func setChildren(mod *modconfig.Mod) error {
 //	for _, benchmark := range mod.ResourceMaps.Benchmarks {
 //		for _, childName := range benchmark.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName.Name)

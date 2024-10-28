@@ -31,7 +31,7 @@ type QueryProviderImpl struct {
 	paramsInheritedFromBase bool
 }
 
-func NewQueryProviderImpl(block *hcl.Block, mod modconfig.ModI, shortName string) QueryProviderImpl {
+func NewQueryProviderImpl(block *hcl.Block, mod *modconfig.Mod, shortName string) QueryProviderImpl {
 	return QueryProviderImpl{
 		RuntimeDependencyProviderImpl: RuntimeDependencyProviderImpl{
 			ModTreeItemImpl: modconfig.NewModTreeItemImpl(block, mod, shortName),

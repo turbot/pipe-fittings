@@ -36,7 +36,7 @@ import (
 //		Path:              workspacePath,
 //		VariableValues:    make(map[string]string),
 //		ValidateVariables: true,
-//		Mod:               modconfig.NewModBase("local", workspacePath, hcl.Range{}),
+//		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
 //	}
 //
 //	// check whether the workspace contains a modfile
@@ -53,16 +53,16 @@ import (
 
 type WorkspaceI interface {
 	GetResourceMaps() modconfig.ResourceMapsI
-	GetMod() modconfig.ModI
+	GetMod() *modconfig.Mod
 	GetPath() string
 	GetResource(name *modconfig.ParsedResourceName) (modconfig.HclResource, bool)
-	GetMods() map[string]modconfig.ModI
+	GetMods() map[string]*modconfig.Mod
 }
 
 type Workspace[T modconfig.ResourceMapsI] struct {
 	Path                string
 	ModInstallationPath string
-	Mod                 modconfig.ModI
+	Mod                 *modconfig.Mod
 
 	// TODO remove and provide value maps from config somehow???
 	PipelingConnections map[string]connection.PipelingConnection
@@ -73,7 +73,7 @@ type Workspace[T modconfig.ResourceMapsI] struct {
 	Integrations map[string]flowpipe.Integration
 	Notifiers    map[string]flowpipe.Notifier
 
-	Mods map[string]modconfig.ModI
+	Mods map[string]*modconfig.Mod
 
 	// the input variables used in the parse
 	VariableValues map[string]string
@@ -222,11 +222,11 @@ func (w *Workspace[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.Error
 	return ew
 }
 
-func (w *Workspace[T]) GetMod() modconfig.ModI {
+func (w *Workspace[T]) GetMod() *modconfig.Mod {
 	return w.Mod
 }
 
-func (w *Workspace[T]) GetMods() map[string]modconfig.ModI {
+func (w *Workspace[T]) GetMods() map[string]*modconfig.Mod {
 	return w.Mods
 }
 
