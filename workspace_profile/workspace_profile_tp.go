@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/options"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -51,7 +51,7 @@ func (p *TpWorkspaceProfile) ShortName() string {
 }
 
 func (p *TpWorkspaceProfile) CtyValue() (cty.Value, error) {
-	return modconfig.GetCtyValue(p)
+	return cty_helpers.GetCtyValue(p)
 }
 
 func (p *TpWorkspaceProfile) OnDecoded() hcl.Diagnostics {

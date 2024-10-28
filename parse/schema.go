@@ -125,10 +125,6 @@ var FlowpipeConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeOptions,
 			LabelNames: []string{"type"},
 		},
-		{
-			Type:       schema.BlockTypeWorkspaceProfile,
-			LabelNames: []string{"name"},
-		},
 	},
 }
 
@@ -154,6 +150,21 @@ var SteampipeConfigBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypePartition,
 			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+	},
+}
+
+var TpConfigBlockSchema = &hcl.BodySchema{
+	Attributes: []hcl.AttributeSchema{},
+	Blocks: []hcl.BlockHeaderSchema{
+		{
+			// Tp connections have 2 labels
+			Type:       schema.BlockTypeConnection,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeWorkspaceProfile,
+			LabelNames: []string{schema.LabelName},
 		},
 	},
 }
