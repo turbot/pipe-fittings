@@ -96,7 +96,9 @@ func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	pipelines := w.Mod.GetResourceMaps().(*flowpipe.ModResources).Pipelines
+	resourceMaps := flowpipe.GetModResources(w.Mod)
+
+	pipelines := resourceMaps.Pipelines
 
 	pipeline := pipelines["throw_config.pipeline.error_with_throw_does_not_ignore"]
 
