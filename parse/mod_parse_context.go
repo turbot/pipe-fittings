@@ -346,7 +346,7 @@ func (m *ModParseContext) AddModResources(mod *modconfig.Mod) hcl.Diagnostics {
 	shouldAdd := func(item modconfig.HclResource) bool {
 		if item.GetBlockType() == schema.BlockTypeMod ||
 			item.GetBlockType() == schema.BlockTypeVariable ||
-			item.GetBlockType() == schema.BlockTypeLocals && item.(modconfig.ModItem).GetMod().GetShortName() != m.CurrentMod.GetShortName() {
+			item.GetBlockType() == schema.BlockTypeLocals && item.(modconfig.ModItem).GetMod().GetShortName() != m.CurrentMod.ShortName {
 			return false
 		}
 		return true
@@ -420,7 +420,7 @@ func (m *ModParseContext) AddResource(resource modconfig.HclResource) hcl.Diagno
 // this is used to resolve resource references
 // specifically when the 'children' property of dashboards and benchmarks refers to resource in a dependency mod
 func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
-	if modShortName == m.CurrentMod.GetShortName() {
+	if modShortName == m.CurrentMod.ShortName {
 		return m.CurrentMod
 	}
 	// we need to iterate through dependency mods of the current mod
@@ -428,7 +428,7 @@ func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
 	deps := m.WorkspaceLock.InstallCache[key]
 	for _, dep := range deps {
 		depMod, ok := m.topLevelDependencyMods[dep.Name]
-		if ok && depMod.GetShortName() == modShortName {
+		if ok && depMod.ShortName == modShortName {
 			return depMod
 		}
 	}
@@ -660,7 +660,7 @@ func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, valu
 		mod = m.CurrentMod
 	}
 
-	modName := mod.GetShortName()
+	modName := mod.ShortName
 	if mod.GetModPath() == m.RootEvalPath {
 		modName = "local"
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 // GetWorkspaceResourcesOfType returns all resources of type T from a workspace
-func GetWorkspaceResourcesOfType[T modconfig.HclResource](w WorkspaceI) map[string]T {
+func GetWorkspaceResourcesOfType[T modconfig.HclResource](w Workspace) map[string]T {
 	var res = map[string]T{}
 
 	resourceFunc := func(item modconfig.HclResource) (bool, error) {
@@ -23,7 +23,7 @@ func GetWorkspaceResourcesOfType[T modconfig.HclResource](w WorkspaceI) map[stri
 
 // FilterWorkspaceResourcesOfType returns all resources of type T from a workspace which satisf          y the filter,
 // which is specified as a SQL syntax where clause
-func FilterWorkspaceResourcesOfType[T modconfig.HclResource](w WorkspaceI, filter ResourceFilter) (map[string]T, error) {
+func FilterWorkspaceResourcesOfType[T modconfig.HclResource](w Workspace, filter ResourceFilter) (map[string]T, error) {
 	var res = map[string]T{}
 
 	filterPredicate, err := filter.getPredicate()

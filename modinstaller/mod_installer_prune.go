@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/pipe-fittings/versionmap"
 )
 
-func (i *ModInstaller[T]) Prune() (versionmap.DependencyVersionListMap, error) {
+func (i *ModInstaller) Prune() (versionmap.DependencyVersionListMap, error) {
 	unusedMods := i.installData.Lock.GetUnreferencedMods()
 	// now delete any mod folders which are not in the lock file
 	for name, versions := range unusedMods {
@@ -23,7 +23,7 @@ func (i *ModInstaller[T]) Prune() (versionmap.DependencyVersionListMap, error) {
 	return unusedMods, nil
 }
 
-func (i *ModInstaller[T]) deleteDependencyItem(depPath string) error {
+func (i *ModInstaller) deleteDependencyItem(depPath string) error {
 	if err := os.RemoveAll(depPath); err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (i *ModInstaller[T]) deleteDependencyItem(depPath string) error {
 
 }
 
-func (i *ModInstaller[T]) deleteEmptyFolderTree(folderPath string) error {
+func (i *ModInstaller) deleteEmptyFolderTree(folderPath string) error {
 	// if the parent folder is empty, delete it
 	err := os.Remove(folderPath)
 	if err == nil {

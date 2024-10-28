@@ -26,7 +26,7 @@ func (m *ResourceMetadata) SetMod(mod *Mod) {
 	if mod.IsDefaultMod() {
 		return
 	}
-	m.ModName = mod.GetShortName()
+	m.ModName = mod.ShortName
 	m.ModFullName = mod.GetFullName()
 }
 

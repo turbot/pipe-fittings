@@ -99,7 +99,7 @@ func (m MissingVariableError) getVariableName(v *modconfig.Variable) string {
 	if v.Mod.Name() == m.workspaceMod.Name() {
 		return v.ShortName
 	}
-	return fmt.Sprintf("%s.%s", v.Mod.GetShortName(), v.ShortName)
+	return fmt.Sprintf("%s.%s", v.Mod.ShortName, v.ShortName)
 }
 
 type VariableValidationFailedError struct {

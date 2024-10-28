@@ -8,6 +8,10 @@ import (
 	"github.com/turbot/pipe-fittings/utils"
 )
 
+func GetModResources(mod *modconfig.Mod) *ModResources {
+	return mod.GetResourceMaps().(*ModResources)
+}
+
 // ModResources is a struct containing maps of all mod resource types
 // This is provided to avoid db needing to reference workspace package
 type ModResources struct {
@@ -398,7 +402,7 @@ func (m *ModResources) Equals(o modconfig.ResourceMapsI) bool {
 func (m *ModResources) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	modName := parsedName.Mod
 	if modName == "" {
-		modName = m.Mod.GetShortName()
+		modName = m.Mod.ShortName
 	}
 	longName := fmt.Sprintf("%s.%s.%s", modName, parsedName.ItemType, parsedName.Name)
 
@@ -446,7 +450,7 @@ func (m *ModResources) GetResource(parsedName *modconfig.ParsedResourceName) (re
 		resource, found = m.Variables[longName]
 	case schema.BlockTypeMod:
 		for _, mod := range m.Mods {
-			if mod.GetShortName() == parsedName.Name {
+			if mod.ShortName == parsedName.Name {
 				resource = mod
 				found = true
 				break

@@ -7,6 +7,10 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
+func GetModResources(mod *modconfig.Mod) *ModResources {
+	return mod.GetResourceMaps().(*ModResources)
+}
+
 // ModResources is a struct containing maps of all mod resource types
 // This is provided to avoid db needing to reference workspace package
 type ModResources struct {
@@ -18,10 +22,9 @@ type ModResources struct {
 	// TODO KAI store as interfaces so GetMods satisfies the interface
 	Mods       map[string]*modconfig.Mod
 	References map[string]*modconfig.ResourceReference
-	// flowpipe
-	Pipelines map[string]*Pipeline
-	Triggers  map[string]*Trigger
-	Locals    map[string]*modconfig.Local
+	Pipelines  map[string]*Pipeline
+	Triggers   map[string]*Trigger
+	Locals     map[string]*modconfig.Local
 }
 
 func NewModResources(mod *modconfig.Mod, sourceMaps ...modconfig.ResourceMapsI) modconfig.ResourceMapsI {
@@ -129,7 +132,7 @@ func (m *ModResources) Equals(o modconfig.ResourceMapsI) bool {
 func (m *ModResources) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	modName := parsedName.Mod
 	if modName == "" {
-		modName = m.Mod.GetShortName()
+		modName = m.Mod.ShortName
 	}
 	longName := fmt.Sprintf("%s.%s.%s", modName, parsedName.ItemType, parsedName.Name)
 
@@ -145,7 +148,7 @@ func (m *ModResources) GetResource(parsedName *modconfig.ParsedResourceName) (re
 		resource, found = m.Triggers[longName]
 	case schema.BlockTypeMod:
 		for _, mod := range m.Mods {
-			if mod.GetShortName() == parsedName.Name {
+			if mod.ShortName == parsedName.Name {
 				resource = mod
 				found = true
 				break

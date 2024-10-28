@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/workspace"
 	"log/slog"
@@ -13,7 +12,7 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
-func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (*workspace.Workspace[*flowpipe.ModResources], error_helpers.ErrorAndWarnings) {
+func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (*workspace.Workspace, error_helpers.ErrorAndWarnings) {
 	// do not load resources if there is no modfile
 	opts = append(opts, WithSkipResourceLoadIfNoModfile(true))
 
@@ -37,7 +36,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 
 // Load_ creates a Workspace and loads the workspace mod
 
-func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (w *workspace.Workspace[*flowpipe.ModResources], ew error_helpers.ErrorAndWarnings) {
+func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (w *workspace.Workspace, ew error_helpers.ErrorAndWarnings) {
 	cfg := newLoadFlowpipeWorkspaceConfig()
 	for _, o := range opts {
 		o(cfg)
@@ -46,7 +45,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 	utils.LogTime("w.Load start")
 	defer utils.LogTime("w.Load end")
 
-	w = &workspace.Workspace[*flowpipe.ModResources]{
+	w = &workspace.Workspace{
 		Path:              workspacePath,
 		VariableValues:    make(map[string]string),
 		ValidateVariables: true,

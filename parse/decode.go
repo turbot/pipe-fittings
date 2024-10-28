@@ -29,7 +29,7 @@ var missingVariableErrors = []string{
 }
 
 //
-//func decode[T modconfig.ResourceMapsI](parseCtx *ModParseContext) hcl.Diagnostics {
+//func decode(parseCtx *ModParseContext) hcl.Diagnostics {
 //	utils.LogTime(fmt.Sprintf("decode %s start", parseCtx.CurrentMod.Name()))
 //	defer utils.LogTime(fmt.Sprintf("decode %s end", parseCtx.CurrentMod.Name()))
 //

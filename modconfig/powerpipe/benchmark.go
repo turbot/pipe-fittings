@@ -36,7 +36,7 @@ type Benchmark struct {
 }
 
 func NewRootBenchmarkWithChildren(mod *modconfig.Mod, children []modconfig.ModTreeItem) modconfig.HclResource {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.GetShortName(), "benchmark", "root")
+	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, "benchmark", "root")
 	benchmark := &Benchmark{
 		ModTreeItemImpl: modconfig.ModTreeItemImpl{
 			HclResourceImpl: modconfig.HclResourceImpl{

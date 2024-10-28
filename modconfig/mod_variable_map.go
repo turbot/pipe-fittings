@@ -30,7 +30,7 @@ func NewModVariableMap(mod *Mod) (*ModVariableMap, error) {
 
 	// add variables into map, modifying the key to be the variable short name
 	for name, variable := range mod.GetResourceMaps().GetVariables() {
-		if variable.Mod.GetShortName() != mod.GetShortName() {
+		if variable.Mod.ShortName != mod.ShortName {
 			continue
 		}
 		k, err := buildVariableMapKey(name)

@@ -104,7 +104,7 @@ func LoadPipelinesReturningItsMod(ctx context.Context, configPath string) (*modc
 	if err != nil {
 		return nil, err
 	}
-	mod, errorsAndWarnings := LoadModWithFileName[*flowpipe.ModResources](ctx, modDir, modFileNameToLoad, parseCtx)
+	mod, errorsAndWarnings := LoadModWithFileName(ctx, modDir, modFileNameToLoad, parseCtx)
 
 	if errorsAndWarnings.Error != nil {
 		return nil, errorsAndWarnings.Error

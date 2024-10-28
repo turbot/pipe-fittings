@@ -51,15 +51,7 @@ import (
 //	return w, nil
 //}
 
-type WorkspaceI interface {
-	GetResourceMaps() modconfig.ResourceMapsI
-	GetMod() *modconfig.Mod
-	GetPath() string
-	GetResource(name *modconfig.ParsedResourceName) (modconfig.HclResource, bool)
-	GetMods() map[string]*modconfig.Mod
-}
-
-type Workspace[T modconfig.ResourceMapsI] struct {
+type Workspace struct {
 	Path                string
 	ModInstallationPath string
 	Mod                 *modconfig.Mod
@@ -104,7 +96,7 @@ type Workspace[T modconfig.ResourceMapsI] struct {
 	SupportLateBinding  bool
 }
 
-func (w *Workspace[T]) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
+func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
 	watcherOptions := &filewatcher.WatcherOptions{
 		Directories: []string{w.Path},
 		Include:     filehelpers.InclusionsFromExtensions(load_mod.GetModFileExtensions()),
@@ -134,23 +126,23 @@ func (w *Workspace[T]) SetupWatcher(ctx context.Context, errorHandler func(conte
 	return nil
 }
 
-func (w *Workspace[T]) SetOnFileWatcherEventMessages(f func()) {
+func (w *Workspace) SetOnFileWatcherEventMessages(f func()) {
 	w.onFileWatcherEventMessages = f
 }
 
-func (w *Workspace[T]) Close() {
+func (w *Workspace) Close() {
 	if w.watcher != nil {
 		w.watcher.Close()
 	}
 }
 
-func (w *Workspace[T]) ModfileExists() bool {
+func (w *Workspace) ModfileExists() bool {
 	return len(w.modFilePath) > 0
 }
 
 // check  whether the workspace contains a modfile
 // this will determine whether we load files recursively, and create pseudo resources for sql files
-func (w *Workspace[T]) SetModfileExists() {
+func (w *Workspace) SetModfileExists() {
 	modFile, err := FindModFilePath(w.Path)
 	modFileExists := !errors.Is(err, ErrorNoModDefinition)
 
@@ -164,7 +156,7 @@ func (w *Workspace[T]) SetModfileExists() {
 	}
 }
 
-func (w *Workspace[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.ErrorAndWarnings {
+func (w *Workspace) LoadWorkspaceMod(ctx context.Context) error_helpers.ErrorAndWarnings {
 	utils.LogTime("LoadWorkspaceMod start")
 	defer utils.LogTime("LoadWorkspaceMod end")
 
@@ -202,7 +194,7 @@ func (w *Workspace[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.Error
 	}
 
 	// load the workspace mod
-	m, otherErrorAndWarning := load_mod.LoadMod[T](ctx, w.Path, parseCtx)
+	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
 	ew.Merge(otherErrorAndWarning)
 	if ew.Error != nil {
 		return ew
@@ -222,21 +214,21 @@ func (w *Workspace[T]) LoadWorkspaceMod(ctx context.Context) error_helpers.Error
 	return ew
 }
 
-func (w *Workspace[T]) GetMod() *modconfig.Mod {
+func (w *Workspace) GetMod() *modconfig.Mod {
 	return w.Mod
 }
 
-func (w *Workspace[T]) GetMods() map[string]*modconfig.Mod {
+func (w *Workspace) GetMods() map[string]*modconfig.Mod {
 	return w.Mods
 }
 
-func (w *Workspace[T]) GetPath() string {
+func (w *Workspace) GetPath() string {
 	return w.Path
 }
 
 // resolve values of all input variables
 // we may need to load the mod more than once to resolve all variable dependencies
-func (w *Workspace[T]) resolveVariableValues(ctx context.Context) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) resolveVariableValues(ctx context.Context) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	lastDependCount := -1
 
 	var inputVariables *modconfig.ModVariableMap
@@ -291,7 +283,7 @@ func getVariableDependencyCount(ew error_helpers.ErrorAndWarnings) int {
 	return count
 }
 
-func (w *Workspace[T]) getVariablesParseContext(ctx context.Context, inputVariable *modconfig.ModVariableMap) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) getVariablesParseContext(ctx context.Context, inputVariable *modconfig.ModVariableMap) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
 	// build a run context just to use to load variable definitions
 	variablesParseCtx, err := w.GetParseContext(ctx)
 	if err != nil {
@@ -310,12 +302,12 @@ func (w *Workspace[T]) getVariablesParseContext(ctx context.Context, inputVariab
 	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
 }
 
-func (w *Workspace[T]) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	utils.LogTime("getInputVariables start")
 	defer utils.LogTime("getInputVariables end")
 
 	// load variable definitions
-	variableMap, ew := load_mod.LoadVariableDefinitions[T](ctx, w.Path, variablesParseCtx)
+	variableMap, ew := load_mod.LoadVariableDefinitions(ctx, w.Path, variablesParseCtx)
 	if ew.Error != nil {
 		return nil, ew
 	}
@@ -326,7 +318,7 @@ func (w *Workspace[T]) getVariableValues(ctx context.Context, variablesParseCtx 
 }
 
 // build options used to load workspace
-func (w *Workspace[T]) GetParseContext(ctx context.Context) (*parse.ModParseContext, error) {
+func (w *Workspace) GetParseContext(ctx context.Context) (*parse.ModParseContext, error) {
 	workspaceLock, err := w.loadWorkspaceLock(ctx)
 	if err != nil {
 		return nil, err
@@ -357,7 +349,7 @@ func (w *Workspace[T]) GetParseContext(ctx context.Context) (*parse.ModParseCont
 }
 
 // load the workspace lock, migrating it if necessary
-func (w *Workspace[T]) loadWorkspaceLock(ctx context.Context) (*versionmap.WorkspaceLock, error) {
+func (w *Workspace) loadWorkspaceLock(ctx context.Context) (*versionmap.WorkspaceLock, error) {
 	workspaceLock, err := versionmap.LoadWorkspaceLock(w.Path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load installation cache from %s: %s", w.Path, err)
@@ -372,7 +364,7 @@ func (w *Workspace[T]) loadWorkspaceLock(ctx context.Context) (*versionmap.Works
 	return workspaceLock, nil
 }
 
-func (w *Workspace[T]) LoadExclusions() error {
+func (w *Workspace) LoadExclusions() error {
 	// default to ignoring hidden files and folders
 	w.exclusions = []string{
 		// ignore any hidden folder
@@ -410,7 +402,7 @@ func (w *Workspace[T]) LoadExclusions() error {
 }
 
 // populate the mod resource maps with variables from the parse context
-func (w *Workspace[T]) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) error_helpers.ErrorAndWarnings {
+func (w *Workspace) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) error_helpers.ErrorAndWarnings {
 	var diags hcl.Diagnostics
 	for _, v := range parseCtx.Variables.ToArray() {
 		diags = append(diags, w.Mod.GetResourceMaps().AddResource(v)...)
@@ -418,13 +410,13 @@ func (w *Workspace[T]) populateVariablesOnlyMod(parseCtx *parse.ModParseContext)
 	return error_helpers.DiagsToErrorsAndWarnings("", diags)
 }
 
-func (w *Workspace[T]) LoadLock() {
+func (w *Workspace) LoadLock() {
 	if w.loadLock == nil {
 		w.loadLock = &sync.Mutex{}
 	}
 	w.loadLock.Lock()
 }
 
-func (w *Workspace[T]) LoadUnlock() {
+func (w *Workspace) LoadUnlock() {
 	w.loadLock.Unlock()
 }

@@ -1,6 +1,5 @@
 package parse
 
-import "C"
 import (
 	"fmt"
 

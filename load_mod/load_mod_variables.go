@@ -18,8 +18,8 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func LoadVariableDefinitions[T modconfig.ResourceMapsI](ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
-	mod, ew := LoadMod[T](ctx, variablePath, parseCtx)
+func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+	mod, ew := LoadMod(ctx, variablePath, parseCtx)
 	if ew.GetError() != nil {
 		return nil, ew
 	}
@@ -52,7 +52,8 @@ func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 	mod := parseCtx.CurrentMod
 	path := mod.GetModPath()
 
-	var inputValuesUnparsed, err = inputvars.CollectVariableValues(path, variableFileArgs, variableArgs, parseCtx.CurrentMod.GetShortName())
+	var inputValuesUnparsed, err = inputvars.CollectVariableValues(path, variableFileArgs, variableArgs, parseCtx.Current
+	 mod.ShortName)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -107,7 +108,7 @@ func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *m
 	missingVarErr := steampipeconfig.NewMissingVarsError(parseCtx.CurrentMod)
 
 	// build a lookup with the dependency path of the root mod and all top level dependencies
-	rootName := variableMap.Mod.GetShortName()
+	rootName := variableMap. mod.ShortName
 	topLevelModLookup := map[steampipeconfig.DependencyPathKey]struct{}{steampipeconfig.DependencyPathKey(rootName): {}}
 	for dep := range parseCtx.WorkspaceLock.InstallCache {
 		depPathKey := steampipeconfig.NewDependencyPathKey(rootName, dep)
@@ -184,7 +185,7 @@ func getVariableValueMapKey(k string, variableMap *modconfig.ModVariableMap) str
 	// if the mod name is the same as the current mod (variableMap.Mod)
 	// then add a map entry with the variable short name
 	// this will allow us to match the variable value to a variable defined in this mod
-	if err == nil && parsedName.Mod == variableMap.Mod.GetShortName() {
+	if err == nil && parsedName.Mod == variableMap. mod.ShortName {
 		k = parsedName.Name
 	}
 	return k

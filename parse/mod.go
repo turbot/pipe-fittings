@@ -17,7 +17,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func LoadModfile[T modconfig.ResourceMapsI](modPath string) (*modconfig.Mod, error) {
+func LoadModfile(modPath string) (*modconfig.Mod, error) {
 	modFilePath, exists := ModFileExists(modPath)
 	if !exists {
 		return nil, nil
@@ -29,7 +29,7 @@ func LoadModfile[T modconfig.ResourceMapsI](modPath string) (*modconfig.Mod, err
 		Variables: make(map[string]cty.Value),
 	}
 
-	mod, res := ParseModDefinition[T](modFilePath, evalCtx)
+	mod, res := ParseModDefinition(modFilePath, evalCtx)
 	if res.Diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load mod", res.Diags)
 	}
@@ -42,7 +42,7 @@ func LoadModfile[T modconfig.ResourceMapsI](modPath string) (*modconfig.Mod, err
 // this is called before parsing the workspace to, for example, identify dependency mods
 //
 // This function only parse the "mod" block, and does not parse any resources in the mod file
-func ParseModDefinition[T modconfig.ResourceMapsI](modFilePath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
+func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfig.Mod, *DecodeResult) {
 	res := NewDecodeResult()
 
 	fileData, diags := LoadFileData(modFilePath)
@@ -93,7 +93,7 @@ func ParseModDefinition[T modconfig.ResourceMapsI](modFilePath string, evalCtx *
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
 // NOTE: the mod definition has already been parsed (or a default created) and is in opts.RunCtx.RootMod
-func ParseMod[T modconfig.ResourceMapsI](_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("ParseMod %s start", parseCtx.CurrentMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("ParseMod %s end", parseCtx.CurrentMod.Name()))
 

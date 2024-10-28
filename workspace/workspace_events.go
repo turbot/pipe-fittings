@@ -10,7 +10,7 @@ import (
 
 var EventCount int64 = 0
 
-func (w *Workspace[T]) handleFileWatcherEvent(ctx context.Context) {
+func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	slog.Debug("handleFileWatcherEvent")
 	prevResourceMaps, resourceMaps, errAndWarnings := w.ReloadResourceMaps(ctx)
 
@@ -38,7 +38,7 @@ func (w *Workspace[T]) handleFileWatcherEvent(ctx context.Context) {
 	}
 }
 
-func (w *Workspace[T]) ReloadResourceMaps(ctx context.Context) (modconfig.ResourceMapsI, modconfig.ResourceMapsI, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) ReloadResourceMaps(ctx context.Context) (modconfig.ResourceMapsI, modconfig.ResourceMapsI, error_helpers.ErrorAndWarnings) {
 	w.LoadLock()
 	defer w.LoadUnlock()
 

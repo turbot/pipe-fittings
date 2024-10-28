@@ -52,7 +52,7 @@ func NewVariable(v *RawVariable, mod *Mod) *Variable {
 	if !v.Default.IsNull() {
 		defaultGo, _ = hclhelpers.CtyToGo(v.Default)
 	}
-	fullName := fmt.Sprintf("%s.var.%s", mod.GetShortName(), v.Name)
+	fullName := fmt.Sprintf("%s.var.%s", mod.ShortName, v.Name)
 	res := &Variable{
 		ModTreeItemImpl: ModTreeItemImpl{
 			HclResourceImpl: HclResourceImpl{
@@ -73,7 +73,7 @@ func NewVariable(v *RawVariable, mod *Mod) *Variable {
 
 		Type:        v.Type,
 		ParsingMode: v.ParsingMode,
-		ModName:     mod.GetShortName(),
+		ModName:     mod.ShortName,
 		Enum:        v.Enum,
 		EnumGo:      v.EnumGo,
 		Format:      v.Format,

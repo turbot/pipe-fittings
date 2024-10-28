@@ -31,7 +31,7 @@ type ModTreeItemImpl struct {
 }
 
 func NewModTreeItemImpl(block *hcl.Block, mod *Mod, shortName string) ModTreeItemImpl {
-	fullName := fmt.Sprintf("%s.%s.%s", mod.GetShortName(), block.Type, shortName)
+	fullName := fmt.Sprintf("%s.%s.%s", mod.ShortName, block.Type, shortName)
 
 	return ModTreeItemImpl{
 		HclResourceImpl: NewHclResourceImpl(block, fullName),
@@ -194,7 +194,7 @@ func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 		printers.NewFieldValue("Name", name),
 	)
 	if b.Mod != nil {
-		res.AddField(printers.NewFieldValue("Mod", b.Mod.GetShortName()))
+		res.AddField(printers.NewFieldValue("Mod", b.Mod.ShortName))
 	}
 	res.AddField(printers.NewFieldValue("Database", b.Database))
 
@@ -211,7 +211,7 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 	}
 	res := printers.NewRowData()
 	if b.Mod != nil {
-		res.AddField(printers.NewFieldValue("MOD", b.Mod.GetShortName()))
+		res.AddField(printers.NewFieldValue("MOD", b.Mod.ShortName))
 	}
 
 	res.AddField(printers.NewFieldValue("NAME", name))

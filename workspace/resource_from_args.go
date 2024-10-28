@@ -15,7 +15,7 @@ import (
 )
 
 // ResolveResourceAndArgsFromSQLString attempts to resolve 'arg' to a resource of type T and (optionally) query args
-func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w WorkspaceI) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
+func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString string, w Workspace) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
 	var err error
 	var empty T
 
@@ -57,7 +57,7 @@ func ResolveResourceAndArgsFromSQLString[T modconfig.ModTreeItem](sqlString stri
 
 // does the input look like a resource which can be executed as a query
 // Note: if anything fails just return nil values
-func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w WorkspaceI) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
+func extractResourceFromQueryString[T modconfig.ModTreeItem](input string, w Workspace) (modconfig.ModTreeItem, *powerpipe.QueryArgs, error) {
 	// can we extract a resource name from the string
 	parsedResourceName, err := extractResourceNameFromQuery[T](input)
 	if err != nil {
