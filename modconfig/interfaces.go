@@ -67,6 +67,7 @@ type ModI interface {
 	CacheKey() string
 	GetDefaultConnectionString(context *hcl.EvalContext) (string, error)
 	CtyValue() (cty.Value, error)
+	GetConnectionDependsOn() []string
 }
 
 // ModTreeItem must be implemented by elements of the mod resource hierarchy

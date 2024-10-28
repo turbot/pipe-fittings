@@ -76,8 +76,8 @@ func GetLoopDefn(stepType string, p *PipelineStepBase, hclRange *hcl.Range) Loop
 
 type LoopStep struct {
 	// circular link to its "parent"
-	PipelineStepBase     *PipelineStepBase `json:"-"`
-	Range                *hcl.Range        `json:"-"`
+	PipelineStepBase     *PipelineStepBase         `json:"-"`
+	Range                *hcl.Range                `json:"-"`
 	UnresolvedAttributes map[string]hcl.Expression `json:"-"`
 	Until                *bool
 }

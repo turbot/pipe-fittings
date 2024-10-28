@@ -25,8 +25,8 @@ import (
 // mod name used if a default mod is created for a workspace which does not define one explicitly
 const defaultModName = "local"
 
-// ModBase is a struct representing a ModBase resource
-type ModBase[T ResourceMapsI] struct {
+// Mod is a struct representing a Mod resource
+type Mod[T ResourceMapsI] struct {
 	ResourceWithMetadataImpl
 	ModTreeItemImpl
 
@@ -68,9 +68,9 @@ type ModBase[T ResourceMapsI] struct {
 	modFilePath string
 }
 
-func NewModBase[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *ModBase[T] {
+func NewModBase[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) *Mod[T] {
 	name := fmt.Sprintf("mod.%s", shortName)
-	mod := &ModBase[T]{
+	mod := &Mod[T]{
 		ModTreeItemImpl: ModTreeItemImpl{
 			HclResourceImpl: HclResourceImpl{
 				ShortName:       shortName,
@@ -88,7 +88,7 @@ func NewModBase[T ResourceMapsI](shortName, modPath string, defRange hcl.Range) 
 	return mod
 }
 
-func (m *ModBase[T]) Equals(other *ModBase[T]) bool {
+func (m *Mod[T]) Equals(other *Mod[T]) bool {
 	res := m.ShortName == other.ShortName &&
 		m.FullName == other.FullName &&
 		typehelpers.SafeString(m.Color) == typehelpers.SafeString(other.Color) &&
@@ -134,7 +134,7 @@ func (m *ModBase[T]) Equals(other *ModBase[T]) bool {
 	return m.ResourceMaps.Equals(other.ResourceMaps)
 }
 
-func (m *ModBase[T]) CacheKey() string {
+func (m *Mod[T]) CacheKey() string {
 	cacheKey := m.Name()
 	if m.Version != nil {
 		cacheKey += "." + m.Version.String()
@@ -152,20 +152,20 @@ func CreateDefaultMod[T ResourceMapsI](modPath string) ModI {
 }
 
 // IsDefaultMod returns whether this mod is a default mod created for a workspace with no mod definition
-func (m *ModBase[T]) IsDefaultMod() bool {
+func (m *Mod[T]) IsDefaultMod() bool {
 	return m.modFilePath == ""
 }
 
 // GetPaths implements ModTreeItem (override base functionality)
-func (m *ModBase[T]) GetPaths() []NodePath {
+func (m *Mod[T]) GetPaths() []NodePath {
 	return []NodePath{{m.Name()}}
 }
 
 // SetPaths implements ModTreeItem (override base functionality)
-func (m *ModBase[T]) SetPaths() {}
+func (m *Mod[T]) SetPaths() {}
 
 // OnDecoded implements HclResource
-func (m *ModBase[T]) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
+func (m *Mod[T]) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
 	// handle legacy requires block
 	if m.LegacyRequire != nil && !m.LegacyRequire.Empty() {
 		// ensure that both 'require' and 'requires' were not set
@@ -189,13 +189,13 @@ func (m *ModBase[T]) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Dia
 	return m.Require.initialise(block)
 }
 
-//	func (m *ModBase[T]) AddReference(ref *ResourceReference) {
+//	func (m *Mod[T]) AddReference(ref *ResourceReference) {
 //		m.PowerpipeResourceMaps.References[ref.Name()] = ref
 //	}
 //
 // // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 //
-//	func (m *ModBase[T]) GetReferences() []*ResourceReference {
+//	func (m *Mod[T]) GetReferences() []*ResourceReference {
 //		var res = make([]*ResourceReference, len(m.PowerpipeResourceMaps.References))
 //		// convert from map to array
 //		idx := 0
@@ -207,41 +207,41 @@ func (m *ModBase[T]) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Dia
 //	}
 //
 // AddReference implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
-func (m *ModBase[T]) AddReference(ref *ResourceReference) {
+func (m *Mod[T]) AddReference(ref *ResourceReference) {
 	m.ResourceMaps.AddReference(ref)
 }
 
 // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
-func (m *ModBase[T]) GetReferences() []*ResourceReference {
+func (m *Mod[T]) GetReferences() []*ResourceReference {
 	return maps.Values(m.ResourceMaps.GetReferences())
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (m *ModBase[T]) GetResourceMaps() ResourceMapsI {
+func (m *Mod[T]) GetResourceMaps() ResourceMapsI {
 	return m.ResourceMaps
 }
 
-func (m *ModBase[T]) SetResourceMaps(resourceMaps ResourceMapsI) {
+func (m *Mod[T]) SetResourceMaps(resourceMaps ResourceMapsI) {
 	m.ResourceMaps = resourceMaps.(T)
 }
 
-func (m *ModBase[T]) GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool) {
+func (m *Mod[T]) GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool) {
 	return m.ResourceMaps.GetResource(parsedName)
 }
 
-func (m *ModBase[T]) AddModDependencies(modVersions map[string]*ModVersionConstraint) {
+func (m *Mod[T]) AddModDependencies(modVersions map[string]*ModVersionConstraint) {
 	m.Require.AddModDependencies(modVersions)
 }
 
-func (m *ModBase[T]) RemoveModDependencies(modVersions map[string]*ModVersionConstraint) {
+func (m *Mod[T]) RemoveModDependencies(modVersions map[string]*ModVersionConstraint) {
 	m.Require.RemoveModDependencies(modVersions)
 }
 
-func (m *ModBase[T]) RemoveAllModDependencies() {
+func (m *Mod[T]) RemoveAllModDependencies() {
 	m.Require.RemoveAllModDependencies()
 }
 
-func (m *ModBase[T]) Save() error {
+func (m *Mod[T]) Save() error {
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
@@ -319,30 +319,30 @@ func (m *ModBase[T]) Save() error {
 	return os.WriteFile(app_specific.DefaultModFilePath(m.ModPath), f.Bytes(), 0644) //nolint:gosec // TODO: check file permission
 }
 
-func (m *ModBase[T]) HasDependentMods() bool {
+func (m *Mod[T]) HasDependentMods() bool {
 	return m.Require != nil && len(m.Require.Mods) > 0
 }
 
-func (m *ModBase[T]) GetModDependency(modName string) *ModVersionConstraint {
+func (m *Mod[T]) GetModDependency(modName string) *ModVersionConstraint {
 	if m.Require == nil {
 		return nil
 	}
 	return m.Require.GetModDependency(modName)
 }
 
-func (m *ModBase[T]) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
+func (m *Mod[T]) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
 	return m.ResourceMaps.WalkResources(resourceFunc)
 }
 
-func (m *ModBase[T]) SetFilePath(modFilePath string) {
+func (m *Mod[T]) SetFilePath(modFilePath string) {
 	m.modFilePath = modFilePath
 }
-func (m *ModBase[T]) GetFilePath() string {
+func (m *Mod[T]) GetFilePath() string {
 	return m.modFilePath
 }
 
 // ValidateRequirements validates that the current steampipe CLI and the installed plugins is compatible with the mod
-func (m *ModBase[T]) ValidateRequirements(pluginVersionMap *plugin.PluginVersionMap) []error {
+func (m *Mod[T]) ValidateRequirements(pluginVersionMap *plugin.PluginVersionMap) []error {
 	var validationErrors []error
 	if err := m.validateAppVersion(); err != nil {
 		validationErrors = append(validationErrors, err)
@@ -355,18 +355,18 @@ func (m *ModBase[T]) ValidateRequirements(pluginVersionMap *plugin.PluginVersion
 	return validationErrors
 }
 
-func (m *ModBase[T]) FilePath() string {
+func (m *Mod[T]) FilePath() string {
 	return m.modFilePath
 }
 
-func (m *ModBase[T]) validateAppVersion() error {
+func (m *Mod[T]) validateAppVersion() error {
 	if m.Require == nil {
 		return nil
 	}
 	return m.Require.validateAppVersion(m.Name())
 }
 
-func (m *ModBase[T]) validatePluginVersions(availablePlugins plugin.PluginVersionMap) []error {
+func (m *Mod[T]) validatePluginVersions(availablePlugins plugin.PluginVersionMap) []error {
 	if m.Require == nil {
 		return nil
 	}
@@ -375,12 +375,12 @@ func (m *ModBase[T]) validatePluginVersions(availablePlugins plugin.PluginVersio
 }
 
 // CtyValue implements CtyValueProvider
-func (m *ModBase[T]) CtyValue() (cty.Value, error) {
+func (m *Mod[T]) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(m)
 }
 
 // GetInstallCacheKey returns the key used to find this mod in a workspace lock InstallCache
-func (m *ModBase[T]) GetInstallCacheKey() string {
+func (m *Mod[T]) GetInstallCacheKey() string {
 	// if the ModDependencyPath is set, this is a dependency mod - use that
 	if m.DependencyPath != nil {
 		return *m.DependencyPath
@@ -390,7 +390,7 @@ func (m *ModBase[T]) GetInstallCacheKey() string {
 }
 
 // SetDependencyConfigFromPath sets DependencyPath, DependencyName and Version
-func (m *ModBase[T]) SetDependencyConfigFromPath(dependencyPath string) error {
+func (m *Mod[T]) SetDependencyConfigFromPath(dependencyPath string) error {
 	// parse the dependency path to get the dependency name and version
 	dependencyName, dependencyVersion, err := ParseModDependencyPath(dependencyPath)
 	if err != nil {
@@ -402,7 +402,7 @@ func (m *ModBase[T]) SetDependencyConfigFromPath(dependencyPath string) error {
 	return nil
 }
 
-func (m *ModBase[T]) SetDependencyConfig(dependencyVersion *DependencyVersion, dependencyPath *string, dependencyName string) {
+func (m *Mod[T]) SetDependencyConfig(dependencyVersion *DependencyVersion, dependencyPath *string, dependencyName string) {
 	m.DependencyPath = dependencyPath
 	m.DependencyName = dependencyName
 	m.Version = dependencyVersion
@@ -411,7 +411,7 @@ func (m *ModBase[T]) SetDependencyConfig(dependencyVersion *DependencyVersion, d
 // RequireHasUnresolvedArgs returns whether the mod has any mod requirements which have unresolved args
 // (this could be because the arg refers to a variable, meanin gwe need an additional parse phase
 // to resolve the arg values)
-func (m *ModBase[T]) RequireHasUnresolvedArgs() bool {
+func (m *Mod[T]) RequireHasUnresolvedArgs() bool {
 	if m.Require == nil {
 		return false
 	}
@@ -425,14 +425,14 @@ func (m *ModBase[T]) RequireHasUnresolvedArgs() bool {
 	return false
 }
 
-func (m *ModBase[T]) GetConnectionDependsOn() []string {
+func (m *Mod[T]) GetConnectionDependsOn() []string {
 	if m.Database != nil && strings.HasPrefix(*m.Database, "connection.") {
 		return []string{strings.TrimPrefix(*m.Database, "connection.")}
 	}
 	return nil
 }
 
-func (m *ModBase[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
+func (m *Mod[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
 	if m.Database != nil {
 		modDatabase := *m.Database
 
@@ -447,28 +447,28 @@ func (m *ModBase[T]) GetDefaultConnectionString(evalContext *hcl.EvalContext) (s
 	return constants.DefaultSteampipeConnectionString, nil
 }
 
-func (m *ModBase[T]) GetDependencyName() string {
+func (m *Mod[T]) GetDependencyName() string {
 	return m.DependencyName
 }
-func (m *ModBase[T]) GetDependencyPath() *string {
+func (m *Mod[T]) GetDependencyPath() *string {
 	return m.DependencyPath
 }
 
-func (m *ModBase[T]) GetModPath() string {
+func (m *Mod[T]) GetModPath() string {
 	return m.ModPath
 }
 
-func (m *ModBase[T]) GetRequire() *Require {
+func (m *Mod[T]) GetRequire() *Require {
 	return m.Require
 }
 
-func (m *ModBase[T]) SetRequire(require *Require) {
+func (m *Mod[T]) SetRequire(require *Require) {
 	m.Require = require
 }
 
-func (m *ModBase[T]) SetTitle(title string) {
+func (m *Mod[T]) SetTitle(title string) {
 	m.Title = &title
 }
-func (m *ModBase[T]) GetVersion() *DependencyVersion {
+func (m *Mod[T]) GetVersion() *DependencyVersion {
 	return m.Version
 }

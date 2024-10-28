@@ -27,7 +27,7 @@ type Trigger struct {
 	modconfig.HclResourceImpl
 	modconfig.ResourceWithMetadataImpl
 
-	mod *modconfig.ModBase[*ModResources]
+	mod *modconfig.Mod[*ModResources]
 
 	FileName        string          `json:"file_name"`
 	StartLineNumber int             `json:"start_line_number"`
@@ -54,7 +54,7 @@ type Trigger struct {
 }
 
 // Implements the ModTreeItem interface
-func (t *Trigger) GetMod() *modconfig.ModBase[*ModResources] {
+func (t *Trigger) GetMod() *modconfig.Mod[*ModResources] {
 	return t.mod
 }
 
@@ -1229,7 +1229,7 @@ func (c *TriggerHTTPMethod) GetArgs(evalContext *hcl.EvalContext) (Input, hcl.Di
 	return retVal, diags
 }
 
-func NewTrigger(block *hcl.Block, mod *modconfig.ModBase[*ModResources], triggerType, triggerName string) *Trigger {
+func NewTrigger(block *hcl.Block, mod *modconfig.Mod[*ModResources], triggerType, triggerName string) *Trigger {
 
 	triggerFullName := triggerType + "." + triggerName
 

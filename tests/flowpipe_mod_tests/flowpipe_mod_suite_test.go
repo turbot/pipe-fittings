@@ -3,6 +3,7 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"os"
 	"path"
 	"reflect"
@@ -21,7 +22,6 @@ import (
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/modconfig"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"

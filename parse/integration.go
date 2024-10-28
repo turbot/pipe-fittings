@@ -2,11 +2,10 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/funcs"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
 )
