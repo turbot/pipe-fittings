@@ -40,6 +40,7 @@ func emptyFlowpipeModResources() *ModResources {
 
 		Mods:      make(map[string]*modconfig.Mod),
 		Variables: make(map[string]*modconfig.Variable),
+		Locals:    make(map[string]*modconfig.Local),
 
 		// Flowpipe
 		Pipelines: make(map[string]*Pipeline),
