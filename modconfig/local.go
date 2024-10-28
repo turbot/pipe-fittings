@@ -3,7 +3,7 @@ package modconfig
 import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -19,17 +19,23 @@ type Local struct {
 }
 
 func NewLocal(name string, val cty.Value, declRange hcl.Range, mod *Mod) *Local {
+	// special case creation code
 	fullName := fmt.Sprintf("%s.local.%s", mod.ShortName, name)
-	// create a fake block to pass to NewHclResourceImpl
-	b := &hcl.Block{Body: &hclsyntax.Body{SrcRange: declRange}}
-
 	l := &Local{
 		Value: val,
 		ModTreeItemImpl: ModTreeItemImpl{
-			HclResourceImpl: NewHclResourceImpl(b, fullName, WithDisableCtySerialise()),
+			HclResourceImpl: HclResourceImpl{
+				ShortName:       name,
+				UnqualifiedName: fmt.Sprintf("local.%s", name),
+				FullName:        fullName,
+				DeclRange:       declRange,
+				BlockType:       schema.BlockTypeLocals,
+				// disable cty serialisation of base properties
+				disableCtySerialise: true,
+			},
+			Mod: mod,
 		},
 	}
-	l.Mod = mod
 	return l
 }
 
