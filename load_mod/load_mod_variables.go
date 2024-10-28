@@ -52,8 +52,7 @@ func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 	mod := parseCtx.CurrentMod
 	path := mod.GetModPath()
 
-	var inputValuesUnparsed, err = inputvars.CollectVariableValues(path, variableFileArgs, variableArgs, parseCtx.Current
-	 mod.ShortName)
+	var inputValuesUnparsed, err = inputvars.CollectVariableValues(path, variableFileArgs, variableArgs, parseCtx.CurrentMod.ShortName)
 	if err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
@@ -108,7 +107,7 @@ func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *m
 	missingVarErr := steampipeconfig.NewMissingVarsError(parseCtx.CurrentMod)
 
 	// build a lookup with the dependency path of the root mod and all top level dependencies
-	rootName := variableMap. mod.ShortName
+	rootName := variableMap.Mod.ShortName
 	topLevelModLookup := map[steampipeconfig.DependencyPathKey]struct{}{steampipeconfig.DependencyPathKey(rootName): {}}
 	for dep := range parseCtx.WorkspaceLock.InstallCache {
 		depPathKey := steampipeconfig.NewDependencyPathKey(rootName, dep)
@@ -185,7 +184,7 @@ func getVariableValueMapKey(k string, variableMap *modconfig.ModVariableMap) str
 	// if the mod name is the same as the current mod (variableMap.Mod)
 	// then add a map entry with the variable short name
 	// this will allow us to match the variable value to a variable defined in this mod
-	if err == nil && parsedName.Mod == variableMap. mod.ShortName {
+	if err == nil && parsedName.Mod == variableMap.Mod.ShortName {
 		k = parsedName.Name
 	}
 	return k
