@@ -3,7 +3,6 @@ package parse
 import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
-	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"log/slog"
 	"maps"
 	"strings"
@@ -70,8 +69,8 @@ type ModParseContext struct {
 	// TODO K these are flowpipe only
 	// TODO K are these even needed?
 	// PipelineHcls map[string]*flowpipe.Pipeline
-	TriggerHcls     map[string]*flowpipe.Trigger
-	IntegrationHcls map[string]flowpipe.Integration
+	//TriggerHcls     map[string]*flowpipe.Trigger
+	//IntegrationHcls map[string]flowpipe.Integration
 
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
@@ -130,11 +129,12 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 	c := &ModParseContext{
 		ParseContext: parseContext,
 
+		// TODO K can we remove?
 		// TODO: fix this issue
 		// TODO: temporary mapping until we sort out merging Flowpipe and Steampipe
-		// PipelineHcls: make(map[string]*flowpipe.Pipeline),
-		TriggerHcls:     make(map[string]*flowpipe.Trigger),
-		IntegrationHcls: make(map[string]flowpipe.Integration),
+		// : make(map[string]*flowpipe.Pipeline),
+		//TriggerHcls:     make(map[string]*flowpipe.Trigger),
+		//IntegrationHcls: make(map[string]flowpipe.Integration),
 
 		WorkspaceLock: workspaceLock,
 
@@ -580,24 +580,14 @@ func (m *ModParseContext) getResourceCtyValue(resource modconfig.HclResource) (c
 	if valueMap == nil {
 		valueMap = make(map[string]cty.Value)
 	}
-	base := resource.GetHclResourceImpl()
-	if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
-		return cty.Zero, m.errToCtyValueDiags(resource, err)
-	}
-
-	if qp, ok := resource.(powerpipe.QueryProvider); ok {
-		base := qp.GetQueryProviderImpl()
+	// get all nested structs (i.e. HclResourceImpl, ModTreeItemImpl and QueryProviderImpl - if this resource contains them)
+	nestedStructs := resource.GetNestedStructs()
+	for _, base := range nestedStructs {
 		if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
 			return cty.Zero, m.errToCtyValueDiags(resource, err)
 		}
 	}
 
-	if treeItem, ok := resource.(modconfig.ModTreeItem); ok {
-		base := treeItem.GetModTreeItemImpl()
-		if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
-			return cty.Zero, m.errToCtyValueDiags(resource, err)
-		}
-	}
 	return cty.ObjectVal(valueMap), nil
 }
 
@@ -923,12 +913,13 @@ func (m *ModParseContext) AddPipeline(pipelineHcl *flowpipe.Pipeline) hcl.Diagno
 
 func (m *ModParseContext) AddTrigger(trigger *flowpipe.Trigger) hcl.Diagnostics {
 
+	// TODO K is this mechanism still needed?
 	// Split and get the last part for pipeline name
-	parts := strings.Split(trigger.Name(), ".")
-	triggerNameOnly := parts[len(parts)-1]
+	//parts := strings.Split(trigger.Name(), ".")
+	//triggerNameOnly := parts[len(parts)-1]
 
 	// we don't add the trigger in the reference values unlike pipeline, but this seems to work?
-	m.TriggerHcls[triggerNameOnly] = trigger
+	//m.TriggerHcls[triggerNameOnly] = trigger
 
 	// remove this resource from unparsed blocks
 	delete(m.UnresolvedBlocks, trigger.Name())

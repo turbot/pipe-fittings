@@ -303,3 +303,8 @@ func (q *QueryProviderImpl) Diff(other QueryProvider) *modconfig.ModTreeItemDiff
 
 	return d
 }
+
+func (b *QueryProviderImpl) GetNestedStructs() []modconfig.CtyValueProvider {
+	// return all nested structs - this is used to get the nested structs for the cty serialisation
+	return append([]modconfig.CtyValueProvider{&b.RuntimeDependencyProviderImpl}, b.RuntimeDependencyProviderImpl.GetNestedStructs()...)
+}

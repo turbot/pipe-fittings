@@ -58,12 +58,6 @@ func NewModResources(mod *modconfig.Mod, sourceMaps ...modconfig.ResourceMapsI) 
 	return res
 }
 
-func NewSourceSnapshotModResources(snapshotPaths []string) *ModResources {
-	res := emptyPowerpipeModResources()
-	res.AddSnapshots(snapshotPaths)
-	return res
-}
-
 func emptyPowerpipeModResources() *ModResources {
 	return &ModResources{
 		Controls:              make(map[string]*Control),

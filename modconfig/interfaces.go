@@ -24,6 +24,7 @@ type HclResource interface {
 	SetTopLevel(bool)
 	IsTopLevel() bool
 	GetBase() HclResource
+	GetNestedStructs() []CtyValueProvider
 	GetHclResourceImpl() *HclResourceImpl
 }
 

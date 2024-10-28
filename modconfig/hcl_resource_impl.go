@@ -252,3 +252,7 @@ func (h *HclResourceImpl) SetBaseProperties() {
 func (h *HclResourceImpl) getBaseImpl() *HclResourceImpl {
 	return h.base.GetHclResourceImpl()
 }
+
+func (*HclResourceImpl) GetNestedStructs() []CtyValueProvider {
+	return nil
+}

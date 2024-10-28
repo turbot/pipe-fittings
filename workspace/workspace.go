@@ -73,10 +73,12 @@ type Workspace struct {
 	// TODO K needed?
 	//PipesMetadata *steampipeconfig.PipesMetadata
 
+	// TODO K needed?
+
 	// source snapshot paths
 	// if this is set, no other mod resources are loaded and
 	// the PowerpipeResourceMaps returned by GetModResources will contain only the snapshots
-	SourceSnapshots []string
+	//SourceSnapshots []string
 
 	watcher     *filewatcher.FileWatcher
 	loadLock    *sync.Mutex
@@ -419,4 +421,17 @@ func (w *Workspace) LoadLock() {
 
 func (w *Workspace) LoadUnlock() {
 	w.loadLock.Unlock()
+}
+
+// GetResourceMaps implements ResourceMapsProvider
+func (w *Workspace) GetResourceMaps() modconfig.ResourceMapsI {
+
+	w.LoadLock()
+	defer w.LoadUnlock()
+
+	return w.Mod.GetResourceMaps()
+}
+
+func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
+	return w.GetResourceMaps().GetResource(parsedName)
 }

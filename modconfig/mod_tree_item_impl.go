@@ -224,3 +224,8 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 func (b *ModTreeItemImpl) IsDependencyResource() bool {
 	return b.GetMod().GetDependencyPath() != nil
 }
+
+func (b *ModTreeItemImpl) GetNestedStructs() []CtyValueProvider {
+	// return all nested structs - this is used to get the nested structs for the cty serialisation
+	return append([]CtyValueProvider{&b.HclResourceImpl}, b.HclResourceImpl.GetNestedStructs()...)
+}
