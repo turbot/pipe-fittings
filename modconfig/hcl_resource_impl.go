@@ -31,7 +31,7 @@ type HclResourceImpl struct {
 	MaxConcurrency *int `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource
-	BlockType           string `json:"-" cty:"block_type" hcl:"-"`
+	BlockType           string `json:"-"`
 	disableCtySerialise bool
 	isTopLevel          bool
 }

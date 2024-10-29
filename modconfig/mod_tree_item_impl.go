@@ -23,7 +23,7 @@ type ModTreeItemImpl struct {
 	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
 
 	Paths    []NodePath    `json:"path,omitempty"`
-	Children []ModTreeItem `json:"-" cty:"-" hcl:"-"`
+	Children []ModTreeItem `json:"-"`
 
 	// node may have multiple parents
 	// use a map to avoid dupes
