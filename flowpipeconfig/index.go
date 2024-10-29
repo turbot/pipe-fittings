@@ -194,6 +194,9 @@ func (f *FlowpipeConfig) handleFileWatcherEvent(ctx context.Context) {
 
 func (f *FlowpipeConfig) NotifierValueMap() (map[string]cty.Value, error) {
 	varValueNotifierMap := make(map[string]cty.Value)
+	if f == nil {
+		return varValueNotifierMap, nil
+	}
 
 	for k, i := range f.Notifiers {
 		var err error

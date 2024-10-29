@@ -39,7 +39,7 @@ func WithConfigValueMap(valueMaps map[string]map[string]cty.Value) ModParseConte
 	}
 }
 
-func WithDecoderOptions(decoderOptions []DecoderOption) ModParseContextOption {
+func WithDecoderOptions(decoderOptions ...DecoderOption) ModParseContextOption {
 	return func(m *ModParseContext) {
 		m.decoderOptions = decoderOptions
 	}

@@ -9,8 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
+	fpparse "github.com/turbot/pipe-fittings/parse/flowpipe"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
+	"github.com/turbot/pipe-fittings/workspace"
 )
 
 type FlowpipeModEqualityTestSuite struct {
@@ -587,13 +589,23 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 			utils.EmptyDir(TARGET_DIR)         //nolint:errcheck // test only
 			utils.CopyDir(tc.base, TARGET_DIR) //nolint:errcheck // test only
 
-			flowpipeConfigA, err := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
-			if err.Error != nil {
-				assert.FailNow(err.Error.Error())
+			flowpipeConfigA, ew := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
+			if ew.Error != nil {
+				assert.FailNow(ew.Error.Error())
 				return
 			}
 
-			wA, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigA.Credentials), workspace.WithIntegrations(flowpipeConfigA.Integrations), workspace.WithNotifiers(flowpipeConfigA.Notifiers))
+			notiferMapA, err := flowpipeConfigA.NotifierValueMap()
+			if err != nil {
+				assert.FailNow(err.Error())
+				return
+			}
+
+			wA, errorAndWarning := workspace.Load(suite.ctx,
+				TARGET_DIR,
+				workspace.WithDecoderOptions(fpparse.WithCredentials(flowpipeConfigA.Credentials)),
+				workspace.WithConfigValueMap("notifier", notiferMapA))
+
 			assert.NotNil(wA)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))
@@ -601,16 +613,26 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 			utils.EmptyDir(TARGET_DIR)            //nolint:errcheck // test only
 			utils.CopyDir(tc.compare, TARGET_DIR) //nolint:errcheck // test only
 
-			flowpipeConfigB, err := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
-			if err.Error != nil {
-				assert.FailNow(err.Error.Error())
+			flowpipeConfigB, ew := flowpipeconfig.LoadFlowpipeConfig([]string{TARGET_DIR})
+			if ew.Error != nil {
+				assert.FailNow(ew.Error.Error())
 				return
 			}
 
-			wB, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigB.Credentials), workspace.WithIntegrations(flowpipeConfigB.Integrations), workspace.WithNotifiers(flowpipeConfigB.Notifiers))
+			notiferMapB, err := flowpipeConfigB.NotifierValueMap()
+			if err != nil {
+				assert.FailNow(err.Error())
+				return
+			}
+
+			wB, ew := workspace.Load(suite.ctx,
+				TARGET_DIR,
+				workspace.WithDecoderOptions(fpparse.WithCredentials(flowpipeConfigB.Credentials)),
+				workspace.WithConfigValueMap("notifier", notiferMapB))
+
 			assert.NotNil(wB)
-			assert.Nil(errorAndWarning.Error)
-			assert.Equal(0, len(errorAndWarning.Warnings))
+			assert.Nil(ew.Error)
+			assert.Equal(0, len(ew.Warnings))
 
 			assert.Equal(tc.equal, wA.GetResourceMaps().Equals(wB.GetResourceMaps()))
 		})

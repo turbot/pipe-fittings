@@ -3,13 +3,13 @@ package load_mod
 import (
 	"context"
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"os"
 	"path/filepath"
 
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/parse"
 	"github.com/turbot/pipe-fittings/perr"
 )
@@ -40,7 +40,7 @@ func LoadPipelines(ctx context.Context, configPath string) (map[string]*flowpipe
 	var triggers map[string]*flowpipe.Trigger
 
 	if mod != nil && mod.GetResourceMaps() != nil {
-		resourceMaps := flowpipe.GetModResources(mod.GetMod())
+		resourceMaps := flowpipe.GetModResources(mod)
 		pipelines = resourceMaps.Pipelines
 		triggers = resourceMaps.Triggers
 	}

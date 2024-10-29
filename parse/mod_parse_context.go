@@ -171,7 +171,9 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 		WithParseFlags(parent.Flags),
 		WithListOptions(parent.ListOptions),
 		WithLateBinding(parent.supportLateBinding),
-		WithConnections(parent.PipelingConnections))
+		WithConnections(parent.PipelingConnections),
+		WithDecoderOptions(parent.decoderOptions...),
+		WithConfigValueMap(parent.configValueMaps))
 
 	if err != nil {
 		return nil, err

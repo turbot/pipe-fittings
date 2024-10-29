@@ -321,7 +321,7 @@ func (w *Workspace) GetParseContext(ctx context.Context) (*parse.ModParseContext
 		parse.WithConnections(w.PipelingConnections),
 		parse.WithLateBinding(w.SupportLateBinding),
 		parse.WithConfigValueMap(w.configValueMaps),
-		parse.WithDecoderOptions(w.decoderOptions))
+		parse.WithDecoderOptions(w.decoderOptions...))
 
 	if err != nil {
 		return nil, err
