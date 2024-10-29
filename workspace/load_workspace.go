@@ -1,18 +1,17 @@
-package flowpipe
+package workspace
 
 import (
 	"context"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/utils"
-	"github.com/turbot/pipe-fittings/workspace"
 	"log/slog"
 	"time"
 
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
-func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (*workspace.Workspace, error_helpers.ErrorAndWarnings) {
+func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, error_helpers.ErrorAndWarnings) {
 	// do not load resources if there is no modfile
 	opts = append(opts, WithSkipResourceLoadIfNoModfile(true))
 
@@ -26,7 +25,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 	}
 
 	// kif there wqs an error check if it was a missing variable error and if so prompt for variables
-	if err := workspace.HandleWorkspaceLoadError(ctx, errAndWarnings.GetError(), workspacePath); err != nil {
+	if err := HandleWorkspaceLoadError(ctx, errAndWarnings.GetError(), workspacePath); err != nil {
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
@@ -36,7 +35,7 @@ func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath strin
 
 // Load_ creates a Workspace and loads the workspace mod
 
-func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspaceOption) (w *workspace.Workspace, ew error_helpers.ErrorAndWarnings) {
+func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (w *Workspace, ew error_helpers.ErrorAndWarnings) {
 	cfg := newLoadFlowpipeWorkspaceConfig()
 	for _, o := range opts {
 		o(cfg)
@@ -45,7 +44,7 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 	utils.LogTime("w.Load start")
 	defer utils.LogTime("w.Load end")
 
-	w = &workspace.Workspace{
+	w = &Workspace{
 		Path:              workspacePath,
 		VariableValues:    make(map[string]string),
 		ValidateVariables: true,
@@ -61,13 +60,13 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadFlowpipeWorkspa
 		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
-	w.Credentials = cfg.credentials
 	w.PipelingConnections = cfg.pipelingConnections
 	w.SupportLateBinding = cfg.supportLateBinding
-	w.Integrations = cfg.integrations
-	w.Notifiers = cfg.notifiers
 	w.BlockTypeInclusions = cfg.blockTypeInclusions
 	w.ValidateVariables = cfg.validateVariables
+
+	w.configValueMaps = cfg.configValueMaps
+	w.decoderOptions = cfg.decoderOptions
 
 	// if there is a mod file (or if we are loading resources even with no modfile), load them
 	if w.ModfileExists() || !cfg.skipResourceLoadIfNoModfile {

@@ -3,7 +3,6 @@ package pipeline_test
 import (
 	"context"
 	"encoding/json"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"os"
 	"path"
 	"reflect"
@@ -22,11 +21,14 @@ import (
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/parse"
+	fparse "github.com/turbot/pipe-fittings/parse/flowpipe"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
-	fworkspace "github.com/turbot/pipe-fittings/workspace/flowpipe"
+	"github.com/turbot/pipe-fittings/workspace"
+
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -91,7 +93,7 @@ func (suite *FlowpipeModTestSuite) TestModThrowConfig() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_throw_config", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_throw_config")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -112,7 +114,7 @@ func (suite *FlowpipeModTestSuite) TestPipelineWithTags() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./pipeline_with_tags", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_with_tags")
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -149,7 +151,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerDependencies() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_dependencies"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./trigger_dependencies", fworkspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_dependencies", workspace.WithDecoderOptions(fparse.WithCredentials(flowpipeConfig.Credentials)))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -170,7 +172,7 @@ func (suite *FlowpipeModTestSuite) TestTriggerWithParam() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./trigger_with_param"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./trigger_with_param", fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./trigger_with_param", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	assert.NotNil(w)
 	assert.Nil(errorAndWarning.Error)
 
@@ -253,10 +255,10 @@ func (suite *FlowpipeModTestSuite) TestModTagsMutipleFiles() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./tags_multiple_files"})
+	_, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./tags_multiple_files"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./tags_multiple_files", fworkspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./tags_multiple_files")
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -271,7 +273,7 @@ func (suite *FlowpipeModTestSuite) TestModWithDocs() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./with_docs", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./with_docs")
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -294,7 +296,7 @@ func (suite *FlowpipeModTestSuite) TestGoodMod() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./good_mod", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./good_mod")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -369,7 +371,7 @@ func (suite *FlowpipeModTestSuite) TestModReferences() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_references", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_references")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -393,6 +395,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigInvalidIntegration() {
 	// Reading from different file will always result in different config
 	_, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_invalid_integration"})
 	assert.NotNil(err.Error)
+
 }
 
 func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
@@ -429,7 +432,7 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigConnection() {
 	assert.Equal("abc1", *slackConn.Token)
 
 	// Check that the connection is loaded in the workspace
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./config_dir_connections", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./config_dir_connections", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -541,11 +544,11 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsWithContextFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds_using_context_function", fworkspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_using_context_function", workspace.WithDecoderOptions(fparse.WithCredentials(flowpipeConfig.Credentials)))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	credentials := w.Credentials
+	credentials := flowpipeConfig.Credentials
 	slackCreds := credentials["slack.slack_creds"]
 	slackCredsCty, e := slackCreds.CtyValue()
 	assert.Nil(e)
@@ -566,7 +569,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnWithContextFunction() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_using_context_function"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn_using_context_function", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_using_context_function", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -589,11 +592,11 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsInOutput() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_creds_output"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds_output", fworkspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_output", workspace.WithDecoderOptions(fparse.WithCredentials(flowpipeConfig.Credentials)))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
-	credentials := w.Credentials
+	credentials := flowpipeConfig.Credentials
 	awsExampleCreds := credentials["aws.example"]
 	slackCredsCty, e := awsExampleCreds.CtyValue()
 	assert.Nil(e)
@@ -624,7 +627,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnInOutput() {
 	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_conn_output"})
 	assert.Nil(err.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn_output", fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn_output", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -656,10 +659,15 @@ func (suite *FlowpipeModTestSuite) TestModIntegrationNotifierParam() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_integration_notifier_param"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_integration_notifier_param"})
+	assert.Nil(ew.Error)
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_integration_notifier_param", fworkspace.WithCredentials(flowpipeConfig.Credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_integration_notifier_param", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -673,10 +681,16 @@ func (suite *FlowpipeModTestSuite) TestModSimpleInputStep() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_input_step_simple"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_with_input_step_simple"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_input_step_simple", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_input_step_simple", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -768,9 +782,9 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 	require := require.New(suite.T())
 
 	// the order of directories matter because we determine which one has precedent. the "admins" notifier used will be the one defined in config_dir_more_integrations
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
-	if err.Error != nil {
-		assert.FailNow(err.Error.Error())
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir_more_integrations", "./mod_with_integration"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
 		return
 	}
 
@@ -779,10 +793,16 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegrationEmail() {
 		return
 	}
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_integration", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
-	assert.Equal(5, len(w.Integrations))
+	assert.Equal(5, len(flowpipeConfig.Integrations))
 
 	pipelines := w.Mod.GetResourceMaps().(*flowpipe.ModResources).Pipelines
 	pipeline := pipelines["mod_with_integration.pipeline.approval_with_notifies"]
@@ -1610,9 +1630,9 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir", "./mod_with_integration"})
-	if err.Error != nil {
-		assert.FailNow(err.Error.Error())
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./config_dir", "./mod_with_integration"})
+	if ew.Error != nil {
+		assert.FailNow(ew.Error.Error())
 		return
 	}
 
@@ -1658,9 +1678,9 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("devs", devsNotifier.GetHclResourceImpl().FullName)
 	assert.Equal(2, len(devsNotifier.GetNotifies()))
 
-	dvCtyVal, err2 := devsNotifier.CtyValue()
-	if err2 != nil {
-		assert.Fail(err2.Error())
+	dvCtyVal, err := devsNotifier.CtyValue()
+	if err != nil {
+		assert.Fail(err.Error())
 		return
 	}
 
@@ -1674,12 +1694,17 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal(2, len(devsNotifiesSlice))
 	assert.Equal("#devs", devsNotifiesSlice[0].AsValueMap()["channel"].AsString())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_integration", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_integration", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
-	assert.Equal(2, len(w.Integrations))
-	assert.NotNil(w.Integrations["slack.my_slack_app"])
-	if i, ok := w.Integrations["slack.my_slack_app"].(*flowpipe.SlackIntegration); !ok {
+	assert.Equal(2, len(flowpipeConfig.Integrations))
+	assert.NotNil(flowpipeConfig.Integrations["slack.my_slack_app"])
+	if i, ok := flowpipeConfig.Integrations["slack.my_slack_app"].(*flowpipe.SlackIntegration); !ok {
 		assert.Fail("integration failed to parse to SlackIntegration")
 	} else {
 		assert.Equal("slack.my_slack_app", i.FullName)
@@ -1701,14 +1726,14 @@ func (suite *FlowpipeModTestSuite) TestFlowpipeConfigIntegration() {
 	assert.Equal("Do you want to approve?", *step.Prompt)
 
 	// This notifier CtyValue function
-	ctyVal, err2 := step.Notifier.CtyValue()
-	if err2 != nil {
-		assert.Fail(err2.Error())
+	ctyVal, err := step.Notifier.CtyValue()
+	if err != nil {
+		assert.Fail(err.Error())
 		return
 	}
 
-	notifierMap := ctyVal.AsValueMap()
-	notifiesSlice := notifierMap["notifies"].AsValueSlice()
+	stepNotifierMap := ctyVal.AsValueMap()
+	notifiesSlice := stepNotifierMap["notifies"].AsValueSlice()
 	assert.Equal(1, len(notifiesSlice))
 
 	notifies := step.Notifier.GetNotifies()
@@ -1789,7 +1814,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCreds() {
 	}
 
 	os.Setenv("ACCESS_KEY", "foobarbaz")
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds", fworkspace.WithCredentials(credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithDecoderOptions(fparse.WithCredentials(credentials)))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1832,7 +1857,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsNoEnvVarSet() {
 	}
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds", fworkspace.WithCredentials(credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds", workspace.WithDecoderOptions(fparse.WithCredentials(credentials)))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1871,7 +1896,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConn() {
 	os.Setenv("ACCESS_KEY", "foobarbaz")
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn", fworkspace.WithPipelingConnections(connections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", workspace.WithPipelingConnections(connections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1909,7 +1934,7 @@ func (suite *FlowpipeModTestSuite) TestModWithConnNoEnvVarSet() {
 	}
 
 	// This is the same test with TestModWithCreds but with no ACCESS_KEY env var set, the value for the second step should be nil
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_conn", fworkspace.WithPipelingConnections(connections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_conn", workspace.WithPipelingConnections(connections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1949,7 +1974,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicCreds() {
 		},
 	}
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_dynamic_creds", fworkspace.WithCredentials(credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_creds", workspace.WithDecoderOptions(fparse.WithCredentials(credentials)))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -1982,7 +2007,7 @@ func (suite *FlowpipeModTestSuite) TestModDynamicConn() {
 		},
 	}
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_dynamic_conn", fworkspace.WithPipelingConnections(connections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_dynamic_conn", workspace.WithPipelingConnections(connections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2024,7 +2049,7 @@ func (suite *FlowpipeModTestSuite) TestModWithCredsResolved() {
 		},
 	}
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_creds_resolved", fworkspace.WithCredentials(credentials))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_creds_resolved", workspace.WithDecoderOptions(fparse.WithCredentials(credentials)))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2064,7 +2089,7 @@ func (suite *FlowpipeModTestSuite) TestStepOutputParsing() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_with_step_output", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_with_step_output")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2090,7 +2115,7 @@ func (suite *FlowpipeModTestSuite) TestModDependencies() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_dep_one", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_one")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2154,7 +2179,7 @@ func (suite *FlowpipeModTestSuite) TestModDependenciesSimple() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_dep_simple", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dep_simple")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2217,7 +2242,7 @@ func (suite *FlowpipeModTestSuite) TestModVariable() {
 
 	os.Setenv("FP_VAR_var_six", "set from env var")
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_variable", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_variable")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2346,11 +2371,16 @@ func (suite *FlowpipeModTestSuite) TestModMessageStep() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_message_step"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_message_step"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_message_step", fworkspace.WithCredentials(flowpipeConfig.Credentials),
-		fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_message_step", workspace.WithConfigValueMap("notifier", notifierMap))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2440,11 +2470,15 @@ func (suite *FlowpipeModTestSuite) TestModDynamicPipeRef() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_dynamic_pipeline_ref"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_dynamic_pipeline_ref"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_dynamic_pipeline_ref", fworkspace.WithCredentials(flowpipeConfig.Credentials),
-		fworkspace.WithIntegrations(flowpipeConfig.Integrations), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_dynamic_pipeline_ref", workspace.WithConfigValueMap("notifier", notifierMap))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2475,10 +2509,15 @@ func (suite *FlowpipeModTestSuite) TestModTryFunction() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_try_function"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_try_function"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_try_function", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_try_function", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -2530,10 +2569,16 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithThrow() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_throw"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_throw"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./input_step_with_throw", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_throw", workspace.WithConfigValueMap("notifier", notifierMap))
+
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 }
@@ -2542,10 +2587,16 @@ func (suite *FlowpipeModTestSuite) TestInputStepWithLoop() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_loop"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./input_step_with_loop"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./input_step_with_loop", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./input_step_with_loop", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -2565,10 +2616,16 @@ func (suite *FlowpipeModTestSuite) TestLoopVarious() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	flowpipeConfig, err := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_loop_various"})
-	assert.Nil(err.Error)
+	flowpipeConfig, ew := flowpipeconfig.LoadFlowpipeConfig([]string{"./mod_loop_various"})
+	assert.Nil(ew.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./mod_loop_various", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx, "./mod_loop_various", workspace.WithConfigValueMap("notifier", notifierMap))
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -2755,7 +2812,7 @@ func (suite *FlowpipeModTestSuite) TestPipelineParamOrder() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./pipeline_param_order", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./pipeline_param_order")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2783,7 +2840,7 @@ func (suite *FlowpipeModTestSuite) TestModTriggers() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./triggers", fworkspace.WithCredentials(map[string]credential.Credential{}))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./triggers")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -2838,7 +2895,7 @@ func (suite *FlowpipeModTestSuite) TestEnumParam() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./enum_param")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./enum_param")
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
 
@@ -2853,7 +2910,7 @@ func (suite *FlowpipeModTestSuite) TestTags() {
 	assert := assert.New(suite.T())
 	require := require.New(suite.T())
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./tags")
+	w, errorAndWarning := workspace.Load(suite.ctx, "./tags")
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -3319,16 +3376,16 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeTwo() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_two"})
 	require.Nil(errAndWarning.Error)
 
-	w, errAndWarning := fworkspace.Load(suite.ctx, "./custom_type_two", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), fworkspace.WithNotifiers(flowpipeConfig.Notifiers))
-
-	require.NotNil(w)
-	require.Nil(errAndWarning.Error)
-
-	notifierMap, err := parse.BuildNotifierMapForEvalContext(flowpipeConfig.Notifiers)
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
 	if err != nil {
 		assert.Fail("error building notifier map")
 		return
 	}
+
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_two", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections), workspace.WithConfigValueMap("notifier", notifierMap))
+
+	require.NotNil(w)
+	require.Nil(errAndWarning.Error)
 
 	connMap := parse.BuildTemporaryConnectionMapForEvalContext(flowpipeConfig.PipelingConnections)
 	if err != nil {
@@ -3386,7 +3443,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeThree() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_three"})
 	require.Nil(errAndWarning.Error)
 
-	w, errAndWarning := fworkspace.Load(suite.ctx, "./custom_type_three", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_three", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 	require.NotNil(w)
 	require.Nil(errAndWarning.Error)
 
@@ -3416,7 +3473,7 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeFour() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_four"})
 	require.Nil(errAndWarning.Error)
 
-	w, errAndWarning := fworkspace.Load(suite.ctx, "./custom_type_four", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errAndWarning := workspace.Load(suite.ctx, "./custom_type_four", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errAndWarning.Error)
@@ -3429,7 +3486,7 @@ func (suite *FlowpipeModTestSuite) TestCustomType() {
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type"})
 	assert.Nil(errAndWarning.Error)
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./custom_type", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./custom_type", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -3443,7 +3500,16 @@ func (suite *FlowpipeModTestSuite) TestCustomTypeNotifier() {
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./custom_type_notifier"})
 	assert.Nil(errAndWarning.Error)
 
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./custom_type_notifier", fworkspace.WithNotifiers(flowpipeConfig.Notifiers), fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	notifierMap, err := flowpipeConfig.NotifierValueMap()
+	if err != nil {
+		assert.Fail("error building notifier map")
+		return
+	}
+
+	w, errorAndWarning := workspace.Load(suite.ctx,
+		"./custom_type_notifier",
+		workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections),
+		workspace.WithConfigValueMap("notifier", notifierMap))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -3477,7 +3543,7 @@ func (suite *FlowpipeModTestSuite) TestComplexVariable() {
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./complex_variable"})
 	assert.Nil(errAndWarning.Error)
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./complex_variable", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./complex_variable", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)
@@ -3496,7 +3562,7 @@ func (suite *FlowpipeModTestSuite) XTestForEach() {
 
 	flowpipeConfig, errAndWarning := flowpipeconfig.LoadFlowpipeConfig([]string{"./for_each"})
 	assert.Nil(errAndWarning.Error)
-	w, errorAndWarning := fworkspace.Load(suite.ctx, "./for_each", fworkspace.WithCredentials(flowpipeConfig.Credentials), fworkspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
+	w, errorAndWarning := workspace.Load(suite.ctx, "./for_each", workspace.WithPipelingConnections(flowpipeConfig.PipelingConnections))
 
 	require.NotNil(w)
 	require.Nil(errorAndWarning.Error)

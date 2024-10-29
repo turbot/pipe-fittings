@@ -2,7 +2,6 @@ package flowpipeconfig
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"log/slog"
 	"sync"
 
@@ -14,6 +13,8 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/modconfig"
+	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type FlowpipeConfig struct {
@@ -189,6 +190,20 @@ func (f *FlowpipeConfig) handleFileWatcherEvent(ctx context.Context) {
 		}
 	}
 
+}
+
+func (f *FlowpipeConfig) NotifierValueMap() (map[string]cty.Value, error) {
+	varValueNotifierMap := make(map[string]cty.Value)
+
+	for k, i := range f.Notifiers {
+		var err error
+		varValueNotifierMap[k], err = i.CtyValue()
+		if err != nil {
+			slog.Warn("failed to convert notifier to cty value", "notifier", i.Name(), "error", err)
+		}
+	}
+
+	return varValueNotifierMap, nil
 }
 
 func NewFlowpipeConfig(configPaths []string) *FlowpipeConfig {

@@ -11,6 +11,8 @@ import (
 	"log/slog"
 )
 
+type DecoderOption func(Decoder)
+
 type Decoder interface {
 	Decode(*ModParseContext) hcl.Diagnostics
 }

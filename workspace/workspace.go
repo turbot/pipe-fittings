@@ -6,8 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/turbot/pipe-fittings/connection"
-	"github.com/turbot/pipe-fittings/credential"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
+	"github.com/zclconf/go-cty/cty"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -30,45 +29,29 @@ import (
 	"github.com/turbot/pipe-fittings/versionmap"
 )
 
-//func createShellWorkspace(workspacePath string) (*Workspace, error) {
-//	// create shell workspace
-//	w := &Workspace{
-//		Path:              workspacePath,
-//		VariableValues:    make(map[string]string),
-//		ValidateVariables: true,
-//		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
-//	}
-//
-//	// check whether the workspace contains a modfile
-//	// this will determine whether we load files recursively, and create pseudo resources for sql files
-//	w.SetModfileExists()
-//
-//	// load the .steampipe ignore file
-//	if err := w.LoadExclusions(); err != nil {
-//		return nil, err
-//	}
-//
-//	return w, nil
-//}
-
 type Workspace struct {
 	Path                string
 	ModInstallationPath string
 	Mod                 *modconfig.Mod
 
-	// TODO remove and provide value maps from config somehow???
 	PipelingConnections map[string]connection.PipelingConnection
+
 	// TODO K flowpiwp specific but needed for now as we must add them to the parse context and that is done by the base workspace
 	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
 	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
-	Credentials  map[string]credential.Credential
-	Integrations map[string]flowpipe.Integration
-	Notifiers    map[string]flowpipe.Notifier
+	//Credentials  map[string]credential.Credential
+	//Integrations map[string]flowpipe.Integration
+	//Notifiers    map[string]flowpipe.Notifier
 
 	Mods map[string]*modconfig.Mod
 
 	// the input variables used in the parse
 	VariableValues map[string]string
+
+	// items from the global config which need to be added to the parse context as a value map
+	// Flowpipe uses this to populate notifiers
+	// it is a map of cty value maps - keyed by the typ ename (e.g. notifier)
+	configValueMaps map[string]map[string]cty.Value
 
 	// TODO K needed?
 	//PipesMetadata *steampipeconfig.PipesMetadata
@@ -96,6 +79,7 @@ type Workspace struct {
 	BlockTypeInclusions []string
 	ValidateVariables   bool
 	SupportLateBinding  bool
+	decoderOptions      []parse.DecoderOption
 }
 
 func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
@@ -319,7 +303,6 @@ func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *pa
 	return m, ew
 }
 
-// build options used to load workspace
 func (w *Workspace) GetParseContext(ctx context.Context) (*parse.ModParseContext, error) {
 	workspaceLock, err := w.loadWorkspaceLock(ctx)
 	if err != nil {
@@ -336,16 +319,13 @@ func (w *Workspace) GetParseContext(ctx context.Context) (*parse.ModParseContext
 		parse.WithParseFlags(parse.CreateDefaultMod),
 		parse.WithListOptions(listOptions),
 		parse.WithConnections(w.PipelingConnections),
-		parse.WithLateBinding(w.SupportLateBinding))
+		parse.WithLateBinding(w.SupportLateBinding),
+		parse.WithConfigValueMap(w.configValueMaps),
+		parse.WithDecoderOptions(w.decoderOptions))
 
 	if err != nil {
 		return nil, err
 	}
-
-	// TODO K we need another way to add these - maybe base workspace needs to call into derived workspace???
-	parseCtx.Credentials = w.Credentials
-	parseCtx.Integrations = w.Integrations
-	parseCtx.Notifiers = w.Notifiers
 
 	return parseCtx, nil
 }

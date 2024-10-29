@@ -2,28 +2,12 @@ package parse
 
 import (
 	"github.com/turbot/pipe-fittings/cty_helpers"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"log/slog"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/zclconf/go-cty/cty"
 )
-
-func BuildNotifierMapForEvalContext(notifiers map[string]flowpipe.Notifier) (map[string]cty.Value, error) {
-
-	varValueNotifierMap := make(map[string]cty.Value)
-
-	for k, i := range notifiers {
-		var err error
-		varValueNotifierMap[k], err = i.CtyValue()
-		if err != nil {
-			slog.Warn("failed to convert notifier to cty value", "notifier", i.Name(), "error", err)
-		}
-	}
-
-	return varValueNotifierMap, nil
-}
 
 // **WARNING** this function has a specific use case do not use
 //

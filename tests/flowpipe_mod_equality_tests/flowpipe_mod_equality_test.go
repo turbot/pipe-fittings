@@ -11,7 +11,6 @@ import (
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/tests/test_init"
 	"github.com/turbot/pipe-fittings/utils"
-	fworkspace "github.com/turbot/pipe-fittings/workspace/flowpipe"
 )
 
 type FlowpipeModEqualityTestSuite struct {
@@ -594,7 +593,7 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 				return
 			}
 
-			wA, errorAndWarning := fworkspace.Load(suite.ctx, TARGET_DIR, fworkspace.WithCredentials(flowpipeConfigA.Credentials), fworkspace.WithIntegrations(flowpipeConfigA.Integrations), fworkspace.WithNotifiers(flowpipeConfigA.Notifiers))
+			wA, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigA.Credentials), workspace.WithIntegrations(flowpipeConfigA.Integrations), workspace.WithNotifiers(flowpipeConfigA.Notifiers))
 			assert.NotNil(wA)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))
@@ -608,7 +607,7 @@ func (suite *FlowpipeModEqualityTestSuite) TestFlowpipeModEquality() {
 				return
 			}
 
-			wB, errorAndWarning := fworkspace.Load(suite.ctx, TARGET_DIR, fworkspace.WithCredentials(flowpipeConfigB.Credentials), fworkspace.WithIntegrations(flowpipeConfigB.Integrations), fworkspace.WithNotifiers(flowpipeConfigB.Notifiers))
+			wB, errorAndWarning := workspace.Load(suite.ctx, TARGET_DIR, workspace.WithCredentials(flowpipeConfigB.Credentials), workspace.WithIntegrations(flowpipeConfigB.Integrations), workspace.WithNotifiers(flowpipeConfigB.Notifiers))
 			assert.NotNil(wB)
 			assert.Nil(errorAndWarning.Error)
 			assert.Equal(0, len(errorAndWarning.Warnings))

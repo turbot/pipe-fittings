@@ -3,7 +3,6 @@ package parse
 import (
 	"fmt"
 	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
-	"log/slog"
 	"maps"
 	"strings"
 	"sync"
@@ -15,7 +14,6 @@ import (
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
-	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/inputvars"
 	"github.com/turbot/pipe-fittings/modconfig"
@@ -76,14 +74,10 @@ type ModParseContext struct {
 	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
 	// TODO K instead of storing these on parse context, the app registers functions to add value maps into the parse context
 
-	Credentials map[string]credential.Credential
-	Notifiers   map[string]flowpipe.Notifier
-	// TODO K IS THIS NEEDED
-	ConnectionImports map[string]modconfig.ConnectionImport
-	// TODO K IS THIS NEEDED
-	Integrations map[string]flowpipe.Integration
-	// TODO K IS THIS NEEDED
-	CredentialImports map[string]credential.CredentialImport
+	// only used to validate pipeline
+	//Credentials map[string]credential.Credential
+
+	//Notifiers   map[string]flowpipe.Notifier
 
 	ParentParseCtx *ModParseContext
 
@@ -116,12 +110,14 @@ type ModParseContext struct {
 	// if connections are early binding, this map contains the connection values
 	connectionValueMap map[string]cty.Value
 
-	// tactical: should temporary connections and notifiers be added to the reference values?
+	// tactical: should temporary connections be added to the reference values?
 	// this is a temporary solution until the 2 methods of determining runtime dependencies are merged
 	includeLateBindingResourcesInEvalContext bool
 
 	// mutex to control access to topLevelDependencyMods and resourceMaps when asyncronously adding dependency mods
-	depLock sync.Mutex
+	depLock         sync.Mutex
+	configValueMaps map[string]map[string]cty.Value
+	decoderOptions  []DecoderOption
 }
 
 func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath string, opts ...ModParseContextOption) (*ModParseContext, error) {
@@ -148,6 +144,7 @@ func NewModParseContext(workspaceLock *versionmap.WorkspaceLock, rootEvalPath st
 		lateBindingVars: make(map[string]cty.Value),
 		// default to supporting late binding
 		supportLateBinding: true,
+		configValueMaps:    make(map[string]map[string]cty.Value),
 	}
 
 	// apply options
@@ -194,11 +191,8 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 			child.AddVariablesToEvalContext()
 		}
 	}
-	child.Credentials = parent.Credentials
-
-	child.Integrations = parent.Integrations
-	child.CredentialImports = parent.CredentialImports
-	child.Notifiers = parent.Notifiers
+	//child.Credentials = parent.Credentials
+	//child.Notifiers = parent.Notifiers
 	child.connectionValueMap = parent.connectionValueMap
 
 	// ensure to inherit the value of includeLateBindingResourcesInEvalContext
@@ -500,12 +494,11 @@ func (m *ModParseContext) RebuildEvalContext() {
 		variables[mod] = cty.ObjectVal(refTypeMap)
 	}
 
-	varValueNotifierMap, err := BuildNotifierMapForEvalContext(m.Notifiers)
-	if err != nil {
-		slog.Warn("failed to build notifier map for eval context", "error", err)
+	// add in any config value maps	(these will be values of global config items which may be referred to -
+	// e.g. Flowpipe adds Notifiers)
+	for name, valueMap := range m.configValueMaps {
+		variables[name] = cty.ObjectVal(valueMap)
 	}
-
-	variables[schema.BlockTypeNotifier] = cty.ObjectVal(varValueNotifierMap)
 
 	if !m.supportLateBinding && len(m.PipelingConnections) > 0 {
 		variables[schema.BlockTypeConnection] = cty.ObjectVal(m.connectionValueMap)
@@ -517,14 +510,6 @@ func (m *ModParseContext) RebuildEvalContext() {
 			variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
 		}
 
-		if len(m.Notifiers) > 0 {
-			notifierMap, err := BuildNotifierMapForEvalContext(m.Notifiers)
-			if err != nil {
-				slog.Warn("failed to build notifier map for eval context", "error", err)
-			}
-
-			variables[schema.BlockTypeNotifier] = cty.ObjectVal(notifierMap)
-		}
 		if len(m.lateBindingVars) > 0 {
 			var vars map[string]cty.Value
 			if currentVars, gotVars := variables[schema.AttributeVar]; gotVars {
@@ -944,7 +929,7 @@ func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
 	}
 }
 
-// SetIncludeLateBindingResources sets whether connections and notifiers should be included in the eval context
+// SetIncludeLateBindingResources sets whether connections be included in the eval context
 // and rebuilds the eval context
 func (m *ModParseContext) SetIncludeLateBindingResources(include bool) {
 	// this is only relevant if we support late binding resources

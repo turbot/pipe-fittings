@@ -19,18 +19,31 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 )
 
-type FlowpipeModDecoder struct {
-	parse.DecoderImpl
+// flowpipe decoder options
+func WithCredentials(credentials map[string]credential.Credential) parse.DecoderOption {
+	return func(d parse.Decoder) {
+		decoder, ok := d.(*FlowpipeModDecoder)
+		if ok {
+			decoder.Credentials = credentials
+		}
+	}
 }
 
-// TODO K PARR CREDENTIALS IN FROM CONFFIG
-func NewFlowpipeModDecoder() parse.Decoder {
+type FlowpipeModDecoder struct {
+	parse.DecoderImpl
+	Credentials map[string]credential.Credential
+}
+
+func NewFlowpipeModDecoder(opts ...parse.DecoderOption) parse.Decoder {
 	d := &FlowpipeModDecoder{
 		DecoderImpl: parse.NewDecoderImpl(),
 	}
 	d.DecodeFuncs[schema.BlockTypePipeline] = d.decodePipeline
 	d.DecodeFuncs[schema.BlockTypeTrigger] = d.decodeTrigger
-
+	// apply options
+	for _, opt := range opts {
+		opt(d)
+	}
 	return d
 }
 
@@ -573,7 +586,7 @@ func (d *FlowpipeModDecoder) decodePipeline(block *hcl.Block, parseCtx *parse.Mo
 	}
 
 	handlePipelineDecodeResult(pipelineHcl, res, block, parseCtx)
-	diags = validatePipelineDependencies(pipelineHcl, parseCtx.Credentials, parseCtx.PipelingConnections)
+	diags = validatePipelineDependencies(pipelineHcl, d.Credentials, parseCtx.PipelingConnections)
 	if len(diags) > 0 {
 		res.HandleDecodeDiags(diags)
 

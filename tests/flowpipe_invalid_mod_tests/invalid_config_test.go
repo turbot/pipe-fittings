@@ -3,6 +3,7 @@ package invalid_mod_tests
 import (
 	"context"
 	"errors"
+	"github.com/turbot/pipe-fittings/workspace"
 	"os"
 	"path"
 	"testing"
@@ -10,11 +11,9 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/turbot/pipe-fittings/credential"
 	"github.com/turbot/pipe-fittings/flowpipeconfig"
 	"github.com/turbot/pipe-fittings/perr"
 	"github.com/turbot/pipe-fittings/tests/test_init"
-	fworkspace "github.com/turbot/pipe-fittings/workspace/flowpipe"
 )
 
 type FlowpipeSimpleInvalidConfigTestSuite struct {
@@ -208,9 +207,13 @@ func (suite *FlowpipeSimpleInvalidConfigTestSuite) TestSimpleInvalidMods() {
 			if !test.ignoreConfigParse {
 				assert.Contains(errorAndWarning.Error.Error(), test.containsError)
 			}
-
+			notifierValueMap, err := fpConfig.NotifierValueMap()
+			if err != nil {
+				assert.Fail("Error getting notifier value map")
+				return
+			}
 			if test.modDir != "" {
-				_, errorAndWarning := fworkspace.Load(suite.ctx, test.modDir, fworkspace.WithCredentials(map[string]credential.Credential{}), fworkspace.WithNotifiers(fpConfig.Notifiers))
+				_, errorAndWarning := workspace.Load(suite.ctx, test.modDir, workspace.WithConfigValueMap("notifier", notifierValueMap))
 				assert.NotNil(errorAndWarning.Error)
 				if errorAndWarning.Error != nil {
 					assert.Contains(errorAndWarning.Error.Error(), test.containsError)

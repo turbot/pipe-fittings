@@ -101,7 +101,7 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	if ModDecoderFunc == nil {
 		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("ModDecoderFunc not set - app should populate as part of app_specific init"))
 	}
-	modDecoder := ModDecoderFunc()
+	modDecoder := ModDecoderFunc(parseCtx.decoderOptions...)
 
 	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {

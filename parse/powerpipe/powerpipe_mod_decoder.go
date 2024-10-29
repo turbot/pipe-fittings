@@ -15,7 +15,7 @@ type PowerpipeModDecoder struct {
 	parse.DecoderImpl
 }
 
-func NewPowerpipeModDecoder() parse.Decoder {
+func NewPowerpipeModDecoder(opts ...parse.DecoderOption) parse.Decoder {
 	d := &PowerpipeModDecoder{
 		DecoderImpl: parse.NewDecoderImpl(),
 	}
@@ -28,7 +28,10 @@ func NewPowerpipeModDecoder() parse.Decoder {
 	d.DecodeFuncs[schema.BlockTypeDashboard] = d.decodeDashboard
 	d.DecodeFuncs[schema.BlockTypeContainer] = d.decodeDashboardContainer
 	d.DecodeFuncs[schema.BlockTypeBenchmark] = d.decodeBenchmark
-
+	// apply options
+	for _, opt := range opts {
+		opt(d)
+	}
 	return d
 }
 
