@@ -1,7 +1,0 @@
-notifier "notify_one" {
-  description = "foo"
-  title = "foo bar"
-  notify {
-    integration = integration.http.default
-  }
-}

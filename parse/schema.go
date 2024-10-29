@@ -2,11 +2,67 @@ package parse
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
+	"reflect"
 )
 
 // cache resource schemas
-var resourceSchemaCache = make(map[string]*hcl.BodySchema)
+var ResourceSchemaCache = make(map[string]*hcl.BodySchema)
+
+// build the hcl schema for this resource
+func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl.BodySchema {
+	t := reflect.TypeOf(helpers.DereferencePointer(resource))
+	typeName := t.Name()
+
+	if cachedSchema, ok := ResourceSchemaCache[typeName]; ok {
+		return cachedSchema
+	}
+	var res = &hcl.BodySchema{}
+
+	// ensure we cache before returning
+	defer func() {
+		ResourceSchemaCache[typeName] = res
+	}()
+
+	var schemas []*hcl.BodySchema
+
+	// build schema for top level object
+	schemas = append(schemas, GetSchemaForStruct(t))
+
+	// now get schemas for any nested structs (using cache)
+	for _, nestedStruct := range nestedStructs {
+		t := reflect.TypeOf(helpers.DereferencePointer(nestedStruct))
+		typeName := t.Name()
+
+		// is this cached?
+		nestedStructSchema, schemaCached := ResourceSchemaCache[typeName]
+		if !schemaCached {
+			nestedStructSchema = GetSchemaForStruct(t)
+			ResourceSchemaCache[typeName] = nestedStructSchema
+		}
+
+		// add to our list of schemas
+		schemas = append(schemas, nestedStructSchema)
+	}
+
+	// now merge the schemas
+	for _, s := range schemas {
+		res.Blocks = append(res.Blocks, s.Blocks...)
+		res.Attributes = append(res.Attributes, s.Attributes...)
+	}
+
+	if resource.GetBlockType() == schema.BlockTypeMod {
+		res.Blocks = append(res.Blocks, hcl.BlockHeaderSchema{Type: schema.BlockTypeRequire})
+	}
+
+	// if there is app specific schema, add it in
+	if AppSpecificGetResourceSchemaFunc != nil {
+		res = AppSpecificGetResourceSchemaFunc(resource, res)
+	}
+	return res
+}
 
 // PowerpipeConfigBlockSchema defines the config schema for Flowpipe config blocks.
 // The connection block setup is different, Steampipe only has one label while Pipelingconnections has 2 labels.

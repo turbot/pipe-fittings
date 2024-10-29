@@ -2,7 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"maps"
 	"strings"
 	"sync"
@@ -868,54 +867,55 @@ func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
 
 }
 
-// TODO: transition period
-// AddPipeline stores this resource as a variable to be added to the eval context. It alse
-func (m *ModParseContext) AddPipeline(pipelineHcl *flowpipe.Pipeline) hcl.Diagnostics {
-
-	// Split and get the last part for pipeline name
-	// pipelineFullName := pipelineHcl.Name()
-	// parts := strings.Split(pipelineFullName, ".")
-	// pipelineNameOnly := parts[len(parts)-1]
-
-	// m.PipelineHcls[pipelineNameOnly] = pipelineHcl
-	pCty, err := pipelineHcl.CtyValue()
-	if err != nil {
-		return hcl.Diagnostics{&hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("failed to convert pipeline '%s' to its cty value", pipelineHcl.Name()),
-			Detail:   err.Error(),
-			Subject:  pipelineHcl.GetDeclRange(),
-		}}
-	}
-
-	diags := m.addReferenceValue(pipelineHcl, pCty)
-	if diags.HasErrors() {
-		return diags
-	}
-
-	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, pipelineHcl.Name())
-
-	m.RebuildEvalContext()
-	return nil
-}
-
-func (m *ModParseContext) AddTrigger(trigger *flowpipe.Trigger) hcl.Diagnostics {
-
-	// TODO K is this mechanism still needed?
-	// Split and get the last part for pipeline name
-	//parts := strings.Split(trigger.Name(), ".")
-	//triggerNameOnly := parts[len(parts)-1]
-
-	// we don't add the trigger in the reference values unlike pipeline, but this seems to work?
-	//m.TriggerHcls[triggerNameOnly] = trigger
-
-	// remove this resource from unparsed blocks
-	delete(m.UnresolvedBlocks, trigger.Name())
-
-	m.RebuildEvalContext()
-	return nil
-}
+//
+//// TODO: transition period
+//// AddPipeline stores this resource as a variable to be added to the eval context. It alse
+//func (m *ModParseContext) AddPipeline(pipelineHcl *flowpipe2.Pipeline) hcl.Diagnostics {
+//
+//	// Split and get the last part for pipeline name
+//	// pipelineFullName := pipelineHcl.Name()
+//	// parts := strings.Split(pipelineFullName, ".")
+//	// pipelineNameOnly := parts[len(parts)-1]
+//
+//	// m.PipelineHcls[pipelineNameOnly] = pipelineHcl
+//	pCty, err := pipelineHcl.CtyValue()
+//	if err != nil {
+//		return hcl.Diagnostics{&hcl.Diagnostic{
+//			Severity: hcl.DiagError,
+//			Summary:  fmt.Sprintf("failed to convert pipeline '%s' to its cty value", pipelineHcl.Name()),
+//			Detail:   err.Error(),
+//			Subject:  pipelineHcl.GetDeclRange(),
+//		}}
+//	}
+//
+//	diags := m.addReferenceValue(pipelineHcl, pCty)
+//	if diags.HasErrors() {
+//		return diags
+//	}
+//
+//	// remove this resource from unparsed blocks
+//	delete(m.UnresolvedBlocks, pipelineHcl.Name())
+//
+//	m.RebuildEvalContext()
+//	return nil
+//}
+//
+//func (m *ModParseContext) AddTrigger(trigger *flowpipe2.Trigger) hcl.Diagnostics {
+//
+//	// TODO K is this mechanism still needed?
+//	// Split and get the last part for pipeline name
+//	//parts := strings.Split(trigger.Name(), ".")
+//	//triggerNameOnly := parts[len(parts)-1]
+//
+//	// we don't add the trigger in the reference values unlike pipeline, but this seems to work?
+//	//m.TriggerHcls[triggerNameOnly] = trigger
+//
+//	// remove this resource from unparsed blocks
+//	delete(m.UnresolvedBlocks, trigger.Name())
+//
+//	m.RebuildEvalContext()
+//	return nil
+//}
 
 // LoadVariablesOnly returns whether we are ONLY loading variables
 func (m *ModParseContext) LoadVariablesOnly() bool {

@@ -39,7 +39,7 @@ func (p *DecodeResult) Success() bool {
 // otherwise adds diags to the result
 func (p *DecodeResult) HandleDecodeDiags(diags hcl.Diagnostics) {
 	for _, diag := range diags {
-		if dependency := diagsToDependency(diag); dependency != nil {
+		if dependency := DiagsToDependency(diag); dependency != nil {
 			p.Depends[dependency.String()] = dependency
 		}
 	}
@@ -50,7 +50,7 @@ func (p *DecodeResult) HandleDecodeDiags(diags hcl.Diagnostics) {
 }
 
 // determine whether the diag is a dependency error, and if so, return a dependency object
-func diagsToDependency(diag *hcl.Diagnostic) *modconfig.ResourceDependency {
+func DiagsToDependency(diag *hcl.Diagnostic) *modconfig.ResourceDependency {
 	if helpers.StringSliceContains(missingVariableErrors, diag.Summary) {
 		return &modconfig.ResourceDependency{Range: diag.Expression.Range(), Traversals: diag.Expression.Variables()}
 	}

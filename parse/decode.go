@@ -2,7 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/modconfig/powerpipe"
 	"log/slog"
 	"strings"
 
@@ -82,17 +81,18 @@ func AddResourceToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx
 
 }
 
+// TODO K move to decoder
 func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) bool {
 	switch resource.(type) {
 	// do not add mods, withs
-	case *modconfig.Mod, *powerpipe.DashboardWith:
+	case *modconfig.Mod /*, *powerpipe2.DashboardWith*/ :
 		return false
 
-	case *powerpipe.DashboardCategory, *powerpipe.DashboardInput:
-		// if this is a dashboard category or dashboard input, only add top level blocks
-		// this is to allow nested categories/inputs to have the same name as top level categories
-		// (nested inputs are added by Dashboard.InitInputs)
-		return parseCtx.IsTopLevelBlock(block)
+	//case *powerpipe2.DashboardCategory, *powerpipe2.DashboardInput:
+	//	// if this is a dashboard category or dashboard input, only add top level blocks
+	//	// this is to allow nested categories/inputs to have the same name as top level categories
+	//	// (nested inputs are added by Dashboard.InitInputs)
+	//	return parseCtx.IsTopLevelBlock(block)
 	default:
 		return true
 	}
@@ -141,49 +141,6 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 //	diags := gohcl.DecodeBody(block.Body, evalCtx, require)
 //	return require, diags
 //}
-
-// return a shell resource for the given block
-func ResourceForBlock(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, hcl.Diagnostics) {
-	var resource modconfig.HclResource
-	// parseCtx already contains the current mod
-	mod := parseCtx.CurrentMod
-	blockName := parseCtx.DetermineBlockName(block)
-
-	factoryFuncs := map[string]func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource{
-		// for block type mod, just use the current mod
-		schema.BlockTypeMod:       func(*hcl.Block, *modconfig.Mod, string) modconfig.HclResource { return mod },
-		schema.BlockTypeQuery:     powerpipe.NewQuery,
-		schema.BlockTypeControl:   powerpipe.NewControl,
-		schema.BlockTypeBenchmark: powerpipe.NewBenchmark,
-		schema.BlockTypeDashboard: powerpipe.NewDashboard,
-		schema.BlockTypeContainer: powerpipe.NewDashboardContainer,
-		schema.BlockTypeChart:     powerpipe.NewDashboardChart,
-		schema.BlockTypeCard:      powerpipe.NewDashboardCard,
-		schema.BlockTypeFlow:      powerpipe.NewDashboardFlow,
-		schema.BlockTypeGraph:     powerpipe.NewDashboardGraph,
-		schema.BlockTypeHierarchy: powerpipe.NewDashboardHierarchy,
-		schema.BlockTypeImage:     powerpipe.NewDashboardImage,
-		schema.BlockTypeInput:     powerpipe.NewDashboardInput,
-		schema.BlockTypeTable:     powerpipe.NewDashboardTable,
-		schema.BlockTypeText:      powerpipe.NewDashboardText,
-		schema.BlockTypeNode:      powerpipe.NewDashboardNode,
-		schema.BlockTypeEdge:      powerpipe.NewDashboardEdge,
-		schema.BlockTypeCategory:  powerpipe.NewDashboardCategory,
-		schema.BlockTypeWith:      powerpipe.NewDashboardWith,
-	}
-
-	factoryFunc, ok := factoryFuncs[block.Type]
-	if !ok {
-		return nil, hcl.Diagnostics{&hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("ResourceForBlock called for unsupported block type %s", block.Type),
-			Subject:  hclhelpers.BlockRangePointer(block),
-		},
-		}
-	}
-	resource = factoryFunc(block, mod, blockName)
-	return resource, nil
-}
 
 func ResolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext) (cs *string, searchPath, searchPathPrefix []string, diags hcl.Diagnostics) {
 	var connectionString string
@@ -288,9 +245,6 @@ func HandleModDecodeResult(resource modconfig.HclResource, res *DecodeResult, bl
 	moreDiags = AddReferences(resource, block, parseCtx)
 	res.AddDiags(moreDiags)
 
-	// validate the resource
-	moreDiags = validateResource(resource)
-	res.AddDiags(moreDiags)
 	// if we failed validation, return
 	if !res.Success() {
 		return

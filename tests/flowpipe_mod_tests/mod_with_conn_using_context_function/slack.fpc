@@ -1,4 +1,0 @@
-
-connection "slack" "slack_conn" {
-  token = env("TEST_SLACK_TOKEN")
-}

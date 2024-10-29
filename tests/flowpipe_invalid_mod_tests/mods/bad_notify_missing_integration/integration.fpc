@@ -1,8 +1,0 @@
-notifier "admins" {
-
-  notify {
-    to = ["admins@bluthenterprises.com"]
-    cc = ["gob@bluthenterprises.com"]
-  }
-
-}

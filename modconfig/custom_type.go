@@ -157,7 +157,7 @@ func customTypeCheckResourceTypeCorrect(ctyVal cty.Value, encapsulatedGoType ref
 		return diags
 	} else {
 		// handle any app specific custom types
-		for _, customTypeName := range app_specific.CustomTypes {
+		for _, customTypeName := range app_specific.CustomTypesNames() {
 			if encapsulatedGoType.String() == customTypeName {
 				diags := validateMapAttribute(valueMap, "resource_type", "missing resource_type in value", sourceRange)
 				if len(diags) > 0 {

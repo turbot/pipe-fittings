@@ -3,26 +3,32 @@ package parse
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
 	"github.com/turbot/pipe-fittings/hclhelpers"
-	"github.com/turbot/pipe-fittings/modconfig/flowpipe"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
-	"reflect"
 	"strings"
 )
-
-var BaseNotifierCtyType = cty.Capsule("BaseNotifierCtyType", reflect.TypeOf(&flowpipe.NotifierImpl{}))
 
 // customTypeFunc is a function that returns a custom cty.Type for a given subtype
 type customTypeFunc func(string) cty.Type
 
 // customTypeMappings is a map of resource types to custom cty.Type functions
-var customTypeMappings = map[string]customTypeFunc{
-	schema.BlockTypeConnection: app_specific_connection.ConnectionCtyType,
-	schema.BlockTypeNotifier: func(string) cty.Type {
-		return BaseNotifierCtyType
-	},
+func getCustomTypeFunc(blockType string) (customTypeFunc, bool) {
+	if blockType == schema.BlockTypeConnection {
+		return app_specific_connection.ConnectionCtyType, true
+	}
+
+	// otherwise try app specific custom types
+	ty, ok := app_specific.CustomTypes[blockType]
+	if ok {
+		f := func(string) cty.Type {
+			return ty
+		}
+		return f, true
+	}
+	return nil, false
 }
 
 // customTypeFromExpr returns the custom cty.Type for the given hcl.Expression, if one is registered
@@ -44,14 +50,14 @@ func customTypeFromScopeTraversalExpr(expr *hclsyntax.ScopeTraversalExpr) (cty.T
 	dottedString := hclhelpers.TraversalAsString(expr.Traversal)
 	parts := strings.Split(dottedString, ".")
 	// extract the resource type and (optionally) the subtype
-	ty := parts[0]
+	blockType := parts[0]
 	var subtype string
 	if len(parts) == 2 {
 		subtype = parts[1]
 	}
 
 	// do we have a custom type mapping for this type?
-	customTypeFunc, ok := customTypeMappings[ty]
+	customTypeFunc, ok := getCustomTypeFunc(blockType)
 	if !ok {
 		return cty.NilType, true
 	}
@@ -72,14 +78,14 @@ func customTypeFromFunctionCallExpr(fCallExpr *hclsyntax.FunctionCallExpr) (cty.
 	parts := strings.Split(dottedString, ".")
 
 	// extract the resource type and (optionally) the subtype
-	ty := parts[0]
+	blockType := parts[0]
 	var subtype string
 	if len(parts) == 2 {
 		subtype = parts[1]
 	}
 
 	// do we have a custom type mapping for this type?
-	customTypeFunc, ok := customTypeMappings[ty]
+	customTypeFunc, ok := getCustomTypeFunc(blockType)
 	if !ok {
 		return cty.NilType, true
 	}

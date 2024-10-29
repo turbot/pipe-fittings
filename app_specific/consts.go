@@ -2,6 +2,7 @@ package app_specific
 
 import (
 	"github.com/Masterminds/semver/v3"
+	"github.com/zclconf/go-cty/cty"
 	"path/filepath"
 )
 
@@ -76,6 +77,15 @@ var PluginHub string
 var DefaultImageRepoActualURL string
 var DefaultImageRepoDisplayURL string
 
-// Custom types
-var CustomTypes []string
+// map of app specific custom cty types, keyed by the block name
+var CustomTypes map[string]cty.Type
 
+// return a slice of the type name of app specific custom types
+func CustomTypesNames() []string {
+	var res []string
+
+	for _, ty := range CustomTypes {
+		res = append(res, ty.EncapsulatedType().String())
+	}
+	return res
+}

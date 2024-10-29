@@ -1,5 +1,0 @@
-notifier "new" {
-    notify {
-        integration = integration.http.default
-    }
-}

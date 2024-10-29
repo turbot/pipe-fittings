@@ -22,6 +22,10 @@ type DecodeFunc func(*hcl.Block, *ModParseContext) (modconfig.HclResource, *Deco
 type DecoderImpl struct {
 	// registered block types
 	DecodeFuncs map[string]DecodeFunc
+	// optional default decode function
+	DefaultDecodeFunc DecodeFunc
+	// optional resource validation func
+	ValidateFunc func(resource modconfig.HclResource) hcl.Diagnostics
 }
 
 func NewDecoderImpl() DecoderImpl {
@@ -54,7 +58,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 	for _, block := range blocks {
 		switch block.Type {
 		case schema.BlockTypeLocals:
-			// TODO K remove spceial casing - decodeBlock could return an array
+			// TODO K remove special casing - decodeBlock could return an array
 			resources, res := d.decodeLocalsBlock(block, parseCtx)
 			if !res.Success() {
 				diags = append(diags, res.Diags...)
@@ -73,7 +77,10 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 
 			resourceDiags := AddResourceToMod(resource, block, parseCtx)
 			diags = append(diags, resourceDiags...)
-
+			// if a validate function was registered, call it
+			if d.ValidateFunc != nil {
+				diags = append(diags, d.ValidateFunc(resource)...)
+			}
 		}
 	}
 
@@ -119,7 +126,11 @@ func (d *DecoderImpl) DecodeBlock(block *hcl.Block, parseCtx *ModParseContext) (
 		return nil, res
 	}
 
-	decodeFunc := d.getDecodeFunc(block.Type)
+	decodeFunc, moreDiags := d.getDecodeFunc(block)
+	if diags.HasErrors() {
+		res.AddDiags(moreDiags)
+		return nil, res
+	}
 	resource, res = decodeFunc(block, parseCtx)
 	// Note that an interface value that holds a nil concrete value is itself non-nil.
 	if !helpers.IsNil(resource) {
@@ -131,30 +142,20 @@ func (d *DecoderImpl) DecodeBlock(block *hcl.Block, parseCtx *ModParseContext) (
 	return resource, res
 }
 
-func (d *DecoderImpl) getDecodeFunc(t string) DecodeFunc {
-	decodeFunc, ok := d.DecodeFuncs[t]
+func (d *DecoderImpl) getDecodeFunc(block *hcl.Block) (DecodeFunc, hcl.Diagnostics) {
+	decodeFunc, ok := d.DecodeFuncs[block.Type]
 	if !ok {
-		// default to generic decode function
-		decodeFunc = d.decodeResource
+		if d.DefaultDecodeFunc != nil {
+			return d.DefaultDecodeFunc, nil
+		}
+		return nil,
+			hcl.Diagnostics{&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("no decode function registered for block type %s", block.Type),
+				Subject:  &block.DefRange,
+			}}
 	}
-	return decodeFunc
-}
-
-// generic decode function for any resource we do not have custom decode logic for
-func (d *DecoderImpl) decodeResource(block *hcl.Block, parseCtx *ModParseContext) (modconfig.HclResource, *DecodeResult) {
-	res := NewDecodeResult()
-	// get shell resource
-	resource, diags := ResourceForBlock(block, parseCtx)
-	res.HandleDecodeDiags(diags)
-	if diags.HasErrors() {
-		return nil, res
-	}
-
-	diags = DecodeHclBody(block.Body, parseCtx.EvalCtx, parseCtx, resource)
-	if len(diags) > 0 {
-		res.HandleDecodeDiags(diags)
-	}
-	return resource, res
+	return decodeFunc, nil
 }
 
 func (d *DecoderImpl) decodeLocals(block *hcl.Block, parseCtx *ModParseContext) ([]*modconfig.Local, *DecodeResult) {
