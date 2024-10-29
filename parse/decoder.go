@@ -52,8 +52,9 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 	parseCtx.ClearDependencies()
 
 	for _, block := range blocks {
-		if block.Type == schema.BlockTypeLocals {
-			// TODO K remove spceial casing - decodeBVlock could return an array
+		switch block.Type {
+		case schema.BlockTypeLocals:
+			// TODO K remove spceial casing - decodeBlock could return an array
 			resources, res := d.decodeLocalsBlock(block, parseCtx)
 			if !res.Success() {
 				diags = append(diags, res.Diags...)
@@ -63,7 +64,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 				resourceDiags := AddResourceToMod(resource, block, parseCtx)
 				diags = append(diags, resourceDiags...)
 			}
-		} else {
+		default:
 			resource, res := d.DecodeBlock(block, parseCtx)
 			diags = append(diags, res.Diags...)
 			if !res.Success() || resource == nil {
@@ -72,6 +73,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 
 			resourceDiags := AddResourceToMod(resource, block, parseCtx)
 			diags = append(diags, resourceDiags...)
+
 		}
 	}
 

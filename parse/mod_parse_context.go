@@ -178,8 +178,10 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 	if err != nil {
 		return nil, err
 	}
-	// copy our block types
+	// copy our block types and exclusions
 	child.blockTypes = parent.blockTypes
+	child.blockTypeExclusions = parent.blockTypeExclusions
+
 	// set the child's parent
 	child.ParentParseCtx = parent
 	// set the dependency config
