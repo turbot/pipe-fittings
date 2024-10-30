@@ -59,7 +59,7 @@ func (m *Mod) getChildParentsLookup() (map[string][]ModTreeItem, error) {
 		// continue walking
 		return true, nil
 	}
-	err := m.ModResources.WalkResources(resourceFunc)
+	err := m.Resources.WalkResources(resourceFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -142,5 +142,5 @@ func CheckForDuplicate(existing, new HclResource) hcl.Diagnostics {
 }
 
 func (m *Mod) AddResource(item HclResource) hcl.Diagnostics {
-	return m.ModResources.AddResource(item)
+	return m.Resources.AddResource(item)
 }

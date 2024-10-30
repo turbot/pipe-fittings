@@ -23,7 +23,7 @@ package workspace
 //				Require:     &modconfig.Require{},
 //				Description: toStringPointer("this mod is to test runtime dependencies for named arguments"),
 //				Title:       toStringPointer("dashboard runtime dependencies named arguments"),
-//				ModResources: &modconfig.ModResources{
+//				Resources: &modconfig.Resources{
 //					Queries: map[string]*modconfig.Query{
 //						"dashboard_runtime_deps_named_arg.query.query1": {
 //							FullName:        "dashboard_runtime_deps_named_arg.query.query1",
@@ -135,7 +135,7 @@ package workspace
 //				Require:     &modconfig.Require{},
 //				Description: toStringPointer("this mod is to test runtime dependencies for positional arguments"),
 //				Title:       toStringPointer("dashboard runtime dependencies positional arguments"),
-//				ModResources: &modconfig.ModResources{
+//				Resources: &modconfig.Resources{
 //					Queries: map[string]*modconfig.Query{
 //						"dashboard_runtime_deps_pos_arg.query.query1": {
 //							FullName:  "dashboard_runtime_deps_pos_arg.query.query1",
@@ -245,7 +245,7 @@ package workspace
 //				FullName:  "mod.local",
 //				Title:     toStringPointer("dependent_mod"),
 //				Require:   &modconfig.Require{},
-//				ModResources: &modconfig.ModResources{
+//				Resources: &modconfig.Resources{
 //					Queries: map[string]*modconfig.Query{
 //						"m1.query.m1_q1": {
 //							ShortName:       "m1_q1",
@@ -371,7 +371,7 @@ package workspace
 //				FullName:  "mod.local",
 //				Title:     toStringPointer("dependent_mod"),
 //				Require:   &modconfig.Require{},
-//				ModResources: &modconfig.ModResources{
+//				Resources: &modconfig.Resources{
 //					Queries: map[string]*modconfig.Query{
 //						"m1.query.m1_q1": {
 //							ShortName:       "m1_q1",
@@ -517,7 +517,7 @@ package workspace
 //
 //// try to resolve mod resource children using their child names
 //func setChildren(mod *modconfig.Mod) error {
-//	for _, benchmark := range mod.ModResources.Benchmarks {
+//	for _, benchmark := range mod.Resources.Benchmarks {
 //		for _, childName := range benchmark.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName.Name)
 //			child, found := modconfig.GetResource(mod, parsed)
@@ -527,7 +527,7 @@ package workspace
 //			benchmark.Children = append(benchmark.Children, child.(modconfig.ModTreeItem))
 //		}
 //	}
-//	for _, container := range mod.ModResources.DashboardContainers {
+//	for _, container := range mod.Resources.DashboardContainers {
 //		var children []modconfig.ModTreeItem
 //		for _, childName := range container.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName)
@@ -546,7 +546,7 @@ package workspace
 //		container.SetChildren(children)
 //
 //	}
-//	for _, dashboard := range mod.ModResources.Dashboards {
+//	for _, dashboard := range mod.Resources.Dashboards {
 //		var children []modconfig.ModTreeItem
 //		for _, childName := range dashboard.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName)

@@ -62,7 +62,7 @@ type Mod struct {
 	ModPath string `json:"-"`
 
 	// convenient aggregation of all resources
-	ModResources ModResources `json:"-"`
+	Resources ModResources `json:"-"`
 
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
@@ -84,7 +84,7 @@ func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 		Require: NewRequire(),
 	}
 	// call the app specific resource maps constructor to make an empty resource maps
-	mod.ModResources = NewModResources(mod)
+	mod.Resources = NewModResources(mod)
 	return mod
 }
 
@@ -131,7 +131,7 @@ func (m *Mod) Equals(other *Mod) bool {
 	}
 
 	// now check the child resources
-	return m.ModResources.Equals(other.ModResources)
+	return m.Resources.Equals(other.Resources)
 }
 
 func (m *Mod) CacheKey() string {
@@ -208,25 +208,25 @@ func (m *Mod) OnDecoded(block *hcl.Block, _ ModResourcesProvider) hcl.Diagnostic
 //
 // AddReference implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 func (m *Mod) AddReference(ref *ResourceReference) {
-	m.ModResources.AddReference(ref)
+	m.Resources.AddReference(ref)
 }
 
 // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 func (m *Mod) GetReferences() []*ResourceReference {
-	return maps.Values(m.ModResources.GetReferences())
+	return maps.Values(m.Resources.GetReferences())
 }
 
 // GetModResources implements ModResourcesProvider
 func (m *Mod) GetModResources() ModResources {
-	return m.ModResources
+	return m.Resources
 }
 
 func (m *Mod) SetModResources(modResources ModResources) {
-	m.ModResources = modResources
+	m.Resources = modResources
 }
 
 func (m *Mod) GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool) {
-	return m.ModResources.GetResource(parsedName)
+	return m.Resources.GetResource(parsedName)
 }
 
 func (m *Mod) AddModDependencies(modVersions map[string]*ModVersionConstraint) {
@@ -331,7 +331,7 @@ func (m *Mod) GetModDependency(modName string) *ModVersionConstraint {
 }
 
 func (m *Mod) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
-	return m.ModResources.WalkResources(resourceFunc)
+	return m.Resources.WalkResources(resourceFunc)
 }
 
 func (m *Mod) SetFilePath(modFilePath string) {
