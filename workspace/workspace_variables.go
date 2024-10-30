@@ -46,7 +46,7 @@ func promptForMissingVariables(ctx context.Context, missingVariables []*modconfi
 		variableName := v.ShortName
 		variableDisplayName := fmt.Sprintf("var.%s", v.ShortName)
 		// if this variable is NOT part of the workspace mod, add the mod name to the variable name
-		if v.Mod.GetModPath() != workspacePath {
+		if v.Mod.ModPath != workspacePath {
 			variableDisplayName = fmt.Sprintf("%s.var.%s", v.ModName, v.ShortName)
 			variableName = fmt.Sprintf("%s.%s", v.ModName, v.ShortName)
 		}

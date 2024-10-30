@@ -51,8 +51,8 @@ func NewFilepathModVersionConstraint(mod *Mod) *ModVersionConstraint {
 	return &ModVersionConstraint{
 		Args: make(map[string]cty.Value),
 		// set name and filepath to the same value
-		Name:     mod.GetModPath(),
-		FilePath: mod.GetModPath(),
+		Name:     mod.ModPath,
+		FilePath: mod.ModPath,
 	}
 }
 

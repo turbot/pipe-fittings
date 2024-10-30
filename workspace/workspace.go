@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/turbot/pipe-fittings/connection"
-	"github.com/zclconf/go-cty/cty"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -19,6 +17,7 @@ import (
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/load_mod"
@@ -27,6 +26,7 @@ import (
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionmap"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type Workspace struct {
@@ -177,18 +177,6 @@ func (w *Workspace) LoadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	w.Mods[w.Mod.Name()] = w.Mod
 
 	return ew
-}
-
-func (w *Workspace) GetMod() *modconfig.Mod {
-	return w.Mod
-}
-
-func (w *Workspace) GetMods() map[string]*modconfig.Mod {
-	return w.Mods
-}
-
-func (w *Workspace) GetPath() string {
-	return w.Path
 }
 
 // resolve values of all input variables

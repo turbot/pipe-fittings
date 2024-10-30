@@ -48,7 +48,7 @@ func NewModVariableMap(mod *Mod) (*ModVariableMap, error) {
 			if err != nil {
 				return nil, err
 			}
-			m.DependencyVariables[depMod.GetDependencyName()] = depMap
+			m.DependencyVariables[depMod.DependencyName] = depMap
 		}
 	}
 

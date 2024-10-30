@@ -19,7 +19,7 @@ func (i *ModInstaller) updateModFile() error {
 	}
 
 	oldRequire := i.oldRequire
-	newRequire := i.workspaceMod.GetRequire()
+	newRequire := i.workspaceMod.Require
 
 	// fill these requires in with empty requires
 	// so that we don't have to do nil checks everywhere

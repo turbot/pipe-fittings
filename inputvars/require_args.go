@@ -13,7 +13,7 @@ const ValueFromModFile terraform.ValueSourceType = 'M'
 
 func CollectVariableValuesFromModRequire(m *modconfig.Mod, lock *versionmap.WorkspaceLock) (terraform.InputValues, error) {
 	res := make(terraform.InputValues)
-	if require := m.GetRequire(); require != nil {
+	if require := m.Require; require != nil {
 		for _, depModConstraint := range require.Mods {
 			if args := depModConstraint.Args; args != nil {
 				// find the loaded dep mod which satisfies this constraint

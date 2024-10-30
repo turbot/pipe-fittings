@@ -615,7 +615,7 @@ func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, valu
 	}
 
 	modName := mod.ShortName
-	if mod.GetModPath() == m.RootEvalPath {
+	if mod.ModPath == m.RootEvalPath {
 		modName = "local"
 	}
 	variablesForMod, ok := m.referenceValues[modName]
@@ -677,7 +677,7 @@ func (m *ModParseContext) AddLoadedDependencyMod(mod *modconfig.Mod) {
 	m.depLock.Lock()
 	defer m.depLock.Unlock()
 
-	m.topLevelDependencyMods[mod.GetDependencyName()] = mod
+	m.topLevelDependencyMods[mod.DependencyName] = mod
 	m.modResources.AddMaps(mod.GetModResources().TopLevelResources())
 }
 

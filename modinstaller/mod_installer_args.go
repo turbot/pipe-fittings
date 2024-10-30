@@ -17,7 +17,7 @@ func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[st
 		var err error
 		// check is this a file path
 		// if modArg IS a filepath, argToFilePath will return the absolute path
-		if filePath := i.toAbsoluteFilepath(modArg, i.workspaceMod.GetModPath()); filePath != "" {
+		if filePath := i.toAbsoluteFilepath(modArg, i.workspaceMod.ModPath); filePath != "" {
 			// special case for file paths
 			modVersion, err = i.newFilepathModVersionConstraint(filePath)
 

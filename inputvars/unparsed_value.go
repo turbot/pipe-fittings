@@ -270,7 +270,7 @@ func getUndeclaredVariableError(name string, variablesMap *modconfig.ModVariable
 
 	for _, m := range variablesMap.Mod.GetModResources().GetMods() {
 		if m.GetShortName() == parsedVarName.Mod {
-			return fmt.Sprintf("\"%s\": Dependency mod \"%s\" has no variable \"%s\"", name, m.GetDependencyName(), parsedVarName.Name)
+			return fmt.Sprintf("\"%s\": Dependency mod \"%s\" has no variable \"%s\"", name, m.DependencyName, parsedVarName.Name)
 			// so it is a dependency mod
 		}
 	}

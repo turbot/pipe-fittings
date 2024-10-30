@@ -65,7 +65,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		return nil, fmt.Errorf("no workspace mod passed to mod installer")
 	}
 	// NOTE: ensure worksapace path is absolute
-	workspacePath, err := filepath.Abs(opts.WorkspaceMod.GetModPath())
+	workspacePath, err := filepath.Abs(opts.WorkspaceMod.ModPath)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		updateStrategy: opts.UpdateStrategy,
 	}
 
-	if require := opts.WorkspaceMod.GetRequire(); require != nil {
+	if require := opts.WorkspaceMod.Require; require != nil {
 		i.oldRequire = require.Clone()
 	}
 
@@ -122,8 +122,8 @@ func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error
 		return err
 	}
 
-	if workspaceMod.GetRequire().Empty() {
-		workspaceMod.SetRequire(nil)
+	if workspaceMod.Require.Empty() {
+		workspaceMod.Require = nil
 	}
 
 	// if this is a dry run, return now
@@ -314,7 +314,7 @@ func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (
 
 	var errors []error
 
-	for _, requiredModVersion := range i.workspaceMod.GetRequire().Mods {
+	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
 		// is this mod targeted by the command (i.e. was the mod name passed as an arg
 		// - or else were no args passed, targeting all mods)
 		commandTargetingMod := i.isCommandTargetingMod(requiredModVersion)
@@ -377,12 +377,12 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	} else {
 		// this mod is already installed - just update the install data
 		i.installData.addExisting(dependencyMod, parent)
-		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already Installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.GetVersion()))
+		slog.Debug(fmt.Sprintf("not installing %s with version constraint %s as version %s is already Installed", requiredModVersion.Name, requiredModVersion.VersionString, dependencyMod.Mod.Version))
 	}
 
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
-	for _, childDependency := range dependencyMod.Mod.GetRequire().Mods {
+	for _, childDependency := range dependencyMod.Mod.Require.Mods {
 		childDependencyMod, err := i.getModForRequirement(ctx, childDependency, commandTargettingParent)
 		if err != nil {
 			errors = append(errors, err)
@@ -584,7 +584,7 @@ func (i *ModInstaller) installFromGit(repoName string, gitRefName plumbing.Refer
 func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) (*versionmap.ResolvedVersionConstraint, *modconfig.Mod, error) {
 	// build a DependencyVersion
 	// convert the filename to absolute
-	filePath := i.toAbsoluteFilepath(modVersion.FilePath, parent.GetModPath())
+	filePath := i.toAbsoluteFilepath(modVersion.FilePath, parent.ModPath)
 
 	var dependencyVersion = &modconfig.DependencyVersion{
 		FilePath: filePath,

@@ -222,7 +222,7 @@ func (b *ModTreeItemImpl) GetListData() *printers.RowData {
 }
 
 func (b *ModTreeItemImpl) IsDependencyResource() bool {
-	return b.GetMod().GetDependencyPath() != nil
+	return b.GetMod().DependencyPath != nil
 }
 
 func (b *ModTreeItemImpl) GetNestedStructs() []CtyValueProvider {

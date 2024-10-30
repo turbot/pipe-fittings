@@ -103,10 +103,10 @@ func loadModDefinition(modPath string, parseCtx *parse.ModParseContext) (*modcon
 }
 
 func loadModDependenciesAsync(ctx context.Context, parent *modconfig.Mod, parseCtx *parse.ModParseContext) error {
-	utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s start", parent.GetModPath()))
-	defer utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s end", parent.GetModPath()))
+	utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s start", parent.ModPath))
+	defer utils.LogTime(fmt.Sprintf("loadModDependenciesAsync for %s end", parent.ModPath))
 
-	parentRequire := parent.GetRequire()
+	parentRequire := parent.Require
 	if parentRequire == nil || len(parentRequire.Mods) == 0 {
 		return nil
 	}
@@ -185,11 +185,11 @@ func loadModDependency(ctx context.Context, requiredModVersion *modconfig.ModVer
 }
 
 func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
-	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.GetModPath()))
-	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.GetModPath()))
+	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.ModPath))
+	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.ModPath))
 
 	// get the source files
-	sourcePaths, err := getSourcePaths(ctx, mod.GetModPath(), parseCtx.ListOptions)
+	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
 	if err != nil {
 		slog.Warn("LoadMod: failed to get mod file paths", "error", err)
 		return nil, error_helpers.NewErrorsAndWarning(err)

@@ -147,7 +147,7 @@ func (m *Mod) CacheKey() string {
 func CreateDefaultMod(modPath string) *Mod {
 	m := NewMod(defaultModName, modPath, hcl.Range{})
 	folderName := filepath.Base(modPath)
-	m.SetTitle(folderName)
+	m.Title = &folderName
 	return m
 }
 
@@ -428,30 +428,4 @@ func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, 
 	}
 	// if no database is set on mod, use the default steampipe connection
 	return constants.DefaultSteampipeConnectionString, nil
-}
-
-func (m *Mod) GetDependencyName() string {
-	return m.DependencyName
-}
-func (m *Mod) GetDependencyPath() *string {
-	return m.DependencyPath
-}
-
-func (m *Mod) GetModPath() string {
-	return m.ModPath
-}
-
-func (m *Mod) GetRequire() *Require {
-	return m.Require
-}
-
-func (m *Mod) SetRequire(require *Require) {
-	m.Require = require
-}
-
-func (m *Mod) SetTitle(title string) {
-	m.Title = &title
-}
-func (m *Mod) GetVersion() *DependencyVersion {
-	return m.Version
 }
