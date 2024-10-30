@@ -171,7 +171,7 @@ func (w *Workspace) LoadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 
 	// now set workspace properties
 	// populate the mod references map references
-	//m.GetResourceMaps().PopulateReferences()
+	//m.GetModResources().PopulateReferences()
 
 	// set the mod
 	w.Mod = m
@@ -369,7 +369,7 @@ func (w *Workspace) LoadExclusions() error {
 func (w *Workspace) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) error_helpers.ErrorAndWarnings {
 	var diags hcl.Diagnostics
 	for _, v := range parseCtx.Variables.ToArray() {
-		diags = append(diags, w.Mod.GetResourceMaps().AddResource(v)...)
+		diags = append(diags, w.Mod.GetModResources().AddResource(v)...)
 	}
 	return error_helpers.DiagsToErrorsAndWarnings("", diags)
 }
@@ -385,15 +385,15 @@ func (w *Workspace) LoadUnlock() {
 	w.loadLock.Unlock()
 }
 
-// GetResourceMaps implements ResourceMapsProvider
-func (w *Workspace) GetResourceMaps() modconfig.ModResources {
+// GetModResources implements ModResourcesProvider
+func (w *Workspace) GetModResources() modconfig.ModResources {
 
 	w.LoadLock()
 	defer w.LoadUnlock()
 
-	return w.Mod.GetResourceMaps()
+	return w.Mod.GetModResources()
 }
 
 func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
-	return w.GetResourceMaps().GetResource(parsedName)
+	return w.GetModResources().GetResource(parsedName)
 }

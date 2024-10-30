@@ -154,7 +154,7 @@ func (h *HclResourceImpl) GetFullName() string {
 }
 
 // OnDecoded implements HclResource
-func (h *HclResourceImpl) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
+func (h *HclResourceImpl) OnDecoded(block *hcl.Block, _ ModResourcesProvider) hcl.Diagnostics {
 	return nil
 }
 

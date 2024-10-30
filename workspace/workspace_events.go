@@ -12,10 +12,10 @@ var EventCount int64 = 0
 
 func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	slog.Debug("handleFileWatcherEvent")
-	prevResourceMaps, resourceMaps, errAndWarnings := w.ReloadResourceMaps(ctx)
+	prevModResources, modResources, errAndWarnings := w.ReloadModResources(ctx)
 
 	if errAndWarnings.GetError() != nil {
-		slog.Debug("handleFileWatcherEvent reloadResourceMaps returned error - call PublishDashboardEvent")
+		slog.Debug("handleFileWatcherEvent reloadModResources returned error - call PublishDashboardEvent")
 		// call error hook
 		if w.OnFileWatcherError != nil {
 			w.OnFileWatcherError(ctx, errAndWarnings.Error)
@@ -26,7 +26,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 		return
 	}
 	// if resources have changed, update introspection tables
-	if !prevResourceMaps.Equals(resourceMaps) {
+	if !prevModResources.Equals(modResources) {
 		if w.onFileWatcherEventMessages != nil {
 			w.onFileWatcherEventMessages()
 		}
@@ -34,20 +34,20 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 
 	// call hook
 	if w.OnFileWatcherEvent != nil {
-		w.OnFileWatcherEvent(ctx, resourceMaps, prevResourceMaps)
+		w.OnFileWatcherEvent(ctx, modResources, prevModResources)
 	}
 }
 
-func (w *Workspace) ReloadResourceMaps(ctx context.Context) (modconfig.ModResources, modconfig.ModResources, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) ReloadModResources(ctx context.Context) (modconfig.ModResources, modconfig.ModResources, error_helpers.ErrorAndWarnings) {
 	w.LoadLock()
 	defer w.LoadUnlock()
 
 	// get the pre-load resource maps
-	// NOTE: do not call GetResourceMaps - we DO NOT want to lock LoadLock
-	prevResourceMaps := w.Mod.GetResourceMaps()
-	// if there is an outstanding watcher error, set prevResourceMaps to empty to force refresh
+	// NOTE: do not call GetModResources - we DO NOT want to lock LoadLock
+	prevModResources := w.Mod.GetModResources()
+	// if there is an outstanding watcher error, set prevModResources to empty to force refresh
 	if w.WatcherError != nil {
-		prevResourceMaps = modconfig.NewResourceMaps(w.Mod)
+		prevModResources = modconfig.NewModResources(w.Mod)
 	}
 
 	// now reload the workspace
@@ -65,8 +65,8 @@ func (w *Workspace) ReloadResourceMaps(ctx context.Context) (modconfig.ModResour
 	w.WatcherError = nil
 
 	// reload the resource maps
-	resourceMaps := w.Mod.GetResourceMaps()
+	modResources := w.Mod.GetModResources()
 
-	return prevResourceMaps, resourceMaps, errAndWarnings
+	return prevModResources, modResources, errAndWarnings
 
 }

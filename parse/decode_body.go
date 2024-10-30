@@ -79,7 +79,7 @@ func GetSchemaForStruct(t reflect.Type) *hcl.BodySchema {
 // (which has the issue that when deserializing from cty we do not receive all base struct values)
 // instead resolve the reference by parsing the resource name and finding the resource in the ResourceMap
 // and use this resource to set the target property
-func resolveReferences(body hcl.Body, resourceMapsProvider modconfig.ResourceProvider, val any) (diags hcl.Diagnostics) {
+func resolveReferences(body hcl.Body, modResourcesProvider modconfig.ResourceProvider, val any) (diags hcl.Diagnostics) {
 	defer func() {
 		if r := recover(); r != nil {
 			if r := recover(); r != nil {
@@ -119,7 +119,7 @@ func resolveReferences(body hcl.Body, resourceMapsProvider modconfig.ResourcePro
 					if scopeTraversal, ok := hclVal.Expr.(*hclsyntax.ScopeTraversalExpr); ok {
 						path := hclhelpers.TraversalAsString(scopeTraversal.Traversal)
 						if parsedName, err := modconfig.ParseResourceName(path); err == nil {
-							if r, ok := resourceMapsProvider.GetResource(parsedName); ok {
+							if r, ok := modResourcesProvider.GetResource(parsedName); ok {
 								f := rv.FieldByName(field.Name)
 								if f.IsValid() && f.CanSet() {
 									targetVal := reflect.ValueOf(r)

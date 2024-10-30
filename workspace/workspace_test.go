@@ -23,7 +23,7 @@ package workspace
 //				Require:     &modconfig.Require{},
 //				Description: toStringPointer("this mod is to test runtime dependencies for named arguments"),
 //				Title:       toStringPointer("dashboard runtime dependencies named arguments"),
-//				ResourceMaps: &modconfig.ResourceMaps{
+//				ModResources: &modconfig.ModResources{
 //					Queries: map[string]*modconfig.Query{
 //						"dashboard_runtime_deps_named_arg.query.query1": {
 //							FullName:        "dashboard_runtime_deps_named_arg.query.query1",
@@ -135,7 +135,7 @@ package workspace
 //				Require:     &modconfig.Require{},
 //				Description: toStringPointer("this mod is to test runtime dependencies for positional arguments"),
 //				Title:       toStringPointer("dashboard runtime dependencies positional arguments"),
-//				ResourceMaps: &modconfig.ResourceMaps{
+//				ModResources: &modconfig.ModResources{
 //					Queries: map[string]*modconfig.Query{
 //						"dashboard_runtime_deps_pos_arg.query.query1": {
 //							FullName:  "dashboard_runtime_deps_pos_arg.query.query1",
@@ -245,7 +245,7 @@ package workspace
 //				FullName:  "mod.local",
 //				Title:     toStringPointer("dependent_mod"),
 //				Require:   &modconfig.Require{},
-//				ResourceMaps: &modconfig.ResourceMaps{
+//				ModResources: &modconfig.ModResources{
 //					Queries: map[string]*modconfig.Query{
 //						"m1.query.m1_q1": {
 //							ShortName:       "m1_q1",
@@ -371,7 +371,7 @@ package workspace
 //				FullName:  "mod.local",
 //				Title:     toStringPointer("dependent_mod"),
 //				Require:   &modconfig.Require{},
-//				ResourceMaps: &modconfig.ResourceMaps{
+//				ModResources: &modconfig.ModResources{
 //					Queries: map[string]*modconfig.Query{
 //						"m1.query.m1_q1": {
 //							ShortName:       "m1_q1",
@@ -517,7 +517,7 @@ package workspace
 //
 //// try to resolve mod resource children using their child names
 //func setChildren(mod *modconfig.Mod) error {
-//	for _, benchmark := range mod.ResourceMaps.Benchmarks {
+//	for _, benchmark := range mod.ModResources.Benchmarks {
 //		for _, childName := range benchmark.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName.Name)
 //			child, found := modconfig.GetResource(mod, parsed)
@@ -527,7 +527,7 @@ package workspace
 //			benchmark.Children = append(benchmark.Children, child.(modconfig.ModTreeItem))
 //		}
 //	}
-//	for _, container := range mod.ResourceMaps.DashboardContainers {
+//	for _, container := range mod.ModResources.DashboardContainers {
 //		var children []modconfig.ModTreeItem
 //		for _, childName := range container.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName)
@@ -546,7 +546,7 @@ package workspace
 //		container.SetChildren(children)
 //
 //	}
-//	for _, dashboard := range mod.ResourceMaps.Dashboards {
+//	for _, dashboard := range mod.ModResources.Dashboards {
 //		var children []modconfig.ModTreeItem
 //		for _, childName := range dashboard.ChildNames {
 //			parsed, _ := modconfig.ParseResourceName(childName)
@@ -751,8 +751,8 @@ package workspace
 // 	if actual.Mod.String() != expected.Mod.String() {
 // 		errors = append(errors, fmt.Sprintf("workspace mods do not match - expected \n\n%s\n\nbut got\n\n%s\n", expected.Mod.String(), actual.Mod.String()))
 // 	}
-// 	expectedMaps := expected.GetResourceMaps()
-// 	actualMaps := actual.GetResourceMaps()
+// 	expectedMaps := expected.GetModResources()
+// 	actualMaps := actual.GetModResources()
 
 // 	for name, expectedQuery := range expectedMaps.Queries {
 // 		actualQuery, ok := actualMaps.Queries[name]

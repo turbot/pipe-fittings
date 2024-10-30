@@ -16,7 +16,7 @@ func GetWorkspaceResourcesOfType[T modconfig.HclResource](w *Workspace) map[stri
 	}
 
 	// resource func does not return error
-	_ = w.GetResourceMaps().WalkResources(resourceFunc)
+	_ = w.GetModResources().WalkResources(resourceFunc)
 
 	return res
 }
@@ -40,7 +40,7 @@ func FilterWorkspaceResourcesOfType[T modconfig.HclResource](w *Workspace, filte
 	}
 
 	// resource func does not return error
-	_ = w.GetResourceMaps().WalkResources(resourceFunc)
+	_ = w.GetModResources().WalkResources(resourceFunc)
 
 	return res, nil
 }

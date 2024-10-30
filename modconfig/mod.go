@@ -62,7 +62,7 @@ type Mod struct {
 	ModPath string `json:"-"`
 
 	// convenient aggregation of all resources
-	ResourceMaps ModResources `json:"-"`
+	ModResources ModResources `json:"-"`
 
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
@@ -84,7 +84,7 @@ func NewMod(shortName, modPath string, defRange hcl.Range) *Mod {
 		Require: NewRequire(),
 	}
 	// call the app specific resource maps constructor to make an empty resource maps
-	mod.ResourceMaps = NewResourceMaps(mod)
+	mod.ModResources = NewModResources(mod)
 	return mod
 }
 
@@ -131,7 +131,7 @@ func (m *Mod) Equals(other *Mod) bool {
 	}
 
 	// now check the child resources
-	return m.ResourceMaps.Equals(other.ResourceMaps)
+	return m.ModResources.Equals(other.ModResources)
 }
 
 func (m *Mod) CacheKey() string {
@@ -165,7 +165,7 @@ func (m *Mod) GetPaths() []NodePath {
 func (m *Mod) SetPaths() {}
 
 // OnDecoded implements HclResource
-func (m *Mod) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostics {
+func (m *Mod) OnDecoded(block *hcl.Block, _ ModResourcesProvider) hcl.Diagnostics {
 	// handle legacy requires block
 	if m.LegacyRequire != nil && !m.LegacyRequire.Empty() {
 		// ensure that both 'require' and 'requires' were not set
@@ -190,16 +190,16 @@ func (m *Mod) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostic
 }
 
 //	func (m *Mod) AddReference(ref *ResourceReference) {
-//		m.PowerpipeResourceMaps.References[ref.Name()] = ref
+//		m.PowerpipeModResources.References[ref.Name()] = ref
 //	}
 //
 // // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 //
 //	func (m *Mod) GetReferences() []*ResourceReference {
-//		var res = make([]*ResourceReference, len(m.PowerpipeResourceMaps.References))
+//		var res = make([]*ResourceReference, len(m.PowerpipeModResources.References))
 //		// convert from map to array
 //		idx := 0
-//		for _, ref := range m.PowerpipeResourceMaps.References {
+//		for _, ref := range m.PowerpipeModResources.References {
 //			res[idx] = ref
 //			idx++
 //		}
@@ -208,25 +208,25 @@ func (m *Mod) OnDecoded(block *hcl.Block, _ ResourceMapsProvider) hcl.Diagnostic
 //
 // AddReference implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 func (m *Mod) AddReference(ref *ResourceReference) {
-	m.ResourceMaps.AddReference(ref)
+	m.ModResources.AddReference(ref)
 }
 
 // GetReferences implements ResourceWithMetadata (overridden from ResourceWithMetadataImpl)
 func (m *Mod) GetReferences() []*ResourceReference {
-	return maps.Values(m.ResourceMaps.GetReferences())
+	return maps.Values(m.ModResources.GetReferences())
 }
 
-// GetResourceMaps implements ResourceMapsProvider
-func (m *Mod) GetResourceMaps() ModResources {
-	return m.ResourceMaps
+// GetModResources implements ModResourcesProvider
+func (m *Mod) GetModResources() ModResources {
+	return m.ModResources
 }
 
-func (m *Mod) SetResourceMaps(resourceMaps ModResources) {
-	m.ResourceMaps = resourceMaps
+func (m *Mod) SetModResources(modResources ModResources) {
+	m.ModResources = modResources
 }
 
 func (m *Mod) GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool) {
-	return m.ResourceMaps.GetResource(parsedName)
+	return m.ModResources.GetResource(parsedName)
 }
 
 func (m *Mod) AddModDependencies(modVersions map[string]*ModVersionConstraint) {
@@ -331,7 +331,7 @@ func (m *Mod) GetModDependency(modName string) *ModVersionConstraint {
 }
 
 func (m *Mod) WalkResources(resourceFunc func(item HclResource) (bool, error)) error {
-	return m.ResourceMaps.WalkResources(resourceFunc)
+	return m.ModResources.WalkResources(resourceFunc)
 }
 
 func (m *Mod) SetFilePath(modFilePath string) {

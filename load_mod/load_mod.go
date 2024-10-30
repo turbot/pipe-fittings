@@ -52,7 +52,7 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 	}
 
 	// populate the resource maps of the current mod using the dependency mods
-	mod.SetResourceMaps(parseCtx.GetResourceMaps())
+	mod.SetModResources(parseCtx.GetModResources())
 
 	// now load the mod resource hcl (
 	var resourceResult error_helpers.ErrorAndWarnings
@@ -255,7 +255,7 @@ func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx 
 	}
 
 	// populate the resource maps of the current mod using the dependency mods
-	mod.SetResourceMaps(parseCtx.GetResourceMaps())
+	mod.SetModResources(parseCtx.GetModResources())
 	// now load the mod resource hcl (
 	mod, errorsAndWarnings = loadModResources(ctx, mod, parseCtx)
 

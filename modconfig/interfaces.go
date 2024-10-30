@@ -15,7 +15,7 @@ type HclResource interface {
 	GetUnqualifiedName() string
 	GetShortName() string
 	GetFullName() string
-	OnDecoded(*hcl.Block, ResourceMapsProvider) hcl.Diagnostics
+	OnDecoded(*hcl.Block, ModResourcesProvider) hcl.Diagnostics
 	GetDeclRange() *hcl.Range
 	GetBlockType() string
 	GetDescription() string
@@ -86,8 +86,8 @@ type ModResources interface {
 	AddMaps(i ...ModResources)
 }
 
-type ResourceMapsProvider interface {
-	GetResourceMaps() ModResources
+type ModResourcesProvider interface {
+	GetModResources() ModResources
 	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }
 

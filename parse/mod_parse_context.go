@@ -84,7 +84,7 @@ type ModParseContext struct {
 	topLevelDependencyMods modconfig.ModMap
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
-	resourceMaps     modconfig.ModResources
+	modResources     modconfig.ModResources
 	// map of late binding variable values
 	// - this is added to the eval context if includeLateBindingResourcesInEvalContext is true
 	lateBindingVars map[string]cty.Value
@@ -98,7 +98,7 @@ type ModParseContext struct {
 	// this is a temporary solution until the 2 methods of determining runtime dependencies are merged
 	includeLateBindingResourcesInEvalContext bool
 
-	// mutex to control access to topLevelDependencyMods and resourceMaps when asyncronously adding dependency mods
+	// mutex to control access to topLevelDependencyMods and modResources when asyncronously adding dependency mods
 	depLock         sync.Mutex
 	configValueMaps map[string]map[string]cty.Value
 	decoderOptions  []DecoderOption
@@ -417,37 +417,37 @@ func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
 	return nil
 }
 
-func (m *ModParseContext) GetResourceMaps() modconfig.ModResources {
-	if m.resourceMaps != nil {
-		return m.resourceMaps
+func (m *ModParseContext) GetModResources() modconfig.ModResources {
+	if m.modResources != nil {
+		return m.modResources
 	}
 
-	m.setResourceMaps()
-	return m.resourceMaps
+	m.setModResources()
+	return m.modResources
 }
 
-func (m *ModParseContext) setResourceMaps() {
-	utils.LogTime(fmt.Sprintf("ModParseContext.setResourceMaps %p", m))
-	defer utils.LogTime(fmt.Sprintf("ModParseContext.setResourceMaps %p end", m))
+func (m *ModParseContext) setModResources() {
+	utils.LogTime(fmt.Sprintf("ModParseContext.setModResources %p", m))
+	defer utils.LogTime(fmt.Sprintf("ModParseContext.setModResources %p end", m))
 
 	// get a map of top level loaded dep mods
 	deps := m.GetTopLevelDependencyMods()
 
 	// use the current mod as the base resource map
-	sourceResourceMaps := make([]modconfig.ModResources, 0, len(deps)+1)
+	sourceModResources := make([]modconfig.ModResources, 0, len(deps)+1)
 
-	sourceResourceMaps = append(sourceResourceMaps, m.CurrentMod.GetResourceMaps())
+	sourceModResources = append(sourceModResources, m.CurrentMod.GetModResources())
 
 	// merge in the top level resources of the dependency mods
 	for _, dep := range deps {
-		sourceResourceMaps = append(sourceResourceMaps, dep.GetResourceMaps().TopLevelResources())
+		sourceModResources = append(sourceModResources, dep.GetModResources().TopLevelResources())
 	}
 
-	m.resourceMaps = modconfig.NewResourceMaps(m.CurrentMod, sourceResourceMaps...)
+	m.modResources = modconfig.NewModResources(m.CurrentMod, sourceModResources...)
 }
 
 func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
-	return m.GetResourceMaps().GetResource(parsedName)
+	return m.GetModResources().GetResource(parsedName)
 }
 
 // RebuildEvalContext the eval context from the cached reference values
@@ -687,7 +687,7 @@ func (m *ModParseContext) AddLoadedDependencyMod(mod *modconfig.Mod) {
 	defer m.depLock.Unlock()
 
 	m.topLevelDependencyMods[mod.GetDependencyName()] = mod
-	m.resourceMaps.AddMaps(mod.GetResourceMaps().TopLevelResources())
+	m.modResources.AddMaps(mod.GetModResources().TopLevelResources())
 }
 
 // GetTopLevelDependencyMods build a mod map of top level loaded dependencies, keyed by mod name
@@ -698,7 +698,7 @@ func (m *ModParseContext) GetTopLevelDependencyMods() modconfig.ModMap {
 func (m *ModParseContext) SetCurrentMod(mod *modconfig.Mod) error {
 	m.CurrentMod = mod
 	// populate the resource maps
-	m.setResourceMaps()
+	m.setModResources()
 	// now we have the mod, load any arg values from the mod require - these will be passed to dependency mods
 	return m.loadModRequireArgs()
 }
