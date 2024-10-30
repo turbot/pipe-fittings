@@ -16,7 +16,7 @@ type ModTreeItemImpl struct {
 	// required to allow partial decoding
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
-	// TODO K for some reason the auto cty serialisation fails for this struct with a NRE so we manually serialise
+	// auto cty serialisation fails with an NRE for mod struct so we manually serialise
 	Mod              *Mod     `cty:"-" json:"-"`
 	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
 	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`

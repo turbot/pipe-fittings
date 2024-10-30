@@ -27,7 +27,7 @@ type HclResourceImpl struct {
 	Documentation   *string           `cty:"documentation" hcl:"documentation" json:"documentation,omitempty"`
 	DeclRange       hcl.Range         `json:"-"` // No corresponding cty tag, so using "-"
 	Tags            map[string]string `cty:"tags" hcl:"tags,optional" json:"tags,omitempty"`
-	// TODO K can we move this out of here?
+	// TODO can we move this out of here?
 	MaxConcurrency *int `cty:"max_concurrency" hcl:"max_concurrency,optional" json:"max_concurrency,omitempty"`
 
 	base                HclResource

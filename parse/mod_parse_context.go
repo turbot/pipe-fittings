@@ -63,21 +63,6 @@ type ModParseContext struct {
 
 	PipelingConnections map[string]connection.PipelingConnection
 
-	// TODO K these are flowpipe only
-	// TODO K are these even needed?
-	// PipelineHcls map[string]*flowpipe.Pipeline
-	//TriggerHcls     map[string]*flowpipe.Trigger
-	//IntegrationHcls map[string]flowpipe.Integration
-
-	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
-	// with mod and workspace. However it can be reference by the mod, so it needs to be in the parse context
-	// TODO K instead of storing these on parse context, the app registers functions to add value maps into the parse context
-
-	// only used to validate pipeline
-	//Credentials map[string]credential.Credential
-
-	//Notifiers   map[string]flowpipe.Notifier
-
 	ParentParseCtx *ModParseContext
 
 	// stack of parent resources for the currently parsed block
@@ -99,7 +84,7 @@ type ModParseContext struct {
 	topLevelDependencyMods modconfig.ModMap
 	// if we are loading dependency mod, this contains the details
 	DependencyConfig *ModDependencyConfig
-	resourceMaps     modconfig.ResourceMapsI
+	resourceMaps     modconfig.ModResources
 	// map of late binding variable values
 	// - this is added to the eval context if includeLateBindingResourcesInEvalContext is true
 	lateBindingVars map[string]cty.Value
@@ -432,7 +417,7 @@ func (m *ModParseContext) GetMod(modShortName string) *modconfig.Mod {
 	return nil
 }
 
-func (m *ModParseContext) GetResourceMaps() modconfig.ResourceMapsI {
+func (m *ModParseContext) GetResourceMaps() modconfig.ModResources {
 	if m.resourceMaps != nil {
 		return m.resourceMaps
 	}
@@ -449,7 +434,7 @@ func (m *ModParseContext) setResourceMaps() {
 	deps := m.GetTopLevelDependencyMods()
 
 	// use the current mod as the base resource map
-	sourceResourceMaps := make([]modconfig.ResourceMapsI, 0, len(deps)+1)
+	sourceResourceMaps := make([]modconfig.ModResources, 0, len(deps)+1)
 
 	sourceResourceMaps = append(sourceResourceMaps, m.CurrentMod.GetResourceMaps())
 
@@ -866,56 +851,6 @@ func (m *ModParseContext) getModRequireBlock() *hclsyntax.Block {
 	return nil
 
 }
-
-//
-//// TODO: transition period
-//// AddPipeline stores this resource as a variable to be added to the eval context. It alse
-//func (m *ModParseContext) AddPipeline(pipelineHcl *flowpipe2.Pipeline) hcl.Diagnostics {
-//
-//	// Split and get the last part for pipeline name
-//	// pipelineFullName := pipelineHcl.Name()
-//	// parts := strings.Split(pipelineFullName, ".")
-//	// pipelineNameOnly := parts[len(parts)-1]
-//
-//	// m.PipelineHcls[pipelineNameOnly] = pipelineHcl
-//	pCty, err := pipelineHcl.CtyValue()
-//	if err != nil {
-//		return hcl.Diagnostics{&hcl.Diagnostic{
-//			Severity: hcl.DiagError,
-//			Summary:  fmt.Sprintf("failed to convert pipeline '%s' to its cty value", pipelineHcl.Name()),
-//			Detail:   err.Error(),
-//			Subject:  pipelineHcl.GetDeclRange(),
-//		}}
-//	}
-//
-//	diags := m.addReferenceValue(pipelineHcl, pCty)
-//	if diags.HasErrors() {
-//		return diags
-//	}
-//
-//	// remove this resource from unparsed blocks
-//	delete(m.UnresolvedBlocks, pipelineHcl.Name())
-//
-//	m.RebuildEvalContext()
-//	return nil
-//}
-//
-//func (m *ModParseContext) AddTrigger(trigger *flowpipe2.Trigger) hcl.Diagnostics {
-//
-//	// TODO K is this mechanism still needed?
-//	// Split and get the last part for pipeline name
-//	//parts := strings.Split(trigger.Name(), ".")
-//	//triggerNameOnly := parts[len(parts)-1]
-//
-//	// we don't add the trigger in the reference values unlike pipeline, but this seems to work?
-//	//m.TriggerHcls[triggerNameOnly] = trigger
-//
-//	// remove this resource from unparsed blocks
-//	delete(m.UnresolvedBlocks, trigger.Name())
-//
-//	m.RebuildEvalContext()
-//	return nil
-//}
 
 // LoadVariablesOnly returns whether we are ONLY loading variables
 func (m *ModParseContext) LoadVariablesOnly() bool {

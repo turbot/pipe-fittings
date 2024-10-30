@@ -36,13 +36,6 @@ type Workspace struct {
 
 	PipelingConnections map[string]connection.PipelingConnection
 
-	// TODO K flowpiwp specific but needed for now as we must add them to the parse context and that is done by the base workspace
-	// Credentials are something different, it's not part of the mod, it's not part of the workspace, it is at the same level
-	// with mod and workspace. However, it can be referenced by the mod, so it needs to be in the parse context
-	//Credentials  map[string]credential.Credential
-	//Integrations map[string]flowpipe.Integration
-	//Notifiers    map[string]flowpipe.Notifier
-
 	Mods map[string]*modconfig.Mod
 
 	// the input variables used in the parse
@@ -52,16 +45,6 @@ type Workspace struct {
 	// Flowpipe uses this to populate notifiers
 	// it is a map of cty value maps - keyed by the typ ename (e.g. notifier)
 	configValueMaps map[string]map[string]cty.Value
-
-	// TODO K needed?
-	//PipesMetadata *steampipeconfig.PipesMetadata
-
-	// TODO K needed?
-
-	// source snapshot paths
-	// if this is set, no other mod resources are loaded and
-	// the PowerpipeResourceMaps returned by GetModResources will contain only the snapshots
-	//SourceSnapshots []string
 
 	watcher     *filewatcher.FileWatcher
 	loadLock    *sync.Mutex
@@ -75,7 +58,7 @@ type Workspace struct {
 
 	// hooks
 	OnFileWatcherError  func(context.Context, error)
-	OnFileWatcherEvent  func(context.Context, modconfig.ResourceMapsI, modconfig.ResourceMapsI)
+	OnFileWatcherEvent  func(context.Context, modconfig.ModResources, modconfig.ModResources)
 	BlockTypeInclusions []string
 	ValidateVariables   bool
 	SupportLateBinding  bool
@@ -339,7 +322,6 @@ func (w *Workspace) loadWorkspaceLock(ctx context.Context) (*versionmap.Workspac
 
 	// if this is the old format, migrate by reinstalling dependencies
 	if workspaceLock.StructVersion() != versionmap.WorkspaceLockStructVersion {
-		// TODO K removed migration - check an install will work
 		return nil, fmt.Errorf("workspace lock file is out of date, please run 'steampipe install' to update")
 	}
 
@@ -404,7 +386,7 @@ func (w *Workspace) LoadUnlock() {
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (w *Workspace) GetResourceMaps() modconfig.ResourceMapsI {
+func (w *Workspace) GetResourceMaps() modconfig.ModResources {
 
 	w.LoadLock()
 	defer w.LoadUnlock()

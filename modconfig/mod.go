@@ -62,7 +62,7 @@ type Mod struct {
 	ModPath string `json:"-"`
 
 	// convenient aggregation of all resources
-	ResourceMaps ResourceMapsI `json:"-"`
+	ResourceMaps ModResources `json:"-"`
 
 	// the filepath of the mod.sp/mod.fp/mod.pp file (will be empty for default mod)
 	modFilePath string
@@ -217,11 +217,11 @@ func (m *Mod) GetReferences() []*ResourceReference {
 }
 
 // GetResourceMaps implements ResourceMapsProvider
-func (m *Mod) GetResourceMaps() ResourceMapsI {
+func (m *Mod) GetResourceMaps() ModResources {
 	return m.ResourceMaps
 }
 
-func (m *Mod) SetResourceMaps(resourceMaps ResourceMapsI) {
+func (m *Mod) SetResourceMaps(resourceMaps ModResources) {
 	m.ResourceMaps = resourceMaps
 }
 

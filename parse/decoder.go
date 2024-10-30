@@ -58,7 +58,6 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 	for _, block := range blocks {
 		switch block.Type {
 		case schema.BlockTypeLocals:
-			// TODO K remove special casing - decodeBlock could return an array
 			resources, res := d.decodeLocalsBlock(block, parseCtx)
 			if !res.Success() {
 				diags = append(diags, res.Diags...)
