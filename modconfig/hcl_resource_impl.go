@@ -253,6 +253,8 @@ func (h *HclResourceImpl) getBaseImpl() *HclResourceImpl {
 	return h.base.GetHclResourceImpl()
 }
 
-func (*HclResourceImpl) GetNestedStructs() []CtyValueProvider {
-	return nil
+func (h *HclResourceImpl) GetNestedStructs() []CtyValueProvider {
+	// return all nested structs - this is used to get the nested structs for the cty serialisation
+	// we return ourselves
+	return []CtyValueProvider{h}
 }
