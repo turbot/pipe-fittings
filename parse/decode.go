@@ -221,49 +221,6 @@ func DecodeProperty(content *hcl.BodyContent, property string, dest interface{},
 	return diags
 }
 
-// HandleModDecodeResult
-// if decode was successful:
-// - generate and set resource metadata
-// - add resource to ModParseContext (which adds it to the mod)HandleModDecodeResult
-func HandleModDecodeResult(resource modconfig.HclResource, res *DecodeResult, block *hcl.Block, parseCtx *ModParseContext) {
-	if !res.Success() {
-		if len(res.Depends) > 0 {
-			moreDiags := parseCtx.AddDependencies(block, resource.GetUnqualifiedName(), res.Depends)
-			res.AddDiags(moreDiags)
-		}
-		return
-	}
-	// set whether this is a top level resource
-	resource.SetTopLevel(parseCtx.IsTopLevelBlock(block))
-
-	// call post decode hook
-	// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property
-	moreDiags := resource.OnDecoded(block, parseCtx)
-	res.AddDiags(moreDiags)
-
-	// add references
-	moreDiags = AddReferences(resource, block, parseCtx)
-	res.AddDiags(moreDiags)
-
-	// if we failed validation, return
-	if !res.Success() {
-		return
-	}
-
-	// if resource is NOT anonymous, and this is a TOP LEVEL BLOCK, add into the run context
-	// NOTE: we can only reference resources defined in a top level block
-	if !resourceIsAnonymous(resource) && resource.IsTopLevel() {
-		moreDiags = parseCtx.AddResource(resource)
-		res.AddDiags(moreDiags)
-	}
-
-	// if resource supports metadata, save it
-	if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
-		moreDiags = AddResourceMetadata(resourceWithMetadata, resource.GetHclResourceImpl().DeclRange, parseCtx)
-		res.AddDiags(moreDiags)
-	}
-}
-
 func resourceIsAnonymous(resource modconfig.HclResource) bool {
 	// (if a resource anonymous it must support ResourceWithMetadata)
 	resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata)

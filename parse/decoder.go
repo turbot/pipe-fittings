@@ -76,10 +76,6 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 
 			resourceDiags := AddResourceToMod(resource, block, parseCtx)
 			diags = append(diags, resourceDiags...)
-			// if a validate function was registered, call it
-			if d.ValidateFunc != nil {
-				diags = append(diags, d.ValidateFunc(resource)...)
-			}
 		}
 	}
 
@@ -102,7 +98,7 @@ func (d *DecoderImpl) decodeLocalsBlock(block *hcl.Block, parseCtx *ModParseCont
 	locals, res = d.decodeLocals(block, parseCtx)
 	for _, local := range locals {
 		resources = append(resources, local)
-		HandleModDecodeResult(local, res, block, parseCtx)
+		d.HandleModDecodeResult(local, res, block, parseCtx)
 	}
 
 	return resources, res
@@ -135,7 +131,7 @@ func (d *DecoderImpl) DecodeBlock(block *hcl.Block, parseCtx *ModParseContext) (
 	if !helpers.IsNil(resource) {
 		// handle the result
 		// - if there are dependencies, add to run context
-		HandleModDecodeResult(resource, res, block, parseCtx)
+		d.HandleModDecodeResult(resource, res, block, parseCtx)
 	}
 
 	return resource, res
@@ -222,4 +218,51 @@ func (d *DecoderImpl) decodeVariable(block *hcl.Block, parseCtx *ModParseContext
 func ExtractExpressionString(expr hcl.Expression, src []byte) string {
 	rng := expr.Range()
 	return string(src[rng.Start.Byte:rng.End.Byte])
+}
+
+// HandleModDecodeResult
+// if decode was successful:
+// - generate and set resource metadata
+// - add resource to ModParseContext (which adds it to the mod)HandleModDecodeResult
+func (d *DecoderImpl) HandleModDecodeResult(resource modconfig.HclResource, res *DecodeResult, block *hcl.Block, parseCtx *ModParseContext) {
+	if !res.Success() {
+		if len(res.Depends) > 0 {
+			moreDiags := parseCtx.AddDependencies(block, resource.GetUnqualifiedName(), res.Depends)
+			res.AddDiags(moreDiags)
+		}
+		return
+	}
+	// set whether this is a top level resource
+	resource.SetTopLevel(parseCtx.IsTopLevelBlock(block))
+
+	// call post decode hook
+	// NOTE: must do this BEFORE adding resource to run context to ensure we respect the base property
+	moreDiags := resource.OnDecoded(block, parseCtx)
+	res.AddDiags(moreDiags)
+
+	// add references
+	moreDiags = AddReferences(resource, block, parseCtx)
+	res.AddDiags(moreDiags)
+
+	if d.ValidateFunc != nil {
+		res.AddDiags(d.ValidateFunc(resource))
+	}
+
+	// if we failed validation, return
+	if !res.Success() {
+		return
+	}
+
+	// if resource is NOT anonymous, and this is a TOP LEVEL BLOCK, add into the run context
+	// NOTE: we can only reference resources defined in a top level block
+	if !resourceIsAnonymous(resource) && resource.IsTopLevel() {
+		moreDiags = parseCtx.AddResource(resource)
+		res.AddDiags(moreDiags)
+	}
+
+	// if resource supports metadata, save it
+	if resourceWithMetadata, ok := resource.(modconfig.ResourceWithMetadata); ok {
+		moreDiags = AddResourceMetadata(resourceWithMetadata, resource.GetHclResourceImpl().DeclRange, parseCtx)
+		res.AddDiags(moreDiags)
+	}
 }
