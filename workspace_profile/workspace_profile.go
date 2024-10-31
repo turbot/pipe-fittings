@@ -41,6 +41,8 @@ func NewWorkspaceProfile[T WorkspaceProfile](block *hcl.Block) (T, hcl.Diagnosti
 		res = &FlowpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	case *PowerpipeWorkspaceProfile:
 		res = &PowerpipeWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
+	case *TpWorkspaceProfile:
+		res = &TpWorkspaceProfile{ProfileName: profileName, DeclRange: declRange}
 	default:
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,

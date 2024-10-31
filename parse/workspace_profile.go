@@ -3,6 +3,7 @@ package parse
 import (
 	"fmt"
 	"log/slog"
+	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -53,7 +54,8 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 	switch any(temp).(type) {
 	case *workspace_profile.FlowpipeWorkspaceProfile:
 		schema = FlowpipeConfigBlockSchema
-
+	case *workspace_profile.TpWorkspaceProfile:
+		schema = TpConfigBlockSchema
 	case *workspace_profile.PowerpipeWorkspaceProfile:
 		schema = PowerpipeConfigBlockSchema
 	case *workspace_profile.SteampipeWorkspaceProfile:
@@ -63,7 +65,7 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		// unexpected type
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagError,
-			Summary:  fmt.Sprintf("unexpected workspace profile type %s", temp.ShortName()),
+			Summary:  fmt.Sprintf("unexpected workspace profile type %s", reflect.TypeOf(temp).Name()),
 		})
 	}
 	if diags.HasErrors() {
