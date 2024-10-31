@@ -147,10 +147,6 @@ var SteampipeConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeWorkspaceProfile,
 			LabelNames: []string{schema.LabelName},
 		},
-		{
-			Type:       schema.BlockTypePartition,
-			LabelNames: []string{schema.LabelType, schema.LabelName},
-		},
 	},
 }
 
@@ -165,6 +161,10 @@ var TpConfigBlockSchema = &hcl.BodySchema{
 		{
 			Type:       schema.BlockTypeWorkspaceProfile,
 			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypePartition,
+			LabelNames: []string{schema.LabelType, schema.LabelName},
 		},
 	},
 }
