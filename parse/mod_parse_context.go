@@ -862,13 +862,6 @@ func (m *ModParseContext) LoadVariablesOnly() bool {
 	return ok
 }
 
-func (m *ModParseContext) SetBlockTypeExclusions(blockTypes ...string) {
-	m.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
-	for _, t := range blockTypes {
-		m.blockTypeExclusions[t] = struct{}{}
-	}
-}
-
 // SetIncludeLateBindingResources sets whether connections be included in the eval context
 // and rebuilds the eval context
 func (m *ModParseContext) SetIncludeLateBindingResources(include bool) {

@@ -266,6 +266,13 @@ func (p *ParseContext) SetBlockTypes(blockTypes ...string) {
 	}
 }
 
+func (m *ParseContext) SetBlockTypeExclusions(blockTypes ...string) {
+	m.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
+	for _, t := range blockTypes {
+		m.blockTypeExclusions[t] = struct{}{}
+	}
+}
+
 // default resourceNameFromDependency func
 func resourceNameFromDependency(propertyPath string) (string, error) {
 	parsedPropertyPath, err := modconfig.ParseResourcePropertyPath(propertyPath)
