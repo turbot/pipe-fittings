@@ -2,10 +2,10 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"os"
 	"path/filepath"
 
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
@@ -21,8 +21,6 @@ const (
 	legacyStateFileName          = "update-check.json"
 	availableVersionsFileName    = "available_versions.json"
 	legacyNotificationsFileName  = "notifications.json"
-
-	PipesComponentInternal = "internal"
 )
 
 func ensureInstallSubDir(dirName string) string {
