@@ -26,6 +26,7 @@ const (
 	ArgConfigPath              = "config-path"
 	ArgConnectionString        = "connection-string"
 	ArgDashboardStartTimeout   = "dashboard-start-timeout"
+	ArgDetectionTimeout        = "detection-timeout"
 	ArgDashboardTimeout        = "dashboard-timeout"
 	ArgDatabase                = "database"
 	ArgDatabaseListenAddresses = "database-listen"

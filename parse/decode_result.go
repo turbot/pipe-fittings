@@ -10,7 +10,7 @@ import (
 	"github.com/turbot/pipe-fittings/modconfig"
 )
 
-// struct to hold the result of a decoding operation
+// DecodeResult holds the result of a decoding operation - diags and resource dependencies
 type DecodeResult struct {
 	Diags   hcl.Diagnostics
 	Depends map[string]*modconfig.ResourceDependency
@@ -49,7 +49,7 @@ func (p *DecodeResult) HandleDecodeDiags(diags hcl.Diagnostics) {
 	}
 }
 
-// determine whether the diag is a dependency error, and if so, return a dependency object
+// DiagsToDependency determines whether the diag is a dependency error, and if so, return a dependency object
 func DiagsToDependency(diag *hcl.Diagnostic) *modconfig.ResourceDependency {
 	if helpers.StringSliceContains(missingVariableErrors, diag.Summary) {
 		return &modconfig.ResourceDependency{Range: diag.Expression.Range(), Traversals: diag.Expression.Variables()}

@@ -238,6 +238,9 @@ func (h *HclResourceImpl) GetListData() *printers.RowData {
 }
 
 func (h *HclResourceImpl) SetBaseProperties() {
+	if h.base == nil {
+		return
+	}
 	if h.Title == nil {
 		h.Title = h.getBaseImpl().Title
 	}
