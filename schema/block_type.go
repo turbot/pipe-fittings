@@ -9,30 +9,32 @@ const (
 	BlockTypeMod       = "mod"
 	BlockTypePlugin    = "plugin"
 	// resource blocks
-	BlockTypeQuery          = "query"
-	BlockTypeControl        = "control"
-	BlockTypeBenchmark      = "benchmark"
-	BlockTypeDashboard      = "dashboard"
-	BlockTypeContainer      = "container"
-	BlockTypeChart          = "chart"
-	BlockTypeCard           = "card"
-	BlockTypeFlow           = "flow"
-	BlockTypeGraph          = "graph"
-	BlockTypeHierarchy      = "hierarchy"
-	BlockTypeImage          = "image"
-	BlockTypeInput          = "input"
-	BlockTypeTable          = "table"
-	BlockTypeText           = "text"
-	BlockTypeLocals         = "locals"
-	BlockTypeVariable       = "variable"
-	BlockTypeParam          = "param"
-	BlockTypeRequire        = "require"
-	BlockTypeNode           = "node"
-	BlockTypeEdge           = "edge"
-	BlockTypeLegacyRequires = "requires"
-	BlockTypeCategory       = "category"
-	BlockTypeWith           = "with"
-	BlockTypeError          = "error"
+	BlockTypeQuery              = "query"
+	BlockTypeControl            = "control"
+	BlockTypeBenchmark          = "benchmark"
+	BlockTypeDetection          = "detection"
+	BlockTypeDetectionBenchmark = "detection_benchmark"
+	BlockTypeDashboard          = "dashboard"
+	BlockTypeContainer          = "container"
+	BlockTypeChart              = "chart"
+	BlockTypeCard               = "card"
+	BlockTypeFlow               = "flow"
+	BlockTypeGraph              = "graph"
+	BlockTypeHierarchy          = "hierarchy"
+	BlockTypeImage              = "image"
+	BlockTypeInput              = "input"
+	BlockTypeTable              = "table"
+	BlockTypeText               = "text"
+	BlockTypeLocals             = "locals"
+	BlockTypeVariable           = "variable"
+	BlockTypeParam              = "param"
+	BlockTypeRequire            = "require"
+	BlockTypeNode               = "node"
+	BlockTypeEdge               = "edge"
+	BlockTypeLegacyRequires     = "requires"
+	BlockTypeCategory           = "category"
+	BlockTypeWith               = "with"
+	BlockTypeError              = "error"
 
 	// config blocks
 	BlockTypeRateLimiter       = "limiter"
@@ -63,7 +65,7 @@ const (
 	AttributeTypeDefault = "default"
 	AttributeTypeEnum    = "enum"
 	AttributeTypeFormat  = "format"
-	
+
 	AttributeTypeSensitive = "sensitive"
 	// Pipeline param block
 	AttributeTypeOptional = "optional"
@@ -248,6 +250,7 @@ var QueryProviderBlocks = []string{
 	BlockTypeCard,
 	BlockTypeChart,
 	BlockTypeControl,
+	BlockTypeDetection,
 	BlockTypeEdge,
 	BlockTypeFlow,
 	BlockTypeGraph,
@@ -274,6 +277,8 @@ var ReferenceBlocks = []string{
 	BlockTypeControl,
 	BlockTypeBenchmark,
 	BlockTypeDashboard,
+	BlockTypeDetection,
+	BlockTypeDetectionBenchmark,
 	BlockTypeContainer,
 	BlockTypeCard,
 	BlockTypeChart,
@@ -293,6 +298,8 @@ var ValidResourceItemTypes = []string{
 	BlockTypeMod,
 	BlockTypeQuery,
 	BlockTypeControl,
+	BlockTypeDetection,
+	BlockTypeDetectionBenchmark,
 	BlockTypeBenchmark,
 	BlockTypeDashboard,
 	BlockTypeContainer,

@@ -238,6 +238,14 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 			LabelNames: []string{schema.LabelName},
 		},
 		{
+			Type:       schema.BlockTypeDetection,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeDetectionBenchmark,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
 			Type:       schema.BlockTypeBenchmark,
 			LabelNames: []string{schema.LabelName},
 		},
@@ -313,103 +321,6 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 	},
 }
 
-// DashboardBlockSchema is only used to validate the blocks of a Dashboard
-var DashboardBlockSchema = &hcl.BodySchema{
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       schema.BlockTypeInput,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeParam,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type: schema.BlockTypeWith,
-		},
-		{
-			Type: schema.BlockTypeContainer,
-		},
-		{
-			Type: schema.BlockTypeCard,
-		},
-		{
-			Type: schema.BlockTypeChart,
-		},
-		{
-			Type: schema.BlockTypeBenchmark,
-		},
-		{
-			Type: schema.BlockTypeControl,
-		},
-		{
-			Type: schema.BlockTypeFlow,
-		},
-		{
-			Type: schema.BlockTypeGraph,
-		},
-		{
-			Type: schema.BlockTypeHierarchy,
-		},
-		{
-			Type: schema.BlockTypeImage,
-		},
-		{
-			Type: schema.BlockTypeTable,
-		},
-		{
-			Type: schema.BlockTypeText,
-		},
-	},
-}
-
-// DashboardContainerBlockSchema is only used to validate the blocks of a DashboardContainer
-var DashboardContainerBlockSchema = &hcl.BodySchema{
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       schema.BlockTypeInput,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       schema.BlockTypeParam,
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type: schema.BlockTypeContainer,
-		},
-		{
-			Type: schema.BlockTypeCard,
-		},
-		{
-			Type: schema.BlockTypeChart,
-		},
-		{
-			Type: schema.BlockTypeBenchmark,
-		},
-		{
-			Type: schema.BlockTypeControl,
-		},
-		{
-			Type: schema.BlockTypeFlow,
-		},
-		{
-			Type: schema.BlockTypeGraph,
-		},
-		{
-			Type: schema.BlockTypeHierarchy,
-		},
-		{
-			Type: schema.BlockTypeImage,
-		},
-		{
-			Type: schema.BlockTypeTable,
-		},
-		{
-			Type: schema.BlockTypeText,
-		},
-	},
-}
-
 var BenchmarkBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{
 		{Name: "children"},
@@ -422,53 +333,6 @@ var BenchmarkBlockSchema = &hcl.BodySchema{
 		{Name: "base"},
 		{Name: "type"},
 		{Name: "display"},
-	},
-}
-
-// QueryProviderBlockSchema schema for all blocks satisfying QueryProvider interface
-// NOTE: these are just the blocks/attributes that are explicitly decoded
-// other query provider properties are implicitly decoded using tags
-var QueryProviderBlockSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{
-		{Name: "args"},
-	},
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       "param",
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       "with",
-			LabelNames: []string{schema.LabelName},
-		},
-	},
-}
-
-// NodeAndEdgeProviderSchema is used to decode graph/hierarchy/flow
-// (EXCEPT categories)
-var NodeAndEdgeProviderSchema = &hcl.BodySchema{
-	Attributes: []hcl.AttributeSchema{
-		{Name: "args"},
-	},
-	Blocks: []hcl.BlockHeaderSchema{
-		{
-			Type:       "param",
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       "category",
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type:       "with",
-			LabelNames: []string{schema.LabelName},
-		},
-		{
-			Type: schema.BlockTypeNode,
-		},
-		{
-			Type: schema.BlockTypeEdge,
-		},
 	},
 }
 
