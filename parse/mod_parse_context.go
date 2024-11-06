@@ -521,7 +521,7 @@ func (m *ModParseContext) RebuildEvalContext() {
 // store the resource as a cty value in the reference valuemap
 func (m *ModParseContext) storeResourceInReferenceValueMap(resource modconfig.HclResource) hcl.Diagnostics {
 	// add resource to variable map
-	ctyValue, diags := m.getResourceCtyValue(resource)
+	ctyValue, diags := m.GetResourceCtyValue(resource)
 	if diags.HasErrors() {
 		return diags
 	}
@@ -536,64 +536,6 @@ func (m *ModParseContext) storeResourceInReferenceValueMap(resource modconfig.Hc
 	delete(m.UnresolvedBlocks, n)
 
 	return nil
-}
-
-// convert a HclResource into a cty value, taking into account nested structs
-func (m *ModParseContext) getResourceCtyValue(resource modconfig.HclResource) (cty.Value, hcl.Diagnostics) {
-	ctyValue, err := resource.(modconfig.CtyValueProvider).CtyValue()
-	if err != nil {
-		return cty.Zero, m.errToCtyValueDiags(resource, err)
-	}
-	// if this is a value map, merge in the values of base structs
-	// if it is NOT a value map, the resource must have overridden CtyValue so do not merge base structs
-	if ctyValue.Type().FriendlyName() != "object" {
-		return ctyValue, nil
-	}
-	// TODO [node_reuse] fetch nested structs and serialise automatically https://github.com/turbot/steampipe/issues/2924
-	valueMap := ctyValue.AsValueMap()
-	if valueMap == nil {
-		valueMap = make(map[string]cty.Value)
-	}
-	// get all nested structs (i.e. HclResourceImpl, ModTreeItemImpl and QueryProviderImpl - if this resource contains them)
-	nestedStructs := resource.GetNestedStructs()
-	for _, base := range nestedStructs {
-		if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
-			return cty.Zero, m.errToCtyValueDiags(resource, err)
-		}
-	}
-
-	return cty.ObjectVal(valueMap), nil
-}
-
-// merge the cty value of the given interface into valueMap
-// (note: this mutates valueMap)
-func (m *ModParseContext) mergeResourceCtyValue(resource modconfig.CtyValueProvider, valueMap map[string]cty.Value) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("panic in mergeResourceCtyValue: %s", helpers.ToError(r).Error())
-		}
-	}()
-	ctyValue, err := resource.CtyValue()
-	if err != nil {
-		return err
-	}
-	if ctyValue == cty.Zero {
-		return nil
-	}
-	// merge results
-	for k, v := range ctyValue.AsValueMap() {
-		valueMap[k] = v
-	}
-	return nil
-}
-
-func (m *ModParseContext) errToCtyValueDiags(resource modconfig.HclResource, err error) hcl.Diagnostics {
-	return hcl.Diagnostics{&hcl.Diagnostic{
-		Severity: hcl.DiagError,
-		Summary:  fmt.Sprintf("failed to convert resource '%s' to its cty value", resource.Name()),
-		Detail:   err.Error(),
-		Subject:  resource.GetDeclRange(),
-	}}
 }
 
 func (m *ModParseContext) addReferenceValue(resource modconfig.HclResource, value cty.Value) hcl.Diagnostics {
