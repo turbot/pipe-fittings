@@ -409,20 +409,28 @@ func (m *Mod) RequireHasUnresolvedArgs() bool {
 
 // GetConnectionDependsOn determines whether the mod depends on a connection
 // if so the Database field will be a ConnectionDependency struct
-func (m *Mod) GetConnectionDependsOn() []string {
+func (m *Mod) GetConnectionDependsOn() ([]string, error) {
 	if m.Database != nil {
 		if csp, ok := (m.Database).(connection.ConnectionDependency); ok {
-			return []string{csp.GetConnectionString()}
+			cs, err := csp.GetConnectionString()
+			if err != nil {
+				return nil, err
+			}
+			return []string{cs}, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (connection.ConnectionStringProvider, error) {
 	if m.Database != nil {
 
 		if cd, ok := (m.Database).(connection.ConnectionDependency); ok {
-			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, cd.GetConnectionString())
+			connectionString, err := cd.GetConnectionString()
+			if err != nil {
+				return nil, err
+			}
+			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, connectionString)
 		}
 
 		return m.Database, nil

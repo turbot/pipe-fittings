@@ -32,18 +32,9 @@ type TimeRangeProvider interface {
 	SetTimeRange(utils.TimeRange)
 }
 
-func WithTimeRange(tr utils.TimeRange) ConnectionStringOpt {
-	return func(c ConnectionStringProvider) {
-		// if this connection supports time range, set it
-		if c, ok := c.(TimeRangeProvider); ok {
-			c.SetTimeRange(tr)
-		}
-	}
-}
-
 // ConnectionStringProvider is implemented by all connections which can provide a connection string
 type ConnectionStringProvider interface {
-	GetConnectionString(...ConnectionStringOpt) string
+	GetConnectionString(...ConnectionStringOpt) (string, error)
 }
 
 // SearchPathProvider is implemented by all connections which can provide a connection string

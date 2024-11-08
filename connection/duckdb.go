@@ -79,16 +79,16 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func (c *DuckDbConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+func (c *DuckDbConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
 	for _, opt := range opts {
 		opt(c)
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString
+		return *c.ConnectionString, nil
 	}
 
-	return fmt.Sprintf("duckdb://%s", c.getFileName())
+	return fmt.Sprintf("duckdb://%s", c.getFileName()), nil
 }
 
 func (c *DuckDbConnection) getFileName() any {

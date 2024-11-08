@@ -89,13 +89,13 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 	return nil
 }
 
-func (c *SteampipePgConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+func (c *SteampipePgConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
 	for _, opt := range opts {
 		opt(c)
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString
+		return *c.ConnectionString, nil
 	}
 	// db, username, host and port all have default values if not set
 	return buildPostgresConnectionString(
@@ -104,7 +104,7 @@ func (c *SteampipePgConnection) GetConnectionString(opts ...ConnectionStringOpt)
 		c.getHost(),
 		c.getPort(),
 
-		c.Password, c.SslMode)
+		c.Password, c.SslMode), nil
 }
 
 func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {

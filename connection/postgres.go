@@ -119,13 +119,13 @@ func validateSSlMode(s string, declRange *hcl.Range) hcl.Diagnostics {
 	}
 }
 
-func (c *PostgresConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+func (c *PostgresConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
 	for _, opt := range opts {
 		opt(c)
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString
+		return *c.ConnectionString, nil
 	}
 
 	// db, username, host and port all have default values if not set
@@ -135,7 +135,7 @@ func (c *PostgresConnection) GetConnectionString(opts ...ConnectionStringOpt) st
 		c.getHost(),
 		c.getPort(),
 		c.Password, c.SslMode)
-	return connString
+	return connString, nil
 }
 
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {

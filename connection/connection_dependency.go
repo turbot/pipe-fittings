@@ -7,8 +7,8 @@ type ConnectionDependency struct {
 	ConnectionName string
 }
 
-func (c ConnectionDependency) GetConnectionString(opt ...ConnectionStringOpt) string {
-	return c.ConnectionName
+func (c ConnectionDependency) GetConnectionString(opt ...ConnectionStringOpt) (string, error) {
+	return c.ConnectionName, nil
 }
 
 func NewConnectionDependency(depPath string) ConnectionStringProvider {

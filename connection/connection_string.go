@@ -11,6 +11,6 @@ func NewConnectionString(connectionString string) ConnectionStringProvider {
 	}
 }
 
-func (c ConnectionString) GetConnectionString(...ConnectionStringOpt) string {
-	return c.ConnectionString
+func (c ConnectionString) GetConnectionString(...ConnectionStringOpt) (string, error) {
+	return c.ConnectionString, nil
 }

@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/turbot/pipe-fittings/utils"
 )
 
 const (
@@ -46,7 +44,6 @@ type BackendConfig struct {
 	MaxConnIdleTime  time.Duration
 	MaxOpenConns     int
 	SearchPathConfig SearchPathConfig
-	TimeRange        utils.TimeRange
 }
 
 func NewBackendConfig(opts []BackendOption) *BackendConfig {
@@ -78,11 +75,5 @@ func WithConfig(other *BackendConfig) BackendOption {
 func WithSearchPathConfig(config SearchPathConfig) BackendOption {
 	return func(c *BackendConfig) {
 		c.SearchPathConfig = config
-	}
-}
-
-func WithTimeRange(tr utils.TimeRange) BackendOption {
-	return func(c *BackendConfig) {
-		c.TimeRange = tr
 	}
 }
