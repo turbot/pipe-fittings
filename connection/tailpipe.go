@@ -2,7 +2,6 @@ package connection
 
 import (
 	"context"
-	"github.com/turbot/pipe-fittings/constants"
 	"os/exec"
 	"slices"
 	"strings"
@@ -83,9 +82,6 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) st
 	for _, opt := range opts {
 		opt(c)
 	}
-	// TODO HACK
-	return constants.DefaultSteampipeConnectionString
-
 	// Invoke the "tailpipe connect" shell command and capture output
 	cmd := exec.Command("tailpipe", "connect")
 
