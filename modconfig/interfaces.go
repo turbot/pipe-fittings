@@ -2,6 +2,7 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -45,10 +46,10 @@ type ModTreeItem interface {
 }
 
 type DatabaseItem interface {
-	GetDatabase() *string
+	GetDatabase() connection.ConnectionStringProvider
 	GetSearchPath() []string
 	GetSearchPathPrefix() []string
-	SetDatabase(*string)
+	SetDatabase(connection.ConnectionStringProvider)
 	SetSearchPath([]string)
 	SetSearchPathPrefix([]string)
 }

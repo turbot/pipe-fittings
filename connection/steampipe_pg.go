@@ -89,7 +89,11 @@ func (c *SteampipePgConnection) Validate() hcl.Diagnostics {
 	return nil
 }
 
-func (c *SteampipePgConnection) GetConnectionString() string {
+func (c *SteampipePgConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+	for _, opt := range opts {
+		opt(c)
+	}
+
 	if c.ConnectionString != nil {
 		return *c.ConnectionString
 	}

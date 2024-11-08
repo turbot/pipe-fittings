@@ -28,8 +28,8 @@ func NewDuckDBBackend(connString string) *DuckDBBackend {
 }
 
 // Connect implements Backend.
-func (b *DuckDBBackend) Connect(ctx context.Context, options ...ConnectOption) (*sql.DB, error) {
-	config := NewConnectConfig(options)
+func (b *DuckDBBackend) Connect(ctx context.Context, options ...BackendOption) (*sql.DB, error) {
+	config := NewBackendConfig(options)
 	db, err := sql.Open("duckdb", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")

@@ -28,8 +28,8 @@ func NewSqliteBackend(connString string) *SqliteBackend {
 }
 
 // Connect implements Backend.
-func (b *SqliteBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
-	config := NewConnectConfig(options)
+func (b *SqliteBackend) Connect(_ context.Context, options ...BackendOption) (*sql.DB, error) {
+	config := NewBackendConfig(options)
 	db, err := sql.Open("sqlite3", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to sqlite backend")

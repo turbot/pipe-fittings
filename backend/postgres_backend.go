@@ -58,14 +58,14 @@ func (b *PostgresBackend) init(ctx context.Context) error {
 }
 
 // Connect implements Backend.
-func (b *PostgresBackend) Connect(ctx context.Context, opts ...ConnectOption) (*sql.DB, error) {
+func (b *PostgresBackend) Connect(ctx context.Context, opts ...BackendOption) (*sql.DB, error) {
 	connString := b.originalConnectionString
 	connector, err := NewPgxConnector(connString, b.afterConnectFunc)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "Unable to parse connection string")
 	}
 
-	config := NewConnectConfig(opts)
+	config := NewBackendConfig(opts)
 
 	db := sql.OpenDB(connector)
 	db.SetConnMaxIdleTime(config.MaxConnIdleTime)

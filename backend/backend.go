@@ -17,7 +17,7 @@ type RowReader interface {
 }
 
 type Backend interface {
-	Connect(context.Context, ...ConnectOption) (*sql.DB, error)
+	Connect(context.Context, ...BackendOption) (*sql.DB, error)
 	RowReader() RowReader
 	ConnectionString() string
 	Name() string

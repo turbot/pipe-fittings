@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/printers"
 	"github.com/turbot/pipe-fittings/schema"
@@ -17,10 +18,11 @@ type ModTreeItemImpl struct {
 	ModTreeItemRemain hcl.Body `hcl:",remain" json:"-"`
 
 	// auto cty serialisation fails with an NRE for mod struct so we manually serialise
-	Mod              *Mod     `cty:"-" json:"-"`
-	Database         *string  `cty:"database" hcl:"database" json:"database,omitempty"`
-	SearchPath       []string `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
-	SearchPathPrefix []string `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
+	Mod              *Mod                                `cty:"-" json:"-"`
+	DatabaseString   *string                             `cty:"database" hcl:"database" json:"database,omitempty"`
+	Database         connection.ConnectionStringProvider `cty:"-" json:"-"`
+	SearchPath       []string                            `cty:"search_path" hcl:"search_path,optional" json:"search_path,omitempty"`
+	SearchPathPrefix []string                            `cty:"search_path_prefix" hcl:"search_path_prefix,optional" json:"search_path_prefix,omitempty"`
 
 	Paths            []NodePath    `json:"path,omitempty"`
 	Children         []ModTreeItem `json:"-"`
@@ -96,7 +98,7 @@ func (b *ModTreeItemImpl) GetMod() *Mod {
 }
 
 // GetDatabase implements DatabaseItem
-func (b *ModTreeItemImpl) GetDatabase() *string {
+func (b *ModTreeItemImpl) GetDatabase() connection.ConnectionStringProvider {
 	if b.Database != nil {
 		return b.Database
 	}
@@ -145,7 +147,7 @@ func (b *ModTreeItemImpl) GetSearchPathPrefix() []string {
 }
 
 // SetDatabase implements DatabaseItem
-func (b *ModTreeItemImpl) SetDatabase(database *string) {
+func (b *ModTreeItemImpl) SetDatabase(database connection.ConnectionStringProvider) {
 	b.Database = database
 }
 

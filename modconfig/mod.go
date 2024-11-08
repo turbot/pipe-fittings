@@ -4,22 +4,21 @@ import (
 	"fmt"
 	"golang.org/x/exp/maps"
 
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/app_specific_connection"
+	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/cty_helpers"
 	"github.com/turbot/pipe-fittings/hclhelpers"
 	"github.com/turbot/pipe-fittings/plugin"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/zclconf/go-cty/cty"
+	"os"
+	"path/filepath"
 )
 
 // mod name used if a default mod is created for a workspace which does not define one explicitly
@@ -408,24 +407,26 @@ func (m *Mod) RequireHasUnresolvedArgs() bool {
 	return false
 }
 
+// GetConnectionDependsOn determines whether the mod depends on a connection
+// if so the Database field will be a ConnectionDependency struct
 func (m *Mod) GetConnectionDependsOn() []string {
-	if m.Database != nil && strings.HasPrefix(*m.Database, "connection.") {
-		return []string{strings.TrimPrefix(*m.Database, "connection.")}
+	if m.Database != nil {
+		if csp, ok := (m.Database).(connection.ConnectionDependency); ok {
+			return []string{csp.GetConnectionString()}
+		}
 	}
 	return nil
 }
 
-func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (string, error) {
+func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (connection.ConnectionStringProvider, error) {
 	if m.Database != nil {
-		modDatabase := *m.Database
 
-		// if the database is actually a connection name, try to resolve from eval context
-		if strings.HasPrefix(modDatabase, "connection.") {
-			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, modDatabase)
-		} else {
-			return modDatabase, nil
+		if cd, ok := (m.Database).(connection.ConnectionDependency); ok {
+			return app_specific_connection.ConnectionStringFromConnectionName(evalContext, cd.GetConnectionString())
 		}
+
+		return m.Database, nil
 	}
 	// if no database is set on mod, use the default steampipe connection
-	return constants.DefaultSteampipeConnectionString, nil
+	return connection.NewConnectionString(constants.DefaultSteampipeConnectionString), nil
 }
