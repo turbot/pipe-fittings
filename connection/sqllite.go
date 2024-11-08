@@ -80,7 +80,11 @@ func (c *SqliteConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func (c *SqliteConnection) GetConnectionString() string {
+func (c *SqliteConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+	for _, opt := range opts {
+		opt(c)
+	}
+
 	if c.ConnectionString != nil {
 		return *c.ConnectionString
 	}

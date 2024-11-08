@@ -33,8 +33,8 @@ func NewMySQLBackend(connString string) *MySQLBackend {
 }
 
 // Connect implements Backend.
-func (b *MySQLBackend) Connect(_ context.Context, options ...ConnectOption) (*sql.DB, error) {
-	config := NewConnectConfig(options)
+func (b *MySQLBackend) Connect(_ context.Context, options ...BackendOption) (*sql.DB, error) {
+	config := NewBackendConfig(options)
 	db, err := sql.Open("mysql", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to mysql backend")

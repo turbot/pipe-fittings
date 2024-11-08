@@ -79,7 +79,11 @@ func (c *DuckDbConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func (c *DuckDbConnection) GetConnectionString() string {
+func (c *DuckDbConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+	for _, opt := range opts {
+		opt(c)
+	}
+
 	if c.ConnectionString != nil {
 		return *c.ConnectionString
 	}

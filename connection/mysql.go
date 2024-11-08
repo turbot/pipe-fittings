@@ -85,7 +85,11 @@ func (c *MysqlConnection) Validate() hcl.Diagnostics {
 	return nil
 }
 
-func (c *MysqlConnection) GetConnectionString() string {
+func (c *MysqlConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+	for _, opt := range opts {
+		opt(c)
+	}
+
 	if c.ConnectionString != nil {
 		return *c.ConnectionString
 	}

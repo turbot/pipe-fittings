@@ -2,10 +2,10 @@ package connection
 
 import (
 	"context"
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
+	"strings"
 )
 
 type PipelingConnection interface {
@@ -26,9 +26,24 @@ type PipelingConnection interface {
 	SetTtl(int)
 }
 
+type ConnectionStringOpt func(ConnectionStringProvider)
+
+type TimeRangeProvider interface {
+	SetTimeRange(utils.TimeRange)
+}
+
+func WithTimeRange(tr utils.TimeRange) ConnectionStringOpt {
+	return func(c ConnectionStringProvider) {
+		// if this connection supports time range, set it
+		if c, ok := c.(TimeRangeProvider); ok {
+			c.SetTimeRange(tr)
+		}
+	}
+}
+
 // ConnectionStringProvider is implemented by all connections which can provide a connection string
 type ConnectionStringProvider interface {
-	GetConnectionString() string
+	GetConnectionString(...ConnectionStringOpt) string
 }
 
 // SearchPathProvider is implemented by all connections which can provide a connection string

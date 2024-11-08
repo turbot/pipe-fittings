@@ -58,33 +58,33 @@ func DefaultPipelingConnections() (map[string]connection.PipelingConnection, err
 
 // ConnectionStringFromConnectionName resolves the connection name to a conneciton onbject in the eval context and
 // return the connection string
-func ConnectionStringFromConnectionName(evalContext *hcl.EvalContext, longName string) (string, error) {
+func ConnectionStringFromConnectionName(evalContext *hcl.EvalContext, longName string) (connection.ConnectionStringProvider, error) {
 	ty, name, err := parseConnectionName(longName)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	// look in the eval context for the connection
 	connectionMap, ok := evalContext.Variables["connection"]
 	if !ok {
-		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+		return nil, perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
 	}
 	connextionsOfType, ok := connectionMap.AsValueMap()[ty]
 	if !ok {
-		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+		return nil, perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
 	}
 	connCty, ok := connextionsOfType.AsValueMap()[name]
 	if !ok {
-		return "", perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
+		return nil, perr.BadRequestWithMessage("unable to resolve connection - not found in eval context: " + longName)
 	}
 	conn, err := CtyValueToConnection(connCty)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	csp, ok := conn.(connection.ConnectionStringProvider)
 	if !ok {
-		return "", perr.BadRequestWithMessage("connection does not support connection string: " + longName)
+		return nil, perr.BadRequestWithMessage("connection does not support connection string: " + longName)
 	}
-	return csp.GetConnectionString(), nil
+	return csp, nil
 }
 
 // parseConnectionName parses the connection name in the form "connection.<type>.<name>", and returns the type and name
