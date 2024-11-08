@@ -85,13 +85,13 @@ func (c *MysqlConnection) Validate() hcl.Diagnostics {
 	return nil
 }
 
-func (c *MysqlConnection) GetConnectionString(opts ...ConnectionStringOpt) string {
+func (c *MysqlConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
 	for _, opt := range opts {
 		opt(c)
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString
+		return *c.ConnectionString, nil
 	}
 
 	db := c.getDbName()
@@ -110,7 +110,7 @@ func (c *MysqlConnection) GetConnectionString(opts ...ConnectionStringOpt) strin
 	}
 	connString := fmt.Sprintf("mysql://%s@tcp(%s:%d)/%s", userString, host, port, db)
 
-	return connString
+	return connString, nil
 }
 
 func (c *MysqlConnection) GetEnv() map[string]cty.Value {

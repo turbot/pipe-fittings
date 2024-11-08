@@ -48,8 +48,7 @@ func FromConnectionString(ctx context.Context, str string) (Backend, error) {
 	case IsSqliteConnectionString(str):
 		return NewSqliteBackend(str), nil
 	default:
-
-		return nil, sperr.WrapWithMessage(ErrUnknownBackend, "could not evaluate backend: %s", str)
+		return nil, sperr.WrapWithMessage(ErrUnknownBackend, "could not evaluate backend: '%s'", str)
 	}
 }
 
