@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os/exec"
 	"slices"
@@ -80,14 +81,14 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	cmd := exec.Command("tailpipe", args...)
 
 	// Run the command and get the output
-	output, err := cmd.Output()
+	filename, err := cmd.Output()
 	if err != nil {
 		// Handle the error, e.g., by returning an empty string or a specific error message
 		return "", err
 	}
 
 	// Convert output to string, trim whitespace, and return as connection string
-	connectionString := strings.TrimSpace(string(output))
+	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(string(filename)))
 
 	// add to cache
 	c.connectionStrings[filterKey] = connectionString
