@@ -73,29 +73,12 @@ var missingVariableErrors = []string{
 //	return diags
 //}
 
-func AddResourceToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) hcl.Diagnostics {
-	if !shouldAddToMod(resource, block, parseCtx) {
+func AddResourceToMod(resource modconfig.HclResource, block *hcl.Block, decoder Decoder, parseCtx *ModParseContext) hcl.Diagnostics {
+	if !decoder.ShouldAddToMod(resource, block, parseCtx) {
 		return nil
 	}
 	return parseCtx.CurrentMod.AddResource(resource)
 
-}
-
-// TODO K move to decoder
-func shouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) bool {
-	switch resource.(type) {
-	// do not add mods, withs
-	case *modconfig.Mod /*, *powerpipe2.DashboardWith*/ :
-		return false
-
-	//case *powerpipe2.DashboardCategory, *powerpipe2.DashboardInput:
-	//	// if this is a dashboard category or dashboard input, only add top level blocks
-	//	// this is to allow nested categories/inputs to have the same name as top level categories
-	//	// (nested inputs are added by Dashboard.InitInputs)
-	//	return parseCtx.IsTopLevelBlock(block)
-	default:
-		return true
-	}
 }
 
 func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (*modconfig.Mod, *DecodeResult) {
