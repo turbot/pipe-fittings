@@ -77,6 +77,8 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 		return connectionString, nil
 	}
 
+	slog.Debug("TailpipeConnection.GetConnectionString", "args", args)
+
 	// Invoke the "tailpipe connect" shell command and capture output
 	cmd := exec.Command("tailpipe", args...)
 
@@ -84,9 +86,8 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	filename, err := cmd.Output()
 	if err != nil {
 		// Handle the error, e.g., by returning an empty string or a specific error message
-		return "", err
+		return "", fmt.Errorf("TailpipeConnection failed to get connection string: %w", err)
 	}
-
 	// Convert output to string, trim whitespace, and return as connection string
 	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(string(filename)))
 
