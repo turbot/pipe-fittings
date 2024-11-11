@@ -16,6 +16,7 @@ type DecoderOption func(Decoder)
 
 type Decoder interface {
 	Decode(*ModParseContext) hcl.Diagnostics
+	ShouldAddToMod(modconfig.HclResource, *hcl.Block, *ModParseContext) bool
 }
 
 type DecodeFunc func(*hcl.Block, *ModParseContext) (modconfig.HclResource, *DecodeResult)
@@ -66,7 +67,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 				continue
 			}
 			for _, resource := range resources {
-				resourceDiags := AddResourceToMod(resource, block, parseCtx)
+				resourceDiags := AddResourceToMod(resource, block, d, parseCtx)
 				diags = append(diags, resourceDiags...)
 			}
 		default:
@@ -76,7 +77,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 				continue
 			}
 
-			resourceDiags := AddResourceToMod(resource, block, parseCtx)
+			resourceDiags := AddResourceToMod(resource, block, d, parseCtx)
 			diags = append(diags, resourceDiags...)
 		}
 		utils.LogTime(fmt.Sprintf("decode block %s - %v end", block.Type, block.Labels))
@@ -268,4 +269,11 @@ func (d *DecoderImpl) HandleModDecodeResult(resource modconfig.HclResource, res 
 		moreDiags = AddResourceMetadata(resourceWithMetadata, resource.GetHclResourceImpl().DeclRange, parseCtx)
 		res.AddDiags(moreDiags)
 	}
+}
+
+// ShouldAddToMod determines whether the resource should be added to the mod
+// this may be overridden by the app specific decoder to add app-specific resource logic
+func (d *DecoderImpl) ShouldAddToMod(resource modconfig.HclResource, block *hcl.Block, parseCtx *ModParseContext) bool {
+	// do not add mods
+	return resource.GetBlockType() != schema.BlockTypeMod
 }
