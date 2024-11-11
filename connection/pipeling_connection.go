@@ -37,6 +37,12 @@ type ConnectionStringProvider interface {
 	GetConnectionString(...ConnectionStringOpt) (string, error)
 }
 
+// DynamicConnectionStringProvider is implemented by all connections for which the connection string may change
+// (for example as a result of ConnectionStringOpts)
+type DynamicConnectionStringProvider interface {
+	IsDynamic()
+}
+
 // SearchPathProvider is implemented by all connections which can provide a connection string
 type SearchPathProvider interface {
 	ConnectionStringProvider
