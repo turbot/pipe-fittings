@@ -173,7 +173,13 @@ func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
 	return res
 }
 
-// option to set the filter for the connection
+// IsDynamic implements the DynamicConnectionStringProvider interface
+// indicating that the connection string may change
+func (c *TailpipeConnection) IsDynamic() {}
+
+// WithFilter is a ConnectionStringOpt that sets the filters for the connection
+// it currently only supports TailpipeConnection
+// TODO K maybe we need a FilterableConnection interface
 func WithFilter(f *TailpipeDatabaseFilters) ConnectionStringOpt {
 	return func(c ConnectionStringProvider) {
 		// if this connection supports time range, set it
