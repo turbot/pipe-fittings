@@ -25,6 +25,7 @@ func ShowPaged(ctx context.Context, content string) {
 }
 
 func isPagerNeeded(content string) bool {
+	// TODO K use option, NOT viper
 	// only show pager in interactive mode
 	if !viper.GetBool(constants.ConfigKeyInteractive) {
 		return false
