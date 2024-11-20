@@ -153,3 +153,8 @@ func CopyDir(src string, dst string) error {
 
 	return nil
 }
+
+func IsValidDir(path string) bool {
+	stat, err := os.Stat(path)
+	return err == nil && stat.IsDir()
+}
