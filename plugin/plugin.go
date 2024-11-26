@@ -24,6 +24,14 @@ type Plugin struct {
 	Version string `db:"version"`
 }
 
+func NewPlugin(name string) *Plugin {
+	return &Plugin{
+		Instance: name,
+		Alias:    name,
+		Plugin:   ResolvePluginImageRef(name),
+	}
+}
+
 // NewImplicitPlugin creates a default plugin config struct for a connection
 // this is called when there is no explicit plugin config defined
 // for a plugin which is used by a connection

@@ -3,6 +3,7 @@ package task
 import (
 	"encoding/json"
 	"fmt"
+	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"log/slog"
 	"os"
@@ -43,6 +44,12 @@ func (r *Runner) saveAvailableVersions(cli *CLIVersionCheckResponse) error {
 func (r *Runner) loadAvailableVersions() (*AvailableVersionCache, error) {
 	utils.LogTime("Runner.getNotifications start")
 	defer utils.LogTime("Runner.getNotifications end")
+
+	// if file does not exist, return nil
+	if !filehelpers.FileExists(filepaths.AvailableVersionsFilePath()) {
+		slog.Debug("no available versions file found")
+		return nil, nil
+	}
 	// TODO graza why not put this in the update check file (later)
 	f, err := os.Open(filepaths.AvailableVersionsFilePath())
 	if err != nil {
