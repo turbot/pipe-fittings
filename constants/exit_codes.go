@@ -8,6 +8,7 @@ const (
 	ExitCodePluginListFailure           = 12  // plugin - listing failed
 	ExitCodePluginNotFound              = 13  // plugin - not found
 	ExitCodePluginInstallFailure        = 14  // plugin - install failed
+	ExitCodePluginShowFailure           = 15  // plugin - show failed
 	ExitCodeSnapshotCreationFailed      = 21  // snapshot - creation failed
 	ExitCodeSnapshotUploadFailed        = 22  // snapshot - upload failed
 	ExitCodeServiceSetupFailure         = 31  // service - setup failed
