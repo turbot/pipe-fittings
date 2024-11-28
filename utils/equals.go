@@ -14,3 +14,13 @@ func SafeIntEqual(i1, i2 *int) bool {
 	}
 	return i2 == nil
 }
+
+func SafeBoolEqual(b1, b2 *bool) bool {
+	if b1 != nil {
+		if b2 == nil {
+			return false
+		}
+		return *b1 == *b2
+	}
+	return b2 == nil
+}
