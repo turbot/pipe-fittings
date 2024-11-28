@@ -241,10 +241,7 @@ var WorkspaceBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypeDetection,
 			LabelNames: []string{schema.LabelName},
 		},
-		{
-			Type:       schema.BlockTypeDetectionBenchmark,
-			LabelNames: []string{schema.LabelName},
-		},
+
 		{
 			Type:       schema.BlockTypeBenchmark,
 			LabelNames: []string{schema.LabelName},
