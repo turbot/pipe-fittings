@@ -57,7 +57,6 @@ func StripSnapshot(snapshot *steampipecloud.WorkspaceSnapshotData) error {
 	propertiesToStrip := []string{
 		"sql",
 		"source_definition",
-		"documentation",
 		"search_path",
 		"search_path_prefix"}
 	for _, p := range snapshot.Panels {
