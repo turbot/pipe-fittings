@@ -160,7 +160,7 @@ func getHclAttributeTag(field reflect.StructField) string {
 }
 
 func GetNestedStructValsRecursive(val any) ([]any, hcl.Diagnostics) {
-	nested, diags := getNestedStructVals(val)
+	nested, diags := GetNestedStructVals(val)
 	res := nested
 
 	for _, n := range nested {
@@ -173,7 +173,7 @@ func GetNestedStructValsRecursive(val any) ([]any, hcl.Diagnostics) {
 }
 
 // GetNestedStructVals return a slice of any nested structs within val
-func getNestedStructVals(val any) (_ []any, diags hcl.Diagnostics) {
+func GetNestedStructVals(val any) (_ []any, diags hcl.Diagnostics) {
 	defer func() {
 		if r := recover(); r != nil {
 			if r := recover(); r != nil {
