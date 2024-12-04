@@ -2065,7 +2065,8 @@ func TestMysqlConnectionGetConnectionString(t *testing.T) {
 			}
 			// call validate to initialise the default values
 			_ = c.Validate()
-			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
+			cs, _ := c.GetConnectionString()
+			assert.Equalf(t, tt.want, cs, "GetConnectionString()")
 		})
 	}
 }
@@ -2656,7 +2657,8 @@ func TestPostgresConnectionGetConnectionString(t *testing.T) {
 			}
 			// call validate to initialise the default values
 			_ = c.Validate()
-			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
+			cs, _ := c.GetConnectionString()
+			assert.Equalf(t, tt.want, cs, "GetConnectionString()")
 		})
 	}
 }
@@ -3378,7 +3380,8 @@ func TestSteampipeConnectionGetConnectionString(t *testing.T) {
 				Password: tt.fields.password,
 				SslMode:  tt.fields.sslMode,
 			}
-			assert.Equalf(t, tt.want, c.GetConnectionString(), "GetConnectionString()")
+			cs, _ := c.GetConnectionString()
+			assert.Equalf(t, tt.want, cs, "GetConnectionString()")
 		})
 	}
 }

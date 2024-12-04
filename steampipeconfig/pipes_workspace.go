@@ -7,7 +7,7 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 )
 
-// IsPipesWorkspaceIdentifier returns whether name is a cloud workspace identifier
+// IsPipesWorkspaceConnectionString returns whether name is a cloud workspace identifier
 // of the form: {identity_handle}/{workspace_handle},
 func IsPipesWorkspaceConnectionString(csp connection.ConnectionStringProvider) bool {
 	// if the connection string is dynamic, assume it is a NOT workspace connection
@@ -18,7 +18,7 @@ func IsPipesWorkspaceConnectionString(csp connection.ConnectionStringProvider) b
 	connectionString, err := csp.GetConnectionString()
 	if err != nil {
 		// unexpected - we do not expect errors from non dynamic connection strings
-		slog.Warn("unexpected error getting connection string from non-dynamic %T: %v", csp, err)
+		slog.Warn("unexpected error getting connection string from non-dynamic provider", "type", csp, "error", err)
 		return false
 	}
 
