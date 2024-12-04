@@ -7,7 +7,7 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 )
 
-// IsPipesWorkspaceIdentifier returns whether name is a cloud workspace identifier
+// IsPipesWorkspaceConnectionString returns whether name is a cloud workspace identifier
 // of the form: {identity_handle}/{workspace_handle},
 func IsPipesWorkspaceConnectionString(csp connection.ConnectionStringProvider) bool {
 	// if the connection string is dynamic, assume it is a NOT workspace connection
