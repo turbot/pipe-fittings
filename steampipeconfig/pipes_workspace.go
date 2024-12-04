@@ -18,7 +18,7 @@ func IsPipesWorkspaceConnectionString(csp connection.ConnectionStringProvider) b
 	connectionString, err := csp.GetConnectionString()
 	if err != nil {
 		// unexpected - we do not expect errors from non dynamic connection strings
-		slog.Warn("unexpected error getting connection string from non-dynamic %T: %v", csp, err)
+		slog.Warn("unexpected error getting connection string from non-dynamic provider", "type", csp, "error", err)
 		return false
 	}
 
