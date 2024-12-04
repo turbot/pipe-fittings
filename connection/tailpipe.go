@@ -19,7 +19,7 @@ const TailpipeConnectionType = "tailpipe"
 
 type TailpipeConnectResponse struct {
 	DatabaseFilepath string `json:"database_filepath,omitempty"`
-	Error            string `json:"error,omitempty0"`
+	Error            string `json:"error,omitempty"`
 }
 
 type TailpipeConnection struct {
