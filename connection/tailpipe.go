@@ -2,6 +2,7 @@ package connection
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os/exec"
@@ -15,6 +16,11 @@ import (
 )
 
 const TailpipeConnectionType = "tailpipe"
+
+type TailpipeConnectResponse struct {
+	DatabaseFilepath string `json:"database_filepath,omitempty"`
+	Error            string `json:"error,omitempty"`
+}
 
 type TailpipeConnection struct {
 	ConnectionImpl
@@ -59,7 +65,7 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	for _, opt := range opts {
 		opt(c)
 	}
-	args := []string{"connect"}
+	args := []string{"connect", "--output", "json"}
 
 	// resolve the filters
 	filters := c.getFilters()
@@ -83,13 +89,25 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	cmd := exec.Command("tailpipe", args...)
 
 	// Run the command and get the output
-	filename, err := cmd.Output()
+	op, err := cmd.Output()
+
 	if err != nil {
 		// Handle the error, e.g., by returning an empty string or a specific error message
 		return "", fmt.Errorf("TailpipeConnection failed to get connection string: %w", err)
 	}
+
+	res := TailpipeConnectResponse{}
+	err = json.Unmarshal(op, &res)
+	if err != nil {
+		return "", fmt.Errorf("'tailpipe connect' returned invalid response: %w", err)
+	}
+
+	if res.Error != "" {
+		return "", fmt.Errorf("'tailpipe connect' returned an error: %s", res.Error)
+	}
+
 	// Convert output to string, trim whitespace, and return as connection string
-	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(string(filename)))
+	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
 
 	// add to cache
 	c.connectionStrings[filterKey] = connectionString
