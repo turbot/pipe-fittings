@@ -9,32 +9,31 @@ const (
 	BlockTypeMod       = "mod"
 	BlockTypePlugin    = "plugin"
 	// resource blocks
-	BlockTypeQuery              = "query"
-	BlockTypeControl            = "control"
-	BlockTypeBenchmark          = "benchmark"
-	BlockTypeDetection          = "detection"
-	BlockTypeDetectionBenchmark = "detection_benchmark"
-	BlockTypeDashboard          = "dashboard"
-	BlockTypeContainer          = "container"
-	BlockTypeChart              = "chart"
-	BlockTypeCard               = "card"
-	BlockTypeFlow               = "flow"
-	BlockTypeGraph              = "graph"
-	BlockTypeHierarchy          = "hierarchy"
-	BlockTypeImage              = "image"
-	BlockTypeInput              = "input"
-	BlockTypeTable              = "table"
-	BlockTypeText               = "text"
-	BlockTypeLocals             = "locals"
-	BlockTypeVariable           = "variable"
-	BlockTypeParam              = "param"
-	BlockTypeRequire            = "require"
-	BlockTypeNode               = "node"
-	BlockTypeEdge               = "edge"
-	BlockTypeLegacyRequires     = "requires"
-	BlockTypeCategory           = "category"
-	BlockTypeWith               = "with"
-	BlockTypeError              = "error"
+	BlockTypeQuery          = "query"
+	BlockTypeControl        = "control"
+	BlockTypeBenchmark      = "benchmark"
+	BlockTypeDetection      = "detection"
+	BlockTypeDashboard      = "dashboard"
+	BlockTypeContainer      = "container"
+	BlockTypeChart          = "chart"
+	BlockTypeCard           = "card"
+	BlockTypeFlow           = "flow"
+	BlockTypeGraph          = "graph"
+	BlockTypeHierarchy      = "hierarchy"
+	BlockTypeImage          = "image"
+	BlockTypeInput          = "input"
+	BlockTypeTable          = "table"
+	BlockTypeText           = "text"
+	BlockTypeLocals         = "locals"
+	BlockTypeVariable       = "variable"
+	BlockTypeParam          = "param"
+	BlockTypeRequire        = "require"
+	BlockTypeNode           = "node"
+	BlockTypeEdge           = "edge"
+	BlockTypeLegacyRequires = "requires"
+	BlockTypeCategory       = "category"
+	BlockTypeWith           = "with"
+	BlockTypeError          = "error"
 
 	// config blocks
 	BlockTypeRateLimiter       = "limiter"
@@ -278,7 +277,6 @@ var ReferenceBlocks = []string{
 	BlockTypeBenchmark,
 	BlockTypeDashboard,
 	BlockTypeDetection,
-	BlockTypeDetectionBenchmark,
 	BlockTypeContainer,
 	BlockTypeCard,
 	BlockTypeChart,
@@ -299,7 +297,6 @@ var ValidResourceItemTypes = []string{
 	BlockTypeQuery,
 	BlockTypeControl,
 	BlockTypeDetection,
-	BlockTypeDetectionBenchmark,
 	BlockTypeBenchmark,
 	BlockTypeDashboard,
 	BlockTypeContainer,
