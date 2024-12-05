@@ -6,6 +6,7 @@ const (
 	ArgAll                 = "all"
 	ArgBrowser             = "browser"
 	ArgClear               = "clear"
+	ArgCompact             = "compact"
 	ArgServicePassword     = "database-password"
 	ArgServiceShowPassword = "show-password"
 	ArgSkipConfig          = "skip-config"
