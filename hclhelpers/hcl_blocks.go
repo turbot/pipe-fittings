@@ -45,12 +45,27 @@ func BlocksToMap(blocks hcl.Blocks) map[string]*hcl.Block {
 	return res
 }
 
+// BlockRange returns the range for the block
 func BlockRange(block *hcl.Block) hcl.Range {
 	if hclBody, ok := block.Body.(*hclsyntax.Body); ok {
 		return hclBody.SrcRange
 	}
 	return block.DefRange
 }
+
+// BlockRangeWithLabels returns the range for the block including the labels
+func BlockRangeWithLabels(block *hcl.Block) hcl.Range {
+	if hclBody, ok := block.Body.(*hclsyntax.Body); ok {
+		// build a range including the block labels
+		var res hcl.Range
+		res.Filename = hclBody.SrcRange.Filename
+		res.Start = block.DefRange.Start
+		res.End = hclBody.SrcRange.End
+		return res
+	}
+	return block.DefRange
+}
+
 func BlockRangePointer(block *hcl.Block) *hcl.Range {
 	r := BlockRange(block)
 	return &r
