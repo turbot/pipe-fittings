@@ -4,22 +4,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/turbot/pipe-fittings/app_specific"
 	"io"
 	"log"
 	"net/url"
 	"strings"
 	"time"
 
+	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/ociinstaller"
 	"github.com/turbot/pipe-fittings/utils"
 	"github.com/turbot/pipe-fittings/versionfile"
 )
 
 const (
-	VersionCheckerSchema   = "https"
-	VersionCheckerHost     = "hub.steampipe.io"
-	VersionCheckerEndpoint = "api/plugin/version"
+	VersionCheckerSchema        = "https"
+	VersionCheckerHostSteampipe = "hub.steampipe.io"
+	// TODO Pskr Update the endpoint when hub.tailpipe.io is ready
+	VersionCheckerHostTailpipe = "hub-tailpipe-io.vercel.app"
+	VersionCheckerEndpoint     = "api/plugin/version"
 )
 
 // PluginVersionCheckReport
@@ -161,7 +163,11 @@ func (v *VersionChecker) getPayloadFromInstalledData(plugin *versionfile.Install
 func (v *VersionChecker) getVersionCheckURL() url.URL {
 	var u url.URL
 	u.Scheme = VersionCheckerSchema
-	u.Host = VersionCheckerHost
+	if app_specific.AppName == "tailpipe" {
+		u.Host = VersionCheckerHostTailpipe
+	} else {
+		u.Host = VersionCheckerHostSteampipe
+	}
 	u.Path = VersionCheckerEndpoint
 	return u
 }
