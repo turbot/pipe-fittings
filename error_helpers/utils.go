@@ -79,12 +79,11 @@ func TransformErrorToSteampipe(err error) error {
 	// an error that originated from our database/sql driver (always prefixed with "ERROR:")
 	if strings.HasPrefix(errString, "ERROR:") {
 		errString = strings.TrimSpace(strings.TrimPrefix(errString, "ERROR:"))
-
-		// if this is an RPC Error while talking with the plugin
-		if strings.HasPrefix(errString, "rpc error") {
-			// trim out "rpc error: code = Unknown desc ="
-			errString = strings.TrimPrefix(errString, "rpc error: code = Unknown desc =")
-		}
+	}
+	// if this is an RPC Error while talking with the plugin
+	if strings.HasPrefix(errString, "rpc error") {
+		// trim out "rpc error: code = Unknown desc ="
+		errString = strings.TrimPrefix(errString, "rpc error: code = Unknown desc =")
 	}
 	return errors.New(strings.TrimSpace(errString))
 }
