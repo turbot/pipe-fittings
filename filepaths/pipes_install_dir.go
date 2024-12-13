@@ -2,12 +2,13 @@ package filepaths
 
 import (
 	"fmt"
-	"github.com/turbot/pipe-fittings/error_helpers"
 	"os"
 	"path/filepath"
+
+	"github.com/turbot/pipe-fittings/error_helpers"
 )
 
-// PipesInstallDir is the location of config files commen between pipelings
+// PipesInstallDir is the location of config files common between pipelings
 // this must be set by the application at startup
 var DefaultPipesInstallDir = ""
 var PipesInstallDir = ""
@@ -38,4 +39,9 @@ func PipesInternalDir() string {
 // EnsurePipesInternalDir returns the path to the pipes internal directory (creates if missing)
 func EnsurePipesInternalDir() string {
 	return ensurePipesInstallSubDir("internal")
+}
+
+// EnsurePipesDuckDbExtensionsDir returns the path to the pipes duckdb extensions directory (creates if missing)
+func EnsurePipesDuckDbExtensionsDir() string {
+	return ensurePipesInstallSubDir(filepath.Join("extensions", "duckdb"))
 }
