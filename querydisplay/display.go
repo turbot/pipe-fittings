@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"text/tabwriter"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -81,6 +82,38 @@ func ShowWrappedTable(headers []string, rows [][]string, opts *ShowWrappedTableO
 		t.AppendRow(rowObj, rowConfig)
 	}
 	t.Render()
+}
+
+// show table using text/tabwriter
+func ShowTable(headers []string, rows [][]string, opts *ShowWrappedTableOptions) {
+	if opts == nil {
+		opts = &ShowWrappedTableOptions{}
+	}
+
+	// Use the provided OutputMirror or default to os.Stdout
+	writer := opts.OutputMirror
+	if writer == nil {
+		writer = os.Stdout
+	}
+
+	// Create a tabwriter
+	tw := tabwriter.NewWriter(writer, 1, 1, 4, ' ', 0)
+
+	// Prepare the headers
+	headerLine := strings.Join(headers, "\t")
+	fmt.Fprintln(tw, headerLine) //nolint:forbidigo // ui output
+
+	// Process rows
+	for _, row := range rows {
+		// Join the row into a tab-delimited string
+		rowLine := strings.Join(row, "\t")
+		fmt.Fprintln(tw, rowLine) //nolint:forbidigo // ui output
+	}
+
+	// Flush the writer to render the table
+	if err := tw.Flush(); err != nil {
+		fmt.Printf("Error flushing tabwriter: %v\n", err) //nolint:forbidigo // ui output
+	}
 }
 
 func GetMaxCols() int {
