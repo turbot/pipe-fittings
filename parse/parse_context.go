@@ -298,6 +298,7 @@ func (m *ParseContext) GetResourceCtyValue(resource modconfig.HclResource) (cty.
 
 	return cty.ObjectVal(valueMap), nil
 }
+
 func (m *ParseContext) errToCtyValueDiags(resource modconfig.HclResource, err error) hcl.Diagnostics {
 	return hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
