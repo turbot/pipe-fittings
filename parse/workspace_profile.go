@@ -40,12 +40,12 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 
 	fileData, diags := LoadFileData(configPaths...)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 
 	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 
 	// identify the config schema to use
@@ -69,13 +69,13 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		})
 	}
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 
 	// do a partial decode
 	content, diags := body.Content(schema)
 	if diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("Failed to load workspace profiles", diags)
+		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 	parseCtx := NewWorkspaceProfileParseContext[T](workspaceProfilePath)
 	parseCtx.SetDecodeContent(content, fileData)

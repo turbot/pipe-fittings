@@ -16,21 +16,22 @@ const (
 	LimiterStatusOverridden = "overridden"
 )
 
+// TODO K what are db tags for
 type RateLimiter struct {
-	Name            string                 `hcl:"name,label" db:"name"`
-	BucketSize      *int64                 `hcl:"bucket_size,optional" db:"bucket_size"`
-	FillRate        *float32               `hcl:"fill_rate,optional" db:"fill_rate"`
-	MaxConcurrency  *int64                 `hcl:"max_concurrency,optional" db:"max_concurrency"`
-	Scope           []string               `hcl:"scope,optional" db:"scope"`
-	Where           *string                `hcl:"where,optional" db:"where"`
-	Plugin          string                 `db:"plugin"`
-	PluginInstance  string                 `db:"plugin_instance"`
-	FileName        *string                `db:"file_name" json:"-"`
-	StartLineNumber *int                   `db:"start_line_number"  json:"-"`
-	EndLineNumber   *int                   `db:"end_line_number"  json:"-"`
-	Status          string                 `db:"status"`
-	Source          string                 `db:"source_type"`
-	ImageRef        *ociinstaller.ImageRef `db:"-" json:"-"`
+	Name            string                 `hcl:"name,label" db:"name" cty:"name"`
+	BucketSize      *int64                 `hcl:"bucket_size,optional" db:"bucket_size" cty:"bucket_size"`
+	FillRate        *float32               `hcl:"fill_rate,optional" db:"fill_rate" cty:"fill_rate"`
+	MaxConcurrency  *int64                 `hcl:"max_concurrency,optional" db:"max_concurrency" cty:"max_concurrency"`
+	Scope           []string               `hcl:"scope,optional" db:"scope" cty:"scope"`
+	Where           *string                `hcl:"where,optional" db:"where" cty:"where"`
+	Plugin          string                 `db:"plugin" cty:"plugin"`
+	PluginInstance  string                 `db:"plugin_instance" cty:"plugin_instance"`
+	FileName        *string                `db:"file_name" json:"-" cty:"file_name"`
+	StartLineNumber *int                   `db:"start_line_number" json:"-" cty:"start_line_number"`
+	EndLineNumber   *int                   `db:"end_line_number" json:"-" cty:"end_line_number"`
+	Status          string                 `db:"status" cty:"status"`
+	Source          string                 `db:"source_type" cty:"source"`
+	ImageRef        *ociinstaller.ImageRef `db:"-" json:"-" cty:"-"`
 }
 
 func (l *RateLimiter) OnDecoded(block *hcl.Block) {
