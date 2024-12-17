@@ -14,6 +14,7 @@ const (
 	BlockTypeBenchmark      = "benchmark"
 	BlockTypeDetection      = "detection"
 	BlockTypeDashboard      = "dashboard"
+	BlockTypeFormat         = "format"
 	BlockTypeContainer      = "container"
 	BlockTypeChart          = "chart"
 	BlockTypeCard           = "card"
@@ -58,6 +59,7 @@ const (
 	BlockTypeOption            = "option"
 	BlockTypeCapture           = "capture"
 	BlockTypeMethod            = "method"
+	BlockTypeSource            = "source"
 
 	AttributeTypeValue   = "value"
 	AttributeTypeType    = "type"
@@ -237,8 +239,11 @@ const (
 	AttributeArgs        = "args"
 	AttributeQuery       = "query"
 
-	AttributeVar   = "var"
-	AttributeLocal = "local"
+	AttributeVar        = "var"
+	AttributeLocal      = "local"
+	AttributeConnection = "connection"
+	AttributeFormat     = "format"
+	AttributeType       = "type"
 
 	AttributeEach = "each"
 	AttributeKey  = "key"
