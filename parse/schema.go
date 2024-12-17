@@ -170,6 +170,14 @@ var TpConfigBlockSchema = &hcl.BodySchema{
 			Type:       schema.BlockTypePlugin,
 			LabelNames: []string{schema.LabelName},
 		},
+		{
+			Type:       schema.BlockTypeTable,
+			LabelNames: []string{schema.LabelName},
+		},
+		{
+			Type:       schema.BlockTypeFormat,
+			LabelNames: []string{schema.LabelName},
+		},
 	},
 }
 
