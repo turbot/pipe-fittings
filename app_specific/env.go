@@ -63,6 +63,7 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvLogLevel = buildEnv("LOG_LEVEL")
 	EnvGitToken = buildEnv("GIT_TOKEN")
 	EnvPipesToken = buildEnv("PIPES_TOKEN")
+	EnvProfile = buildEnv("PROFILE")
 }
 
 // buildEnv is a function to construct an application specific env var key
