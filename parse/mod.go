@@ -156,8 +156,10 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	// continue decoding as long as the number of unresolved blocks decreases
 	prevUnresolvedBlocks := 0
 	for attempts := 0; ; attempts++ {
+		slog.Debug("decode mod start", "decode passes", attempts+1)
 		diags = modDecoder.Decode(parseCtx)
 		if diags.HasErrors() {
+			slog.Error("decode mod failed", "decode passes", attempts+1, "diags", diags)
 			return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to decode mod", diags))
 		}
 		// now retrieve the warning strings
@@ -169,6 +171,9 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 			slog.Debug("parse complete with no unresolved blocks", "decode passes", attempts+1)
 			break
 		}
+
+		slog.Debug("decode mod unresolved blocks", "decode passes", attempts+1, "unresolved blocks", unresolvedBlocks)
+
 		// if the number of unresolved blocks has NOT reduced, fail
 		if prevUnresolvedBlocks != 0 && unresolvedBlocks >= prevUnresolvedBlocks {
 			str := parseCtx.FormatDependencies()
