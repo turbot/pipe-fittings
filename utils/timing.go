@@ -3,13 +3,10 @@ package utils
 import (
 	"fmt"
 	"io"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/logrusorgru/aurora"
 	"github.com/olekukonko/tablewriter"
-	"github.com/turbot/pipe-fittings/app_specific"
 )
 
 type timeLog struct {
@@ -22,7 +19,8 @@ type timeLog struct {
 var Timing []timeLog
 
 func shouldProfile() bool {
-	return strings.ToUpper(os.Getenv(app_specific.EnvProfile)) == "TRUE"
+	return true
+	// return strings.ToUpper(os.Getenv(app_specific.EnvProfile)) == "TRUE"
 }
 
 func LogTime(operation string) {
