@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v1.7.0 [tbd]
+
+_What's new_
+
+* Improved performance of mod loading when there's a lot of `connections`.
+* Added in memory cache functionality.
+
 ## v1.6.6 [2024-11-21]
 
 _Bug fixes_
