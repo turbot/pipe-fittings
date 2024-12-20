@@ -51,7 +51,7 @@ func (d *ModTreeItemDiffs) PopulateChildDiffs(old ModTreeItem, new ModTreeItem) 
 			d.AddRemovedItem(childName)
 		}
 		//else {
-		// TODO K INCOMPLETE sort out referencing
+		// TODO INCOMPLETE sort out referencing https://github.com/turbot/pipe-fittings/issues/614
 		// so this resource exists on old and new
 
 		//// TACTICAL
