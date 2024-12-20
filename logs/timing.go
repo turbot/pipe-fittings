@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/turbot/pipe-fittings/app_specific"
 )
 
 type timeLog struct {
@@ -21,8 +24,7 @@ type timeLog struct {
 var timing []timeLog
 
 func shouldProfile() bool {
-	return true
-	// return strings.ToUpper(os.Getenv(app_specific.EnvProfile)) == "TRUE"
+	return strings.ToUpper(os.Getenv(app_specific.EnvProfile)) == "TRUE"
 }
 
 func LogTime(operation string) {
