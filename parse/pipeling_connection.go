@@ -9,6 +9,7 @@ import (
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/funcs"
 	"github.com/turbot/pipe-fittings/hclhelpers"
+	"github.com/turbot/pipe-fittings/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -23,6 +24,8 @@ func DecodePipelingConnection(configPath string, block *hcl.Block) (connection.P
 		}
 		return nil, diags
 	}
+
+	utils.LogTime(fmt.Sprintf("decode connection %v start", block.Labels))
 
 	// create an empty connection struct of appropriate type
 	conn, err := app_specific_connection.NewPipelingConnection(block.Labels[0], block.Labels[1], block.DefRange)
@@ -61,11 +64,16 @@ func DecodePipelingConnection(configPath string, block *hcl.Block) (connection.P
 		diags = append(diags, moreDiags...)
 	}
 
+	utils.LogTime(fmt.Sprintf("decode connection %v end", block.Labels))
+
 	return conn, diags
 }
 
 // decodeConnectionImpl decodes the given block into a connection.ConnectionImpl and returns the remaining body.
 func decodeConnectionImpl(block *hcl.Block, evalCtx *hcl.EvalContext, connectionImpl *connection.ConnectionImpl) (hcl.Body, hcl.Diagnostics) {
+	
+	utils.LogTime(fmt.Sprintf("decode connectionImpl %s start", connectionImpl.FullName))
+
 	schema, err := hclhelpers.HclSchemaForStruct(connectionImpl)
 	if err != nil {
 		return nil, hcl.Diagnostics{
@@ -106,6 +114,8 @@ func decodeConnectionImpl(block *hcl.Block, evalCtx *hcl.EvalContext, connection
 			}
 		}
 	}
+
+	utils.LogTime(fmt.Sprintf("decode connectionImpl %s end", connectionImpl.FullName))
 
 	// Return the decoded result, remaining body, and any diagnostics
 	return remain, diags
