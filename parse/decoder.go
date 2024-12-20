@@ -2,13 +2,14 @@ package parse
 
 import (
 	"fmt"
+	"log/slog"
+
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/modconfig"
 	"github.com/turbot/pipe-fittings/schema"
 	"github.com/turbot/pipe-fittings/utils"
-	"log/slog"
 )
 
 type DecoderOption func(Decoder)
@@ -56,6 +57,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 	parseCtx.ClearDependencies()
 
 	for _, block := range blocks {
+		utils.LogTime(fmt.Sprintf("decode block %s - %v start", block.Type, block.Labels))
 		switch block.Type {
 		case schema.BlockTypeLocals:
 			resources, res := d.decodeLocalsBlock(block, parseCtx)
@@ -77,6 +79,7 @@ func (d *DecoderImpl) Decode(parseCtx *ModParseContext) hcl.Diagnostics {
 			resourceDiags := AddResourceToMod(resource, block, parseCtx)
 			diags = append(diags, resourceDiags...)
 		}
+		utils.LogTime(fmt.Sprintf("decode block %s - %v end", block.Type, block.Labels))
 	}
 
 	return diags
