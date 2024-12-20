@@ -487,11 +487,11 @@ func (m *ModParseContext) RebuildEvalContext() {
 	// should we include connections
 	if m.supportLateBinding && m.includeLateBindingResourcesInEvalContext {
 		if len(m.PipelingConnections) > 0 {
-			cacheKey := m.CurrentMod.ModName + ":" + m.CurrentMod.Version.String() + ":pipeling_connections"
+			cacheKey := m.ParseContext.RootEvalPath + ":pipeling_connections"
 			connMapI, found :=  cache.GetCache().Get(cacheKey)
 			if !found {
 				connMap := BuildTemporaryConnectionMapForEvalContext(m.PipelingConnections)
-				variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)				
+				variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
 				cache.GetCache().SetWithTTL(cacheKey, connMap, 24 * time.Hour)
 			} else {
 				connMap := connMapI.(map[string]cty.Value)
