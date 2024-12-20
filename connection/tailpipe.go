@@ -57,7 +57,7 @@ func (c *TailpipeConnection) Resolve(ctx context.Context) (PipelingConnection, e
 }
 
 func (c *TailpipeConnection) Validate() hcl.Diagnostics {
-	// todo validate From and To
+	// TODO #validate validate From and To https://github.com/turbot/powerpipe/issues/645
 	return nil
 }
 
@@ -185,7 +185,7 @@ func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
 			}
 		}
 	}
-	// TODO partitions and indexes
+	// TODO partitions and indexes https://github.com/turbot/powerpipe/issues/644
 
 	return res
 }
@@ -196,12 +196,15 @@ func (c *TailpipeConnection) IsDynamic() {}
 
 // WithFilter is a ConnectionStringOpt that sets the filters for the connection
 // it currently only supports TailpipeConnection
-// TODO K maybe we need a FilterableConnection interface
 func WithFilter(f *TailpipeDatabaseFilters) ConnectionStringOpt {
 	return func(c ConnectionStringProvider) {
-		// if this connection supports time range, set it
-		if c, ok := c.(*TailpipeConnection); ok {
-			c.setFilters(f)
+
+		// if this connection supports filter, set it
+		type filterSetter interface {
+			setFilters(f *TailpipeDatabaseFilters)
+		}
+		if setter, ok := c.(filterSetter); ok {
+			setter.setFilters(f)
 		}
 	}
 }
