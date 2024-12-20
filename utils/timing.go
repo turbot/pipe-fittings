@@ -69,18 +69,13 @@ func DisplayProfileData(op io.Writer) {
 
 func DisplayProfileDataJsonl(op io.Writer) {
 	if shouldProfile() {
-		fmt.Fprint(op, "Timing\n") //nolint:forbidigo // TODO: better way to print out? Or maybe this is acceptable
 		// Create a new JSON encoder
 		encoder := json.NewEncoder(op)
 
 		for _, logEntry := range Timing {
 			var itemData []string
 			itemData = append(itemData, logEntry.Operation)
-			if logEntry.Interval > 300*time.Millisecond {
-				itemData = append(itemData, aurora.Bold(aurora.BrightRed(logEntry.Interval.String())).String())
-			} else {
-				itemData = append(itemData, logEntry.Interval.String())
-			}
+			itemData = append(itemData, logEntry.Interval.String())
 			itemData = append(itemData, logEntry.Cumulative.String())
 
 			if err := encoder.Encode(itemData); err != nil {
