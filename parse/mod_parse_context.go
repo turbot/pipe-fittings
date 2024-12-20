@@ -5,12 +5,14 @@ import (
 	"maps"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/app_specific"
+	"github.com/turbot/pipe-fittings/cache"
 	"github.com/turbot/pipe-fittings/connection"
 	"github.com/turbot/pipe-fittings/constants"
 	"github.com/turbot/pipe-fittings/hclhelpers"
@@ -485,8 +487,16 @@ func (m *ModParseContext) RebuildEvalContext() {
 	// should we include connections
 	if m.supportLateBinding && m.includeLateBindingResourcesInEvalContext {
 		if len(m.PipelingConnections) > 0 {
-			connMap := BuildTemporaryConnectionMapForEvalContext(m.PipelingConnections)
-			variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
+			cacheKey := m.CurrentMod.ModName + ":" + m.CurrentMod.Version.String() + ":pipeling_connections"
+			connMapI, found :=  cache.GetCache().Get(cacheKey)
+			if !found {
+				connMap := BuildTemporaryConnectionMapForEvalContext(m.PipelingConnections)
+				variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)				
+				cache.GetCache().SetWithTTL(cacheKey, connMap, 24 * time.Hour)
+			} else {
+				connMap := connMapI.(map[string]cty.Value)
+				variables[schema.BlockTypeConnection] = cty.ObjectVal(connMap)
+			}
 		}
 
 		if len(m.lateBindingVars) > 0 {
