@@ -25,7 +25,7 @@ func ShowPaged(ctx context.Context, content string) {
 }
 
 func isPagerNeeded(content string) bool {
-	// TODO K use option, NOT viper
+	// TODO use option, NOT viper https://github.com/turbot/pipe-fittings/issues/613
 	// only show pager in interactive mode
 	if !viper.GetBool(constants.ConfigKeyInteractive) {
 		return false

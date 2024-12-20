@@ -9,7 +9,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-// TODO K what is db tag for
+// TODO what is db tag for https://github.com/turbot/pipe-fittings/issues/615
 
 type Plugin struct {
 	Instance        string         `hcl:"name,label" db:"plugin_instance" cty:"plugin_instance"`
