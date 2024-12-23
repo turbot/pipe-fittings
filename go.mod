@@ -53,6 +53,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/pipes-sdk-go v0.9.1
 	github.com/turbot/steampipe-plugin-code v0.7.0
+	github.com/turbot/steampipe-plugin-sdk/v5 v5.8.0
 	github.com/turbot/terraform-components v0.0.0-20231213122222-1f3526cab7a7
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/text v0.21.0
