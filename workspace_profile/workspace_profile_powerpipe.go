@@ -63,7 +63,7 @@ type PowerpipeWorkspaceProfile struct {
 	Timing    *bool   `hcl:"timing"`
 
 	// set if this is an implicit profile for a cloud workspace
-	CloudWorkspace *string `hcl:"-"`
+	CloudWorkspace *string
 
 	Base      *PowerpipeWorkspaceProfile `hcl:"base"`
 	DeclRange hcl.Range
