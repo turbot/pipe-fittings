@@ -53,14 +53,14 @@ func GetPluginPath(pluginImageRef, pluginAlias string) (string, error) {
 		if pluginFolder, err = FindPluginFolder(pluginImageRef); err != nil {
 			return "", err
 		} else if pluginFolder == "" {
-			return "", fmt.Errorf("no plugin installed matching %s", pluginAlias)
+			return "", fmt.Errorf("no plugin installed matching '%s'", pluginAlias)
 		}
 	}
 
 	// there should be just 1 file with extension pluginExtension (".plugin")
 	entries, err := os.ReadDir(pluginFolder)
 	if err != nil {
-		return "", fmt.Errorf("failed to load plugin %s: %v", pluginImageRef, err)
+		return "", fmt.Errorf("failed to load plugin '%s': %v", pluginImageRef, err)
 	}
 	var matches []string
 	for _, entry := range entries {
