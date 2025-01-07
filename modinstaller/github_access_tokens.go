@@ -8,5 +8,4 @@ const (
 	GitHubAppInstallationAccessTokenPrefix = "ghs_"
 	GitHubAppRefreshTokenPrefix            = "ghr_"
 	GitLabPersonalAccessTokenPrefix        = "glpat-"
-	GitLabProjectAccessTokenPrefx          = "glpat-"
 )
