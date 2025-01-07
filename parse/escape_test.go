@@ -16,12 +16,48 @@ func Test_parseHclFileWithGrokProperties(t *testing.T) {
 		wantError bool
 	}{
 		{
-			name: "single target property ",
+			name: "single target property",
 			args: args{
 				disableTemplatesForProps: []string{"file_layout"},
 				fileData: []byte(`partition "aws_cloudtrail_log" "fs" {
     source "file_system"  {
         file_layout = "AWSLogs/%{WORD:org}/%{WORD:account_id}/CloudTrail/%{NOTSPACE:file_name}.%{WORD:ext}"
+        paths = ["/Users/kai/tailpipe_data/flaws_cloudtrail_logs"]
+    }
+}`),
+			},
+			wantBytes: []byte(`partition "aws_cloudtrail_log" "fs" {
+    source "file_system"  {
+        file_layout = "AWSLogs/%%{WORD:org}/%%{WORD:account_id}/CloudTrail/%%{NOTSPACE:file_name}.%%{WORD:ext}"
+        paths = ["/Users/kai/tailpipe_data/flaws_cloudtrail_logs"]
+    }
+}`),
+		},
+		{
+			name: "already escaped",
+			args: args{
+				disableTemplatesForProps: []string{"file_layout"},
+				fileData: []byte(`partition "aws_cloudtrail_log" "fs" {
+    source "file_system"  {
+        file_layout = "AWSLogs/%%{WORD:org}/%%{WORD:account_id}/CloudTrail/%%{NOTSPACE:file_name}.%%{WORD:ext}"
+        paths = ["/Users/kai/tailpipe_data/flaws_cloudtrail_logs"]
+    }
+}`),
+			},
+			wantBytes: []byte(`partition "aws_cloudtrail_log" "fs" {
+    source "file_system"  {
+        file_layout = "AWSLogs/%%{WORD:org}/%%{WORD:account_id}/CloudTrail/%%{NOTSPACE:file_name}.%%{WORD:ext}"
+        paths = ["/Users/kai/tailpipe_data/flaws_cloudtrail_logs"]
+    }
+}`),
+		},
+		{
+			name: "mix of escaped and not escaped",
+			args: args{
+				disableTemplatesForProps: []string{"file_layout"},
+				fileData: []byte(`partition "aws_cloudtrail_log" "fs" {
+    source "file_system"  {
+        file_layout = "AWSLogs/%%{WORD:org}/%{WORD:account_id}/CloudTrail/%%{NOTSPACE:file_name}.%{WORD:ext}"
         paths = ["/Users/kai/tailpipe_data/flaws_cloudtrail_logs"]
     }
 }`),
