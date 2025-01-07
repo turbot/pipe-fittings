@@ -25,7 +25,7 @@ func LoadFileData(paths ...string) (map[string][]byte, hcl.Diagnostics) {
 
 		if err != nil {
 			diags = append(diags, &hcl.Diagnostic{
-				Severity: hcl.DiagError,
+				Severity: hcl.DiagWarning,
 				Summary:  fmt.Sprintf("failed to read config file %s", configPath),
 				Detail:   err.Error()})
 			continue
