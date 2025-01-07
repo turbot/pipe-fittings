@@ -31,6 +31,7 @@ func getGitUrl(modName string, urlMode GitUrlMode) string {
 }
 
 func transformToGitURL(input string, urlMode GitUrlMode) string {
+	// If HTTPS mode is selected
 	if urlMode == GitUrlModeHTTPS {
 		if !strings.HasPrefix(input, "https://") {
 			input = "https://" + input
@@ -38,29 +39,33 @@ func transformToGitURL(input string, urlMode GitUrlMode) string {
 		return input
 	}
 
-	if !strings.HasPrefix(input, "github.com") {
-		return input
+	// check for GitHub and GitLab-specific transformations
+	// gitlab can have domain names like example.gitlab.com
+	if strings.Contains(input, "github.com") || strings.Contains(input, "gitlab.com") {
+		// For SSH mode
+		if !strings.HasPrefix(input, "git@") {
+			input = "git@" + input
+		}
+
+		if !strings.HasSuffix(input, ".git") {
+			input += ".git"
+		}
+
+		// Add a colon after the "git@<host>" part to replace the first /
+		if !strings.Contains(input, ":") {
+			index := strings.Index(input, "/")
+			if index > -1 {
+				input = input[:index] + ":" + input[index+1:]
+			}
+		}
 	}
 
-	if !strings.HasPrefix(input, "git@") {
-		input = "git@" + input
-	}
-
-	if !strings.HasSuffix(input, ".git") {
-		input += ".git"
-	}
-
-	// Add a colon after the "git@github.com" part, so it replaces the first / with :
-	if !strings.Contains(input, ":") {
-		index := strings.Index(input, "/")
-		input = input[:index] + ":" + input[index+1:]
-	}
-
+	// Return the input unmodified for unsupported hosts or already formatted URLs
 	return input
 }
 
 func getRefs(repo string) ([]*plumbing.Reference, error) {
-	gitHubToken := getGitToken()
+	gitToken := getGitToken()
 
 	// Create the remote with repository URL
 	rem := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
@@ -70,9 +75,9 @@ func getRefs(repo string) ([]*plumbing.Reference, error) {
 
 	var listOption git.ListOptions
 	// if a token was provided, use it
-	if gitHubToken != "" {
+	if gitToken != "" {
 		listOption = git.ListOptions{
-			Auth: getGitAuthForToken(gitHubToken),
+			Auth: getGitAuthForToken(gitToken),
 		}
 	}
 	// load remote references
@@ -83,21 +88,26 @@ func getRefs(repo string) ([]*plumbing.Reference, error) {
 	return refs, nil
 }
 
-func getGitAuthForToken(gitHubToken string) transport.AuthMethod {
-	if gitHubToken == "" {
+func getGitAuthForToken(gitToken string) transport.AuthMethod {
+	if gitToken == "" {
 		return nil
 	}
 	var auth transport.AuthMethod
 	// if authentication token is an app token, we need to use the GitHub API to list
-	if strings.HasPrefix(gitHubToken, GitHubAppInstallationAccessTokenPrefix) {
+	if strings.HasPrefix(gitToken, GitHubAppInstallationAccessTokenPrefix) {
 		// (NOTE: set user to x-access-token - this is required for github application tokens))
 		auth = &http.BasicAuth{
 			Username: "x-access-token",
-			Password: gitHubToken,
+			Password: gitToken,
+		}
+	} else if strings.HasPrefix(gitToken, GitLabPersonalAccessTokenPrefix) {
+		// for gitlab auth
+		auth = &http.BasicAuth{
+			Password: gitToken,
 		}
 	} else {
 		auth = &http.BasicAuth{
-			Username: gitHubToken,
+			Username: gitToken,
 		}
 	}
 	return auth
