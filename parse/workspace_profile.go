@@ -16,7 +16,7 @@ import (
 	"github.com/turbot/pipe-fittings/workspace_profile"
 )
 
-func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfilePath string) (profileMap map[string]T, err error) {
+func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfilePath string, opts ...ParseHclOpt) (profileMap map[string]T, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = helpers.ToError(r)
@@ -43,7 +43,7 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 
-	body, diags := ParseHclFiles(fileData)
+	body, diags := ParseHclFiles(fileData, opts...)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}

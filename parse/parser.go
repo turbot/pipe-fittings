@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"sort"
 
 	"github.com/hashicorp/hcl/v2"
@@ -12,7 +13,6 @@ import (
 	"github.com/hashicorp/hcl/v2/json"
 	"github.com/turbot/pipe-fittings/app_specific"
 	"github.com/turbot/pipe-fittings/constants"
-	"sigs.k8s.io/yaml"
 )
 
 // LoadFileData builds a map of filepath to file data
@@ -35,14 +35,32 @@ func LoadFileData(paths ...string) (map[string][]byte, hcl.Diagnostics) {
 	return fileData, diags
 }
 
-// ParseHclFiles parses hcl file data and returns the hcl body object
-func ParseHclFiles(fileData map[string][]byte) (hcl.Body, hcl.Diagnostics) {
-	var parsedConfigFiles []*hcl.File
+// ParseHclFiles parses hcl, json or yaml file data and returns the hcl body object
+func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body, hcl.Diagnostics) {
+	config := &ParseHclConfig{}
+	for _, opt := range opts {
+		opt(config)
+	}
 	var diags hcl.Diagnostics
-	parser := hclparse.NewParser()
+
+	// if necessary, escape template tokens in any requested properties
+	if len(config.disableTemplateForProperties) > 0 {
+		for filename, fileData := range fileDataMap {
+			fileData, moreDiags := EscapeTemplateTokens(fileData, filename, config.disableTemplateForProperties)
+			if moreDiags.HasErrors() {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+			fileDataMap[filename] = fileData
+		}
+	}
+	if diags.HasErrors() {
+		return nil, diags
+	}
 
 	// build ordered list of files so that we parse in a repeatable order
-	filePaths := buildOrderedFileNameList(fileData)
+	filePaths := buildOrderedFileNameList(fileDataMap)
+	var parsedConfigFiles []*hcl.File
 
 	for _, filePath := range filePaths {
 		var file *hcl.File
@@ -53,8 +71,9 @@ func ParseHclFiles(fileData map[string][]byte) (hcl.Body, hcl.Diagnostics) {
 		} else if constants.IsYamlExtension(ext) {
 			file, moreDiags = parseYamlFile(filePath)
 		} else {
-			data := fileData[filePath]
-			file, moreDiags = parser.ParseHCL(data, filePath)
+			fileData := fileDataMap[filePath]
+			parser := hclparse.NewParser()
+			file, moreDiags = parser.ParseHCL(fileData, filePath)
 		}
 
 		if moreDiags.HasErrors() {
