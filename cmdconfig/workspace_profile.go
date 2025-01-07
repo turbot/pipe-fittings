@@ -14,7 +14,7 @@ import (
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
-func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile]() (*parse.WorkspaceProfileLoader[T], error) {
+func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](parseOpts ...parse.ParseHclOpt) (*parse.WorkspaceProfileLoader[T], error) {
 	// NOTE: we need to setup some viper defaults to enable workspace profile loading
 	// the rest are set up in BootstrapViper
 
@@ -30,6 +30,14 @@ func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile]() (*parse.W
 	}
 	loader, err := parse.NewWorkspaceProfileLoader[T](configPaths...)
 	if err != nil {
+		return nil, err
+	}
+
+	// set the parse options (if any)
+	loader.ParseOpts = parseOpts
+
+	// do the load
+	if err = loader.Load(); err != nil {
 		return nil, err
 	}
 

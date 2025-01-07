@@ -27,6 +27,7 @@ type WorkspaceProfileLoader[T workspace_profile.WorkspaceProfile] struct {
 	workspaceProfilePaths []string
 	DefaultProfile        T
 	ConfiguredProfile     T
+	ParseOpts             []ParseHclOpt
 }
 
 func NewWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](workspaceProfilePaths ...string) (*WorkspaceProfileLoader[T], error) {
@@ -49,12 +50,6 @@ func NewWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](workspacePr
 					"could not create sample workspace",
 				)
 		}
-	}
-
-	// do the load
-	err := loader.load()
-	if err != nil {
-		return nil, err
 	}
 
 	return loader, nil
@@ -109,14 +104,15 @@ func (l *WorkspaceProfileLoader[T]) get(name string) (T, bool) {
 	return emptyProfile, false // fmt.Errorf("workspace profile %s does not exist", name)
 }
 
-func (l *WorkspaceProfileLoader[T]) load() error {
+func (l *WorkspaceProfileLoader[T]) Load() error {
 	// load workspaces from all locations
 	var workspacesPrecedenceList = make([]map[string]T, 0, len(l.workspaceProfilePaths))
 
 	// load from the config paths in reverse order (i.e. lowest precedence first)
 	for _, configPath := range l.workspaceProfilePaths {
 		// load all workspaces in the global config location
-		workspaces, err := LoadWorkspaceProfiles[T](configPath)
+		// NOTE: pass parse opts if we have any
+		workspaces, err := LoadWorkspaceProfiles[T](configPath, l.ParseOpts...)
 		if err != nil {
 			return err
 		}
