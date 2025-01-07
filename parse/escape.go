@@ -3,6 +3,7 @@ package parse
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"regexp"
 	"strings"
 )
 
@@ -40,7 +41,13 @@ func EscapeTemplateTokens(fileData []byte, filePath string, disableTemplateForPr
 	for _, attrRange := range attrRanges {
 		prev := fileData[end:attrRange.Start.Byte]
 		attr := fileData[attrRange.Start.Byte:attrRange.End.Byte]
-		escapedAttr := strings.Replace(string(attr), "%{", "%%{", -1)
+		// Regex pattern to match unescaped "%{" (not preceded by "%")
+		// Regex to match "%{" only if NOT preceded by "%"
+		re := regexp.MustCompile(`([^%]|^)%{`)
+
+		// Replace "%{" with "%%{" (but only if not already escaped) while preserving the preceding character
+		escapedAttr := re.ReplaceAllString(string(attr), "${1}%%{")
+
 		sections = append(sections, string(prev), escapedAttr)
 		end = attrRange.End.Byte
 	}
