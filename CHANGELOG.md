@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.7.3 [2024-01-07]
+
+_What's new_
+
+* Added support for installing mods from GitLab repositories.
+
 ## v1.7.2 [2024-12-23]
 
 _What's new_
