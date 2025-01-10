@@ -9,20 +9,16 @@ import (
 	psutils "github.com/shirou/gopsutil/process"
 )
 
-// PidExists scans through the list of PIDs in the system
-// and checks for the `targetPID`.
-//
-// PidExists uses iteration, instead of signalling, since we have observed that
+// PidExists uses psutils.NewProcess, instead of signalling, since we have observed that
 // signalling does not always work reliably when the destination of the signal
 // is a child of the source of the signal - which may be the case then starting
 // implicit services
-func PidExists(targetPid int) (bool, error) {
+func PidExists(targetPid int) bool {
 	LogTime("utils.PidExists start")
 	defer LogTime("utils.PidExists end")
 
-	process, err := FindProcess(targetPid)
-	found := process != nil
-	return found, err
+	_, err := psutils.NewProcess(int32(targetPid))
+	return err == nil
 }
 
 // FindProcess tries to find the process with the given pid
