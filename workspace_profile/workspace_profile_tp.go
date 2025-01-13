@@ -102,7 +102,7 @@ func (p *TpWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Optio
 
 // EnsureWorkspaceDirs creates all necessary workspace directories
 func (p *TpWorkspaceProfile) EnsureWorkspaceDirs() error {
-	workspaceDirs := []string{p.GetDataDir(), p.GetCollectionDir()}
+	workspaceDirs := []string{p.GetDataDir(), p.GetCollectionDir(), p.GetCollectionTempDir()}
 
 	// create if necessary
 	for _, dir := range workspaceDirs {
@@ -130,4 +130,8 @@ func (p *TpWorkspaceProfile) GetDataDir() string {
 // - this is located  in ~/.turbot/internal/collection/<profile_name>/<pid>
 func (p *TpWorkspaceProfile) GetCollectionDir() string {
 	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName, fmt.Sprintf("%d", os.Getpid()))
+}
+
+func (p *TpWorkspaceProfile) GetCollectionTempDir() string {
+	return filepath.Join(filepaths.GetInternalDir(), "collection", "duckdb.tmp", "tmp")
 }
