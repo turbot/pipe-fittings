@@ -27,6 +27,9 @@ type TpWorkspaceProfile struct {
 	LogLevel    *string `hcl:"log_level" cty:"log_level"`
 	MemoryMaxMb *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
 
+	// terminal options
+	Timing *bool `hcl:"timing" cty:"timing"`
+
 	Base *TpWorkspaceProfile `hcl:"base"`
 
 	DeclRange hcl.Range
@@ -75,6 +78,7 @@ func (p *TpWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{
 	res.SetStringItem(p.UpdateCheck, constants.ArgUpdateCheck)
 	res.SetStringItem(p.LogLevel, constants.ArgLogLevel)
 	res.SetIntItem(p.MemoryMaxMb, constants.ArgMemoryMaxMb)
+	res.SetBoolItem(p.Timing, constants.ArgTiming)
 
 	return res
 }
