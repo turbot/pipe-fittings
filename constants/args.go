@@ -44,6 +44,8 @@ const (
 	ArgForce                   = "force"
 	ArgFrom                    = "from"
 	ArgTo                      = "to"
+	ArgIndex                   = "index"
+	ArgPartition               = "partition"
 	ArgHeader                  = "header"
 	ArgHelp                    = "help"
 	ArgHost                    = "host"
