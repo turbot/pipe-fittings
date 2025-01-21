@@ -132,7 +132,7 @@ func (p *TpWorkspaceProfile) GetDataDir() string {
 
 // GetCollectionDir returns the path to the collection data directory
 // - this is located  in ~/.turbot/internal/collection/<profile_name>
-// this will contain the collection temp dir (which should only exist during collectiot) and the collection state
+// this will contain the collection temp dir (which should only exist during collection) and the collection state
 func (p *TpWorkspaceProfile) GetCollectionDir() string {
-	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName, fmt.Sprintf("%d", os.Getpid()))
+	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName)
 }
