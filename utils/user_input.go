@@ -12,12 +12,12 @@ func UserConfirmationWithDefault(message string, defaultValue bool) bool {
 	if defaultValue {
 		defString = "y"
 	}
-	fmt.Printf("%s (%s): ", message, defString) // No newline here for cleaner input prompt
+	fmt.Printf("%s (%s): ", message, defString) //nolint: forbidigo // No newline here for cleaner input prompt
 
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading input:", err)
+		fmt.Println("Error reading input:", err) //nolint: forbidigo // Console output
 		return defaultValue
 	}
 
@@ -41,7 +41,7 @@ func UserConfirmation(message string) bool {
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Println("Error reading input:", err)
+		fmt.Println("Error reading input:", err) //nolint:forbidigo // Console output
 		return false
 	}
 
