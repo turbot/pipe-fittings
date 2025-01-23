@@ -44,7 +44,7 @@ func parseRelativeTime(input string, now time.Time) (time.Time, error) {
 	unit := relative[len(relative)-1]
 	value, err := strconv.Atoi(relative[:len(relative)-1])
 	if err != nil {
-		return time.Time{}, errors.New("invalid relative time value")
+		return time.Time{}, errors.New(constants.InvalidRelativeTimeFormat)
 	}
 
 	// Calculate the resulting time
