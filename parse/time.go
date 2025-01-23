@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/turbot/pipe-fittings/constants"
 )
 
 // ParseTime parses a time string into a time.Time object.
@@ -28,13 +30,13 @@ func ParseTime(input string, now time.Time) (time.Time, error) {
 		return parseRelativeTime(input, now)
 	}
 
-	return time.Time{}, errors.New("invalid time format")
+	return time.Time{}, errors.New(constants.InvalidTimeFormat)
 }
 
 // parseRelativeTime parses relative time strings.
 func parseRelativeTime(input string, now time.Time) (time.Time, error) {
 	if len(input) < 3 || !strings.HasPrefix(input, "T-") {
-		return time.Time{}, errors.New("invalid relative time format")
+		return time.Time{}, errors.New(constants.InvalidRelativeTimeFormat)
 	}
 
 	// Extract the value and unit
@@ -60,6 +62,6 @@ func parseRelativeTime(input string, now time.Time) (time.Time, error) {
 	case 'M': // Minutes
 		return now.Add(time.Duration(-value) * time.Minute), nil
 	default:
-		return time.Time{}, errors.New("invalid relative time unit")
+		return time.Time{}, errors.New(constants.InvalidRelativeTimeFormat)
 	}
 }
