@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"sort"
 	"testing"
 )
 
@@ -145,6 +146,8 @@ func TestSqlFilterSatisfied(t *testing.T) {
 			if len(fieldNames) != len(tc.expectedFieldNames) {
 				t.Errorf("sqlFilterSatisfied(%v, %v) fieldNames length want %v, got %v", tc.filter, tc.values, len(tc.expectedFieldNames), len(fieldNames))
 			} else {
+				sort.Strings(fieldNames)
+				sort.Strings(tc.expectedFieldNames)
 				for i, v := range fieldNames {
 					if v != tc.expectedFieldNames[i] {
 						t.Errorf("sqlFilterSatisfied(%v, %v) fieldNames[%d] want %v, got %v", tc.filter, tc.values, i, tc.expectedFieldNames[i], v)

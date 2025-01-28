@@ -3,9 +3,11 @@ package backend
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/constants"
+	"github.com/turbot/pipe-fittings/filepaths"
 	"github.com/turbot/pipe-fittings/sperr"
 )
 
@@ -39,14 +41,9 @@ func (b *DuckDBBackend) Connect(ctx context.Context, options ...BackendOption) (
 	db.SetMaxOpenConns(config.MaxOpenConns)
 
 	// Install and load the JSON extension
-	_, err = db.ExecContext(ctx, "INSTALL 'json';")
+	err = installAndLoadExtensions(db)
 	if err != nil {
-		return nil, sperr.WrapWithMessage(err, "could not install json extension in duckdb")
-	}
-
-	_, err = db.ExecContext(ctx, "LOAD 'json';")
-	if err != nil {
-		return nil, sperr.WrapWithMessage(err, "could not load json extension in duckdb")
+		return nil, err
 	}
 
 	return db, nil
@@ -74,4 +71,20 @@ func newDuckDBRowReader() *duckdbRowReader {
 		// use the generic row reader - there's no real difference between sqlite and duckdb
 		BasicRowReader: *NewBasicRowReader(),
 	}
+}
+
+func installAndLoadExtensions(db *sql.DB) error {
+	// set the extension directory
+	if _, err := db.Exec(fmt.Sprintf("SET extension_directory = '%s';", filepaths.EnsurePipesDuckDbExtensionsDir())); err != nil {
+		return fmt.Errorf("failed to set extension_directory: %w", err)
+	}
+
+	// install and load the extensions
+	for _, extension := range constants.DuckDbExtensions {
+		if _, err := db.Exec(fmt.Sprintf("INSTALL '%s'; LOAD '%s';", extension, extension)); err != nil {
+			return fmt.Errorf("failed to install and load extension %s: %s", extension, err.Error())
+		}
+	}
+
+	return nil
 }
