@@ -2,6 +2,8 @@ package utils
 
 import (
 	"fmt"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"math"
 	"time"
 )
@@ -29,4 +31,9 @@ func HumanizeDuration(duration time.Duration) string {
 	return fmt.Sprintf("%dd%dh%dm%ds",
 		int64(duration.Hours()/24), int64(remainingHours),
 		int64(remainingMinutes), int64(remainingSeconds))
+}
+
+func HumanizeNumber(count int) string {
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%d", count)
 }

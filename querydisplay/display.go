@@ -25,6 +25,7 @@ import (
 	"github.com/turbot/pipe-fittings/error_helpers"
 	"github.com/turbot/pipe-fittings/queryresult"
 	pqueryresult "github.com/turbot/pipe-fittings/queryresult"
+	"github.com/turbot/pipe-fittings/utils"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -358,15 +359,19 @@ func displayLine[T queryresult.TimingContainer](ctx context.Context, result *que
 	}
 
 	// call this function for each row
-	count, err := IterateResults(result, rowFunc)
+	var err error
+	rowCount, err = IterateResults(result, rowFunc)
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
 		return 0, rowErrors
 	}
 
-	return count, rowErrors
+	return rowCount, rowErrors
 }
+
+// tables are buffered before rendering so limit the display to the first 10000 rows
+const maxTableDisplayRows = 10000
 
 func displayTable[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 	// the buffer to put the output data in
@@ -397,8 +402,16 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 		t.AppendHeader(headers)
 	}
 
+	// how may rows are we displaying (max 10000)
+	displayRowCount := 0
+
 	// define a function to execute for each row
 	rowFunc := func(row []interface{}, result *queryresult.Result[T]) {
+		if displayRowCount >= maxTableDisplayRows {
+			return
+		}
+		displayRowCount++
+
 		rowAsString, _ := ColumnValuesAsString(row, result.Cols)
 		rowObj := table.Row{}
 		for _, col := range rowAsString {
@@ -432,6 +445,13 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 
 	// page out the table
 	ShowPaged(ctx, outbuf.String())
+
+	status := fmt.Sprintf("% rows", utils.HumanizeNumber(count))
+	if displayRowCount >= maxTableDisplayRows {
+		status += fmt.Sprintf(" (%s shown)", utils.HumanizeNumber(maxTableDisplayRows))
+	}
+	//nolint:forbidigo // acceptable
+	fmt.Println(status)
 
 	return count, rowErrors
 }
