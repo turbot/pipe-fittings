@@ -150,7 +150,7 @@ var SteampipeConfigBlockSchema = &hcl.BodySchema{
 	},
 }
 
-var TpConfigBlockSchema = &hcl.BodySchema{
+var TailpipeConfigBlockSchema = &hcl.BodySchema{
 	Attributes: []hcl.AttributeSchema{},
 	Blocks: []hcl.BlockHeaderSchema{
 		{

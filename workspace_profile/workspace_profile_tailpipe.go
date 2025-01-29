@@ -15,7 +15,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-type TpWorkspaceProfile struct {
+type TailpipeWorkspaceProfile struct {
 	ProfileName string `hcl:"name,label" cty:"name"`
 
 	Local            *string `hcl:"local" cty:"local"`
@@ -30,14 +30,14 @@ type TpWorkspaceProfile struct {
 	// terminal options
 	Timing *bool `hcl:"timing" cty:"timing"`
 
-	Base *TpWorkspaceProfile `hcl:"base"`
+	Base *TailpipeWorkspaceProfile `hcl:"base"`
 
 	DeclRange hcl.Range
 }
 
 // SetOptions sets the options on the connection
 // verify the options object is a valid options type (only options.Connection currently supported)
-func (p *TpWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
+func (p *TailpipeWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) hcl.Diagnostics {
 	return hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  "Powerpipe workspaces do not support options",
@@ -45,31 +45,31 @@ func (p *TpWorkspaceProfile) SetOptions(opts options.Options, block *hcl.Block) 
 	}}
 }
 
-func (p *TpWorkspaceProfile) Name() string {
+func (p *TailpipeWorkspaceProfile) Name() string {
 	return fmt.Sprintf("workspace.%s", p.ProfileName)
 }
 
-func (p *TpWorkspaceProfile) ShortName() string {
+func (p *TailpipeWorkspaceProfile) ShortName() string {
 	return p.ProfileName
 }
 
-func (p *TpWorkspaceProfile) CtyValue() (cty.Value, error) {
+func (p *TailpipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 	return cty_helpers.GetCtyValue(p)
 }
 
-func (p *TpWorkspaceProfile) OnDecoded() hcl.Diagnostics {
+func (p *TailpipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
 	return nil
 }
 
-func (p *TpWorkspaceProfile) setBaseProperties() {
+func (p *TailpipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
 	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
-func (p *TpWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
+func (p *TailpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{} {
 	res := ConfigMap{}
 	// add non-empty properties to config map
 	res.SetStringItem(p.Local, constants.ArgLocal)
@@ -83,20 +83,20 @@ func (p *TpWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]interface{
 	return res
 }
 
-func (p *TpWorkspaceProfile) GetDeclRange() *hcl.Range {
+func (p *TailpipeWorkspaceProfile) GetDeclRange() *hcl.Range {
 	return &p.DeclRange
 }
 
 // TODO this is (currently) required by interface
-func (p *TpWorkspaceProfile) GetInstallDir() *string {
+func (p *TailpipeWorkspaceProfile) GetInstallDir() *string {
 	return nil
 }
 
-func (p *TpWorkspaceProfile) IsNil() bool {
+func (p *TailpipeWorkspaceProfile) IsNil() bool {
 	return p == nil
 }
 
-func (p *TpWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {
+func (p *TailpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Options, hcl.Diagnostics) {
 	return nil, hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  "Powerpipe workspaces do not support options",
@@ -105,7 +105,7 @@ func (p *TpWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options.Optio
 }
 
 // EnsureWorkspaceDirs creates all necessary workspace directories
-func (p *TpWorkspaceProfile) EnsureWorkspaceDirs() error {
+func (p *TailpipeWorkspaceProfile) EnsureWorkspaceDirs() error {
 	workspaceDirs := []string{p.GetDataDir(), p.GetCollectionDir()}
 
 	// create if necessary
@@ -120,7 +120,7 @@ func (p *TpWorkspaceProfile) EnsureWorkspaceDirs() error {
 	return nil
 }
 
-func (p *TpWorkspaceProfile) GetDataDir() string {
+func (p *TailpipeWorkspaceProfile) GetDataDir() string {
 	var dataDir string
 	if p.Local != nil {
 		dataDir = *p.Local
@@ -133,6 +133,6 @@ func (p *TpWorkspaceProfile) GetDataDir() string {
 // GetCollectionDir returns the path to the collection data directory
 // - this is located  in ~/.turbot/internal/collection/<profile_name>
 // this will contain the collection temp dir (which should only exist during collection) and the collection state
-func (p *TpWorkspaceProfile) GetCollectionDir() string {
+func (p *TailpipeWorkspaceProfile) GetCollectionDir() string {
 	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName)
 }

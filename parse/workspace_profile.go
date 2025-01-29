@@ -54,8 +54,8 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 	switch any(temp).(type) {
 	case *workspace_profile.FlowpipeWorkspaceProfile:
 		schema = FlowpipeConfigBlockSchema
-	case *workspace_profile.TpWorkspaceProfile:
-		schema = TpConfigBlockSchema
+	case *workspace_profile.TailpipeWorkspaceProfile:
+		schema = TailpipeConfigBlockSchema
 	case *workspace_profile.PowerpipeWorkspaceProfile:
 		schema = PowerpipeConfigBlockSchema
 	case *workspace_profile.SteampipeWorkspaceProfile:
