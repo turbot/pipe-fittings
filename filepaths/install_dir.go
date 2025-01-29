@@ -41,9 +41,14 @@ func installSubDir(dirName string) string {
 	return filepath.Join(app_specific.InstallDir, dirName)
 }
 
-// EnsureTemplateDir returns the path to the templates directory (creates if missing)
-func EnsureTemplateDir() string {
+// EnsureControlTemplateDir returns the path to the templates directory (creates if missing)
+func EnsureControlTemplateDir() string {
 	return ensureInstallSubDir(filepath.Join("check", "templates"))
+}
+
+// EnsureDetectionTemplateDir returns the path to the detection templates directory (creates if missing)
+func EnsureDetectionTemplateDir() string {
+	return ensureInstallSubDir(filepath.Join("check", "detection_templates"))
 }
 
 // EnsureConfigDir returns the path to the config directory (creates if missing)
