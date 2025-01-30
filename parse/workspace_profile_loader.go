@@ -67,6 +67,8 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfileP
 		sampleContent = constants.DefaultFlowpipeWorkspaceContent
 	case *workspace_profile.PowerpipeWorkspaceProfile:
 		sampleContent = constants.DefaultPowerpipeWorkspaceContent
+	case *workspace_profile.TailpipeWorkspaceProfile:
+		sampleContent = constants.DefaultTailpipeWorkspaceContent
 	}
 	// always write the workspaces sample file; i.e. workspaces.spc.sample
 	err := os.MkdirAll(globalConfigPath, 0755)

@@ -19,9 +19,8 @@ import (
 const (
 	VersionCheckerSchema        = "https"
 	VersionCheckerHostSteampipe = "hub.steampipe.io"
-	// TODO Pskr Update the endpoint when hub.tailpipe.io is ready
-	VersionCheckerHostTailpipe = "hub-tailpipe-io.vercel.app"
-	VersionCheckerEndpoint     = "api/plugin/version"
+	VersionCheckerHostTailpipe  = "hub.tailpipe.io"
+	VersionCheckerEndpoint      = "api/plugin/version"
 )
 
 // PluginVersionCheckReport
