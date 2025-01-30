@@ -105,3 +105,20 @@ const DefaultFlowpipeWorkspaceContent = `
 #  }
 # }
 `
+
+const DefaultTailpipeWorkspaceContent = `
+#
+# For detailed descriptions, see the reference documentation
+# at https://tailpipe.io/docs/reference/config-files/workspace
+#
+# workspace "all_options" {
+#
+#  # General Options
+#  log_level     = "info" # trace, debug, info, warn, error
+#  memory_max_mb = "1024" # the maximum memory to allow the CLI process in MB
+#  update_check  = true  	# check for updates on startup
+#  
+#  # Terminal Options
+#  timing        = true   # show timing information
+# }
+`
