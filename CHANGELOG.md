@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.6.8 [2025-02-05]
+
+_What's new_
+
+* Upgrade pipes-sdk-go to v0.12.0.
+
 ## v1.6.7 [2024-01-07]
 
 _What's new_
