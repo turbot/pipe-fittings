@@ -51,7 +51,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/turbot/pipes-sdk-go v0.9.1
+	github.com/turbot/pipes-sdk-go v0.12.0
 	github.com/turbot/steampipe-plugin-code v0.7.0
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.8.0
 	github.com/turbot/terraform-components v0.0.0-20231213122222-1f3526cab7a7
