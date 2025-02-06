@@ -52,7 +52,7 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/pipes-sdk-go v0.12.0
-	github.com/turbot/steampipe-plugin-code v1.0.1-alpha.0
+	github.com/turbot/steampipe-plugin-code v1.0.1-alpha.1
 	github.com/turbot/steampipe-plugin-sdk/v5 v5.10.4
 	github.com/turbot/terraform-components v0.0.0-20231213122222-1f3526cab7a7
 	golang.org/x/oauth2 v0.21.0
