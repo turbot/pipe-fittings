@@ -1,10 +1,10 @@
 package modconfig
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 )
 
@@ -45,7 +45,7 @@ func isRunTimeDependencyProperty(propertyPath *ParsedPropertyPath) bool {
 	}
 	// is this property a supported runtime dependency property
 	if supportedProperties, ok := runTimeDependencyPropertyPaths[propertyPath.ItemType]; ok {
-		return helpers.StringSliceContains(supportedProperties, propertyPath.PropertyPathString())
+		return slices.Contains(supportedProperties, propertyPath.PropertyPathString())
 	}
 	return false
 }

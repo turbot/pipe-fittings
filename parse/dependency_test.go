@@ -2,9 +2,8 @@ package parse
 
 import (
 	"reflect"
+	"slices"
 	"testing"
-
-	"github.com/turbot/go-kit/helpers"
 )
 
 type dependencyTreeTest struct {
@@ -50,7 +49,7 @@ func combineDependencyOrders(deps [][]string) []string {
 			if i == j {
 				continue
 			}
-			if helpers.StringSliceContains(d2, d1[0]) {
+			if slices.Contains(d2, d1[0]) {
 				longest = false
 				continue
 			}

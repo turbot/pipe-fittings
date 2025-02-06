@@ -2,13 +2,13 @@ package modconfig
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	filehelpers "github.com/turbot/go-kit/files"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/versionhelpers"
 	"github.com/zclconf/go-cty/cty"
@@ -187,7 +187,7 @@ func (m *ModVersionConstraint) DependencyPath() string {
 // HasVersion returns whether the mod has a version specified, or is the latest
 // if no version is specified, or the version is "latest", this is the latest version
 func (m *ModVersionConstraint) HasVersion() bool {
-	return !helpers.StringSliceContains([]string{"", "latest", "*"}, m.VersionString)
+	return !slices.Contains([]string{"", "latest", "*"}, m.VersionString)
 }
 
 func (m *ModVersionConstraint) String() string {

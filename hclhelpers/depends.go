@@ -1,8 +1,9 @@
 package hclhelpers
 
 import (
+	"slices"
+
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 )
 
 func ExpressionToDepends(expr hcl.Expression, validDependsOnTypes []string) ([]string, hcl.Diagnostics) {
@@ -11,7 +12,7 @@ func ExpressionToDepends(expr hcl.Expression, validDependsOnTypes []string) ([]s
 	for _, t := range traversals {
 		parts := TraversalAsStringSlice(t)
 		if len(parts) >= 3 {
-			if helpers.StringSliceContains(validDependsOnTypes, parts[0]) {
+			if slices.Contains(validDependsOnTypes, parts[0]) {
 				if len(parts) >= 3 {
 					dependsOn = append(dependsOn, parts[1]+"."+parts[2])
 				}

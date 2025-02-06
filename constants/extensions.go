@@ -1,7 +1,8 @@
 package constants
 
 import (
-	"github.com/turbot/go-kit/helpers"
+	"slices"
+
 	"github.com/turbot/pipe-fittings/v2/app_specific"
 )
 
@@ -26,5 +27,5 @@ func ConnectionConfigExtension() []string {
 }
 
 func IsYamlExtension(ext string) bool {
-	return helpers.StringSliceContains(YamlExtensions, ext)
+	return slices.Contains(YamlExtensions, ext)
 }

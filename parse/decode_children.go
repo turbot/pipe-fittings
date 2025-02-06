@@ -2,9 +2,9 @@ package parse
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
@@ -22,7 +22,7 @@ func ResolveChildrenFromNames(childNames []string, block *hcl.Block, supportedCh
 
 	for i, childName := range childNames {
 		parsedName, err := modconfig.ParseResourceName(childName)
-		if err != nil || !helpers.StringSliceContains(supportedChildren, parsedName.ItemType) {
+		if err != nil || !slices.Contains(supportedChildren, parsedName.ItemType) {
 			diags = append(diags, childErrorDiagnostic(childName, block))
 			continue
 		}
