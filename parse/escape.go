@@ -19,6 +19,10 @@ func EscapeTemplateTokens(fileData []byte, filePath string, disableTemplateForPr
 	// NOTE: we do not want to use the parse as we do not want to cache the result
 	file, diags := hclsyntax.ParseConfig(fileData, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 
+	if !diags.HasErrors() {
+		return fileData, diags
+	}
+
 	var attrRanges []*hcl.Range
 	for _, attrName := range disableTemplateForProperties {
 		moreRanges, moreDiags := getAttributeRanges(file, attrName)
