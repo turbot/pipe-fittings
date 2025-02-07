@@ -16,16 +16,18 @@ import (
 )
 
 // ShowPaged displays the `content` in a system dependent pager
-func ShowPaged(ctx context.Context, content string) {
+func ShowPaged(ctx context.Context, content string) bool {
 	if isPagerNeeded(content) && (runtime.GOOS == "darwin" || runtime.GOOS == "linux") {
 		nixPager(ctx, content)
+		return true
 	} else {
 		nullPager(content)
+		return false
 	}
 }
 
 func isPagerNeeded(content string) bool {
-	// TODO use option, NOT viper https://github.com/turbot/pipe-fittings/v2/issues/613
+	// TODO use option, NOT viper https://github.com/turbot/pipe-fittings/issues/613
 	// only show pager in interactive mode
 	if !viper.GetBool(constants.ConfigKeyInteractive) {
 		return false
