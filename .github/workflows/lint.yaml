@@ -26,6 +26,10 @@ jobs:
           go-version: '1.21'
           cache: false # setup-go v4 caches by default, do not change this parameter, check golangci-lint-action doc: https://github.com/golangci/golangci-lint-action/pull/704
 
+      - name: check go files
+        run: |
+          find . -name '*.go'
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
