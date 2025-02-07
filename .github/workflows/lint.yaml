@@ -9,10 +9,6 @@ on:
   workflow_dispatch:
   pull_request:
 
-env:
-  GOPRIVATE: github.com/turbot/*
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
   golangci:
     name: Lint and Test
