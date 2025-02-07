@@ -9,9 +9,6 @@ on:
   workflow_dispatch:
   pull_request:
 
-env:
-  GOPRIVATE: github.com/turbot/*
-
 jobs:
   golangci:
     name: Lint and Test
@@ -38,7 +35,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --timeout=15m --out-format=github-actions
+          args: --timeout=15m
 
       - name: Run tests
         run: make test
