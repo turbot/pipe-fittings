@@ -2,6 +2,10 @@ run:
   timeout: 5m
   modules-download-mode: readonly
 
+output:
+  formats:
+    - format: colored-line-number
+
 issues:
   exclude-rules:
     - path: pipeparser/utils/user_input.go
