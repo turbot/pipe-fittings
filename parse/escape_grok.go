@@ -12,9 +12,11 @@ import (
 // used to give warning that grok expressions should be wrapped in a 'grok' function call
 var grokConfigProperties = []string{"log_format", "file_layout", "layout"}
 
-// TODO good comment
-// escapeGrokArgs escapes unescaped Grok patterns in an HCL file
-func escapeGrokArgs(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
+// GrokEscape is the implementation of the hcl 'grok' function
+// which is used to wrap grok expressions and escape the Grok pattern so the hcl parse does not fail
+// NOTE: we must implement this explicitly as part of the parse rather than a standard context function as
+// a grok pattern containing the string "%{" will cause the initial hcl parse to fail
+func GrokEscape(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	// clone fileData
 	fileData := make([]byte, len(f))
 	copy(fileData, f)

@@ -149,10 +149,10 @@ format "custom" "c2" {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			escapedData := escapeGrokArgs(tt.args.fileData, "testfile.tpc")
+			escapedData := GrokEscape(tt.args.fileData, "testfile.tpc")
 
 			if got := escapedData; string(got) != string(tt.wantBytes) {
-				t.Errorf("escapeGrokArgs() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
+				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
 			}
 		})
 	}

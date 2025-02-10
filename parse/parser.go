@@ -44,35 +44,6 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 	}
 	var diags hcl.Diagnostics
 
-	// NOTE: Handle grok properties
-	// if necessary, escape template tokens in any requested properties
-	//for filename, fileData := range fileDataMap {
-	// first check for grok function calls - execute these
-	//fileData = escapeGrokArgs(fileData, filename)
-
-	// TODO do we need to support the old mechanism and if so for how long?
-	//// handle deprecated disableTemplateForProperties
-	//if len(config.disableTemplateForProperties) > 0 {
-	//	updatedFileData, moreDiags := EscapeTemplateTokens(fileData, filename, config.disableTemplateForProperties)
-	//	if moreDiags.HasErrors() {
-	//		diags = append(diags, moreDiags...)
-	//		continue
-	//	}
-	//
-	//	// if this modified the file data, it means the grok function is not being used - raise a warning
-	//	if string(updatedFileData) != string(fileData) {
-	//		diags = append(diags, &hcl.Diagnostic{
-	//			Severity: hcl.DiagWarning,
-	//			Summary:  "Grok expressions should be wrapped in a 'grok' function call",
-	//			Detail:   fmt.Sprintf("The file %q contains a Grok expression that is not wrapped in a 'grok' function call. This has been escaped, but this funcitonalityis deprecated and will be removed in a future version.", filename),
-	//		})
-	//	}
-	//	fileData = updatedFileData
-	//}
-
-	//	fileDataMap[filename] = fileData
-	//}
-
 	if diags.HasErrors() {
 		return nil, diags
 	}
@@ -92,13 +63,26 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 		case constants.IsYamlExtension(ext):
 			file, moreDiags = parseYamlFile(filePath)
 		default:
-			// TODO K use option to determine whethe rwe need to escape grok expressions
-			// first check for grok function calls - execute these to escape grok expressions
-			fileData, moreDiags := escapeGrokArgs(fileDataMap[filePath], filePath)
-			if moreDiags.HasErrors() {
-				diags = append(diags, moreDiags...)
-				continue
+			fileData := fileDataMap[filePath]
+
+			// handle deprecated disableTemplateForProperties
+			//if len(config.disableTemplateForProperties) > 0 {
+			//	fileData, moreDiags = applyDisableTemplateForProperties(fileData, filePath, config, diags)
+			//	diags = append(diags, moreDiags...)
+			//	if diags.HasErrors() {
+			//		continue
+			//	}
+			//}
+
+			// check for grok function calls - execute these to escape grok expressions
+			if config.applyGrokFunction {
+				fileData, moreDiags = GrokEscape(fileDataMap[filePath], filePath)
+				if moreDiags.HasErrors() {
+					diags = append(diags, moreDiags...)
+					continue
+				}
 			}
+
 			parser := hclparse.NewParser()
 			file, moreDiags = parser.ParseHCL(fileData, filePath)
 		}
@@ -113,6 +97,25 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 
 	return hcl.MergeFiles(parsedConfigFiles), diags
 }
+
+//func applyDisableTemplateForProperties(fileData []byte, filePath string, config *ParseHclConfig, diags hcl.Diagnostics) ([]byte, hcl.Diagnostics) {
+//	updatedFileData, moreDiags := EscapeTemplateTokens(fileData, filePath, config.disableTemplateForProperties)
+//	if moreDiags.HasErrors() {
+//		diags = append(diags, moreDiags...)
+//		//continue
+//	}
+//
+//	// if this modified the file data, it means the grok function is not being used - raise a warning
+//	if string(updatedFileData) != string(fileData) {
+//		diags = append(diags, &hcl.Diagnostic{
+//			Severity: hcl.DiagWarning,
+//			Summary:  "Grok expressions should be wrapped in a 'grok' function call",
+//			Detail:   fmt.Sprintf("The file %q contains a Grok expression that is not wrapped in a 'grok' function call. This has been escaped, but this funcitonalityis deprecated and will be removed in a future version.", filePath),
+//		})
+//	}
+//	fileData = updatedFileData
+//	return fileData, diags
+//}
 
 func buildOrderedFileNameList(fileData map[string][]byte) []string {
 	filePaths := make([]string, len(fileData))
