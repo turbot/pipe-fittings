@@ -27,52 +27,6 @@ var missingVariableErrors = []string{
 	"Missing map element",
 }
 
-//
-//func decode(parseCtx *ModParseContext) hcl.Diagnostics {
-//	utils.LogTime(fmt.Sprintf("decode %s start", parseCtx.CurrentMod.Name()))
-//	defer utils.LogTime(fmt.Sprintf("decode %s end", parseCtx.CurrentMod.Name()))
-//
-//	var diags hcl.Diagnostics
-//
-//	blocks, err := parseCtx.BlocksToDecode()
-//	// build list of blocks to decode
-//	if err != nil {
-//		diags = append(diags, &hcl.Diagnostic{
-//			Severity: hcl.DiagError,
-//			Summary:  "failed to determine required dependency order",
-//			Detail:   err.Error()})
-//		return diags
-//	}
-//
-//	// now clear dependencies from run context - they will be rebuilt
-//	parseCtx.ClearDependencies()
-//
-//	for _, block := range blocks {
-//		if block.Type == schema.BlockTypeLocals {
-//			resources, res := decodeLocalsBlock(block, parseCtx)
-//			if !res.Success() {
-//				diags = append(diags, res.Diags...)
-//				continue
-//			}
-//			for _, resource := range resources {
-//				resourceDiags := AddResourceToMod(resource, block, parseCtx)
-//				diags = append(diags, resourceDiags...)
-//			}
-//		} else {
-//			resource, res := decodeBlock(block, parseCtx)
-//			diags = append(diags, res.Diags...)
-//			if !res.Success() || resource == nil {
-//				continue
-//			}
-//
-//			resourceDiags := AddResourceToMod(resource, block, parseCtx)
-//			diags = append(diags, resourceDiags...)
-//		}
-//	}
-//
-//	return diags
-//}
-
 func AddResourceToMod(resource modconfig.HclResource, block *hcl.Block, decoder Decoder, parseCtx *ModParseContext) hcl.Diagnostics {
 	if !decoder.ShouldAddToMod(resource, block, parseCtx) {
 		return nil
@@ -114,16 +68,6 @@ func decodeMod(block *hcl.Block, evalCtx *hcl.EvalContext, mod *modconfig.Mod) (
 	return mod, res
 
 }
-
-//func DecodeRequire(block *hcl.Block, evalCtx *hcl.EvalContext) (*modconfig.Require, hcl.Diagnostics) {
-//	require := modconfig.NewRequire()
-//	// set ranges
-//	require.DeclRange = hclhelpers.BlockRange(block)
-//	require.TypeRange = block.TypeRange
-//	// decode
-//	diags := gohcl.DecodeBody(block.Body, evalCtx, require)
-//	return require, diags
-//}
 
 func ResolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext) (csp connection.ConnectionStringProvider, searchPath, searchPathPrefix []string, diags hcl.Diagnostics) {
 

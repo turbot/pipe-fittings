@@ -1,30 +1,47 @@
 package parse
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"slices"
 	"strconv"
 	"strings"
 )
 
+// used to give warning that grok expressions should be wrapped in a 'grok' function call
+var grokConfigProperties = []string{"log_format", "file_layout", "layout"}
+
+// TODO good comment
 // escapeGrokArgs escapes unescaped Grok patterns in an HCL file
-func escapeGrokArgs(fileData []byte, filePath string) []byte {
+func escapeGrokArgs(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
+	// clone fileData
+	fileData := make([]byte, len(f))
+	copy(fileData, f)
+
 	for {
-		var changed bool
-		fileData, changed = doEscapeGrokArgs(fileData, filePath)
-		if !changed {
-			break
+		// because the parse will return errors for a single attribute at a time, we may need to call doEscapeGrokArgs
+		// multiple times
+
+		updatedFileData, diags := doEscapeGrokArgs(fileData, filePath)
+		if diags.HasErrors() {
+			return fileData, diags
 		}
+
+		if string(updatedFileData) == string(fileData) {
+			return updatedFileData, nil
+		}
+		fileData = updatedFileData
 	}
-	return fileData
 }
-func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, bool) {
+
+func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	// Parse HCL file without caching
 	file, diags := hclsyntax.ParseConfig(fileData, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 
 	// Return original data if no errors or failed parsing
 	if !diags.HasErrors() || file == nil {
-		return fileData, false
+		return fileData, nil
 	}
 
 	type replacement struct {
@@ -37,7 +54,7 @@ func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, bool) {
 
 	// Iterate over diagnostics to find Grok pattern errors
 	for _, diag := range diags {
-		if diag.Summary == "Invalid template control keyword" || diag.Detail == "Expected the start of an expression, but found an invalid expression token." {
+		if isGrokPatternError(diag) {
 
 			a := getAttributeForRange(file.Body.(*hclsyntax.Body), diag.Subject)
 			if a == nil {
@@ -47,18 +64,24 @@ func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, bool) {
 			// we only do this escaping if the attribute is a 'grok' function call
 			f, ok := a.Expr.(*hclsyntax.FunctionCallExpr)
 			if !ok || f.Name != "grok" {
-				continue
+				// so there is a potential grok pattern error, but it is not in a grok function call
+				// is this a known grok property?
+				if slices.Contains(grokConfigProperties, a.Name) {
+					return fileData, hcl.Diagnostics{
+						&hcl.Diagnostic{
+							Severity: hcl.DiagError,
+							Summary:  "Unescaped Grok expression",
+							Detail:   fmt.Sprintf("The attribute '%s' in file %q looks like a Grok pattern. This should be wrapped in a 'grok()' function call (with no surrounding quotes).", a.Name, filePath),
+							Subject:  diag.Subject,
+						}}
+				}
 			}
 			if len(f.Args) == 0 {
 				continue
 			}
-			arg, ok := f.Args[0].(*hclsyntax.LiteralValueExpr)
-			if !ok {
-				continue
-			}
 
 			startByte := a.EqualsRange.End.Byte
-			replaceStartByte := arg.SrcRange.Start.Byte
+			replaceStartByte := f.Args[0].StartRange().Start.Byte
 			// The end byte will not be set as the parse of the arg failed, so just take the while line
 			// Find the end of the current line
 			// Default to end of file
@@ -100,7 +123,11 @@ func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, bool) {
 		fileData = append(fileData[:replacement.start], append([]byte(replacement.value), fileData[replacement.end+1:]...)...)
 	}
 
-	return fileData, len(replacements) > 0
+	return fileData, nil
+}
+
+func isGrokPatternError(diag *hcl.Diagnostic) bool {
+	return diag.Summary == "Invalid template control keyword" || diag.Detail == "Expected the start of an expression, but found an invalid expression token."
 }
 
 // escapeGrokCapturePattern ensures "%{" is escaped as "%%{" but does NOT double-escape existing "%%{"
@@ -125,82 +152,6 @@ func escapeGrokCapturePattern(input string) string {
 
 	return sb.String()
 }
-
-//
-//// escapeGrokProperties escapes template expressions in any properties specified by escapeGrokProperties
-//func escapeGrokArgs(fileData []byte, filePath string) []byte {
-//
-//	// do an initial parse of the file
-//	// NOTE: we call hclsyntax.ParseConfig directly - do not want to use the parser as we do not want to cache the result
-//	file, diags := hclsyntax.ParseConfig(fileData, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
-//
-//	// if there are no errors - or idf we failed to even parse the file - we are done
-//	if !diags.HasErrors() || file == nil {
-//		return fileData
-//	}
-//
-//	//syntaxBody := file.Body.(*hclsyntax.Body)
-//	for _, diag := range diags {
-//		if diag.Summary == "Invalid template control keyword" || diag.Detail == "Expected the start of an expression, but found an invalid expression token." {
-//
-//			//attr := getAttributeForRange(syntaxBody, diag.Subject)
-//			//if attr == nil {
-//			//	continue
-//			//}
-//
-//			startByte := diag.Subject.Start.Byte
-//
-//			// find the end newline
-//			endByte := 0
-//
-//			for i := startByte + 1; i < len(fileData); i++ {
-//				if fileData[i] == '\n' || fileData[i] == '\r' {
-//					endByte = i - 2
-//					break
-//				}
-//			}
-//			if endByte == 0 {
-//				endByte = len(fileData) - 1
-//			}
-//
-//			hclVal := fileData[startByte:endByte]
-//
-//			// escape %{
-//			// Regex to match "%{" only if NOT preceded by "%"
-//			re := regexp.MustCompile(`([^%]|^)%{`)
-//
-//			// Replace "%{" with "%%{" (but only if not already escaped) while preserving the preceding character
-//			escapedAttr := e
-//
-//			start := fileData[:startByte]
-//			middle := []byte(escapedAttr)
-//			end := fileData[endByte:]
-//			// rebuild the fileData
-//			fileData = append(start, append(middle, end...)...)
-//
-//		}
-//	}
-//	return fileData
-//}
-//
-//// Approach 2: Manual iteration with strings.Builder
-//func escapeGrokPatternManual(input string) string {
-//	var sb strings.Builder
-//	n := len(input)
-//
-//	for i := 0; i < n; i++ {
-//		if input[i] == '%' && i+1 < n && input[i+1] == '{' {
-//			// Check if the previous character is also '%'
-//			if i > 0 && input[i-1] == '%' {
-//				sb.WriteByte('%') // Keep "%%{" unchanged
-//			} else {
-//				sb.WriteString("%%") // Escape "%{" to "%%{"
-//			}
-//		}
-//		sb.WriteByte(input[i])
-//	}
-//	return sb.String()
-//}
 
 func getAttributeForRange(syntaxBody *hclsyntax.Body, subject *hcl.Range) *hclsyntax.Attribute {
 	for _, attribute := range syntaxBody.Attributes {
