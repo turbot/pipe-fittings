@@ -77,8 +77,8 @@ func (o *OciDownloader[I, C]) Pull(ctx context.Context, ref string, mediaTypes [
 		return nil, nil, nil, nil, err
 	}
 
-	// Get credentials from the docker credentials store
-	storeOpts := credentials.StoreOptions{}
+	// Get credentials from the platform-default native credentials store
+	storeOpts := credentials.StoreOptions{DetectDefaultNativeStore: true}
 	var credStore *credentials.DynamicStore
 	if strings.HasPrefix(ref, o.baseImageRef) {
 		credStore, err = credentials.NewStore("", storeOpts)
