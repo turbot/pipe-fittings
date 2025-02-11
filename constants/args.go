@@ -74,6 +74,7 @@ const (
 	ArgProgress                = "progress"
 	ArgPrune                   = "prune"
 	ArgPull                    = "pull"
+	ArgQuiet                   = "quiet"
 	ArgRemote                  = "remote"
 	ArgRemoteConnection        = "remote-connection"
 	ArgSearchPath              = "search-path"

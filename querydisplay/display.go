@@ -444,14 +444,16 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 	t.Render()
 
 	// page out the table
-	ShowPaged(ctx, outbuf.String())
+	showRowCount := ShowPaged(ctx, outbuf.String())
 
-	status := fmt.Sprintf("%s rows", utils.HumanizeNumber(count))
-	if displayRowCount >= maxTableDisplayRows {
-		status += fmt.Sprintf(" (%s shown)", utils.HumanizeNumber(maxTableDisplayRows))
+	if showRowCount {
+		status := fmt.Sprintf("%s %s", utils.HumanizeNumber(count), utils.Pluralize("row", count))
+		if displayRowCount >= maxTableDisplayRows {
+			status += fmt.Sprintf(" (%s shown)", utils.HumanizeNumber(maxTableDisplayRows))
+		}
+		//nolint:forbidigo // acceptable
+		fmt.Println(status)
 	}
-	//nolint:forbidigo // acceptable
-	fmt.Println(status)
 
 	return count, rowErrors
 }

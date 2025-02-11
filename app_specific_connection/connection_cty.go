@@ -3,8 +3,8 @@ package app_specific_connection
 import (
 	"fmt"
 	"reflect"
+	"slices"
 
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/connection"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/perr"
@@ -91,7 +91,7 @@ func getKnownCtyFields(ctyVal cty.Value, targetStruct interface{}, excludeFields
 		// If the key is a known cty tag, add it to the known map
 		if knownTags[key] {
 			known[key] = value
-		} else if !helpers.StringSliceContains(excludeFields, key) {
+		} else if !slices.Contains(excludeFields, key) {
 			// if we are not excluding this field, add to unknown map
 			unknown[key] = value
 		}

@@ -1,8 +1,6 @@
 package modconfig
 
-import (
-	"github.com/turbot/go-kit/helpers"
-)
+import "slices"
 
 // ModTreeItemDiffs is a struct representing the differences between 2 DashboardTreeItems (of same type)
 type ModTreeItemDiffs struct {
@@ -14,7 +12,7 @@ type ModTreeItemDiffs struct {
 }
 
 func (d *ModTreeItemDiffs) AddPropertyDiff(propertyName string) {
-	if !helpers.StringSliceContains(d.ChangedProperties, propertyName) {
+	if !slices.Contains(d.ChangedProperties, propertyName) {
 		d.ChangedProperties = append(d.ChangedProperties, propertyName)
 	}
 }

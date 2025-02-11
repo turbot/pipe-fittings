@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/turbot/go-kit/helpers"
+import "slices"
 
 // NOTE: when adding a block type, be sure to update  QueryProviderBlocks/ReferenceBlocks/AllBlockTypes as needed
 const (
@@ -338,5 +338,5 @@ var ValidResourceItemTypes = []string{
 
 // TODO #app_specific this should use an app_specific set of blocks
 func IsValidResourceItemType(blockType string) bool {
-	return helpers.StringSliceContains(ValidResourceItemTypes, blockType)
+	return slices.Contains(ValidResourceItemTypes, blockType)
 }

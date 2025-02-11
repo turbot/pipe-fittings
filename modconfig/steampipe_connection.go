@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/utils"
@@ -95,7 +95,7 @@ func (c *SteampipeConnection) String() string {
 // if this is NOT an aggregator, there must be no children
 func (c *SteampipeConnection) Validate(map[string]*SteampipeConnection) (warnings []string, errors []string) {
 	validConnectionTypes := []string{ConnectionTypePlugin, ConnectionTypeAggregator}
-	if !helpers.StringSliceContains(validConnectionTypes, c.Type) {
+	if !slices.Contains(validConnectionTypes, c.Type) {
 		return nil, []string{fmt.Sprintf("connection '%s' has invalid connection type '%s'", c.Name, c.Type)}
 	}
 

@@ -74,9 +74,9 @@ func uploadSnapshot(ctx context.Context, snapshot *steampipeconfig.SteampipeSnap
 	workspaceType := identity.Type
 
 	// set the visibility
-	visibility := "workspace"
+	visibility := steampipecloud.SnapshotVisibilityWorkspace
 	if share {
-		visibility = "anyone_with_link"
+		visibility = steampipecloud.SnapshotVisibilityAnyoneWithLink
 	}
 
 	// resolve the snapshot title

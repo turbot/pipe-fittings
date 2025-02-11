@@ -2,28 +2,28 @@ package filter
 
 import (
 	"fmt"
-	"github.com/danwakefield/fnmatch"
-	"github.com/turbot/steampipe-plugin-sdk/v5/filter"
-	"github.com/turbot/steampipe-plugin-sdk/v5/sperr"
-	"golang.org/x/exp/maps"
 	"log"
 	"strings"
+
+	"github.com/danwakefield/fnmatch"
+	"github.com/turbot/pipe-fittings/v2/sperr"
+	"golang.org/x/exp/maps"
 )
 
 type SqlFilter struct {
-	Filter filter.ComparisonNode
+	Filter ComparisonNode
 	raw    string
 }
 
 func NewSqlFilter(raw string) (*SqlFilter, error) {
-	parsed, err := filter.Parse("", []byte(raw))
+	parsed, err := Parse("", []byte(raw))
 	if err != nil {
 		log.Printf("err %v", err)
 		return nil, sperr.New("failed to parse 'where' property: %s", err.Error())
 	}
 
 	res := &SqlFilter{
-		Filter: parsed.(filter.ComparisonNode),
+		Filter: parsed.(ComparisonNode),
 		raw:    raw,
 	}
 
@@ -48,7 +48,7 @@ func (f *SqlFilter) GetFieldNames() ([]string, error) {
 
 // sqlFilterSatisfied evaluates a filter against a set of values.
 // It returns whether the filter is satisfied as well as the field names which were checked
-func sqlFilterSatisfied(c filter.ComparisonNode, values map[string]string) (bool, []string, error) {
+func sqlFilterSatisfied(c ComparisonNode, values map[string]string) (bool, []string, error) {
 	var fieldNames = map[string]struct{}{}
 	switch c.Type {
 	case "identifier":
@@ -58,7 +58,7 @@ func sqlFilterSatisfied(c filter.ComparisonNode, values map[string]string) (bool
 		// 'is' is not (currently) supported
 		return false, nil, invalidScopeOperatorError(c.Operator.Value)
 	case "like": // (also ilike?)
-		codeNodes, ok := c.Values.([]filter.CodeNode)
+		codeNodes, ok := c.Values.([]CodeNode)
 		if !ok {
 			return false, nil, fmt.Errorf("failed to parse filter")
 		}
@@ -88,7 +88,7 @@ func sqlFilterSatisfied(c filter.ComparisonNode, values map[string]string) (bool
 		return res, maps.Keys(fieldNames), nil
 
 	case "compare":
-		codeNodes, ok := c.Values.([]filter.CodeNode)
+		codeNodes, ok := c.Values.([]CodeNode)
 		if !ok {
 			return false, nil, fmt.Errorf("failed to parse filter")
 		}
@@ -114,7 +114,7 @@ func sqlFilterSatisfied(c filter.ComparisonNode, values map[string]string) (bool
 		return res, maps.Keys(fieldNames), nil
 
 	case "in":
-		codeNodes, ok := c.Values.([]filter.CodeNode)
+		codeNodes, ok := c.Values.([]CodeNode)
 		if !ok {
 			return false, nil, fmt.Errorf("failed to parse filter")
 		}
@@ -157,7 +157,7 @@ func sqlFilterSatisfied(c filter.ComparisonNode, values map[string]string) (bool
 		}
 		satisfied := false
 		for _, n := range nodes {
-			c, ok := n.(filter.ComparisonNode)
+			c, ok := n.(ComparisonNode)
 			if !ok {
 				return false, nil, fmt.Errorf("failed to parse filter")
 			}
@@ -184,7 +184,7 @@ func sqlFilterSatisfied(c filter.ComparisonNode, values map[string]string) (bool
 		}
 		satisfied := true
 		for _, n := range nodes {
-			c, ok := n.(filter.ComparisonNode)
+			c, ok := n.(ComparisonNode)
 			if !ok {
 				return false, nil, fmt.Errorf("failed to parse filter")
 			}

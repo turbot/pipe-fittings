@@ -11,8 +11,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/zclconf/go-cty/cty"
+
+	"github.com/turbot/go-kit/helpers"
 )
 
 const TailpipeConnectionType = "tailpipe"
@@ -25,9 +26,12 @@ type TailpipeConnectResponse struct {
 type TailpipeConnection struct {
 	ConnectionImpl
 
-	From *string `cty:"from" hcl:"from"`
-	To   *string `cty:"to" hcl:"to"`
-	// if an option is passed to GetConnectionString, it may override the From and To values
+	From       *string   `cty:"from" hcl:"from"`
+	To         *string   `cty:"to" hcl:"to"`
+	Indexes    *[]string `cty:"indexes" hcl:"indexes"`
+	Partitions *[]string `cty:"partitions" hcl:"partitions"`
+
+	// if an option is passed to GetConnectionString, it may override the From, To, Indexes or Partitions values
 	OverrideFilters *TailpipeDatabaseFilters
 
 	// store a maps of connection strings, keyed by the filters used to create the db
@@ -74,6 +78,14 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	}
 	if to := filters.To; to != nil {
 		args = append(args, "--to", to.Format(time.RFC3339))
+	}
+
+	if len(filters.Indexes) > 0 {
+		args = append(args, "--index", fmt.Sprintf("\"%s\"", strings.Join(filters.Indexes, ",")))
+	}
+
+	if len(filters.Partitions) > 0 {
+		args = append(args, "--partition", fmt.Sprintf("\"%s\"", strings.Join(filters.Partitions, ",")))
 	}
 
 	// see if we already have a connection string for these filters
@@ -147,6 +159,30 @@ func (c *TailpipeConnection) Equals(otherConnection PipelingConnection) bool {
 		return false
 	}
 
+	if c.Indexes == nil && other.Indexes != nil {
+		return false
+	}
+
+	if c.Indexes != nil && other.Indexes == nil {
+		return false
+	}
+
+	if c.Indexes != nil && other.Indexes != nil && !slices.Equal(*c.Indexes, *other.Indexes) {
+		return false
+	}
+
+	if c.Partitions == nil && other.Partitions != nil {
+		return false
+	}
+
+	if c.Partitions != nil && other.Partitions == nil {
+		return false
+	}
+
+	if c.Partitions != nil && other.Partitions != nil && !slices.Equal(*c.Partitions, *other.Partitions) {
+		return false
+	}
+
 	return c.GetConnectionImpl().Equals(other.GetConnectionImpl())
 }
 
@@ -172,6 +208,14 @@ func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
 		res.To = &to
 	}
 
+	if c.Indexes != nil && len(*c.Indexes) > 0 {
+		res.Indexes = *c.Indexes
+	}
+
+	if c.Partitions != nil && len(*c.Partitions) > 0 {
+		res.Partitions = *c.Partitions
+	}
+
 	// if we have overrides, use them
 	if c.OverrideFilters != nil {
 		if c.OverrideFilters.From != nil {
@@ -184,8 +228,15 @@ func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
 				res.To = overrideTo
 			}
 		}
+
+		if len(c.OverrideFilters.Indexes) > 0 {
+			res.Indexes = c.OverrideFilters.Indexes
+		}
+
+		if len(c.OverrideFilters.Partitions) > 0 {
+			res.Partitions = c.OverrideFilters.Partitions
+		}
 	}
-	// TODO partitions and indexes https://github.com/turbot/powerpipe/issues/644
 
 	return res
 }
