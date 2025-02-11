@@ -2,9 +2,12 @@
 
 Shared Pipes Component
 
-## v2.1.0 [2025-02-02]
+## v2.1.1 [2025-02-11]
+* Get credentials from the platform-default native credentials store for turbot-hosted private plugins. ([#643](https://github.com/turbot/pipe-fittings/issues/643))
+
+## v2.1.0 [2025-02-11]
 * TailpipeConnection now supports indexes/partitions in addition to to/from. ([#632](https://github.com/turbot/pipe-fittings/issues/632)).
-* Move secrets package to from code plugin
+* Move `secrets` package from steampipe-plugin-code.
 
 ## v2.0.1 [2025-02-02]
 
