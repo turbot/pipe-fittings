@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -20,12 +21,12 @@ func Test_escapeGrokArgs(t *testing.T) {
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}")
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}"__BACKTICK__
 }
 `),
 			},
 			wantBytes: []byte(`format "custom" "c1" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
+  layout = "%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
 }
 `),
 		},
@@ -34,27 +35,27 @@ func Test_escapeGrokArgs(t *testing.T) {
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local})                   
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local}__BACKTICK__                   
 }
 `),
 			},
 			wantBytes: []byte(`format "custom" "c1" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local}"
+  layout = "%%{TIMESTAMP_ISO8601:time_local}"                   
 }
 `),
 		},
 
 		{
-			name: "single grok func call with white space before bracket end",
+			name: "single grok func call with white space before backtick",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local}    )           
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local}    __BACKTICK__
 }
 `),
 			},
 			wantBytes: []byte(`format "custom" "c1" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local}    "
+  layout = "%%{TIMESTAMP_ISO8601:time_local}    "
 }
 `),
 		},
@@ -64,12 +65,12 @@ func Test_escapeGrokArgs(t *testing.T) {
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local} "static" \[%{DATA:location}\] (other))           
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local} "static" \[%{DATA:location}\] (other)__BACKTICK__
 }
 `),
 			},
 			wantBytes: []byte(`format "custom" "c1" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local} \"static\" \\[%%{DATA:location}\\] (other)"
+  layout = "%%{TIMESTAMP_ISO8601:time_local} \"static\" \\[%%{DATA:location}\\] (other)"
 }
 `),
 		},
@@ -79,18 +80,18 @@ func Test_escapeGrokArgs(t *testing.T) {
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}")
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}"__BACKTICK__
 }
 format "custom" "c2" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}")
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}"__BACKTICK__
 }
 `),
 			},
 			wantBytes: []byte(`format "custom" "c1" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
+  layout = "%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
 }
 format "custom" "c2" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
+  layout = "%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
 }
 `),
 		},
@@ -115,10 +116,10 @@ table  "my_dynamic_log" {
 }
 
 format "custom" "c1" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}")
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}"__BACKTICK__
 }
 format "custom" "c2" {
-  layout = grok(%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}")
+  layout = __BACKTICK__%{TIMESTAMP_ISO8601:time_local} - %{NUMBER:event_id} - %{WORD:user} - \[%{DATA:location}\] "%{DATA:message}" %{WORD:severity} "%{DATA:additional_info}"__BACKTICK__
 }
 `),
 			},
@@ -139,19 +140,43 @@ table  "my_dynamic_log" {
 }
 
 format "custom" "c1" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
+  layout = "%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
 }
 format "custom" "c2" {
-  layout ="%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
+  layout = "%%{TIMESTAMP_ISO8601:time_local} - %%{NUMBER:event_id} - %%{WORD:user} - \\[%%{DATA:location}\\] \"%%{DATA:message}\" %%{WORD:severity} \"%%{DATA:additional_info}\""
+}
+`),
+		},
+		{
+			name: "arg with opening bracket",
+			args: args{
+				disableTemplatesForProps: []string{"layout"},
+				fileData: []byte(`format "custom" "vpc_log_default" {
+  layout = __BACKTICK__(?:%{TIMESTAMP_ISO8601:timestamp}\s+)?%{NUMBER:version} %{NUMBER:account_id} %{DATA:interface_id} (?:%{IP:srcaddr}|-) (?:%{IP:dstaddr}|-) (?:%{NUMBER:srcport}|-) (?:%{NUMBER:dstport}|-) (?:%{NUMBER:protocol}|-) (?:%{NUMBER:packets}|-) (?:%{NUMBER:bytes}|-) %{NUMBER:start_time} %{NUMBER:end_time} %{DATA:action} %{WORD:log_status}__BACKTICK__
+}
+`),
+			},
+			wantBytes: []byte(`format "custom" "vpc_log_default" {
+  layout = "(?:%%{TIMESTAMP_ISO8601:timestamp}\\s+)?%%{NUMBER:version} %%{NUMBER:account_id} %%{DATA:interface_id} (?:%%{IP:srcaddr}|-) (?:%%{IP:dstaddr}|-) (?:%%{NUMBER:srcport}|-) (?:%%{NUMBER:dstport}|-) (?:%%{NUMBER:protocol}|-) (?:%%{NUMBER:packets}|-) (?:%%{NUMBER:bytes}|-) %%{NUMBER:start_time} %%{NUMBER:end_time} %%{DATA:action} %%{WORD:log_status}"
 }
 `),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			escapedData := GrokEscape(tt.args.fileData, "testfile.tpc")
+			fileData := strings.ReplaceAll(string(tt.args.fileData), "__BACKTICK__", "`")
+			got, _ := GrokEscape([]byte(fileData), "testfile.tpc")
 
-			if got := escapedData; string(got) != string(tt.wantBytes) {
+			if len(got) != len(tt.wantBytes) {
+				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
+			}
+
+			for i := 0; i < len(got); i++ {
+				if got[i] != tt.wantBytes[i] {
+					t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
+				}
+			}
+			if string(got) != string(tt.wantBytes) {
 				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
 			}
 		})
