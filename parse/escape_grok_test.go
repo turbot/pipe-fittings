@@ -17,6 +17,48 @@ func Test_escapeGrokArgs(t *testing.T) {
 		wantError bool
 	}{
 		{
+			name: "in middle of string",
+			args: args{
+				disableTemplatesForProps: []string{"layout"},
+				fileData: []byte(`format "custom" "c1" {
+  layout = "something __BACKTICK__ escaped __BACKTICK__ something else"
+}
+`),
+			},
+			wantBytes: []byte(`format "custom" "c1" {
+  layout = "something __BACKTICK__ escaped __BACKTICK__ something else"
+}
+`),
+		},
+		{
+			name: "not in attribute",
+			args: args{
+				disableTemplatesForProps: []string{"layout"},
+				fileData: []byte(`format "custom" "c1" {
+  layout __BACKTICK__= "something escaped __BACKTICK__ something else"
+}
+`),
+			},
+			wantBytes: []byte(`format "custom" "c1" {
+  layout __BACKTICK__= "something escaped __BACKTICK__ something else"
+}
+`),
+		},
+		{
+			name: "halfway through string",
+			args: args{
+				disableTemplatesForProps: []string{"layout"},
+				fileData: []byte(`format "custom" "c1" {
+  layout = "something __BACKTICK__ escaped something else"
+}
+`),
+			},
+			wantBytes: []byte(`format "custom" "c1" {
+  layout = "something __BACKTICK__ escaped something else"
+}
+`),
+		},
+		{
 			name: "single grok func call",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
@@ -165,19 +207,21 @@ format "custom" "c2" {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fileData := strings.ReplaceAll(string(tt.args.fileData), "__BACKTICK__", "`")
+			want := strings.ReplaceAll(string(tt.wantBytes), "__BACKTICK__", "`")
 			got, _ := GrokEscape([]byte(fileData), "testfile.tpc")
 
-			if len(got) != len(tt.wantBytes) {
-				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
+			if len(got) != len(want) {
+				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), want)
 			}
 
 			for i := 0; i < len(got); i++ {
-				if got[i] != tt.wantBytes[i] {
-					t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
+				if got[i] != []byte(want)[i] {
+					t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), want)
+					return
 				}
 			}
-			if string(got) != string(tt.wantBytes) {
-				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), string(tt.wantBytes))
+			if string(got) != want {
+				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), want)
 			}
 		})
 	}
