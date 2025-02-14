@@ -53,7 +53,7 @@ func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, hcl.Diagnostics
 	var replacements []replacement
 
 	// Iterate over diagnostics to find Grok pattern errors
-	for _, diag := range diags {
+	for i, diag := range diags {
 		if isBacktickError(diag) {
 			// only replace if the backtick is at the start of an attribute value
 			a := getAttributeForRange(file.Body.(*hclsyntax.Body), diag.Subject)
@@ -71,8 +71,10 @@ func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, hcl.Diagnostics
 				}
 			}
 			if replaceEndByte == replaceStartByte {
-				// failed to find end backtick - ignore this diag
-				continue
+				// replace the diagnostic
+				diags[i].Summary = "Could not find closing backtick"
+				diags[i].Detail = "A backtick escape was found but the closing backtick could not be found"
+				return nil, diags
 			}
 
 			// Extract the value to be escaped
