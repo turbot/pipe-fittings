@@ -22,12 +22,4 @@ Supported formats:
   • T-9H   (9 hours ago)
   • T-10m  (10 minutes ago)
 `
-	InvalidTimeFormat = `Invalid time format
-
-Supported formats:
- • 2024-01-06
- • 2006-01-06T15:04:05
- • 2006-01-06T15:04:05.000
- • 2006-01-06T15:04:05Z07:00
-`
 )

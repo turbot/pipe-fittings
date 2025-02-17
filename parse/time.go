@@ -6,31 +6,26 @@ import (
 	"strings"
 	"time"
 
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/constants"
 )
 
 // ParseTime parses a time string into a time.Time object.
 func ParseTime(input string, now time.Time) (time.Time, error) {
-	// Handle absolute time formats
-	absoluteLayouts := []string{
-		"2006-01-02",              // ISO 8601 date
-		"2006-01-02T15:04:05",     // ISO 8601 datetime
-		"2006-01-02T15:04:05.000", // ISO 8601 datetime with milliseconds
-		time.RFC3339,              // RFC 3339 datetime with timezone
-	}
-
-	for _, layout := range absoluteLayouts {
-		if t, err := time.Parse(layout, input); err == nil {
-			return t.UTC(), nil // Normalize to UTC
-		}
-	}
-
-	// Handle relative formats
+	// short-circuit if time is relative
 	if strings.HasPrefix(input, "T-") {
 		return parseRelativeTime(input, now)
 	}
 
-	return time.Time{}, errors.New(constants.InvalidTimeFormat)
+	// Handle absolute time formats using go-kit helpers.ParseTime
+	t, err := helpers.ParseTime(input)
+	if err != nil {
+		// TODO #error improve the error message to link to docs for supported formats: https://github.com/turbot/pipe-fittings/issues/639
+		return time.Time{}, err
+	}
+
+	// normalize to UTC
+	return t.UTC(), nil
 }
 
 // parseRelativeTime parses relative time strings.
