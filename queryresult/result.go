@@ -1,15 +1,25 @@
 package queryresult
 
-import (
-	"time"
-)
+import "time"
 
 type RowResult struct {
 	Data  []interface{}
 	Error error
 }
+
 type TimingMetadata struct {
 	Duration time.Duration
+}
+
+type QueryTimingMetadata struct {
+	RowsReturned int    `json:"rows_returned"`
+	Duration     string `json:"duration_ms"`
+}
+
+// GetTiming implements TimingContainer - we implement this interface
+// to allow QueryTimingMetadata to be used to parameterize the ResultStreamer
+func (t QueryTimingMetadata) GetTiming() any {
+	return t
 }
 
 // TimingContainer is an interface that allows us to parameterize the Result struct
