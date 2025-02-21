@@ -10,7 +10,7 @@ import (
 	"sort"
 
 	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/steampipe-plugin-code/secrets"
+	"github.com/turbot/pipe-fittings/v2/secrets"
 )
 
 const RedactedStr = "REDACTED"

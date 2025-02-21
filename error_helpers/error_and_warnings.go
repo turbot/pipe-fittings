@@ -3,7 +3,6 @@ package error_helpers
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/sperr"
-	"golang.org/x/exp/slog"
 )
 
 type ErrorAndWarnings struct {
@@ -22,14 +21,6 @@ func EmptyErrorsAndWarning() ErrorAndWarnings {
 }
 
 func NewErrorsAndWarning(err error, warnings ...string) ErrorAndWarnings {
-	if err != nil {
-		slog.Error("ErrorAndWarnings", "err", err, "warnings", warnings)
-	}
-
-	if len(warnings) > 0 {
-		slog.Warn("ErrorAndWarnings", "err", err, "warnings", warnings)
-	}
-
 	return ErrorAndWarnings{
 		Error: err, Warnings: warnings,
 	}

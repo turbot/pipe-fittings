@@ -61,7 +61,7 @@ func HclDiagsToError(prefix string, diags hcl.Diagnostics) error {
 	if !diags.HasErrors() {
 		return nil
 	}
-	errStrings := diagsToString(diags, hcl.DiagError)
+	errStrings := DiagsToString(diags, hcl.DiagError)
 
 	var res string
 	if len(errStrings) > 0 {
@@ -75,7 +75,7 @@ func HclDiagsToError(prefix string, diags hcl.Diagnostics) error {
 	return diags.Errs()[0]
 }
 
-func diagsToString(diags hcl.Diagnostics, severity hcl.DiagnosticSeverity) []string { // convert the first diag into an error
+func DiagsToString(diags hcl.Diagnostics, severity hcl.DiagnosticSeverity) []string { // convert the first diag into an error
 	// store list of messages (without the range) and use for de-duping (we may get the same message for multiple ranges)
 	var msgMap = make(map[string]struct{})
 	var strs []string
@@ -103,5 +103,5 @@ func diagsToString(diags hcl.Diagnostics, severity hcl.DiagnosticSeverity) []str
 
 // HclDiagsToWarnings converts warning diags into a list of warning strings
 func HclDiagsToWarnings(diags hcl.Diagnostics) []string {
-	return diagsToString(diags, hcl.DiagWarning)
+	return DiagsToString(diags, hcl.DiagWarning)
 }
