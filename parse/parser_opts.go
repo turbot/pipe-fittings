@@ -2,7 +2,7 @@ package parse
 
 type ParseHclConfig struct {
 	disableTemplateForProperties []string
-	applyGrokFunction            bool
+	escapeBackticks              bool
 }
 type ParseHclOpt func(*ParseHclConfig)
 
@@ -16,10 +16,10 @@ func WithDisableTemplateForProperties(properties []string) ParseHclOpt {
 	}
 }
 
-// WithApplyGrokFunction is an option to specify whether the grok function should be applied to the hcl file
+// WithEscapeBackticks is an option to specify whether the grok function should be applied to the hcl file
 // this is used to escape grok expressions in the hcl file
-func WithApplyGrokFunction(applyGrokFunction bool) ParseHclOpt {
+func WithEscapeBackticks(applyGrokFunction bool) ParseHclOpt {
 	return func(c *ParseHclConfig) {
-		c.applyGrokFunction = applyGrokFunction
+		c.escapeBackticks = applyGrokFunction
 	}
 }

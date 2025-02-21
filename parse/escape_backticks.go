@@ -8,7 +8,7 @@ import (
 )
 
 // used to give warning that grok expressions should be wrapped in a 'grok' function call
-var grokConfigProperties = []string{"log_format", "file_layout", "layout"}
+//var grokConfigProperties = []string{"log_format", "file_layout", "layout"}
 
 // EscapeBackticks implements hcl backtick escaping
 // - any data between backticks will be escaped, including hcl tempate expressions %{ (which are used for grok)
