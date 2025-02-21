@@ -2,6 +2,9 @@
 
 Shared Pipes Component
 
+## v2.2.0 [2025-02-21]
+* Add `GetQueriesFromArgs` func to resolve queries from args. ([#652](https://github.com/turbot/pipe-fittings/issues/652))
+
 ## v2.1.1 [2025-02-11]
 * Get credentials from the platform-default native credentials store for turbot-hosted private plugins. ([#643](https://github.com/turbot/pipe-fittings/issues/643))
 
