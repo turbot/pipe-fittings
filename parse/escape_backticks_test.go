@@ -59,7 +59,7 @@ func Test_escapeGrokArgs(t *testing.T) {
 `),
 		},
 		{
-			name: "single grok func call",
+			name: "single backtick escape",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
@@ -73,7 +73,7 @@ func Test_escapeGrokArgs(t *testing.T) {
 `),
 		},
 		{
-			name: "single grok func call with white space at end",
+			name: "single backtick escape with white space at end",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
@@ -88,7 +88,7 @@ func Test_escapeGrokArgs(t *testing.T) {
 		},
 
 		{
-			name: "single grok func call with white space before backtick",
+			name: "single backtick escape with white space before backtick",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
@@ -103,7 +103,7 @@ func Test_escapeGrokArgs(t *testing.T) {
 		},
 
 		{
-			name: "single grok func call with brackets and quotes ",
+			name: "single backtick escape with brackets and quotes ",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
@@ -118,7 +118,7 @@ func Test_escapeGrokArgs(t *testing.T) {
 		},
 
 		{
-			name: "multiple grok func calls",
+			name: "multiple backtick escapes",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`format "custom" "c1" {
@@ -138,7 +138,7 @@ format "custom" "c2" {
 `),
 		},
 		{
-			name: "multiple grok func calls with additional blocks",
+			name: "multiple backtick escapes with additional blocks",
 			args: args{
 				disableTemplatesForProps: []string{"layout"},
 				fileData: []byte(`partition "my_dynamic_log" "test"{
@@ -208,20 +208,20 @@ format "custom" "c2" {
 		t.Run(tt.name, func(t *testing.T) {
 			fileData := strings.ReplaceAll(string(tt.args.fileData), "__BACKTICK__", "`")
 			want := strings.ReplaceAll(string(tt.wantBytes), "__BACKTICK__", "`")
-			got, _ := GrokEscape([]byte(fileData), "testfile.tpc")
+			got, _ := EscapeBackticks([]byte(fileData), "testfile.tpc")
 
 			if len(got) != len(want) {
-				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), want)
+				t.Errorf("EscapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
 			}
 
 			for i := 0; i < len(got); i++ {
 				if got[i] != []byte(want)[i] {
-					t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), want)
+					t.Errorf("EscapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
 					return
 				}
 			}
 			if string(got) != want {
-				t.Errorf("GrokEscape() = \n%v\n, want \n%v\n", string(got), want)
+				t.Errorf("EscapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
 			}
 		})
 	}

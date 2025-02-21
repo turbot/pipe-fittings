@@ -10,20 +10,18 @@ import (
 // used to give warning that grok expressions should be wrapped in a 'grok' function call
 var grokConfigProperties = []string{"log_format", "file_layout", "layout"}
 
-// GrokEscape is the implementation of the hcl 'grok' function
-// which is used to wrap grok expressions and escape the Grok pattern so the hcl parse does not fail
-// NOTE: we must implement this explicitly as part of the parse rather than a standard context function as
-// a grok pattern containing the string "%{" will cause the initial hcl parse to fail
-func GrokEscape(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
+// EscapeBackticks implements hcl backtick escaping
+// - any data between backticks will be escaped, including hcl tempate expressions %{ (which are used for grok)
+func EscapeBackticks(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	// clone fileData
 	fileData := make([]byte, len(f))
 	copy(fileData, f)
 
 	for {
-		// because the parse will return errors for a single attribute at a time, we may need to call doEscapeGrokArgs
+		// because the parse will return errors for a single attribute at a time, we may need to call doEscapeBackticks
 		// multiple times
 
-		updatedFileData, diags := doEscapeGrokArgs(fileData, filePath)
+		updatedFileData, diags := doEscapeBackticks(fileData, filePath)
 		if diags.HasErrors() {
 			return fileData, diags
 		}
@@ -35,7 +33,7 @@ func GrokEscape(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	}
 }
 
-func doEscapeGrokArgs(fileData []byte, filePath string) ([]byte, hcl.Diagnostics) {
+func doEscapeBackticks(fileData []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	// Parse HCL file without caching
 	file, diags := hclsyntax.ParseConfig(fileData, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 

@@ -76,7 +76,7 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 
 			// check for grok function calls - execute these to escape grok expressions
 			if config.applyGrokFunction {
-				fileData, moreDiags = GrokEscape(fileDataMap[filePath], filePath)
+				fileData, moreDiags = EscapeBackticks(fileDataMap[filePath], filePath)
 				if moreDiags.HasErrors() {
 					diags = append(diags, moreDiags...)
 					continue
