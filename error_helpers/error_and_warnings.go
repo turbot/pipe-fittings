@@ -37,7 +37,6 @@ func NewErrorsAndWarning(err error, warnings ...string) ErrorAndWarnings {
 
 func (r *ErrorAndWarnings) WrapErrorWithMessage(msg string) ErrorAndWarnings {
 	if r.Error != nil {
-		//nolint: govet // we are wrapping the error
 		r.Error = sperr.WrapWithMessage(r.Error, msg)
 	}
 	return *r
