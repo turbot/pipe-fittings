@@ -3,5 +3,5 @@ package constants
 import "time"
 
 const (
-	PluginStartTimeout = 30 * time.Second
+	PluginStartTimeout = 3 * time.Minute
 )
