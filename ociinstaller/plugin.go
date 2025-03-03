@@ -66,7 +66,7 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 	sub <- struct{}{}
 	var metadata *map[string][]string
 	if config.getMetadataFunc != nil {
-		metadata, err = config.getMetadataFunc()
+		metadata, err = config.getMetadataFunc(ctx, ref.GetFriendlyName())
 		if err != nil {
 			return nil, fmt.Errorf("plugin installation failed: %s", err)
 		}

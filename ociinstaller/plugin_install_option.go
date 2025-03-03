@@ -1,8 +1,12 @@
 package ociinstaller
 
+import (
+	"context"
+)
+
 type pluginInstallConfig struct {
 	skipConfigFile  bool
-	getMetadataFunc func() (*map[string][]string, error)
+	getMetadataFunc func(context.Context, string) (*map[string][]string, error)
 }
 
 type PluginInstallOption = func(config *pluginInstallConfig)
@@ -13,7 +17,7 @@ func WithSkipConfig(skipConfigFile bool) PluginInstallOption {
 	}
 }
 
-func WithGetMetadataFunc(getMetadataFunc func() (*map[string][]string, error)) PluginInstallOption {
+func WithGetMetadataFunc(getMetadataFunc func(context.Context, string) (*map[string][]string, error)) PluginInstallOption {
 	return func(o *pluginInstallConfig) {
 		o.getMetadataFunc = getMetadataFunc
 	}
