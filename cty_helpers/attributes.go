@@ -47,22 +47,22 @@ func GetCtyTypes(item interface{}) (_ map[string]cty.Type, err error) {
 
 // GetCtyValue converts the item into a cty value
 func GetCtyValue(item interface{}) (cty.Value, error) {
-	// build the block schema
-	var block = configschema.Block{Attributes: make(map[string]*configschema.Attribute)}
-
+	// reflect on the item to get the cty types as specified in cty tags
 	types, err := GetCtyTypes(item)
 	if err != nil {
 		return cty.NilVal, err
 	}
-	// get the hcl attributes - these include the cty type
+
+	// build the block schema
+	var block = configschema.Block{Attributes: make(map[string]*configschema.Attribute)}
 	for attribute, ctyType := range types {
-		// TODO how to determine optional?
 		block.Attributes[attribute] = &configschema.Attribute{Optional: true, Type: ctyType}
 	}
 
 	// get cty spec
 	spec := block.DecoderSpec()
+	// convert the spec to cty type
 	ty := hcldec.ImpliedType(spec)
-
+	// now convert the item to cty value
 	return gocty.ToCtyValue(item, ty)
 }

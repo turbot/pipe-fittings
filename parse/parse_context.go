@@ -267,18 +267,26 @@ func (p *ParseContext) SetBlockTypes(blockTypes ...string) {
 	}
 }
 
-func (m *ParseContext) SetBlockTypeExclusions(blockTypes ...string) {
-	m.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
+func (p *ParseContext) SetBlockTypeExclusions(blockTypes ...string) {
+	p.blockTypeExclusions = make(map[string]struct{}, len(blockTypes))
 	for _, t := range blockTypes {
-		m.blockTypeExclusions[t] = struct{}{}
+		p.blockTypeExclusions[t] = struct{}{}
 	}
 }
 
 // GetResourceCtyValue converts a HclResource into a cty value, taking into account nested structs
-func (m *ParseContext) GetResourceCtyValue(resource modconfig.HclResource) (cty.Value, hcl.Diagnostics) {
-	ctyValue, err := resource.(modconfig.CtyValueProvider).CtyValue()
+func (p *ParseContext) GetResourceCtyValue(resource modconfig.HclResource) (cty.Value, hcl.Diagnostics) {
+	ctyValueProvider, ok := resource.(modconfig.CtyValueProvider)
+	if !ok {
+		return cty.NilVal, hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("resource '%s' does not provide a cty value", resource.Name()),
+			Subject:  resource.GetDeclRange(),
+		}}
+	}
+	ctyValue, err := ctyValueProvider.CtyValue()
 	if err != nil {
-		return cty.Zero, m.errToCtyValueDiags(resource, err)
+		return cty.Zero, p.errToCtyValueDiags(resource, err)
 	}
 	// if this is a value map, merge in the values of base structs
 	// if it is NOT a value map, the resource must have overridden CtyValue so do not merge base structs
@@ -292,15 +300,15 @@ func (m *ParseContext) GetResourceCtyValue(resource modconfig.HclResource) (cty.
 	// get all nested structs (i.e. HclResourceImpl, ModTreeItemImpl and QueryProviderImpl - if this resource contains them)
 	nestedStructs := resource.GetNestedStructs()
 	for _, base := range nestedStructs {
-		if err := m.mergeResourceCtyValue(base, valueMap); err != nil {
-			return cty.Zero, m.errToCtyValueDiags(resource, err)
+		if err := p.mergeResourceCtyValue(base, valueMap); err != nil {
+			return cty.Zero, p.errToCtyValueDiags(resource, err)
 		}
 	}
 
 	return cty.ObjectVal(valueMap), nil
 }
 
-func (m *ParseContext) errToCtyValueDiags(resource modconfig.HclResource, err error) hcl.Diagnostics {
+func (p *ParseContext) errToCtyValueDiags(resource modconfig.HclResource, err error) hcl.Diagnostics {
 	return hcl.Diagnostics{&hcl.Diagnostic{
 		Severity: hcl.DiagError,
 		Summary:  fmt.Sprintf("failed to convert resource '%s' to its cty value", resource.Name()),
@@ -311,7 +319,7 @@ func (m *ParseContext) errToCtyValueDiags(resource modconfig.HclResource, err er
 
 // merge the cty value of the given interface into valueMap
 // (note: this mutates valueMap)
-func (m *ParseContext) mergeResourceCtyValue(resource modconfig.CtyValueProvider, valueMap map[string]cty.Value) (err error) {
+func (p *ParseContext) mergeResourceCtyValue(resource modconfig.CtyValueProvider, valueMap map[string]cty.Value) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("panic in mergeResourceCtyValue: %s", helpers.ToError(r).Error())
