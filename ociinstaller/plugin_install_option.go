@@ -2,7 +2,7 @@ package ociinstaller
 
 type pluginInstallConfig struct {
 	skipConfigFile  bool
-	getMetadataFunc func() (*map[string]string, error)
+	getMetadataFunc func() (*map[string][]string, error)
 }
 
 type PluginInstallOption = func(config *pluginInstallConfig)
@@ -13,7 +13,7 @@ func WithSkipConfig(skipConfigFile bool) PluginInstallOption {
 	}
 }
 
-func WithGetMetadataFunc(getMetadataFunc func() (*map[string]string, error)) PluginInstallOption {
+func WithGetMetadataFunc(getMetadataFunc func() (*map[string][]string, error)) PluginInstallOption {
 	return func(o *pluginInstallConfig) {
 		o.getMetadataFunc = getMetadataFunc
 	}
