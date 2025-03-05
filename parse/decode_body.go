@@ -30,20 +30,20 @@ func DecodeHclBody(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider mod
 	moreDiags = validateHcl(resource.GetBlockType(), body.(*hclsyntax.Body), schema)
 	diags = append(diags, moreDiags...)
 
-	moreDiags = decodeHclBodyIntoStruct(body, evalCtx, resourceProvider, resource)
+	moreDiags = DecodeHclBodyIntoStruct(body, evalCtx, resourceProvider, resource)
 	diags = append(diags, moreDiags...)
 
 	for _, nestedStruct := range nestedStructs {
-		moreDiags := decodeHclBodyIntoStruct(body, evalCtx, resourceProvider, nestedStruct)
+		moreDiags := DecodeHclBodyIntoStruct(body, evalCtx, resourceProvider, nestedStruct)
 		diags = append(diags, moreDiags...)
 	}
 
 	return diags
 }
 
-func decodeHclBodyIntoStruct(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceProvider, resource any) hcl.Diagnostics {
+func DecodeHclBodyIntoStruct(body hcl.Body, evalCtx *hcl.EvalContext, resourceProvider modconfig.ResourceProvider, resource any) hcl.Diagnostics {
 	var diags hcl.Diagnostics
-	// call decodeHclBodyIntoStruct to do actual decode
+	// call DecodeHclBodyIntoStruct to do actual decode
 	moreDiags := gohcl.DecodeBody(body, evalCtx, resource)
 	diags = append(diags, moreDiags...)
 
