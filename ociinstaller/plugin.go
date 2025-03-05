@@ -64,7 +64,15 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 		}
 	}
 	sub <- struct{}{}
-	if err := updatePluginVersionFiles(ctx, image, constraint); err != nil {
+	metadata := make(map[string][]string)
+	// if we have a get metadata function, call it to get the metadata
+	if config.getMetadataFunc != nil {
+		metadata, err = config.getMetadataFunc(ctx, ref.GetFriendlyName())
+		if err != nil {
+			return nil, fmt.Errorf("plugin installation failed: %s", err)
+		}
+	}
+	if err = updatePluginVersionFiles(ctx, image, constraint, metadata); err != nil {
 		return nil, err
 	}
 	return image, nil
@@ -72,7 +80,7 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 
 // updatePluginVersionFiles updates the global versions.json to add installation of the plugin
 // also adds a version file in the plugin installation directory with the information
-func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage, *PluginImageConfig], constraint string) error {
+func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage, *PluginImageConfig], constraint string, metadata map[string][]string) error {
 	versionFileUpdateLock.Lock()
 	defer versionFileUpdateLock.Unlock()
 
@@ -99,6 +107,7 @@ func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage,
 	installedVersion.InstalledFrom = image.ImageRef.ActualImageRef()
 	installedVersion.LastCheckedDate = timeNow
 	installedVersion.InstallDate = timeNow
+	installedVersion.Metadata = metadata
 
 	v.Plugins[pluginFullName] = installedVersion
 
