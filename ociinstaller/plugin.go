@@ -64,7 +64,8 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 		}
 	}
 	sub <- struct{}{}
-	var metadata *map[string][]string
+	metadata := make(map[string][]string)
+	// if we have a get metadata function, call it to get the metadata
 	if config.getMetadataFunc != nil {
 		metadata, err = config.getMetadataFunc(ctx, ref.GetFriendlyName())
 		if err != nil {
@@ -79,7 +80,7 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 
 // updatePluginVersionFiles updates the global versions.json to add installation of the plugin
 // also adds a version file in the plugin installation directory with the information
-func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage, *PluginImageConfig], constraint string, metadata *map[string][]string) error {
+func updatePluginVersionFiles(ctx context.Context, image *OciImage[*PluginImage, *PluginImageConfig], constraint string, metadata map[string][]string) error {
 	versionFileUpdateLock.Lock()
 	defer versionFileUpdateLock.Unlock()
 
