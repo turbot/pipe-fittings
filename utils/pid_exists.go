@@ -17,7 +17,7 @@ func PidExists(targetPid int) bool {
 	LogTime("utils.PidExists start")
 	defer LogTime("utils.PidExists end")
 
-	_, err := psutils.NewProcess(int32(targetPid)) //nolint: gosec	// TODO check integer overflow conversion int -> int32
+	_, err := psutils.NewProcess(int32(targetPid)) //nolint: gosec	// pid will fit into int32
 	return err == nil
 }
 
