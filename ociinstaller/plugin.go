@@ -67,7 +67,7 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 	metadata := make(map[string][]string)
 	// if we have a get metadata function, call it to get the metadata
 	if config.getMetadataFunc != nil {
-		metadata, err = config.getMetadataFunc(ctx, ref.GetFriendlyName())
+		metadata, err = config.getMetadataFunc(ctx, constraintRef)
 		if err != nil {
 			return nil, fmt.Errorf("plugin installation failed: %s", err)
 		}
