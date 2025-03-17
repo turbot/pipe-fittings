@@ -118,7 +118,8 @@ func resolveReferences(body hcl.Body, modResourcesProvider modconfig.ResourcePro
 				if hclVal, ok := attributes[hclAttribute]; ok {
 					if scopeTraversal, ok := hclVal.Expr.(*hclsyntax.ScopeTraversalExpr); ok {
 						path := hclhelpers.TraversalAsString(scopeTraversal.Traversal)
-						if parsedName, err := modconfig.ParseResourceName(path); err == nil {
+						// parse the resource name - using the app specific parser
+						if parsedName, err := ParseResourceName(path); err == nil {
 							if r, ok := modResourcesProvider.GetResource(parsedName); ok {
 								f := rv.FieldByName(field.Name)
 								if f.IsValid() && f.CanSet() {

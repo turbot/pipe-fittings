@@ -209,7 +209,7 @@ func (m *Mod) SetModResources(modResources ModResources) {
 	m.Resources = modResources
 }
 
-func (m *Mod) GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool) {
+func (m *Mod) GetResource(parsedName ResourceNameProvider) (resource HclResource, found bool) {
 	return m.Resources.GetResource(parsedName)
 }
 
