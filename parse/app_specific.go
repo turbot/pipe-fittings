@@ -13,7 +13,6 @@ var AppSpecificGetResourceSchemaFunc func(resource modconfig.HclResource, bodySc
 
 // ParseResourceName provides a mechanism to override the resource name parser used by DecodeHclBody
 // it is set by Tailpipe to use its own ParsedResourceName type
-// TODO extend ResourceNameProvider to allow replacement of modconfig.ParseResourceName throughout the parse package
 var ParseResourceName = func(propertyPath string) (modconfig.ResourceNameProvider, error) {
 	return modconfig.ParseResourceName(propertyPath)
 }

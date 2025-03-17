@@ -119,6 +119,9 @@ func resolveReferences(body hcl.Body, modResourcesProvider modconfig.ResourcePro
 					if scopeTraversal, ok := hclVal.Expr.(*hclsyntax.ScopeTraversalExpr); ok {
 						path := hclhelpers.TraversalAsString(scopeTraversal.Traversal)
 						// parse the resource name - using the app specific parser
+						// (ParseResourceName is a package global variable which defaults to modconfig.ParseResourceName
+						// but is overridden by tailpipe so that when Tailpipe calls DecodeHclBody it uses
+						// it's own implementation of ParsedResourceName, which does not expect a mod name)
 						if parsedName, err := ParseResourceName(path); err == nil {
 							if r, ok := modResourcesProvider.GetResource(parsedName); ok {
 								f := rv.FieldByName(field.Name)
