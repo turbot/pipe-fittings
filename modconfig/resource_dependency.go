@@ -49,30 +49,3 @@ func isRunTimeDependencyProperty(propertyPath *ParsedPropertyPath) bool {
 	}
 	return false
 }
-
-// getPropertiesFromContent finds any attributes in the given content which depend on this dependency
-//
-//nolint:unused // TODO: unused function
-func (d *ResourceDependency) getPropertiesFromContent(content *hcl.BodyContent) []string {
-	var res []string
-	for _, a := range content.Attributes {
-		vars := a.Expr.Variables()
-		if len(d.Traversals) != len(vars) {
-			break
-		}
-		// build map of paths
-		var traversalMap = make(map[string]bool, len(vars))
-		for _, t := range vars {
-			traversalMap[hclhelpers.TraversalAsString(t)] = true
-		}
-		for _, t := range d.Traversals {
-			if !traversalMap[hclhelpers.TraversalAsString(t)] {
-				return res
-			}
-		}
-
-		// ok so traversals match!
-		res = append(res, a.Name)
-	}
-	return res
-}
