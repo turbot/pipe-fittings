@@ -34,7 +34,7 @@ dep_loop:
 			// TACTICAL
 			// handle the case where an arg value is given as a runtime dependency inside an array, for example
 			// arns = [input.arn]
-			// this is a common pattern where a runtime depdency gives a scalar value, but an array is needed for the arg
+			// this is a common pattern where a runtime depedency gives a scalar value, but an array is needed for the arg
 			// NOTE: this code only supports a SINGLE item in the array
 			if len(e.Exprs) != 1 {
 				return false, nil, fmt.Errorf("unsupported runtime dependency expression - only a single runtime dependency item may be wrapped in an array")
