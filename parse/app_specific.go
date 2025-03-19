@@ -10,3 +10,9 @@ import (
 var ModDecoderFunc func(...DecoderOption) Decoder
 
 var AppSpecificGetResourceSchemaFunc func(resource modconfig.HclResource, bodySchema *hcl.BodySchema) *hcl.BodySchema
+
+// AppSpecificParseResourceNameFunc provides a mechanism to override the resource name parser used by DecodeHclBody
+// it is set by Tailpipe to use its own ParsedResourceName type
+var AppSpecificParseResourceNameFunc = func(propertyPath string) (modconfig.ResourceNameProvider, error) {
+	return modconfig.ParseResourceName(propertyPath)
+}
