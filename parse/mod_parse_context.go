@@ -439,7 +439,7 @@ func (m *ModParseContext) setModResources() {
 	m.modResources = modconfig.NewModResources(m.CurrentMod, sourceModResources...)
 }
 
-func (m *ModParseContext) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
+func (m *ModParseContext) GetResource(parsedName modconfig.ResourceNameProvider) (resource modconfig.HclResource, found bool) {
 	return m.GetModResources().GetResource(parsedName)
 }
 
