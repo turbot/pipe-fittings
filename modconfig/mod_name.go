@@ -35,7 +35,7 @@ func BuildModDependencyPath(dependencyName string, version *DependencyVersion) s
 	return dependencyName
 }
 
-// ParseModDependencyPath converts a mod depdency path of form github.com/turbot/steampipe-mod-m2@v1.0.0
+// ParseModDependencyPath converts a mod depedency path of form github.com/turbot/steampipe-mod-m2@v1.0.0
 // into the dependency name (github.com/turbot/steampipe-mod-m2) and version
 func ParseModDependencyPath(fullName string) (string, *DependencyVersion, error) {
 	switch {
