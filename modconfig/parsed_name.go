@@ -21,6 +21,7 @@ type ResourceNameParser interface {
 	GetMod() string
 	GetItemType() string
 	GetName() string
+	GetSubType() string
 }
 
 // ParsedResourceName is a container struct which holds the parsed resource name.
@@ -56,6 +57,10 @@ func (p ParsedResourceName) ToFullName() string {
 
 func (p ParsedResourceName) ToFullNameWithMod(mod string) string {
 	return p.impl.ToFullNameWithMod(mod)
+}
+
+func (p ParsedResourceName) GetSubType() string {
+	return p.impl.GetSubType()
 }
 
 func parseResourceNameWithMod(fullName string) (ResourceNameParser, error) {
@@ -110,6 +115,10 @@ func (p *ParsedResourceNameWithMod) GetMod() string {
 
 func (p *ParsedResourceNameWithMod) GetItemType() string {
 	return p.ItemType
+}
+
+func (p *ParsedResourceNameWithMod) GetSubType() string {
+	return ""
 }
 
 func (p *ParsedResourceNameWithMod) GetName() string {
