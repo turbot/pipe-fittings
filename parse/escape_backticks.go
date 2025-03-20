@@ -83,7 +83,7 @@ func doEscapeBackticks(fileData []byte, filePath string) ([]byte, hcl.Diagnostic
 			escapedAttr = strings.TrimPrefix(escapedAttr, "`")
 			escapedAttr = strings.TrimSuffix(escapedAttr, "`")
 			// Efficiently escape "%{" while keeping existing "%%{" unchanged
-			escapedAttr = escapeGrokCapturePattern(escapedAttr)
+			escapedAttr = escapeTemplateAndInterpolationPatterns(escapedAttr)
 			// Add quotes and escape the string
 			escapedAttr = strconv.Quote(escapedAttr)
 
@@ -108,13 +108,16 @@ func isBacktickError(diag *hcl.Diagnostic) bool {
 	return strings.HasPrefix(diag.Detail, "The \"`\" character is not valid.")
 }
 
-// escapeGrokCapturePattern ensures "%{" is escaped as "%%{" but does NOT double-escape existing "%%{"
-func escapeGrokCapturePattern(input string) string {
+// escapeTemplateAndInterpolationPatterns ensures "%{" is escaped as "%%{" and "${" as "$${" in the input string.
+// NOTE: we DO NOT escape "%%{" or "$${" as they are already escaped.
+func escapeTemplateAndInterpolationPatterns(input string) string {
 	var sb strings.Builder
 	n := len(input)
 
 	for i := 0; i < n; i++ {
 		if input[i] == '%' && i+1 < n && input[i+1] == '{' {
+			// escape "%{" to "%%{" but not if it's already "%%{"
+
 			// If it's already "%%{", keep it as is
 			if i > 0 && input[i-1] == '%' {
 				sb.WriteString("%{") // Keep it unchanged
@@ -122,7 +125,18 @@ func escapeGrokCapturePattern(input string) string {
 				sb.WriteString("%%{") // Escape "%{" to "%%{"
 			}
 			i++ // Skip '{' since we already processed it
+		} else if input[i] == '$' && i+1 < n && input[i+1] == '{' {
+			// escape "${" to "$${" but not if it's already "$${"
+
+			// If it's already "$${", keep it as is
+			if i > 0 && input[i-1] == '$' {
+				sb.WriteString("${") // Keep it unchanged
+			} else {
+				sb.WriteString("$${") // Escape "${" to "$${"
+			}
+			i++ // Skip '{' since we already processed it
 		} else {
+			// Copy the character as is
 			sb.WriteByte(input[i])
 		}
 	}
