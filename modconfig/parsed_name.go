@@ -8,17 +8,62 @@ import (
 	"github.com/turbot/pipe-fittings/v2/schema"
 )
 
+// ResourceNameParseFunc provides a mechanism for an app using pipe-fittings to override the default resource name parsing behavior.
+// the default is to parse the resource name as <mod>.<block_type>.<name>.
+// Tailpipe (for example) does not have mods, and some resources have subtypes. So, it provides its own resource name parser
+// but for backwards compatibility, we provide a way to plug a new parser into the existing struct.
+var ResourceNameParseFunc = parseResourceNameWithMod
+
+type ResourceNameParser interface {
+	ToResourceName() string
+	ToFullName() string
+	ToFullNameWithMod(mod string) string
+	GetMod() string
+	GetItemType() string
+	GetName() string
+}
+
+// ParsedResourceName is a container struct which holds the parsed resource name.
 type ParsedResourceName struct {
+	impl     ResourceNameParser
 	Mod      string
 	ItemType string
 	Name     string
 }
 
-func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
-	if fullName == "" {
-		return &ParsedResourceName{}, nil
+func ParseResourceName(fullName string) (*ParsedResourceName, error) {
+
+	parsed, err := ResourceNameParseFunc(fullName)
+	if err != nil {
+		return nil, err
 	}
-	res = &ParsedResourceName{}
+	res := &ParsedResourceName{
+		impl:     parsed,
+		Mod:      parsed.GetMod(),
+		ItemType: parsed.GetItemType(),
+		Name:     parsed.GetName(),
+	}
+	return res, nil
+}
+
+func (p ParsedResourceName) ToResourceName() string {
+	return p.impl.ToResourceName()
+}
+
+func (p ParsedResourceName) ToFullName() string {
+	return p.impl.ToFullName()
+}
+
+func (p ParsedResourceName) ToFullNameWithMod(mod string) string {
+	return p.impl.ToFullNameWithMod(mod)
+}
+
+func parseResourceNameWithMod(fullName string) (ResourceNameParser, error) {
+	p := &ParsedResourceNameWithMod{}
+	if fullName == "" {
+		return p, nil
+	}
+	var err error
 
 	parts := strings.Split(fullName, ".")
 
@@ -26,14 +71,14 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 	case 0:
 		err = perr.BadRequestWithMessage("empty name passed to ParseResourceName")
 	case 1:
-		res.Name = parts[0]
+		p.Name = parts[0]
 	case 2:
-		res.ItemType = parts[0]
-		res.Name = parts[1]
+		p.ItemType = parts[0]
+		p.Name = parts[1]
 	case 3:
-		res.Mod = parts[0]
-		res.ItemType = parts[1]
-		res.Name = parts[2]
+		p.Mod = parts[0]
+		p.ItemType = parts[1]
+		p.Name = parts[2]
 	case 4:
 		// this only applies for Triggers and Integration (as of 2023/09/13)
 		// mod_name.trigger.schedule.trigger__name
@@ -41,34 +86,56 @@ func ParseResourceName(fullName string) (res *ParsedResourceName, err error) {
 		if parts[1] != schema.BlockTypeTrigger && parts[1] != schema.BlockTypeIntegration && parts[1] != schema.BlockTypeCredential {
 			err = perr.BadRequestWithMessage(fmt.Sprintf("invalid name passed to ParseResourceName '%s' ", fullName))
 		}
-		res.Mod = parts[0]
-		res.ItemType = parts[1]
-		res.Name = parts[2] + "." + parts[3]
+		p.Mod = parts[0]
+		p.ItemType = parts[1]
+		p.Name = parts[2] + "." + parts[3]
 	default:
 		err = perr.BadRequestWithMessage(fmt.Sprintf("invalid name passed to ParseResourceName '%s'", fullName))
 	}
-	return
+
+	return p, err
 }
 
-func (p *ParsedResourceName) ToResourceName() string {
+// ParsedResourceNameWithMod is the default resource name parser implementation
+// which handles resource names with a mod prefix.
+type ParsedResourceNameWithMod struct {
+	Mod      string
+	ItemType string
+	Name     string
+}
+
+func (p *ParsedResourceNameWithMod) GetMod() string {
+	return p.Mod
+}
+
+func (p *ParsedResourceNameWithMod) GetItemType() string {
+	return p.ItemType
+}
+
+func (p *ParsedResourceNameWithMod) GetName() string {
+	return p.Name
+}
+
+func (p *ParsedResourceNameWithMod) ToResourceName() string {
 	return BuildModResourceName(p.ItemType, p.Name)
 }
 
-func (p *ParsedResourceName) ToFullName() string {
+func (p *ParsedResourceNameWithMod) ToFullName() string {
 	if p.Mod == "" {
 		return p.ToResourceName()
 	}
-	return BuildFullResourceName(p.Mod, p.ItemType, p.Name)
+	return buildFullResourceName(p.Mod, p.ItemType, p.Name)
 }
-func (p *ParsedResourceName) ToFullNameWithMod(mod string) string {
+
+func (p *ParsedResourceNameWithMod) ToFullNameWithMod(mod string) string {
 	// use existing mod if set
 	if p.Mod != "" {
 		return p.ToFullName()
 	}
-	return BuildFullResourceName(mod, p.ItemType, p.Name)
+	return buildFullResourceName(mod, p.ItemType, p.Name)
 }
 
-func BuildFullResourceName(mod, blockType, name string) string {
+func buildFullResourceName(mod, blockType, name string) string {
 	return fmt.Sprintf("%s.%s.%s", mod, blockType, name)
 }
 

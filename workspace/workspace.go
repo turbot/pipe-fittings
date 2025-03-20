@@ -378,6 +378,6 @@ func (w *Workspace) GetModResources() modconfig.ModResources {
 	return w.Mod.GetModResources()
 }
 
-func (w *Workspace) GetResource(parsedName modconfig.ResourceNameProvider) (resource modconfig.HclResource, found bool) {
+func (w *Workspace) GetResource(parsedName *modconfig.ParsedResourceName) (resource modconfig.HclResource, found bool) {
 	return w.GetModResources().GetResource(parsedName)
 }

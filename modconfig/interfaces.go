@@ -77,7 +77,7 @@ type ResourceWithMetadata interface {
 type ModResources interface {
 	WalkResources(resourceFunc func(item HclResource) (bool, error)) error
 	AddResource(item HclResource) hcl.Diagnostics
-	GetResource(parsedName ResourceNameProvider) (resource HclResource, found bool)
+	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 	Equals(other ModResources) bool
 	AddReference(ref *ResourceReference)
 	GetReferences() map[string]*ResourceReference
@@ -89,13 +89,9 @@ type ModResources interface {
 
 type ModResourcesProvider interface {
 	GetModResources() ModResources
-	GetResource(parsedName ResourceNameProvider) (resource HclResource, found bool)
+	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }
 
 type ResourceProvider interface {
-	GetResource(parsedName ResourceNameProvider) (resource HclResource, found bool)
-}
-
-type ResourceNameProvider interface {
-	ToResourceName() string
+	GetResource(parsedName *ParsedResourceName) (resource HclResource, found bool)
 }
