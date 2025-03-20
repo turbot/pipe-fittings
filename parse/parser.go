@@ -109,8 +109,7 @@ func applyDisableTemplateForProperties(fileData []byte, filePath string, config 
 	if string(updatedFileData) != string(fileData) {
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagWarning,
-			Summary:  "File layout containing '${' should be wrapped in backticks",
-			Detail:   fmt.Sprintf("The file %q contains a file layout property which is not wrapped in backticks. This has been escaped for you, however this will be deprecated in a future version. Please use backticks to escape the property.", filePath),
+			Summary:  fmt.Sprintf("The file %q contains a file_layout property containing hcl reserved characters. This has been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.", filePath),
 		})
 	}
 	fileData = updatedFileData
