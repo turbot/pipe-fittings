@@ -1,17 +1,19 @@
 # pipe-fittings
 
-Shared components for use across pipe projects.
+Shared components for use across Turbot Pipes projects.
 
 ## Related Projects
 
-* [Steampipe](https://github.com/turbot/steampipe)
 * [Flowpipe](https://github.com/turbot/flowpipe)
+* [Powerpipe](https://github.com/turbot/powerpipe)
+* [Steampipe](https://github.com/turbot/steampipe)
+* [Tailpipe](https://github.com/turbot/tailpipe)
 
 ## Open Source & Contributing
 
 This repository is published under the [AGPL 3.0](https://www.gnu.org/licenses/agpl-3.0.html) license. Please see our [code of conduct](https://github.com/turbot/.github/blob/main/CODE_OF_CONDUCT.md). Contributors must sign our [Contributor License Agreement](https://turbot.com/open-source#cla) as part of their first pull request. We look forward to collaborating with you!
 
-[Steampipe](https://steampipe.io) is a product produced from this open source software, exclusively by [Turbot HQ, Inc](https://turbot.com). It is distributed under our commercial terms. Others are allowed to make their own distribution of the software, but cannot use any of the Turbot trademarks, cloud services, etc. You can learn more in our [Open Source FAQ](https://turbot.com/open-source).
+[Flowpipe](https://flowpipe.io), [Powerpipe](https://powerpipe.io), [Steampipe](https://steampipe.io) and [Tailpipe](https://tailpipe.io) are products produced from this open source software, exclusively by [Turbot HQ, Inc](https://turbot.com). They are distributed under our commercial terms. Others are allowed to make their own distribution of the software, but cannot use any of the Turbot trademarks, cloud services, etc. You can learn more in our [Open Source FAQ](https://turbot.com/open-source).
 
 ## Get Involved
 
