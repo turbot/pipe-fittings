@@ -211,7 +211,13 @@ func newJSONOutput() *jsonOutput {
 	}
 }
 
-func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (int, int) {
+	jsonOutput, rowCount, rowErrors := BuildJSON(ctx, result)
+	fmt.Println(jsonOutput) //nolint:forbidigo // intentional use of fmt
+	return rowCount, rowErrors
+}
+
+func BuildJSON[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (op string, rowCount, rowErrors int) {
 	jsonOutput := newJSONOutput()
 
 	// add column defs to the JSON output
@@ -244,7 +250,7 @@ func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *que
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
-		return 0, rowErrors
+		return "", 0, rowErrors
 	}
 
 	// now we have iterated the rows, get the timing
@@ -252,21 +258,29 @@ func displayJSON[T queryresult.TimingContainer](ctx context.Context, result *que
 		jsonOutput.Metadata = result.Timing.GetTiming()
 	}
 
-	// display the JSON
-	encoder := json.NewEncoder(os.Stdout)
+	// Encode the JSON output
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
 	encoder.SetIndent("", " ")
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(jsonOutput); err != nil {
 		//nolint:forbidigo // acceptable
-		fmt.Print("Error displaying result as JSON", err)
-		return 0, 0
+		fmt.Print("Error building JSON result", err)
+		return "", 0, 0
 	}
-	return count, rowErrors
+	return buf.String(), count, rowErrors
 }
 
-func displayCSV[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
+func displayCSV[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (int, int) {
+	csvOutput, rowCount, rowErrors := BuildCSV(ctx, result)
+	fmt.Print(csvOutput) //nolint:forbidigo // Print to stdout
+	return rowCount, rowErrors
+}
 
-	csvWriter := csv.NewWriter(os.Stdout)
+func BuildCSV[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (op string, rowCount, rowErrors int) {
+
+	var buf bytes.Buffer
+	csvWriter := csv.NewWriter(&buf)
 	csvWriter.Comma = []rune(viper.GetString(pconstants.ArgSeparator))[0]
 
 	if viper.GetBool(constants.ArgHeader) {
@@ -285,15 +299,15 @@ func displayCSV[T queryresult.TimingContainer](ctx context.Context, result *quer
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
-		return 0, rowErrors
+		return "", 0, rowErrors
 	}
 
 	csvWriter.Flush()
 	if csvWriter.Error() != nil {
-		error_helpers.ShowErrorWithMessage(ctx, csvWriter.Error(), "unable to print csv")
+		error_helpers.ShowErrorWithMessage(ctx, csvWriter.Error(), "unable to build csv")
 	}
 
-	return count, rowErrors
+	return buf.String(), count, rowErrors
 }
 
 func displayLine[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {

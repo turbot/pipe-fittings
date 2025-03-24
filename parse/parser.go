@@ -65,20 +65,20 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 		default:
 			fileData := fileDataMap[filePath]
 
-			// handle deprecated disableTemplateForProperties
-			//if len(config.disableTemplateForProperties) > 0 {
-			//	fileData, moreDiags = applyDisableTemplateForProperties(fileData, filePath, config, diags)
-			//	diags = append(diags, moreDiags...)
-			//	if diags.HasErrors() {
-			//		continue
-			//	}
-			//}
-
 			// check for grok function calls - execute these to escape grok expressions
 			if config.escapeBackticks {
 				fileData, moreDiags = EscapeBackticks(fileDataMap[filePath], filePath)
 				if moreDiags.HasErrors() {
 					diags = append(diags, moreDiags...)
+					continue
+				}
+			}
+
+			// handle deprecated disableTemplateForProperties
+			if len(config.disableTemplateForProperties) > 0 {
+				fileData, moreDiags = applyDisableTemplateForProperties(fileData, filePath, config, diags)
+				diags = append(diags, moreDiags...)
+				if diags.HasErrors() {
 					continue
 				}
 			}
@@ -98,24 +98,23 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 	return hcl.MergeFiles(parsedConfigFiles), diags
 }
 
-//func applyDisableTemplateForProperties(fileData []byte, filePath string, config *ParseHclConfig, diags hcl.Diagnostics) ([]byte, hcl.Diagnostics) {
-//	updatedFileData, moreDiags := EscapeTemplateTokens(fileData, filePath, config.disableTemplateForProperties)
-//	if moreDiags.HasErrors() {
-//		diags = append(diags, moreDiags...)
-//		//continue
-//	}
-//
-//	// if this modified the file data, it means the grok function is not being used - raise a warning
-//	if string(updatedFileData) != string(fileData) {
-//		diags = append(diags, &hcl.Diagnostic{
-//			Severity: hcl.DiagWarning,
-//			Summary:  "Grok expressions should be wrapped in a 'grok' function call",
-//			Detail:   fmt.Sprintf("The file %q contains a Grok expression that is not wrapped in a 'grok' function call. This has been escaped, but this funcitonalityis deprecated and will be removed in a future version.", filePath),
-//		})
-//	}
-//	fileData = updatedFileData
-//	return fileData, diags
-//}
+func applyDisableTemplateForProperties(fileData []byte, filePath string, config *ParseHclConfig, diags hcl.Diagnostics) ([]byte, hcl.Diagnostics) {
+	updatedFileData, moreDiags := EscapeTemplateTokens(fileData, filePath, config.disableTemplateForProperties)
+	if moreDiags.HasErrors() {
+		diags = append(diags, moreDiags...)
+		//continue
+	}
+
+	// if this modified the file data, it means the grok function is not being used - raise a warning
+	if string(updatedFileData) != string(fileData) {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagWarning,
+			Summary:  fmt.Sprintf("The file %q contains a file_layout property containing hcl reserved characters. This has been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.", filePath),
+		})
+	}
+	fileData = updatedFileData
+	return fileData, diags
+}
 
 func buildOrderedFileNameList(fileData map[string][]byte) []string {
 	filePaths := make([]string, len(fileData))
