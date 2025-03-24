@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
 
 	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/filepaths"
 )
 
@@ -115,11 +115,11 @@ func (p *PluginVersionFile) ensureVersionFilesInPluginDirectories() error {
 	return nil
 }
 
-// any plugins installed under the `local` folder are added to the plugin version file
-func (p *PluginVersionFile) AddLocalPlugins(ctx context.Context) error {
+// AddLocalPlugins any plugins installed under the `local` folder are added to the plugin version file
+func (p *PluginVersionFile) AddLocalPlugins(ctx context.Context) error_helpers.ErrorAndWarnings {
 	localPlugins, err := loadLocalPlugins(ctx)
 	if err != nil {
-		return err
+		return error_helpers.NewErrorsAndWarning(err)
 	}
 	for name, install := range localPlugins {
 		if _, ok := p.Plugins[name]; ok {
@@ -128,7 +128,7 @@ func (p *PluginVersionFile) AddLocalPlugins(ctx context.Context) error {
 		}
 		p.Plugins[fmt.Sprintf("local/%s", name)] = install
 	}
-	return nil
+	return error_helpers.ErrorAndWarnings{}
 }
 
 // to lock plugin version file loads
