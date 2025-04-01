@@ -23,7 +23,7 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		}
 
 	}()
-
+	var diags hcl.Diagnostics
 	// create profile map to populate
 	profileMap = make(map[string]T)
 
@@ -38,12 +38,20 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		return profileMap, nil
 	}
 
-	fileData, diags := LoadFileData(configPaths...)
+	fileData, moreDiags := LoadFileData(configPaths...)
+	diags = append(diags, moreDiags...)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 
-	body, diags := ParseHclFiles(fileData, opts...)
+	fileData, moreDiags = ApplyPropertyEscaping(fileData, opts...)
+	diags = append(diags, moreDiags...)
+	if diags.HasErrors() {
+		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
+	}
+
+	body, moreDiags := ParseHclFiles(fileData)
+	diags = append(diags, moreDiags...)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
@@ -73,7 +81,8 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 	}
 
 	// do a partial decode
-	content, diags := body.Content(schema)
+	content, moreDiags := body.Content(schema)
+	diags = append(diags, moreDiags...)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
