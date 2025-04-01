@@ -6,14 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-
-	"sigs.k8s.io/yaml"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/hcl/v2/json"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/utils"
+	"sigs.k8s.io/yaml"
 )
 
 // LoadFileData builds a map of filepath to file data
@@ -98,22 +99,67 @@ func ParseHclFiles(fileDataMap map[string][]byte, opts ...ParseHclOpt) (hcl.Body
 	return hcl.MergeFiles(parsedConfigFiles), diags
 }
 
+// findDifferentLines compares two byte slices line by line and returns the line numbers where they differ
+func findDifferentLines(original, updated []byte) []int {
+	originalLines := strings.Split(string(original), "\n")
+	updatedLines := strings.Split(string(updated), "\n")
+
+	var differentLines []int
+
+	// Compare each line
+	maxLines := len(originalLines)
+	if len(updatedLines) > maxLines {
+		maxLines = len(updatedLines)
+	}
+
+	for i := 0; i < maxLines; i++ {
+		if i >= len(originalLines) || i >= len(updatedLines) {
+			differentLines = append(differentLines, i+1)
+			continue
+		}
+		if originalLines[i] != updatedLines[i] {
+			differentLines = append(differentLines, i+1)
+		}
+	}
+
+	return differentLines
+}
+
 func applyDisableTemplateForProperties(fileData []byte, filePath string, config *ParseHclConfig, diags hcl.Diagnostics) ([]byte, hcl.Diagnostics) {
 	updatedFileData, moreDiags := EscapeTemplateTokens(fileData, filePath, config.disableTemplateForProperties)
 	if moreDiags.HasErrors() {
 		diags = append(diags, moreDiags...)
-		//continue
 	}
 
 	// if this modified the file data, it means the grok function is not being used - raise a warning
 	if string(updatedFileData) != string(fileData) {
+		msg := getEscapeTemplateWarningMessage(filePath, fileData, updatedFileData)
+
 		diags = append(diags, &hcl.Diagnostic{
 			Severity: hcl.DiagWarning,
-			Summary:  fmt.Sprintf("The file %q contains a file_layout property containing hcl reserved characters. This has been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.", filePath),
+			Summary:  msg,
 		})
+		fileData = updatedFileData
 	}
-	fileData = updatedFileData
 	return fileData, diags
+}
+
+func getEscapeTemplateWarningMessage(filePath string, fileData, updatedFileData []byte) string {
+	differentLines := findDifferentLines(fileData, updatedFileData)
+	lineStr := make([]string, 0, len(differentLines))
+	for _, line := range differentLines {
+		lineStr = append(lineStr, fmt.Sprintf("%d", line))
+	}
+	if len(differentLines) == 1 {
+		return fmt.Sprintf("The file %q contains a file_layout property containing hcl reserved characters (%s). This has been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.",
+			filePath,
+			lineStr[0])
+	}
+	return fmt.Sprintf("The file %q contains file_layout properties containing hcl reserved characters (%s %s). These have been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.",
+		filePath,
+		utils.Pluralize("line", len(differentLines)),
+		strings.Join(lineStr, ", "))
+
 }
 
 func buildOrderedFileNameList(fileData map[string][]byte) []string {
