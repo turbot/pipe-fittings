@@ -208,6 +208,8 @@ func applyDisableTemplateForProperties(fileData []byte, filePath string, disable
 	}
 	return fileData, diags
 }
+
+// getEscapeTemplateWarningMessage generates a warning message	 for the deprecated disableTemplateForProperties
 func getEscapeTemplateWarningMessage(filePath string, fileData, updatedFileData []byte) string {
 	differentLines := findDifferentLines(fileData, updatedFileData)
 	lineStr := make([]string, 0, len(differentLines))
