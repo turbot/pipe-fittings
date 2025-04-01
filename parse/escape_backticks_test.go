@@ -208,20 +208,20 @@ format "custom" "c2" {
 		t.Run(tt.name, func(t *testing.T) {
 			fileData := strings.ReplaceAll(string(tt.args.fileData), "__BACKTICK__", "`")
 			want := strings.ReplaceAll(string(tt.wantBytes), "__BACKTICK__", "`")
-			got, _ := EscapeBackticks([]byte(fileData), "testfile.tpc")
+			got, _ := escapeBackticks([]byte(fileData), "testfile.tpc")
 
 			if len(got) != len(want) {
-				t.Errorf("EscapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
+				t.Errorf("escapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
 			}
 
 			for i := 0; i < len(got); i++ {
 				if got[i] != []byte(want)[i] {
-					t.Errorf("EscapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
+					t.Errorf("escapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
 					return
 				}
 			}
 			if string(got) != want {
-				t.Errorf("EscapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
+				t.Errorf("escapeBackticks() = \n%v\n, want \n%v\n", string(got), want)
 			}
 		})
 	}
