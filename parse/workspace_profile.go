@@ -43,7 +43,11 @@ func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfil
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
 
-	body, diags := ParseHclFiles(fileData, opts...)
+	var moreDiags hcl.Diagnostics
+	fileData, moreDiags = ApplyPropertyEscaping(fileData, opts...)
+	diags = append(diags, moreDiags...)
+
+	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
 		return nil, error_helpers.HclDiagsToError("Failed to load config", diags)
 	}
