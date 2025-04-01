@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// ApplyPropertyEscaping escapes properties within backticks, and optionally escaped properties specified by disableTemplateForProperties
 func ApplyPropertyEscaping(fileDataMap map[string][]byte, opts ...ParseHclOpt) (map[string][]byte, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	var res = make(map[string][]byte, len(fileDataMap))
@@ -22,7 +23,7 @@ func ApplyPropertyEscaping(fileDataMap map[string][]byte, opts ...ParseHclOpt) (
 		fileData := fileDataMap[filePath]
 		var moreDiags hcl.Diagnostics
 		if config.escapeBackticks {
-			// check for grok function calls - execute these to escape grok expressions
+			// check backtick surrounded property values - escape the contents
 			fileData, moreDiags = escapeBackticks(fileDataMap[filePath], filePath)
 			if moreDiags.HasErrors() {
 				diags = append(diags, moreDiags...)
