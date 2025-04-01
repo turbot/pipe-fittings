@@ -1,18 +1,49 @@
 package parse
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"strconv"
 	"strings"
 )
 
-// used to give warning that grok expressions should be wrapped in a 'grok' function call
-//var grokConfigProperties = []string{"log_format", "file_layout", "layout"}
+// ApplyPropertyEscaping escapes properties within backticks, and optionally escaped properties specified by disableTemplateForProperties
+func ApplyPropertyEscaping(fileDataMap map[string][]byte, opts ...ParseHclOpt) (map[string][]byte, hcl.Diagnostics) {
+	var diags hcl.Diagnostics
+	var res = make(map[string][]byte, len(fileDataMap))
+	config := &ParseHclConfig{}
+	for _, opt := range opts {
+		opt(config)
+	}
 
-// EscapeBackticks implements hcl backtick escaping
+	for filePath := range fileDataMap {
+
+		fileData := fileDataMap[filePath]
+		var moreDiags hcl.Diagnostics
+		if config.escapeBackticks {
+			// check backtick surrounded property values - escape the contents
+			fileData, moreDiags = escapeBackticks(fileDataMap[filePath], filePath)
+			if moreDiags.HasErrors() {
+				diags = append(diags, moreDiags...)
+				continue
+			}
+		}
+		// handle deprecated disableTemplateForProperties
+		fileData, moreDiags = applyDisableTemplateForProperties(fileData, filePath, config.disableTemplateForProperties)
+		diags = append(diags, moreDiags...)
+		if diags.HasErrors() {
+			continue
+		}
+		res[filePath] = fileData
+	}
+	return res, diags
+}
+
+// escapeBackticks implements hcl backtick escaping
 // - any data between backticks will be escaped, including hcl tempate expressions %{ (which are used for grok)
-func EscapeBackticks(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
+func escapeBackticks(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	// clone fileData
 	fileData := make([]byte, len(f))
 	copy(fileData, f)
@@ -159,4 +190,66 @@ func getAttributeForRange(syntaxBody *hclsyntax.Body, subject *hcl.Range) *hclsy
 
 	return nil
 
+}
+
+// applyDisableTemplateForProperties is the deprecated mechanism for escaping template tokens
+func applyDisableTemplateForProperties(fileData []byte, filePath string, disableTemplateForProperties []string) ([]byte, hcl.Diagnostics) {
+	updatedFileData, diags := EscapeTemplateTokens(fileData, filePath, disableTemplateForProperties)
+
+	// if this modified the file data, it means the grok function is not being used - raise a warning
+	if string(updatedFileData) != string(fileData) {
+		msg := getEscapeTemplateWarningMessage(filePath, fileData, updatedFileData)
+
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagWarning,
+			Summary:  msg,
+		})
+		fileData = updatedFileData
+	}
+	return fileData, diags
+}
+
+// getEscapeTemplateWarningMessage generates a warning message	 for the deprecated disableTemplateForProperties
+func getEscapeTemplateWarningMessage(filePath string, fileData, updatedFileData []byte) string {
+	differentLines := findDifferentLines(fileData, updatedFileData)
+	lineStr := make([]string, 0, len(differentLines))
+	for _, line := range differentLines {
+		lineStr = append(lineStr, fmt.Sprintf("%d", line))
+	}
+	if len(differentLines) == 1 {
+		return fmt.Sprintf("The file %q contains a file_layout property containing hcl reserved characters (%s). This has been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.",
+			filePath,
+			lineStr[0])
+	}
+	return fmt.Sprintf("The file %q contains file_layout properties containing hcl reserved characters (%s %s). These have been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.",
+		filePath,
+		utils.Pluralize("line", len(differentLines)),
+		strings.Join(lineStr, ", "))
+
+}
+
+// findDifferentLines compares two byte slices line by line and returns the line numbers where they differ
+func findDifferentLines(original, updated []byte) []int {
+	originalLines := strings.Split(string(original), "\n")
+	updatedLines := strings.Split(string(updated), "\n")
+
+	var differentLines []int
+
+	// Compare each line
+	maxLines := len(originalLines)
+	if len(updatedLines) > maxLines {
+		maxLines = len(updatedLines)
+	}
+
+	for i := 0; i < maxLines; i++ {
+		if i >= len(originalLines) || i >= len(updatedLines) {
+			differentLines = append(differentLines, i+1)
+			continue
+		}
+		if originalLines[i] != updatedLines[i] {
+			differentLines = append(differentLines, i+1)
+		}
+	}
+
+	return differentLines
 }
