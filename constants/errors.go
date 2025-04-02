@@ -16,10 +16,10 @@ const (
 
 Supported formats:
   • T-2Y   (2 years ago)
-  • T-10M  (10 months ago)
+  • T-10m  (10 months ago)
   • T-10W  (10 weeks ago)
   • T-180d (180 days ago)
   • T-9H   (9 hours ago)
-  • T-10m  (10 minutes ago)
+  • T-10M  (10 minutes ago)
 `
 )
