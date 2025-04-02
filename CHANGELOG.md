@@ -2,6 +2,16 @@
 
 Shared Pipes Component
 
+
+## v2.3.0 [2025-04-02]
+* Add CSV and JSON exporters for powerpipe query run export. ([#651](https://github.com/turbot/pipe-fittings/issues/651))
+* Added metadata to InstalledVersion file. ([#657](https://github.com/turbot/pipe-fittings/issues/657))
+* `ParseHclFiles` no longer accepts parse opts and does not do any file data escaping. Instead `ApplyPropertyEscaping` added to escape source data.
+* Fix `InvalidRelativeTimeFormat` error message.
+* Add GetSubType to ResourceNameParser.
+* Add String function for `hclhelpers.Range`.
+* Export DecodeHclBodyIntoStruct.
+
 ## v2.2.0 [2025-02-21]
 * Add `GetQueriesFromArgs` func to resolve queries from args. ([#652](https://github.com/turbot/pipe-fittings/issues/652))
 
