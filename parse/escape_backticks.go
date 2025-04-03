@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/utils"
 	"strconv"
 	"strings"
 )
@@ -216,14 +215,9 @@ func getEscapeTemplateWarningMessage(filePath string, fileData, updatedFileData 
 	for _, line := range differentLines {
 		lineStr = append(lineStr, fmt.Sprintf("%d", line))
 	}
-	if len(differentLines) == 1 {
-		return fmt.Sprintf("The file %q contains a file_layout property containing hcl reserved characters (%s). This has been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.",
-			filePath,
-			lineStr[0])
-	}
-	return fmt.Sprintf("The file %q contains file_layout properties containing hcl reserved characters (%s %s). These have been auto-escaped for you, but future versions will not do this. Please use backticks to escape the property: file_layout = `${val}`.",
+
+	return fmt.Sprintf("Config contains reserved reserved characters. These have been auto-escaped for you, but future versions will not do this. \nPlease use backticks to escape the property: file_layout = `${val}`. (%s:%s)\n",
 		filePath,
-		utils.Pluralize("line", len(differentLines)),
 		strings.Join(lineStr, ", "))
 
 }
