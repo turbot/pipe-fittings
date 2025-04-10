@@ -3,8 +3,12 @@ package querydisplay
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
 
 	typeHelpers "github.com/turbot/go-kit/types"
@@ -84,8 +88,26 @@ func ColumnValueAsString(val interface{}, col *queryresult.ColumnDef, opts ...Co
 	case "NAME":
 		result := string(val.([]uint8))
 		return result, nil
-
+	case "UUID":
+		// duckdb returns UUID as []uint8 which if parsed as string will return illegible data, need to convert to uuid
+		// postgres returns UUID correctly and doesn't need conversion
+		b, ok := val.([]uint8)
+		if ok {
+			v, err := uuid.FromBytes(b)
+			if err != nil {
+				return "", err
+			}
+			return v.String(), nil
+		}
+		fallthrough
 	default:
+		if strings.HasPrefix(col.DataType, "DECIMAL") {
+			// attempt to convert decimal to string, if this fails will fall through to generic formatting code
+			if str, ok := columnValueForDuckDBDecimal(val); ok {
+				return str, nil
+			}
+		}
+
 		return typeHelpers.ToString(val), nil
 	}
 }
@@ -104,4 +126,23 @@ func ParseJSONOutputColumnValue(val interface{}, col *queryresult.ColumnDef) (in
 	default:
 		return ColumnValueAsString(val, col)
 	}
+}
+
+// columnValueForDuckDBDecimal converts duckdb decimal to string
+// we want to use the String() method on the duckDb Decimal object,
+// but we do not want to reference go-duckdb as that requires Cgo bindings
+// so instead invoke the function via reflection
+func columnValueForDuckDBDecimal(val interface{}) (string, bool) {
+	if val == nil {
+		return "", false
+	}
+
+	s, err := helpers.ExecuteMethod(val, "String")
+	if err == nil && len(s) == 1 {
+		if str, ok := s[0].(string); ok {
+			return str, true
+		}
+	}
+
+	return "", false
 }
