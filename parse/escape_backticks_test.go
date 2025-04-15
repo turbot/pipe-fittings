@@ -203,6 +203,56 @@ format "custom" "c2" {
 }
 `),
 		},
+		{
+			name: "multiple backtick escapes with additional blocks and arg with opening bracket",
+			args: args{
+				disableTemplatesForProps: []string{"layout"},
+				fileData: []byte(`partition "my_syslog" "demo" {
+  source "file"  {
+    paths = ["/Users/kai/tailpipe_data/demo/syslogs"]
+    file_layout = __BACKTICK__.log__BACKTICK__
+  }
+}
+
+table "my_syslog" {
+  format = format.regex.example
+  
+  column "tp_timestamp" {
+    source = "timestamp"
+  }
+  column "host" {
+    transform =  __BACKTICK__upper(host)__BACKTICK__
+    type = "varchar"
+  }
+}
+
+format "regex" "example" {
+  	layout = __BACKTICK__^(?P<timestamp>\S+) (?P<host>\S+) (?P<service>\w+)\[(?P<pid>\d+)\]: \[(?P<level>[A-Z]+)\] (?P<message>.+)$__BACKTICK__
+}`),
+			},
+			wantBytes: []byte(`partition "my_syslog" "demo" {
+  source "file"  {
+    paths = ["/Users/kai/tailpipe_data/demo/syslogs"]
+    file_layout = ".log"
+  }
+}
+
+table "my_syslog" {
+  format = format.regex.example
+  
+  column "tp_timestamp" {
+    source = "timestamp"
+  }
+  column "host" {
+    transform =  "upper(host)"
+    type = "varchar"
+  }
+}
+
+format "regex" "example" {
+  	layout = "^(?P<timestamp>\\S+) (?P<host>\\S+) (?P<service>\\w+)\\[(?P<pid>\\d+)\\]: \\[(?P<level>[A-Z]+)\\] (?P<message>.+)$"
+}`),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
