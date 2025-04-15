@@ -3,9 +3,11 @@ package querydisplay
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 
 	"github.com/turbot/go-kit/helpers"
@@ -44,11 +46,12 @@ func WithNullString(nullString string) ColumnValueOption {
 func ColumnValuesAsString(values []interface{}, columns []*queryresult.ColumnDef, opts ...ColumnValueOption) ([]string, error) {
 	rowAsString := make([]string, len(columns))
 	for idx, val := range values {
-		val, err := ColumnValueAsString(val, columns[idx], opts...)
+		v, err := ColumnValueAsString(val, columns[idx], opts...)
 		if err != nil {
 			return nil, err
 		}
-		rowAsString[idx] = val
+		// TODO: #tactical local humanizeNumericStringValue function is a temporary fix and we should implement this properly in go-kit https://github.com/turbot/go-kit/issues/98
+		rowAsString[idx] = humaniseNumericStringValue(v)
 	}
 	return rowAsString, nil
 }
@@ -145,4 +148,24 @@ func columnValueForDuckDBDecimal(val interface{}) (string, bool) {
 	}
 
 	return "", false
+}
+
+// humaniseNumericStringValue is used to determine if the number is all numeric or numeric with a single decimal point
+func humaniseNumericStringValue(s string) string {
+	if s == "" {
+		return s
+	}
+
+	// Attempt to parse as int, if it succeeds, format it
+	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return humanize.Comma(i)
+	}
+
+	// Attempt to parse as a float, if it succeeds, format the integer part and then append the decimal part
+	if f, err := strconv.ParseFloat(s, 64); err == nil {
+		return humanize.Commaf(f)
+	}
+
+	// s is not a valid number, return it as is
+	return s
 }
