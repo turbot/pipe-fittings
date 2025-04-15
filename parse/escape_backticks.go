@@ -42,15 +42,8 @@ func ApplyPropertyEscaping(fileDataMap map[string][]byte, opts ...ParseHclOpt) (
 
 // escapeBackticks implements hcl backtick escaping
 // - any data between backticks will be escaped, including hcl tempate expressions %{ (which are used for grok)
-func escapeBackticks(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
-	// clone fileData
-	fileData := make([]byte, len(f))
-	copy(fileData, f)
-
+func escapeBackticks(fileData []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	for {
-		// because the parse will return errors for a single attribute at a time, we may need to call doEscapeBackticks
-		// multiple times
-
 		updatedFileData, diags := doEscapeBackticks(fileData, filePath)
 		if diags.HasErrors() {
 			return fileData, diags
@@ -63,7 +56,11 @@ func escapeBackticks(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
 	}
 }
 
-func doEscapeBackticks(fileData []byte, filePath string) ([]byte, hcl.Diagnostics) {
+func doEscapeBackticks(f []byte, filePath string) ([]byte, hcl.Diagnostics) {
+	// clone fileData so we can mutate it
+	fileData := make([]byte, len(f))
+	copy(fileData, f)
+
 	// Parse HCL file without caching
 	file, diags := hclsyntax.ParseConfig(fileData, filePath, hcl.Pos{Byte: 0, Line: 1, Column: 1})
 
