@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v2.3.1 [2025-04-03]
+
+* Update auto_escape deprecation warning
+
+## v2.3.0 [2025-04-02]
+* Add CSV and JSON exporters for powerpipe query run export. ([#651](https://github.com/turbot/pipe-fittings/issues/651))
 
 ## v2.3.0 [2025-04-02]
 * Add CSV and JSON exporters for powerpipe query run export. ([#651](https://github.com/turbot/pipe-fittings/issues/651))
