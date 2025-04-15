@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v2.3.2 [2025-04-15]
+
+* Fix multiple backtick escaping.
+* Add comma separators to numeric output in query results.  ([#685](https://github.com/turbot/pipe-fittings/issues/685))
+* Add support to `querydisplay.ColumnValueAsString` for UUID/Decimal in format received from DuckDB.
+
 ## v2.3.1 [2025-04-03]
 
 * Update auto_escape deprecation warning
