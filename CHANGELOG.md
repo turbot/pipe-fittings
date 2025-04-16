@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.3.3 [2025-04-16]
+
+* Fix comma separation - do not apply to varchar columns.
+
 ## v2.3.2 [2025-04-15]
 
 * Fix multiple backtick escaping.
