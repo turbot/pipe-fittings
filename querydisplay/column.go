@@ -3,6 +3,7 @@ package querydisplay
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +52,7 @@ func ColumnValuesAsString(values []interface{}, columns []*queryresult.ColumnDef
 			return nil, err
 		}
 		// TODO: #tactical local humanizeNumericStringValue function is a temporary fix and we should implement this properly in go-kit https://github.com/turbot/go-kit/issues/98
-		rowAsString[idx] = humaniseNumericStringValue(v)
+		rowAsString[idx] = humaniseNumericStringValue(v, columns[idx].DataType)
 	}
 	return rowAsString, nil
 }
@@ -151,8 +152,9 @@ func columnValueForDuckDBDecimal(val interface{}) (string, bool) {
 }
 
 // humaniseNumericStringValue is used to determine if the number is all numeric or numeric with a single decimal point
-func humaniseNumericStringValue(s string) string {
-	if s == "" {
+func humaniseNumericStringValue(s string, colType string) string {
+	ignoreTypes := []string{"JSON", "JSONB", "BOOL", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "DATE", "TIME", "INTERVAL", "VARCHAR", "TEXT", "NAME", "UUID", "BLOB", "BIT"}
+	if s == "" || slices.Contains(ignoreTypes, colType) {
 		return s
 	}
 
