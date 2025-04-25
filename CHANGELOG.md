@@ -2,6 +2,11 @@
 
 Shared Pipes Component
 
+## v2.3.4 [2025-04-25]
+
+* Fix issue in steampipe where query batch mode outputs(json, csv, line) were not returning the rows received when any of the other rows returned an error. This has been fixed and now steampipe outputs the correct rows to stdout even when an API error occurs. ([#696](https://github.com/turbot/pipe-fittings/issues/696))
+* Fix issue in steampipe query batch mode where the table output always returned a 0 row count when timing was enabled. ([#697](https://github.com/turbot/pipe-fittings/issues/697))
+
 ## v2.3.3 [2025-04-16]
 
 * Fix comma separation - do not apply to varchar columns.
