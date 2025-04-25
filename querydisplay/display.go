@@ -42,7 +42,7 @@ func ShowOutput[T queryresult.TimingContainer](ctx context.Context, result *quer
 	case constants.OutputFormatLine:
 		rowCount, rowErrors = displayLine(ctx, result)
 	case constants.OutputFormatTable:
-		displayTable(ctx, result)
+		rowCount, rowErrors = displayTable(ctx, result)
 	}
 
 	return rowCount, rowErrors
@@ -250,7 +250,6 @@ func BuildJSON[T queryresult.TimingContainer](ctx context.Context, result *query
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
-		return "", 0, rowErrors
 	}
 
 	// now we have iterated the rows, get the timing
@@ -299,7 +298,6 @@ func BuildCSV[T queryresult.TimingContainer](ctx context.Context, result *queryr
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
-		return "", 0, rowErrors
 	}
 
 	csvWriter.Flush()
@@ -378,7 +376,6 @@ func displayLine[T queryresult.TimingContainer](ctx context.Context, result *que
 	if err != nil {
 		error_helpers.ShowError(ctx, err)
 		rowErrors++
-		return 0, rowErrors
 	}
 
 	return rowCount, rowErrors
