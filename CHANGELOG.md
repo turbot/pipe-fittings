@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.3.5 [2025-04-29]
+
+* Fix plugin install/update messages to use app_specific app names. ([#701](https://github.com/turbot/pipe-fittings/issues/701))
+
 ## v2.3.4 [2025-04-25]
 
 * Fix issue in steampipe where query batch mode outputs(json, csv, line) were not returning the rows received when any of the other rows returned an error. This has been fixed and now steampipe outputs the correct rows to stdout even when an API error occurs. ([#696](https://github.com/turbot/pipe-fittings/issues/696))

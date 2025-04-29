@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/ociinstaller"
 	"github.com/turbot/pipe-fittings/v2/utils"
@@ -144,7 +145,8 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 				utils.Pluralize("plugin", len(canBeInstalled)),
 				utils.Pluralize("is", len(canBeInstalled)),
 				constants.Bold(fmt.Sprintf(
-					"steampipe plugin install %s",
+					"%s plugin install %s",
+					app_specific.AppName,
 					strings.Join(pluginList, " "),
 				)),
 			)
@@ -162,8 +164,8 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 				"To update %s %s: %s\nTo update all plugins: %s",
 				utils.Pluralize("this", len(pluginList)),
 				utils.Pluralize("plugin", len(pluginList)),
-				constants.Bold(fmt.Sprintf("steampipe plugin update %s", strings.Join(pluginList, " "))),
-				constants.Bold(fmt.Sprintln("steampipe plugin update --all")),
+				constants.Bold(fmt.Sprintf("%s plugin update %s", app_specific.AppName, strings.Join(pluginList, " "))),
+				constants.Bold(fmt.Sprintf("%s plugin update --all\n", app_specific.AppName)),
 			)
 		}
 	}
