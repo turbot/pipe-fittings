@@ -19,8 +19,10 @@ type TailpipeWorkspaceProfile struct {
 	ProfileName string `hcl:"name,label" cty:"name"`
 
 	// general options
-	UpdateCheck *string `hcl:"update_check" cty:"update_check"`
-	LogLevel    *string `hcl:"log_level" cty:"log_level"`
+	UpdateCheck    *string `hcl:"update_check" cty:"update_check"`
+	LogLevel       *string `hcl:"log_level" cty:"log_level"`
+	MemoryMaxMb    *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
+	MaxTempCacheMb *int    `hcl:"memory_temp_cache_mb" cty:"memory_temp_cache_mb"`
 
 	Base *TailpipeWorkspaceProfile `hcl:"base"`
 
@@ -58,6 +60,21 @@ func (p *TailpipeWorkspaceProfile) setBaseProperties() {
 	if p.Base == nil {
 		return
 	}
+
+	if p.MemoryMaxMb == nil {
+		p.MemoryMaxMb = p.Base.MemoryMaxMb
+	}
+
+	if p.MaxTempCacheMb == nil {
+		p.MaxTempCacheMb = p.Base.MaxTempCacheMb
+	}
+
+	if p.UpdateCheck == nil {
+		p.UpdateCheck = p.Base.UpdateCheck
+	}
+	if p.LogLevel == nil {
+		p.LogLevel = p.Base.LogLevel
+	}
 }
 
 // ConfigMap creates a config map containing all options to pass to viper
@@ -66,6 +83,8 @@ func (p *TailpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]inte
 	// add non-empty properties to config map
 	res.SetStringItem(p.UpdateCheck, constants.ArgUpdateCheck)
 	res.SetStringItem(p.LogLevel, constants.ArgLogLevel)
+	res.SetIntItem(p.MemoryMaxMb, constants.ArgMemoryMaxMb)
+	res.SetIntItem(p.MaxTempCacheMb, constants.ArgMaxTempCacheMb)
 
 	return res
 }
