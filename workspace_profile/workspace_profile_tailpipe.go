@@ -22,7 +22,7 @@ type TailpipeWorkspaceProfile struct {
 	UpdateCheck       *string `hcl:"update_check" cty:"update_check"`
 	LogLevel          *string `hcl:"log_level" cty:"log_level"`
 	MemoryMaxMb       *int    `hcl:"memory_max_mb" cty:"memory_max_mb"`
-	MemoryMaxMbPlugin *int    `hcl:"memory_max_mb_plugin" cty:"memory_max_mb_plugin"`
+	PluginMemoryMaxMb *int    `hcl:"plugin_memory_max_mb" cty:"plugin_memory_max_mb"`
 	MaxTempCacheMb    *int    `hcl:"memory_temp_cache_mb" cty:"memory_temp_cache_mb"`
 
 	Base *TailpipeWorkspaceProfile `hcl:"base"`
@@ -66,8 +66,8 @@ func (p *TailpipeWorkspaceProfile) setBaseProperties() {
 		p.MemoryMaxMb = p.Base.MemoryMaxMb
 	}
 
-	if p.MemoryMaxMbPlugin == nil {
-		p.MemoryMaxMbPlugin = p.Base.MemoryMaxMbPlugin
+	if p.PluginMemoryMaxMb == nil {
+		p.PluginMemoryMaxMb = p.Base.PluginMemoryMaxMb
 	}
 
 	if p.MaxTempCacheMb == nil {
@@ -89,7 +89,7 @@ func (p *TailpipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]inte
 	res.SetStringItem(p.UpdateCheck, constants.ArgUpdateCheck)
 	res.SetStringItem(p.LogLevel, constants.ArgLogLevel)
 	res.SetIntItem(p.MemoryMaxMb, constants.ArgMemoryMaxMb)
-	res.SetIntItem(p.MemoryMaxMbPlugin, constants.ArgMemoryMaxMbPlugin)
+	res.SetIntItem(p.PluginMemoryMaxMb, constants.ArgMemoryMaxMbPlugin)
 	res.SetIntItem(p.MaxTempCacheMb, constants.ArgMaxTempCacheMb)
 
 	return res
