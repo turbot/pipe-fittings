@@ -3,12 +3,9 @@ package querydisplay
 import (
 	"encoding/json"
 	"fmt"
-	"slices"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/google/uuid"
 
 	"github.com/turbot/go-kit/helpers"
@@ -33,13 +30,24 @@ func columnNames(columns []*queryresult.ColumnDef) []string {
 	return colNames
 }
 
-type columnValueSettings struct{ nullString string }
+type columnValueSettings struct {
+	nullString     string
+	shouldHumanise bool
+}
 
 type ColumnValueOption func(opt *columnValueSettings)
 
 func WithNullString(nullString string) ColumnValueOption {
 	return func(opt *columnValueSettings) {
 		opt.nullString = nullString
+	}
+}
+
+// WithHumanisedString sets whether values should be humanised (e.g. adding commas to numbers)
+// This is used in displayLine and displayTable functions to make numbers more readable
+func WithHumanisedString(shouldHumanise bool) ColumnValueOption {
+	return func(opt *columnValueSettings) {
+		opt.shouldHumanise = shouldHumanise
 	}
 }
 
@@ -51,17 +59,16 @@ func ColumnValuesAsString(values []interface{}, columns []*queryresult.ColumnDef
 		if err != nil {
 			return nil, err
 		}
-		// TODO: #tactical local humanizeNumericStringValue function is a temporary fix and we should implement this properly in go-kit https://github.com/turbot/go-kit/issues/98
-		rowAsString[idx] = humaniseNumericStringValue(v, columns[idx].DataType)
+		rowAsString[idx] = v
 	}
 	return rowAsString, nil
 }
 
 // ColumnValueAsString converts column value to string
 func ColumnValueAsString(val interface{}, col *queryresult.ColumnDef, opts ...ColumnValueOption) (result string, err error) {
-	opt := &columnValueSettings{nullString: constants.NullString}
+	cfg := &columnValueSettings{nullString: constants.NullString}
 	for _, o := range opts {
-		o(opt)
+		o(cfg)
 	}
 
 	defer func() {
@@ -71,7 +78,7 @@ func ColumnValueAsString(val interface{}, col *queryresult.ColumnDef, opts ...Co
 	}()
 
 	if val == nil {
-		return opt.nullString, nil
+		return cfg.nullString, nil
 	}
 
 	//log.Printf("[TRACE] ColumnValueAsString type %s", colType.DatabaseTypeName())
@@ -107,11 +114,15 @@ func ColumnValueAsString(val interface{}, col *queryresult.ColumnDef, opts ...Co
 	default:
 		if strings.HasPrefix(col.DataType, "DECIMAL") {
 			// attempt to convert decimal to string, if this fails will fall through to generic formatting code
-			if str, ok := columnValueForDuckDBDecimal(val); ok {
+			if str, ok := columnValueForDuckDBDecimal(val, cfg.shouldHumanise); ok {
 				return str, nil
 			}
 		}
 
+		// use ToHumanisedString for humanised output (e.g. adding commas to numbers) or ToString for raw output
+		if cfg.shouldHumanise {
+			return typeHelpers.ToHumanisedString(val), nil
+		}
 		return typeHelpers.ToString(val), nil
 	}
 }
@@ -136,7 +147,7 @@ func ParseJSONOutputColumnValue(val interface{}, col *queryresult.ColumnDef) (in
 // we want to use the String() method on the duckDb Decimal object,
 // but we do not want to reference go-duckdb as that requires Cgo bindings
 // so instead invoke the function via reflection
-func columnValueForDuckDBDecimal(val interface{}) (string, bool) {
+func columnValueForDuckDBDecimal(val interface{}, shouldHumanise bool) (string, bool) {
 	if val == nil {
 		return "", false
 	}
@@ -144,30 +155,13 @@ func columnValueForDuckDBDecimal(val interface{}) (string, bool) {
 	s, err := helpers.ExecuteMethod(val, "String")
 	if err == nil && len(s) == 1 {
 		if str, ok := s[0].(string); ok {
+			// Apply humanisation if requested (e.g. adding commas to numbers)
+			if shouldHumanise {
+				return typeHelpers.ToHumanisedString(str), true
+			}
 			return str, true
 		}
 	}
 
 	return "", false
-}
-
-// humaniseNumericStringValue is used to determine if the number is all numeric or numeric with a single decimal point
-func humaniseNumericStringValue(s string, colType string) string {
-	ignoreTypes := []string{"JSON", "JSONB", "BOOL", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "DATE", "TIME", "INTERVAL", "VARCHAR", "TEXT", "NAME", "UUID", "BLOB", "BIT"}
-	if s == "" || slices.Contains(ignoreTypes, colType) {
-		return s
-	}
-
-	// Attempt to parse as int, if it succeeds, format it
-	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
-		return humanize.Comma(i)
-	}
-
-	// Attempt to parse as a float, if it succeeds, format the integer part and then append the decimal part
-	if f, err := strconv.ParseFloat(s, 64); err == nil {
-		return humanize.Commaf(f)
-	}
-
-	// s is not a valid number, return it as is
-	return s
 }

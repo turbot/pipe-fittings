@@ -321,7 +321,7 @@ func displayLine[T queryresult.TimingContainer](ctx context.Context, result *que
 
 	// define a function to display each row
 	rowFunc := func(row []interface{}, result *queryresult.Result[T]) {
-		recordAsString, _ := ColumnValuesAsString(row, result.Cols)
+		recordAsString, _ := ColumnValuesAsString(row, result.Cols, WithHumanisedString(true))
 		requiredTerminalColumnsForValuesOfRecord := 0
 		for _, colValue := range recordAsString {
 			colRequired := getTerminalColumnsRequiredForString(colValue)
@@ -423,7 +423,7 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 		}
 		displayRowCount++
 
-		rowAsString, _ := ColumnValuesAsString(row, result.Cols)
+		rowAsString, _ := ColumnValuesAsString(row, result.Cols, WithHumanisedString(true))
 		rowObj := table.Row{}
 		for _, col := range rowAsString {
 			// trim out non-displayable code-points in string
