@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.3.6 [2025-05-06]
+
+* Fix issue where system-ingestible outputs were humanised(comma separated) leading to a breaking change in Steampipe. ([#709](https://github.com/turbot/pipe-fittings/issues/709))
+
 ## v2.3.5 [2025-04-29]
 
 * Fix plugin install/update messages to use app_specific app names. ([#701](https://github.com/turbot/pipe-fittings/issues/701))
