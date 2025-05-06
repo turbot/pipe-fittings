@@ -30,15 +30,15 @@ func columnNames(columns []*queryresult.ColumnDef) []string {
 	return colNames
 }
 
-type columnValueSettings struct {
+type columnValueConfig struct {
 	nullString     string
 	shouldHumanise bool
 }
 
-type ColumnValueOption func(opt *columnValueSettings)
+type ColumnValueOption func(opt *columnValueConfig)
 
 func WithNullString(nullString string) ColumnValueOption {
-	return func(opt *columnValueSettings) {
+	return func(opt *columnValueConfig) {
 		opt.nullString = nullString
 	}
 }
@@ -46,7 +46,7 @@ func WithNullString(nullString string) ColumnValueOption {
 // WithHumanisedString sets whether values should be humanised (e.g. adding commas to numbers)
 // This is used in displayLine and displayTable functions to make numbers more readable
 func WithHumanisedString(shouldHumanise bool) ColumnValueOption {
-	return func(opt *columnValueSettings) {
+	return func(opt *columnValueConfig) {
 		opt.shouldHumanise = shouldHumanise
 	}
 }
@@ -66,7 +66,7 @@ func ColumnValuesAsString(values []interface{}, columns []*queryresult.ColumnDef
 
 // ColumnValueAsString converts column value to string
 func ColumnValueAsString(val interface{}, col *queryresult.ColumnDef, opts ...ColumnValueOption) (result string, err error) {
-	cfg := &columnValueSettings{nullString: constants.NullString}
+	cfg := &columnValueConfig{nullString: constants.NullString}
 	for _, o := range opts {
 		o(cfg)
 	}
