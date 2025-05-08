@@ -60,7 +60,7 @@ const (
 	ArgMaxParallel             = "max-parallel"
 	ArgMemoryMaxMb             = "memory-max-mb"
 	ArgMemoryMaxMbPlugin       = "memory-max-mb-plugin"
-	ArgTempCacheMaxMb          = "temp-cache-max-mb"
+	ArgTempDirMaxMb            = "temp-dir-max-mb"
 	ArgModInstall              = "mod-install"
 	ArgModLocation             = "mod-location"
 	ArgMultiLine               = "multi-line"
