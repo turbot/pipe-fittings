@@ -30,7 +30,7 @@ var EnvUpdateCheck,
 	EnvGitToken,
 	EnvPipesToken,
 	EnvProfile,
-	EnvMaxTempCacheMb string
+	EnvTempCacheMaxMb string
 
 func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	// set prefix
@@ -65,7 +65,7 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvGitToken = buildEnv("GIT_TOKEN")
 	EnvPipesToken = buildEnv("PIPES_TOKEN")
 	EnvProfile = buildEnv("PROFILE")
-	EnvMaxTempCacheMb = buildEnv("MAX_TEMP_CACHE_MB")
+	EnvTempCacheMaxMb = buildEnv("TEMP_CACHE_MAX_MB")
 }
 
 // buildEnv is a function to construct an application specific env var key
