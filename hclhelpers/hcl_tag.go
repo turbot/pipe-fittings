@@ -12,6 +12,8 @@ type HclTag struct {
 	// was optional specified in the hcl tag
 	// (NOTE - the field may be optional even if not specified, so this is a pointer)
 	Optional *bool
+	// was remain specified in the hcl tag
+	Remain bool
 }
 
 // NewHclTag creates a new HclTag from a string and validates it.
@@ -42,6 +44,8 @@ func NewHclTag(tag string) (HclTag, error) {
 	case "optional":
 		optional := true
 		hclTag.Optional = &optional
+	case "remain":
+		hclTag.Remain = true
 	default:
 		return HclTag{}, fmt.Errorf("invalid HCL tag: unknown modifier '%s', must be 'block' or 'optional'", modifier)
 	}
