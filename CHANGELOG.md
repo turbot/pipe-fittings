@@ -2,6 +2,14 @@
 
 Shared Pipes Component
 
+## 2.4.1 [2025-05-14]
+
+* Add `remain` to HclTag struct.
+
+## 2.4.0 [2025-05-14]
+
+* Add `plugin_memory_max_mb`, `memory_max_mb`, `temp_dir_max_mb` options to TailpipeWorkspaceProfile. Also add `TEMP_DIR_MAX_MB` env var and `temp-dir-max-mb` argument. ([#707](https://github.com/turbot/pipe-fittings/issues/707))
+
 ## v2.3.6 [2025-05-06]
 
 * Fix issue where system-ingestible outputs were humanised(comma separated) leading to a breaking change in Steampipe. ([#709](https://github.com/turbot/pipe-fittings/issues/709))
@@ -28,9 +36,6 @@ Shared Pipes Component
 ## v2.3.1 [2025-04-03]
 
 * Update auto_escape deprecation warning
-
-## v2.3.0 [2025-04-02]
-* Add CSV and JSON exporters for powerpipe query run export. ([#651](https://github.com/turbot/pipe-fittings/issues/651))
 
 ## v2.3.0 [2025-04-02]
 * Add CSV and JSON exporters for powerpipe query run export. ([#651](https://github.com/turbot/pipe-fittings/issues/651))
