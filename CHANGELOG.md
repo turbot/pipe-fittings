@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## 2.4.1 [2025-05-14]
+
+* Add `remain` to HclTag struct.
+
 ## 2.4.0 [2025-05-14]
 
 * Add `plugin_memory_max_mb`, `memory_max_mb`, `temp_dir_max_mb` options to TailpipeWorkspaceProfile. Also add `TEMP_DIR_MAX_MB` env var and `temp-dir-max-mb` argument. ([#707](https://github.com/turbot/pipe-fittings/issues/707))
