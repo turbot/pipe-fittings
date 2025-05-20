@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## 2.4.2 [2025-05-20]
+
+* Fix issue where the `from` property in Tailpipe connections was getting parsed incorrectly. ([#717](https://github.com/turbot/pipe-fittings/issues/717))
+
 ## 2.4.1 [2025-05-14]
 
 * Add `remain` to HclTag struct.
