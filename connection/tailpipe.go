@@ -3,10 +3,12 @@ package connection
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os/exec"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/zclconf/go-cty/cty"
 
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/v2/constants"
 )
 
 const TailpipeConnectionType = "tailpipe"
@@ -199,12 +202,12 @@ func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
 	var res = &TailpipeDatabaseFilters{}
 	if c.From != nil {
 		// we have already validated the time format
-		from, _ := time.Parse(time.RFC3339, *c.From)
+		from, _ := parseTime(*c.From, time.Now())
 		res.From = &from
 	}
 	if c.To != nil {
 		// we have already validated the time format
-		to, _ := time.Parse(time.RFC3339, *c.To)
+		to, _ := parseTime(*c.To, time.Now())
 		res.To = &to
 	}
 
@@ -303,4 +306,64 @@ func (o *TailpipeDatabaseFilters) String() string {
 		str.WriteString(o.To.String())
 	}
 	return str.String()
+}
+
+// This is a duplicate of the function in parse/time.go. We have to duplicate it since we are not
+// able to import the package due to circular dependencies.
+// The alternative would be to move the function to a different package, but that would mean a breaking
+// change for all users of the function.
+// TODO: this is a temporary tactical solution, we will eventually split the pipe-fittings repo into
+// two separate repos: one for the turbot IP code and one for the utilities code. At that point we can
+// move the whole parse package to the new repo, use that and remove the duplicate code.
+// https://github.com/turbot/pipe-fittings/issues/716
+
+// parseTime parses a time string into a time.Time object.
+func parseTime(input string, now time.Time) (time.Time, error) {
+	// short-circuit if time is relative
+	if strings.HasPrefix(input, "T-") {
+		return parseRelativeTime(input, now)
+	}
+
+	// Handle absolute time formats using go-kit helpers.ParseTime
+	t, err := helpers.ParseTime(input)
+	if err != nil {
+		// TODO #error improve the error message to link to docs for supported formats: https://github.com/turbot/pipe-fittings/issues/639
+		return time.Time{}, err
+	}
+
+	// normalize to UTC
+	return t.UTC(), nil
+}
+
+// parseRelativeTime parses relative time strings.
+func parseRelativeTime(input string, now time.Time) (time.Time, error) {
+	if len(input) < 3 || !strings.HasPrefix(input, "T-") {
+		return time.Time{}, errors.New(constants.InvalidRelativeTimeFormat)
+	}
+
+	// Extract the value and unit
+	relative := input[2:]
+	unit := relative[len(relative)-1]
+	value, err := strconv.Atoi(relative[:len(relative)-1])
+	if err != nil {
+		return time.Time{}, errors.New(constants.InvalidRelativeTimeFormat)
+	}
+
+	// Calculate the resulting time
+	switch unit {
+	case 'Y': // Years
+		return now.AddDate(-value, 0, 0), nil
+	case 'm': // Months
+		return now.AddDate(0, -value, 0), nil
+	case 'W': // Weeks
+		return now.AddDate(0, 0, -value*7), nil
+	case 'd': // Days
+		return now.AddDate(0, 0, -value), nil
+	case 'H': // Hours
+		return now.Add(time.Duration(-value) * time.Hour), nil
+	case 'M': // Minutes
+		return now.Add(time.Duration(-value) * time.Minute), nil
+	default:
+		return time.Time{}, errors.New(constants.InvalidRelativeTimeFormat)
+	}
 }
