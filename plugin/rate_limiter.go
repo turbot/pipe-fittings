@@ -16,7 +16,6 @@ const (
 	LimiterStatusOverridden = "overridden"
 )
 
-// TODO what are db tags for https://github.com/turbot/pipe-fittings/v2/issues/615
 type RateLimiter struct {
 	Name            string                 `hcl:"name,label" db:"name" cty:"name"`
 	BucketSize      *int64                 `hcl:"bucket_size,optional" db:"bucket_size" cty:"bucket_size"`
