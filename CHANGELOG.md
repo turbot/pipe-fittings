@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## 2.5.0 [2025-06-02]
+
+* Add DecodePlugin function to share functionality between steampipe and export. ([#722](https://github.com/turbot/pipe-fittings/issues/722))
+
 ## 2.4.2 [2025-05-20]
 
 * Fix issue where the `from` property in Tailpipe connections was getting parsed incorrectly. ([#717](https://github.com/turbot/pipe-fittings/issues/717))
