@@ -151,6 +151,11 @@ func GetDataDir() string {
 	return installSubDir("data")
 }
 
+// GetMetadataDir returns the path to the metadata directory
+func GetMetadataDir() string {
+	return installSubDir("metadata")
+}
+
 // EnsureDataDir returns the path to the data directory (creates if missing)
 func EnsureDataDir() string {
 	return ensureInstallSubDir("data")

@@ -118,7 +118,7 @@ func (p *TailpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options
 
 // EnsureWorkspaceDirs creates all necessary workspace directories
 func (p *TailpipeWorkspaceProfile) EnsureWorkspaceDirs() error {
-	workspaceDirs := []string{p.GetDataDir(), p.GetCollectionDir()}
+	workspaceDirs := []string{p.GetDataDir(), p.GetMetadataDir(), p.GetCollectionDir()}
 
 	// create if necessary
 	for _, dir := range workspaceDirs {
@@ -134,6 +134,10 @@ func (p *TailpipeWorkspaceProfile) EnsureWorkspaceDirs() error {
 
 func (p *TailpipeWorkspaceProfile) GetDataDir() string {
 	return filepath.Join(filepaths.GetDataDir(), p.ProfileName)
+}
+
+func (p *TailpipeWorkspaceProfile) GetMetadataDir() string {
+	return filepath.Join(filepaths.GetMetadataDir(), p.ProfileName)
 }
 
 // GetCollectionDir returns the path to the collection data directory
