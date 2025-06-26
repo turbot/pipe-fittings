@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## 2.5.2 [2025-06-26]
+
+* Add `constants.ArgOverwrite`
+
 ## 2.5.1 [2025-06-02]
 
 * Add `constants.ArgReindex`
