@@ -102,7 +102,7 @@ const (
 	ArgResume                  = "resume"
 	ArgResumeInput             = "resume-input"
 	ArgReindex                 = "reindex"
-	ArgRecollect               = "recollect"
+	ArgOverwrite               = "overwrite"
 
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
