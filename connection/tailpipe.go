@@ -119,6 +119,10 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	if res.Error != "" {
 		return "", fmt.Errorf("'tailpipe connect' returned an error: %s", res.Error)
 	}
+	// verify a filepath was returned
+	if res.DatabaseFilepath == "" {
+		return "", errors.New("'tailpipe connect' did not return a database filepath")
+	}
 
 	// Convert output to string, trim whitespace, and return as connection string
 	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
