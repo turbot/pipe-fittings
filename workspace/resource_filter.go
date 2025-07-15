@@ -255,8 +255,8 @@ func (f *ResourceFilter) parseJSONPathFilter() (func(resource modconfig.HclResou
 		return nil, sperr.New("invalid JSON path: %s", jsonPath)
 	}
 
-	fieldName := strings.TrimSpace(pathParts[0])                    // e.g., "tags"
-	keyName := strings.Trim(strings.TrimSpace(pathParts[1]), ">''") // e.g., "tag_property"
+	fieldName := strings.TrimSpace(pathParts[0])                   // e.g., "tags"
+	keyName := strings.Trim(strings.TrimSpace(pathParts[1]), ">'") // e.g., "tag_property"
 
 	// Build the predicate
 	p := func(resource modconfig.HclResource) bool {
