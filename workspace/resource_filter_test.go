@@ -63,24 +63,29 @@ func TestSimplePropertyFilter(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "cis_type equals automated",
-			where:    "cis_type='automated'",
-			expected: true,
-		},
-		{
-			name:     "cis_type equals manual",
-			where:    "cis_type='manual'",
-			expected: false,
-		},
-		{
 			name:     "severity equals high",
 			where:    "severity='high'",
 			expected: true,
 		},
 		{
+			name:     "severity equals low",
+			where:    "severity='low'",
+			expected: false,
+		},
+		{
 			name:     "severity not equals low",
 			where:    "severity!='low'",
 			expected: true,
+		},
+		{
+			name:     "cis_type equals automated (using JSON path)",
+			where:    "tags->>'cis_type' = 'automated'",
+			expected: true,
+		},
+		{
+			name:     "cis_type equals manual (using JSON path)",
+			where:    "tags->>'cis_type' = 'manual'",
+			expected: false,
 		},
 	}
 
