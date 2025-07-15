@@ -92,6 +92,18 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 			return true
 		}, nil
 	}
+
+	// Check if this is a JSON path expression (contains ->)
+	if strings.Contains(f.Where, "->") {
+		return f.parseJSONPathFilter()
+	}
+
+	// Try to parse as a simple property filter first
+	if simpleFilter, err := f.parseSimplePropertyFilter(); err == nil {
+		return simpleFilter, nil
+	}
+
+	// Fall back to the original filter parser
 	parsed, err := filter.Parse("", []byte(f.Where))
 	if err != nil {
 		log.Printf("err %v", err)
@@ -99,7 +111,6 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 	}
 
 	// convert table schema into a column map
-
 	columnFilter, err := newColumnFilter(parsed.(filter.ComparisonNode))
 	if err != nil {
 		return nil, err
@@ -116,6 +127,202 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 		return columnFilter.evaluate(data)
 	}
 	return p, nil
+}
+
+// parseSimplePropertyFilter handles simple property filters like cis_type='automated'
+func (f *ResourceFilter) parseSimplePropertyFilter() (func(resource modconfig.HclResource) bool, error) {
+	// Parse expressions like: cis_type='automated' or severity='high'
+	// or: cis_type in ('automated', 'manual')
+	parts := strings.Fields(f.Where)
+	if len(parts) < 3 {
+		return nil, sperr.New("invalid simple property filter: %s", f.Where)
+	}
+
+	propertyName := parts[0] // e.g., "tag_property"
+	operator := parts[1]     // e.g., "=" or "in"
+
+	// Handle "not in" operator
+	if operator == "not" && len(parts) >= 4 && parts[2] == "in" {
+		operator = "not in"
+		parts = append(parts[:2], parts[3:]...)
+	}
+
+	// Extract values
+	var values []string
+	if operator == "in" || operator == "not in" {
+		// Handle list like ('automated', 'manual')
+		valuePart := strings.Join(parts[2:], " ")
+		if strings.HasPrefix(valuePart, "(") && strings.HasSuffix(valuePart, ")") {
+			valuePart = strings.Trim(valuePart, "()")
+			values = parseQuotedList(valuePart)
+		} else {
+			return nil, sperr.New("invalid list format in filter: %s", f.Where)
+		}
+	} else {
+		// Handle single value
+		value := strings.Trim(parts[2], "'")
+		values = []string{value}
+	}
+
+	// Build the predicate
+	p := func(resource modconfig.HclResource) bool {
+		data := resource.GetShowData()
+
+		// Get the field value
+		fieldValue, exists := data.Fields[propertyName]
+		if !exists {
+			return false
+		}
+
+		// Compare the values
+		fieldStr := fieldValue.ValueString()
+		switch operator {
+		case "=":
+			if len(values) == 1 {
+				return fieldStr == values[0]
+			}
+			return false
+		case "!=":
+			if len(values) == 1 {
+				return fieldStr != values[0]
+			}
+			return false
+		case "in":
+			for _, v := range values {
+				if fieldStr == v {
+					return true
+				}
+			}
+			return false
+		case "not in":
+			for _, v := range values {
+				if fieldStr == v {
+					return false
+				}
+			}
+			return true
+		default:
+			return false
+		}
+	}
+
+	return p, nil
+}
+
+// parseJSONPathFilter handles PostgreSQL JSON path expressions like tags->>'service'
+func (f *ResourceFilter) parseJSONPathFilter() (func(resource modconfig.HclResource) bool, error) {
+	// Parse expressions like: tags->>'service' != 'Azure/ActiveDirectory'
+	// or: tags->>'service' not in ('Azure/EntraID','Azure/ActiveDirectory')
+	// or: tags->>'service' = 'Azure/ActiveDirectory'
+
+	// Extract the JSON path and operator
+	parts := strings.Fields(f.Where)
+	if len(parts) < 3 {
+		return nil, sperr.New("invalid JSON path expression: %s", f.Where)
+	}
+
+	jsonPath := parts[0] // e.g., "tags->>'tag_property'"
+	operator := parts[1] // e.g., "!=", "=", "in", "not"
+
+	// Handle "not in" operator
+	if operator == "not" && len(parts) >= 4 && parts[2] == "in" {
+		operator = "not in"
+		parts = append(parts[:2], parts[3:]...)
+	}
+
+	// Extract values (handle both single value and list)
+	var values []string
+	if operator == "in" || operator == "not in" {
+		valuePart := strings.Join(parts[2:], " ")
+		if strings.HasPrefix(valuePart, "(") && strings.HasSuffix(valuePart, ")") {
+			valuePart = strings.Trim(valuePart, "()")
+			values = parseQuotedList(valuePart)
+		} else {
+			return nil, sperr.New("invalid list format in filter: %s", f.Where)
+		}
+	} else {
+		valuePart := strings.Join(parts[2:], " ")
+		if strings.HasPrefix(valuePart, "'") && strings.HasSuffix(valuePart, "'") {
+			values = []string{strings.Trim(valuePart, "'")}
+		} else {
+			values = []string{valuePart}
+		}
+	}
+
+	// Parse the JSON path
+	pathParts := strings.Split(jsonPath, "->")
+	if len(pathParts) != 2 {
+		return nil, sperr.New("invalid JSON path: %s", jsonPath)
+	}
+
+	fieldName := strings.TrimSpace(pathParts[0])                    // e.g., "tags"
+	keyName := strings.Trim(strings.TrimSpace(pathParts[1]), ">''") // e.g., "tag_property"
+
+	// Build the predicate
+	p := func(resource modconfig.HclResource) bool {
+		data := resource.GetShowData()
+
+		// Get the field value
+		fieldValue, exists := data.Fields[fieldName]
+		if !exists {
+			return false
+		}
+
+		// If it's a map (like tags), extract the key value
+		if tags, ok := fieldValue.Value.(map[string]string); ok {
+			tagValue, tagExists := tags[keyName]
+			if !tagExists {
+				return false
+			}
+
+			// Apply the operator
+			switch operator {
+			case "=":
+				if len(values) == 1 {
+					return tagValue == values[0]
+				}
+				return false
+			case "!=":
+				if len(values) == 1 {
+					return tagValue != values[0]
+				}
+				return false
+			case "in":
+				for _, v := range values {
+					if tagValue == v {
+						return true
+					}
+				}
+				return false
+			case "not in":
+				for _, v := range values {
+					if tagValue == v {
+						return false
+					}
+				}
+				return true
+			default:
+				return false
+			}
+		}
+
+		return false
+	}
+
+	return p, nil
+}
+
+// parseQuotedList parses a comma-separated list of quoted strings
+func parseQuotedList(listStr string) []string {
+	var values []string
+	parts := strings.Split(listStr, ",")
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if strings.HasPrefix(part, "'") && strings.HasSuffix(part, "'") {
+			values = append(values, strings.Trim(part, "'"))
+		}
+	}
+	return values
 }
 
 type columnFilter struct {
