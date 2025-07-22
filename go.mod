@@ -54,7 +54,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/pipes-sdk-go v0.12.0
 	github.com/turbot/terraform-components v0.0.0-20231213122222-1f3526cab7a7
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/text v0.23.0
 )
 
