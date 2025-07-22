@@ -23,6 +23,7 @@ const TailpipeConnectionType = "tailpipe"
 
 type TailpipeConnectResponse struct {
 	DatabaseFilepath string `json:"database_filepath,omitempty"`
+	DataPath         string `json:"data_path,omitempty"`
 	Error            string `json:"error,omitempty"`
 }
 
@@ -64,7 +65,6 @@ func (c *TailpipeConnection) Resolve(ctx context.Context) (PipelingConnection, e
 }
 
 func (c *TailpipeConnection) Validate() hcl.Diagnostics {
-	// TODO #validate validate From and To https://github.com/turbot/powerpipe/issues/645
 	return nil
 }
 
@@ -91,12 +91,22 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 		args = append(args, "--partition", fmt.Sprintf("\"%s\"", strings.Join(filters.Partitions, ",")))
 	}
 
-	// see if we already have a connection string for these filters
-	filterKey := filters.String()
-	if connectionString, ok := c.connectionStrings[filterKey]; ok {
+	// for tailpipe v0.7.0 and later, we will have a single ducklake connection string - and we will NOT support
+	// filter params
+	// for tailpipe v0.6.0 and earlier, we will store a connection string for each set of filters
+	// check if we have cached a connection string
+	// first try ducklake
+	connectionKey := "ducklake"
+	if connectionString, ok := c.connectionStrings[connectionKey]; ok {
+		return connectionString, nil
+	}
+	// if not, try the filters
+	connectionKey = filters.String()
+	if connectionString, ok := c.connectionStrings[connectionKey]; ok {
 		return connectionString, nil
 	}
 
+	// so - we do not have a cached connection string, so we need to call tailpipe
 	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe", "args", args)
 
 	// Invoke the "tailpipe connect" shell command and capture output
@@ -120,11 +130,18 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 		return "", fmt.Errorf("'tailpipe connect' returned an error: %s", res.Error)
 	}
 
-	// Convert output to string, trim whitespace, and return as connection string
-	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
-
+	// if DataPath is included in the response, that means the db is a DuckLake database
+	var connectionString string
+	if res.DataPath != "" {
+		// Convert output to string, trim whitespace, and return as connection string
+		connectionString = fmt.Sprintf("ducklake://%s?data_path=%s", strings.TrimSpace(res.DatabaseFilepath), strings.TrimSpace(res.DataPath))
+		connectionKey = "ducklake"
+	} else {
+		// Convert output to string, trim whitespace, and return as connection string
+		connectionString = fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
+	}
 	// add to cache
-	c.connectionStrings[filterKey] = connectionString
+	c.connectionStrings[connectionKey] = connectionString
 
 	slog.Info("GetConnectionString returned from tailpipe", "args", args, "connectionString", connectionString)
 
