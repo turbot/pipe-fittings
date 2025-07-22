@@ -101,6 +101,9 @@ const (
 	ArgWorkspaceDatabase       = "workspace-database"
 	ArgResume                  = "resume"
 	ArgResumeInput             = "resume-input"
+	ArgReindex                 = "reindex"
+	ArgOverwrite               = "overwrite"
+
 	// Flowpipe concurrency
 	ArgMaxConcurrencyHttp      = "max-concurrency-http"
 	ArgMaxConcurrencyQuery     = "max-concurrency-query"

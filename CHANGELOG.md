@@ -2,6 +2,14 @@
 
 Shared Pipes Component
 
+## 2.5.2 [2025-06-26]
+
+* Add `constants.ArgOverwrite`
+
+## 2.5.1 [2025-06-02]
+
+* Add `constants.ArgReindex`
+
 ## 2.5.0 [2025-06-02]
 
 * Add DecodePlugin function to share functionality between steampipe and export. ([#722](https://github.com/turbot/pipe-fittings/issues/722))
