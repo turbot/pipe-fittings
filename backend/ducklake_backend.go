@@ -16,25 +16,22 @@ const (
 )
 
 type DucklakeBackend struct {
-	dbPath           string
-	dataPath         string
-	rowReader        RowReader
-	connectionString string
+	dbPath    string
+	dataPath  string
+	rowReader RowReader
 }
 
 func NewDucklakeBackend(connString string) (*DucklakeBackend, error) {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
-	dbPath, dataPath, err := parseDucklakeConnectionString(connString)
+	dbPath, dataPath, err := ParseDucklakeConnectionString(connString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not parse ducklake connection string: '%s'", connString)
 	}
 
 	return &DucklakeBackend{
-		dbPath:   dbPath,
-		dataPath: dataPath,
-		// also store the raw connection string
-		connectionString: connString,
-		rowReader:        newDuckDBRowReader(),
+		dbPath:    dbPath,
+		dataPath:  dataPath,
+		rowReader: newDuckDBRowReader(),
 	}, nil
 }
 
@@ -62,23 +59,8 @@ func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption)
 	return db, nil
 }
 
-func parseDucklakeConnectionString(connectionString string) (string, string, error) {
-	u, err := url.Parse(connectionString)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Db path comes from the Path component
-	dbPath := u.Path
-
-	// Data path comes from the query parameter
-	dataDir := u.Query().Get("data_path")
-
-	return dbPath, dataDir, err
-}
-
 func (b *DucklakeBackend) ConnectionString() string {
-	return b.connectionString
+	return GetDucklakeConnectionString(b.dbPath, b.dataPath)
 }
 
 func (b *DucklakeBackend) Name() string {
@@ -133,4 +115,23 @@ func (b *DucklakeBackend) OnConnection(ctx context.Context, conn *sql.Conn) erro
 	// set default catalog to ducklake
 	_, err := conn.ExecContext(ctx, fmt.Sprintf("use %s", constants.DuckLakeCatalog))
 	return err
+}
+
+func ParseDucklakeConnectionString(connectionString string) (string, string, error) {
+	u, err := url.Parse(connectionString)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Db path comes from the Path component
+	dbPath := u.Path
+
+	// Data path comes from the query parameter
+	dataDir := u.Query().Get("data_path")
+
+	return dbPath, dataDir, err
+}
+
+func GetDucklakeConnectionString(dbPath, dataPath string) string {
+	return fmt.Sprintf("ducklake://%s?data_path=%s", dbPath, dataPath)
 }
