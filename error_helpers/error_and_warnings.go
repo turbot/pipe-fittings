@@ -28,7 +28,7 @@ func NewErrorsAndWarning(err error, warnings ...string) ErrorAndWarnings {
 
 func (r *ErrorAndWarnings) WrapErrorWithMessage(msg string) ErrorAndWarnings {
 	if r.Error != nil {
-		r.Error = sperr.WrapWithMessage(r.Error, msg)
+		r.Error = sperr.WrapWithMessage(r.Error, "%s", msg)
 	}
 	return *r
 }
