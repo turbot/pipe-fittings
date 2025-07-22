@@ -1,6 +1,6 @@
 module github.com/turbot/pipe-fittings/v2
 
-go 1.23.1
+go 1.24
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
