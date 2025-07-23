@@ -98,11 +98,6 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 		return f.parseJSONPathFilter()
 	}
 
-	// Try to parse as a simple property filter first
-	if simpleFilter, err := f.parseSimplePropertyFilter(); err == nil {
-		return simpleFilter, nil
-	}
-
 	// Fall back to the original filter parser
 	parsed, err := filter.Parse("", []byte(f.Where))
 	if err != nil {
@@ -126,86 +121,6 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 
 		return columnFilter.evaluate(data)
 	}
-	return p, nil
-}
-
-// parseSimplePropertyFilter handles simple property filters like cis_type='automated'
-func (f *ResourceFilter) parseSimplePropertyFilter() (func(resource modconfig.HclResource) bool, error) {
-	// Parse expressions like: cis_type='automated' or severity='high'
-	// or: cis_type in ('automated', 'manual')
-	parts := strings.Fields(f.Where)
-	if len(parts) < 3 {
-		return nil, sperr.New("invalid simple property filter: %s", f.Where)
-	}
-
-	propertyName := parts[0] // e.g., "tag_property"
-	operator := parts[1]     // e.g., "=" or "in"
-
-	// Handle "not in" operator
-	if operator == "not" && len(parts) >= 4 && parts[2] == "in" {
-		operator = "not in"
-		parts = append(parts[:2], parts[3:]...)
-	}
-
-	// Extract values
-	var values []string
-	if operator == "in" || operator == "not in" {
-		// Handle list like ('automated', 'manual')
-		valuePart := strings.Join(parts[2:], " ")
-		if strings.HasPrefix(valuePart, "(") && strings.HasSuffix(valuePart, ")") {
-			valuePart = strings.Trim(valuePart, "()")
-			values = parseQuotedList(valuePart)
-		} else {
-			return nil, sperr.New("invalid list format in filter: %s", f.Where)
-		}
-	} else {
-		// Handle single value
-		value := strings.Trim(parts[2], "'")
-		values = []string{value}
-	}
-
-	// Build the predicate
-	p := func(resource modconfig.HclResource) bool {
-		data := resource.GetShowData()
-
-		// Get the field value
-		fieldValue, exists := data.Fields[propertyName]
-		if !exists {
-			return false
-		}
-
-		// Compare the values
-		fieldStr := fieldValue.ValueString()
-		switch operator {
-		case "=":
-			if len(values) == 1 {
-				return fieldStr == values[0]
-			}
-			return false
-		case "!=":
-			if len(values) == 1 {
-				return fieldStr != values[0]
-			}
-			return false
-		case "in":
-			for _, v := range values {
-				if fieldStr == v {
-					return true
-				}
-			}
-			return false
-		case "not in":
-			for _, v := range values {
-				if fieldStr == v {
-					return false
-				}
-			}
-			return true
-		default:
-			return false
-		}
-	}
-
 	return p, nil
 }
 
