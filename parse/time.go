@@ -17,16 +17,12 @@ func ParseTime(input string, now time.Time) (time.Time, error) {
 	// check if time is relative
 	if strings.HasPrefix(input, "T-") {
 		t, err = parseRelativeTime(input, now)
-		if err != nil {
-			return time.Time{}, err
-		}
 	} else {
 		// Handle absolute time formats using go-kit helpers.ParseTime
 		t, err = helpers.ParseTime(input)
-		if err != nil {
-			// TODO #error improve the error message to link to docs for supported formats: https://github.com/turbot/pipe-fittings/issues/639
-			return time.Time{}, err
-		}
+	}
+	if err != nil {
+		return time.Time{}, err
 	}
 
 	// normalize to UTC
