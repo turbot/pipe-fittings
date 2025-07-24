@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"log/slog"
 	"os/exec"
 	"slices"
@@ -36,7 +37,7 @@ type TailpipeConnection struct {
 	Partitions *[]string `cty:"partitions" hcl:"partitions"`
 
 	// if an option is passed to GetConnectionString, it may override the From, To, Indexes or Partitions values
-	OverrideFilters *TailpipeDatabaseFilters
+	OverrideFilters *backend.DatabaseFilters
 
 	// store a maps of connection strings, keyed by the filters used to create the db
 	// this is to avoid creating a new connection string each time GetConnectionString is called, unless
@@ -210,13 +211,13 @@ func (c *TailpipeConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func (c *TailpipeConnection) setFilters(f *TailpipeDatabaseFilters) {
+func (c *TailpipeConnection) setFilters(f *backend.DatabaseFilters) {
 	c.OverrideFilters = f
 }
 
 // resolve the active filters, either from the connection or the override
-func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
-	var res = &TailpipeDatabaseFilters{}
+func (c *TailpipeConnection) getFilters() *backend.DatabaseFilters {
+	var res = &backend.DatabaseFilters{}
 	if c.From != nil {
 		// we have already validated the time format
 		from, _ := parseTime(*c.From, time.Now())
@@ -267,62 +268,17 @@ func (c *TailpipeConnection) IsDynamic() {}
 
 // WithFilter is a ConnectionStringOpt that sets the filters for the connection
 // it currently only supports TailpipeConnection
-func WithFilter(f *TailpipeDatabaseFilters) ConnectionStringOpt {
+func WithFilter(f *backend.DatabaseFilters) ConnectionStringOpt {
 	return func(c ConnectionStringProvider) {
 
 		// if this connection supports filter, set it
 		type filterSetter interface {
-			setFilters(f *TailpipeDatabaseFilters)
+			setFilters(f *backend.DatabaseFilters)
 		}
 		if setter, ok := c.(filterSetter); ok {
 			setter.setFilters(f)
 		}
 	}
-}
-
-type TailpipeDatabaseFilters struct {
-	// partition wildcards
-	Partitions []string
-	// the indexes to include
-	Indexes []string
-	// the data range
-	From *time.Time
-	To   *time.Time
-}
-
-func (o *TailpipeDatabaseFilters) Equals(other *TailpipeDatabaseFilters) bool {
-	if (o == nil) != (other == nil) ||
-		!slices.Equal(o.Partitions, other.Partitions) ||
-		!slices.Equal(o.Indexes, other.Indexes) ||
-		(o.From == nil) != (other.From == nil) ||
-		o.From != nil && !o.From.Equal(*other.From) ||
-		(o.To == nil) != (other.To == nil) ||
-		o.To != nil && !o.To.Equal(*other.To) {
-		return false
-	}
-
-	return true
-}
-
-func (o *TailpipeDatabaseFilters) String() string {
-	var str strings.Builder
-	if len(o.Partitions) > 0 {
-		str.WriteString("partitions: ")
-		str.WriteString(strings.Join(o.Partitions, ","))
-	}
-	if len(o.Indexes) > 0 {
-		str.WriteString("indexes: ")
-		str.WriteString(strings.Join(o.Indexes, ","))
-	}
-	if o.From != nil {
-		str.WriteString("from: ")
-		str.WriteString(o.From.String())
-	}
-	if o.To != nil {
-		str.WriteString("to: ")
-		str.WriteString(o.To.String())
-	}
-	return str.String()
 }
 
 // This is a duplicate of the function in parse/time.go. We have to duplicate it since we are not

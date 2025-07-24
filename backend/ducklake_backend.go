@@ -52,7 +52,7 @@ func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption)
 		return nil, err
 	}
 
-	if err = ConnectDucklake(ctx, db, b.dbPath, b.dataPath); err != nil {
+	if err = ConnectDucklake(ctx, db, b.dbPath, b.dataPath, config.Filters); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +72,7 @@ func (b *DucklakeBackend) RowReader() RowReader {
 	return b.rowReader
 }
 
-func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
+func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, filters *DatabaseFilters) error {
 	// 1. Install sqlite extension
 	_, err := db.ExecContext(ctx, "install sqlite")
 	if err != nil {
@@ -112,6 +112,7 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) e
 // This function is called by the dbClient after obtaining a new connection
 // We use it to set the default catalog to tailpipe_ducklake
 func (b *DucklakeBackend) OnConnection(ctx context.Context, conn *sql.Conn) error {
+
 	// set default catalog to ducklake
 	_, err := conn.ExecContext(ctx, fmt.Sprintf("use %s", constants.DuckLakeCatalog))
 	return err
