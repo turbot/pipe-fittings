@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## 2.6.0 [2025-07-24]
+
+* Compiled with Go 1.24.
+* Fixed `ParseTime` func returning non-UTC times for relative times.
+* Upgraded `cloudflare/circl` and `oauth2` to remediate high vulnerabilities.
+
 ## 2.5.2 [2025-06-26]
 
 * Add `constants.ArgOverwrite`

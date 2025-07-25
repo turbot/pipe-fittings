@@ -1,6 +1,6 @@
 module github.com/turbot/pipe-fittings/v2
 
-go 1.23.1
+go 1.24
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -54,7 +54,7 @@ require (
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/pipes-sdk-go v0.12.0
 	github.com/turbot/terraform-components v0.0.0-20231213122222-1f3526cab7a7
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/text v0.23.0
 )
 
@@ -86,7 +86,7 @@ require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/btubbs/datetime v0.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
