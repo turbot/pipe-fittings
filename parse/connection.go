@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-fittings/v2/funcs"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
@@ -19,7 +20,11 @@ func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Dia
 	if diags.HasErrors() {
 		return nil, diags
 	}
-
+	configPath := block.DefRange.Filename
+	evalCtx := &hcl.EvalContext{
+		Variables: make(map[string]cty.Value),
+		Functions: funcs.ContextFunctions(configPath),
+	}
 	connection := modconfig.NewConnection(block)
 
 	// decode the plugin property
@@ -74,7 +79,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Dia
 	}
 
 	// convert the remaining config to a hcl string to pass to the plugin
-	config, moreDiags := hclhelpers.HclBodyToHclString(rest, connectionContent)
+	config, moreDiags := hclhelpers.HclBodyToHclStringWithEvalContext(rest, connectionContent, evalCtx)
 	if moreDiags.HasErrors() {
 		diags = append(diags, moreDiags...)
 	} else {

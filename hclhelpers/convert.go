@@ -25,6 +25,10 @@ func JSONToHcl(jsonString string) (string, hcl.Diagnostics) {
 // HclBodyToHclString builds a hcl string with all attributes in the connection config which are NOT specified in the connection block schema
 // this is passed to the plugin who will validate and parse it
 func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent) (string, hcl.Diagnostics) {
+	return HclBodyToHclStringWithEvalContext(body, excludeContent, nil)
+}
+
+func HclBodyToHclStringWithEvalContext(body hcl.Body, excludeContent *hcl.BodyContent, evalCtx *hcl.EvalContext) (string, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
@@ -76,7 +80,7 @@ func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent) (string,
 	var sortedKeys = helpers.SortedMapKeys(attrExpressionMap)
 	for _, name := range sortedKeys {
 		expr := attrExpressionMap[name]
-		val, moreDiags := expr.Value(nil)
+		val, moreDiags := expr.Value(evalCtx)
 		if moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
