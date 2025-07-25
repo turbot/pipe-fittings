@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/funcs"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/v2/funcs"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/zclconf/go-cty/cty"
@@ -36,7 +36,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Dia
 
 	if connectionContent.Attributes["type"] != nil {
 		var connectionType string
-		diags = gohcl.DecodeExpression(connectionContent.Attributes["type"].Expr, nil, &connectionType)
+		diags = gohcl.DecodeExpression(connectionContent.Attributes["type"].Expr, evalCtx, &connectionType)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -44,7 +44,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Dia
 	}
 	if connectionContent.Attributes["import_schema"] != nil {
 		var importSchema string
-		diags = gohcl.DecodeExpression(connectionContent.Attributes["import_schema"].Expr, nil, &importSchema)
+		diags = gohcl.DecodeExpression(connectionContent.Attributes["import_schema"].Expr, evalCtx, &importSchema)
 		if diags.HasErrors() {
 			return nil, diags
 		}
@@ -52,7 +52,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Dia
 	}
 	if connectionContent.Attributes["connections"] != nil {
 		var connections []string
-		diags = gohcl.DecodeExpression(connectionContent.Attributes["connections"].Expr, nil, &connections)
+		diags = gohcl.DecodeExpression(connectionContent.Attributes["connections"].Expr, evalCtx, &connections)
 		if diags.HasErrors() {
 			return nil, diags
 		}
