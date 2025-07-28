@@ -1,7 +1,6 @@
 package ociinstaller
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,7 +22,15 @@ func NewTempDir(parent string) *tempDir {
 }
 
 func getOrCreateTempDir(parent string) string {
-	cacheDir := filepath.Join(parent, safeDirName(fmt.Sprintf("tmp-%s", generateTempDirName())))
+	// Create temp subdirectory under parent if it doesn't exist
+	tempParentDir := filepath.Join(parent, "temp")
+	if _, err := os.Stat(tempParentDir); os.IsNotExist(err) {
+		err = os.MkdirAll(tempParentDir, 0755)
+		error_helpers.FailOnErrorWithMessage(err, "could not create temp parent directory")
+	}
+
+	// Create the actual temp directory
+	cacheDir := filepath.Join(tempParentDir, safeDirName(generateTempDirName()))
 
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		err = os.MkdirAll(cacheDir, 0755)
