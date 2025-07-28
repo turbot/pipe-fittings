@@ -110,13 +110,11 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 	p := func(resource modconfig.HclResource) bool {
 		data := resource.GetShowData()
 
-		// For JSON path expressions, we need to handle them specially
-		if columnFilter.isJSONPath {
-			return columnFilter.evaluateJSONPath(data)
-		}
-
-		if _, containsColumn := data.Fields[columnFilter.column]; !containsColumn {
-			return false
+		// Check if the column exists (for non-JSON path expressions)
+		if !columnFilter.isJSONPath {
+			if _, containsColumn := data.Fields[columnFilter.column]; !containsColumn {
+				return false
+			}
 		}
 
 		return columnFilter.evaluate(data)
@@ -129,6 +127,8 @@ type columnFilter struct {
 	operator   string
 	values     []string
 	isJSONPath bool
+	jsonPath   string // Base field name for JSON path expressions
+	jsonKey    string // Key to extract from JSON field
 }
 
 func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
@@ -152,20 +152,10 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 		// Check if this is a JSON path expression
 		if len(codeNodes[0].JsonbSelector) > 0 {
 			res.isJSONPath = true
-			// Reconstruct the JSON path expression properly
-			res.column = codeNodes[0].Value
-			for i, selector := range codeNodes[0].JsonbSelector {
-				if i%2 == 0 {
-					// This is the operator (-> or ->>)
-					res.column += selector.Value
-				} else {
-					// This is the field/key - add quotes if it's a string
-					if selector.Type == "string" {
-						res.column += "'" + selector.Value + "'"
-					} else {
-						res.column += selector.Value
-					}
-				}
+			res.jsonPath = codeNodes[0].Value
+			// Extract the key from the JSON selector
+			if len(codeNodes[0].JsonbSelector) >= 2 {
+				res.jsonKey = codeNodes[0].JsonbSelector[1].Value
 			}
 		}
 
@@ -181,20 +171,10 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 		// Check if this is a JSON path expression
 		if len(codeNodes[0].JsonbSelector) > 0 {
 			res.isJSONPath = true
-			// Reconstruct the JSON path expression properly
-			res.column = codeNodes[0].Value
-			for i, selector := range codeNodes[0].JsonbSelector {
-				if i%2 == 0 {
-					// This is the operator (-> or ->>)
-					res.column += selector.Value
-				} else {
-					// This is the field/key - add quotes if it's a string
-					if selector.Type == "string" {
-						res.column += "'" + selector.Value + "'"
-					} else {
-						res.column += selector.Value
-					}
-				}
+			res.jsonPath = codeNodes[0].Value
+			// Extract the key from the JSON selector
+			if len(codeNodes[0].JsonbSelector) >= 2 {
+				res.jsonKey = codeNodes[0].JsonbSelector[1].Value
 			}
 		}
 
@@ -214,34 +194,47 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 
 // evaluateFilter evaluates whether the f.column filter passes for the given resource
 func (f columnFilter) evaluate(data *printers.RowData) bool {
+	// Get the value to compare against
+	var valueToCompare string
+	if f.isJSONPath {
+		valueToCompare = f.getJSONPathValue(data)
+	} else {
+		if field, exists := data.Fields[f.column]; exists {
+			valueToCompare = field.ValueString()
+		} else {
+			return false
+		}
+	}
+
+	// Apply the operator
 	switch f.operator {
 	case "=":
-		return data.Fields[f.column].ValueString() == f.values[0]
+		return valueToCompare == f.values[0]
 	case "!=":
-		return data.Fields[f.column].ValueString() != f.values[0]
+		return valueToCompare != f.values[0]
 	// TODO cast as number??
 	//case "<":
 	//case "<=":
 	//case ">":
 	//case ">=":
 	case "~~", "like":
-		return SqlLike(data.Fields[f.column].ValueString(), f.values[0], true)
+		return SqlLike(valueToCompare, f.values[0], true)
 	case "!~~", "not like":
-		return !SqlLike(data.Fields[f.column].ValueString(), f.values[0], true)
+		return !SqlLike(valueToCompare, f.values[0], true)
 	case "~~*", "ilike":
-		return SqlLike(data.Fields[f.column].ValueString(), f.values[0], false)
+		return SqlLike(valueToCompare, f.values[0], false)
 	case "!~~*", "not ilike":
-		return !SqlLike(data.Fields[f.column].ValueString(), f.values[0], false)
+		return !SqlLike(valueToCompare, f.values[0], false)
 	case "in":
 		for _, v := range f.values {
-			if data.Fields[f.column].ValueString() == v {
+			if valueToCompare == v {
 				return true
 			}
 		}
 		return false
 	case "not in":
 		for _, v := range f.values {
-			if data.Fields[f.column].ValueString() == v {
+			if valueToCompare == v {
 				return false
 			}
 		}
@@ -251,78 +244,21 @@ func (f columnFilter) evaluate(data *printers.RowData) bool {
 	}
 }
 
-// evaluateJSONPath evaluates a JSON path expression for the given resource
-func (f columnFilter) evaluateJSONPath(data *printers.RowData) bool {
-	// The JSON path expression is expected to be in the format "json_path->>'key'"
-	// where 'json_path' is the path to the JSON field and 'key' is the key to extract.
-	// The '->>' operator is handled by the filter parser.
-
-	// Extract the JSON path and key
-	// Handle both "->" and "->>" operators
-	var jsonPath, keyName string
-	if strings.Contains(f.column, "->>'") {
-		parts := strings.Split(f.column, "->>'")
-		if len(parts) != 2 {
-			return false
-		}
-		jsonPath = parts[0]
-		keyName = strings.TrimSuffix(parts[1], "'")
-	} else if strings.Contains(f.column, "->'") {
-		parts := strings.Split(f.column, "->'")
-		if len(parts) != 2 {
-			return false
-		}
-		jsonPath = parts[0]
-		keyName = strings.TrimSuffix(parts[1], "'")
-	} else {
-		return false
-	}
-
-	// Get the field value
-	fieldValue, exists := data.Fields[jsonPath]
+// getJSONPathValue extracts the value from a JSON path expression
+func (f columnFilter) getJSONPathValue(data *printers.RowData) string {
+	fieldValue, exists := data.Fields[f.jsonPath]
 	if !exists {
-		return false
+		return ""
 	}
 
 	// If it's a map (like tags), extract the key value
 	if tags, ok := fieldValue.Value.(map[string]string); ok {
-		tagValue, tagExists := tags[keyName]
-		if !tagExists {
-			return false
-		}
-
-		// Apply the operator
-		switch f.operator {
-		case "=":
-			if len(f.values) == 1 {
-				return tagValue == f.values[0]
-			}
-			return false
-		case "!=":
-			if len(f.values) == 1 {
-				return tagValue != f.values[0]
-			}
-			return false
-		case "in":
-			for _, v := range f.values {
-				if tagValue == v {
-					return true
-				}
-			}
-			return false
-		case "not in":
-			for _, v := range f.values {
-				if tagValue == v {
-					return false
-				}
-			}
-			return true
-		default:
-			return false
+		if tagValue, tagExists := tags[f.jsonKey]; tagExists {
+			return tagValue
 		}
 	}
 
-	return false
+	return ""
 }
 
 // SqlLike simulates SQL LIKE pattern matching using fnmatch, with an option for case sensitivity.
