@@ -25,7 +25,7 @@ func JSONToHcl(jsonString string) (string, hcl.Diagnostics) {
 // HclBodyToHclString builds an HCL string by extracting attributes and blocks that are NOT specified in the connection block schema.
 func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent, evalCtx *hcl.EvalContext) (string, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
-	// The HCL bytes are extracted by creating an HCL file with hclwrite.
+	// The HCL bytes are extracted by creating an HCL file with hclwrite and then converting it to a string.
 	// This is passed to the plugin who will validate and parse it.
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
