@@ -23,7 +23,7 @@ type ResourceFilter struct {
 
 // ResourceFilterFromTags creates a ResourceFilter from a list of tag values of the form 'key=value'
 func ResourceFilterFromTags(tags []string) ResourceFilter {
-	var res = ResourceFilter{
+	res := ResourceFilter{
 		Tags: make(map[string][]string),
 	}
 
@@ -31,9 +31,6 @@ func ResourceFilterFromTags(tags []string) ResourceFilter {
 	for _, tag := range tags {
 		value, _ := url.ParseQuery(tag)
 		for k, v := range value {
-			if _, ok := res.Tags[k]; !ok {
-				res.Tags[k] = []string{}
-			}
 			res.Tags[k] = append(res.Tags[k], v...)
 		}
 	}
@@ -69,11 +66,10 @@ func (f *ResourceFilter) getPredicate() (func(resource modconfig.HclResource) bo
 
 func (f *ResourceFilter) getTagPredicate() func(resource modconfig.HclResource) bool {
 	if f.Tags == nil {
-		return func(resource modconfig.HclResource) bool {
-			return true
-		}
+		return func(resource modconfig.HclResource) bool { return true }
 	}
-	tagPredicate := func(resource modconfig.HclResource) bool {
+
+	return func(resource modconfig.HclResource) bool {
 		tags := resource.GetTags()
 		for k, v := range f.Tags {
 			if !slices.Contains(v, tags[k]) {
@@ -81,16 +77,12 @@ func (f *ResourceFilter) getTagPredicate() func(resource modconfig.HclResource) 
 			}
 		}
 		return true
-
 	}
-	return tagPredicate
 }
 
 func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) bool, error) {
 	if f.Where == "" {
-		return func(resource modconfig.HclResource) bool {
-			return true
-		}, nil
+		return func(resource modconfig.HclResource) bool { return true }, nil
 	}
 
 	// Use the existing filter parser for all expressions, including JSON path expressions
@@ -109,14 +101,6 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 	// now build the predicate
 	p := func(resource modconfig.HclResource) bool {
 		data := resource.GetShowData()
-
-		// Check if the column exists (for non-JSON path expressions)
-		if !columnFilter.isJSONPath {
-			if _, containsColumn := data.Fields[columnFilter.column]; !containsColumn {
-				return false
-			}
-		}
-
 		return columnFilter.evaluate(data)
 	}
 	return p, nil
@@ -150,14 +134,7 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 		res.operator = cn.Operator.Value
 
 		// Check if this is a JSON path expression
-		if len(codeNodes[0].JsonbSelector) > 0 {
-			res.isJSONPath = true
-			res.jsonPath = codeNodes[0].Value
-			// Extract the key from the JSON selector
-			if len(codeNodes[0].JsonbSelector) >= 2 {
-				res.jsonKey = codeNodes[0].JsonbSelector[1].Value
-			}
-		}
+		res.setupJSONPath(codeNodes[0])
 
 	case "in":
 		res.operator = cn.Operator.Value
@@ -169,14 +146,7 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 		res.column = codeNodes[0].Value
 
 		// Check if this is a JSON path expression
-		if len(codeNodes[0].JsonbSelector) > 0 {
-			res.isJSONPath = true
-			res.jsonPath = codeNodes[0].Value
-			// Extract the key from the JSON selector
-			if len(codeNodes[0].JsonbSelector) >= 2 {
-				res.jsonKey = codeNodes[0].JsonbSelector[1].Value
-			}
-		}
+		res.setupJSONPath(codeNodes[0])
 
 		// Build look up of values to dedupe
 		valuesMap := make(map[string]struct{}, len(codeNodes)-1)
@@ -192,18 +162,25 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 	return res, nil
 }
 
+// setupJSONPath configures the filter for JSON path expressions
+func (f *columnFilter) setupJSONPath(codeNode filter.CodeNode) {
+	if len(codeNode.JsonbSelector) > 0 {
+		f.isJSONPath = true
+		f.jsonPath = codeNode.Value
+		// Extract the key from the JSON selector
+		if len(codeNode.JsonbSelector) >= 2 {
+			f.jsonKey = codeNode.JsonbSelector[1].Value
+		}
+	}
+}
+
 // evaluateFilter evaluates whether the f.column filter passes for the given resource
 func (f columnFilter) evaluate(data *printers.RowData) bool {
 	// Get the value to compare against
-	var valueToCompare string
-	if f.isJSONPath {
-		valueToCompare = f.getJSONPathValue(data)
-	} else {
-		if field, exists := data.Fields[f.column]; exists {
-			valueToCompare = field.ValueString()
-		} else {
-			return false
-		}
+	valueToCompare := f.getValue(data)
+	if valueToCompare == "" && !f.isJSONPath {
+		// For non-JSON paths, empty value means field doesn't exist
+		return false
 	}
 
 	// Apply the operator
@@ -242,6 +219,18 @@ func (f columnFilter) evaluate(data *printers.RowData) bool {
 	default:
 		return false
 	}
+}
+
+// getValue extracts the value to compare against, handling both regular columns and JSON paths
+func (f columnFilter) getValue(data *printers.RowData) string {
+	if f.isJSONPath {
+		return f.getJSONPathValue(data)
+	}
+
+	if field, exists := data.Fields[f.column]; exists {
+		return field.ValueString()
+	}
+	return ""
 }
 
 // getJSONPathValue extracts the value from a JSON path expression
