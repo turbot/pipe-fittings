@@ -93,12 +93,7 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 		}, nil
 	}
 
-	// Check if this is a JSON path expression (contains ->)
-	if strings.Contains(f.Where, "->") {
-		return f.parseJSONPathFilter()
-	}
-
-	// Fall back to the original filter parser
+	// Use the existing filter parser for all expressions, including JSON path expressions
 	parsed, err := filter.Parse("", []byte(f.Where))
 	if err != nil {
 		log.Printf("err %v", err)
@@ -115,6 +110,11 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 	p := func(resource modconfig.HclResource) bool {
 		data := resource.GetShowData()
 
+		// For JSON path expressions, we need to handle them specially
+		if columnFilter.isJSONPath {
+			return columnFilter.evaluateJSONPath(data)
+		}
+
 		if _, containsColumn := data.Fields[columnFilter.column]; !containsColumn {
 			return false
 		}
@@ -124,126 +124,11 @@ func (f *ResourceFilter) parseFilter() (func(resource modconfig.HclResource) boo
 	return p, nil
 }
 
-// parseJSONPathFilter handles PostgreSQL JSON path expressions like tags->>'service'
-func (f *ResourceFilter) parseJSONPathFilter() (func(resource modconfig.HclResource) bool, error) {
-	// Parse expressions like: tags->>'service' != 'Azure/ActiveDirectory'
-	// or: tags->>'service' not in ('Azure/EntraID','Azure/ActiveDirectory')
-	// or: tags->>'service' = 'Azure/ActiveDirectory'
-
-	// Extract the JSON path and operator
-	parts := strings.Fields(f.Where)
-	if len(parts) < 3 {
-		return nil, sperr.New("invalid JSON path expression: %s", f.Where)
-	}
-
-	jsonPath := parts[0] // e.g., "tags->>'tag_property'"
-	operator := parts[1] // e.g., "!=", "=", "in", "not"
-
-	// Handle "not in" operator
-	if operator == "not" && len(parts) >= 4 && parts[2] == "in" {
-		operator = "not in"
-		parts = append(parts[:2], parts[3:]...)
-	}
-
-	// Extract values (handle both single value and list)
-	var values []string
-	if operator == "in" || operator == "not in" {
-		valuePart := strings.Join(parts[2:], " ")
-		if strings.HasPrefix(valuePart, "(") && strings.HasSuffix(valuePart, ")") {
-			valuePart = strings.Trim(valuePart, "()")
-			values = parseQuotedList(valuePart)
-		} else {
-			return nil, sperr.New("invalid list format in filter: %s", f.Where)
-		}
-	} else {
-		valuePart := strings.Join(parts[2:], " ")
-		if strings.HasPrefix(valuePart, "'") && strings.HasSuffix(valuePart, "'") {
-			values = []string{strings.Trim(valuePart, "'")}
-		} else {
-			values = []string{valuePart}
-		}
-	}
-
-	// Parse the JSON path
-	pathParts := strings.Split(jsonPath, "->")
-	if len(pathParts) != 2 {
-		return nil, sperr.New("invalid JSON path: %s", jsonPath)
-	}
-
-	fieldName := strings.TrimSpace(pathParts[0])                   // e.g., "tags"
-	keyName := strings.Trim(strings.TrimSpace(pathParts[1]), ">'") // e.g., "tag_property"
-
-	// Build the predicate
-	p := func(resource modconfig.HclResource) bool {
-		data := resource.GetShowData()
-
-		// Get the field value
-		fieldValue, exists := data.Fields[fieldName]
-		if !exists {
-			return false
-		}
-
-		// If it's a map (like tags), extract the key value
-		if tags, ok := fieldValue.Value.(map[string]string); ok {
-			tagValue, tagExists := tags[keyName]
-			if !tagExists {
-				return false
-			}
-
-			// Apply the operator
-			switch operator {
-			case "=":
-				if len(values) == 1 {
-					return tagValue == values[0]
-				}
-				return false
-			case "!=":
-				if len(values) == 1 {
-					return tagValue != values[0]
-				}
-				return false
-			case "in":
-				for _, v := range values {
-					if tagValue == v {
-						return true
-					}
-				}
-				return false
-			case "not in":
-				for _, v := range values {
-					if tagValue == v {
-						return false
-					}
-				}
-				return true
-			default:
-				return false
-			}
-		}
-
-		return false
-	}
-
-	return p, nil
-}
-
-// parseQuotedList parses a comma-separated list of quoted strings
-func parseQuotedList(listStr string) []string {
-	var values []string
-	parts := strings.Split(listStr, ",")
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if strings.HasPrefix(part, "'") && strings.HasSuffix(part, "'") {
-			values = append(values, strings.Trim(part, "'"))
-		}
-	}
-	return values
-}
-
 type columnFilter struct {
-	column   string
-	operator string
-	values   []string
+	column     string
+	operator   string
+	values     []string
+	isJSONPath bool
 }
 
 func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
@@ -264,6 +149,26 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 		res.values = append(res.values, codeNodes[1].Value)
 		res.operator = cn.Operator.Value
 
+		// Check if this is a JSON path expression
+		if len(codeNodes[0].JsonbSelector) > 0 {
+			res.isJSONPath = true
+			// Reconstruct the JSON path expression properly
+			res.column = codeNodes[0].Value
+			for i, selector := range codeNodes[0].JsonbSelector {
+				if i%2 == 0 {
+					// This is the operator (-> or ->>)
+					res.column += selector.Value
+				} else {
+					// This is the field/key - add quotes if it's a string
+					if selector.Type == "string" {
+						res.column += "'" + selector.Value + "'"
+					} else {
+						res.column += selector.Value
+					}
+				}
+			}
+		}
+
 	case "in":
 		res.operator = cn.Operator.Value
 
@@ -272,6 +177,26 @@ func newColumnFilter(cn filter.ComparisonNode) (columnFilter, error) {
 			return res, fmt.Errorf("failed to parse cn")
 		}
 		res.column = codeNodes[0].Value
+
+		// Check if this is a JSON path expression
+		if len(codeNodes[0].JsonbSelector) > 0 {
+			res.isJSONPath = true
+			// Reconstruct the JSON path expression properly
+			res.column = codeNodes[0].Value
+			for i, selector := range codeNodes[0].JsonbSelector {
+				if i%2 == 0 {
+					// This is the operator (-> or ->>)
+					res.column += selector.Value
+				} else {
+					// This is the field/key - add quotes if it's a string
+					if selector.Type == "string" {
+						res.column += "'" + selector.Value + "'"
+					} else {
+						res.column += selector.Value
+					}
+				}
+			}
+		}
 
 		// Build look up of values to dedupe
 		valuesMap := make(map[string]struct{}, len(codeNodes)-1)
@@ -324,6 +249,80 @@ func (f columnFilter) evaluate(data *printers.RowData) bool {
 	default:
 		return false
 	}
+}
+
+// evaluateJSONPath evaluates a JSON path expression for the given resource
+func (f columnFilter) evaluateJSONPath(data *printers.RowData) bool {
+	// The JSON path expression is expected to be in the format "json_path->>'key'"
+	// where 'json_path' is the path to the JSON field and 'key' is the key to extract.
+	// The '->>' operator is handled by the filter parser.
+
+	// Extract the JSON path and key
+	// Handle both "->" and "->>" operators
+	var jsonPath, keyName string
+	if strings.Contains(f.column, "->>'") {
+		parts := strings.Split(f.column, "->>'")
+		if len(parts) != 2 {
+			return false
+		}
+		jsonPath = parts[0]
+		keyName = strings.TrimSuffix(parts[1], "'")
+	} else if strings.Contains(f.column, "->'") {
+		parts := strings.Split(f.column, "->'")
+		if len(parts) != 2 {
+			return false
+		}
+		jsonPath = parts[0]
+		keyName = strings.TrimSuffix(parts[1], "'")
+	} else {
+		return false
+	}
+
+	// Get the field value
+	fieldValue, exists := data.Fields[jsonPath]
+	if !exists {
+		return false
+	}
+
+	// If it's a map (like tags), extract the key value
+	if tags, ok := fieldValue.Value.(map[string]string); ok {
+		tagValue, tagExists := tags[keyName]
+		if !tagExists {
+			return false
+		}
+
+		// Apply the operator
+		switch f.operator {
+		case "=":
+			if len(f.values) == 1 {
+				return tagValue == f.values[0]
+			}
+			return false
+		case "!=":
+			if len(f.values) == 1 {
+				return tagValue != f.values[0]
+			}
+			return false
+		case "in":
+			for _, v := range f.values {
+				if tagValue == v {
+					return true
+				}
+			}
+			return false
+		case "not in":
+			for _, v := range f.values {
+				if tagValue == v {
+					return false
+				}
+			}
+			return true
+		default:
+			return false
+		}
+	}
+
+	return false
 }
 
 // SqlLike simulates SQL LIKE pattern matching using fnmatch, with an option for case sensitivity.
