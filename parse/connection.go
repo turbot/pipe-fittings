@@ -79,7 +79,7 @@ func DecodeConnection(block *hcl.Block) (*modconfig.SteampipeConnection, hcl.Dia
 	}
 
 	// convert the remaining config to a hcl string to pass to the plugin
-	config, moreDiags := hclhelpers.HclBodyToHclStringWithEvalContext(rest, connectionContent, evalCtx)
+	config, moreDiags := hclhelpers.HclBodyToHclString(rest, connectionContent, evalCtx)
 	if moreDiags.HasErrors() {
 		diags = append(diags, moreDiags...)
 	} else {
