@@ -3,6 +3,7 @@ package filepaths
 import (
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -48,11 +49,10 @@ func CleanupPidTempDirs(dir string) {
 				}
 			}
 			slog.Debug("Removing directory", "dir", file.Name())
-			_ = os.RemoveAll(filepath.Join(dir, file.Name()))
+			DeleteTempDir(filepath.Join(dir, file.Name()))
 		}
 	}
 }
-
 
 // isDirEmpty checks if a directory is empty.
 func IsDirEmpty(dir string) (bool, error) {
@@ -67,4 +67,31 @@ func IsDirEmpty(dir string) (bool, error) {
 		return true, nil
 	}
 	return false, err
+}
+
+func DeleteTempDir(tempDir string) {
+	// Remove the specific temp directory
+	if err := os.RemoveAll(tempDir); err != nil {
+		log.Printf("[TRACE] Failed to delete temp dir '%s' after installing plugin: %s", tempDir, err)
+		return
+	}
+
+	// Check if the parent temp directory is empty and clean it up if so
+	parentTempDir := filepath.Dir(tempDir)
+	fmt.Println("Parent temp dir", parentTempDir)
+	if filepath.Base(parentTempDir) == "temp" {
+		isEmpty, err := IsDirEmpty(parentTempDir)
+		if err != nil {
+			log.Printf("[TRACE] Failed to check if temp parent dir '%s' is empty: %s", parentTempDir, err)
+			return
+		}
+
+		if isEmpty {
+			if err := os.Remove(parentTempDir); err != nil {
+				log.Printf("[TRACE] Failed to remove empty temp parent dir '%s': %s", parentTempDir, err)
+			} else {
+				log.Printf("[TRACE] Cleaned up empty temp parent dir '%s'", parentTempDir)
+			}
+		}
+	}
 }

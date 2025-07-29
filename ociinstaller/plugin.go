@@ -31,7 +31,7 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 	defer func() {
 		// send a last beacon to signal completion
 		sub <- struct{}{}
-		DeleteTempDir(tempDir)
+		filepaths.DeleteTempDir(tempDir)
 	}()
 
 	ref := NewImageRef(imageRef)
