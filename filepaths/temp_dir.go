@@ -12,6 +12,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
+// EnsurePidTempDir creates a temporary directory with the current process ID as the name, it returns the path to the temporary directory
 func EnsurePidTempDir(parent string) string {
 	// add a PID directory to the collection directory
 	pidTempDir := filepath.Join(parent, fmt.Sprintf("%d", os.Getpid()))
@@ -26,9 +27,8 @@ func EnsurePidTempDir(parent string) string {
 	return pidTempDir
 }
 
-
+// CleanupPidTempDirs cleans up the temporary directories passed to it
 func CleanupPidTempDirs(dir string) {
-	
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		slog.Warn("failed to list files in dir", "error", err)
@@ -49,7 +49,7 @@ func CleanupPidTempDirs(dir string) {
 				}
 			}
 			slog.Debug("Removing directory", "dir", file.Name())
-			DeleteTempDir(filepath.Join(dir, file.Name()))
+			RemoveDirAndEmptyParents(filepath.Join(dir, file.Name()))
 		}
 	}
 }
@@ -69,7 +69,8 @@ func IsDirEmpty(dir string) (bool, error) {
 	return false, err
 }
 
-func DeleteTempDir(tempDir string) {
+// RemoveDirAndEmptyParents deletes the redundant 'temp' directory passed to it if it is empty
+func RemoveDirAndEmptyParents(tempDir string) {
 	// Remove the specific temp directory
 	if err := os.RemoveAll(tempDir); err != nil {
 		log.Printf("[TRACE] Failed to delete temp dir '%s' after installing plugin: %s", tempDir, err)

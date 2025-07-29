@@ -25,8 +25,7 @@ func EnsurePluginTempDir() string {
 	return EnsurePidTempDir(ensureInstallSubDir("plugins/temp"))
 }
 
-// When we install the plugin all the files go under ~/.tailpipe/plugins/temp/<pid> folder
-// The 'root' is used to clean up temp files and this the path to the parent 'temp' folder
+// CleanupPluginTempDirs removes orphaned temporary directories from failed plugin installations
 func CleanupPluginTempDirs() {
 	pluginRootTempDir:= installSubDir("plugins/temp")
 	CleanupPidTempDirs(pluginRootTempDir)
