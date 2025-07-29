@@ -78,7 +78,6 @@ func DeleteTempDir(tempDir string) {
 
 	// Check if the parent temp directory is empty and clean it up if so
 	parentTempDir := filepath.Dir(tempDir)
-	fmt.Println("Parent temp dir", parentTempDir)
 	if filepath.Base(parentTempDir) == "temp" {
 		isEmpty, err := IsDirEmpty(parentTempDir)
 		if err != nil {
