@@ -163,6 +163,8 @@ func (b *DucklakeBackend) buildFilterClause() string {
 	return "where " + strings.Join(conditions, " and ")
 }
 
+// TODO #DL: use default data location - remove DataPath everywhere
+
 func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
 	// 1. Install sqlite extension
 	_, err := db.ExecContext(ctx, "install sqlite")
