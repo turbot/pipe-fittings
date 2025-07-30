@@ -24,13 +24,6 @@ type Backend interface {
 	Name() string
 }
 
-// ConnectionInitializer is an interface which a backend can implement - it provides an OnConnected call
-// which is called by the dbClient after obtaining a new connection, giving the backend an opportunity to set session config/state
-// (it is used by ducklake to set the default catalog)
-type ConnectionInitializer interface {
-	OnConnection(context.Context, *sql.Conn) error
-}
-
 type SearchPathProvider interface {
 	OriginalSearchPath() []string
 	RequiredSearchPath() []string

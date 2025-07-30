@@ -19,6 +19,7 @@ type DucklakeBackend struct {
 	dbPath    string
 	dataPath  string
 	rowReader RowReader
+	filters   *DatabaseFilters
 }
 
 func NewDucklakeBackend(connString string) (*DucklakeBackend, error) {
@@ -38,6 +39,10 @@ func NewDucklakeBackend(connString string) (*DucklakeBackend, error) {
 // Connect implements Backend.
 func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption) (*sql.DB, error) {
 	config := NewBackendConfig(options)
+
+	// Store filters for later use in view creation
+	b.filters = config.Filters
+
 	db, err := sql.Open("duckdb", "")
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")
@@ -52,8 +57,12 @@ func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption)
 		return nil, err
 	}
 
-	if err = ConnectDucklake(ctx, db, b.dbPath, b.dataPath, config.Filters); err != nil {
+	if err = ConnectDucklake(ctx, db, b.dbPath, b.dataPath); err != nil {
 		return nil, err
+	}
+
+	if err := b.createViews(ctx, db); err != nil {
+		return nil, fmt.Errorf("failed to create views: %w", err)
 	}
 
 	return db, nil
@@ -72,7 +81,89 @@ func (b *DucklakeBackend) RowReader() RowReader {
 	return b.rowReader
 }
 
-func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, filters *DatabaseFilters) error {
+func (b *DucklakeBackend) createViews(ctx context.Context, db *sql.DB) error {
+	// get list of tables
+	tableQuery := fmt.Sprintf("select table_name FROM %s.ducklake_table", constants.DuckLakeMetadataCatalog)
+
+	// Execute the query
+	rows, err := db.QueryContext(ctx, tableQuery)
+	if err != nil {
+		return fmt.Errorf("failed to query ducklake tables: %w", err)
+	}
+	defer rows.Close()
+	var tableNames []string
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil {
+			return fmt.Errorf("failed to scan ducklake table name: %w", err)
+		}
+		tableNames = append(tableNames, tableName)
+	}
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating over ducklake tables: %w", err)
+	}
+
+	// Create views for each table
+	for _, tableName := range tableNames {
+		// build the (possibly empty) filter clause
+		filterClause := b.buildFilterClause()
+		// build the view creation query
+		createViewQuery := fmt.Sprintf(`
+				create view %s as 
+				select * from %s.%s 
+				%s`, tableName, constants.DuckLakeCatalog, tableName, filterClause)
+
+		_, err = db.ExecContext(ctx, createViewQuery)
+		if err != nil {
+			return fmt.Errorf("failed to create view for table %s: %w", tableName, err)
+		}
+	}
+
+	return nil
+}
+
+// buildFilterClause builds the WHERE clause for the filters
+func (b *DucklakeBackend) buildFilterClause() string {
+	if b.filters == nil {
+		return ""
+	}
+
+	var conditions []string
+
+	// Add partition filters
+	if len(b.filters.Partitions) > 0 {
+		partitionCondition := fmt.Sprintf("partition IN (%s)",
+			strings.Join(b.filters.Partitions, ","))
+		conditions = append(conditions, partitionCondition)
+	}
+
+	// Add index filters
+	if len(b.filters.Indexes) > 0 {
+		indexCondition := fmt.Sprintf("index IN (%s)",
+			strings.Join(b.filters.Indexes, ","))
+		conditions = append(conditions, indexCondition)
+	}
+
+	// Add time range filters
+	if b.filters.From != nil {
+		fromCondition := fmt.Sprintf("timestamp >= '%s'", b.filters.From.Format("2006-01-02 15:04:05"))
+		conditions = append(conditions, fromCondition)
+	}
+
+	if b.filters.To != nil {
+		toCondition := fmt.Sprintf("timestamp <= '%s'", b.filters.To.Format("2006-01-02 15:04:05"))
+		conditions = append(conditions, toCondition)
+	}
+
+	if len(conditions) == 0 {
+		return "" // No filters, return all rows
+	}
+
+	return "where " + strings.Join(conditions, " and ")
+}
+
+func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
 	// 1. Install sqlite extension
 	_, err := db.ExecContext(ctx, "install sqlite")
 	if err != nil {
@@ -99,23 +190,15 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, f
 		return fmt.Errorf("failed to attach sqlite database: %v", err)
 	}
 
-	// set default catalog to ducklake
-	_, err = db.ExecContext(ctx, fmt.Sprintf("use %s", constants.DuckLakeCatalog))
+	// TODO #DL figure out appropriate row group size
+	// 4. Set the row group size for parquet files
+	rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 1000);", constants.DuckLakeCatalog)
+	_, err = db.ExecContext(ctx, rowGroupQuery)
 	if err != nil {
-		return fmt.Errorf("failed to set catalog: %w", err)
+		return fmt.Errorf("failed to attach sqlite database: %v", err)
 	}
 
 	return nil
-}
-
-// OnConnection implements ConnectionInitializer.
-// This function is called by the dbClient after obtaining a new connection
-// We use it to set the default catalog to tailpipe_ducklake
-func (b *DucklakeBackend) OnConnection(ctx context.Context, conn *sql.Conn) error {
-
-	// set default catalog to ducklake
-	_, err := conn.ExecContext(ctx, fmt.Sprintf("use %s", constants.DuckLakeCatalog))
-	return err
 }
 
 func ParseDucklakeConnectionString(connectionString string) (string, string, error) {

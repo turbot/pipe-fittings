@@ -39,6 +39,7 @@ type TailpipeConnection struct {
 	// if an option is passed to GetConnectionString, it may override the From, To, Indexes or Partitions values
 	OverrideFilters *backend.DatabaseFilters
 
+	// TODO #DL handle legacy tailpipe Connect functionality
 	// store a maps of connection strings, keyed by the filters used to create the db
 	// this is to avoid creating a new connection string each time GetConnectionString is called, unless
 	connectionStrings map[string]string
@@ -70,27 +71,13 @@ func (c *TailpipeConnection) Validate() hcl.Diagnostics {
 }
 
 func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
+	// apply any options to the connection
 	for _, opt := range opts {
 		opt(c)
 	}
-	args := []string{"connect", "--output", "json"}
 
 	// resolve the filters
 	filters := c.getFilters()
-	if from := filters.From; from != nil {
-		args = append(args, "--from", from.Format(time.RFC3339))
-	}
-	if to := filters.To; to != nil {
-		args = append(args, "--to", to.Format(time.RFC3339))
-	}
-
-	if len(filters.Indexes) > 0 {
-		args = append(args, "--index", fmt.Sprintf("\"%s\"", strings.Join(filters.Indexes, ",")))
-	}
-
-	if len(filters.Partitions) > 0 {
-		args = append(args, "--partition", fmt.Sprintf("\"%s\"", strings.Join(filters.Partitions, ",")))
-	}
 
 	// for tailpipe v0.7.0 and later, we will have a single ducklake connection string - and we will NOT support
 	// filter params
@@ -108,6 +95,36 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	}
 
 	// so - we do not have a cached connection string, so we need to call tailpipe
+	connectionString, err := c.getTailpipeConnectionString(filters)
+	if err != nil {
+		return "", err
+	}
+	// add to cache
+	c.connectionStrings[connectionKey] = connectionString
+
+	slog.Info("GetConnectionString returned from tailpipe", "connectionString", connectionString)
+
+	return connectionString, nil
+}
+
+func (c *TailpipeConnection) getTailpipeConnectionString(filters *backend.DatabaseFilters) (string, error) {
+	args := []string{"connect", "--output", "json"}
+
+	if from := filters.From; from != nil {
+		args = append(args, "--from", from.Format(time.RFC3339))
+	}
+	if to := filters.To; to != nil {
+		args = append(args, "--to", to.Format(time.RFC3339))
+	}
+
+	if len(filters.Indexes) > 0 {
+		args = append(args, "--index", fmt.Sprintf("\"%s\"", strings.Join(filters.Indexes, ",")))
+	}
+
+	if len(filters.Partitions) > 0 {
+		args = append(args, "--partition", fmt.Sprintf("\"%s\"", strings.Join(filters.Partitions, ",")))
+	}
+
 	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe", "args", args)
 
 	// Invoke the "tailpipe connect" shell command and capture output
@@ -136,22 +153,18 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	if res.DataPath != "" {
 		// Convert output to string, trim whitespace, and return as connection string
 		connectionString = fmt.Sprintf("ducklake://%s?data_path=%s", strings.TrimSpace(res.DatabaseFilepath), strings.TrimSpace(res.DataPath))
-		connectionKey = "ducklake"
+
 	} else {
 		// Convert output to string, trim whitespace, and return as connection string
 		connectionString = fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
 	}
-	// add to cache
-	c.connectionStrings[connectionKey] = connectionString
-
-	slog.Info("GetConnectionString returned from tailpipe", "args", args, "connectionString", connectionString)
-
 	return connectionString, nil
 }
 
 func (c *TailpipeConnection) GetEnv() map[string]cty.Value {
 	return map[string]cty.Value{}
 }
+
 func (c *TailpipeConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {

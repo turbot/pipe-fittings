@@ -73,7 +73,7 @@ func (b *PostgresBackend) Connect(ctx context.Context, opts ...BackendOption) (*
 	db.SetMaxOpenConns(config.MaxOpenConns)
 
 	// resolve the required search path
-	if err := b.resolveDesiredSearchPath(ctx, db, config.SearchPathConfig); err != nil {
+	if err := b.resolveDesiredSearchPath(db, config.SearchPathConfig); err != nil {
 		return nil, err
 	}
 	return db, nil
@@ -205,7 +205,7 @@ func (b *PostgresBackend) loadSchemaNames(db *sql.DB) error {
 }
 
 // resolveDesiredSearchPath resolves the desired search path from the prefix or the custom search path
-func (b *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.DB, cfg SearchPathConfig) error {
+func (b *PostgresBackend) resolveDesiredSearchPath(db *sql.DB, cfg SearchPathConfig) error {
 	if len(cfg.SearchPath) > 0 && len(cfg.SearchPathPrefix) > 0 {
 		return sperr.WrapWithMessage(ErrInvalidConfig, "cannot specify both search_path and search_path_prefix")
 	}
@@ -220,7 +220,7 @@ func (b *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.
 	}
 
 	// must be that the SearchPathPrefix is set
-	requiredSearchPath, err := b.constructSearchPathFromPrefix(ctx, db, cfg)
+	requiredSearchPath, err := b.constructSearchPathFromPrefix(db, cfg)
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func (b *PostgresBackend) resolveDesiredSearchPath(ctx context.Context, db *sql.
 }
 
 // constructSearchPathFromPrefix constructs the search path from the prefix and the original search path
-func (b *PostgresBackend) constructSearchPathFromPrefix(ctx context.Context, db *sql.DB, cfg SearchPathConfig) ([]string, error) {
+func (b *PostgresBackend) constructSearchPathFromPrefix(db *sql.DB, cfg SearchPathConfig) ([]string, error) {
 	searchPathPrefix := b.cleanSearchPath(cfg.SearchPathPrefix)
 	return append(searchPathPrefix, b.originalSearchPath...), nil
 }
