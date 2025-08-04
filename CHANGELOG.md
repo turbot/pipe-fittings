@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## 2.6.1 [2025-08-01]
+
+* Update ResourceFilter to support parsing of JSON path expressions through the `--where` arg. ([#735](https://github.com/turbot/pipe-fittings/issues/735))
+
 ## 2.6.0 [2025-07-24]
 
 * Compiled with Go 1.24.
