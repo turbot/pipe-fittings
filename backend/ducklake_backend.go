@@ -181,25 +181,13 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, c
 	if err != nil {
 		return fmt.Errorf("failed to install parquet extension: %w", err)
 	}
-	_, err = db.ExecContext(ctx, "load parquet")
-	if err != nil {
-		return fmt.Errorf("failed to load parquet extension: %v", err)
-	}
 	_, err = db.ExecContext(ctx, "install httpfs")
 	if err != nil {
 		return fmt.Errorf("failed to install httpfs extension: %w", err)
 	}
-	_, err = db.ExecContext(ctx, "load httpfs")
-	if err != nil {
-		return fmt.Errorf("failed to load httpfs extension: %w", err)
-	}
 	_, err = db.ExecContext(ctx, "install aws")
 	if err != nil {
 		return fmt.Errorf("failed to install aws extension: %w", err)
-	}
-	_, err = db.ExecContext(ctx, "load aws")
-	if err != nil {
-		return fmt.Errorf("failed to load aws extension: %w", err)
 	}
 	slog.Info("loading aws credentials")
 	// load aws creds
@@ -214,10 +202,6 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, c
 	_, err = db.ExecContext(ctx, "force install ducklake from core_nightly")
 	if err != nil {
 		return fmt.Errorf("failed to install ducklake nightly extension: %v", err)
-	}
-	_, err = db.ExecContext(ctx, "load ducklake")
-	if err != nil {
-		return fmt.Errorf("failed to load ducklake extension: %v", err)
 	}
 
 	// 3. Attach the sqlite database as my_ducklake
