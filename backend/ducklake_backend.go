@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strings"
 
@@ -165,14 +166,48 @@ func (b *DucklakeBackend) buildFilterClause() string {
 
 // TODO #DL: use default data location - remove DataPath everywhere
 
-func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
+func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, creds ...string) error {
 	// 1. Install sqlite extension
 	_, err := db.ExecContext(ctx, "install sqlite")
 	if err != nil {
-		return fmt.Errorf("failed to install sqlite extension: %v", err)
+		return fmt.Errorf("failed to install sqlite extension: %w", err)
 	}
 
-	// 2. Install ducklake extension
+	// 2. Install extensions
+	slog.Info("loading aws, parquet, httpfs extensions")
+	// TODO #DL: enscapsulate extension loading and only load s3 related ones if needed
+	// load aws, http and parquet for S3 support
+	_, err = db.ExecContext(ctx, "install parquet")
+	if err != nil {
+		return fmt.Errorf("failed to install parquet extension: %w", err)
+	}
+	_, err = db.ExecContext(ctx, "load parquet")
+	if err != nil {
+		return fmt.Errorf("failed to load parquet extension: %v", err)
+	}
+	_, err = db.ExecContext(ctx, "install httpfs")
+	if err != nil {
+		return fmt.Errorf("failed to install httpfs extension: %w", err)
+	}
+	_, err = db.ExecContext(ctx, "load httpfs")
+	if err != nil {
+		return fmt.Errorf("failed to load httpfs extension: %w", err)
+	}
+	_, err = db.ExecContext(ctx, "install aws")
+	if err != nil {
+		return fmt.Errorf("failed to install aws extension: %w", err)
+	}
+	_, err = db.ExecContext(ctx, "load aws")
+	if err != nil {
+		return fmt.Errorf("failed to load aws extension: %w", err)
+	}
+	slog.Info("loading aws credentials")
+	// load aws creds
+	_, err = db.ExecContext(ctx, "call load_aws_credentials()")
+	if err != nil {
+		return fmt.Errorf("failed to load aws credentials: %w", err)
+	}
+
 	// TODO #DL change to using prod extension when stable
 	//  https://github.com/turbot/tailpipe/issues/476
 	//_, err = db.Exec("install ducklake;")
@@ -186,6 +221,8 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) e
 	}
 
 	// 3. Attach the sqlite database as my_ducklake
+	slog.Info("attaching sqlite database", "dbPath", dbPath, "dataPath", dataPath)
+
 	attachQuery := fmt.Sprintf("attach 'ducklake:sqlite:%s' AS %s (data_path '%s/')", dbPath, constants.DuckLakeCatalog, dataPath)
 	_, err = db.ExecContext(ctx, attachQuery)
 	if err != nil {
@@ -194,7 +231,7 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) e
 
 	// TODO #DL figure out appropriate row group size
 	// 4. Set the row group size for parquet files
-	rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 1000);", constants.DuckLakeCatalog)
+	rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 10000);", constants.DuckLakeCatalog)
 	_, err = db.ExecContext(ctx, rowGroupQuery)
 	if err != nil {
 		return fmt.Errorf("failed to attach sqlite database: %v", err)
