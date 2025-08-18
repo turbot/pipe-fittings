@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/connection"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/schema"
 	"github.com/zclconf/go-cty/cty"
 )

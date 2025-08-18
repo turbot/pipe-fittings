@@ -14,18 +14,18 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/go-kit/filewatcher"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/pipe-fittings/v2/connection"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/load_mod"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/parse"
+	parse2 "github.com/turbot/pipe-fittings/v2/parse"
 	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/turbot/pipe-fittings/v2/versionmap"
+	"github.com/turbot/pipe-helpers/app_specific"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	filehelpers "github.com/turbot/pipe-helpers/files"
+	"github.com/turbot/pipe-helpers/filewatcher"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -62,7 +62,7 @@ type Workspace struct {
 	BlockTypeInclusions []string
 	ValidateVariables   bool
 	SupportLateBinding  bool
-	decoderOptions      []parse.DecoderOption
+	decoderOptions      []parse2.DecoderOption
 }
 
 func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
@@ -119,7 +119,7 @@ func (w *Workspace) SetModfileExists() {
 		w.modFilePath = modFile
 
 		// also set it in the viper config, so that it is available to whoever is using it
-		viper.Set(constants.ArgModLocation, filepath.Dir(modFile))
+		viper.Set(constants2.ArgModLocation, filepath.Dir(modFile))
 		w.Path = filepath.Dir(modFile)
 		w.Mod.SetFilePath(modFile)
 	}
@@ -229,14 +229,14 @@ func (w *Workspace) resolveVariableValues(ctx context.Context) (*modconfig.ModVa
 func getVariableDependencyCount(ew error_helpers.ErrorAndWarnings) int {
 	count := 0
 	for _, w := range ew.Warnings {
-		if strings.Contains(w, constants.MissingVariableWarning) {
+		if strings.Contains(w, constants2.MissingVariableWarning) {
 			count++
 		}
 	}
 	return count
 }
 
-func (w *Workspace) getVariablesParseContext(ctx context.Context, inputVariable *modconfig.ModVariableMap) (*parse.ModParseContext, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) getVariablesParseContext(ctx context.Context, inputVariable *modconfig.ModVariableMap) (*parse2.ModParseContext, error_helpers.ErrorAndWarnings) {
 	// build a run context just to use to load variable definitions
 	variablesParseCtx, err := w.GetParseContext(ctx)
 	if err != nil {
@@ -255,7 +255,7 @@ func (w *Workspace) getVariablesParseContext(ctx context.Context, inputVariable 
 	return variablesParseCtx, error_helpers.ErrorAndWarnings{}
 }
 
-func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *parse2.ModParseContext, validateMissing bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
 	utils.LogTime("getInputVariables start")
 	defer utils.LogTime("getInputVariables end")
 
@@ -270,7 +270,7 @@ func (w *Workspace) getVariableValues(ctx context.Context, variablesParseCtx *pa
 	return m, ew
 }
 
-func (w *Workspace) GetParseContext(ctx context.Context) (*parse.ModParseContext, error) {
+func (w *Workspace) GetParseContext(ctx context.Context) (*parse2.ModParseContext, error) {
 	workspaceLock, err := w.loadWorkspaceLock(ctx)
 	if err != nil {
 		return nil, err
@@ -282,13 +282,13 @@ func (w *Workspace) GetParseContext(ctx context.Context) (*parse.ModParseContext
 		Include: filehelpers.InclusionsFromExtensions(app_specific.ModDataExtensions),
 	}
 
-	parseCtx, err := parse.NewModParseContext(workspaceLock, w.Path,
-		parse.WithParseFlags(parse.CreateDefaultMod),
-		parse.WithListOptions(listOptions),
-		parse.WithConnections(w.PipelingConnections),
-		parse.WithLateBinding(w.SupportLateBinding),
-		parse.WithConfigValueMap(w.configValueMaps),
-		parse.WithDecoderOptions(w.decoderOptions...))
+	parseCtx, err := parse2.NewModParseContext(workspaceLock, w.Path,
+		parse2.WithParseFlags(parse2.CreateDefaultMod),
+		parse2.WithListOptions(listOptions),
+		parse2.WithConnections(w.PipelingConnections),
+		parse2.WithLateBinding(w.SupportLateBinding),
+		parse2.WithConfigValueMap(w.configValueMaps),
+		parse2.WithDecoderOptions(w.decoderOptions...))
 
 	if err != nil {
 		return nil, err
@@ -350,7 +350,7 @@ func (w *Workspace) LoadExclusions() error {
 }
 
 // populate the mod resource maps with variables from the parse context
-func (w *Workspace) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) error_helpers.ErrorAndWarnings {
+func (w *Workspace) populateVariablesOnlyMod(parseCtx *parse2.ModParseContext) error_helpers.ErrorAndWarnings {
 	var diags hcl.Diagnostics
 	for _, v := range parseCtx.Variables.ToArray() {
 		diags = append(diags, w.Mod.GetModResources().AddResource(v)...)

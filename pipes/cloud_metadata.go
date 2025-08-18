@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/sperr"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/sperr"
 	"github.com/turbot/pipes-sdk-go"
 )
 
@@ -35,10 +35,10 @@ func GetPipesMetadata(ctx context.Context, workspaceDatabaseString, token string
 		cloudWorkspace, _, err = client.OrgWorkspaces.Get(ctx, identityHandle, workspaceHandle).Execute()
 	}
 
-	if error_helpers.IsInvalidWorkspaceDatabaseArg(err) {
+	if error_helpers2.IsInvalidWorkspaceDatabaseArg(err) {
 		return nil, sperr.New("Invalid 'workspace-database' argument '%s'.\nPlease check the workspace name and try again.", workspaceDatabaseString)
-	} else if error_helpers.IsInvalidCloudToken(err) {
-		return nil, error_helpers.InvalidCloudTokenError()
+	} else if error_helpers2.IsInvalidCloudToken(err) {
+		return nil, error_helpers2.InvalidCloudTokenError()
 	}
 
 	workspaceHost := cloudWorkspace.GetHost()
@@ -46,7 +46,7 @@ func GetPipesMetadata(ctx context.Context, workspaceDatabaseString, token string
 
 	actor, _, err := client.Actors.Get(ctx).Execute()
 	if err != nil {
-		return nil, error_helpers.InvalidCloudTokenError()
+		return nil, error_helpers2.InvalidCloudTokenError()
 	}
 
 	password, _, err := client.Users.GetDBPassword(ctx, actor.GetHandle()).Execute()

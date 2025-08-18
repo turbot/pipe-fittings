@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	"github.com/turbot/pipe-helpers/error_helpers"
 )
 
 // GetQueriesFromArgs retrieves queries from args

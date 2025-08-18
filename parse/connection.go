@@ -8,8 +8,8 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
 )

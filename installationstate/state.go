@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
+	"github.com/turbot/pipe-helpers/filepaths"
+	"github.com/turbot/pipe-helpers/files"
 )
 
 const StateStructVersion = 20220411

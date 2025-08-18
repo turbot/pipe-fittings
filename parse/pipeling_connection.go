@@ -8,8 +8,8 @@ import (
 	"github.com/turbot/pipe-fittings/v2/app_specific_connection"
 	"github.com/turbot/pipe-fittings/v2/connection"
 	"github.com/turbot/pipe-fittings/v2/funcs"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

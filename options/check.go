@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 // Check options are deprecated and removed. They are kept here for compatibility with old configurations.

@@ -3,6 +3,9 @@ package modconfig
 import (
 	"fmt"
 
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 	"golang.org/x/exp/maps"
 
 	"os"
@@ -11,15 +14,12 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
-	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/pipe-fittings/v2/app_specific_connection"
 	"github.com/turbot/pipe-fittings/v2/connection"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/cty_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/plugin"
 	"github.com/turbot/pipe-fittings/v2/schema"
+	typehelpers "github.com/turbot/pipe-helpers/types"
 	"github.com/zclconf/go-cty/cty"
 )
 

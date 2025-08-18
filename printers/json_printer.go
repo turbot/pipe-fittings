@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/turbot/pipe-fittings/v2/color"
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	"github.com/turbot/pipe-helpers/color"
+	"github.com/turbot/pipe-helpers/sanitize"
 )
 
 type JsonPrinter[T any] struct {

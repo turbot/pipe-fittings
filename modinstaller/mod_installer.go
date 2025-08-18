@@ -14,17 +14,17 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/otiai10/copy"
 	"github.com/spf13/viper"
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/parse"
 	"github.com/turbot/pipe-fittings/v2/plugin"
-	"github.com/turbot/pipe-fittings/v2/sperr"
-	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/turbot/pipe-fittings/v2/versionmap"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/filepaths"
+	filehelpers "github.com/turbot/pipe-helpers/files"
+	"github.com/turbot/pipe-helpers/sperr"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 type ModInstaller struct {
@@ -174,13 +174,13 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 	if validationErrors := workspaceMod.ValidateRequirements(i.pluginVersions); len(validationErrors) > 0 {
 		if !i.force {
 			// if this is not a force install, return errors in validation
-			return error_helpers.CombineErrors(validationErrors...)
+			return error_helpers2.CombineErrors(validationErrors...)
 		}
 		// ignore if this is a force install
-		error_helpers.ShowWarning(fmt.Sprintf("--force is set, ignoring %d mod validation %s:\n\t%s",
+		error_helpers2.ShowWarning(fmt.Sprintf("--force is set, ignoring %d mod validation %s:\n\t%s",
 			len(validationErrors),
 			utils.Pluralize("error", len(validationErrors)),
-			error_helpers.CombineErrors(validationErrors...).Error()))
+			error_helpers2.CombineErrors(validationErrors...).Error()))
 	}
 
 	// if mod args have been provided, add them to the workspace mod requires
@@ -239,7 +239,7 @@ func (i *ModInstaller) removeOldShadowDirectories() error {
 			}
 		}
 	}
-	return error_helpers.CombineErrors(removeErrors...)
+	return error_helpers2.CombineErrors(removeErrors...)
 }
 
 func (i *ModInstaller) setModsPath() error {
@@ -253,7 +253,7 @@ func (i *ModInstaller) setModsPath() error {
 // to the mods directory, replacing conflicts as it goes
 // (uses `os.Create(dest)` under the hood - which truncates the target)
 func (i *ModInstaller) commitShadow(ctx context.Context) error {
-	if error_helpers.IsContextCanceled(ctx) {
+	if error_helpers2.IsContextCanceled(ctx) {
 		return ctx.Err()
 	}
 	if _, err := os.Stat(i.shadowDirPath); os.IsNotExist(err) {
@@ -350,12 +350,12 @@ func (i *ModInstaller) buildInstallError(errors []error) error {
 		verb = "update"
 	}
 	prefix := fmt.Sprintf("%d %s failed to %s", len(errors), utils.Pluralize("dependency", len(errors)), verb)
-	err := error_helpers.CombineErrorsWithPrefix(prefix, errors...)
+	err := error_helpers2.CombineErrorsWithPrefix(prefix, errors...)
 	return err
 }
 
 func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, requiredModVersion *modconfig.ModVersionConstraint, dependencyMod *DependencyMod, parent *modconfig.Mod, commandTargettingParent bool) error {
-	if error_helpers.IsContextCanceled(ctx) {
+	if error_helpers2.IsContextCanceled(ctx) {
 		// short circuit if the execution context has been cancelled
 		return ctx.Err()
 	}
@@ -395,7 +395,7 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	}
 
 	if len(errors) > 0 {
-		return error_helpers.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
+		return error_helpers2.CombineErrorsWithPrefix(fmt.Sprintf("%d child %s failed to install", len(errors), utils.Pluralize("dependency", len(errors))), errors...)
 	}
 	return nil
 }

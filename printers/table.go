@@ -1,7 +1,7 @@
 package printers
 
 import (
-	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-helpers/helpers"
 	"reflect"
 )
 

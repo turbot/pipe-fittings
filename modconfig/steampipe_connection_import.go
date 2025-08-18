@@ -2,8 +2,8 @@ package modconfig
 
 import (
 	"github.com/hashicorp/hcl/v2"
-	gokit "github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	gokit "github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 // The definition of a single ConnectionImport

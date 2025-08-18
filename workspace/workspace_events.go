@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
 )
 
 var EventCount int64 = 0
@@ -38,7 +38,7 @@ func (w *Workspace) handleFileWatcherEvent(ctx context.Context) {
 	}
 }
 
-func (w *Workspace) ReloadModResources(ctx context.Context) (modconfig.ModResources, modconfig.ModResources, error_helpers.ErrorAndWarnings) {
+func (w *Workspace) ReloadModResources(ctx context.Context) (modconfig.ModResources, modconfig.ModResources, error_helpers2.ErrorAndWarnings) {
 	w.LoadLock()
 	defer w.LoadUnlock()
 
@@ -55,7 +55,7 @@ func (w *Workspace) ReloadModResources(ctx context.Context) (modconfig.ModResour
 	if errAndWarnings.GetError() != nil {
 		// check the existing watcher error - if we are already in an error state, do not show error
 		if w.WatcherError == nil {
-			w.FileWatcherErrorHandler(ctx, error_helpers.PrefixError(errAndWarnings.GetError(), "failed to reload workspace"))
+			w.FileWatcherErrorHandler(ctx, error_helpers2.PrefixError(errAndWarnings.GetError(), "failed to reload workspace"))
 		}
 		// now set watcher error to new error
 		w.WatcherError = errAndWarnings.GetError()

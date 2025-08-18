@@ -6,9 +6,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/helpers"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -133,19 +133,19 @@ func (c *AwsCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.PtrEqual(c.AccessKey, other.AccessKey) {
+	if !utils2.PtrEqual(c.AccessKey, other.AccessKey) {
 		return false
 	}
 
-	if !utils.PtrEqual(c.SecretKey, other.SecretKey) {
+	if !utils2.PtrEqual(c.SecretKey, other.SecretKey) {
 		return false
 	}
 
-	if !utils.PtrEqual(c.Profile, other.Profile) {
+	if !utils2.PtrEqual(c.Profile, other.Profile) {
 		return false
 	}
 
-	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
+	if !utils2.SafeIntEqual(c.Ttl, other.Ttl) {
 		return false
 	}
 

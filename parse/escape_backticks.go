@@ -2,10 +2,11 @@ package parse
 
 import (
 	"fmt"
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"strconv"
 	"strings"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 // ApplyPropertyEscaping escapes properties within backticks, and optionally escaped properties specified by disableTemplateForProperties

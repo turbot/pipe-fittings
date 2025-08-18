@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-helpers/constants"
 
 	"github.com/turbot/pipe-fittings/v2/queryresult"
-	"github.com/turbot/pipe-fittings/v2/sperr"
+	"github.com/turbot/pipe-helpers/sperr"
 )
 
 const (

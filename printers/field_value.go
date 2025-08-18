@@ -1,8 +1,8 @@
 package printers
 
 import (
-	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	"github.com/turbot/pipe-helpers/sanitize"
+	typehelpers "github.com/turbot/pipe-helpers/types"
 )
 
 type FieldValueOption func(*FieldValue)

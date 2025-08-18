@@ -6,7 +6,7 @@ import (
 	"io"
 	"text/tabwriter"
 
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	"github.com/turbot/pipe-helpers/sanitize"
 )
 
 // Inspired by Kubernetes

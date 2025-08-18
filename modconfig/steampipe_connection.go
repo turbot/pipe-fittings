@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/constants"
+	hclhelpers2 "github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/utils"
 	"golang.org/x/exp/maps"
 )
 
@@ -59,13 +59,13 @@ type SteampipeConnection struct {
 
 	Error error
 
-	DeclRange hclhelpers.Range `json:"decl_range"`
+	DeclRange hclhelpers2.Range `json:"decl_range"`
 }
 
 func NewConnection(block *hcl.Block) *SteampipeConnection {
 	return &SteampipeConnection{
 		Name:         block.Labels[0],
-		DeclRange:    hclhelpers.NewRange(hclhelpers.BlockRange(block)),
+		DeclRange:    hclhelpers2.NewRange(hclhelpers2.BlockRange(block)),
 		ImportSchema: ImportSchemaEnabled,
 		// default to plugin
 		Type: ConnectionTypePlugin,
@@ -213,7 +213,7 @@ func (c *SteampipeConnection) GetResolveConnectionNames() []string {
 	return res
 }
 
-func (c *SteampipeConnection) GetDeclRange() hclhelpers.Range {
+func (c *SteampipeConnection) GetDeclRange() hclhelpers2.Range {
 	return c.DeclRange
 }
 

@@ -10,11 +10,11 @@ import (
 	"path"
 
 	"github.com/spf13/viper"
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
-	"github.com/turbot/pipe-fittings/v2/sperr"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/filepaths"
+	filehelpers "github.com/turbot/pipe-helpers/files"
+	"github.com/turbot/pipe-helpers/sperr"
+	"github.com/turbot/pipe-helpers/utils"
 	steampipecloud "github.com/turbot/pipes-sdk-go"
 )
 
@@ -23,7 +23,7 @@ var UnconfirmedError = "Not confirmed"
 // WebLogin POSTs to ${envBaseUrl}/api/latest/login/token to retrieve a login is
 // it then opens the login webpage and returns th eid
 func WebLogin(ctx context.Context) (string, error) {
-	client := newPipesClient(viper.GetString(constants.ArgPipesToken))
+	client := newPipesClient(viper.GetString(constants2.ArgPipesToken))
 
 	tempTokenReq, _, err := client.Auth.LoginTokenCreate(ctx).Execute()
 	if err != nil {
@@ -66,12 +66,12 @@ func GetLoginToken(ctx context.Context, id, code string) (string, error) {
 // SaveToken writes the token to  ~/.steampipe/internal/{cloud-host}.tptt
 func SaveToken(token string) error {
 	// create pipes folder if necessary
-	tokenPath := ensureTokenFilePath(viper.GetString(constants.ArgPipesHost))
+	tokenPath := ensureTokenFilePath(viper.GetString(constants2.ArgPipesHost))
 	return sperr.Wrap(os.WriteFile(tokenPath, []byte(token), 0600))
 }
 
 func LoadToken() (string, error) {
-	tokenPath := tokenFilePath(viper.GetString(constants.ArgPipesHost))
+	tokenPath := tokenFilePath(viper.GetString(constants2.ArgPipesHost))
 	if !filehelpers.FileExists(tokenPath) {
 		return "", nil
 	}
@@ -99,11 +99,11 @@ func getActorName(actor steampipecloud.User) string {
 }
 
 func tokenFilePath(pipesHost string) string {
-	tokenPath := path.Join(filepaths.PipesInternalDir(), fmt.Sprintf("%s%s", pipesHost, constants.TokenExtension))
+	tokenPath := path.Join(filepaths.PipesInternalDir(), fmt.Sprintf("%s%s", pipesHost, constants2.TokenExtension))
 	return tokenPath
 }
 
 func ensureTokenFilePath(pipesHost string) string {
-	tokenPath := path.Join(filepaths.EnsurePipesInternalDir(), fmt.Sprintf("%s%s", pipesHost, constants.TokenExtension))
+	tokenPath := path.Join(filepaths.EnsurePipesInternalDir(), fmt.Sprintf("%s%s", pipesHost, constants2.TokenExtension))
 	return tokenPath
 }

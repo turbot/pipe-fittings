@@ -9,16 +9,13 @@ import (
 	"time"
 
 	"github.com/turbot/pipe-fittings/v2/logs"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/filepaths"
+	"github.com/turbot/pipe-helpers/utils"
 
 	"github.com/spf13/cobra"
-	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/installationstate"
-
-	// "github.com/turbot/pipe-fittings/v2/installationstate"
-	// "github.com/turbot/pipe-fittings/v2/plugin"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/files"
 )
 
 const minimumDurationBetweenChecks = 24 * time.Hour
@@ -112,19 +109,19 @@ func (r *Runner) run(ctx context.Context) {
 	waitGroup.Wait()
 
 	// check if the context was cancelled before starting any FileIO
-	if error_helpers.IsContextCanceled(ctx) {
+	if error_helpers2.IsContextCanceled(ctx) {
 		// if the context was cancelled, we don't want to do anything
 		return
 	}
 
 	// save the notifications, if any
 	if err := r.saveAvailableVersions(availableCliVersion); err != nil {
-		error_helpers.ShowWarning(fmt.Sprintf("Regular task runner failed to save pending notifications: %s", err))
+		error_helpers2.ShowWarning(fmt.Sprintf("Regular task runner failed to save pending notifications: %s", err))
 	}
 
 	// save the state - this updates the last checked time
 	if err := r.currentState.Save(); err != nil {
-		error_helpers.ShowWarning(fmt.Sprintf("Regular task runner failed to save state file: %s", err))
+		error_helpers2.ShowWarning(fmt.Sprintf("Regular task runner failed to save state file: %s", err))
 	}
 }
 

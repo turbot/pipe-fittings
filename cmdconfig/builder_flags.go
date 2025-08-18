@@ -4,8 +4,8 @@ import (
 	"os"
 
 	"github.com/spf13/pflag"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/error_helpers"
 )
 
 // basic flags
@@ -76,15 +76,15 @@ func (c *CmdBuilder) AddStringMapStringFlag(name string, defaultValue map[string
 // AddCloudFlags is helper function to add the cloud flags to a command
 func (c *CmdBuilder) AddCloudFlags() *CmdBuilder {
 	return c.
-		AddStringFlag(constants.ArgPipesHost, constants.DefaultPipesHost, "Turbot Pipes host").
-		AddStringFlag(constants.ArgPipesToken, "", "Turbot Pipes authentication token")
+		AddStringFlag(constants2.ArgPipesHost, constants2.DefaultPipesHost, "Turbot Pipes host").
+		AddStringFlag(constants2.ArgPipesToken, "", "Turbot Pipes authentication token")
 }
 
 // AddModLocationFlag is helper function to add the mod-location flag to a command
 func (c *CmdBuilder) AddModLocationFlag() *CmdBuilder {
 	cwd, err := os.Getwd()
 	error_helpers.FailOnError(err)
-	return c.AddStringFlag(constants.ArgModLocation, cwd, "Sets the workspace working directory. If not specified, the workspace directory will be set to the current working directory.")
+	return c.AddStringFlag(constants2.ArgModLocation, cwd, "Sets the workspace working directory. If not specified, the workspace directory will be set to the current working directory.")
 }
 
 func (c *CmdBuilder) AddVarFlag(value pflag.Value, name string, usage string, opts ...FlagOption) *CmdBuilder {

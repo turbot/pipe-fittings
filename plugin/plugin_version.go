@@ -6,8 +6,8 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/ociinstaller"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/ociinstaller"
 )
 
 type PluginVersion struct {

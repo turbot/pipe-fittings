@@ -19,13 +19,12 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/karrick/gows"
 	"github.com/spf13/viper"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	pconstants "github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
 	pqueryresult "github.com/turbot/pipe-fittings/v2/queryresult"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/helpers"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -33,15 +32,15 @@ import (
 // ShowOutput displays the output using the proper formatter as applicable
 func ShowOutput[T queryresult.TimingContainer](ctx context.Context, result *queryresult.Result[T]) (rowCount, rowErrors int) {
 
-	outputFormat := viper.GetString(pconstants.ArgOutput)
+	outputFormat := viper.GetString(constants2.ArgOutput)
 	switch outputFormat {
-	case constants.OutputFormatJSON:
+	case constants2.OutputFormatJSON:
 		rowCount, rowErrors = displayJSON(ctx, result)
-	case constants.OutputFormatCSV:
+	case constants2.OutputFormatCSV:
 		rowCount, rowErrors = displayCSV(ctx, result)
-	case constants.OutputFormatLine:
+	case constants2.OutputFormatLine:
 		rowCount, rowErrors = displayLine(ctx, result)
-	case constants.OutputFormatTable:
+	case constants2.OutputFormatTable:
 		rowCount, rowErrors = displayTable(ctx, result)
 	}
 
@@ -120,8 +119,8 @@ func ShowTable(headers []string, rows [][]string, opts *ShowWrappedTableOptions)
 func GetMaxCols() int {
 	colsAvailable, _, _ := gows.GetWinSize()
 	// check if STEAMPIPE_DISPLAY_WIDTH env variable is set
-	if viper.IsSet(pconstants.ArgDisplayWidth) {
-		colsAvailable = viper.GetInt(pconstants.ArgDisplayWidth)
+	if viper.IsSet(constants2.ArgDisplayWidth) {
+		colsAvailable = viper.GetInt(constants2.ArgDisplayWidth)
 	}
 	return colsAvailable
 }
@@ -253,7 +252,7 @@ func BuildJSON[T queryresult.TimingContainer](ctx context.Context, result *query
 	}
 
 	// now we have iterated the rows, get the timing
-	if viper.IsSet(constants.ArgTiming) {
+	if viper.IsSet(constants2.ArgTiming) {
 		jsonOutput.Metadata = result.Timing.GetTiming()
 	}
 
@@ -280,9 +279,9 @@ func BuildCSV[T queryresult.TimingContainer](ctx context.Context, result *queryr
 
 	var buf bytes.Buffer
 	csvWriter := csv.NewWriter(&buf)
-	csvWriter.Comma = []rune(viper.GetString(pconstants.ArgSeparator))[0]
+	csvWriter.Comma = []rune(viper.GetString(constants2.ArgSeparator))[0]
 
-	if viper.GetBool(constants.ArgHeader) {
+	if viper.GetBool(constants2.ArgHeader) {
 		_ = csvWriter.Write(columnNames(result.Cols))
 	}
 
@@ -405,12 +404,12 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 		colConfigs = append(colConfigs, table.ColumnConfig{
 			Name:     columnName,
 			Number:   idx + 1,
-			WidthMax: constants.MaxColumnWidth,
+			WidthMax: constants2.MaxColumnWidth,
 		})
 	}
 
 	t.SetColumnConfigs(colConfigs)
-	if viper.GetBool(pconstants.ArgHeader) {
+	if viper.GetBool(constants2.ArgHeader) {
 		t.AppendHeader(headers)
 	}
 
@@ -460,9 +459,9 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 	showRowCount := ShowPaged(ctx, outbuf.String())
 
 	if showRowCount {
-		status := fmt.Sprintf("%s %s", utils.HumanizeNumber(count), utils.Pluralize("row", count))
+		status := fmt.Sprintf("%s %s", utils2.HumanizeNumber(count), utils2.Pluralize("row", count))
 		if displayRowCount >= maxTableDisplayRows {
-			status += fmt.Sprintf(" (%s shown)", utils.HumanizeNumber(maxTableDisplayRows))
+			status += fmt.Sprintf(" (%s shown)", utils2.HumanizeNumber(maxTableDisplayRows))
 		}
 		//nolint:forbidigo // acceptable
 		fmt.Println(status)

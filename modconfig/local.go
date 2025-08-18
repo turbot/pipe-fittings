@@ -5,7 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

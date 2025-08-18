@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
-	typehelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/printers"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	typehelpers "github.com/turbot/pipe-helpers/types"
 )
 
 type ParamDef struct {

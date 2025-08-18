@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 

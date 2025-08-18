@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
+	"github.com/turbot/pipe-helpers/filepaths"
+	"github.com/turbot/pipe-helpers/files"
 )
 
 func CleanupOldTmpDirs(ctx context.Context) {

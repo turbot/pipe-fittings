@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/parse"
 	"github.com/turbot/pipe-fittings/v2/workspace_profile"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/types"
 )
 
 // Viper fetches the global viper instance

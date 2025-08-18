@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 func TestPipesConnectionMetadata_handlePipesCredApiResponse(t *testing.T) {

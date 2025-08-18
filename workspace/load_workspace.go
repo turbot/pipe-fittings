@@ -7,9 +7,8 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/utils"
-
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 func LoadWorkspacePromptingForVariables(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption) (*Workspace, error_helpers.ErrorAndWarnings) {

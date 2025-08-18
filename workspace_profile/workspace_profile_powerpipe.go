@@ -8,13 +8,13 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/cty_helpers"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/options"
 	"github.com/turbot/pipe-fittings/v2/pipes"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
+	"github.com/turbot/pipe-helpers/constants"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -251,25 +251,25 @@ func (p *PowerpipeWorkspaceProfile) IsCloudWorkspace() bool {
 
 // GetPipesMetadata returns the cloud metadata for the cloud workspace
 // note: call IsCloudWorkspace before calling this to ensure it is a cloud workspace
-func (p *PowerpipeWorkspaceProfile) GetPipesMetadata() (*steampipeconfig.PipesMetadata, error_helpers.ErrorAndWarnings) {
+func (p *PowerpipeWorkspaceProfile) GetPipesMetadata() (*steampipeconfig.PipesMetadata, error_helpers2.ErrorAndWarnings) {
 	if !p.IsCloudWorkspace() {
-		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("workspace profile is not a cloud workspace"))
+		return nil, error_helpers2.NewErrorsAndWarning(fmt.Errorf("workspace profile is not a cloud workspace"))
 	}
 
 	// verify the cloud token was provided
 	cloudToken := viper.GetString(constants.ArgPipesToken)
 	if cloudToken == "" {
-		return nil, error_helpers.NewErrorsAndWarning(error_helpers.MissingCloudTokenError())
+		return nil, error_helpers2.NewErrorsAndWarning(error_helpers2.MissingCloudTokenError())
 	}
 
 	// so we have a database and a token - build the connection string and set it in viper
 	pipesMetadata, err := pipes.GetPipesMetadata(context.Background(), *p.CloudWorkspace, cloudToken)
 	if err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+		return nil, error_helpers2.NewErrorsAndWarning(err)
 	}
 
 	// set the default conneciton to the cloud metadata
-	return pipesMetadata, error_helpers.ErrorAndWarnings{}
+	return pipesMetadata, error_helpers2.ErrorAndWarnings{}
 }
 
 // searchPathFromString checks that `str` is `nil` and returns a string slice with `str`

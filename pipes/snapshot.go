@@ -8,10 +8,10 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/export"
-	"github.com/turbot/pipe-fittings/v2/sperr"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/sperr"
 	steampipecloud "github.com/turbot/pipes-sdk-go"
 )
 

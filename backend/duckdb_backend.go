@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
-	"github.com/turbot/pipe-fittings/v2/sperr"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/filepaths"
+	"github.com/turbot/pipe-helpers/sperr"
 )
 
 const (
@@ -54,7 +54,7 @@ func (b *DuckDBBackend) ConnectionString() string {
 }
 
 func (b *DuckDBBackend) Name() string {
-	return constants.DuckDBBackendName
+	return constants2.DuckDBBackendName
 }
 
 // RowReader implements Backend.
@@ -80,7 +80,7 @@ func installAndLoadExtensions(db *sql.DB) error {
 	}
 
 	// install and load the extensions
-	for _, extension := range constants.DuckDbExtensions {
+	for _, extension := range constants2.DuckDbExtensions {
 		if _, err := db.Exec(fmt.Sprintf("INSTALL '%s'; LOAD '%s';", extension, extension)); err != nil {
 			return fmt.Errorf("failed to install and load extension %s: %s", extension, err.Error())
 		}

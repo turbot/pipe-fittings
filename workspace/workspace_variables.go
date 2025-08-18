@@ -7,11 +7,11 @@ import (
 	"log/slog"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/inputvars"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/statushooks"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/statushooks"
 	"github.com/turbot/terraform-components/terraform"
 )
 
@@ -27,7 +27,7 @@ func HandleWorkspaceLoadError(ctx context.Context, err error, workspacePath stri
 		return err
 	}
 	// if interactive input is disabled, return the missing variables error
-	if !viper.GetBool(constants.ArgInput) {
+	if !viper.GetBool(constants2.ArgInput) {
 		return missingVariablesError
 	}
 	// so we have missing variables - prompt for them
@@ -72,7 +72,7 @@ func promptForVariable(ctx context.Context, name, description string) (string, e
 }
 
 func addInteractiveVariableToViper(name string, rawValue string) {
-	varMap := viper.GetStringMap(constants.ConfigInteractiveVariables)
+	varMap := viper.GetStringMap(constants2.ConfigInteractiveVariables)
 	varMap[name] = rawValue
-	viper.Set(constants.ConfigInteractiveVariables, varMap)
+	viper.Set(constants2.ConfigInteractiveVariables, varMap)
 }

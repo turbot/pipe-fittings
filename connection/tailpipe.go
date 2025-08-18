@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
+	"github.com/turbot/pipe-helpers/constants"
 	"github.com/zclconf/go-cty/cty"
 
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 const TailpipeConnectionType = "tailpipe"

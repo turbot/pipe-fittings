@@ -4,9 +4,9 @@ import (
 	"reflect"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 // cache resource schemas

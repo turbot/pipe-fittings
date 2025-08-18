@@ -5,8 +5,8 @@ import (
 	"slices"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 )
 
 func ResolveChildrenFromNames(childNames []string, block *hcl.Block, supportedChildren []string, parseCtx *ModParseContext) ([]modconfig.ModTreeItem, hcl.Diagnostics) {

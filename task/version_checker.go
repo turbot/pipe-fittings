@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 type CLIVersionCheckResponse struct {

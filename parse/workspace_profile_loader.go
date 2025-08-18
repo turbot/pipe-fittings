@@ -9,12 +9,12 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/sperr"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
 	"github.com/turbot/pipe-fittings/v2/workspace_profile"
+	"github.com/turbot/pipe-helpers/app_specific"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/sperr"
 )
 
 func DefaultWorkspaceSampleFileName() string {
@@ -42,7 +42,7 @@ func NewWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](workspacePr
 
 	// if a config paths location was NOT passed, write the workspaces.spc.sample file to the lowest precedence location
 	// (assumed to be the global config folder)
-	if !viper.IsSet(constants.ArgConfigPath) {
+	if !viper.IsSet(constants2.ArgConfigPath) {
 		if err := loader.ensureDefaultWorkspaceFile(workspaceProfilePaths); err != nil {
 			return nil,
 				sperr.WrapWithMessage(
@@ -62,13 +62,13 @@ func (l *WorkspaceProfileLoader[T]) ensureDefaultWorkspaceFile(workspaceProfileP
 	var sampleContent string
 	switch any(empty).(type) {
 	case *workspace_profile.SteampipeWorkspaceProfile:
-		sampleContent = constants.DefaultSteampipeWorkspaceContent
+		sampleContent = constants2.DefaultSteampipeWorkspaceContent
 	case *workspace_profile.FlowpipeWorkspaceProfile:
-		sampleContent = constants.DefaultFlowpipeWorkspaceContent
+		sampleContent = constants2.DefaultFlowpipeWorkspaceContent
 	case *workspace_profile.PowerpipeWorkspaceProfile:
-		sampleContent = constants.DefaultPowerpipeWorkspaceContent
+		sampleContent = constants2.DefaultPowerpipeWorkspaceContent
 	case *workspace_profile.TailpipeWorkspaceProfile:
-		sampleContent = constants.DefaultTailpipeWorkspaceContent
+		sampleContent = constants2.DefaultTailpipeWorkspaceContent
 	}
 	// always write the workspaces sample file; i.e. workspaces.spc.sample
 	err := os.MkdirAll(globalConfigPath, 0755)
@@ -133,8 +133,8 @@ func (l *WorkspaceProfileLoader[T]) Load() error {
 	l.setWorkspaces(workspacesPrecedenceList)
 
 	// try to set the configured workspace
-	if viper.IsSet(constants.ArgWorkspaceProfile) {
-		name := viper.GetString(constants.ArgWorkspaceProfile)
+	if viper.IsSet(constants2.ArgWorkspaceProfile) {
+		name := viper.GetString(constants2.ArgWorkspaceProfile)
 		configuredProfile, ok := l.get(name)
 		if !ok {
 			// could not find configured profile

@@ -3,9 +3,9 @@ package modinstaller
 import (
 	"fmt"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-helpers/error_helpers"
 )
 
 func (i *ModInstaller) GetRequiredModVersionsFromArgs(modsArgs []string) (map[string]*modconfig.ModVersionConstraint, error) {

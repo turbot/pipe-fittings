@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
+	constants2 "github.com/turbot/pipe-helpers/constants"
 )
 
 type testExporter struct {
@@ -24,7 +24,7 @@ var dummyCSVExporter = testExporter{alias: "", extension: ".csv", name: "csv"}
 var dummyJSONExporter = testExporter{alias: "", extension: ".json", name: "json"}
 var dummyASFFExporter = testExporter{alias: "asff.json", extension: ".json", name: "asff"}
 var dummyNUNITExporter = testExporter{alias: "nunit3.xml", extension: ".xml", name: "nunit3"}
-var dummyPPSExporter = testExporter{alias: "pps", extension: constants.SnapshotExtension, name: constants.OutputFormatSnapshot}
+var dummyPPSExporter = testExporter{alias: "pps", extension: constants2.SnapshotExtension, name: constants2.OutputFormatSnapshot}
 
 type exporterTestCase struct {
 	name   string

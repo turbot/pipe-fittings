@@ -7,13 +7,13 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/ociinstaller"
 	"github.com/turbot/pipe-fittings/v2/plugin"
 	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/sperr"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/ociinstaller"
+	"github.com/turbot/pipe-helpers/sperr"
 )
 
 // Require is a struct representing mod dependencies

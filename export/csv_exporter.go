@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/querydisplay"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
+	constants2 "github.com/turbot/pipe-helpers/constants"
 )
 
 type CsvExporter struct {
@@ -29,9 +29,9 @@ func (e *CsvExporter) Export(ctx context.Context, input ExportSourceData, filePa
 }
 
 func (e *CsvExporter) FileExtension() string {
-	return constants.CsvExtension
+	return constants2.CsvExtension
 }
 
 func (e *CsvExporter) Name() string {
-	return constants.OutputFormatCSV
+	return constants2.OutputFormatCSV
 }

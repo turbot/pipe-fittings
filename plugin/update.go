@@ -3,7 +3,7 @@ package plugin
 import (
 	"runtime"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-helpers/constants"
 )
 
 // UpdateRequired determines if the latest version in a "stream"

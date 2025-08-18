@@ -9,19 +9,19 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/pipe-fittings/v2/cache"
 	"github.com/turbot/pipe-fittings/v2/connection"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/inputvars"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/turbot/pipe-fittings/v2/versionmap"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	filehelpers "github.com/turbot/pipe-helpers/files"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/perr"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -249,8 +249,8 @@ func VariableValueCtyMap(variables map[string]*modconfig.Variable, supportLateBi
 // AddInputVariableValues adds evaluated variables to the run context.
 // This function is called for the root run context after loading all input variables
 func (m *ModParseContext) AddInputVariableValues(inputVariables *modconfig.ModVariableMap) {
-	utils.LogTime("AddInputVariableValues")
-	defer utils.LogTime("AddInputVariableValues end")
+	utils2.LogTime("AddInputVariableValues")
+	defer utils2.LogTime("AddInputVariableValues end")
 	// store the variables
 	m.Variables = inputVariables
 
@@ -420,8 +420,8 @@ func (m *ModParseContext) GetModResources() modconfig.ModResources {
 }
 
 func (m *ModParseContext) setModResources() {
-	utils.LogTime(fmt.Sprintf("ModParseContext.setModResources %p", m))
-	defer utils.LogTime(fmt.Sprintf("ModParseContext.setModResources %p end", m))
+	utils2.LogTime(fmt.Sprintf("ModParseContext.setModResources %p", m))
+	defer utils2.LogTime(fmt.Sprintf("ModParseContext.setModResources %p end", m))
 
 	// get a map of top level loaded dep mods
 	deps := m.GetTopLevelDependencyMods()
@@ -714,7 +714,7 @@ func (m *ModParseContext) validateModRequireValues(depModVarValues terraform.Inp
 			return fmt.Errorf("failed to resolve dependency mod argument value: %s", missingVarExpressions[0])
 		}
 
-		return fmt.Errorf("failed to resolve %d dependency mod arguments %s:\n\t%s", errorCount, utils.Pluralize("value", errorCount), strings.Join(missingVarExpressions, "\n\t"))
+		return fmt.Errorf("failed to resolve %d dependency mod arguments %s:\n\t%s", errorCount, utils2.Pluralize("value", errorCount), strings.Join(missingVarExpressions, "\n\t"))
 	}
 	return nil
 }

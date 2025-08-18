@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/ociinstaller"
-	"github.com/turbot/pipe-fittings/v2/utils"
-	"github.com/turbot/pipe-fittings/v2/versionfile"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/ociinstaller"
+	utils2 "github.com/turbot/pipe-helpers/utils"
+	versionfile2 "github.com/turbot/pipe-helpers/versionfile"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 
 // PluginVersionCheckReport
 type PluginVersionCheckReport struct {
-	Plugin        *versionfile.InstalledVersion
+	Plugin        *versionfile2.InstalledVersion
 	CheckResponse versionCheckCorePayload
 	CheckRequest  versionCheckCorePayload
 }
@@ -44,12 +44,12 @@ func (vr *PluginVersionCheckReport) ShortNameWithConstraint() string {
 
 // VersionChecker :: wrapper struct over the plugin version check utilities
 type VersionChecker struct {
-	pluginsToCheck []*versionfile.InstalledVersion
+	pluginsToCheck []*versionfile2.InstalledVersion
 	signature      string
 }
 
 // GetUpdateReport looks up and reports the updated version of selective turbot plugins which are listed in versions.json
-func GetUpdateReport(ctx context.Context, installationID string, check []*versionfile.InstalledVersion) map[string]PluginVersionCheckReport {
+func GetUpdateReport(ctx context.Context, installationID string, check []*versionfile2.InstalledVersion) map[string]PluginVersionCheckReport {
 	versionChecker := new(VersionChecker)
 	versionChecker.signature = installationID
 
@@ -63,10 +63,10 @@ func GetUpdateReport(ctx context.Context, installationID string, check []*versio
 }
 
 // GetAllUpdateReport looks up and reports the updated version of all turbot plugins which are listed in versions.json
-func GetAllUpdateReport(ctx context.Context, installationID string, pluginVersions map[string]*versionfile.InstalledVersion) map[string]PluginVersionCheckReport {
+func GetAllUpdateReport(ctx context.Context, installationID string, pluginVersions map[string]*versionfile2.InstalledVersion) map[string]PluginVersionCheckReport {
 	versionChecker := new(VersionChecker)
 	versionChecker.signature = installationID
-	versionChecker.pluginsToCheck = []*versionfile.InstalledVersion{}
+	versionChecker.pluginsToCheck = []*versionfile2.InstalledVersion{}
 
 	for _, p := range pluginVersions {
 		if strings.HasPrefix(p.Name, app_specific.DefaultImageRepoDisplayURL) {
@@ -79,7 +79,7 @@ func GetAllUpdateReport(ctx context.Context, installationID string, pluginVersio
 
 func (v *VersionChecker) reportPluginUpdates(ctx context.Context) map[string]PluginVersionCheckReport {
 	// retrieve the plugin version data from steampipe config
-	versionFileData, err := versionfile.LoadPluginVersionFile(ctx)
+	versionFileData, err := versionfile2.LoadPluginVersionFile(ctx)
 	if err != nil {
 		log.Printf("[TRACE] reportPluginUpdates could not load version file: %s", err.Error())
 		return nil
@@ -103,7 +103,7 @@ func (v *VersionChecker) reportPluginUpdates(ctx context.Context) map[string]Plu
 
 	// update the version file
 	for _, plugin := range v.pluginsToCheck {
-		versionFileData.Plugins[plugin.Name].LastCheckedDate = utils.FormatTime(time.Now())
+		versionFileData.Plugins[plugin.Name].LastCheckedDate = utils2.FormatTime(time.Now())
 	}
 
 	if err = versionFileData.Save(); err != nil {
@@ -114,7 +114,7 @@ func (v *VersionChecker) reportPluginUpdates(ctx context.Context) map[string]Plu
 	return reports
 }
 
-func (v *VersionChecker) getLatestVersionsForPlugins(ctx context.Context, plugins []*versionfile.InstalledVersion) map[string]PluginVersionCheckReport {
+func (v *VersionChecker) getLatestVersionsForPlugins(ctx context.Context, plugins []*versionfile2.InstalledVersion) map[string]PluginVersionCheckReport {
 
 	var requestPayload []versionCheckCorePayload
 	reports := map[string]PluginVersionCheckReport{}
@@ -146,7 +146,7 @@ func (v *VersionChecker) getLatestVersionsForPlugins(ctx context.Context, plugin
 	return reports
 }
 
-func (v *VersionChecker) getPayloadFromInstalledData(plugin *versionfile.InstalledVersion) versionCheckCorePayload {
+func (v *VersionChecker) getPayloadFromInstalledData(plugin *versionfile2.InstalledVersion) versionCheckCorePayload {
 	ref := ociinstaller.NewImageRef(plugin.Name)
 	org, name, constraint := ref.GetOrgNameAndStream()
 	payload := versionCheckCorePayload{
@@ -174,11 +174,11 @@ func (v *VersionChecker) getVersionCheckURL() url.URL {
 func (v *VersionChecker) requestServerForLatest(ctx context.Context, payload []versionCheckCorePayload) ([]versionCheckCorePayload, error) {
 	// Set a default timeout of 3 sec for the check request (in milliseconds)
 	sendRequestTo := v.getVersionCheckURL()
-	requestBody := utils.BuildRequestPayload(v.signature, map[string]interface{}{
+	requestBody := utils2.BuildRequestPayload(v.signature, map[string]interface{}{
 		"plugins": payload,
 	})
 
-	resp, err := utils.SendRequest(ctx, v.signature, "POST", sendRequestTo, requestBody)
+	resp, err := utils2.SendRequest(ctx, v.signature, "POST", sendRequestTo, requestBody)
 	if err != nil {
 		log.Printf("[TRACE] Could not send request")
 		return nil, err

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 )
 
 type UnresolvedBlock struct {

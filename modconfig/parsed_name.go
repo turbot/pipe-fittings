@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-helpers/perr"
 )
 
 // ResourceNameParseFunc provides a mechanism for an app using pipe-fittings to override the default resource name parsing behavior.

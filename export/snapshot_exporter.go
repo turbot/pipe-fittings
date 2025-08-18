@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
-
-	"github.com/turbot/pipe-fittings/v2/constants"
+	constants2 "github.com/turbot/pipe-helpers/constants"
 )
 
 type SnapshotExporter struct {
@@ -30,11 +29,11 @@ func (e *SnapshotExporter) Export(_ context.Context, input ExportSourceData, fil
 }
 
 func (e *SnapshotExporter) FileExtension() string {
-	return constants.SnapshotExtension
+	return constants2.SnapshotExtension
 }
 
 func (e *SnapshotExporter) Name() string {
-	return constants.OutputFormatSnapshot
+	return constants2.OutputFormatSnapshot
 }
 
 func (*SnapshotExporter) Alias() string {

@@ -3,8 +3,8 @@ package plugin
 import (
 	"context"
 
-	"github.com/turbot/pipe-fittings/v2/ociinstaller"
-	"github.com/turbot/pipe-fittings/v2/versionfile"
+	"github.com/turbot/pipe-helpers/ociinstaller"
+	"github.com/turbot/pipe-helpers/versionfile"
 )
 
 // Exists looks up the version file and reports whether a plugin is already installed

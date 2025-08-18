@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/options"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 type ConfigMap map[string]interface{}

@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 // DetermineBlockName determines if the block is anonymous, and if so, returns a unique name for the block,

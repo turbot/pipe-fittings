@@ -7,9 +7,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 )
 
 type AvailableVersionCache struct {
@@ -22,7 +22,7 @@ func (av *AvailableVersionCache) asTable() (*tablewriter.Table, error) {
 	if err != nil {
 		return nil, err
 	}
-	notificationTable := utils.Map(notificationLines, func(line string) []string {
+	notificationTable := utils2.Map(notificationLines, func(line string) []string {
 		return []string{line}
 	})
 
@@ -65,7 +65,7 @@ func (av *AvailableVersionCache) cliNotificationMessage() ([]string, error) {
 
 	if newVersion.GreaterThan(app_specific.AppVersion) {
 		var downloadURLColor = color.New(color.FgYellow)
-		titleAppName := utils.ToTitleCase(app_specific.AppName)
+		titleAppName := utils2.ToTitleCase(app_specific.AppName)
 		var notificationLines = []string{
 			"",
 			fmt.Sprintf("A new version of %s is available! %s → %s", titleAppName, constants.Bold(app_specific.AppVersion.String()), constants.Bold(newVersion)),

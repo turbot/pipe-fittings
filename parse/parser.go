@@ -5,14 +5,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"sort"
+
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	"sigs.k8s.io/yaml"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
 	"github.com/hashicorp/hcl/v2/json"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
 )
 
 // LoadFileData builds a map of filepath to file data

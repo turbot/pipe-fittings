@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 // General
@@ -50,22 +50,22 @@ func (t *Query) ConfigMap() map[string]interface{} {
 	// only add keys which are non null
 	res := map[string]interface{}{}
 	if t.Output != nil {
-		res[constants.ArgOutput] = t.Output
+		res[constants2.ArgOutput] = t.Output
 	}
 	if t.Separator != nil {
-		res[constants.ArgSeparator] = t.Separator
+		res[constants2.ArgSeparator] = t.Separator
 	}
 	if t.Header != nil {
-		res[constants.ArgHeader] = t.Header
+		res[constants2.ArgHeader] = t.Header
 	}
 	if t.Multi != nil {
-		res[constants.ArgMultiLine] = t.Multi
+		res[constants2.ArgMultiLine] = t.Multi
 	}
 	if t.Timing != nil {
-		res[constants.ArgTiming] = *t.Timing
+		res[constants2.ArgTiming] = *t.Timing
 	}
 	if t.AutoComplete != nil {
-		res[constants.ArgAutoComplete] = t.AutoComplete
+		res[constants2.ArgAutoComplete] = t.AutoComplete
 	}
 	return res
 }
@@ -136,7 +136,7 @@ func (t *Query) String() string {
 
 func (t *Query) SetTiming(flag string, r hcl.Range) hcl.Diagnostics {
 	// check the value is valid
-	if _, ok := constants.QueryTimingValueLookup[flag]; !ok {
+	if _, ok := constants2.QueryTimingValueLookup[flag]; !ok {
 		return hcl.Diagnostics{
 			&hcl.Diagnostic{
 				Severity: hcl.DiagError,

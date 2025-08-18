@@ -3,9 +3,9 @@ package parse
 import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 )
 
 // AddReferences populates the 'References' resource field, used for the introspection tables

@@ -6,8 +6,8 @@ import (
 	"slices"
 
 	"github.com/turbot/pipe-fittings/v2/connection"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/perr"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/perr"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/gocty"
 )

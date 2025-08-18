@@ -3,9 +3,9 @@ package modinstaller
 import (
 	"context"
 
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 func UninstallWorkspaceDependencies(ctx context.Context, opts *InstallOpts) (_ *InstallData, err error) {

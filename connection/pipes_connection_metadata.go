@@ -10,10 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/perr"
-
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	perr2 "github.com/turbot/pipe-helpers/perr"
 )
 
 const (
@@ -77,7 +76,7 @@ func (m PipesConnectionMetadata) callPipesCredApi(target PipelingConnection) err
 	// Create a new HTTP request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return perr.InternalWithMessage("failed to create request")
+		return perr2.InternalWithMessage("failed to create request")
 	}
 
 	// Set the Authorization header with the Bearer token
@@ -87,13 +86,13 @@ func (m PipesConnectionMetadata) callPipesCredApi(target PipelingConnection) err
 	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		return perr.InternalWithMessage("failed to execute request")
+		return perr2.InternalWithMessage("failed to execute request")
 	}
 	defer resp.Body.Close()
 
 	// Check if the status code is OK (200)
 	if resp.StatusCode != http.StatusOK {
-		return perr.InternalWithMessage(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
+		return perr2.InternalWithMessage(fmt.Sprintf("unexpected status code: %d", resp.StatusCode))
 	}
 
 	// Parse the JSON response
@@ -107,7 +106,7 @@ func (m PipesConnectionMetadata) handlePipesCredApiResponse(resp io.ReadCloser, 
 
 	err := json.NewDecoder(resp).Decode(&apiResponse)
 	if err != nil {
-		return perr.InternalWithMessage("failed to decode response body")
+		return perr2.InternalWithMessage("failed to decode response body")
 	}
 
 	// always set a ttl, even if pipes does not provide one
@@ -146,18 +145,18 @@ func (m PipesConnectionMetadata) endpoint() string {
 func (m PipesConnectionMetadata) validate() error {
 	// connection, workspace and either user or org are required
 	if m.Connection == nil {
-		return perr.BadRequestWithMessage("connection is required")
+		return perr2.BadRequestWithMessage("connection is required")
 
 	}
 	if m.Workspace == nil {
-		return perr.BadRequestWithMessage("workspace is required")
+		return perr2.BadRequestWithMessage("workspace is required")
 	}
 	if m.User == nil && m.Org == nil {
-		return perr.BadRequestWithMessage("either user or org is required")
+		return perr2.BadRequestWithMessage("either user or org is required")
 	}
 	// if org is provided, user is not allowed
 	if m.Org != nil && m.User != nil {
-		return perr.BadRequestWithMessage("only one of user or org is allowed")
+		return perr2.BadRequestWithMessage("only one of user or org is allowed")
 	}
 
 	// cloudhost, if provided, must END in pipes.turbot.com
@@ -170,7 +169,7 @@ func (m PipesConnectionMetadata) validate() error {
 			}
 		}
 		if !valid {
-			return perr.BadRequestWithMessage("cloud_host must end in one of the allowed hosts")
+			return perr2.BadRequestWithMessage("cloud_host must end in one of the allowed hosts")
 		}
 	}
 

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	"github.com/turbot/pipe-helpers/sanitize"
 
 	"github.com/fatih/color"
 	"github.com/goccy/go-yaml"

@@ -7,13 +7,13 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/schema"
 	"github.com/turbot/pipe-fittings/v2/workspace_profile"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	filehelpers "github.com/turbot/pipe-helpers/files"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 func LoadWorkspaceProfiles[T workspace_profile.WorkspaceProfile](workspaceProfilePath string, opts ...ParseHclOpt) (profileMap map[string]T, err error) {

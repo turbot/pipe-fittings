@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 type MissingVariableError struct {

@@ -6,46 +6,46 @@ import (
 	"io"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/color"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	color2 "github.com/turbot/pipe-helpers/color"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	sanitize2 "github.com/turbot/pipe-helpers/sanitize"
 )
 
 type StringPrinter[T any] struct {
-	colorGenerator *color.DynamicColorGenerator
-	Sanitizer      *sanitize.Sanitizer
+	colorGenerator *color2.DynamicColorGenerator
+	Sanitizer      *sanitize2.Sanitizer
 }
 
 func NewStringPrinter[T any]() (*StringPrinter[T], error) {
-	colorGenerator, err := color.NewDynamicColorGenerator(0, 16)
+	colorGenerator, err := color2.NewDynamicColorGenerator(0, 16)
 	if err != nil {
 		return nil, err
 	}
 
 	p := &StringPrinter[T]{
 		colorGenerator: colorGenerator,
-		Sanitizer:      sanitize.NullSanitizer,
+		Sanitizer:      sanitize2.NullSanitizer,
 	}
 	return p, nil
 }
 
 func (p StringPrinter[T]) PrintResource(_ context.Context, r PrintableResource[T], writer io.Writer) error {
 	items := r.GetItems()
-	enableColor := viper.GetString(constants.ArgOutput) == constants.OutputFormatPretty
+	enableColor := viper.GetString(constants2.ArgOutput) == constants2.OutputFormatPretty
 	for _, item := range items {
-		if item, isSanitizedStringer := any(item).(sanitize.SanitizedStringer); isSanitizedStringer {
-			colorOpts := sanitize.RenderOptions{
+		if item, isSanitizedStringer := any(item).(sanitize2.SanitizedStringer); isSanitizedStringer {
+			colorOpts := sanitize2.RenderOptions{
 				ColorGenerator: p.colorGenerator,
 				ColorEnabled:   enableColor,
-				Verbose:        viper.GetBool(constants.ArgVerbose),
-				JsonFormatter:  color.NewJsonFormatter(!enableColor),
+				Verbose:        viper.GetBool(constants2.ArgVerbose),
+				JsonFormatter:  color2.NewJsonFormatter(!enableColor),
 			}
 
 			var str string
 			if p.Sanitizer != nil {
 				str = item.String(p.Sanitizer, colorOpts)
 			} else {
-				str = item.String(sanitize.Instance, colorOpts)
+				str = item.String(sanitize2.Instance, colorOpts)
 			}
 
 			if _, err := writer.Write([]byte(str)); err != nil {

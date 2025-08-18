@@ -6,7 +6,7 @@ import (
 
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 
-	filehelpers "github.com/turbot/go-kit/files"
+	filehelpers "github.com/turbot/pipe-helpers/files"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"

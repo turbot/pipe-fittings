@@ -7,11 +7,11 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/cty_helpers"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/options"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -244,33 +244,33 @@ func (p *SteampipeWorkspaceProfile) ConfigMap(cmd *cobra.Command) map[string]int
 	res := ConfigMap{}
 	// add non-empty properties to config map
 
-	res.SetStringItem(p.CloudHost, constants.ArgPipesHost)
-	res.SetStringItem(p.CloudToken, constants.ArgPipesToken)
-	res.SetStringItem(p.PipesHost, constants.ArgPipesHost)
-	res.SetStringItem(p.PipesToken, constants.ArgPipesToken)
-	res.SetStringItem(p.InstallDir, constants.ArgInstallDir)
-	res.SetStringItem(p.ModLocation, constants.ArgModLocation)
-	res.SetStringItem(p.SnapshotLocation, constants.ArgSnapshotLocation)
-	res.SetStringItem(p.WorkspaceDatabase, constants.ArgWorkspaceDatabase)
-	res.SetIntItem(p.QueryTimeout, constants.ArgDatabaseQueryTimeout)
-	res.SetIntItem(p.MaxParallel, constants.ArgMaxParallel)
-	res.SetBoolItem(p.Watch, constants.ArgWatch)
-	res.SetStringSliceItem(searchPathFromString(p.SearchPath, ","), constants.ArgSearchPath)
-	res.SetStringSliceItem(searchPathFromString(p.SearchPathPrefix, ","), constants.ArgSearchPathPrefix)
-	res.SetStringItem(p.Introspection, constants.ArgIntrospection)
-	res.SetBoolItem(p.Input, constants.ArgInput)
-	res.SetBoolItem(p.Progress, constants.ArgProgress)
-	res.SetStringItem(p.Theme, constants.ArgTheme)
-	res.SetBoolItem(p.Cache, constants.ArgClientCacheEnabled)
-	res.SetIntItem(p.CacheTTL, constants.ArgCacheTtl)
+	res.SetStringItem(p.CloudHost, constants2.ArgPipesHost)
+	res.SetStringItem(p.CloudToken, constants2.ArgPipesToken)
+	res.SetStringItem(p.PipesHost, constants2.ArgPipesHost)
+	res.SetStringItem(p.PipesToken, constants2.ArgPipesToken)
+	res.SetStringItem(p.InstallDir, constants2.ArgInstallDir)
+	res.SetStringItem(p.ModLocation, constants2.ArgModLocation)
+	res.SetStringItem(p.SnapshotLocation, constants2.ArgSnapshotLocation)
+	res.SetStringItem(p.WorkspaceDatabase, constants2.ArgWorkspaceDatabase)
+	res.SetIntItem(p.QueryTimeout, constants2.ArgDatabaseQueryTimeout)
+	res.SetIntItem(p.MaxParallel, constants2.ArgMaxParallel)
+	res.SetBoolItem(p.Watch, constants2.ArgWatch)
+	res.SetStringSliceItem(searchPathFromString(p.SearchPath, ","), constants2.ArgSearchPath)
+	res.SetStringSliceItem(searchPathFromString(p.SearchPathPrefix, ","), constants2.ArgSearchPathPrefix)
+	res.SetStringItem(p.Introspection, constants2.ArgIntrospection)
+	res.SetBoolItem(p.Input, constants2.ArgInput)
+	res.SetBoolItem(p.Progress, constants2.ArgProgress)
+	res.SetStringItem(p.Theme, constants2.ArgTheme)
+	res.SetBoolItem(p.Cache, constants2.ArgClientCacheEnabled)
+	res.SetIntItem(p.CacheTTL, constants2.ArgCacheTtl)
 
-	if cmd.Name() == constants.CmdNameQuery && p.QueryOptions != nil {
+	if cmd.Name() == constants2.CmdNameQuery && p.QueryOptions != nil {
 		res.PopulateConfigMapForOptions(p.QueryOptions)
 	}
-	if cmd.Name() == constants.CmdNameCheck && p.CheckOptions != nil {
+	if cmd.Name() == constants2.CmdNameCheck && p.CheckOptions != nil {
 		res.PopulateConfigMapForOptions(p.CheckOptions)
 	}
-	if cmd.Name() == constants.CmdNameDashboard && p.DashboardOptions != nil {
+	if cmd.Name() == constants2.CmdNameDashboard && p.DashboardOptions != nil {
 		res.PopulateConfigMapForOptions(p.DashboardOptions)
 	}
 

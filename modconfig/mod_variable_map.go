@@ -1,8 +1,8 @@
 package modconfig
 
 import (
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 )
 
 // ModVariableMap is a struct containing maps of variable definitions
@@ -61,14 +61,14 @@ func NewModVariableMap(mod *Mod) (*ModVariableMap, error) {
 func (m *ModVariableMap) ToArray() []*Variable {
 	var res []*Variable
 
-	keys := utils.SortedMapKeys(m.RootVariables)
+	keys := utils2.SortedMapKeys(m.RootVariables)
 	for _, k := range keys {
 		res = append(res, m.RootVariables[k])
 	}
 
 	for _, depVariables := range m.DependencyVariables {
 
-		keys := utils.SortedMapKeys(depVariables.RootVariables)
+		keys := utils2.SortedMapKeys(depVariables.RootVariables)
 		for _, k := range keys {
 			res = append(res, depVariables.RootVariables[k])
 		}
@@ -107,8 +107,8 @@ func (m *ModVariableMap) PopulatePublicVariables() {
 
 // GetPublicVariableValues converts public variables into a map of string variable values
 func (m *ModVariableMap) GetPublicVariableValues() (map[string]string, error) {
-	utils.LogTime("GetPublicVariableValues")
-	defer utils.LogTime("GetPublicVariableValues end")
+	utils2.LogTime("GetPublicVariableValues")
+	defer utils2.LogTime("GetPublicVariableValues end")
 
 	res := make(map[string]string, len(m.PublicVariables))
 	for k, v := range m.PublicVariables {

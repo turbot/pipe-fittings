@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/sperr"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/sperr"
 )
 
 // GetUserWorkspaceHandle returns the handle of the user workspace

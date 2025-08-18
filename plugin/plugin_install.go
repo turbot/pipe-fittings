@@ -5,10 +5,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/ociinstaller"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/app_specific"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/ociinstaller"
+	"github.com/turbot/pipe-helpers/utils"
 )
 
 type PluginInstallReports []*PluginInstallReport
@@ -39,7 +39,7 @@ func (i *PluginInstallReport) installString() string {
 	if i.IsUpdateReport {
 		thisReport = append(
 			thisReport,
-			fmt.Sprintf("Updated plugin: %s%s", constants.Bold(i.Plugin), i.Version),
+			fmt.Sprintf("Updated plugin: %s%s", constants2.Bold(i.Plugin), i.Version),
 		)
 		if len(i.DocURL) > 0 {
 			thisReport = append(
@@ -50,7 +50,7 @@ func (i *PluginInstallReport) installString() string {
 	} else {
 		thisReport = append(
 			thisReport,
-			fmt.Sprintf("Installed plugin: %s%s", constants.Bold(i.Plugin), i.Version),
+			fmt.Sprintf("Installed plugin: %s%s", constants2.Bold(i.Plugin), i.Version),
 		)
 		if len(i.DocURL) > 0 {
 			thisReport = append(
@@ -82,11 +82,11 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 		report.IsUpdateReport = isUpdateReport
 		if !report.Skipped {
 			installedOrUpdated = append(installedOrUpdated, report)
-		} else if report.SkipReason == constants.InstallMessagePluginNotInstalled {
+		} else if report.SkipReason == constants2.InstallMessagePluginNotInstalled {
 			canBeInstalled = append(canBeInstalled, report)
-		} else if report.SkipReason == constants.InstallMessagePluginAlreadyInstalled {
+		} else if report.SkipReason == constants2.InstallMessagePluginAlreadyInstalled {
 			canBeUpdated = append(canBeUpdated, report)
-		} else if report.SkipReason == constants.InstallMessagePluginNotFound {
+		} else if report.SkipReason == constants2.InstallMessagePluginNotFound {
 			notFound = append(notFound, report)
 		}
 	}
@@ -114,7 +114,7 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 		installSkipReports := []string{}
 		for _, report := range reports {
 			showReport := true
-			if report.SkipReason == constants.InstallMessagePluginAlreadyInstalled || report.SkipReason == constants.InstallMessagePluginLatestAlreadyInstalled {
+			if report.SkipReason == constants2.InstallMessagePluginAlreadyInstalled || report.SkipReason == constants2.InstallMessagePluginLatestAlreadyInstalled {
 				showReport = false
 			}
 			if report.Skipped && showReport {
@@ -144,7 +144,7 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 				"To install %s which %s not installed, please run %s\n",
 				utils.Pluralize("plugin", len(canBeInstalled)),
 				utils.Pluralize("is", len(canBeInstalled)),
-				constants.Bold(fmt.Sprintf(
+				constants2.Bold(fmt.Sprintf(
 					"%s plugin install %s",
 					app_specific.AppName,
 					strings.Join(pluginList, " "),
@@ -164,8 +164,8 @@ func PrintInstallReports(reports PluginInstallReports, isUpdateReport bool) {
 				"To update %s %s: %s\nTo update all plugins: %s",
 				utils.Pluralize("this", len(pluginList)),
 				utils.Pluralize("plugin", len(pluginList)),
-				constants.Bold(fmt.Sprintf("%s plugin update %s", app_specific.AppName, strings.Join(pluginList, " "))),
-				constants.Bold(fmt.Sprintf("%s plugin update --all\n", app_specific.AppName)),
+				constants2.Bold(fmt.Sprintf("%s plugin update %s", app_specific.AppName, strings.Join(pluginList, " "))),
+				constants2.Bold(fmt.Sprintf("%s plugin update --all\n", app_specific.AppName)),
 			)
 		}
 	}

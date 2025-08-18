@@ -11,8 +11,8 @@ import (
 
 	"github.com/karrick/gows"
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/error_helpers"
 )
 
 // ShowPaged displays the `content` in a system dependent pager

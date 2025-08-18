@@ -5,20 +5,20 @@ import (
 	"sort"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/inputvars"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/parse"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
-	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/turbot/pipe-fittings/v2/versionmap"
+	"github.com/turbot/pipe-helpers/constants"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/turbot/terraform-components/terraform"
 	"github.com/turbot/terraform-components/tfdiags"
 	"golang.org/x/exp/maps"
 )
 
-func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx *parse.ModParseContext) (*modconfig.ModVariableMap, error_helpers2.ErrorAndWarnings) {
 	mod, ew := LoadMod(ctx, variablePath, parseCtx)
 	if ew.GetError() != nil {
 		return nil, ew
@@ -30,7 +30,7 @@ func LoadVariableDefinitions(ctx context.Context, variablePath string, parseCtx 
 
 }
 
-func GetVariableValues(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, error_helpers.ErrorAndWarnings) {
+func GetVariableValues(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (*modconfig.ModVariableMap, error_helpers2.ErrorAndWarnings) {
 	// now resolve all input variables
 	inputValues, errorsAndWarnings := getInputVariables(parseCtx, variableMap, validate)
 	if errorsAndWarnings.Error == nil {
@@ -44,7 +44,7 @@ func GetVariableValues(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 	return variableMap, errorsAndWarnings
 }
 
-func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, error_helpers.ErrorAndWarnings) {
+func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, validate bool) (terraform.InputValues, error_helpers2.ErrorAndWarnings) {
 	variableFileArgs := viper.GetStringSlice(constants.ArgVarFile)
 	variableArgs := viper.GetStringSlice(constants.ArgVariable)
 
@@ -54,19 +54,19 @@ func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 
 	var inputValuesUnparsed, err = inputvars.CollectVariableValues(path, variableFileArgs, variableArgs, parseCtx.CurrentMod.ShortName)
 	if err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+		return nil, error_helpers2.NewErrorsAndWarning(err)
 	}
 
 	if validate {
 		if err := identifyAllMissingVariables(parseCtx, variableMap, inputValuesUnparsed); err != nil {
-			return nil, error_helpers.NewErrorsAndWarning(err)
+			return nil, error_helpers2.NewErrorsAndWarning(err)
 		}
 	}
 
 	// read any args set in the mod require block
 	depModArgs, err := inputvars.CollectVariableValuesFromModRequire(variableMap.Mod, parseCtx.WorkspaceLock)
 	if err != nil {
-		return nil, error_helpers.NewErrorsAndWarning(err)
+		return nil, error_helpers2.NewErrorsAndWarning(err)
 	}
 
 	// parse the input values (only parse values for public variables)
@@ -81,13 +81,13 @@ func getInputVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.M
 	return parsedValues, newVariableValidationResult(diags)
 }
 
-func newVariableValidationResult(diags tfdiags.Diagnostics) error_helpers.ErrorAndWarnings {
-	warnings := error_helpers.HclDiagsToWarnings(diags.ToHCL())
+func newVariableValidationResult(diags tfdiags.Diagnostics) error_helpers2.ErrorAndWarnings {
+	warnings := error_helpers2.HclDiagsToWarnings(diags.ToHCL())
 	var err error
 	if diags.HasErrors() {
 		err = steampipeconfig.NewVariableValidationFailedError(diags)
 	}
-	return error_helpers.NewErrorsAndWarning(err, warnings...)
+	return error_helpers2.NewErrorsAndWarning(err, warnings...)
 }
 
 func identifyAllMissingVariables(parseCtx *parse.ModParseContext, variableMap *modconfig.ModVariableMap, variableValues map[string]inputvars.UnparsedVariableValue) error {

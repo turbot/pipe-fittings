@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	filehelpers "github.com/turbot/go-kit/files"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	filehelpers "github.com/turbot/pipe-helpers/files"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/versionhelpers"
 	"github.com/zclconf/go-cty/cty"
 )

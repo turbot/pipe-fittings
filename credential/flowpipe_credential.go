@@ -7,16 +7,16 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	perr2 "github.com/turbot/pipe-helpers/perr"
 	"golang.org/x/exp/maps"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/app_specific_connection"
 	"github.com/turbot/pipe-fittings/v2/connection"
 	"github.com/turbot/pipe-fittings/v2/cty_helpers"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -59,12 +59,12 @@ var credentialTypeRegistry = map[string]reflect.Type{
 func instantiateCredential(key string, hclResourceImpl modconfig.HclResourceImpl) (Credential, error) {
 	t, exists := credentialTypeRegistry[key]
 	if !exists {
-		return nil, perr.BadRequestWithMessage("Invalid credential type " + key)
+		return nil, perr2.BadRequestWithMessage("Invalid credential type " + key)
 	}
 	credInterface := reflect.New(t).Interface()
 	cred, ok := credInterface.(Credential)
 	if !ok {
-		return nil, perr.InternalWithMessage("Failed to create credential")
+		return nil, perr2.InternalWithMessage("Failed to create credential")
 	}
 	cred.SetHclResourceImpl(hclResourceImpl)
 	cred.SetCredentialType(key)
@@ -125,7 +125,7 @@ func InstantiateCredentialConfig(key string) (CredentialConfig, error) {
 	credConfigInterface := reflect.New(t).Interface()
 	credConfig, ok := credConfigInterface.(CredentialConfig)
 	if !ok {
-		return nil, perr.InternalWithMessage("Failed to create credential config")
+		return nil, perr2.InternalWithMessage("Failed to create credential config")
 	}
 
 	return credConfig, nil

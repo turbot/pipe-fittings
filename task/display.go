@@ -6,13 +6,13 @@ import (
 	"log/slog"
 	"os"
 
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/filepaths"
+	filehelpers "github.com/turbot/pipe-helpers/files"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/utils"
 
 	"github.com/spf13/cobra"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
-	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 const (

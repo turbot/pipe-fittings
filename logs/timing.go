@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-helpers/app_specific"
 )
 
 type timeLog struct {

@@ -6,9 +6,9 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/schema"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/perr"
 )
 
 func PropertyPathFromExpression(expr hcl.Expression) (bool, *ParsedPropertyPath, error) {

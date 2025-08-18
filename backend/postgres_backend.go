@@ -12,11 +12,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
-	"github.com/turbot/pipe-fittings/v2/sperr"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/sperr"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 )
 
 var postgresConnectionStringPrefixes = []string{"postgresql://", "postgres://"}
@@ -262,7 +262,7 @@ func pgxReadCell(columnValue any, col *queryresult.ColumnDef) (any, error) {
 		switch col.DataType {
 		case "_TEXT":
 			if arr, ok := columnValue.([]interface{}); ok {
-				elements := utils.Map(arr, func(e interface{}) string { return e.(string) })
+				elements := utils2.Map(arr, func(e interface{}) string { return e.(string) })
 				result = strings.Join(elements, ",")
 			}
 		case "INET":
@@ -285,13 +285,13 @@ func pgxReadCell(columnValue any, col *queryresult.ColumnDef) (any, error) {
 				years := interval.Months / 12
 				months := interval.Months % 12
 				if years > 0 {
-					sb.WriteString(fmt.Sprintf("%d %s ", years, utils.Pluralize("year", int(years))))
+					sb.WriteString(fmt.Sprintf("%d %s ", years, utils2.Pluralize("year", int(years))))
 				}
 				if months > 0 {
-					sb.WriteString(fmt.Sprintf("%d %s ", months, utils.Pluralize("mon", int(months))))
+					sb.WriteString(fmt.Sprintf("%d %s ", months, utils2.Pluralize("mon", int(months))))
 				}
 				if interval.Days > 0 {
-					sb.WriteString(fmt.Sprintf("%d %s ", interval.Days, utils.Pluralize("day", int(interval.Days))))
+					sb.WriteString(fmt.Sprintf("%d %s ", interval.Days, utils2.Pluralize("day", int(interval.Days))))
 				}
 				if interval.Microseconds > 0 {
 					d := time.Duration(interval.Microseconds) * time.Microsecond

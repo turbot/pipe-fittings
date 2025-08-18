@@ -6,29 +6,29 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/parse"
+	parse2 "github.com/turbot/pipe-fittings/v2/parse"
 	"github.com/turbot/pipe-fittings/v2/workspace_profile"
+	app_specific2 "github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/files"
 )
 
 // GetWorkspaceProfileLoader creates a WorkspaceProfileLoader which loads the configured workspace
-func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](parseOpts ...parse.ParseHclOpt) (*parse.WorkspaceProfileLoader[T], error) {
+func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](parseOpts ...parse2.ParseHclOpt) (*parse2.WorkspaceProfileLoader[T], error) {
 	// NOTE: we need to setup some viper defaults to enable workspace profile loading
 	// the rest are set up in BootstrapViper
 
 	// set viper default for workspace profile, using ArgWorkspaceProfile env var
-	SetDefaultFromEnv(app_specific.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
+	SetDefaultFromEnv(app_specific2.EnvWorkspaceProfile, constants.ArgWorkspaceProfile, EnvVarTypeString)
 	// set viper default for install dir, using ArgInstallDir env var
-	SetDefaultFromEnv(app_specific.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
+	SetDefaultFromEnv(app_specific2.EnvInstallDir, constants.ArgInstallDir, EnvVarTypeString)
 
 	// create loader and load the workspace
 	configPaths, err := GetConfigPath()
 	if err != nil {
 		return nil, err
 	}
-	loader, err := parse.NewWorkspaceProfileLoader[T](configPaths...)
+	loader, err := parse2.NewWorkspaceProfileLoader[T](configPaths...)
 	if err != nil {
 		return nil, err
 	}
@@ -46,11 +46,11 @@ func GetWorkspaceProfileLoader[T workspace_profile.WorkspaceProfile](parseOpts .
 
 // GetConfigPath builds a list of possible config file locations, starting with the HIGHEST priority
 func GetConfigPath() ([]string, error) {
-	configPathArg := app_specific.DefaultConfigPath
+	configPathArg := app_specific2.DefaultConfigPath
 
 	// config-path is a colon separated path of decreasing precedence that config (fpc) files are loaded from
 	// default to the cmod location and the global config dir
-	configPathEnv := app_specific.EnvConfigPath
+	configPathEnv := app_specific2.EnvConfigPath
 	if envVal, ok := os.LookupEnv(configPathEnv); ok {
 		configPathArg = envVal
 	}

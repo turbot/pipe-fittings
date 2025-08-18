@@ -1,8 +1,8 @@
 package parse
 
 import (
-	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/pipe-fittings/v2/connection"
+	filehelpers "github.com/turbot/pipe-helpers/files"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/exp/maps"
 )

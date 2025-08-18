@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/hcl/v2"
-	typehelpers "github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/v2/cty_helpers"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
-	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	hclhelpers2 "github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/perr"
+	typehelpers "github.com/turbot/pipe-helpers/types"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/turbot/terraform-components/tfdiags"
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/convert"
@@ -51,7 +51,7 @@ type Variable struct {
 func NewVariable(v *RawVariable, mod *Mod) *Variable {
 	var defaultGo interface{} = nil
 	if !v.Default.IsNull() {
-		defaultGo, _ = hclhelpers.CtyToGo(v.Default)
+		defaultGo, _ = hclhelpers2.CtyToGo(v.Default)
 	}
 	fullName := fmt.Sprintf("%s.var.%s", mod.ShortName, v.Name)
 	res := &Variable{
@@ -130,16 +130,16 @@ func (v *Variable) SetInputValue(value cty.Value, sourceType string, sourceRange
 	v.ValueSourceFileName = sourceRange.Filename
 	v.ValueSourceStartLineNumber = sourceRange.Start.Line
 	v.ValueSourceEndLineNumber = sourceRange.End.Line
-	v.ValueGo, _ = hclhelpers.CtyToGo(value)
+	v.ValueGo, _ = hclhelpers2.CtyToGo(value)
 
 	// if type string is not set, derive from the type of value
 	if v.TypeString == "" {
-		v.TypeString = hclhelpers.CtyTypeToHclType(value.Type())
+		v.TypeString = hclhelpers2.CtyTypeToHclType(value.Type())
 	}
 
 	if v.Enum != cty.NilVal {
 		// check that the value is in the enum
-		valid, err := hclhelpers.ValidateSettingWithEnum(v.Value, v.Enum)
+		valid, err := hclhelpers2.ValidateSettingWithEnum(v.Value, v.Enum)
 		if err != nil {
 			return err
 		}

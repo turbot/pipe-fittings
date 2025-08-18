@@ -7,13 +7,13 @@ import (
 	"path"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/funcs"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/schema"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	error_helpers2 "github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/hclhelpers"
+	"github.com/turbot/pipe-helpers/perr"
+	"github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -31,7 +31,7 @@ func LoadModfile(modPath string) (*modconfig.Mod, error) {
 
 	mod, res := ParseModDefinition(modFilePath, evalCtx)
 	if res.Diags.HasErrors() {
-		return nil, error_helpers.HclDiagsToError("Failed to load mod", res.Diags)
+		return nil, error_helpers2.HclDiagsToError("Failed to load mod", res.Diags)
 	}
 
 	return mod, nil
@@ -93,43 +93,43 @@ func ParseModDefinition(modFilePath string, evalCtx *hcl.EvalContext) (*modconfi
 
 // ParseMod parses all source hcl files for the mod path and associated resources, and returns the mod object
 // NOTE: the mod definition has already been parsed (or a default created) and is in opts.RunCtx.RootMod
-func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (*modconfig.Mod, error_helpers.ErrorAndWarnings) {
+func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseContext) (*modconfig.Mod, error_helpers2.ErrorAndWarnings) {
 	utils.LogTime(fmt.Sprintf("ParseMod %s start", parseCtx.CurrentMod.Name()))
 	defer utils.LogTime(fmt.Sprintf("ParseMod %s end", parseCtx.CurrentMod.Name()))
 
 	// verify the modDecoder is set
 	if ModDecoderFunc == nil {
-		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("ModDecoderFunc not set - app should populate as part of app_specific init"))
+		return nil, error_helpers2.NewErrorsAndWarning(fmt.Errorf("ModDecoderFunc not set - app should populate as part of app_specific init"))
 	}
 	modDecoder := ModDecoderFunc(parseCtx.decoderOptions...)
 
 	body, diags := ParseHclFiles(fileData)
 	if diags.HasErrors() {
-		return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to load all mod source files", diags))
+		return nil, error_helpers2.NewErrorsAndWarning(error_helpers2.HclDiagsToError("Failed to load all mod source files", diags))
 	}
 
 	content, moreDiags := body.Content(WorkspaceBlockSchema)
 	if moreDiags.HasErrors() {
 		diags = append(diags, moreDiags...)
-		return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to load mod", diags))
+		return nil, error_helpers2.NewErrorsAndWarning(error_helpers2.HclDiagsToError("Failed to load mod", diags))
 	}
 
 	mod := parseCtx.CurrentMod
 	if mod == nil {
-		return nil, error_helpers.NewErrorsAndWarning(fmt.Errorf("ParseMod called with no Current Mod set in ModParseContext"))
+		return nil, error_helpers2.NewErrorsAndWarning(fmt.Errorf("ParseMod called with no Current Mod set in ModParseContext"))
 	}
 
 	// if variables were passed in parsecontext, add to the mod
 	if parseCtx.Variables != nil {
 		for _, v := range parseCtx.Variables.RootVariables {
 			if diags = mod.AddResource(v); diags.HasErrors() {
-				return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to add resource to mod", diags))
+				return nil, error_helpers2.NewErrorsAndWarning(error_helpers2.HclDiagsToError("Failed to add resource to mod", diags))
 			}
 		}
 	}
 
 	// collect warnings as we parse
-	var res = error_helpers.ErrorAndWarnings{}
+	var res = error_helpers2.ErrorAndWarnings{}
 
 	// add the parsed content to the run context
 	parseCtx.SetDecodeContent(content, fileData)
@@ -149,7 +149,7 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	// ! resources but not necessarily need to be in the mod tree
 	// !
 	if diags = parseCtx.AddModResources(mod); diags.HasErrors() {
-		return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to add mod to run context", diags))
+		return nil, error_helpers2.NewErrorsAndWarning(error_helpers2.HclDiagsToError("Failed to add mod to run context", diags))
 	}
 
 	// we may need to decode more than once as we gather dependencies as we go
@@ -160,10 +160,10 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 		diags = modDecoder.Decode(parseCtx)
 		if diags.HasErrors() {
 			slog.Error("decode mod failed", "decode passes", attempts+1, "diags", diags)
-			return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to decode mod", diags))
+			return nil, error_helpers2.NewErrorsAndWarning(error_helpers2.HclDiagsToError("Failed to decode mod", diags))
 		}
 		// now retrieve the warning strings
-		res.AddWarning(error_helpers.HclDiagsToWarnings(diags)...)
+		res.AddWarning(error_helpers2.HclDiagsToWarnings(diags)...)
 
 		// if there are no unresolved blocks, we are done
 		unresolvedBlocks := len(parseCtx.UnresolvedBlocks)
@@ -178,7 +178,7 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 		if prevUnresolvedBlocks != 0 && unresolvedBlocks >= prevUnresolvedBlocks {
 			str := parseCtx.FormatDependencies()
 			msg := fmt.Sprintf("Failed to resolve dependencies after %d passes. Unresolved blocks:\n%s", attempts+1, str)
-			return nil, error_helpers.NewErrorsAndWarning(perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, msg))
+			return nil, error_helpers2.NewErrorsAndWarning(perr.BadRequestWithTypeAndMessage(perr.ErrorCodeDependencyFailure, msg))
 		}
 		// update prevUnresolvedBlocks
 		prevUnresolvedBlocks = unresolvedBlocks

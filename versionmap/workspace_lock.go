@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	filehelpers "github.com/turbot/go-kit/files"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/filepaths"
+	filehelpers "github.com/turbot/pipe-helpers/files"
 )
 
 const WorkspaceLockStructVersion = 20240429

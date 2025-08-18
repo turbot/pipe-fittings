@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/turbot/pipe-helpers/constants"
 
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
+	"github.com/turbot/pipe-helpers/helpers"
 
-	typeHelpers "github.com/turbot/go-kit/types"
-	"github.com/turbot/pipe-fittings/v2/constants"
+	typeHelpers "github.com/turbot/pipe-helpers/types"
 )
 
 // columnNames builds a list of name from a slice of column defs - respecting the original name if present

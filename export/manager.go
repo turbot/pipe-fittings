@@ -6,10 +6,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/error_helpers"
-	"github.com/turbot/pipe-fittings/v2/sperr"
-	"github.com/turbot/pipe-fittings/v2/statushooks"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/error_helpers"
+	"github.com/turbot/pipe-helpers/sperr"
+	"github.com/turbot/pipe-helpers/statushooks"
+	"github.com/turbot/pipe-helpers/utils"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )

@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/connection"
-	"github.com/turbot/pipe-fittings/v2/perr"
+	"github.com/turbot/pipe-helpers/perr"
 	"github.com/zclconf/go-cty/cty"
 )
 

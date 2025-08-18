@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/constants"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 )
 
 // DecodeResult holds the result of a decoding operation - diags and resource dependencies

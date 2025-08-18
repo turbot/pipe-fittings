@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/querydisplay"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
+	constants2 "github.com/turbot/pipe-helpers/constants"
 )
 
 type JsonExporter struct {
@@ -29,9 +29,9 @@ func (e *JsonExporter) Export(ctx context.Context, input ExportSourceData, fileP
 }
 
 func (e *JsonExporter) FileExtension() string {
-	return constants.JsonExtension
+	return constants2.JsonExtension
 }
 
 func (e *JsonExporter) Name() string {
-	return constants.OutputFormatJSON
+	return constants2.OutputFormatJSON
 }

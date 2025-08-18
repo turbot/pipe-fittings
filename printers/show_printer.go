@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora"
-	"github.com/turbot/go-kit/helpers"
-	"github.com/turbot/pipe-fittings/v2/sanitize"
+	constants2 "github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/sanitize"
 
 	"github.com/spf13/viper"
-	"github.com/turbot/pipe-fittings/v2/constants"
 )
 
 type ShowPrinter[T any] struct{}
@@ -28,7 +28,7 @@ func (p ShowPrinter[T]) PrintResource(_ context.Context, r PrintableResource[T],
 		return fmt.Errorf("expected exactly one item, got %d", len(items))
 	}
 
-	enableColor := viper.GetString(constants.ArgOutput) == constants.OutputFormatPretty
+	enableColor := viper.GetString(constants2.ArgOutput) == constants2.OutputFormatPretty
 	renderOpts := sanitize.RenderOptions{ColorEnabled: enableColor}
 
 	showable, ok := any(items[0]).(Showable)

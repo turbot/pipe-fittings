@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/turbot/go-kit/helpers"
-
-	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-helpers/constants"
+	"github.com/turbot/pipe-helpers/helpers"
 )
 
 // TODO KAI this is Flowpipe specific - should it be named as such

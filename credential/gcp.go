@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
-	"github.com/turbot/pipe-fittings/v2/perr"
-	"github.com/turbot/pipe-fittings/v2/utils"
+	"github.com/turbot/pipe-helpers/helpers"
+	"github.com/turbot/pipe-helpers/perr"
+	utils2 "github.com/turbot/pipe-helpers/utils"
 	"github.com/zclconf/go-cty/cty"
 	"golang.org/x/oauth2/google"
 )
@@ -48,11 +48,11 @@ func (c *GcpCredential) Equals(otherCredential Credential) bool {
 		return false
 	}
 
-	if !utils.PtrEqual(c.Credentials, other.Credentials) {
+	if !utils2.PtrEqual(c.Credentials, other.Credentials) {
 		return false
 	}
 
-	if !utils.SafeIntEqual(c.Ttl, other.Ttl) {
+	if !utils2.SafeIntEqual(c.Ttl, other.Ttl) {
 		return false
 	}
 

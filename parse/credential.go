@@ -5,9 +5,9 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/credential"
 	"github.com/turbot/pipe-fittings/v2/funcs"
+	"github.com/turbot/pipe-helpers/helpers"
 	"github.com/zclconf/go-cty/cty"
 )
 

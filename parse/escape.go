@@ -1,10 +1,11 @@
 package parse
 
 import (
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"regexp"
 	"strings"
+
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 // EscapeTemplateTokens escapes template expressions in any properties specified by disableTemplateForProperties

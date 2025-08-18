@@ -6,8 +6,8 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/hclhelpers"
+	"github.com/turbot/pipe-helpers/app_specific"
+	"github.com/turbot/pipe-helpers/hclhelpers"
 )
 
 type AppRequire struct {
