@@ -62,6 +62,7 @@ func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption)
 		return nil, err
 	}
 
+	// create a view over the data, applying any filters
 	if err := b.createViews(ctx, db); err != nil {
 		return nil, fmt.Errorf("failed to create views: %w", err)
 	}
@@ -84,7 +85,8 @@ func (b *DucklakeBackend) RowReader() RowReader {
 
 func (b *DucklakeBackend) createViews(ctx context.Context, db *sql.DB) error {
 	// get list of tables
-	tableQuery := fmt.Sprintf("select table_name FROM %s.ducklake_table", constants.DuckLakeMetadataCatalog)
+	//nolint:gosec // DuckLakeMetadataCatalog is a known constant
+	tableQuery := fmt.Sprintf("select table_name from %s.ducklake_table", constants.DuckLakeMetadataCatalog)
 
 	// Execute the query
 	rows, err := db.QueryContext(ctx, tableQuery)
@@ -107,9 +109,12 @@ func (b *DucklakeBackend) createViews(ctx context.Context, db *sql.DB) error {
 
 	// Create views for each table
 	for _, tableName := range tableNames {
+		tableName = SafeIdentifier(tableName) // ensure table name is safe for SQL
 		// build the (possibly empty) filter clause
 		filterClause := b.buildFilterClause()
+
 		// build the view creation query
+		//nolint:gosec // DuckLakeMetadataCatalog is a known constant
 		createViewQuery := fmt.Sprintf(`
 				create view %s as 
 				select * from %s.%s 
@@ -242,4 +247,19 @@ func ParseDucklakeConnectionString(connectionString string) (string, string, err
 
 func GetDucklakeConnectionString(dbPath, dataPath string) string {
 	return fmt.Sprintf("ducklake://%s?data_path=%s", dbPath, dataPath)
+}
+
+// SafeIdentifier ensures that SQL identifiers (like table or column names)
+// are safely quoted using double quotes and escaped appropriately.
+//
+// For example:
+//
+//	input:  my_table         → output:  "my_table"
+//	input:  some"col         → output:  "some""col"
+//	input:  select           → output:  "select"    (reserved keyword)
+//
+// TODO duplicated from tailpipe - once moved to pipe-helpers use that one https://github.com/turbot/tailpipe/issues/517
+func SafeIdentifier(identifier string) string {
+	escaped := strings.ReplaceAll(identifier, `"`, `""`)
+	return `"` + escaped + `"`
 }
