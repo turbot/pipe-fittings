@@ -205,21 +205,22 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, c
 	}
 
 	// 3. Attach the sqlite database as my_ducklake
+	// NOTE: set journal mode to WAL and synchronous to NORMAL for better performance
 	slog.Info("attaching sqlite database", "dbPath", dbPath, "dataPath", dataPath)
-
-	attachQuery := fmt.Sprintf("attach 'ducklake:sqlite:%s' AS %s (data_path '%s/')", dbPath, constants.DuckLakeCatalog, dataPath)
+	attachQuery := fmt.Sprintf("attach 'ducklake:sqlite:%s' AS %s (data_path '%s/', meta_journal_mode 'WAL', meta_synchronous 'NORMAL', meta_busy_timeout 500)",
+		dbPath, constants.DuckLakeCatalog, dataPath)
 	_, err = db.ExecContext(ctx, attachQuery)
 	if err != nil {
 		return fmt.Errorf("failed to attach sqlite database: %v", err)
 	}
 
-	// TODO #DL figure out appropriate row group size
+	// TODO #DL figure out appropriate row group size https://github.com/turbot/tailpipe/issues/514
 	// 4. Set the row group size for parquet files
-	rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 10000);", constants.DuckLakeCatalog)
-	_, err = db.ExecContext(ctx, rowGroupQuery)
-	if err != nil {
-		return fmt.Errorf("failed to attach sqlite database: %v", err)
-	}
+	//rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 10000);", constants.DuckLakeCatalog)
+	//_, err = db.ExecContext(ctx, rowGroupQuery)
+	//if err != nil {
+	//	return fmt.Errorf("failed to attach sqlite database: %v", err)
+	//}
 
 	return nil
 }
