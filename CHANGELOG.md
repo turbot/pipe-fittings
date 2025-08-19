@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## 2.6.3 [2025-08-19]
+
+* Reverted accidental removal of functions in ociinstaller package.
+
 ## 2.6.2 [2025-08-19]
 
 * Fixed issue where a version.json file to the working directory if the plugin binary does not exist. ([#751](https://github.com/turbot/pipe-fittings/issues/751))

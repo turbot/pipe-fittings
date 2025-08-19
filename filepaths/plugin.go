@@ -19,18 +19,6 @@ const (
 func EnsurePluginDir() string {
 	return ensureInstallSubDir("plugins")
 }
-
-// When we install the plugin all the files go under ~/.tailpipe/plugins/temp/<pid> folder
-func EnsurePluginTempDir() string {
-	return EnsurePidTempDir(ensureInstallSubDir("plugins/temp"))
-}
-
-// CleanupPluginTempDirs removes orphaned temporary directories from failed plugin installations
-func CleanupPluginTempDirs() {
-	pluginRootTempDir:= installSubDir("plugins/temp")
-	CleanupPidTempDirs(pluginRootTempDir)
-}
-
 func EnsurePluginInstallDir(pluginImageDisplayRef string) string {
 	installDir := PluginInstallDir(pluginImageDisplayRef)
 
