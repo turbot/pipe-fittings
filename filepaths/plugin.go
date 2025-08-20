@@ -20,7 +20,7 @@ func EnsurePluginDir() string {
 	return ensureInstallSubDir("plugins")
 }
 
-// When we install the plugin all the files go under ~/.tailpipe/plugins/temp/<pid> folder
+// EnsurePluginTempDir install the plugin all the files go under ~/.tailpipe/plugins/temp/<pid>/uuid folder
 func EnsurePluginTempDir() string {
 	return EnsurePidTempDir(ensureInstallSubDir("plugins/temp"))
 }
