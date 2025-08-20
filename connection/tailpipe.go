@@ -39,7 +39,7 @@ type TailpipeConnection struct {
 	// if an option is passed to GetConnectionString, it may override the From, To, Indexes or Partitions values
 	OverrideFilters *backend.DatabaseFilters
 
-	// TODO #DL handle legacy tailpipe Connect functionality
+	// TODO #DL handle legacy tailpipe Connect functionality https://github.com/turbot/pipe-fittings/issues/748
 	// store a maps of connection strings, keyed by the filters used to create the db
 	// this is to avoid creating a new connection string each time GetConnectionString is called, unless
 	connectionStrings map[string]string

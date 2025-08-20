@@ -169,9 +169,7 @@ func (b *DucklakeBackend) buildFilterClause() string {
 	return "where " + strings.Join(conditions, " and ")
 }
 
-// TODO #DL: use default data location - remove DataPath everywhere
-
-func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, creds ...string) error {
+func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
 	// 1. Install sqlite extension
 	_, err := db.ExecContext(ctx, "install sqlite")
 	if err != nil {
@@ -180,7 +178,7 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, c
 
 	// 2. Install extensions
 	slog.Info("loading aws, parquet, httpfs extensions")
-	// TODO #DL: enscapsulate extension loading and only load s3 related ones if needed
+	// TODO #DL: enscapsulate extension loading and only load s3 related ones if needed https://github.com/turbot/tailpipe/issues/520
 	// load aws, http and parquet for S3 support
 	_, err = db.ExecContext(ctx, "install parquet")
 	if err != nil {
@@ -212,7 +210,11 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string, c
 	// 3. Attach the sqlite database as my_ducklake
 	// NOTE: set journal mode to WAL and synchronous to NORMAL for better performance
 	slog.Info("attaching sqlite database", "dbPath", dbPath, "dataPath", dataPath)
-	attachQuery := fmt.Sprintf("attach 'ducklake:sqlite:%s' AS %s (data_path '%s/', meta_journal_mode 'WAL', meta_synchronous 'NORMAL', meta_busy_timeout 500)",
+	attachQuery := fmt.Sprintf(`attach 'ducklake:sqlite:%s' AS %s (
+	data_path '%s/', 
+	meta_journal_mode 'WAL', 
+	meta_synchronous 'NORMAL', 
+	meta_busy_timeout 500)`,
 		dbPath, constants.DuckLakeCatalog, dataPath)
 	_, err = db.ExecContext(ctx, attachQuery)
 	if err != nil {

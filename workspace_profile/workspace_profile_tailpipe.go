@@ -118,7 +118,7 @@ func (p *TailpipeWorkspaceProfile) GetOptionsForBlock(block *hcl.Block) (options
 
 // EnsureWorkspaceDirs creates all necessary workspace directories
 func (p *TailpipeWorkspaceProfile) EnsureWorkspaceDirs() error {
-	workspaceDirs := []string{p.GetDataDir(), p.GetMetadataDir(), p.GetCollectionDir()}
+	workspaceDirs := []string{p.GetDataDir(), p.GetCollectionDir()}
 
 	// create if necessary
 	for _, dir := range workspaceDirs {
@@ -137,14 +137,9 @@ func (p *TailpipeWorkspaceProfile) GetDataDir() string {
 	return filepath.Join(filepaths.GetDataDir(), p.ProfileName)
 }
 
-// GetMetadataDir returns the path to the metadata directory, which is of the form ~/.turbot/metadata/<profile_name>
-func (p *TailpipeWorkspaceProfile) GetMetadataDir() string {
-	return filepath.Join(filepaths.GetMetadataDir(), p.ProfileName)
-}
-
 // GetDucklakeDbPath returns the path to the DuckDB database file which is of the form ~/.turbot/metadata/<profile_name>/metadata.sqlite
 func (p *TailpipeWorkspaceProfile) GetDucklakeDbPath() string {
-	return filepath.Join(p.GetMetadataDir(), "metadata.sqlite")
+	return filepath.Join(p.GetDataDir(), "metadata.sqlite")
 }
 
 // GetCollectionDir returns the path to the collection data directory
