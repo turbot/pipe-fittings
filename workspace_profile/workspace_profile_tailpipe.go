@@ -132,8 +132,14 @@ func (p *TailpipeWorkspaceProfile) EnsureWorkspaceDirs() error {
 	return nil
 }
 
+// GetDataDir returns the path to the data directory, which is of the form .tailpipe/data/<profile_name>
 func (p *TailpipeWorkspaceProfile) GetDataDir() string {
 	return filepath.Join(filepaths.GetDataDir(), p.ProfileName)
+}
+
+// GetDucklakeDbPath returns the path to the DuckDB database file which is of the form ~/.turbot/metadata/<profile_name>/metadata.sqlite
+func (p *TailpipeWorkspaceProfile) GetDucklakeDbPath() string {
+	return filepath.Join(p.GetDataDir(), "metadata.sqlite")
 }
 
 // GetCollectionDir returns the path to the collection data directory

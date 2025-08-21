@@ -19,17 +19,17 @@ const (
 
 type MySQLBackend struct {
 	connectionString string
-	rowreader        RowReader
+	rowReader        RowReader
 }
 
-func NewMySQLBackend(connString string) *MySQLBackend {
+func NewMySQLBackend(connString string) (*MySQLBackend, error) {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
 	connString = strings.TrimPrefix(connString, mysqlConnectionStringPrefix)
 
 	return &MySQLBackend{
 		connectionString: connString,
-		rowreader:        newMySqlRowReader(),
-	}
+		rowReader:        newMySqlRowReader(),
+	}, nil
 }
 
 // Connect implements Backend.
@@ -55,7 +55,7 @@ func (b *MySQLBackend) Name() string {
 
 // RowReader implements Backend.
 func (b *MySQLBackend) RowReader() RowReader {
-	return b.rowreader
+	return b.rowReader
 }
 
 type mysqlRowReader struct {

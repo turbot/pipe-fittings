@@ -17,16 +17,16 @@ const (
 
 type DuckDBBackend struct {
 	connectionString string
-	rowreader        RowReader
+	rowReader        RowReader
 }
 
-func NewDuckDBBackend(connString string) *DuckDBBackend {
+func NewDuckDBBackend(connString string) (*DuckDBBackend, error) {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
 	connString = strings.TrimPrefix(connString, duckDBConnectionStringPrefix)
 	return &DuckDBBackend{
 		connectionString: connString,
-		rowreader:        newDuckDBRowReader(),
-	}
+		rowReader:        newDuckDBRowReader(),
+	}, nil
 }
 
 // Connect implements Backend.
@@ -59,7 +59,7 @@ func (b *DuckDBBackend) Name() string {
 
 // RowReader implements Backend.
 func (b *DuckDBBackend) RowReader() RowReader {
-	return b.rowreader
+	return b.rowReader
 }
 
 type duckdbRowReader struct {

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -14,36 +13,12 @@ const (
 
 var ErrInvalidConfig = errors.New("invalid config")
 
-type PoolConfig struct {
-	MaxConnLifeTime time.Duration
-	MaxConnIdleTime time.Duration
-	MaxOpenConns    int
-}
-
-type SearchPathConfig struct {
-	SearchPath       []string
-	SearchPathPrefix []string
-}
-
-func (c SearchPathConfig) Empty() bool {
-	return len(c.SearchPath) == 0 && len(c.SearchPathPrefix) == 0
-}
-
-func (c SearchPathConfig) String() string {
-	if c.Empty() {
-		return ""
-	}
-	if len(c.SearchPath) > 0 {
-		return fmt.Sprintf("search_path=%v", c.SearchPath)
-	}
-	return fmt.Sprintf("search_path_prefix=%v", c.SearchPathPrefix)
-}
-
 type BackendConfig struct {
 	MaxConnLifeTime  time.Duration
 	MaxConnIdleTime  time.Duration
 	MaxOpenConns     int
 	SearchPathConfig SearchPathConfig
+	Filters          *DatabaseFilters
 }
 
 func NewBackendConfig(opts []BackendOption) *BackendConfig {
@@ -75,5 +50,12 @@ func WithConfig(other *BackendConfig) BackendOption {
 func WithSearchPathConfig(config SearchPathConfig) BackendOption {
 	return func(c *BackendConfig) {
 		c.SearchPathConfig = config
+	}
+}
+
+// WithFilter is a BackendOption that sets the filters for the backend.
+func WithFilter(f *DatabaseFilters) BackendOption {
+	return func(c *BackendConfig) {
+		c.Filters = f
 	}
 }
