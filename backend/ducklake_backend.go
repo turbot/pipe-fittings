@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/constants"
@@ -171,32 +172,38 @@ func (b *DucklakeBackend) buildFilterClause() string {
 
 func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
 	// 1. Install sqlite extension
+	slog.Info("loading sqlite extension")
 	_, err := db.ExecContext(ctx, "install sqlite")
 	if err != nil {
 		return fmt.Errorf("failed to install sqlite extension: %w", err)
 	}
 
 	// 2. Install extensions
-	slog.Info("loading aws, parquet, httpfs extensions")
-	// TODO #DL: enscapsulate extension loading and only load s3 related ones if needed https://github.com/turbot/tailpipe/issues/520
-	// load aws, http and parquet for S3 support
-	_, err = db.ExecContext(ctx, "install parquet")
-	if err != nil {
-		return fmt.Errorf("failed to install parquet extension: %w", err)
-	}
-	_, err = db.ExecContext(ctx, "install httpfs")
-	if err != nil {
-		return fmt.Errorf("failed to install httpfs extension: %w", err)
-	}
-	_, err = db.ExecContext(ctx, "install aws")
-	if err != nil {
-		return fmt.Errorf("failed to install aws extension: %w", err)
-	}
-	slog.Info("loading aws credentials")
-	// load aws creds
-	_, err = db.ExecContext(ctx, "call load_aws_credentials()")
-	if err != nil {
-		return fmt.Errorf("failed to load aws credentials: %w", err)
+
+	// TODO #DL tactical code for S3 - remove before release https://github.com/turbot/tailpipe/issues/520
+	if envDir := os.Getenv("TAILPIPE_DATA_DIR"); strings.HasPrefix(envDir, "s3") {
+		slog.Info("loading parquet, httpfs, aws extensions for S3")
+
+		// load aws, http and parquet for S3 support
+		_, err = db.ExecContext(ctx, "install parquet")
+		if err != nil {
+			return fmt.Errorf("failed to install parquet extension: %w", err)
+		}
+		_, err = db.ExecContext(ctx, "install httpfs")
+		if err != nil {
+			return fmt.Errorf("failed to install httpfs extension: %w", err)
+		}
+		_, err = db.ExecContext(ctx, "install aws")
+		if err != nil {
+			return fmt.Errorf("failed to install aws extension: %w", err)
+		}
+		slog.Info("loading aws credentials")
+		// load aws creds
+		_, err = db.ExecContext(ctx, "call load_aws_credentials()")
+		if err != nil {
+			return fmt.Errorf("failed to load aws credentials: %w", err)
+		}
+
 	}
 
 	// TODO #DL change to using prod extension when stable
