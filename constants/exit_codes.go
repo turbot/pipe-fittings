@@ -18,6 +18,10 @@ const (
 	ExitCodeLoginCloudConnectionFailed  = 51  // login - connecting to cloud failed
 	ExitCodeModInitFailed               = 61  // mod - init failed
 	ExitCodeModInstallFailed            = 62  // mod - install failed
+	ExitCodeConnectFailed               = 71  // connect - failed
+	ExitCodeCompactFailed               = 81  // compact - failed
+	ExitCodeOperationCancelled          = 91  // operation - cancelled
+	ExitCodeCollectionFailed            = 101 // collection - failed
 	ExitCodeInvalidExecutionEnvironment = 249 // common - when steampipe is run in an unsupported environment
 	ExitCodeInitializationFailed        = 250 // common - initialization failed
 	ExitCodeBindPortUnavailable         = 251 // common(service/dashboard) - port binding failed
