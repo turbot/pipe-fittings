@@ -110,7 +110,10 @@ func (b *DucklakeBackend) createViews(ctx context.Context, db *sql.DB) error {
 
 	// Create views for each table
 	for _, tableName := range tableNames {
-		tableName = SafeIdentifier(tableName) // ensure table name is safe for SQL
+		tableName, err = SanitizeDuckDBIdentifier(tableName) // ensure table name is safe for SQL
+		if err != nil {
+			return err
+		}
 		// build the (possibly empty) filter clause
 		filterClause := b.buildFilterClause()
 
@@ -256,19 +259,4 @@ func ParseDucklakeConnectionString(connectionString string) (string, string, err
 
 func GetDucklakeConnectionString(dbPath, dataPath string) string {
 	return fmt.Sprintf("ducklake://%s?data_path=%s", dbPath, dataPath)
-}
-
-// SafeIdentifier ensures that SQL identifiers (like table or column names)
-// are safely quoted using double quotes and escaped appropriately.
-//
-// For example:
-//
-//	input:  my_table         → output:  "my_table"
-//	input:  some"col         → output:  "some""col"
-//	input:  select           → output:  "select"    (reserved keyword)
-//
-// TODO duplicated from tailpipe - once moved to pipe-helpers use that one https://github.com/turbot/tailpipe/issues/517
-func SafeIdentifier(identifier string) string {
-	escaped := strings.ReplaceAll(identifier, `"`, `""`)
-	return `"` + escaped + `"`
 }
