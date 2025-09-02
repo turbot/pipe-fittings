@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/constants"
@@ -260,41 +259,4 @@ func ParseDucklakeConnectionString(connectionString string) (string, string, err
 
 func GetDucklakeConnectionString(dbPath, dataPath string) string {
 	return fmt.Sprintf("ducklake://%s?data_path=%s", dbPath, dataPath)
-}
-
-// SanitizeDuckDBIdentifier ensures that SQL identifiers (like table or column names)
-// are safely quoted using double quotes and escaped appropriately.
-//
-// The function uses a two-tier approach:
-//  1. Simple identifiers (letters, digits, underscore, starting with letter/underscore)
-//     are returned unquoted for readability
-//  2. Complex identifiers are safely quoted and escaped
-//
-// For example:
-//
-//	input:  my_table         → output:  my_table        (unquoted - simple identifier)
-//	input:  some"col         → output:  "some""col"     (quoted - contains quote)
-//	input:  select           → output:  select          (unquoted - reserved keyword handled by quoting)
-//	input:  table with spaces → output: "table with spaces" (quoted - contains spaces)
-//
-// TODO duplicated from tailpipe - once moved to pipe-helpers use that one https://github.com/turbot/tailpipe/issues/517
-func SanitizeDuckDBIdentifier(name string) (string, error) {
-	if name == "" {
-		return "", fmt.Errorf("empty identifier name")
-	}
-
-	// Option 1: allow only simple unquoted identifiers (letters, digits, underscore).
-	// Start must be a letter or underscore.
-	identRe := regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
-	if identRe.MatchString(name) {
-		// Safe to return bare.
-		return name, nil
-	}
-
-	// Option 2: allow quoting, but escape embedded quotes.
-	if strings.Contains(name, "\x00") {
-		return "", fmt.Errorf("invalid identifier name: contains NUL")
-	}
-	escaped := strings.ReplaceAll(name, `"`, `""`)
-	return `"` + escaped + `"`, nil
 }
