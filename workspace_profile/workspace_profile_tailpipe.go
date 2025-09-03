@@ -137,7 +137,7 @@ func (p *TailpipeWorkspaceProfile) GetDataDir() string {
 	return filepath.Join(filepaths.GetDataDir(), p.ProfileName)
 }
 
-// GetDucklakeDbPath returns the path to the DuckDB database file which is of the form ~/.turbot/metadata/<profile_name>/metadata.sqlite
+// GetDucklakeDbPath returns the path to the DuckDB database file which is of the form ~/.tailpipe/metadata/<profile_name>/metadata.sqlite
 func (p *TailpipeWorkspaceProfile) GetDucklakeDbPath() string {
 	return filepath.Join(p.GetDataDir(), "metadata.sqlite")
 }
@@ -147,4 +147,16 @@ func (p *TailpipeWorkspaceProfile) GetDucklakeDbPath() string {
 // this will contain the collection temp dir (which should only exist during collection) and the collection state
 func (p *TailpipeWorkspaceProfile) GetCollectionDir() string {
 	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName)
+}
+
+// GetMigratingDir returns the path to the ~/.tailpipe/migration/migrating directory for this profile
+func (p *TailpipeWorkspaceProfile) GetMigratingDir() string {
+	base := filepath.Dir(filepaths.GetDataDir())
+	return filepath.Join(base, "migration", "migrating", p.ProfileName)
+}
+
+// GetMigratedDir returns the path to the ~/.tailpipe/migration/migrated directory for this profile
+func (p *TailpipeWorkspaceProfile) GetMigratedDir() string {
+	base := filepath.Dir(filepaths.GetDataDir())
+	return filepath.Join(base, "migration", "migrated", p.ProfileName)
 }
