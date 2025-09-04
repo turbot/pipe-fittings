@@ -80,7 +80,7 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	filters := c.getFilters()
 
 	// for tailpipe v0.7.0 and later, we will have a single ducklake connection string - and we will NOT support
-	// filter params
+	// filter params (filters are applied within Powerpipe by the DucklakeBackend)
 	// for tailpipe v0.6.0 and earlier, we will store a connection string for each set of filters
 	// check if we have cached a connection string
 	// first try ducklake

@@ -59,7 +59,12 @@ func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption)
 		return nil, err
 	}
 
-	if err = ConnectDucklake(ctx, db, b.dbPath, b.dataPath); err != nil {
+	cfg := &AttachConfig{
+		DbPath:   b.dbPath,
+		DataPath: b.dataPath,
+		Readonly: true,
+	}
+	if err = ConnectDucklake(ctx, db, cfg); err != nil {
 		return nil, err
 	}
 
@@ -84,6 +89,11 @@ func (b *DucklakeBackend) RowReader() RowReader {
 	return b.rowReader
 }
 
+// createViews creates a view for each table in the DuckLake metadata catalog, applying any filters
+// NOTE: the view name is the same as the table name - but it is in the default (memory) catalog).
+// We are connected to the Ducklake DB but it is NOT our default catalog. So when a query accesses a table name
+// it is actually using the view we created here.
+// This means that any query will automatically have the filters applied.
 func (b *DucklakeBackend) createViews(ctx context.Context, db *sql.DB) error {
 	// get list of tables
 	//nolint:gosec // DuckLakeMetadataCatalog is a known constant
@@ -173,7 +183,24 @@ func (b *DucklakeBackend) buildFilterClause() string {
 	return "where " + strings.Join(conditions, " and ")
 }
 
-func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
+type AttachConfig struct {
+	DbPath   string
+	DataPath string
+	Readonly bool
+}
+
+func ConnectDucklake(ctx context.Context, db *sql.DB, cfg *AttachConfig) error {
+	// Validate required parameters
+	if cfg == nil {
+		return fmt.Errorf("AttachConfig cannot be nil")
+	}
+	if cfg.DbPath == "" {
+		return fmt.Errorf("DbPath is required")
+	}
+	if cfg.DataPath == "" {
+		return fmt.Errorf("DataPath is required")
+	}
+
 	// 1. Install sqlite extension
 	slog.Info("loading sqlite extension")
 	_, err := db.ExecContext(ctx, "install sqlite")
@@ -211,33 +238,41 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) e
 
 	// TODO #DL change to using prod extension when stable
 	//  https://github.com/turbot/tailpipe/issues/476
-	//_, err = db.Exec("install ducklake;")
+	// _, err = db.Exec("install ducklake;")
 	_, err = db.ExecContext(ctx, "force install ducklake from core_nightly")
 	if err != nil {
-		return fmt.Errorf("failed to install ducklake nightly extension: %v", err)
+		return fmt.Errorf("failed to install ducklake nightly extension: %w", err)
 	}
 
 	// 3. Attach the sqlite database as my_ducklake
 	// NOTE: set journal mode to WAL and synchronous to NORMAL for better performance
-	slog.Info("attaching sqlite database", "dbPath", dbPath, "dataPath", dataPath)
-	attachQuery := fmt.Sprintf(`attach 'ducklake:sqlite:%s' AS %s (
+	slog.Info("attaching sqlite database", "bbPath", cfg.DbPath, "dataPath", cfg.DataPath)
+	var attachQuery string
+	if cfg.Readonly {
+		attachQuery = fmt.Sprintf(`attach 'ducklake:sqlite:%s' as %s (read_only, data_path '%s/', meta_busy_timeout 500)`,
+			cfg.DbPath, constants.DuckLakeCatalog, cfg.DataPath)
+	} else {
+		// if NOT in readonly mode, set journal mode to WAL and synchronous to NORMAL for better performance
+		attachQuery = fmt.Sprintf(`attach 'ducklake:sqlite:%s' AS %s (
 	data_path '%s/', 
 	meta_journal_mode 'WAL', 
-	meta_synchronous 'NORMAL', 
-	meta_busy_timeout 500)`,
-		dbPath, constants.DuckLakeCatalog, dataPath)
+	meta_synchronous 'NORMAL')`,
+			cfg.DbPath,
+			constants.DuckLakeCatalog,
+			cfg.DataPath)
+	}
 	_, err = db.ExecContext(ctx, attachQuery)
 	if err != nil {
-		return fmt.Errorf("failed to attach sqlite database: %v", err)
+		return fmt.Errorf("failed to attach sqlite database: %w", err)
 	}
 
 	// TODO #DL figure out appropriate row group size https://github.com/turbot/tailpipe/issues/514
 	// 4. Set the row group size for parquet files
-	//rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 10000);", constants.DuckLakeCatalog)
-	//_, err = db.ExecContext(ctx, rowGroupQuery)
-	//if err != nil {
+	// rowGroupQuery := fmt.Sprintf("call ducklake_set_option('%s', 'parquet_row_group_size', 10000);", constants.DuckLakeCatalog)
+	// _, err = db.ExecContext(ctx, rowGroupQuery)
+	// if err != nil {
 	//	return fmt.Errorf("failed to attach sqlite database: %v", err)
-	//}
+	// }
 
 	return nil
 }
