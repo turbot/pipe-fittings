@@ -59,12 +59,7 @@ func (b *DucklakeBackend) Connect(ctx context.Context, options ...BackendOption)
 		return nil, err
 	}
 
-	cfg := &AttachConfig{
-		DbPath:   b.dbPath,
-		DataPath: b.dataPath,
-		Readonly: true,
-	}
-	if err = ConnectDucklake(ctx, db, cfg); err != nil {
+	if err = ConnectDucklake(ctx, db, b.dbPath, b.dataPath); err != nil {
 		return nil, err
 	}
 
@@ -183,23 +178,7 @@ func (b *DucklakeBackend) buildFilterClause() string {
 	return "where " + strings.Join(conditions, " and ")
 }
 
-type AttachConfig struct {
-	DbPath   string
-	DataPath string
-	Readonly bool
-}
-
-func ConnectDucklake(ctx context.Context, db *sql.DB, cfg *AttachConfig) error {
-	// Validate required parameters
-	if cfg == nil {
-		return fmt.Errorf("AttachConfig cannot be nil")
-	}
-	if cfg.DbPath == "" {
-		return fmt.Errorf("DbPath is required")
-	}
-	if cfg.DataPath == "" {
-		return fmt.Errorf("DataPath is required")
-	}
+func ConnectDucklake(ctx context.Context, db *sql.DB, dbPath, dataPath string) error {
 
 	// 1. Install sqlite extension
 	slog.Info("loading sqlite extension")
@@ -209,7 +188,6 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, cfg *AttachConfig) error {
 	}
 
 	// 2. Install extensions
-
 	// TODO #DL tactical code for S3 - remove before release https://github.com/turbot/tailpipe/issues/520
 	if envDir := os.Getenv("TAILPIPE_DATA_DIR"); strings.HasPrefix(envDir, "s3") {
 		slog.Info("loading parquet, httpfs, aws extensions for S3")
@@ -246,21 +224,17 @@ func ConnectDucklake(ctx context.Context, db *sql.DB, cfg *AttachConfig) error {
 
 	// 3. Attach the sqlite database as my_ducklake
 	// NOTE: set journal mode to WAL and synchronous to NORMAL for better performance
-	slog.Info("attaching sqlite database", "bbPath", cfg.DbPath, "dataPath", cfg.DataPath)
-	var attachQuery string
-	if cfg.Readonly {
-		attachQuery = fmt.Sprintf(`attach 'ducklake:sqlite:%s' as %s (read_only, data_path '%s/', meta_busy_timeout 500)`,
-			cfg.DbPath, constants.DuckLakeCatalog, cfg.DataPath)
-	} else {
-		// if NOT in readonly mode, set journal mode to WAL and synchronous to NORMAL for better performance
-		attachQuery = fmt.Sprintf(`attach 'ducklake:sqlite:%s' AS %s (
+	slog.Info("attaching sqlite database", "bbPath", dbPath, "dataPath", dataPath)
+
+	// set journal mode to WAL and synchronous to NORMAL for better performance
+	attachQuery := fmt.Sprintf(`attach 'ducklake:sqlite:%s' AS %s (
 	data_path '%s/', 
 	meta_journal_mode 'WAL', 
 	meta_synchronous 'NORMAL')`,
-			cfg.DbPath,
-			constants.DuckLakeCatalog,
-			cfg.DataPath)
-	}
+		dbPath,
+		constants.DuckLakeCatalog,
+		dataPath)
+
 	_, err = db.ExecContext(ctx, attachQuery)
 	if err != nil {
 		return fmt.Errorf("failed to attach sqlite database: %w", err)
