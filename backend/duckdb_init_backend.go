@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/constants"
@@ -20,8 +21,10 @@ type DuckDBInitBackend struct {
 }
 
 func NewDuckDBInitBackend(connString string) (*DuckDBInitBackend, error) {
-	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
-	// connString is already the file path, no need to trim prefix
+	// remove any leading or trailing whitespace
+	connString = strings.TrimSpace(connString)
+	// remove the prefix
+	connString = strings.TrimPrefix(connString, duckDBInitConnectionStringPrefix)
 	return &DuckDBInitBackend{
 		initScript: connString,
 		rowReader:  newDuckDBRowReader(),
@@ -31,7 +34,7 @@ func NewDuckDBInitBackend(connString string) (*DuckDBInitBackend, error) {
 // Connect implements Backend.
 func (b *DuckDBInitBackend) Connect(ctx context.Context, options ...BackendOption) (*sql.DB, error) {
 	config := NewBackendConfig(options)
-	db, err := sql.Open("duckdb", fmt.Sprintf("init=%s", b.initScript))
+	db, err := sql.Open("duckdb", "")
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")
 	}
@@ -44,6 +47,15 @@ func (b *DuckDBInitBackend) Connect(ctx context.Context, options ...BackendOptio
 	err = installAndLoadDuckDbExtensions(db)
 	if err != nil {
 		return nil, err
+	}
+
+	// Execute the init script if provided
+	if b.initScript != "" {
+		err = b.executeInitScript(ctx, db)
+		if err != nil {
+			db.Close()
+			return nil, sperr.WrapWithMessage(err, "failed to execute init script")
+		}
 	}
 
 	return db, nil
@@ -60,4 +72,17 @@ func (b *DuckDBInitBackend) Name() string {
 // RowReader implements Backend.
 func (b *DuckDBInitBackend) RowReader() RowReader {
 	return b.rowReader
+}
+
+// executeInitScript reads and executes the SQL init script file
+func (b *DuckDBInitBackend) executeInitScript(ctx context.Context, db *sql.DB) error {
+	content, err := os.ReadFile(b.initScript)
+	if err != nil {
+		return fmt.Errorf("failed to read init script %q: %w", b.initScript, err)
+	}
+
+	if _, err := db.ExecContext(ctx, string(content)); err != nil {
+		return fmt.Errorf("failed to execute init script %q: %w", b.initScript, err)
+	}
+	return nil
 }

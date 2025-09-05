@@ -8,9 +8,10 @@ import (
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
 )
 
-// PipesInstallDir is the location of config files common between pipelings
+// DefaultPipesInstallDir is the location of config files common between pipelings
 // this must be set by the application at startup
 var DefaultPipesInstallDir = ""
+
 var PipesInstallDir = ""
 
 func ensurePipesInstallSubDir(dirName string) string {
