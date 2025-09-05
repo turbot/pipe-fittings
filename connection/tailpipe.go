@@ -24,10 +24,14 @@ const TailpipeConnectionType = "tailpipe"
 
 type TailpipeConnectResponse struct {
 	DatabaseFilepath string `json:"database_filepath,omitempty"`
-	DataPath         string `json:"data_path,omitempty"`
+	InitScriptPath   string `json:"init_script_path,omitempty"`
 	Error            string `json:"error,omitempty"`
 }
 
+// TailpipeConnection represents a connection to a tailpipe database
+// It uses the `tailpipe connect` command to get a connection string
+// The connection string is cached based on the filters used to create the database
+// so that subsequent calls with the same filters do not require calling the command again
 type TailpipeConnection struct {
 	ConnectionImpl
 
@@ -39,7 +43,6 @@ type TailpipeConnection struct {
 	// if an option is passed to GetConnectionString, it may override the From, To, Indexes or Partitions values
 	OverrideFilters *backend.DatabaseFilters
 
-	// TODO #DL handle legacy tailpipe Connect functionality https://github.com/turbot/pipe-fittings/issues/748
 	// store a maps of connection strings, keyed by the filters used to create the db
 	// this is to avoid creating a new connection string each time GetConnectionString is called, unless
 	connectionStrings map[string]string
@@ -70,46 +73,24 @@ func (c *TailpipeConnection) Validate() hcl.Diagnostics {
 	return nil
 }
 
+// GetConnectionString implements the ConnectionStringProvider interface
+// it calls the `tailpipe connect` command to get a connection string
+// it caches the connection string based on the filters used to create the database
+// so that subsequent calls with the same filters do not require calling the command again
+// it supports the following ConnectionStringOpt options:
+// - WithFilter: to override the filters used to create the database
+// NOTE: the connection string returned is either of duckdb://<db path> or duckdbinit://<init script location>
+// The format depends on the tailpipe version
+//   - for <= v0.6.x it is duckdb://<db path>
+//   - for >= v0.7.x it is duckdbinit://<init script location>
 func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
-	// apply any options to the connection
 	for _, opt := range opts {
 		opt(c)
 	}
+	args := []string{"connect", "--output", "json"}
 
 	// resolve the filters
 	filters := c.getFilters()
-
-	// for tailpipe v0.7.0 and later, we will have a single ducklake connection string - and we will NOT support
-	// filter params (filters are applied within Powerpipe by the DucklakeBackend)
-	// for tailpipe v0.6.0 and earlier, we will store a connection string for each set of filters
-	// check if we have cached a connection string
-	// first try ducklake
-	connectionKey := "ducklake"
-	if connectionString, ok := c.connectionStrings[connectionKey]; ok {
-		return connectionString, nil
-	}
-	// if not, try the filters
-	connectionKey = filters.String()
-	if connectionString, ok := c.connectionStrings[connectionKey]; ok {
-		return connectionString, nil
-	}
-
-	// so - we do not have a cached connection string, so we need to call tailpipe
-	connectionString, err := c.getTailpipeConnectionString(filters)
-	if err != nil {
-		return "", err
-	}
-	// add to cache
-	c.connectionStrings[connectionKey] = connectionString
-
-	slog.Info("GetConnectionString returned from tailpipe", "connectionString", connectionString)
-
-	return connectionString, nil
-}
-
-func (c *TailpipeConnection) getTailpipeConnectionString(filters *backend.DatabaseFilters) (string, error) {
-	args := []string{"connect", "--output", "json"}
-
 	if from := filters.From; from != nil {
 		args = append(args, "--from", from.Format(time.RFC3339))
 	}
@@ -123,6 +104,12 @@ func (c *TailpipeConnection) getTailpipeConnectionString(filters *backend.Databa
 
 	if len(filters.Partitions) > 0 {
 		args = append(args, "--partition", fmt.Sprintf("\"%s\"", strings.Join(filters.Partitions, ",")))
+	}
+
+	// see if we already have a connection string for these filters
+	filterKey := filters.String()
+	if connectionString, ok := c.connectionStrings[filterKey]; ok {
+		return connectionString, nil
 	}
 
 	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe", "args", args)
@@ -148,16 +135,23 @@ func (c *TailpipeConnection) getTailpipeConnectionString(filters *backend.Databa
 		return "", fmt.Errorf("'tailpipe connect' returned an error: %s", res.Error)
 	}
 
-	// if DataPath is included in the response, that means the db is a DuckLake database
+	// builb a connection string based on the response
 	var connectionString string
-	if res.DataPath != "" {
-		// Convert output to string, trim whitespace, and return as connection string
-		connectionString = fmt.Sprintf("ducklake://%s?data_path=%s", strings.TrimSpace(res.DatabaseFilepath), strings.TrimSpace(res.DataPath))
-
-	} else {
-		// Convert output to string, trim whitespace, and return as connection string
+	if res.DatabaseFilepath != "" {
+		// for tailpipe up to v0.6.x, the response contains DatabaseFilepath
+		// - use duckdb:// prefix so we create a DuckDBBackend
 		connectionString = fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
+	} else if res.InitScriptPath != "" {
+		// for tailpipe v0.7.x and later, the response contains InitScriptPath
+		// - use duckdbinit:// prefix so we create a DuckDBBackend
+		connectionString = fmt.Sprintf("duckdbinit://%s", strings.TrimSpace(res.InitScriptPath))
 	}
+
+	// add to cache
+	c.connectionStrings[filterKey] = connectionString
+
+	slog.Info("GetConnectionString returned from tailpipe", "args", args, "connectionString", connectionString)
+
 	return connectionString, nil
 }
 

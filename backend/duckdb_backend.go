@@ -40,8 +40,8 @@ func (b *DuckDBBackend) Connect(ctx context.Context, options ...BackendOption) (
 	db.SetConnMaxLifetime(config.MaxConnLifeTime)
 	db.SetMaxOpenConns(config.MaxOpenConns)
 
-	// Install and load the JSON extension
-	err = installAndLoadExtensions(db)
+	// Install and load the standard extensions
+	err = installAndLoadDuckDbExtensions(db)
 	if err != nil {
 		return nil, err
 	}
@@ -73,15 +73,16 @@ func newDuckDBRowReader() *duckdbRowReader {
 	}
 }
 
-func installAndLoadExtensions(db *sql.DB) error {
+// installAndLoadDuckDbExtensions installs and loads the default DuckDB extensions (json, inet)
+func installAndLoadDuckDbExtensions(db *sql.DB) error {
 	// set the extension directory
-	if _, err := db.Exec(fmt.Sprintf("SET extension_directory = '%s';", filepaths.EnsurePipesDuckDbExtensionsDir())); err != nil {
+	if _, err := db.Exec(fmt.Sprintf("set extension_directory = '%s';", filepaths.EnsurePipesDuckDbExtensionsDir())); err != nil {
 		return fmt.Errorf("failed to set extension_directory: %w", err)
 	}
 
 	// install and load the extensions
 	for _, extension := range constants.DuckDbExtensions {
-		if _, err := db.Exec(fmt.Sprintf("INSTALL '%s'; LOAD '%s';", extension, extension)); err != nil {
+		if _, err := db.Exec(fmt.Sprintf("install '%s'; load '%s';", extension, extension)); err != nil {
 			return fmt.Errorf("failed to install and load extension %s: %s", extension, err.Error())
 		}
 	}

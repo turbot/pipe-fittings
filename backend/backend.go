@@ -66,8 +66,8 @@ func FromConnectionString(ctx context.Context, cs string) (Backend, error) {
 		return NewMySQLBackend(cs)
 	case IsDuckDBConnectionString(cs):
 		return NewDuckDBBackend(cs)
-	case IsDucklakeConnectionString(cs):
-		return NewDucklakeBackend(cs)
+	case IsDuckDBInitConnectionString(cs):
+		return NewDuckDBInitBackend(cs)
 	case IsSqliteConnectionString(cs):
 		return NewSqliteBackend(cs)
 	default:
@@ -81,7 +81,7 @@ func HasBackend(str string) bool {
 		IsPostgresConnectionString(str),
 		IsMySqlConnectionString(str),
 		IsDuckDBConnectionString(str),
-		IsDucklakeConnectionString(str),
+		IsDuckDBInitConnectionString(str),
 		IsSqliteConnectionString(str):
 		return true
 	default:
@@ -139,10 +139,12 @@ func IsDuckDBConnectionString(connString string) bool {
 	return strings.HasPrefix(connString, duckDBConnectionStringPrefix)
 }
 
-// IsDucklakeConnectionString returns true if the connection string is for ducklake
-// looks for the ducklake:// prefix
-func IsDucklakeConnectionString(connString string) bool {
-	return strings.HasPrefix(connString, ducklakeConnectionStringPrefix)
+// IsDuckDBInitConnectionString returns true if the connection string is for duckdbinit, i.e. an init script for duckdb
+// looks for the duckdb:// prefix
+func IsDuckDBInitConnectionString(connString string) bool {
+	// this will be of form "/path/to/file/duckdb_init_xxxxxx.sql"
+
+	return strings.HasPrefix(connString, duckDBInitConnectionStringPrefix)
 }
 
 // IsMySqlConnectionString returns true if the connection string is for mysql
