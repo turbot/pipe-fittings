@@ -160,3 +160,9 @@ func (p *TailpipeWorkspaceProfile) GetMigratedDir() string {
 	base := filepath.Dir(filepaths.GetDataDir())
 	return filepath.Join(base, "migration", "migrated", p.ProfileName)
 }
+
+// GetMigratingDir returns the path to the ~/.tailpipe/migration/failed directory for this profile
+func (p *TailpipeWorkspaceProfile) GetMigrationFailedDir() string {
+	base := filepath.Dir(filepaths.GetDataDir())
+	return filepath.Join(base, "migration", "failed", p.ProfileName)
+}
