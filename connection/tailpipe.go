@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/turbot/pipe-fittings/v2/backend"
 	"log/slog"
+	"os"
 	"os/exec"
 	"slices"
 	"strconv"
@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/zclconf/go-cty/cty"
-
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/zclconf/go-cty/cty"
 )
 
 const TailpipeConnectionType = "tailpipe"
@@ -53,6 +53,22 @@ func NewTailpipeConnection(shortName string, declRange hcl.Range) PipelingConnec
 		ConnectionImpl:    NewConnectionImpl(TailpipeConnectionType, shortName, declRange),
 		connectionStrings: make(map[string]string),
 	}
+}
+
+// Close attempts to remove the init script for all cached connection strings
+func (c *TailpipeConnection) Close() {
+	if len(c.connectionStrings) == 0 {
+		return
+	}
+	slog.Info("Cleaning up tailpipe connection init scripts")
+	for _, connStr := range c.connectionStrings {
+		//  try to remove it
+		if err := os.Remove(connStr); err != nil {
+			// just log error
+			slog.Warn("Failed to remove tailpipe init script", "file", connStr, "error", err)
+		}
+	}
+	return
 }
 
 func (c *TailpipeConnection) GetConnectionType() string {
