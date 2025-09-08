@@ -31,6 +31,19 @@ func NewDuckDBInitBackend(connString string) (*DuckDBInitBackend, error) {
 	}, nil
 }
 
+// Cleanup attempts to remove the init script file if it exists
+func (b *DuckDBInitBackend) Cleanup() error {
+	if b.initScript != "" {
+		if _, err := os.Stat(b.initScript); err == nil {
+			// file exists - try to remove it
+			if err := os.Remove(b.initScript); err != nil {
+				return fmt.Errorf("failed to remove duckdb init script %q: %w", b.initScript, err)
+			}
+		}
+	}
+	return nil
+}
+
 // Connect implements Backend.
 func (b *DuckDBInitBackend) Connect(ctx context.Context, options ...BackendOption) (*sql.DB, error) {
 	config := NewBackendConfig(options)
