@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -89,7 +90,7 @@ func (c *SqliteConnection) GetConnectionString(opts ...ConnectionStringOpt) (str
 		return *c.ConnectionString, nil
 	}
 
-	return fmt.Sprintf("sqlite://%s", c.getFileName()), nil
+	return fmt.Sprintf("%s%s", backend.SqliteConnectionStringPrefix, c.getFileName()), nil
 }
 
 func (c *SqliteConnection) getFileName() any {

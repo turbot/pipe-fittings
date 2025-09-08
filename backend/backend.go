@@ -130,7 +130,7 @@ func IsPostgresConnectionString(connString string) bool {
 // IsSqliteConnectionString returns true if the connection string is for sqlite
 // looks for the sqlite:// prefix
 func IsSqliteConnectionString(connString string) bool {
-	return strings.HasPrefix(connString, sqliteConnectionStringPrefix)
+	return strings.HasPrefix(connString, SqliteConnectionStringPrefix)
 }
 
 // IsDuckDBConnectionString returns true if the connection string is for duckdb
@@ -140,7 +140,7 @@ func IsDuckDBConnectionString(connString string) bool {
 }
 
 // IsDuckDBInitConnectionString returns true if the connection string is for duckdbinit, i.e. an init script for duckdb
-// looks for the duckdb:// prefix
+// looks for the duckdbinit:// prefix
 func IsDuckDBInitConnectionString(connString string) bool {
 	// this will be of form "/path/to/file/duckdb_init_xxxxxx.sql"
 

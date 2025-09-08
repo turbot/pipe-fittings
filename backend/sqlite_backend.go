@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	sqliteConnectionStringPrefix = "sqlite:"
+	SqliteConnectionStringPrefix = "sqlite://"
 )
 
 type SqliteBackend struct {
@@ -20,7 +20,7 @@ type SqliteBackend struct {
 
 func NewSqliteBackend(connString string) (*SqliteBackend, error) {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
-	connString = strings.TrimPrefix(connString, sqliteConnectionStringPrefix)
+	connString = strings.TrimPrefix(connString, SqliteConnectionStringPrefix)
 	return &SqliteBackend{
 		connectionString: connString,
 		rowReader:        newSqliteRowReader(),

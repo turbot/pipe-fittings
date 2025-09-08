@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	DuckDBConnectionStringPrefix = "duckdb:"
+	DuckDBConnectionStringPrefix = "duckdb://"
 )
 
 type DuckDBBackend struct {

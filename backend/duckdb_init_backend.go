@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DuckDBInitConnectionStringPrefix = "duckdbinit:"
+	DuckDBInitConnectionStringPrefix = "duckdbinit://"
 )
 
 type DuckDBInitBackend struct {
@@ -33,7 +33,7 @@ func NewDuckDBInitBackend(connString string) (*DuckDBInitBackend, error) {
 }
 
 // Close attempts to remove the init script file if it exists
-func (b *DuckDBInitBackend) Close()error {
+func (b *DuckDBInitBackend) Close() error {
 	if b.initScript != "" {
 		if _, err := os.Stat(b.initScript); err == nil {
 			// file exists - try to remove it

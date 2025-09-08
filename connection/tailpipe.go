@@ -140,16 +140,16 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 		return "", fmt.Errorf("'tailpipe connect' returned an error: %s", res.Error)
 	}
 
-	// builb a connection string based on the response
+	// buil a connection string based on the response
 	var connectionString string
 	if res.DatabaseFilepath != "" {
 		// for tailpipe up to v0.6.x, the response contains DatabaseFilepath
 		// - use duckdb:// prefix so we create a DuckDBBackend
-		connectionString = fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
+		connectionString = fmt.Sprintf("%s%s", backend.DuckDBConnectionStringPrefix, strings.TrimSpace(res.DatabaseFilepath))
 	} else if res.InitScriptPath != "" {
 		// for tailpipe v0.7.x and later, the response contains InitScriptPath
 		// - use duckdbinit:// prefix so we create a DuckDBBackend
-		connectionString = fmt.Sprintf("duckdbinit://%s", strings.TrimSpace(res.InitScriptPath))
+		connectionString = fmt.Sprintf("%s%s", backend.DuckDBInitConnectionStringPrefix, strings.TrimSpace(res.InitScriptPath))
 	}
 
 	// add to cache
