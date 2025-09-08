@@ -44,7 +44,11 @@ type TailpipeConnection struct {
 	OverrideFilters *backend.DatabaseFilters
 
 	// store a maps of connection strings, keyed by the filters used to create the db
-	// this is to avoid creating a new connection string each time GetConnectionString is called, unless
+	// this is to avoid creating a new connection string each time GetConnectionString is called
+	// NOTE: these connection strings are in fact paths to init scripts. These scripts will be deleted by the client
+	//  when the client is closed, to avoid buildup of files,
+	//  so we need to handle the case that we have a connection string in our map for a missing file
+	// (in which case we clear the map entry and return a cache miss)
 	connectionStrings map[string]string
 }
 
@@ -53,22 +57,6 @@ func NewTailpipeConnection(shortName string, declRange hcl.Range) PipelingConnec
 		ConnectionImpl:    NewConnectionImpl(TailpipeConnectionType, shortName, declRange),
 		connectionStrings: make(map[string]string),
 	}
-}
-
-// Close attempts to remove the init script for all cached connection strings
-func (c *TailpipeConnection) Close() {
-	if len(c.connectionStrings) == 0 {
-		return
-	}
-	slog.Info("Cleaning up tailpipe connection init scripts")
-	for _, connStr := range c.connectionStrings {
-		//  try to remove it
-		if err := os.Remove(connStr); err != nil {
-			// just log error
-			slog.Warn("Failed to remove tailpipe init script", "file", connStr, "error", err)
-		}
-	}
-	return
 }
 
 func (c *TailpipeConnection) GetConnectionType() string {
@@ -124,11 +112,12 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 
 	// see if we already have a connection string for these filters
 	filterKey := filters.String()
-	if connectionString, ok := c.connectionStrings[filterKey]; ok {
+
+	if connectionString, ok := c.getCachedConnectionString(filterKey); ok {
 		return connectionString, nil
 	}
 
-	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe", "args", args)
+	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe connect", "args", args)
 
 	// Invoke the "tailpipe connect" shell command and capture output
 	cmd := exec.Command("tailpipe", args...)
@@ -288,6 +277,46 @@ func (c *TailpipeConnection) getFilters() *backend.DatabaseFilters {
 // IsDynamic implements the DynamicConnectionStringProvider interface
 // indicating that the connection string may change
 func (c *TailpipeConnection) IsDynamic() {}
+
+// getCachedConnectionString checks if we have a cached connection string for the given filter key
+// if we do, check whether the underlying file still exists
+// NOTE: these connection strings are in fact paths to init scripts. These scripts will be deleted by the client
+//
+//	when the client is closed, to avoid buildup of files,
+//	so we need to handle the case that we have a connection string in our map for a missing file
+//
+// (in which case we clear the map entry and return a cache miss)
+func (c *TailpipeConnection) getCachedConnectionString(filterKey string) (string, bool) {
+	connectionString, ok := c.connectionStrings[filterKey]
+	// if we have no hit, return
+	if !ok {
+		return "", false
+	}
+
+	// so we have a hit - check if the file exists - extract the filepath from the connection string
+
+	// connection string might be either duckdb://<db path> or duckdbinit://<init script location>
+	var filePath string
+	switch {
+	case backend.IsDuckDBConnectionString(connectionString):
+		filePath = strings.TrimPrefix(connectionString, backend.DuckDBConnectionStringPrefix)
+	case backend.IsDuckDBInitConnectionString(connectionString):
+		filePath = strings.TrimPrefix(connectionString, backend.DuckDBInitConnectionStringPrefix)
+	default:
+		// unknown format - return as is - let the backend code handle it
+		return connectionString, true
+	}
+
+	// so we have a filepath, check it exists
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		slog.Info("TailpipeConnection.getCachedConnectionString: cached connection string file does not exist, removing from cache", "file", filePath)
+		// file does not exist - remove from cache and return miss
+		delete(c.connectionStrings, filterKey)
+		return "", false
+	}
+	// file exists - return the connection string
+	return connectionString, true
+}
 
 // WithFilter is a ConnectionStringOpt that sets the filters for the connection
 // it currently only supports TailpipeConnection

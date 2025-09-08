@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	duckDBInitConnectionStringPrefix = "duckdbinit:"
+	DuckDBInitConnectionStringPrefix = "duckdbinit:"
 )
 
 type DuckDBInitBackend struct {
@@ -24,11 +25,25 @@ func NewDuckDBInitBackend(connString string) (*DuckDBInitBackend, error) {
 	// remove any leading or trailing whitespace
 	connString = strings.TrimSpace(connString)
 	// remove the prefix
-	connString = strings.TrimPrefix(connString, duckDBInitConnectionStringPrefix)
+	connString = strings.TrimPrefix(connString, DuckDBInitConnectionStringPrefix)
 	return &DuckDBInitBackend{
 		initScript: connString,
 		rowReader:  newDuckDBRowReader(),
 	}, nil
+}
+
+// Close attempts to remove the init script file if it exists
+func (b *DuckDBInitBackend) Close()error {
+	if b.initScript != "" {
+		if _, err := os.Stat(b.initScript); err == nil {
+			// file exists - try to remove it
+			if err := os.Remove(b.initScript); err != nil {
+				// just log error
+				slog.Warn("Failed to remove duckdb init script file", "file", b.initScript, "error", err)
+			}
+		}
+	}
+	return nil
 }
 
 // Connect implements Backend.

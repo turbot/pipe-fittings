@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	duckDBConnectionStringPrefix = "duckdb:"
+	DuckDBConnectionStringPrefix = "duckdb:"
 )
 
 type DuckDBBackend struct {
@@ -22,7 +22,7 @@ type DuckDBBackend struct {
 
 func NewDuckDBBackend(connString string) (*DuckDBBackend, error) {
 	connString = strings.TrimSpace(connString) // remove any leading or trailing whitespace
-	connString = strings.TrimPrefix(connString, duckDBConnectionStringPrefix)
+	connString = strings.TrimPrefix(connString, DuckDBConnectionStringPrefix)
 	return &DuckDBBackend{
 		connectionString: connString,
 		rowReader:        newDuckDBRowReader(),
