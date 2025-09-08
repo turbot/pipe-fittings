@@ -31,22 +31,18 @@ func (o *DatabaseFilters) Equals(other *DatabaseFilters) bool {
 }
 
 func (o *DatabaseFilters) String() string {
-	var str strings.Builder
+	var parts []string
 	if len(o.Partitions) > 0 {
-		str.WriteString("partitions: ")
-		str.WriteString(strings.Join(o.Partitions, ","))
+		parts = append(parts, "partitions:"+strings.Join(o.Partitions, ","))
 	}
 	if len(o.Indexes) > 0 {
-		str.WriteString("indexes: ")
-		str.WriteString(strings.Join(o.Indexes, ","))
+		parts = append(parts, "indexes:"+strings.Join(o.Indexes, ","))
 	}
 	if o.From != nil {
-		str.WriteString("from: ")
-		str.WriteString(o.From.String())
+		parts = append(parts, "from:"+o.From.String())
 	}
 	if o.To != nil {
-		str.WriteString("to: ")
-		str.WriteString(o.To.String())
+		parts = append(parts, "to:"+o.To.String())
 	}
-	return str.String()
+	return strings.Join(parts, "|")
 }
