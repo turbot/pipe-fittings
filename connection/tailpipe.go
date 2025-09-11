@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
 	"slices"
 	"strconv"
@@ -13,19 +14,24 @@ import (
 	"time"
 
 	"github.com/hashicorp/hcl/v2"
-	"github.com/zclconf/go-cty/cty"
-
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/zclconf/go-cty/cty"
 )
 
 const TailpipeConnectionType = "tailpipe"
 
 type TailpipeConnectResponse struct {
 	DatabaseFilepath string `json:"database_filepath,omitempty"`
+	InitScriptPath   string `json:"init_script_path,omitempty"`
 	Error            string `json:"error,omitempty"`
 }
 
+// TailpipeConnection represents a connection to a tailpipe database
+// It uses the `tailpipe connect` command to get a connection string
+// The connection string is cached based on the filters used to create the database
+// so that subsequent calls with the same filters do not require calling the command again
 type TailpipeConnection struct {
 	ConnectionImpl
 
@@ -35,10 +41,14 @@ type TailpipeConnection struct {
 	Partitions *[]string `cty:"partitions" hcl:"partitions"`
 
 	// if an option is passed to GetConnectionString, it may override the From, To, Indexes or Partitions values
-	OverrideFilters *TailpipeDatabaseFilters
+	OverrideFilters *backend.DatabaseFilters
 
 	// store a maps of connection strings, keyed by the filters used to create the db
-	// this is to avoid creating a new connection string each time GetConnectionString is called, unless
+	// this is to avoid creating a new connection string each time GetConnectionString is called
+	// NOTE: these connection strings are in fact paths to init scripts. These scripts will be deleted by the client
+	//  when the client is closed, to avoid buildup of files,
+	//  so we need to handle the case that we have a connection string in our map for a missing file
+	// (in which case we clear the map entry and return a cache miss)
 	connectionStrings map[string]string
 }
 
@@ -64,10 +74,19 @@ func (c *TailpipeConnection) Resolve(ctx context.Context) (PipelingConnection, e
 }
 
 func (c *TailpipeConnection) Validate() hcl.Diagnostics {
-	// TODO #validate validate From and To https://github.com/turbot/powerpipe/issues/645
 	return nil
 }
 
+// GetConnectionString implements the ConnectionStringProvider interface
+// it calls the `tailpipe connect` command to get a connection string
+// it caches the connection string based on the filters used to create the database
+// so that subsequent calls with the same filters do not require calling the command again
+// it supports the following ConnectionStringOpt options:
+// - WithFilter: to override the filters used to create the database
+// NOTE: the connection string returned is either of duckdb://<db path> or duckdbinit://<init script location>
+// The format depends on the tailpipe version
+//   - for <= v0.6.x it is duckdb://<db path>
+//   - for >= v0.7.x it is duckdbinit://<init script location>
 func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
 	for _, opt := range opts {
 		opt(c)
@@ -93,11 +112,12 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 
 	// see if we already have a connection string for these filters
 	filterKey := filters.String()
-	if connectionString, ok := c.connectionStrings[filterKey]; ok {
+
+	if connectionString, ok := c.getCachedConnectionString(filterKey); ok {
 		return connectionString, nil
 	}
 
-	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe", "args", args)
+	slog.Debug("TailpipeConnection.GetConnectionString cache miss, calling tailpipe connect", "args", args)
 
 	// Invoke the "tailpipe connect" shell command and capture output
 	cmd := exec.Command("tailpipe", args...)
@@ -120,8 +140,17 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 		return "", fmt.Errorf("'tailpipe connect' returned an error: %s", res.Error)
 	}
 
-	// Convert output to string, trim whitespace, and return as connection string
-	connectionString := fmt.Sprintf("duckdb://%s", strings.TrimSpace(res.DatabaseFilepath))
+	// buil a connection string based on the response
+	var connectionString string
+	if res.DatabaseFilepath != "" {
+		// for tailpipe up to v0.6.x, the response contains DatabaseFilepath
+		// - use duckdb:// prefix so we create a DuckDBBackend
+		connectionString = fmt.Sprintf("%s%s", backend.DuckDBConnectionStringPrefix, strings.TrimSpace(res.DatabaseFilepath))
+	} else if res.InitScriptPath != "" {
+		// for tailpipe v0.7.x and later, the response contains InitScriptPath
+		// - use duckdbinit:// prefix so we create a DuckDBBackend
+		connectionString = fmt.Sprintf("%s%s", backend.DuckDBInitConnectionStringPrefix, strings.TrimSpace(res.InitScriptPath))
+	}
 
 	// add to cache
 	c.connectionStrings[filterKey] = connectionString
@@ -134,6 +163,7 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 func (c *TailpipeConnection) GetEnv() map[string]cty.Value {
 	return map[string]cty.Value{}
 }
+
 func (c *TailpipeConnection) Equals(otherConnection PipelingConnection) bool {
 	// If both pointers are nil, they are considered equal
 	if c == nil && helpers.IsNil(otherConnection) {
@@ -193,13 +223,13 @@ func (c *TailpipeConnection) CtyValue() (cty.Value, error) {
 	return ctyValueForConnection(c)
 }
 
-func (c *TailpipeConnection) setFilters(f *TailpipeDatabaseFilters) {
+func (c *TailpipeConnection) setFilters(f *backend.DatabaseFilters) {
 	c.OverrideFilters = f
 }
 
 // resolve the active filters, either from the connection or the override
-func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
-	var res = &TailpipeDatabaseFilters{}
+func (c *TailpipeConnection) getFilters() *backend.DatabaseFilters {
+	var res = &backend.DatabaseFilters{}
 	if c.From != nil {
 		// we have already validated the time format
 		from, _ := parseTime(*c.From, time.Now())
@@ -248,64 +278,59 @@ func (c *TailpipeConnection) getFilters() *TailpipeDatabaseFilters {
 // indicating that the connection string may change
 func (c *TailpipeConnection) IsDynamic() {}
 
+// getCachedConnectionString checks if we have a cached connection string for the given filter key
+// if we do, check whether the underlying file still exists
+// NOTE: these connection strings are in fact paths to init scripts. These scripts will be deleted by the client
+//
+//	when the client is closed, to avoid buildup of files,
+//	so we need to handle the case that we have a connection string in our map for a missing file
+//
+// (in which case we clear the map entry and return a cache miss)
+func (c *TailpipeConnection) getCachedConnectionString(filterKey string) (string, bool) {
+	connectionString, ok := c.connectionStrings[filterKey]
+	// if we have no hit, return
+	if !ok {
+		return "", false
+	}
+
+	// so we have a hit - check if the file exists - extract the filepath from the connection string
+
+	// connection string might be either duckdb://<db path> or duckdbinit://<init script location>
+	var filePath string
+	switch {
+	case backend.IsDuckDBConnectionString(connectionString):
+		filePath = strings.TrimPrefix(connectionString, backend.DuckDBConnectionStringPrefix)
+	case backend.IsDuckDBInitConnectionString(connectionString):
+		filePath = strings.TrimPrefix(connectionString, backend.DuckDBInitConnectionStringPrefix)
+	default:
+		// unknown format - return as is - let the backend code handle it
+		return connectionString, true
+	}
+
+	// so we have a filepath, check it exists
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		slog.Info("TailpipeConnection.getCachedConnectionString: cached connection string file does not exist, removing from cache", "file", filePath)
+		// file does not exist - remove from cache and return miss
+		delete(c.connectionStrings, filterKey)
+		return "", false
+	}
+	// file exists - return the connection string
+	return connectionString, true
+}
+
 // WithFilter is a ConnectionStringOpt that sets the filters for the connection
 // it currently only supports TailpipeConnection
-func WithFilter(f *TailpipeDatabaseFilters) ConnectionStringOpt {
+func WithFilter(f *backend.DatabaseFilters) ConnectionStringOpt {
 	return func(c ConnectionStringProvider) {
 
 		// if this connection supports filter, set it
 		type filterSetter interface {
-			setFilters(f *TailpipeDatabaseFilters)
+			setFilters(f *backend.DatabaseFilters)
 		}
 		if setter, ok := c.(filterSetter); ok {
 			setter.setFilters(f)
 		}
 	}
-}
-
-type TailpipeDatabaseFilters struct {
-	// partition wildcards
-	Partitions []string
-	// the indexes to include
-	Indexes []string
-	// the data range
-	From *time.Time
-	To   *time.Time
-}
-
-func (o *TailpipeDatabaseFilters) Equals(other *TailpipeDatabaseFilters) bool {
-	if (o == nil) != (other == nil) ||
-		!slices.Equal(o.Partitions, other.Partitions) ||
-		!slices.Equal(o.Indexes, other.Indexes) ||
-		(o.From == nil) != (other.From == nil) ||
-		o.From != nil && !o.From.Equal(*other.From) ||
-		(o.To == nil) != (other.To == nil) ||
-		o.To != nil && !o.To.Equal(*other.To) {
-		return false
-	}
-
-	return true
-}
-
-func (o *TailpipeDatabaseFilters) String() string {
-	var str strings.Builder
-	if len(o.Partitions) > 0 {
-		str.WriteString("partitions: ")
-		str.WriteString(strings.Join(o.Partitions, ","))
-	}
-	if len(o.Indexes) > 0 {
-		str.WriteString("indexes: ")
-		str.WriteString(strings.Join(o.Indexes, ","))
-	}
-	if o.From != nil {
-		str.WriteString("from: ")
-		str.WriteString(o.From.String())
-	}
-	if o.To != nil {
-		str.WriteString("to: ")
-		str.WriteString(o.To.String())
-	}
-	return str.String()
 }
 
 // This is a duplicate of the function in parse/time.go. We have to duplicate it since we are not

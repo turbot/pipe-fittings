@@ -51,6 +51,15 @@ func (p *PluginVersionFile) EnsurePluginVersionFile(installData *InstalledVersio
 	if err != nil {
 		return err
 	}
+
+	// filepaths.FindPluginFolder returns an empty path if it does not find the folder.
+	// If the path is empty, we should just return nil (i.e. no error but no action)
+	// rather than attempting to write files which could end up in the working directory.
+	// This handles the case where a plugin is in the version file but the binary does not exist.
+	if pluginFolder == "" {
+		return nil
+	}
+
 	versionFile := filepath.Join(pluginFolder, pluginVersionFileName)
 
 	// If the version file already exists, we only write to it if the incoming data is newer

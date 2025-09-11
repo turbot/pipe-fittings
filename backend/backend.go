@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"github.com/turbot/pipe-fittings/v2/constants"
 	"strings"
 
+	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/queryresult"
 	"github.com/turbot/pipe-fittings/v2/sperr"
 )
@@ -23,6 +23,7 @@ type Backend interface {
 	ConnectionString() string
 	Name() string
 }
+
 type SearchPathProvider interface {
 	OriginalSearchPath() []string
 	RequiredSearchPath() []string
@@ -62,11 +63,13 @@ func FromConnectionString(ctx context.Context, cs string) (Backend, error) {
 		return pgBackend, nil
 
 	case IsMySqlConnectionString(cs):
-		return NewMySQLBackend(cs), nil
+		return NewMySQLBackend(cs)
 	case IsDuckDBConnectionString(cs):
-		return NewDuckDBBackend(cs), nil
+		return NewDuckDBBackend(cs)
+	case IsDuckDBInitConnectionString(cs):
+		return NewDuckDBInitBackend(cs)
 	case IsSqliteConnectionString(cs):
-		return NewSqliteBackend(cs), nil
+		return NewSqliteBackend(cs)
 	default:
 		return nil, sperr.WrapWithMessage(ErrUnknownBackend, "could not evaluate backend: '%s'", cs)
 	}
@@ -78,6 +81,7 @@ func HasBackend(str string) bool {
 		IsPostgresConnectionString(str),
 		IsMySqlConnectionString(str),
 		IsDuckDBConnectionString(str),
+		IsDuckDBInitConnectionString(str),
 		IsSqliteConnectionString(str):
 		return true
 	default:
@@ -126,13 +130,21 @@ func IsPostgresConnectionString(connString string) bool {
 // IsSqliteConnectionString returns true if the connection string is for sqlite
 // looks for the sqlite:// prefix
 func IsSqliteConnectionString(connString string) bool {
-	return strings.HasPrefix(connString, sqliteConnectionStringPrefix)
+	return strings.HasPrefix(connString, SqliteConnectionStringPrefix)
 }
 
 // IsDuckDBConnectionString returns true if the connection string is for duckdb
 // looks for the duckdb:// prefix
 func IsDuckDBConnectionString(connString string) bool {
-	return strings.HasPrefix(connString, duckDBConnectionStringPrefix)
+	return strings.HasPrefix(connString, DuckDBConnectionStringPrefix)
+}
+
+// IsDuckDBInitConnectionString returns true if the connection string is for duckdbinit, i.e. an init script for duckdb
+// looks for the duckdbinit:// prefix
+func IsDuckDBInitConnectionString(connString string) bool {
+	// this will be of form "/path/to/file/duckdb_init_xxxxxx.sql"
+
+	return strings.HasPrefix(connString, DuckDBInitConnectionStringPrefix)
 }
 
 // IsMySqlConnectionString returns true if the connection string is for mysql

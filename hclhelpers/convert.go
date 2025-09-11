@@ -14,7 +14,7 @@ func JSONToHcl(jsonString string) (string, hcl.Diagnostics) {
 		return "", diags
 	}
 
-	res, diags := HclBodyToHclString(converted.Body, nil)
+	res, diags := HclBodyToHclString(converted.Body, nil, nil)
 
 	if diags.HasErrors() {
 		return "", diags
@@ -22,10 +22,11 @@ func JSONToHcl(jsonString string) (string, hcl.Diagnostics) {
 	return res, nil
 }
 
-// HclBodyToHclString builds a hcl string with all attributes in the connection config which are NOT specified in the connection block schema
-// this is passed to the plugin who will validate and parse it
-func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent) (string, hcl.Diagnostics) {
+// HclBodyToHclString builds an HCL string by extracting attributes and blocks that are NOT specified in the connection block schema.
+func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent, evalCtx *hcl.EvalContext) (string, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
+	// The HCL bytes are extracted by creating an HCL file with hclwrite and then converting it to a string.
+	// This is passed to the plugin who will validate and parse it.
 	f := hclwrite.NewEmptyFile()
 	rootBody := f.Body()
 
@@ -76,7 +77,7 @@ func HclBodyToHclString(body hcl.Body, excludeContent *hcl.BodyContent) (string,
 	var sortedKeys = helpers.SortedMapKeys(attrExpressionMap)
 	for _, name := range sortedKeys {
 		expr := attrExpressionMap[name]
-		val, moreDiags := expr.Value(nil)
+		val, moreDiags := expr.Value(evalCtx)
 		if moreDiags.HasErrors() {
 			diags = append(diags, moreDiags...)
 		} else {
