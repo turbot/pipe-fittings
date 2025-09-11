@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -28,20 +27,18 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 	for _, opt := range opts {
 		opt(config)
 	}
-	tempDir := NewTempDir(filepaths.EnsurePluginDir())
+	tempDir := filepaths.EnsurePluginTempDir()
 	defer func() {
 		// send a last beacon to signal completion
 		sub <- struct{}{}
-		if err := tempDir.Delete(); err != nil {
-			log.Printf("[TRACE] Failed to delete temp dir '%s' after installing plugin: %s", tempDir, err)
-		}
+		filepaths.RemoveDirAndEmptyParents(tempDir)
 	}()
 
 	ref := NewImageRef(imageRef)
 	imageDownloader := NewPluginOciDownloader(baseImageRef, mediaTypesProvider)
 
 	sub <- struct{}{}
-	image, err := imageDownloader.Download(ctx, ref, ImageTypePlugin, tempDir.Path)
+	image, err := imageDownloader.Download(ctx, ref, ImageTypePlugin, tempDir)
 	if err != nil {
 		return nil, err
 	}
@@ -51,15 +48,15 @@ func InstallPlugin(ctx context.Context, imageRef string, constraint string, sub 
 	pluginPath := filepaths.EnsurePluginInstallDir(constraintRef)
 
 	sub <- struct{}{}
-	if err = installPluginBinary(image, tempDir.Path, pluginPath); err != nil {
+	if err = installPluginBinary(image, tempDir, pluginPath); err != nil {
 		return nil, fmt.Errorf("plugin installation failed: %s", err)
 	}
 	sub <- struct{}{}
-	if err = installPluginDocs(image, tempDir.Path, pluginPath); err != nil {
+	if err = installPluginDocs(image, tempDir, pluginPath); err != nil {
 		return nil, fmt.Errorf("plugin installation failed: %s", err)
 	}
 	if !config.skipConfigFile {
-		if err = installPluginConfigFiles(image, tempDir.Path, constraint); err != nil {
+		if err = installPluginConfigFiles(image, tempDir, constraint); err != nil {
 			return nil, fmt.Errorf("plugin installation failed: %s", err)
 		}
 	}

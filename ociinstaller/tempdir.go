@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
-
-	"github.com/google/uuid"
+	pfilepaths"github.com/turbot/pipe-fittings/v2/filepaths"
 )
 
 type tempDir struct {
@@ -23,7 +21,7 @@ func NewTempDir(parent string) *tempDir {
 }
 
 func getOrCreateTempDir(parent string) string {
-	cacheDir := filepath.Join(parent, safeDirName(fmt.Sprintf("tmp-%s", generateTempDirName())))
+	cacheDir := filepath.Join(parent, pfilepaths.SafeDirName(fmt.Sprintf("tmp-%s", pfilepaths.GenerateTempDirName())))
 
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		err = os.MkdirAll(cacheDir, 0755)
@@ -34,21 +32,4 @@ func getOrCreateTempDir(parent string) string {
 
 func (d *tempDir) Delete() error {
 	return os.RemoveAll(d.Path)
-}
-
-func safeDirName(dirName string) string {
-	newName := strings.ReplaceAll(dirName, "/", "_")
-	newName = strings.ReplaceAll(newName, ":", "@")
-
-	return newName
-}
-
-func generateTempDirName() string {
-	u, err := uuid.NewRandom()
-	if err != nil {
-		// Should never happen?
-		panic(err)
-	}
-	s := u.String()
-	return s[9:23]
 }
