@@ -22,6 +22,7 @@ const (
 	ExitCodeCompactFailed               = 81  // compact - failed
 	ExitCodeOperationCancelled          = 91  // operation - cancelled
 	ExitCodeCollectionFailed            = 101 // collection - failed
+	ExitCodeOutputRenderingFailed       = 111 // output - rendering failed
 	ExitCodeInvalidExecutionEnvironment = 249 // common - when steampipe is run in an unsupported environment
 	ExitCodeInitializationFailed        = 250 // common - initialization failed
 	ExitCodeBindPortUnavailable         = 251 // common(service/dashboard) - port binding failed
