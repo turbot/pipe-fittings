@@ -158,3 +158,38 @@ func IsValidDir(path string) bool {
 	stat, err := os.Stat(path)
 	return err == nil && stat.IsDir()
 }
+
+// MoveDirContents moves all entries (files and subdirectories) from srcDir to destDir, preserving structure.
+func MoveDirContents(srcDir, destDir string) error {
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(srcDir)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		srcPath := filepath.Join(srcDir, e.Name())
+		destPath := filepath.Join(destDir, e.Name())
+		if e.IsDir() {
+			if err := os.MkdirAll(destPath, 0755); err != nil {
+				return err
+			}
+			// move nested contents recursively
+			if err := MoveDirContents(srcPath, destPath); err != nil {
+				return err
+			}
+			// remove empty src dir
+			_ = os.Remove(srcPath)
+		} else {
+			// ensure parent exists
+			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+				return err
+			}
+			if err := os.Rename(srcPath, destPath); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
