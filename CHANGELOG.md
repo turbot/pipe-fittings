@@ -2,6 +2,24 @@
 
 Shared Pipes Component
 
+## v2.7.0 [2025-09-15]
+
+- Add DuckLake backend support for Tailpipe integration. ([#760](https://github.com/turbot/pipe-fittings/issues/760))
+  - Add DuckDbInitBackend which supports using an initialization script to create a db connection.  
+  - Update TailpipeConnectResponse to remove DataPath and add InitScriptPath.
+  - Add TailpipeConnection handling for cached connection files being missing (as a result of cleanup).
+  - Backend constructors now return errors for better error handling.
+  - Optimize DuckLake performance with WAL journal mode and NORMAL synchronous mode.
+  - Move DatabaseFilters to backend layer for better separation of concerns.
+  - Add TailpipeWorkspaceProfile.GetDucklakeDbPath for database path resolution.
+  - Add DbClient.Close calls Backend.Close if it supports it.
+
+- Rename SafeIdentifier to SanitizeDuckDBIdentifier and make more thorough.
+- Add new exit codes for connection, operation and output rendering failures.
+- Add new install message for plugins not distributed via hub.tailpipe.io.
+- Create a temporary parent directory for temp files in NewTempDir function and update cleanup logic.
+- Add utility functions and method for DuckLake migration.
+
 ## 2.6.3 [2025-08-19]
 
 * Reverted accidental removal of functions in ociinstaller package.
