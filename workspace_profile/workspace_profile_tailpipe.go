@@ -161,7 +161,13 @@ func (p *TailpipeWorkspaceProfile) GetMigratedDir() string {
 	return filepath.Join(base, "migration", "migrated", p.ProfileName)
 }
 
-// GetMigratingDir returns the path to the ~/.tailpipe/migration/failed directory for this profile
+// GetUnmigratedDir returns the path to the ~/.tailpipe/migration/unmigrated directory for this profile
+func (p *TailpipeWorkspaceProfile) GetUnmigratedDir() string {
+	base := filepath.Dir(filepaths.GetDataDir())
+	return filepath.Join(base, "migration", "unmigrated", p.ProfileName)
+}
+
+// GetMigrationFailedDir returns the path to the ~/.tailpipe/migration/failed directory for this profile
 func (p *TailpipeWorkspaceProfile) GetMigrationFailedDir() string {
 	base := filepath.Dir(filepaths.GetDataDir())
 	return filepath.Join(base, "migration", "failed", p.ProfileName)
