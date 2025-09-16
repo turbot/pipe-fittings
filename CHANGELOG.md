@@ -2,7 +2,7 @@
 
 Shared Pipes Component
 
-## v2.7.0 [2025-09-15]
+## v2.7.0 [2025-09-dd]
 
 - Add DuckLake backend support for Tailpipe integration. ([#760](https://github.com/turbot/pipe-fittings/issues/760))
   - Add DuckDbInitBackend which supports using an initialization script to create a db connection.  
@@ -19,6 +19,7 @@ Shared Pipes Component
 - Add new install message for plugins not distributed via hub.tailpipe.io.
 - Create a temporary parent directory for temp files in NewTempDir function and update cleanup logic.
 - Add utility functions and method for DuckLake migration.
+- Update `CopyDir` and `MoveDirContents` function signatures to accept a ctx.
 
 ## 2.6.3 [2025-08-19]
 
