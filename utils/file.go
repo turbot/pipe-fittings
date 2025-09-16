@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"path"
@@ -118,7 +119,7 @@ func CopyFile(src, dst string) error {
 	return err
 }
 
-func CopyDir(src string, dst string) error {
+func CopyDir(ctx context.Context, src string, dst string) error {
 	srcInfo, err := os.Stat(src)
 	if err != nil {
 		return err
@@ -135,11 +136,14 @@ func CopyDir(src string, dst string) error {
 	}
 
 	for _, obj := range objects {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		srcFilePath := filepath.Join(src, obj.Name())
 		dstFilePath := filepath.Join(dst, obj.Name())
 
 		if obj.IsDir() {
-			err = CopyDir(srcFilePath, dstFilePath)
+			err = CopyDir(ctx, srcFilePath, dstFilePath)
 			if err != nil {
 				return err
 			}
@@ -160,7 +164,7 @@ func IsValidDir(path string) bool {
 }
 
 // MoveDirContents moves all entries (files and subdirectories) from srcDir to destDir, preserving structure.
-func MoveDirContents(srcDir, destDir string) error {
+func MoveDirContents(ctx context.Context, srcDir, destDir string) error {
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return err
 	}
@@ -169,6 +173,9 @@ func MoveDirContents(srcDir, destDir string) error {
 		return err
 	}
 	for _, e := range entries {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		srcPath := filepath.Join(srcDir, e.Name())
 		destPath := filepath.Join(destDir, e.Name())
 		if e.IsDir() {
@@ -176,7 +183,7 @@ func MoveDirContents(srcDir, destDir string) error {
 				return err
 			}
 			// move nested contents recursively
-			if err := MoveDirContents(srcPath, destPath); err != nil {
+			if err := MoveDirContents(ctx, srcPath, destPath); err != nil {
 				return err
 			}
 			// remove empty src dir
