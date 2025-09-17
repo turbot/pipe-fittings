@@ -149,6 +149,12 @@ func (p *TailpipeWorkspaceProfile) GetCollectionDir() string {
 	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName)
 }
 
+// GetMigrationDir returns the path to the ~/.tailpipe/migration directory
+func (p *TailpipeWorkspaceProfile) GetMigrationDir() string {
+	base := filepath.Dir(filepaths.GetDataDir())
+	return filepath.Join(base, "migration")
+}
+
 // GetMigratingDir returns the path to the ~/.tailpipe/migration/migrating directory for this profile
 func (p *TailpipeWorkspaceProfile) GetMigratingDir() string {
 	base := filepath.Dir(filepaths.GetDataDir())
