@@ -126,6 +126,14 @@ func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	op, err := cmd.Output()
 
 	if err != nil {
+		// See if it's a ExitCodeMigrationUnsupported exit code - if so, show a specific message
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			if exitErr.ExitCode() == constants.ExitCodeMigrationUnsupported {
+				return "", fmt.Errorf("tailpipe collection data must be migrated to Ducklake format - run 'tailpipe query' to migrate the data")
+			}
+		}
+
 		// Handle the error, e.g., by returning an empty string or a specific error message
 		return "", fmt.Errorf("TailpipeConnection failed to get connection string: %w", err)
 	}
