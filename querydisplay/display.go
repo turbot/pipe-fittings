@@ -459,7 +459,7 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 	// page out the table
 	paged := ShowPaged(ctx, outbuf.String())
 
-	// show row count for both interactive and batch modes
+	// show row count for both batch and interactive(paged) modes
 	showRowCount := !viper.GetBool(constants.ConfigKeyInteractive) || paged
 
 	if showRowCount {
