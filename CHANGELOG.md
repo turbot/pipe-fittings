@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.7.1 [2025-10-30]
+
+* Improved truncated row count message for table output. ([#768](https://github.com/turbot/pipe-fittings/issues/768))
+
 ## v2.7.0 [2025-09-19]
 
 - Add DuckLake backend support for Tailpipe integration. ([#760](https://github.com/turbot/pipe-fittings/issues/760))
