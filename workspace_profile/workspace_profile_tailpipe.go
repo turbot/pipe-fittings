@@ -149,19 +149,25 @@ func (p *TailpipeWorkspaceProfile) GetCollectionDir() string {
 	return filepath.Join(filepaths.GetInternalDir(), "collection", p.ProfileName)
 }
 
+// GetMigrationDir returns the path to the ~/.tailpipe/migration directory
+func (p *TailpipeWorkspaceProfile) GetMigrationDir() string {
+	base := filepath.Dir(filepaths.GetDataDir())
+	return filepath.Join(base, "migration")
+}
+
 // GetMigratingDir returns the path to the ~/.tailpipe/migration/migrating directory for this profile
 func (p *TailpipeWorkspaceProfile) GetMigratingDir() string {
 	base := filepath.Dir(filepaths.GetDataDir())
 	return filepath.Join(base, "migration", "migrating", p.ProfileName)
 }
 
-// GetMigratedDir returns the path to the ~/.tailpipe/migration/migrated directory for this profile
-func (p *TailpipeWorkspaceProfile) GetMigratedDir() string {
+// GetUnmigratedDir returns the path to the ~/.tailpipe/migration/unmigrated directory for this profile
+func (p *TailpipeWorkspaceProfile) GetUnmigratedDir() string {
 	base := filepath.Dir(filepaths.GetDataDir())
-	return filepath.Join(base, "migration", "migrated", p.ProfileName)
+	return filepath.Join(base, "migration", "unmigrated", p.ProfileName)
 }
 
-// GetMigratingDir returns the path to the ~/.tailpipe/migration/failed directory for this profile
+// GetMigrationFailedDir returns the path to the ~/.tailpipe/migration/failed directory for this profile
 func (p *TailpipeWorkspaceProfile) GetMigrationFailedDir() string {
 	base := filepath.Dir(filepaths.GetDataDir())
 	return filepath.Join(base, "migration", "failed", p.ProfileName)

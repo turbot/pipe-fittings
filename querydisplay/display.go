@@ -457,12 +457,16 @@ func displayTable[T queryresult.TimingContainer](ctx context.Context, result *qu
 	t.Render()
 
 	// page out the table
-	showRowCount := ShowPaged(ctx, outbuf.String())
+	ShowPaged(ctx, outbuf.String())
+
+	// show row count: always in interactive; in batch only if rows exceed max display rows
+	interactive := viper.GetBool(constants.ConfigKeyInteractive)
+	showRowCount := interactive || (!interactive && count > maxTableDisplayRows)
 
 	if showRowCount {
 		status := fmt.Sprintf("%s %s", utils.HumanizeNumber(count), utils.Pluralize("row", count))
 		if displayRowCount >= maxTableDisplayRows {
-			status += fmt.Sprintf(" (%s shown)", utils.HumanizeNumber(maxTableDisplayRows))
+			status += fmt.Sprintf(" (%s shown). Table output is limited to 10,000 rows. Use json/csv/line to view all the rows.", utils.HumanizeNumber(maxTableDisplayRows))
 		}
 		//nolint:forbidigo // acceptable
 		fmt.Println(status)
