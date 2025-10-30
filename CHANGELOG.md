@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.7.2 [2025-10-30]
+
+* Reverted behaviour to - only show truncated row count message for table output if the row count exceeds 10,000.
+
 ## v2.7.1 [2025-10-30]
 
 * Improved truncated row count message for table output. ([#768](https://github.com/turbot/pipe-fittings/issues/768))
