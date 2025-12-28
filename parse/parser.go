@@ -2,14 +2,13 @@ package parse
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"sync"
 
 	"sigs.k8s.io/yaml"
-	"sort"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclparse"
@@ -119,42 +118,132 @@ func loadFileDataParallel(paths []string) (map[string][]byte, hcl.Diagnostics) {
 }
 
 // ParseHclFiles parses hcl, json or yaml file data and returns the hcl body object
+// For 4 or more files, parsing is parallelized for better CPU utilization
 func ParseHclFiles(fileDataMap map[string][]byte) (hcl.Body, hcl.Diagnostics) {
-	var diags hcl.Diagnostics
-
-	if diags.HasErrors() {
-		return nil, diags
+	if len(fileDataMap) == 0 {
+		return hcl.EmptyBody(), nil
 	}
 
-	// build ordered list of files so that we parse in a repeatable order
+	// For small number of files, sequential is fine (avoids goroutine overhead)
+	if len(fileDataMap) < 4 {
+		return parseHclFilesSequential(fileDataMap)
+	}
+
+	return parseHclFilesParallel(fileDataMap)
+}
+
+// parseHclFilesSequential parses files one at a time
+func parseHclFilesSequential(fileDataMap map[string][]byte) (hcl.Body, hcl.Diagnostics) {
+	var diags hcl.Diagnostics
 	filePaths := buildOrderedFileNameList(fileDataMap)
-	var parsedConfigFiles []*hcl.File
+	parsedConfigFiles := make([]*hcl.File, 0, len(filePaths))
 
 	for _, filePath := range filePaths {
-		var file *hcl.File
-		var moreDiags hcl.Diagnostics
-		ext := filepath.Ext(filePath)
-
-		switch {
-		case ext == constants.JsonExtension:
-			file, moreDiags = json.ParseFile(filePath)
-		case constants.IsYamlExtension(ext):
-			file, moreDiags = parseYamlFile(filePath)
-		default:
-			fileData := fileDataMap[filePath]
-			parser := hclparse.NewParser()
-			file, moreDiags = parser.ParseHCL(fileData, filePath)
+		file, moreDiags := parseHclFile(filePath, fileDataMap[filePath])
+		diags = append(diags, moreDiags...)
+		if file != nil {
+			parsedConfigFiles = append(parsedConfigFiles, file)
 		}
-
-		if moreDiags.HasErrors() {
-			//  detect templata error for grok expressions and raise a warning to use grok function
-			diags = append(diags, moreDiags...)
-			continue
-		}
-		parsedConfigFiles = append(parsedConfigFiles, file)
 	}
 
 	return hcl.MergeFiles(parsedConfigFiles), diags
+}
+
+// parseResult holds the result of parsing a single file
+type parseResult struct {
+	path  string
+	file  *hcl.File
+	diags hcl.Diagnostics
+}
+
+// parseHclFilesParallel parses files concurrently using a worker pool
+func parseHclFilesParallel(fileDataMap map[string][]byte) (hcl.Body, hcl.Diagnostics) {
+	filePaths := buildOrderedFileNameList(fileDataMap)
+	numFiles := len(filePaths)
+
+	// Use worker pool pattern
+	numWorkers := runtime.NumCPU()
+	if numWorkers > numFiles {
+		numWorkers = numFiles
+	}
+
+	workChan := make(chan string, numFiles)
+	resultsChan := make(chan parseResult, numFiles)
+
+	// Start workers
+	var wg sync.WaitGroup
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for path := range workChan {
+				file, diags := parseHclFile(path, fileDataMap[path])
+				resultsChan <- parseResult{path: path, file: file, diags: diags}
+			}
+		}()
+	}
+
+	// Send work
+	for _, path := range filePaths {
+		workChan <- path
+	}
+	close(workChan)
+
+	// Wait for completion in separate goroutine
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	// Collect results - need to maintain order for deterministic output
+	resultMap := make(map[string]parseResult, numFiles)
+	for result := range resultsChan {
+		resultMap[result.path] = result
+	}
+
+	// Build ordered output
+	var diags hcl.Diagnostics
+	parsedConfigFiles := make([]*hcl.File, 0, numFiles)
+
+	for _, path := range filePaths {
+		result := resultMap[path]
+		diags = append(diags, result.diags...)
+		if result.file != nil {
+			parsedConfigFiles = append(parsedConfigFiles, result.file)
+		}
+	}
+
+	return hcl.MergeFiles(parsedConfigFiles), diags
+}
+
+// parseHclFile parses a single file based on its extension using already-loaded data
+func parseHclFile(filePath string, data []byte) (*hcl.File, hcl.Diagnostics) {
+	ext := filepath.Ext(filePath)
+
+	switch {
+	case ext == constants.JsonExtension:
+		return json.Parse(data, filePath)
+	case constants.IsYamlExtension(ext):
+		return parseYamlData(data, filePath)
+	default:
+		parser := hclparse.NewParser()
+		return parser.ParseHCL(data, filePath)
+	}
+}
+
+// parseYamlData parses YAML from already-loaded data
+func parseYamlData(data []byte, filename string) (*hcl.File, hcl.Diagnostics) {
+	jsonData, err := yaml.YAMLToJSON(data)
+	if err != nil {
+		return nil, hcl.Diagnostics{
+			{
+				Severity: hcl.DiagError,
+				Summary:  "Failed to convert YAML to JSON",
+				Detail:   fmt.Sprintf("Error converting %s: %v", filename, err),
+			},
+		}
+	}
+	return json.Parse(jsonData, filename)
 }
 
 func buildOrderedFileNameList(fileData map[string][]byte) []string {
@@ -178,39 +267,3 @@ func ModFileExists(modPath string) (string, bool) {
 	return "", false
 }
 
-// parse a yaml file into a hcl.File object
-func parseYamlFile(filename string) (*hcl.File, hcl.Diagnostics) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "Failed to open file",
-				Detail:   fmt.Sprintf("The file %q could not be opened.", filename),
-			},
-		}
-	}
-	defer f.Close()
-
-	src, err := io.ReadAll(f)
-	if err != nil {
-		return nil, hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "Failed to read file",
-				Detail:   fmt.Sprintf("The file %q was opened, but an error occured while reading it.", filename),
-			},
-		}
-	}
-	jsonData, err := yaml.YAMLToJSON(src)
-	if err != nil {
-		return nil, hcl.Diagnostics{
-			{
-				Severity: hcl.DiagError,
-				Summary:  "Failed to read convert YAML to JSON",
-				Detail:   fmt.Sprintf("The file %q was opened, but an error occured while converting it to JSON.", filename),
-			},
-		}
-	}
-	return json.Parse(jsonData, filename)
-}
