@@ -1,8 +1,6 @@
 package parse
 
 import (
-	"strings"
-
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 )
@@ -33,7 +31,40 @@ func getSourceDefinition(sourceRange hcl.Range, fileData map[string][]byte) stri
 		return ""
 	}
 
-	source := strings.Join(
-		strings.Split(string(fileBytes), "\n")[sourceRange.Start.Line-1:sourceRange.End.Line], "\n")
-	return source
+	// Find byte offsets for start and end lines without splitting the entire file.
+	// This avoids allocating a slice of all lines which was causing 62% of allocations.
+	startLine := sourceRange.Start.Line
+	endLine := sourceRange.End.Line
+
+	if startLine < 1 {
+		startLine = 1
+	}
+
+	var startOffset, endOffset int
+	currentLine := 1
+
+	// Find start offset (beginning of startLine)
+	for i := 0; i < len(fileBytes); i++ {
+		if currentLine == startLine {
+			startOffset = i
+			break
+		}
+		if fileBytes[i] == '\n' {
+			currentLine++
+		}
+	}
+
+	// Find end offset (end of endLine, or EOF)
+	endOffset = len(fileBytes)
+	for i := startOffset; i < len(fileBytes); i++ {
+		if fileBytes[i] == '\n' {
+			if currentLine == endLine {
+				endOffset = i
+				break
+			}
+			currentLine++
+		}
+	}
+
+	return string(fileBytes[startOffset:endOffset])
 }
