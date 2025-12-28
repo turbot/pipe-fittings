@@ -5,6 +5,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"sync"
+
 	"sigs.k8s.io/yaml"
 	"sort"
 
@@ -16,22 +19,102 @@ import (
 )
 
 // LoadFileData builds a map of filepath to file data
+// For 4 or more files, reads are parallelized for better I/O performance
 func LoadFileData(paths ...string) (map[string][]byte, hcl.Diagnostics) {
+	if len(paths) == 0 {
+		return map[string][]byte{}, nil
+	}
+
+	// For small number of files, sequential is fine (avoids goroutine overhead)
+	if len(paths) < 4 {
+		return loadFileDataSequential(paths)
+	}
+
+	return loadFileDataParallel(paths)
+}
+
+// loadFileDataSequential reads files one at a time
+func loadFileDataSequential(paths []string) (map[string][]byte, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
-	var fileData = map[string][]byte{}
+	fileData := make(map[string][]byte, len(paths))
 
 	for _, configPath := range paths {
 		data, err := os.ReadFile(configPath)
-
 		if err != nil {
 			diags = append(diags, &hcl.Diagnostic{
 				Severity: hcl.DiagWarning,
 				Summary:  fmt.Sprintf("failed to read config file %s", configPath),
-				Detail:   err.Error()})
+				Detail:   err.Error(),
+			})
 			continue
 		}
 		fileData[configPath] = data
 	}
+	return fileData, diags
+}
+
+// fileReadResult holds the result of reading a single file
+type fileReadResult struct {
+	path string
+	data []byte
+	err  error
+}
+
+// loadFileDataParallel reads files concurrently using a worker pool
+func loadFileDataParallel(paths []string) (map[string][]byte, hcl.Diagnostics) {
+	var diags hcl.Diagnostics
+	fileData := make(map[string][]byte, len(paths))
+
+	// Use worker pool pattern - limit workers to avoid too many open files
+	numWorkers := runtime.NumCPU()
+	if numWorkers > 8 {
+		numWorkers = 8 // Cap at 8 to avoid file descriptor limits
+	}
+	if numWorkers > len(paths) {
+		numWorkers = len(paths)
+	}
+
+	pathsChan := make(chan string, len(paths))
+	resultsChan := make(chan fileReadResult, len(paths))
+
+	// Start workers
+	var wg sync.WaitGroup
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for path := range pathsChan {
+				data, err := os.ReadFile(path)
+				resultsChan <- fileReadResult{path: path, data: data, err: err}
+			}
+		}()
+	}
+
+	// Send work
+	for _, path := range paths {
+		pathsChan <- path
+	}
+	close(pathsChan)
+
+	// Wait for completion in separate goroutine
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	// Collect results
+	for result := range resultsChan {
+		if result.err != nil {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagWarning,
+				Summary:  fmt.Sprintf("failed to read config file %s", result.path),
+				Detail:   result.err.Error(),
+			})
+			continue
+		}
+		fileData[result.path] = result.data
+	}
+
 	return fileData, diags
 }
 
