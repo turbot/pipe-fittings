@@ -261,3 +261,8 @@ func (h *HclResourceImpl) GetNestedStructs() []CtyValueProvider {
 	// we return ourselves
 	return []CtyValueProvider{h}
 }
+
+// ClearRemain clears the HclResourceRemain field to free HCL AST memory after parsing
+func (h *HclResourceImpl) ClearRemain() {
+	h.HclResourceRemain = nil
+}

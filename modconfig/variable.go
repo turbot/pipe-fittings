@@ -184,3 +184,10 @@ func (v *Variable) IsLateBinding() bool {
 func (p *Variable) IsConnectionType() bool {
 	return IsConnectionType(p.Type)
 }
+
+// ClearRemain clears the Remain field and nested Remain fields to free HCL AST memory after parsing
+func (v *Variable) ClearRemain() {
+	v.Remain = nil
+	v.ModTreeItemImpl.ClearRemain()
+	v.ResourceWithMetadataImpl.ClearRemain()
+}

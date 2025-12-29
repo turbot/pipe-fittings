@@ -109,22 +109,35 @@ func resolveReferences(body hcl.Body, modResourcesProvider modconfig.ResourcePro
 		if hclAttribute == "" {
 			continue
 		}
-		if fieldVal.Type().Kind() == reflect.Pointer && !fieldVal.IsNil() {
-			fieldVal = fieldVal.Elem()
+
+		// Determine if this field should have reference resolution
+		// For pointer fields, check if the pointed-to type implements HclResource
+		fieldType := fieldVal.Type()
+		isPointerToHclResource := false
+
+		if fieldType.Kind() == reflect.Pointer {
+			elemType := fieldType.Elem()
+			if elemType.Kind() == reflect.Struct {
+				// Check if the pointer type implements HclResource
+				ptrType := reflect.PointerTo(elemType)
+				isPointerToHclResource = ptrType.Implements(reflect.TypeOf((*modconfig.HclResource)(nil)).Elem())
+			}
+		} else if fieldType.Kind() == reflect.Struct {
+			// Non-pointer struct - check the address type
+			ptrType := reflect.PointerTo(fieldType)
+			isPointerToHclResource = ptrType.Implements(reflect.TypeOf((*modconfig.HclResource)(nil)).Elem())
 		}
-		if fieldVal.Kind() == reflect.Struct {
-			v := fieldVal.Addr().Interface()
-			if _, ok := v.(modconfig.HclResource); ok {
-				if hclVal, ok := attributes[hclAttribute]; ok {
-					if scopeTraversal, ok := hclVal.Expr.(*hclsyntax.ScopeTraversalExpr); ok {
-						path := hclhelpers.TraversalAsString(scopeTraversal.Traversal)
-						if parsedName, err := modconfig.ParseResourceName(path); err == nil {
-							if r, ok := modResourcesProvider.GetResource(parsedName); ok {
-								f := rv.FieldByName(field.Name)
-								if f.IsValid() && f.CanSet() {
-									targetVal := reflect.ValueOf(r)
-									f.Set(targetVal)
-								}
+
+		if isPointerToHclResource {
+			if hclVal, ok := attributes[hclAttribute]; ok {
+				if scopeTraversal, ok := hclVal.Expr.(*hclsyntax.ScopeTraversalExpr); ok {
+					path := hclhelpers.TraversalAsString(scopeTraversal.Traversal)
+					if parsedName, err := modconfig.ParseResourceName(path); err == nil {
+						if r, ok := modResourcesProvider.GetResource(parsedName); ok {
+							f := rv.FieldByName(field.Name)
+							if f.IsValid() && f.CanSet() {
+								targetVal := reflect.ValueOf(r)
+								f.Set(targetVal)
 							}
 						}
 					}
