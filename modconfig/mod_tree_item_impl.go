@@ -233,3 +233,9 @@ func (b *ModTreeItemImpl) GetNestedStructs() []CtyValueProvider {
 	// we return ourselves and our base structs
 	return append([]CtyValueProvider{b}, b.HclResourceImpl.GetNestedStructs()...)
 }
+
+// ClearRemain clears the ModTreeItemRemain field and nested Remain fields to free HCL AST memory after parsing
+func (b *ModTreeItemImpl) ClearRemain() {
+	b.ModTreeItemRemain = nil
+	b.HclResourceImpl.ClearRemain()
+}

@@ -187,5 +187,8 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 	// now tell mod to build tree of resources
 	res.Error = mod.BuildResourceTree(parseCtx.GetTopLevelDependencyMods())
 
+	// Clear Remain fields to free HCL AST memory after parsing is complete
+	modconfig.ClearAllRemain(mod)
+
 	return mod, res
 }
