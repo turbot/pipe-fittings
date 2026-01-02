@@ -23,7 +23,7 @@ query "test_query" {
     sql = "SELECT 1"
 }
 `
-	require.NoError(t, os.WriteFile(testFile, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte(content), 0600))
 
 	loader := NewSourceLoader(false, 0)
 
@@ -52,7 +52,7 @@ line 3
 line 4
 line 5
 `
-	require.NoError(t, os.WriteFile(testFile, []byte(content), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte(content), 0600))
 
 	loader := NewSourceLoader(false, 0)
 
@@ -76,7 +76,7 @@ line 5
 func TestSourceLoader_WithCache(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.pp")
-	require.NoError(t, os.WriteFile(testFile, []byte("query \"test\" { sql = \"SELECT 1\" }"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("query \"test\" { sql = \"SELECT 1\" }"), 0600))
 
 	loader := NewSourceLoader(true, 100)
 
@@ -100,7 +100,7 @@ func TestSourceLoader_WithCache(t *testing.T) {
 func TestSourceLoader_CacheClearing(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.pp")
-	require.NoError(t, os.WriteFile(testFile, []byte("query \"test\" { sql = \"SELECT 1\" }"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("query \"test\" { sql = \"SELECT 1\" }"), 0600))
 
 	loader := NewSourceLoader(true, 100)
 
@@ -178,7 +178,7 @@ func TestResourceMetadata_GetSourceDefinition_Cached(t *testing.T) {
 func TestResourceMetadata_GetSourceDefinition_Lazy(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.pp")
-	require.NoError(t, os.WriteFile(testFile, []byte("query \"test\" { sql = \"SELECT 1\" }"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("query \"test\" { sql = \"SELECT 1\" }"), 0600))
 
 	meta := &ResourceMetadata{
 		FileName:        testFile,
@@ -215,7 +215,7 @@ func TestResourceMetadata_LazyAfterClear(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.pp")
 	testContent := "control \"test\" { title = \"Test Control\" }"
-	require.NoError(t, os.WriteFile(testFile, []byte(testContent), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte(testContent), 0600))
 
 	meta := &ResourceMetadata{
 		FileName:         testFile,
@@ -239,7 +239,7 @@ func TestResourceMetadata_LazyAfterClear(t *testing.T) {
 func TestLoadSourceDefinition_ConvenienceFunction(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.pp")
-	require.NoError(t, os.WriteFile(testFile, []byte("benchmark \"test\" { }"), 0644))
+	require.NoError(t, os.WriteFile(testFile, []byte("benchmark \"test\" { }"), 0600))
 
 	meta := &ResourceMetadata{
 		FileName:        testFile,
