@@ -54,6 +54,4 @@ func (b *ResourceWithMetadataImpl) GetResourceWithMetadataRemain() hcl.Body {
 func (b *ResourceWithMetadataImpl) ClearRemain() {
 	b.ResourceWithMetadataImplRemain = nil
 	b.ResourceMetadata.ClearRemain()
-	// Also clear source definition to enable lazy loading
-	b.ResourceMetadata.ClearSourceDefinition()
 }
