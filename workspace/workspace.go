@@ -13,7 +13,6 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/spf13/viper"
 	filehelpers "github.com/turbot/go-kit/files"
 	"github.com/turbot/go-kit/filewatcher"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
@@ -46,9 +45,9 @@ type Workspace struct {
 	// it is a map of cty value maps - keyed by the typ ename (e.g. notifier)
 	configValueMaps map[string]map[string]cty.Value
 
-	watcher     *filewatcher.FileWatcher
-	loadLock    *sync.Mutex
-	exclusions  []string
+	watcher    *filewatcher.FileWatcher
+	loadLock   sync.Mutex
+	exclusions []string
 	modFilePath string
 
 	FileWatcherErrorHandler func(context.Context, error)
@@ -117,9 +116,11 @@ func (w *Workspace) SetModfileExists() {
 
 	if modFileExists {
 		w.modFilePath = modFile
-
-		// also set it in the viper config, so that it is available to whoever is using it
-		viper.Set(constants.ArgModLocation, filepath.Dir(modFile))
+		// Update the workspace path to the actual mod directory (not the original working directory).
+		// Note: We intentionally do NOT update viper here, as consumers should use w.Path directly
+		// after workspace load. The viper ArgModLocation value is only used to determine the starting
+		// path for workspace loading, not the resolved path. This avoids race conditions when multiple
+		// workspaces are loaded concurrently (e.g., in tests).
 		w.Path = filepath.Dir(modFile)
 		w.Mod.SetFilePath(modFile)
 	}
@@ -359,9 +360,6 @@ func (w *Workspace) populateVariablesOnlyMod(parseCtx *parse.ModParseContext) er
 }
 
 func (w *Workspace) LoadLock() {
-	if w.loadLock == nil {
-		w.loadLock = &sync.Mutex{}
-	}
 	w.loadLock.Lock()
 }
 
