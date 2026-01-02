@@ -24,7 +24,7 @@ func TestLoadFileData_SingleFile(t *testing.T) {
 	path := filepath.Join(tmpDir, "test.pp")
 	content := `query "test" { sql = "SELECT 1" }`
 
-	err := os.WriteFile(path, []byte(content), 0644)
+	err := os.WriteFile(path, []byte(content), 0600)
 	require.NoError(t, err)
 
 	fileData, diags := LoadFileData(path)
@@ -44,7 +44,7 @@ func TestLoadFileData_SequentialForSmallSets(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file_%d.pp", i))
 		content := fmt.Sprintf(`query "q%d" { sql = "SELECT %d" }`, i, i)
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0600)
 		require.NoError(t, err)
 		paths[i] = path
 		expectedData[path] = content
@@ -71,7 +71,7 @@ func TestLoadFileData_ParallelForLargeSets(t *testing.T) {
 	for i := 0; i < numFiles; i++ {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file_%d.pp", i))
 		content := fmt.Sprintf(`query "q%d" { sql = "SELECT %d" }`, i, i)
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0600)
 		require.NoError(t, err)
 		paths[i] = path
 		expectedData[path] = content
@@ -103,7 +103,7 @@ func TestLoadFileData_HandlesMixedValidAndInvalid(t *testing.T) {
 	// Create one valid file
 	validPath := filepath.Join(tmpDir, "valid.pp")
 	validContent := `query "valid" { sql = "SELECT 1" }`
-	err := os.WriteFile(validPath, []byte(validContent), 0644)
+	err := os.WriteFile(validPath, []byte(validContent), 0600)
 	require.NoError(t, err)
 
 	// Include one invalid path
@@ -131,7 +131,7 @@ func TestLoadFileData_ParallelHandlesMixedValidAndInvalid(t *testing.T) {
 	for i := 0; i < numValid; i++ {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file_%d.pp", i))
 		content := fmt.Sprintf(`query "q%d" { sql = "SELECT %d" }`, i, i)
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0600)
 		require.NoError(t, err)
 		paths[i] = path
 		expectedData[path] = content
@@ -164,7 +164,7 @@ func TestLoadFileData_ExactlyFourFiles(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file_%d.pp", i))
 		content := fmt.Sprintf(`query "q%d" { sql = "SELECT %d" }`, i, i)
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0600)
 		require.NoError(t, err)
 		paths[i] = path
 		expectedData[path] = content
@@ -192,7 +192,7 @@ func TestLoadFileData_LargeFiles(t *testing.T) {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file_%d.pp", i))
 		// Create larger content (~10KB per file)
 		content := strings.Repeat(fmt.Sprintf(`query "q%d_%d" { sql = "SELECT %d" }`+"\n", i, i, i), 200)
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0600)
 		require.NoError(t, err)
 		paths[i] = path
 		expectedData[path] = content
@@ -215,7 +215,7 @@ func BenchmarkLoadFileData_Sequential(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		loadFileDataSequential(paths)
+		_, _ = loadFileDataSequential(paths)
 	}
 }
 
@@ -224,7 +224,7 @@ func BenchmarkLoadFileData_Parallel(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		loadFileDataParallel(paths)
+		_, _ = loadFileDataParallel(paths)
 	}
 }
 
@@ -233,7 +233,7 @@ func BenchmarkLoadFileData_SmallSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		LoadFileData(paths...)
+		_, _ = LoadFileData(paths...)
 	}
 }
 
@@ -242,7 +242,7 @@ func BenchmarkLoadFileData_MediumSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		LoadFileData(paths...)
+		_, _ = LoadFileData(paths...)
 	}
 }
 
@@ -251,7 +251,7 @@ func BenchmarkLoadFileData_LargeSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		LoadFileData(paths...)
+		_, _ = LoadFileData(paths...)
 	}
 }
 
@@ -264,7 +264,7 @@ func setupBenchmarkFiles(b *testing.B, count int) []string {
 		path := filepath.Join(tmpDir, fmt.Sprintf("file_%d.pp", i))
 		// Create realistic-sized file content (~2KB per file)
 		content := strings.Repeat(fmt.Sprintf(`query "q%d" { sql = "SELECT %d" }`+"\n", i, i), 50)
-		err := os.WriteFile(path, []byte(content), 0644)
+		err := os.WriteFile(path, []byte(content), 0600)
 		if err != nil {
 			b.Fatalf("failed to create benchmark file: %v", err)
 		}
@@ -450,7 +450,7 @@ func BenchmarkParseHclFiles_Sequential(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		parseHclFilesSequential(fileData)
+		_, _ = parseHclFilesSequential(fileData)
 	}
 }
 
@@ -459,7 +459,7 @@ func BenchmarkParseHclFiles_Parallel(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		parseHclFilesParallel(fileData)
+		_, _ = parseHclFilesParallel(fileData)
 	}
 }
 
@@ -468,7 +468,7 @@ func BenchmarkParseHclFiles_SmallSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ParseHclFiles(fileData)
+		_, _ = ParseHclFiles(fileData)
 	}
 }
 
@@ -477,7 +477,7 @@ func BenchmarkParseHclFiles_MediumSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ParseHclFiles(fileData)
+		_, _ = ParseHclFiles(fileData)
 	}
 }
 
@@ -486,7 +486,7 @@ func BenchmarkParseHclFiles_LargeSet(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		ParseHclFiles(fileData)
+		_, _ = ParseHclFiles(fileData)
 	}
 }
 
