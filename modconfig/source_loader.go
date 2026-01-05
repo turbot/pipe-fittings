@@ -106,7 +106,8 @@ func (sl *SourceLoader) loadFromFile(meta *ResourceMetadata) (string, error) {
 		}
 	}
 
-	return content.String(), nil
+	// Trim trailing newline to match original HCL parsing behavior
+	return strings.TrimSuffix(content.String(), "\n"), nil
 }
 
 func (sl *SourceLoader) cacheKey(meta *ResourceMetadata) string {
