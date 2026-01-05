@@ -1,8 +1,6 @@
 package modconfig
 
 import (
-	"encoding/json"
-
 	"github.com/hashicorp/hcl/v2"
 )
 
@@ -75,19 +73,4 @@ func (m *ResourceMetadata) SetSourceDefinition(source string) {
 // After calling this, GetSourceDefinition() will load from file on demand.
 func (m *ResourceMetadata) ClearSourceDefinition() {
 	m.SourceDefinition = ""
-}
-
-// MarshalJSON implements custom JSON marshaling that lazily loads source_definition.
-// This allows source definitions to be cleared from memory after parsing while
-// still being available when serializing to JSON (e.g., for show commands).
-func (m *ResourceMetadata) MarshalJSON() ([]byte, error) {
-	// Create an alias to avoid infinite recursion
-	type Alias ResourceMetadata
-	return json.Marshal(&struct {
-		*Alias
-		SourceDefinition string `json:"source_definition"`
-	}{
-		Alias:            (*Alias)(m),
-		SourceDefinition: m.GetSourceDefinition(),
-	})
 }
