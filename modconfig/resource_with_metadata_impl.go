@@ -54,7 +54,4 @@ func (b *ResourceWithMetadataImpl) GetResourceWithMetadataRemain() hcl.Body {
 func (b *ResourceWithMetadataImpl) ClearRemain() {
 	b.ResourceWithMetadataImplRemain = nil
 	b.ResourceMetadata.ClearRemain()
-	// Clear source definition to free memory - it will be lazily loaded from file
-	// when needed (e.g., for JSON serialization in show commands)
-	b.ResourceMetadata.ClearSourceDefinition()
 }
