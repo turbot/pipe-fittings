@@ -2,7 +2,6 @@ package parse
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
@@ -88,8 +87,7 @@ func (m *ModParseContext) getUniqueName(blockType string, parent string) string 
 			childCount++
 		}
 	}
-	sanitisedParentName := strings.ReplaceAll(parent, ".", "_")
-	return fmt.Sprintf("%s_anonymous_%s_%d", sanitisedParentName, blockType, childCount)
+	return modconfig.AnonymousBlockName(parent, blockType, childCount)
 }
 
 func (m *ModParseContext) addChildBlockForParent(parent, child string) {
