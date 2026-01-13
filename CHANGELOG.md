@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.8.0 [TBD]
+
+* Improved mod loading performance with parallel file I/O, parallel HCL parsing, and lazy loading for source definitions.
+
 ## v2.7.3 [2026-02-13]
 
 * Fix DATE and TIMESTAMPTZ display formatting.
