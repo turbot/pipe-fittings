@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.8.0 [TBD]
+
+* Improved mod loading performance with parallel file I/O, parallel HCL parsing, and lazy loading for source definitions.
+
 ## v2.7.2 [2025-10-30]
 
 * Reverted behaviour to - only show truncated row count message for table output if the row count exceeds 10,000.
