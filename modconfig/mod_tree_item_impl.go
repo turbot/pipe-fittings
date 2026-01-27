@@ -208,16 +208,13 @@ func (b *ModTreeItemImpl) GetShowData() *printers.RowData {
 
 // GetListData implements printers.Listable
 func (b *ModTreeItemImpl) GetListData() *printers.RowData {
-	var name = b.ShortName
-	if b.IsDependencyResource() {
-		name = b.Name()
-	}
 	res := printers.NewRowData()
 	if b.Mod != nil {
 		res.AddField(printers.NewFieldValue("MOD", b.Mod.ShortName))
 	}
 
-	res.AddField(printers.NewFieldValue("NAME", name))
+	// Always use full qualified name for consistency with v1.4.2
+	res.AddField(printers.NewFieldValue("NAME", b.Name()))
 	// NOTE - do not merge the base fields here, which only includes NAME, as we want to override the order of the fields
 	//res.Merge(b.HclResourceImpl.GetListData())
 
