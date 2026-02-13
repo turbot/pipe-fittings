@@ -90,10 +90,22 @@ func ColumnValueAsString(val interface{}, col *queryresult.ColumnDef, opts ...Co
 			return "", err
 		}
 		return string(bytes), nil
-	case "TIMESTAMP", "DATE", "TIME", "INTERVAL":
+	case "DATE":
+		t, ok := val.(time.Time)
+		if ok {
+			return t.Format("2006-01-02"), nil
+		}
+		fallthrough
+	case "TIMESTAMP", "TIME", "INTERVAL":
 		t, ok := val.(time.Time)
 		if ok {
 			return t.Format("2006-01-02 15:04:05"), nil
+		}
+		fallthrough
+	case "TIMESTAMPTZ":
+		t, ok := val.(time.Time)
+		if ok {
+			return t.Format(time.RFC3339), nil
 		}
 		fallthrough
 	case "NAME":
