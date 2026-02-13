@@ -1,6 +1,8 @@
 package modconfig
 
-import "github.com/hashicorp/hcl/v2"
+import (
+	"github.com/hashicorp/hcl/v2"
+)
 
 // ResourceMetadata is a struct containing additional data
 // about each resource, used to populate the introspection tables
@@ -42,4 +44,33 @@ func (m *ResourceMetadata) Clone() ResourceMetadata {
 		ModFullName:      m.ModFullName,
 		Anonymous:        m.Anonymous,
 	}
+}
+
+// ClearRemain clears the ResourceMetadataRemain field to free HCL AST memory after parsing
+func (m *ResourceMetadata) ClearRemain() {
+	m.ResourceMetadataRemain = nil
+}
+
+// GetSourceDefinition returns the HCL source for this resource.
+// If the source is already cached in the SourceDefinition field, it returns that.
+// Otherwise, it loads the source lazily from the file using FileName and line numbers.
+func (m *ResourceMetadata) GetSourceDefinition() string {
+	// If we have a cached value, return it
+	if m.SourceDefinition != "" {
+		return m.SourceDefinition
+	}
+
+	// Otherwise load from file
+	return LoadSourceDefinition(m)
+}
+
+// SetSourceDefinition sets the source definition (used during parsing)
+func (m *ResourceMetadata) SetSourceDefinition(source string) {
+	m.SourceDefinition = source
+}
+
+// ClearSourceDefinition clears the cached source to free memory.
+// After calling this, GetSourceDefinition() will load from file on demand.
+func (m *ResourceMetadata) ClearSourceDefinition() {
+	m.SourceDefinition = ""
 }

@@ -62,3 +62,9 @@ func (l *Local) Diff(other *Local) *ModTreeItemDiffs {
 	res.PopulateChildDiffs(l, other)
 	return res
 }
+
+// ClearRemain clears the Remain field and nested Remain fields to free HCL AST memory after parsing
+func (l *Local) ClearRemain() {
+	l.Remain = nil
+	l.ModTreeItemImpl.ClearRemain()
+}

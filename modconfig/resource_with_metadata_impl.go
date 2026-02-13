@@ -49,3 +49,9 @@ func (b *ResourceWithMetadataImpl) GetReferences() []*ResourceReference {
 func (b *ResourceWithMetadataImpl) GetResourceWithMetadataRemain() hcl.Body {
 	return b.ResourceWithMetadataImplRemain
 }
+
+// ClearRemain clears the ResourceWithMetadataImplRemain field and nested Remain fields to free HCL AST memory after parsing
+func (b *ResourceWithMetadataImpl) ClearRemain() {
+	b.ResourceWithMetadataImplRemain = nil
+	b.ResourceMetadata.ClearRemain()
+}

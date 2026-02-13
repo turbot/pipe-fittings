@@ -440,3 +440,9 @@ func (m *Mod) GetDefaultConnectionString(evalContext *hcl.EvalContext) (connecti
 	// if no database is set on mod, use the default steampipe connection
 	return connection.NewConnectionString(constants.DefaultSteampipeConnectionString), nil
 }
+
+// ClearRemain clears the Remain field to free HCL AST memory after parsing
+func (m *Mod) ClearRemain() {
+	m.Remain = nil
+	m.ModTreeItemImpl.ClearRemain()
+}

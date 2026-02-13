@@ -2,6 +2,7 @@ package parse
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
@@ -9,22 +10,22 @@ import (
 	"github.com/turbot/pipe-fittings/v2/schema"
 )
 
-// cache resource schemas
-var ResourceSchemaCache = make(map[string]*hcl.BodySchema)
+// cache resource schemas using sync.Map for thread-safe concurrent access
+var resourceSchemaCache sync.Map
 
 // build the hcl schema for this resource
 func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl.BodySchema {
 	t := reflect.TypeOf(helpers.DereferencePointer(resource))
 	typeName := t.Name()
 
-	if cachedSchema, ok := ResourceSchemaCache[typeName]; ok {
-		return cachedSchema
+	if cached, ok := resourceSchemaCache.Load(typeName); ok {
+		return cached.(*hcl.BodySchema)
 	}
 	var res = &hcl.BodySchema{}
 
 	// ensure we cache before returning
 	defer func() {
-		ResourceSchemaCache[typeName] = res
+		resourceSchemaCache.Store(typeName, res)
 	}()
 
 	var schemas []*hcl.BodySchema
@@ -38,11 +39,12 @@ func getResourceSchema(resource modconfig.HclResource, nestedStructs []any) *hcl
 		typeName := t.Name()
 
 		// is this cached?
-		nestedStructSchema, schemaCached := ResourceSchemaCache[typeName]
-		if !schemaCached {
-			nestedStructSchema = GetSchemaForStruct(t)
-			ResourceSchemaCache[typeName] = nestedStructSchema
+		if cached, ok := resourceSchemaCache.Load(typeName); ok {
+			schemas = append(schemas, cached.(*hcl.BodySchema))
+			continue
 		}
+		nestedStructSchema := GetSchemaForStruct(t)
+		resourceSchemaCache.Store(typeName, nestedStructSchema)
 
 		// add to our list of schemas
 		schemas = append(schemas, nestedStructSchema)
