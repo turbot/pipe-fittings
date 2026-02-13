@@ -2,7 +2,7 @@
 
 Shared Pipes Component
 
-## v2.8.0 [TBD]
+## v2.8.0 [2026-02-13]
 
 * Improved mod loading performance with parallel file I/O, parallel HCL parsing, and lazy loading for source definitions.
 
