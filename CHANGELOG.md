@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.7.3 [2026-02-13]
+
+* Fix DATE and TIMESTAMPTZ display formatting.
+
 ## v2.7.2 [2025-10-30]
 
 * Reverted behaviour to - only show truncated row count message for table output if the row count exceeds 10,000.
