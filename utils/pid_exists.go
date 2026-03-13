@@ -5,8 +5,9 @@ package utils
 
 import (
 	"fmt"
+	"slices"
 
-	psutils "github.com/shirou/gopsutil/process"
+	psutils "github.com/shirou/gopsutil/v3/process"
 )
 
 // PidExists uses psutils.NewProcess, instead of signalling, since we have observed that
@@ -39,12 +40,12 @@ func FindProcess(targetPid int) (*psutils.Process, error) {
 				return nil, nil
 			}
 
-			status, err := process.Status()
+			statuses, err := process.Status()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get status: %s", err.Error())
 			}
 
-			if status == "Z" {
+			if slices.Contains(statuses, "Z") {
 				// this means that postgres went away, but the process itself is still a zombie.
 				return nil, nil
 			}
