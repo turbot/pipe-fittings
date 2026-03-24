@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.9.0 [TBD]
+
+* Replace standalone `pgconn` with `pgx/v5/pgconn` to fix CVE-2026-4427 (pgproto3/v2 DoS). Closes #784.
+
 ## v2.8.0 [2026-02-13]
 
 * Improved mod loading performance with parallel file I/O, parallel HCL parsing, and lazy loading for source definitions.
