@@ -2,7 +2,7 @@
 
 Shared Pipes Component
 
-## v2.9.0 [TBD]
+## v2.9.0 [2026-03-24]
 
 * Replace standalone `pgconn` with `pgx/v5/pgconn` to fix CVE-2026-4427 (pgproto3/v2 DoS). Closes #784.
 * Update `google.golang.org/grpc` to v1.79.3 to fix CVE-2026-33186 (critical).
