@@ -5,9 +5,9 @@ Shared Pipes Component
 ## v2.9.0 [2026-03-24]
 
 * Replace standalone `pgconn` with `pgx/v5/pgconn` to fix CVE-2026-4427 (pgproto3/v2 DoS). Closes #784.
-* Update `google.golang.org/grpc` to v1.79.3 to fix CVE-2026-33186 (critical).
-* Update `go.opentelemetry.io/otel/sdk` to v1.40.0 to fix CVE-2026-24051.
-* Update `github.com/cloudflare/circl` to v1.6.3 to fix CVE-2026-1229.
+* Update `google.golang.org/grpc` to v1.79.3 to fix CVE-2026-33186 (critical). Closes #784.
+* Update `go.opentelemetry.io/otel/sdk` to v1.40.0 to fix CVE-2026-24051. Closes #784.
+* Update `github.com/cloudflare/circl` to v1.6.3 to fix CVE-2026-1229. Closes #784.
 
 ## v2.8.0 [2026-02-13]
 
