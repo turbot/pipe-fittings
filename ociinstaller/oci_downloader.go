@@ -3,7 +3,10 @@ package ociinstaller
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/containerd/containerd/remotes"
@@ -17,6 +20,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/credentials"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 	"oras.land/oras-go/v2/registry/remote/retry"
 )
 
@@ -101,6 +105,21 @@ func (o *OciDownloader[I, C]) Pull(ctx context.Context, ref string, mediaTypes [
 
 	copyOpt := oras.DefaultCopyOptions
 	manifestDescriptor, err := oras.Copy(ctx, repo, tag, fileStore, tag, copyOpt)
+	if err != nil && isRegistryAuthError(err) {
+		// The first attempt used whatever the credential store returned for
+		// the host. On a 401/403 from the registry, it's useful to know
+		// whether those credentials came from the user's Docker config —
+		// an expired or revoked PAT stored there produces the same opaque
+		// "denied" error as a genuine permission problem, and the surfaced
+		// error does not mention the credential source. Retry anonymously
+		// when the store had an entry to see if the issue is stale creds.
+		if retryDesc, ok := retryAnonymouslyIfStoredCreds(ctx, repo, credStore, ref, tag, fileStore, copyOpt); ok {
+			manifestDescriptor = retryDesc
+			err = nil
+		} else {
+			err = wrapAuthError(err, ref)
+		}
+	}
 	if err != nil {
 		log.Println("[TRACE] OciDownloader.Pull:", "failed to pull", ref, err)
 		return nil, nil, nil, nil, err
@@ -181,4 +200,76 @@ func (o *OciDownloader[I, C]) newOciImage() *OciImage[I, C] {
 	}
 	o.Images = append(o.Images, i)
 	return i
+}
+
+// isRegistryAuthError reports whether err unwraps to a 401 or 403 response
+// from the OCI registry. Used to decide whether a retry without credentials
+// could recover the pull.
+func isRegistryAuthError(err error) bool {
+	var errResp *errcode.ErrorResponse
+	if errors.As(err, &errResp) {
+		return errResp.StatusCode == http.StatusUnauthorized ||
+			errResp.StatusCode == http.StatusForbidden
+	}
+	return false
+}
+
+// registryHostFromRef returns the registry host portion of an OCI image
+// reference (e.g. "ghcr.io" from "ghcr.io/turbot/steampipe/plugins/turbot/aws:1.30.2").
+// Falls back to returning the ref unchanged if it contains no path separator.
+func registryHostFromRef(ref string) string {
+	if i := strings.Index(ref, "/"); i >= 0 {
+		return ref[:i]
+	}
+	return ref
+}
+
+// retryAnonymouslyIfStoredCreds retries the copy without any credentials when
+// the credential store had an entry for the target host. The typical case:
+// the user has an expired or revoked PAT in ~/.docker/config.json (or the
+// native keychain), and the registry rejects it with DENIED even though the
+// image is publicly pullable.
+//
+// Returns the fresh manifest descriptor and true if the anonymous retry
+// succeeded. Returns the zero descriptor and false if there were no stored
+// creds (so retry would change nothing) or the anonymous retry itself failed.
+func retryAnonymouslyIfStoredCreds(
+	ctx context.Context,
+	repo *remote.Repository,
+	credStore *credentials.DynamicStore,
+	ref string,
+	tag string,
+	fileStore *file.Store,
+	copyOpt oras.CopyOptions,
+) (ocispec.Descriptor, bool) {
+	host := registryHostFromRef(ref)
+	cred, credErr := credStore.Get(ctx, host)
+	if credErr != nil || cred == auth.EmptyCredential {
+		// No stored creds for this host — the original attempt was already
+		// anonymous, so retrying won't change anything.
+		return ocispec.Descriptor{}, false
+	}
+
+	// Swap in an auth client with no credential source and retry.
+	repo.Client = &auth.Client{
+		Client: retry.DefaultClient,
+		Cache:  auth.DefaultCache,
+	}
+	desc, err := oras.Copy(ctx, repo, tag, fileStore, tag, copyOpt)
+	if err != nil {
+		log.Println("[TRACE] OciDownloader.Pull:", "anonymous retry also failed for", ref, err)
+		return ocispec.Descriptor{}, false
+	}
+
+	log.Printf("[WARN] Stored credentials for %s were rejected by the registry; pull succeeded anonymously. "+
+		"Clear the stale entry with: docker logout %s\n", host, host)
+	return desc, true
+}
+
+// wrapAuthError adds a hint about stored credentials to an auth-failure error
+// surfaced from the registry. Used when the original pull failed on auth AND
+// anonymous retry was either skipped or also failed.
+func wrapAuthError(err error, ref string) error {
+	host := registryHostFromRef(ref)
+	return fmt.Errorf("%w (if you have stored credentials for %s, they may be expired or revoked — try: docker logout %s)", err, host, host)
 }
