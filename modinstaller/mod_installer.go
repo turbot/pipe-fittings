@@ -273,11 +273,42 @@ func (i *ModInstaller) commitShadow(ctx context.Context) error {
 		source := filepath.Join(i.shadowDirPath, entry.Name())
 		destination := filepath.Join(i.modsPath, entry.Name())
 		slog.Debug("copying", source, destination)
+		// the recursive copy truncates existing destination files via os.Create, which
+		// fails on a read-only file. go-git (>= v5.17) writes git pack files read-only,
+		// so a mod re-install or upgrade leaves read-only *.pack/*.idx in the destination;
+		// restore write permission first so they can be overwritten.
+		if err := makeTreeWritable(destination); err != nil {
+			return fmt.Errorf("could not prepare destination '%s' for commit: %w", entry.Name(), err)
+		}
 		if err := copy.Copy(source, destination); err != nil {
 			return fmt.Errorf("could not commit shadow directory '%s': %w", entry.Name(), err)
 		}
 	}
 	return nil
+}
+
+// makeTreeWritable adds owner-write permission to every file and directory under root
+// (which may not exist - a missing root is not an error). It exists because go-git
+// (>= v5.17) writes git pack files read-only (0444); commitShadow's recursive copy
+// cannot truncate a read-only destination file, so a mod re-install/upgrade fails with
+// "permission denied" without this.
+func makeTreeWritable(root string) error {
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return nil
+	}
+	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		if info.Mode()&0o200 != 0 {
+			return nil
+		}
+		return os.Chmod(p, info.Mode()|0o200)
+	})
 }
 
 func (i *ModInstaller) shouldCommitShadow(ctx context.Context, installError error) bool {
