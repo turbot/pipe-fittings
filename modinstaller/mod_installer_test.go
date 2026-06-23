@@ -22,10 +22,10 @@ func TestCommitShadowOverwritesReadOnlyFiles(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(destPack), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(destPack, []byte("old"), 0o444); err != nil {
+	if err := os.WriteFile(destPack, []byte("old"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(destPack, 0o444); err != nil {
+	if err := os.Chmod(destPack, 0o400); err != nil { // read-only, as go-git leaves packs
 		t.Fatal(err)
 	}
 
@@ -34,7 +34,7 @@ func TestCommitShadowOverwritesReadOnlyFiles(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(shadowPack), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(shadowPack, []byte("new"), 0o444); err != nil {
+	if err := os.WriteFile(shadowPack, []byte("new"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
