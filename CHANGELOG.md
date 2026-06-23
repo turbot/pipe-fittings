@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.9.2 [2026-06-23]
+
+* Fix mod install failing with `permission denied` on a re-install or upgrade. go-git (>= v5.17) writes git pack files read-only, which the shared mod installer's shadow-directory commit could not overwrite. ([#801](https://github.com/turbot/pipe-fittings/pull/801))
+
 ## v2.9.1 [2026-04-21]
 
 * Fix OCI plugin installs silently failing when stored Docker credentials for the registry are stale or revoked. The downloader now retries once anonymously on 401/403 when the credential store had an entry for the host, and warns the user to clear the stale entry with `docker logout <host>`. Closes #793.
