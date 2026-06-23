@@ -2,6 +2,12 @@
 
 Shared Pipes Component
 
+## v1.7.4 [2026-06-23]
+
+_Bug fixes_
+
+* Fixed mod install failing with `permission denied` on a re-install or upgrade. go-git (>= v5.17) writes git pack files read-only, which the shared mod installer's shadow-directory commit could not overwrite. ([#802](https://github.com/turbot/pipe-fittings/pull/802))
+
 ## v1.7.3 [2024-01-07]
 
 _What's new_
