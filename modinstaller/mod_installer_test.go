@@ -9,6 +9,7 @@ import (
 
 // TestCommitShadowOverwritesReadOnlyFiles reproduces a mod re-install/upgrade where the
 // destination already holds read-only git pack files (as written by go-git >= v5.17).
+// (pipe-fittings' own go.mod pins go-git below this; consumers such as flowpipe float it higher.)
 // commitShadow must overwrite them rather than fail with "permission denied".
 func TestCommitShadowOverwritesReadOnlyFiles(t *testing.T) {
 	tmp := t.TempDir()
