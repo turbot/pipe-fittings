@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/containerd/containerd/remotes"
-	"github.com/containerd/containerd/remotes/docker"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2"
@@ -35,7 +33,6 @@ type ImageProvider[I OciImageData, C OciImageConfig] interface {
 	EmptyConfig() C
 }
 type OciDownloader[I OciImageData, C OciImageConfig] struct {
-	resolver           remotes.Resolver
 	Images             []*OciImage[I, C]
 	baseImageRef       string
 	MediaTypesProvider MediaTypeProvider
@@ -44,11 +41,10 @@ type OciDownloader[I OciImageData, C OciImageConfig] struct {
 
 // NewOciDownloader creates and returns a OciDownloader instance
 func NewOciDownloader[I OciImageData, C OciImageConfig](baseImageRef string, mediaTypesProvider MediaTypeProvider, imageProvider ImageProvider[I, C]) *OciDownloader[I, C] {
-	// oras uses containerd, which uses logrus and is set up to log
-	// warning and above.  Set to ErrrLevel to get rid of unwanted error message
+	// oras and some of its dependencies use logrus and are set up to log
+	// warning and above.  Set to ErrorLevel to get rid of unwanted error message
 	logrus.SetLevel(logrus.ErrorLevel)
 	return &OciDownloader[I, C]{
-		resolver:           docker.NewResolver(docker.ResolverOptions{}),
 		MediaTypesProvider: mediaTypesProvider,
 		ImageProvider:      imageProvider,
 		baseImageRef:       baseImageRef,
@@ -195,9 +191,7 @@ func (o *OciDownloader[I, C]) Download(ctx context.Context, ref *ImageRef, image
 }
 
 func (o *OciDownloader[I, C]) newOciImage() *OciImage[I, C] {
-	i := &OciImage[I, C]{
-		resolver: &o.resolver,
-	}
+	i := &OciImage[I, C]{}
 	o.Images = append(o.Images, i)
 	return i
 }
