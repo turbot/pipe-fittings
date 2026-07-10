@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.9.3 [2026-07-10]
+
+* Remove the unused `containerd` dependency from `ociinstaller`. A dead `remotes.Resolver` field (a leftover from the pre-`oras-go/v2` implementation, initialised but never invoked) was the only thing pulling in the EOL `github.com/containerd/containerd` v1 line, which trips three unfixable govulncheck advisories — GO-2026-5622, GO-2026-5338, GO-2026-5064 — in every downstream consumer. Removing it drops containerd from the module graph with no behaviour change. ([#804](https://github.com/turbot/pipe-fittings/pull/804))
+
 ## v2.9.2 [2026-06-23]
 
 * Fix mod install failing with `permission denied` on a re-install or upgrade. go-git (>= v5.17) writes git pack files read-only, which the shared mod installer's shadow-directory commit could not overwrite. ([#801](https://github.com/turbot/pipe-fittings/pull/801))
