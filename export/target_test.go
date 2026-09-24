@@ -12,8 +12,8 @@ type noopExporter struct{}
 
 func (e *noopExporter) Export(_ context.Context, _ ExportSourceData, _ string) error { return nil }
 func (e *noopExporter) FileExtension() string                                        { return ".json" }
-func (e *noopExporter) Name() string                                                  { return "noop" }
-func (e *noopExporter) Alias() string                                                 { return "" }
+func (e *noopExporter) Name() string                                                 { return "noop" }
+func (e *noopExporter) Alias() string                                                { return "" }
 
 func TestTarget_Export_Message(t *testing.T) {
 	pwd, err := os.Getwd()
