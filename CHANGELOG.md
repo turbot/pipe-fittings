@@ -2,6 +2,10 @@
 
 Shared Pipes Component
 
+## v2.9.4 [2026-09-28]
+
+* Fix the export status message doubling the path when `--export` is given an absolute path. The "File exported to" message now prints absolute paths as-is and joins relative paths with the working directory; the exported file itself was always written to the right place. ([#812](https://github.com/turbot/pipe-fittings/pull/812))
+
 ## v2.9.3 [2026-07-10]
 
 * Remove the unused `containerd` dependency from `ociinstaller`. A dead `remotes.Resolver` field (a leftover from the pre-`oras-go/v2` implementation, initialised but never invoked) was the only thing pulling in the EOL `github.com/containerd/containerd` v1 line, which trips three unfixable govulncheck advisories — GO-2026-5622, GO-2026-5338, GO-2026-5064 — in every downstream consumer. Removing it drops containerd from the module graph with no behaviour change. ([#804](https://github.com/turbot/pipe-fittings/pull/804))
