@@ -18,6 +18,9 @@ import (
 type ParseContext struct {
 	UnresolvedBlocks map[string]*UnresolvedBlock
 	FileData         map[string][]byte
+	// fileSource holds the content of each file in FileData as a string.
+	// Resource source definitions are substrings of it, so they share its memory.
+	fileSource map[string]string
 
 	// the eval context used to decode references in HCL
 	EvalCtx *hcl.EvalContext
@@ -54,6 +57,25 @@ func NewParseContext(rootEvalPath string) ParseContext {
 func (p *ParseContext) SetDecodeContent(content *hcl.BodyContent, fileData map[string][]byte) {
 	p.blocks = content.Blocks
 	p.FileData = fileData
+	p.fileSource = nil
+}
+
+// sourceDefinition returns the source lines for the range. The result shares memory with the
+// file content, so many resources and references from the same file do not each hold a copy.
+func (p *ParseContext) sourceDefinition(sourceRange hcl.Range) string {
+	source, ok := p.fileSource[sourceRange.Filename]
+	if !ok {
+		fileBytes, ok := p.FileData[sourceRange.Filename]
+		if !ok {
+			return ""
+		}
+		if p.fileSource == nil {
+			p.fileSource = make(map[string]string)
+		}
+		source = string(fileBytes)
+		p.fileSource[sourceRange.Filename] = source
+	}
+	return sourceLines(source, sourceRange)
 }
 
 func (p *ParseContext) ClearDependencies() {
