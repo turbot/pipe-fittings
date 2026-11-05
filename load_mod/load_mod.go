@@ -46,6 +46,17 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 		return nil, ew
 	}
 
+	// with resource targets, decide which resources the mod needs from its dependencies before loading them
+	if parseCtx.HasResourceTargets() && mod.Require != nil && len(mod.Require.Mods) > 0 {
+		fileData, fileErr := loadModFileData(ctx, mod, parseCtx)
+		if fileErr.Error != nil {
+			return nil, fileErr
+		}
+		if ew.Error = parseCtx.ResolveResourceFilter(fileData); ew.Error != nil {
+			return nil, ew
+		}
+	}
+
 	// load the mod dependencies
 	if ew.Error = loadModDependenciesAsync(ctx, mod, parseCtx); ew.Error != nil {
 		return nil, ew
@@ -188,6 +199,19 @@ func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.M
 	utils.LogTime(fmt.Sprintf("loadModResources %s start", mod.ModPath))
 	defer utils.LogTime(fmt.Sprintf("loadModResources %s end", mod.ModPath))
 
+	fileData, ew := loadModFileData(ctx, mod, parseCtx)
+	if ew.Error != nil {
+		return nil, ew
+	}
+
+	// parse all hcl files (NOTE - this reads the CurrentMod out of ParseContext and adds to it)
+	mod, errAndWarnings := parse.ParseMod(ctx, fileData, parseCtx)
+
+	return mod, errAndWarnings
+}
+
+// loadModFileData reads the source files of the mod
+func loadModFileData(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.ModParseContext) (map[string][]byte, error_helpers.ErrorAndWarnings) {
 	// get the source files
 	sourcePaths, err := getSourcePaths(ctx, mod.ModPath, parseCtx.ListOptions)
 	if err != nil {
@@ -200,11 +224,7 @@ func loadModResources(ctx context.Context, mod *modconfig.Mod, parseCtx *parse.M
 	if diags.HasErrors() {
 		return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to load all mod files", diags))
 	}
-
-	// parse all hcl files (NOTE - this reads the CurrentMod out of ParseContext and adds to it)
-	mod, errAndWarnings := parse.ParseMod(ctx, fileData, parseCtx)
-
-	return mod, errAndWarnings
+	return fileData, error_helpers.ErrorAndWarnings{}
 }
 
 // GetModFileExtensions returns list of all file extensions we care about

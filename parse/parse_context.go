@@ -33,6 +33,8 @@ type ParseContext struct {
 	blockTypes map[string]struct{}
 	// if set, exclude these block types
 	blockTypeExclusions map[string]struct{}
+	// if set, only decode the resource blocks with these names (other blocks are not affected)
+	resourceFilter map[string]struct{}
 
 	DependencyGraph *topsort.Graph
 	blocks          hcl.Blocks
@@ -203,6 +205,14 @@ func (p *ParseContext) shouldIncludeBlock(block *hcl.Block) bool {
 	if len(p.blockTypeExclusions) > 0 {
 		if _, ok := p.blockTypeExclusions[block.Type]; ok {
 			return false
+		}
+	}
+	// if a resource filter is set, apply it
+	if p.resourceFilter != nil {
+		if name, isResource := resourceBlockName(block); isResource {
+			if _, ok := p.resourceFilter[name]; !ok {
+				return false
+			}
 		}
 	}
 	return true

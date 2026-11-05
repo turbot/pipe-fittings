@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"log/slog"
 	"maps"
 	"strings"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/cache"
 	"github.com/turbot/pipe-fittings/v2/connection"
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/inputvars"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
@@ -48,6 +50,11 @@ type ReferenceTypeValueMap map[string]map[string]cty.Value
 
 type ModParseContext struct {
 	ParseContext
+
+	// if set, only the resources these targets need are decoded (see SetResourceTargets)
+	resourceTargets []ResourceTarget
+	// the resources of each dependency mod that the current mod needs, keyed by mod short name
+	dependencyResourceRefs map[string][]string
 
 	// the mod which is currently being parsed
 	CurrentMod *modconfig.Mod
@@ -160,6 +167,7 @@ func NewChildModParseContext(parent *ModParseContext, modVersion *versionmap.Res
 	// copy our block types and exclusions
 	child.blockTypes = parent.blockTypes
 	child.blockTypeExclusions = parent.blockTypeExclusions
+	child.resourceTargets = parent.resourceTargets
 
 	// set the child's parent
 	child.ParentParseCtx = parent
@@ -358,6 +366,68 @@ func (m *ModParseContext) SetDecodeContent(content *hcl.BodyContent, fileData ma
 		m.topLevelBlocks[b] = struct{}{}
 	}
 	m.ParseContext.SetDecodeContent(content, fileData)
+}
+
+// SetResourceTargets makes the load decode only the resources that the targets need: the targets, and the
+// resources they reference, directly or indirectly, in this mod and its dependency mods.
+// Blocks that are not resources (mod, variable and locals) are always decoded.
+func (m *ModParseContext) SetResourceTargets(targets ...ResourceTarget) {
+	if len(targets) > 0 {
+		m.resourceTargets = targets
+	}
+}
+
+// HasResourceTargets returns whether only the resources that some targets need are decoded
+func (m *ModParseContext) HasResourceTargets() bool {
+	return m.resourceTargets != nil
+}
+
+// ResolveResourceFilter decides which resources of the current mod to decode, if the load has resource targets.
+// LoadMod calls it before it loads the dependency mods, as it also decides which of their resources are needed.
+func (m *ModParseContext) ResolveResourceFilter(fileData map[string][]byte) error {
+	if m.resourceTargets == nil {
+		return nil
+	}
+	body, diags := ParseHclFiles(fileData)
+	if diags.HasErrors() {
+		return error_helpers.HclDiagsToError("Failed to load all mod source files", diags)
+	}
+	content, diags := body.Content(WorkspaceBlockSchema)
+	if diags.HasErrors() {
+		return error_helpers.HclDiagsToError("Failed to load mod", diags)
+	}
+	m.setResourceFilter(content)
+	return nil
+}
+
+// setResourceFilter sets the resource filter for the current mod, if the load has resource targets and it is not already set
+func (m *ModParseContext) setResourceFilter(content *hcl.BodyContent) {
+	if m.resourceTargets == nil || m.resourceFilter != nil {
+		return
+	}
+	modName := m.CurrentMod.ShortName
+	var required, optional []string
+	for _, t := range m.resourceTargets {
+		switch t.Mod {
+		case "":
+			optional = append(optional, t.Name)
+		case modName:
+			required = append(required, t.Name)
+		}
+	}
+	if m.ParentParseCtx != nil {
+		required = append(required, m.ParentParseCtx.dependencyResourceRefs[modName]...)
+	}
+	needed, dependencyRefs, ok := neededResources(content, modName, required, optional)
+	if !ok {
+		// decode every resource, in this mod and in its dependency mods
+		slog.Debug("decoding all resources: cannot tell which resources the targets need", "mod", modName)
+		m.resourceTargets = nil
+		return
+	}
+	slog.Debug("decoding only the resources the targets need", "mod", modName, "resources", len(needed))
+	m.resourceFilter = needed
+	m.dependencyResourceRefs = dependencyRefs
 }
 
 // AddDependencies :: the block could not be resolved as it has dependencies
