@@ -158,7 +158,7 @@ func resourceIsAnonymous(resource modconfig.HclResource) bool {
 }
 
 func AddResourceMetadata(resourceWithMetadata modconfig.ResourceWithMetadata, srcRange hcl.Range, parseCtx *ModParseContext) hcl.Diagnostics {
-	metadata, err := GetMetadataForParsedResource(resourceWithMetadata.Name(), srcRange, parseCtx.FileData, parseCtx.CurrentMod)
+	metadata, err := newResourceMetadata(resourceWithMetadata.Name(), srcRange, parseCtx.sourceDefinition(srcRange), parseCtx.CurrentMod)
 	if err != nil {
 		return hcl.Diagnostics{&hcl.Diagnostic{
 			Severity: hcl.DiagError,

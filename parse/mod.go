@@ -113,6 +113,7 @@ func ParseMod(_ context.Context, fileData map[string][]byte, parseCtx *ModParseC
 		diags = append(diags, moreDiags...)
 		return nil, error_helpers.NewErrorsAndWarning(error_helpers.HclDiagsToError("Failed to load mod", diags))
 	}
+	parseCtx.setResourceFilter(content)
 
 	mod := parseCtx.CurrentMod
 	if mod == nil {

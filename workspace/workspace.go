@@ -62,6 +62,9 @@ type Workspace struct {
 	ValidateVariables   bool
 	SupportLateBinding  bool
 	decoderOptions      []parse.DecoderOption
+
+	// if set, only the resources these targets need are loaded
+	ResourceTargets []parse.ResourceTarget
 }
 
 func (w *Workspace) SetupWatcher(ctx context.Context, errorHandler func(context.Context, error)) error {
@@ -162,6 +165,7 @@ func (w *Workspace) LoadWorkspaceMod(ctx context.Context) error_helpers.ErrorAnd
 	if len(w.BlockTypeInclusions) > 0 {
 		parseCtx.SetBlockTypes(w.BlockTypeInclusions...)
 	}
+	parseCtx.SetResourceTargets(w.ResourceTargets...)
 
 	// load the workspace mod
 	m, otherErrorAndWarning := load_mod.LoadMod(ctx, w.Path, parseCtx)
