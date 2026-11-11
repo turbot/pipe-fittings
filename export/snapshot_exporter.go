@@ -3,7 +3,7 @@ package export
 import (
 	"context"
 	"fmt"
-	"strings"
+	"io"
 
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
 
@@ -19,14 +19,7 @@ func (e *SnapshotExporter) Export(_ context.Context, input ExportSourceData, fil
 	if !ok {
 		return fmt.Errorf("SnapshotExporter input must be a SteampipeSnapshot")
 	}
-	snapshotBytes, err := snapshot.AsStrippedJson(false)
-	if err != nil {
-		return err
-	}
-
-	res := strings.NewReader(fmt.Sprintf("%s\n", string(snapshotBytes)))
-
-	return Write(filePath, res)
+	return Write(filePath, NewSnapshotReader(snapshot, false))
 }
 
 func (e *SnapshotExporter) FileExtension() string {
@@ -39,4 +32,16 @@ func (e *SnapshotExporter) Name() string {
 
 func (*SnapshotExporter) Alias() string {
 	return "pps"
+}
+
+// NewSnapshotReader returns a reader for the stripped snapshot JSON followed by a newline: the content of a snapshot file.
+// io.Copy streams it to the destination one panel at a time.
+func NewSnapshotReader(snapshot *steampipeconfig.SteampipeSnapshot, indent bool) *StreamReader {
+	return NewStreamReader(func(w io.Writer) error {
+		if err := snapshot.WriteStrippedJson(w, indent); err != nil {
+			return err
+		}
+		_, err := io.WriteString(w, "\n")
+		return err
+	})
 }
