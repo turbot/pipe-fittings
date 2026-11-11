@@ -2,6 +2,11 @@
 
 Shared Pipes Component
 
+## v2.9.5 [2026-11-11]
+
+* Cut memory use when exporting a snapshot. The snapshot is now converted and written one panel at a time, and a panel's rows one row at a time, instead of holding several full copies of it in memory. The exported file is byte for byte the same as before. ([#816](https://github.com/turbot/pipe-fittings/pull/816))
+* Load only the resources that a run needs. A caller can now set resource targets so that the parser decodes only the targets and the resources they reference, in the mod and its dependency mods; with no targets set, every resource is decoded as before. Source definitions of resources and references now share one copy of each file's text instead of copying it, which cuts the memory held after a load. ([#817](https://github.com/turbot/pipe-fittings/pull/817))
+
 ## v2.9.4 [2026-09-28]
 
 * Fix the export status message doubling the path when `--export` is given an absolute path. The "File exported to" message now prints absolute paths as-is and joins relative paths with the working directory; the exported file itself was always written to the right place. ([#812](https://github.com/turbot/pipe-fittings/pull/812))
