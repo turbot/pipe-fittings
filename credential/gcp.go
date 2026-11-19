@@ -101,7 +101,7 @@ func (c *GcpCredential) Resolve(ctx context.Context) (Credential, error) {
 			Scopes: []string{"https://www.googleapis.com/auth/cloud-platform"},
 		}
 
-		credentials, err := google.CredentialsFromJSONWithParams(context.TODO(), creds, credentialParam)
+		credentials, err := google.CredentialsFromJSONWithTypeAndParams(context.TODO(), creds, google.CredentialsType(credData["type"].(string)), credentialParam)
 		if err != nil {
 			return nil, perr.InternalWithMessage("failed to get credentials from JSON " + err.Error())
 		}
