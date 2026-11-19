@@ -1,25 +1,17 @@
+version: "2"
 run:
-  timeout: 5m
   modules-download-mode: readonly
-
-issues:
-  exclude-rules:
-    - path: pipeparser/utils/user_input.go
-      linters:
-        - forbidigo
-
 linters:
   enable:
     - asasalint
     - asciicheck
     - bidichk
+    - copyloopvar
     - depguard
     - durationcheck
-    # - exhaustive
-    - copyloopvar
     - forbidigo
-    - gocritic
     - gocheckcompilerdirectives
+    - gocritic
     - gosec
     - makezero
     - nilerr
@@ -27,43 +19,64 @@ linters:
     - reassign
     - sqlclosecheck
     - unconvert
-
-
-linters-settings:
-  nolintlint:
-    require-explanation: true
-    require-specific: true
-
-  forbidigo:
-    forbid:
-      - "^(fmt\\.Print(|f|ln)|print|println)$"
-      - "^(fmt\\.Fprint(|f|ln)|print|println)$"
-      - '^zap\.Error$'
-      - '^grpc\.(Header|Trailer)$' # easy to misuse and create a data race
-
-  gocritic:
-    disabled-checks:
-      - ifElseChain       # style
-      - singleCaseSwitch  # style & it's actually not a bad idea to use single case switch in some cases
-      - assignOp          # style
-      - commentFormatting # style
-
-  depguard:
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: go.uber.org/zap
+              desc: do not use Uber zap directly, use the fplog package instead
+            - pkg: github.com/pkg/errors
+              desc: Should be replaced by standard lib errors package
+    forbidigo:
+      forbid:
+        - pattern: ^(fmt\.Print(|f|ln)|print|println)$
+        - pattern: ^(fmt\.Fprint(|f|ln)|print|println)$
+        - pattern: ^zap\.Error$
+        - pattern: ^grpc\.(Header|Trailer)$
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+        - singleCaseSwitch
+        - assignOp
+        - commentFormatting
+    govet:
+      disable:
+        - inline
+    gosec:
+      excludes:
+        - G122
+        - G703
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    staticcheck:
+      checks:
+        - SA*
+        - S1*
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      # Name of a rule.
-      main:
-        # List of file globs that will match this list of settings to compare against.
-        # Default: $all
-        # files:
-        #   - "!**/*_a _file.go"
-        # List of allowed packages.
-        # allow:
-        #   - $gostd
-        #   - github.com/OpenPeeDeeP
-        # Packages that are not allowed where the value is a suggestion.
-        deny:
-          - pkg: "go.uber.org/zap"
-            desc: do not use Uber zap directly, use the fplog package instead
-          - pkg: "github.com/pkg/errors"
-            desc: Should be replaced by standard lib errors package
-
+      - linters:
+          - forbidigo
+        path: pipeparser/utils/user_input.go
+      - linters:
+          - gosec
+        path: (connection/connection_test|sanitize/sanitizer_test)\.go
+        text: "G101: Potential hardcoded credentials: (Password in URL|GitHub personal access token)"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
