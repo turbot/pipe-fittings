@@ -31,7 +31,7 @@ func (av *AvailableVersionCache) asTable() (*tablewriter.Table, error) {
 	}
 
 	table := utils.NewASCIITable(os.Stderr) // notifications are written to stderr to avoid interfering with stdout
-	// no headers, rows are left-aligned and unwrapped (the v1 defaults)
+	// no headers; rows are left-aligned and, with no width limit set, never wrap (the v1 defaults)
 	if err := table.Bulk(notificationTable); err != nil {
 		return nil, err
 	}

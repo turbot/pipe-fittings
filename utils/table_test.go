@@ -5,7 +5,8 @@ import (
 	"testing"
 )
 
-// the expected strings are the output of tablewriter v0.0.5 for the same data
+// the expected strings are the output of tablewriter v0.0.5 for the same data,
+// with the callers' v0 settings (auto-wrap off, left alignment)
 func TestNewASCIITable_withHeader(t *testing.T) {
 	var buf bytes.Buffer
 	table := NewASCIITable(&buf)
