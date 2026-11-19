@@ -53,6 +53,7 @@ linters:
     staticcheck:
       checks:
         - SA*
+        - S1*
   exclusions:
     generated: lax
     presets:
