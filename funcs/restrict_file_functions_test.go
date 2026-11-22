@@ -24,6 +24,8 @@ const testRestrictEnv = "TEST_APP_RESTRICT_FILE_FUNCTIONS"
 //	<root>/mod/link_in -> docs/x.md   a symlink that stays inside
 //	<root>/mod/link_out -> ../outside/secret.txt
 //	<root>/mod/linkdir_out -> ../outside
+//	<root>/mod/dang_out -> ../outside/missing.txt
+//	<root>/mod/locked_out -> ../outside/locked/key
 //	<root>/modlink -> mod             a mod folder reached through a symlink
 type fileFuncFixture struct {
 	root, mod, modLink, outside, secret, locked string
@@ -54,6 +56,8 @@ func newFileFuncFixture(t *testing.T) fileFuncFixture {
 	mustSymlink(t, filepath.Join("docs", "x.md"), filepath.Join(f.mod, "link_in"))
 	mustSymlink(t, filepath.Join("..", "outside", "secret.txt"), filepath.Join(f.mod, "link_out"))
 	mustSymlink(t, filepath.Join("..", "outside"), filepath.Join(f.mod, "linkdir_out"))
+	mustSymlink(t, filepath.Join("..", "outside", "missing.txt"), filepath.Join(f.mod, "dang_out"))
+	mustSymlink(t, filepath.Join("..", "outside", "locked", "key"), filepath.Join(f.mod, "locked_out"))
 	mustSymlink(t, "mod", f.modLink)
 	// a HOME outside the mod, so ~ paths are tested without reading the real home folder
 	t.Setenv("HOME", f.outside)
@@ -143,6 +147,17 @@ func TestRestrictFileFunctions_On_ReadsInsideTheModFolder(t *testing.T) {
 	if got := mustEval(t, f.mod, `fileexists("docs/x.md")`); !got.True() {
 		t.Errorf(`fileexists("docs/x.md") = false, want true`)
 	}
+	// so is one reached through a symlink that stays inside
+	mustSymlink(t, filepath.Join("docs", "missing.md"), filepath.Join(f.mod, "dang_in"))
+	mustSymlink(t, "loop", filepath.Join(f.mod, "loop"))
+	if got := mustEval(t, f.mod, `fileexists("dang_in")`); got.True() {
+		t.Errorf(`fileexists("dang_in") = true, want false`)
+	}
+	// a symlink loop fails, and is not read as outside
+	_, loopDiags := eval(t, f.mod, `file("loop")`)
+	if !loopDiags.HasErrors() || strings.Contains(loopDiags.Error(), errOutsideFolder) {
+		t.Errorf(`file("loop"): want a symlink loop error, got: %v`, loopDiags)
+	}
 	_, diags := eval(t, f.mod, `file("docs/missing.md")`)
 	if !diags.HasErrors() || strings.Contains(diags.Error(), errOutsideFolder) {
 		t.Errorf(`file("docs/missing.md"): want a missing-file error, got: %v`, diags)
@@ -180,6 +195,8 @@ func TestRestrictFileFunctions_On_RefusesPathsOutsideTheModFolder(t *testing.T) 
 		"linkdir_out/secret.txt/x",     // the same, through a symlinked folder
 		filepath.Join(f.locked, "key"), // inside a folder that cannot be searched
 		"linkdir_out/locked/key",       // the same, through a symlinked folder
+		"dang_out",                     // a symlink to a missing file outside
+		"locked_out",                   // a symlink into a folder outside that cannot be searched
 	}
 	for _, name := range singlePathFileFunctions {
 		for _, p := range outsidePaths {
@@ -219,9 +236,10 @@ func TestRestrictFileFunctions_On_FilesetNeverListsOutside(t *testing.T) {
 			t.Errorf(`fileset(".", "**") lists %q, which is outside the mod folder`, m)
 		}
 	}
+	// symlinks outside, to a file that exists, is missing or cannot be reached, are all left out alike
 	got = setStrings(t, mustEval(t, f.mod, `fileset(".", "*")`))
-	if contains(got, "link_out") {
-		t.Errorf(`fileset(".", "*") = %v, lists link_out`, got)
+	if want := []string{"link_in"}; strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf(`fileset(".", "*") = %v, want %v`, got, want)
 	}
 
 	// a brace alternative hides ".." from the pattern check; nothing outside is listed
@@ -264,9 +282,13 @@ func TestRestrictFileFunctions_Off_BehaviourUnchanged(t *testing.T) {
 				t.Errorf(`fileset("..", "outside/*") = %v, want outside/secret.txt`, got)
 			}
 			// the symlink to a file outside is listed, which the setting stops
-			got = setStrings(t, mustEval(t, f.mod, `fileset(".", "*")`))
+			got = setStrings(t, mustEval(t, f.mod, `fileset(".", "link_*")`))
 			if !contains(got, "link_out") {
-				t.Errorf(`fileset(".", "*") = %v, want link_out`, got)
+				t.Errorf(`fileset(".", "link_*") = %v, want link_out`, got)
+			}
+			// and a symlink to a missing file outside makes fileset fail, which tells a mod it is missing
+			if _, diags := eval(t, f.mod, `fileset(".", "dang_*")`); !diags.HasErrors() {
+				t.Errorf(`fileset(".", "dang_*"): want a stat error with the setting off`)
 			}
 		})
 	}

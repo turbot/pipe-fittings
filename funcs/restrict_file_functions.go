@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bmatcuk/doublestar"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/terraform-components/lang/marks"
 	"github.com/zclconf/go-cty/cty"
@@ -80,8 +81,10 @@ func confineSinglePathFunc(name, baseDir string, inner function.Function) functi
 	})
 }
 
-// confineFileSetFunc wraps fileset: the folder argument must resolve inside baseDir, the pattern may not
-// climb out of it, and any match that resolves outside baseDir (through a symlink) is dropped.
+// confineFileSetFunc replaces fileset: the folder argument must resolve inside baseDir, the pattern may not
+// climb out of it, and a match that resolves outside baseDir (through a symlink) is left out before it is
+// looked at, so neither the result nor an error says anything about a file outside. Otherwise it does what
+// terraform-components' fileset does.
 func confineFileSetFunc(baseDir string, inner function.Function) function.Function {
 	return function.New(&function.Spec{
 		Description: inner.Description(),
@@ -93,6 +96,7 @@ func confineFileSetFunc(baseDir string, inner function.Function) function.Functi
 			path := pathArg.AsString()
 			patternArg, patternMarks := args[1].Unmark()
 			pattern := patternArg.AsString()
+			allMarks := []cty.ValueMarks{pathMarks, patternMarks}
 
 			root, err := resolveRoot(baseDir)
 			if err != nil {
@@ -102,36 +106,42 @@ func confineFileSetFunc(baseDir string, inner function.Function) function.Functi
 			if err != nil {
 				return cty.UnknownVal(retType), function.NewArgError(0, confineError("fileset", path, pathMarks, err))
 			}
-			// the pattern is joined to the folder by fileset itself; a pattern that climbs out with ".."
-			// would glob (and walk) folders outside the mod folder
-			if !isWithin(root, filepath.Join(resolved, pattern)) {
+			// a pattern that climbs out with ".." would glob (and walk) folders outside the mod folder
+			fullPattern := filepath.Join(resolved, pattern)
+			if !isWithin(root, fullPattern) {
 				return cty.UnknownVal(retType), function.NewArgError(1, confineError("fileset", pattern, patternMarks, errors.New(errOutsideFolder)))
 			}
 
-			result, err := inner.Call([]cty.Value{cty.StringVal(resolved).WithMarks(pathMarks), args[1]})
+			matches, err := doublestar.Glob(fullPattern)
 			if err != nil {
-				return result, err
+				return cty.UnknownVal(retType), fmt.Errorf("failed to glob pattern %s: %w", redact(pattern, allMarks...), err)
 			}
 
-			matches, resultMarks := result.Unmark()
-			if !matches.IsKnown() || matches.IsNull() || matches.LengthInt() == 0 {
-				return result, nil
-			}
-			var kept []cty.Value
-			for it := matches.ElementIterator(); it.Next(); {
-				_, match := it.Element()
-				full := filepath.Join(resolved, filepath.FromSlash(match.AsString()))
-				target, err := filepath.EvalSymlinks(full)
-				// a match that can no longer be resolved, or that resolves outside the folder, is left out
+			var matchVals []cty.Value
+			for _, match := range matches {
+				target, err := resolvePath(match)
 				if err != nil || !isWithin(root, target) {
 					continue
 				}
-				kept = append(kept, match)
+				fi, err := os.Stat(target)
+				if err != nil {
+					return cty.UnknownVal(retType), fmt.Errorf("failed to stat %s: %w", redact(match, allMarks...), err)
+				}
+				if !fi.Mode().IsRegular() {
+					continue
+				}
+				rel, err := filepath.Rel(resolved, match)
+				if err != nil {
+					return cty.UnknownVal(retType), fmt.Errorf("failed to trim path of match %s: %w", redact(match, allMarks...), err)
+				}
+				// forward slashes, for cross-system compatibility, as fileset does
+				matchVals = append(matchVals, cty.StringVal(filepath.ToSlash(rel)))
 			}
-			if len(kept) == 0 {
-				return cty.SetValEmpty(cty.String).WithMarks(resultMarks), nil
+
+			if len(matchVals) == 0 {
+				return cty.SetValEmpty(cty.String).WithMarks(allMarks...), nil
 			}
-			return cty.SetVal(kept).WithMarks(resultMarks), nil
+			return cty.SetVal(matchVals).WithMarks(allMarks...), nil
 		},
 	})
 }
@@ -165,7 +175,7 @@ func confinePath(baseDir, path string) (string, error) {
 		return "", errors.New(errOutsideFolder)
 	}
 
-	resolved, err := resolveExisting(abs)
+	resolved, err := resolvePath(abs)
 	if err != nil {
 		return "", err
 	}
@@ -189,25 +199,57 @@ func resolveRoot(baseDir string) (string, error) {
 	return root, nil
 }
 
-// resolveExisting resolves the symlinks in an absolute, clean path. When the path cannot be resolved
-// (it is missing, or a folder on the way is not a folder or cannot be searched), the deepest folder above it
-// that can is resolved and the rest appended. A missing file can then still be checked against the folder
-// (and reported missing by the function itself), and a path that leaves the folder through a symlink is
-// refused whatever error looking it up would give.
-func resolveExisting(path string) (string, error) {
-	resolved, err := filepath.EvalSymlinks(path)
-	if err == nil {
-		return resolved, nil
+// maxSymlinks bounds the symlinks resolvePath follows, as the OS does, so a symlink loop ends
+const maxSymlinks = 255
+
+// resolvePath resolves the symlinks in an absolute, clean path one part at a time, following each symlink
+// by its target whether or not that target exists. Once a part cannot be looked up (it is missing, or a
+// folder on the way is not a folder or cannot be searched), the rest is appended as written: the OS cannot
+// follow anything past that part either. So a missing file inside the folder can still be checked (and is
+// reported missing by the function itself), and a symlink that points outside is refused whether or not its
+// target exists or can be reached.
+func resolvePath(path string) (string, error) {
+	sep := string(filepath.Separator)
+	vol := filepath.VolumeName(path)
+	resolved := vol + sep
+	pending := strings.Split(path[len(vol):], sep)
+	links := 0
+	for len(pending) > 0 {
+		part := pending[0]
+		pending = pending[1:]
+		switch part {
+		case "", ".":
+			continue
+		case "..":
+			resolved = filepath.Dir(resolved)
+			continue
+		}
+		next := filepath.Join(resolved, part)
+		fi, err := os.Lstat(next)
+		if err != nil {
+			return filepath.Join(append([]string{next}, pending...)...), nil
+		}
+		if fi.Mode()&os.ModeSymlink == 0 {
+			resolved = next
+			continue
+		}
+		links++
+		if links > maxSymlinks {
+			return "", fmt.Errorf("too many levels of symbolic links")
+		}
+		target, err := os.Readlink(next)
+		if err != nil {
+			return "", err
+		}
+		if filepath.IsAbs(target) {
+			targetVol := filepath.VolumeName(target)
+			resolved = targetVol + sep
+			target = target[len(targetVol):]
+		}
+		// a relative target is read from the folder holding the symlink, which is resolved
+		pending = append(strings.Split(target, sep), pending...)
 	}
-	parent := filepath.Dir(path)
-	if parent == path {
-		return "", err
-	}
-	resolvedParent, err := resolveExisting(parent)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(resolvedParent, filepath.Base(path)), nil
+	return resolved, nil
 }
 
 // isWithin reports whether path, once cleaned, is root or lies under it
@@ -238,9 +280,14 @@ func expandHome(path string) (string, error) {
 // confineError formats a refusal as `file("/etc/passwd"): path is outside the mod folder`, hiding a
 // path that is marked sensitive
 func confineError(name, path string, pathMarks cty.ValueMarks, err error) error {
-	shown := fmt.Sprintf("%q", path)
-	if marks.Has(cty.DynamicVal.WithMarks(pathMarks), marks.Sensitive) {
-		shown = "(sensitive value)"
+	return fmt.Errorf("%s(%s): %w", name, redact(path, pathMarks), err)
+}
+
+// redact quotes a path for an error message, or hides it when any of its marks is sensitive, as
+// terraform-components' file functions do
+func redact(path string, pathMarks ...cty.ValueMarks) string {
+	if marks.Has(cty.DynamicVal.WithMarks(pathMarks...), marks.Sensitive) {
+		return "(sensitive value)"
 	}
-	return fmt.Errorf("%s(%s): %w", name, shown, err)
+	return fmt.Sprintf("%q", path)
 }
