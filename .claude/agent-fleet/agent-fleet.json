@@ -1,4 +1,6 @@
 {
+  "platforms": ["darwin", "linux"],
+  "tools": ["go"],
   "secrets": {},
   "chores": {
     "security-audit": {

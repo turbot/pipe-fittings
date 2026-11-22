@@ -1,30 +1,53 @@
-# TODO(seam): a stub installed by the fleet kit. Replace it with what a change to THIS repo must run and show.
+# What a change to pipe-fittings must run and show before an agent's PR counts as done: the checks
+# CI runs on a PR (golangci-lint, then the unit tests), plus a build of every package.
 #
-# `agent-fleet gates owed` reads this file and the diff, matches the changed paths to the
-# kinds below, and lists every check, proof and skill those kinds owe. A path no kind
-# matches falls to the built-in `other` kind (show: test, plus the check named `fast`).
-# Every key is described in kits/fleet/GATES.md in the kit repo, and two complete
-# manifests sit under kits/fleet/examples/ (web-app, turbot-core).
-# `agent-fleet gates check` validates this file. `agent-fleet dispatcher mode live` refuses to leave
-# dry-run while it has an error or any `# TODO(seam)` comment is left in it.
+# pipe-fittings is a Go library. It has no binary, no UI and no service, so nothing here owes
+# screenshots. The Go proxy serves a tag as soon as it is pushed, so a tag is a release.
+#
+# Left out on purpose:
+# - `make test`: it runs `go clean -testcache` first, which clears the test results of every Go
+#   checkout on the machine, not only this one (see never_run). The unit check runs the same
+#   `go test` without it.
+# - filter/test.sh: it regenerates filter.go with pigeon from a path on one developer's machine,
+#   so it fails anywhere else. The unit check runs the filter package's tests.
 
-# needs:                   # what a check needs from the machine (kits/fleet/GATES.md § needs)
-#   my-token: {env: MY_NPM_TOKEN}   # a secret the repo declares in agent-fleet.json; commit a project .npmrc that reads it.
-#                                   # Never a `probe` that looks in the worker owner's ~/.npmrc or ~/.yarnrc: it
-#                                   # breaks every other repo the worker serves, and `gates check` warns on it.
-#                                   # (A probe for a login this machine keeps, such as ~/.config/x/credentials.yml, is fine.)
-# never_run:               # commands a run must never execute: deploys, anything touching production
-#   - make deploy*
-# ignore:                  # paths that belong to no kind on purpose
-#   - vendor/**
+ci_is_proof: false
+
+never_run:
+  # A pushed v* tag is a release: the Go proxy serves it at once and it cannot be taken back
+  - git tag
+  - git push --tags
+  - git push origin v*
+  - git push origin refs/tags/*
+  - gh release
+  - gh workflow run
+  # These clear caches that every Go checkout on the machine shares
+  - make test
+  - go clean -testcache
+  - go clean -cache
+  - go clean -modcache
 
 checks:
-  fast: {run: "echo 'TODO(seam): name the quick check for this repo'; exit 1"}   # e.g. just test, npm test
+  build: {run: "go build ./...", cost: 1}
+  unit: {run: "go test ./... -timeout 120s", cost: 1}
+  # CI runs golangci-lint `latest`; this pins the v2 release that is clean on develop. GOOS=linux
+  # because CI lints on Linux.
+  lint:
+    run: 'd=$(mktemp -d) && GOBIN="$d" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux "$d/golangci-lint" run --timeout=15m'
+    cost: 2
 
 kinds:
-  code:
-    paths: ["**"]          # TODO(seam): narrow this to the repo's source paths, and add a kind per area
-    checks: [fast]
-    show: [test]           # a test for the change, happy and unhappy path
-
-# TODO(seam) — remove this line when this file describes THIS repo
+  go:
+    paths: ["**/*.go", "go.mod", "go.sum", ".golangci.yaml", "filter/filter.peg"]
+    checks: [build, unit, lint]
+    show: [test]
+  testdata:
+    paths: ["workspace/test_data/**"]
+    checks: [unit]
+    show: [test]
+  workflows:
+    paths: [".github/**", "Makefile", "filter/test.sh", ".gitattributes", ".gitignore"]
+    show: [none]
+  docs:
+    paths: ["**/*.md", ".claude/**", "LICENSE"]
+    show: [none]
