@@ -6,10 +6,10 @@
 #
 # Left out on purpose:
 # - `make test`: it runs `go clean -testcache` first, which clears the test results of every Go
-#   checkout on the machine, not only this one (see never_run). The unit check runs the same
+#   checkout on the machine, not only this one (see never_run). The fast check runs the same
 #   `go test` without it.
 # - filter/test.sh: it regenerates filter.go with pigeon from a path on one developer's machine,
-#   so it fails anywhere else. The unit check runs the filter package's tests.
+#   so it fails anywhere else. The fast check runs the filter package's tests.
 
 ci_is_proof: false
 
@@ -27,7 +27,9 @@ never_run:
 
 checks:
   build: {run: "go build ./...", cost: 1}
-  unit: {run: "go test ./... -timeout 120s", cost: 1}
+  # The unit tests. Named fast so that a path no kind below matches (the built-in other kind,
+  # such as a new testdata folder) owes them too.
+  fast: {run: "go test ./... -timeout 120s", cost: 1}
   # CI runs golangci-lint `latest`; this pins the v2 release that is clean on develop. GOOS=linux
   # because CI lints on Linux.
   lint:
@@ -37,13 +39,12 @@ checks:
 kinds:
   go:
     paths: ["**/*.go", "go.mod", "go.sum", ".golangci.yaml", "filter/filter.peg"]
-    checks: [build, unit, lint]
+    checks: [build, fast, lint]
     show: [test]
-  # Fixtures the tests read: today all under workspace/test_data, and a new test may add a
-  # testdata folder anywhere, or mod, connection and query files.
+  # Fixtures the tests read
   testdata:
-    paths: ["**/test_data/**", "**/testdata/**", "**/*.sp", "**/*.pp", "**/*.fp", "**/*.tp", "**/*.hcl", "**/*.spc", "**/*.sql"]
-    checks: [unit]
+    paths: ["workspace/test_data/**"]
+    checks: [fast]
     show: [test]
   workflows:
     paths: [".github/**", "Makefile", "filter/test.sh", ".gitattributes", ".gitignore"]
