@@ -17,8 +17,6 @@ never_run:
   # A pushed v* tag is a release: the Go proxy serves it at once and it cannot be taken back
   - git tag
   - git push --tags
-  - git push origin v*
-  - git push origin refs/tags/*
   - gh release
   - gh workflow run
   # These clear caches that every Go checkout on the machine shares
@@ -41,8 +39,10 @@ kinds:
     paths: ["**/*.go", "go.mod", "go.sum", ".golangci.yaml", "filter/filter.peg"]
     checks: [build, unit, lint]
     show: [test]
+  # Fixtures the tests read: today all under workspace/test_data, and a new test may add a
+  # testdata folder anywhere, or mod, connection and query files.
   testdata:
-    paths: ["workspace/test_data/**"]
+    paths: ["**/test_data/**", "**/testdata/**", "**/*.sp", "**/*.pp", "**/*.fp", "**/*.tp", "**/*.hcl", "**/*.spc", "**/*.sql"]
     checks: [unit]
     show: [test]
   workflows:
