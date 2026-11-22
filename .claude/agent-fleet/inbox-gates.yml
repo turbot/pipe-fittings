@@ -17,13 +17,15 @@ never_run:
   # A pushed v* tag is a release: the Go proxy serves it at once and it cannot be taken back
   - git tag
   - git push --tags
+  - git push origin --tags
+  - git push --follow-tags
+  - git push origin --follow-tags
   - gh release
+  # Dispatching stale.yaml by hand closes the repo's idle issues and PRs
   - gh workflow run
   # These clear caches that every Go checkout on the machine shares
   - make test
-  - go clean -testcache
-  - go clean -cache
-  - go clean -modcache
+  - go clean*
 
 checks:
   build: {run: "go build ./...", cost: 1}
@@ -33,7 +35,7 @@ checks:
   # CI runs golangci-lint `latest`; this pins the v2 release that is clean on develop. GOOS=linux
   # because CI lints on Linux.
   lint:
-    run: 'd=$(mktemp -d) && GOBIN="$d" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux "$d/golangci-lint" run --timeout=15m'
+    run: 'd=$(mktemp -d) && trap ''rm -rf "$d"'' EXIT && GOBIN="$d" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux "$d/golangci-lint" run --timeout=15m'
     cost: 2
 
 kinds:
