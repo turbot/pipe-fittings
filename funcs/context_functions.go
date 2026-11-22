@@ -11,7 +11,9 @@ import (
 
 // from `github.com/hashicorp/terraform/internal/lang/functions.go`
 
-// ContextFunctions returns the set of functions that should be used to when evaluating expressions
+// ContextFunctions returns the set of functions that should be used to when evaluating expressions.
+// When the app's RESTRICT_FILE_FUNCTIONS env var is true (see RestrictFileFunctionsEnabled), the file
+// functions only read inside baseDir.
 func ContextFunctions(baseDir string) map[string]function.Function {
 
 	ctxFuncs := map[string]function.Function{
@@ -133,6 +135,10 @@ func ContextFunctions(baseDir string) map[string]function.Function {
 		"is_error":         IsErrorFunc,
 		"error_message":    ErrorMessageFunc,
 		"env":              EnvFunc,
+	}
+
+	if RestrictFileFunctionsEnabled() {
+		confineFileFunctions(ctxFuncs, baseDir)
 	}
 
 	return ctxFuncs
