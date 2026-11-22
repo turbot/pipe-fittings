@@ -3,7 +3,6 @@ package funcs
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -157,6 +156,15 @@ func confinePath(baseDir, path string) (string, error) {
 		return "", err
 	}
 
+	// refuse a path that is outside before touching it, so its lookup error cannot tell a mod what exists there
+	absBase, err := filepath.Abs(baseDir)
+	if err != nil {
+		return "", err
+	}
+	if !isWithin(absBase, abs) && !isWithin(root, abs) {
+		return "", errors.New(errOutsideFolder)
+	}
+
 	resolved, err := resolveExisting(abs)
 	if err != nil {
 		return "", err
@@ -181,16 +189,15 @@ func resolveRoot(baseDir string) (string, error) {
 	return root, nil
 }
 
-// resolveExisting resolves the symlinks in an absolute, clean path. When the path does not exist, the
-// deepest folder above it that does is resolved and the missing part appended, so a missing file can still
-// be checked against the folder (and reported missing by the function itself).
+// resolveExisting resolves the symlinks in an absolute, clean path. When the path cannot be resolved
+// (it is missing, or a folder on the way is not a folder or cannot be searched), the deepest folder above it
+// that can is resolved and the rest appended. A missing file can then still be checked against the folder
+// (and reported missing by the function itself), and a path that leaves the folder through a symlink is
+// refused whatever error looking it up would give.
 func resolveExisting(path string) (string, error) {
 	resolved, err := filepath.EvalSymlinks(path)
 	if err == nil {
 		return resolved, nil
-	}
-	if !errors.Is(err, fs.ErrNotExist) {
-		return "", err
 	}
 	parent := filepath.Dir(path)
 	if parent == path {

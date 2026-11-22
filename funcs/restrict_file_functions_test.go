@@ -19,13 +19,14 @@ const testRestrictEnv = "TEST_APP_RESTRICT_FILE_FUNCTIONS"
 // fileFuncFixture is a mod folder beside a folder outside it:
 //
 //	<root>/outside/secret.txt         the file a mod must not read
+//	<root>/outside/locked/key         a file in a folder that cannot be searched
 //	<root>/mod/docs/x.md              a file inside the mod
 //	<root>/mod/link_in -> docs/x.md   a symlink that stays inside
 //	<root>/mod/link_out -> ../outside/secret.txt
 //	<root>/mod/linkdir_out -> ../outside
 //	<root>/modlink -> mod             a mod folder reached through a symlink
 type fileFuncFixture struct {
-	root, mod, modLink, outside, secret string
+	root, mod, modLink, outside, secret, locked string
 }
 
 func newFileFuncFixture(t *testing.T) fileFuncFixture {
@@ -37,11 +38,19 @@ func newFileFuncFixture(t *testing.T) fileFuncFixture {
 		modLink: filepath.Join(root, "modlink"),
 		outside: filepath.Join(root, "outside"),
 		secret:  filepath.Join(root, "outside", "secret.txt"),
+		locked:  filepath.Join(root, "outside", "locked"),
 	}
 	mustMkdir(t, filepath.Join(f.mod, "docs"))
 	mustMkdir(t, f.outside)
 	mustWrite(t, filepath.Join(f.mod, "docs", "x.md"), "hello")
 	mustWrite(t, f.secret, "tls-key")
+	mustMkdir(t, f.locked)
+	mustWrite(t, filepath.Join(f.locked, "key"), "locked-key")
+	if err := os.Chmod(f.locked, 0); err != nil {
+		t.Fatal(err)
+	}
+	// let t.TempDir remove it
+	t.Cleanup(func() { _ = os.Chmod(f.locked, 0o755) })
 	mustSymlink(t, filepath.Join("docs", "x.md"), filepath.Join(f.mod, "link_in"))
 	mustSymlink(t, filepath.Join("..", "outside", "secret.txt"), filepath.Join(f.mod, "link_out"))
 	mustSymlink(t, filepath.Join("..", "outside"), filepath.Join(f.mod, "linkdir_out"))
@@ -165,6 +174,12 @@ func TestRestrictFileFunctions_On_RefusesPathsOutsideTheModFolder(t *testing.T) 
 		"linkdir_out/missing.txt", // missing, through a symlinked folder outside
 		"~/secret.txt",            // home folder
 		"..",                      // the parent folder itself
+		// outside paths whose lookup fails other than "not found" get the same refusal, so the error
+		// never tells a mod what exists outside
+		"/etc/passwd/x",                // a file used as a folder
+		"linkdir_out/secret.txt/x",     // the same, through a symlinked folder
+		filepath.Join(f.locked, "key"), // inside a folder that cannot be searched
+		"linkdir_out/locked/key",       // the same, through a symlinked folder
 	}
 	for _, name := range singlePathFileFunctions {
 		for _, p := range outsidePaths {
