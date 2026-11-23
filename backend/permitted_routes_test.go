@@ -71,6 +71,8 @@ func setPermittedForRoutes(t *testing.T, value string) {
 // that copy the permitted folder when permit is set, and puts a CSV and a file that is not an extension outside it
 func newRoutesDirs(t *testing.T, permit bool) routesDirs {
 	t.Helper()
+	// DuckDB keeps persistent secrets and extensions under HOME: never the real one
+	t.Setenv("HOME", t.TempDir())
 	base, err := filepath.EvalSymlinks(t.TempDir())
 	if err != nil {
 		t.Fatal(err)

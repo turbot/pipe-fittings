@@ -41,17 +41,21 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 // duckDBPermittedInit returns the init that locks each DuckDB connection to the permitted folders.
 //
 // The settings it leaves in force are DuckDB globals, shared by every connection to one database instance:
-//   - temp_directory: a folder of its own inside the first permitted folder (duckDBTempDir), so DuckDB's temp
+//   - temp_directory: a folder of its own inside the first permitted folder it can be made in (duckDBTempDir), so DuckDB's temp
 //     files, and the folder it adds to allowed_directories for them, lie inside the folders;
 //   - allowed_directories: every permitted folder, as written and with its symlinks resolved, each ending in a
 //     separator, as DuckDB matches them as prefixes (so /data/a never admits /data/ab);
 //   - allowed_paths: empty, so no single file outside the folders is let through (a DSN could set it);
+//   - allow_persistent_secrets = false: DuckDB keeps persistent secrets in <HOME>/.duckdb/stored_secrets,
+//     outside the folders, and external access does not cover them, so SQL could otherwise write a secret
+//     there, or replace or drop one the user stored;
 //   - enable_external_access = false: no file outside those folders is read, written or attached, and no
 //     extension is installed or loaded;
 //   - lock_configuration = true: no later SQL can change any setting back.
 //
-// Order. On the instance's first connection (lock_configuration still false) pipe-fittings' own extension
-// setup runs first, because DuckDB refuses to install or load an extension once external access is off; then
+// Order. On the instance's first connection (lock_configuration still false) allow_persistent_secrets is
+// turned off first, as DuckDB will not change it once anything has used its secrets; then pipe-fittings' own
+// extension setup runs, because DuckDB refuses to install or load an extension once external access is off; then
 // the temp folder and the two lists, which DuckDB will not change once external access is off; then external access; then the
 // lock. Only after this does any other SQL run: the caller's queries, and a duckdbinit script, which its
 // Connect runs after the pool's first connection is locked. A later connection finds the lock in force and
@@ -113,50 +117,61 @@ func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 // the first symlink in it that leads outside the folders (whether or not what it leads to exists), or that
 // cannot be followed. A symlink that leads inside is not followed, as the folder it leads to is walked in its
 // own right.
-//
-// What DuckDB cannot read through is skipped, as it cannot lead DuckDB anywhere: a folder this process cannot
-// enter, and a symlink loop whose first step stays inside the folders. A folder that does not exist has nothing
-// in it. Any other error fails, so a folder that can be entered but not listed (where DuckDB could reach a
-// symlink by name) fails, as it cannot be shown free of such a symlink.
 func duckDBOutwardSymlink(roots []string) error {
 	for _, root := range roots {
 		resolved, err := permitted_paths.Check(root)
 		if err != nil {
 			return err
 		}
-		err = filepath.WalkDir(resolved, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				if path == resolved && errors.Is(err, fs.ErrNotExist) {
-					return fs.SkipAll
-				}
-				if d != nil && d.IsDir() && errors.Is(err, fs.ErrPermission) && !duckDBCanEnter(path) {
-					return fs.SkipDir
-				}
-				return fmt.Errorf("could not search %s for symlinks that lead outside the folders %s permits: %w", path, permitted_paths.Setting(), err)
-			}
-			if d.Type()&os.ModeSymlink == 0 {
-				return nil
-			}
-			_, err = permitted_paths.Check(path)
-			if errors.Is(err, permitted_paths.ErrSymlinkLoop) && duckDBLinkStaysInside(path) {
-				// DuckDB cannot read through a loop either
-				return nil
-			}
-			if err != nil {
-				var outside *permitted_paths.OutsideError
-				if errors.As(err, &outside) || errors.Is(err, permitted_paths.ErrSymlinkLoop) {
-					return fmt.Errorf("%s is a symlink that leads outside the folders %s permits, which DuckDB would follow: remove it, or add the folder it leads to to the setting", path, permitted_paths.Setting())
-				}
-				// a symlink that cannot be followed cannot be shown to stay inside
-				return fmt.Errorf("could not follow the symlink %s, so %s cannot be applied to DuckDB: %w", path, permitted_paths.Setting(), err)
-			}
-			return nil
-		})
-		if err != nil {
+		if err := filepath.WalkDir(resolved, duckDBSymlinkWalk(resolved)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// duckDBSymlinkWalk returns the WalkDirFunc duckDBOutwardSymlink walks the permitted folder resolved with.
+//
+// What DuckDB cannot read through is skipped, as it cannot lead DuckDB anywhere: a folder this process cannot
+// enter, and a symlink loop whose first step stays inside the folders. A folder that does not exist, or no
+// longer does, has nothing in it: DuckDB removes its own temp folder (under duckDBTempDirName) when a database
+// closes, which may be while this walk runs. Any other error fails, so a folder that can be entered but not
+// listed (where DuckDB could reach a symlink by name) fails, as it cannot be shown free of such a symlink.
+func duckDBSymlinkWalk(resolved string) fs.WalkDirFunc {
+	return func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				if path == resolved {
+					return fs.SkipAll
+				}
+				if d != nil && d.IsDir() {
+					return fs.SkipDir
+				}
+				return nil
+			}
+			if d != nil && d.IsDir() && errors.Is(err, fs.ErrPermission) && !duckDBCanEnter(path) {
+				return fs.SkipDir
+			}
+			return fmt.Errorf("could not search %s for symlinks that lead outside the folders %s permits: %w", path, permitted_paths.Setting(), err)
+		}
+		if d.Type()&os.ModeSymlink == 0 {
+			return nil
+		}
+		_, err = permitted_paths.Check(path)
+		if errors.Is(err, permitted_paths.ErrSymlinkLoop) && duckDBLinkStaysInside(path) {
+			// DuckDB cannot read through a loop either
+			return nil
+		}
+		if err != nil {
+			var outside *permitted_paths.OutsideError
+			if errors.As(err, &outside) || errors.Is(err, permitted_paths.ErrSymlinkLoop) {
+				return fmt.Errorf("%s is a symlink that leads outside the folders %s permits, which DuckDB would follow: remove it, or add the folder it leads to to the setting", path, permitted_paths.Setting())
+			}
+			// a symlink that cannot be followed cannot be shown to stay inside
+			return fmt.Errorf("could not follow the symlink %s, so %s cannot be applied to DuckDB: %w", path, permitted_paths.Setting(), err)
+		}
+		return nil
+	}
 }
 
 // duckDBCanEnter reports whether this process can look up a name in the folder dir, which is what DuckDB needs
@@ -180,21 +195,45 @@ func duckDBLinkStaysInside(link string) bool {
 	return permitted_paths.Within(target)
 }
 
-// duckDBTempDirName is the folder, inside the first permitted folder, that holds each DuckDB database's temp folder
+// duckDBTempDirName is the folder, inside a permitted folder, that holds each DuckDB database's temp folder
 const duckDBTempDirName = ".duckdb_tmp"
 
 // duckDBTempDir returns the temp folder for one DuckDB database: a folder of its own, not yet made, under
-// duckDBTempDirName in the first of roots that exists (or the first, made if missing). Each database has its
-// own, as DuckDB names its temp files the same way in every process and removes them when it closes. DuckDB
-// makes the folder when it first spills to disk, and removes it again when it closes, as it made it.
+// duckDBTempDirName in the first of roots where one can be made. Folders that exist are tried first, in order,
+// then the rest, each made if missing; a root this process cannot write to is passed over, and only when none
+// will do does the open fail. Each database has its own temp folder, as DuckDB names its temp files the same
+// way in every process and removes them when it closes. DuckDB makes the folder when it first spills to disk,
+// and removes it again when it closes, as it made it.
 func duckDBTempDir(roots []string) (string, error) {
-	root := roots[0]
+	var existing, missing []string
 	for _, r := range roots {
 		if fi, err := os.Stat(r); err == nil && fi.IsDir() {
-			root = r
-			break
+			existing = append(existing, r)
+		} else {
+			missing = append(missing, r)
 		}
 	}
+	var firstErr error
+	for _, root := range append(existing, missing...) {
+		dir, err := duckDBTempDirIn(root)
+		if err == nil {
+			return dir, nil
+		}
+		var outside *duckDBTempDirOutsideError
+		if errors.As(err, &outside) {
+			// a symlink that leads out fails the open, whatever a later root holds
+			return "", err
+		}
+		if firstErr == nil {
+			firstErr = err
+		}
+	}
+	return "", firstErr
+}
+
+// duckDBTempDirIn returns a temp folder name under duckDBTempDirName in root, once it has shown that the folder
+// can be made there (it makes it and removes it again, so DuckDB still makes and removes it itself)
+func duckDBTempDirIn(root string) (string, error) {
 	parent := filepath.Join(root, duckDBTempDirName)
 	if err := os.MkdirAll(parent, 0o700); err != nil {
 		return "", fmt.Errorf("could not make a DuckDB temp folder inside the folders %s permits: %w", permitted_paths.Setting(), err)
@@ -202,14 +241,32 @@ func duckDBTempDir(roots []string) (string, error) {
 	dir := filepath.Join(parent, fmt.Sprintf("%d-%s", os.Getpid(), rand.Text()))
 	if !isPermitted(dir) {
 		// a symlink made at that name since the folders were searched
-		return "", fmt.Errorf("%s does not lie inside the folders %s permits", parent, permitted_paths.Setting())
+		return "", &duckDBTempDirOutsideError{parent: parent}
+	}
+	if err := os.Mkdir(dir, 0o700); err != nil {
+		return "", fmt.Errorf("could not make a DuckDB temp folder inside the folders %s permits: %w", permitted_paths.Setting(), err)
+	}
+	if err := os.Remove(dir); err != nil {
+		return "", fmt.Errorf("could not remove the DuckDB temp folder %s: %w", dir, err)
 	}
 	return dir, nil
 }
 
-// duckDBLock runs the extension setup and sets the lock's settings, in that order
+// duckDBTempDirOutsideError is a duckDBTempDirName folder that does not lie inside the folders: a symlink
+// made there since the folders were searched
+type duckDBTempDirOutsideError struct{ parent string }
+
+func (e *duckDBTempDirOutsideError) Error() string {
+	return fmt.Sprintf("%s does not lie inside the folders %s permits", e.parent, permitted_paths.Setting())
+}
+
+// duckDBLock turns off persistent secrets, runs the extension setup and sets the lock's settings, in that order
 func duckDBLock(ctx context.Context, conn driver.Conn, tempDir string, dirs []string) error {
 	exec := func(query string) error { return execConn(ctx, conn, query) }
+	// DuckDB refuses to change this once anything has used its secrets, so it goes before the extension setup
+	if err := exec("SET allow_persistent_secrets = false"); err != nil {
+		return fmt.Errorf("SET allow_persistent_secrets = false: %w", err)
+	}
 	if err := duckDbExtensionSetup(exec); err != nil {
 		return err
 	}
@@ -242,6 +299,13 @@ func duckDBVerifyLock(ctx context.Context, conn driver.Conn, dirs []string, own 
 	}
 	if !locked {
 		return errors.New("lock_configuration is false")
+	}
+	persistent, err := duckDBSettingBool(ctx, conn, "allow_persistent_secrets")
+	if err != nil {
+		return err
+	}
+	if persistent {
+		return errors.New("allow_persistent_secrets is true")
 	}
 	got, err := duckDBSettingList(ctx, conn, "allowed_directories")
 	if err != nil {

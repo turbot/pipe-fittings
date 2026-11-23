@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -37,6 +38,9 @@ func newDuckDBTest(t *testing.T) duckDBTestFolders {
 		filepaths.PipesInstallDir = prevInstall
 		duckDbExtensionSetup = prevSetup
 	})
+
+	// DuckDB keeps persistent secrets and extensions under HOME: never the real one
+	t.Setenv("HOME", t.TempDir())
 
 	base := t.TempDir()
 	f := duckDBTestFolders{
@@ -587,5 +591,163 @@ func TestDuckDBPermittedSymlinks(t *testing.T) {
 			t.Fatalf("Connect: %v", err)
 		}
 		mustRead(t, db, filepath.Join(f.in, "linkdir", "b.csv"))
+	})
+}
+
+// TestDuckDBPermittedPersistentSecrets shows that mod SQL cannot write, replace or drop DuckDB's persistent
+// secrets, which DuckDB keeps outside the folders in <HOME>/.duckdb/stored_secrets. HOME is a temp folder.
+func TestDuckDBPermittedPersistentSecrets(t *testing.T) {
+	f := newDuckDBTest(t)
+	secrets := filepath.Join(os.Getenv("HOME"), ".duckdb", "stored_secrets")
+	if err := os.MkdirAll(secrets, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	// a secret the user stored before
+	const stored = "users_secret"
+	if err := setPermittedEnv(t, ""); err != nil {
+		t.Fatal(err)
+	}
+	before, err := connectDuckDB(t, "duckdb://", 1)
+	if err != nil {
+		t.Fatalf("Connect without the setting: %v", err)
+	}
+	if _, err := before.Exec("CREATE PERSISTENT SECRET " + stored + " (TYPE http, BEARER_TOKEN 'keep')"); err != nil {
+		t.Fatalf("storing the user's secret: %v", err)
+	}
+	_ = before.Close()
+	storedFile := filepath.Join(secrets, stored+".duckdb_secret")
+	want, err := os.ReadFile(storedFile)
+	if err != nil {
+		t.Fatalf("the user's secret was not stored: %v", err)
+	}
+
+	permitFolders(t, f.in)
+	db, err := connectDuckDB(t, "duckdb://", 2)
+	if err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	for _, stmt := range []string{
+		"CREATE PERSISTENT SECRET mod_secret (TYPE http, BEARER_TOKEN 'x')",
+		"CREATE OR REPLACE PERSISTENT SECRET " + stored + " (TYPE http, BEARER_TOKEN 'replaced')",
+		"DROP PERSISTENT SECRET " + stored,
+		"SET allow_persistent_secrets = true",
+		"SET secret_directory = " + q(f.in),
+	} {
+		if _, err := db.Exec(stmt); err == nil {
+			t.Errorf("%s: want an error, got none", stmt)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(secrets, "mod_secret.duckdb_secret")); err == nil {
+		t.Error("mod SQL wrote a persistent secret")
+	}
+	if got, err := os.ReadFile(storedFile); err != nil || string(got) != string(want) {
+		t.Errorf("the user's stored secret was changed or removed: %v", err)
+	}
+	assertLocked(t, db, f)
+}
+
+// TestDuckDBPermittedSymlinkWalkVanish shows that the symlink search goes on past a folder that vanishes while
+// it runs, as DuckDB's own temp folder does when another database closes: the folder is removed after the walk
+// has listed it and before it reads it, so the read fails with "not exist". An outward symlink after it is
+// still found.
+func TestDuckDBPermittedSymlinkWalkVanish(t *testing.T) {
+	f := newDuckDBTest(t)
+	permitFolders(t, f.in)
+	resolved, err := filepath.EvalSymlinks(f.in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vanishing := filepath.Join(resolved, duckDBTempDirName, "123-spill")
+	if err := os.MkdirAll(filepath.Join(vanishing, "deeper"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	walk := func(t *testing.T) error {
+		removed := false
+		search := duckDBSymlinkWalk(resolved)
+		err := filepath.WalkDir(resolved, func(path string, d fs.DirEntry, err error) error {
+			if path == vanishing && err == nil && !removed {
+				// WalkDir reads a folder's entries after this call returns
+				if rmErr := os.RemoveAll(vanishing); rmErr != nil {
+					t.Fatal(rmErr)
+				}
+				removed = true
+			}
+			return search(path, d, err)
+		})
+		if !removed {
+			t.Fatal("the walk never reached the vanishing folder")
+		}
+		return err
+	}
+	if err := walk(t); err != nil {
+		t.Errorf("walk with a folder vanishing = %v; want none", err)
+	}
+
+	if err := os.MkdirAll(filepath.Join(vanishing, "deeper"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	// "zlink" sorts after ".duckdb_tmp", so the walk reaches it after the folder vanished
+	if err := os.Symlink(f.out, filepath.Join(resolved, "zlink")); err != nil {
+		t.Fatal(err)
+	}
+	if err := walk(t); err == nil || !strings.Contains(err.Error(), "zlink") {
+		t.Errorf("walk with a folder vanishing before an outward symlink = %v; want an error naming zlink", err)
+	}
+}
+
+// TestDuckDBPermittedTempDirReadOnlyRoot shows that a first permitted folder this process cannot write to does
+// not stop DuckDB opening when a later one is writable: the temp folder goes in the writable one, and the open
+// stays locked. Only when no folder is writable does the open fail.
+func TestDuckDBPermittedTempDirReadOnlyRoot(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root writes to every folder")
+	}
+	f := newDuckDBTest(t)
+	readOnly := filepath.Join(filepath.Dir(f.in), "readonly")
+	if err := os.MkdirAll(readOnly, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(readOnly, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(readOnly, 0o755) })
+
+	permitFolders(t, readOnly, f.in)
+	for _, backend := range []string{"duckdb", "duckdbinit"} {
+		t.Run(backend, func(t *testing.T) {
+			var db *sql.DB
+			var err error
+			if backend == "duckdb" {
+				db, err = connectDuckDB(t, "duckdb://", 2)
+			} else {
+				db, err = connectDuckDBInit(t, "")
+			}
+			if err != nil {
+				t.Fatalf("Connect: %v", err)
+			}
+			var tempDir string
+			if err := db.QueryRow("SELECT current_setting('temp_directory')").Scan(&tempDir); err != nil {
+				t.Fatal(err)
+			}
+			in, err := filepath.EvalSymlinks(f.in)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.HasPrefix(tempDir, filepath.Join(f.in, duckDBTempDirName)) && !strings.HasPrefix(tempDir, filepath.Join(in, duckDBTempDirName)) {
+				t.Errorf("temp_directory = %q, want a folder under %s", tempDir, filepath.Join(f.in, duckDBTempDirName))
+			}
+			assertLocked(t, db, f)
+		})
+	}
+
+	t.Run("no folder writable", func(t *testing.T) {
+		permitFolders(t, readOnly)
+		db, err := connectDuckDB(t, "duckdb://", 2)
+		if err == nil || !strings.Contains(err.Error(), testPermittedEnv) {
+			t.Errorf("Connect = %v; want an error naming the setting", err)
+		}
+		if db != nil {
+			t.Error("Connect returned a pool with the error")
+		}
 	})
 }
