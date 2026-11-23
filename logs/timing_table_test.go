@@ -43,3 +43,24 @@ func TestDisplayTable_wrapsLongOperation(t *testing.T) {
 		t.Errorf("unexpected table:\n%s\nexpected:\n%s", buf.String(), expected)
 	}
 }
+
+// the Time column is formatted with time.StampMilli, which pads days 1-9 with a space
+func TestDisplayTable_stampMilliSingleDigitDay(t *testing.T) {
+	var buf bytes.Buffer
+	displayTable(&buf, [][]string{
+		{"Load config", "Jan  2 15:04:05.000", "< 1ms", "< 1ms"},
+		{"Next", "Jan 12 15:04:05.123", "120.25ms", "121.75ms"},
+	})
+
+	// tablewriter v0.0.5 output for the same data and settings
+	expected := `+-------------+---------------------+----------+------------+
+|  OPERATION  |        TIME         | ELAPSED  | CUMULATIVE |
++-------------+---------------------+----------+------------+
+| Load config | Jan  2 15:04:05.000 | < 1ms    | < 1ms      |
+| Next        | Jan 12 15:04:05.123 | 120.25ms | 121.75ms   |
++-------------+---------------------+----------+------------+
+`
+	if buf.String() != expected {
+		t.Errorf("unexpected table:\n%s\nexpected:\n%s", buf.String(), expected)
+	}
+}
