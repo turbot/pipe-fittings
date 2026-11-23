@@ -260,7 +260,8 @@ func TestPruneIgnoresRemovedLocalPathDependency(t *testing.T) {
 	}
 }
 
-// a mods folder with a folder a person has linked in is still readable (a symlink is only refused where cloned)
+// a mods folder holding a folder a person linked in still loads: reads are checked on the path text only.
+// (Installing a new mod through such a link is refused: see getInstallPath.)
 func TestModsFolderSymlinkStillResolves(t *testing.T) {
 	i, tmp := newTestInstaller(t)
 	linked := filepath.Join(tmp, "clone")
