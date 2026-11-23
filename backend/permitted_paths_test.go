@@ -150,6 +150,7 @@ func TestConfineModConnectionString(t *testing.T) {
 		{name: "postgres sslcert outside", in: pg("sslcert=" + out("c.pem")), wantErr: `option "sslcert"`},
 		{name: "postgres sslkey outside", in: pg("sslkey=" + out("k.pem")), wantErr: `option "sslkey"`},
 		{name: "postgres sslrootcert outside", in: pg("sslrootcert=" + out("r.pem")), wantErr: `option "sslrootcert"`},
+		{name: "postgres sslrootcert system passes", in: pg("sslrootcert=system"), want: pg("sslrootcert=system")},
 		{name: "postgres passfile outside", in: pg("passfile=" + out("pgpass")), wantErr: `option "passfile"`},
 		// a service file can name files and a password of its own, so servicefile and service are refused
 		{name: "postgres servicefile outside", in: pg("servicefile=" + out("svc")), wantErr: `option "servicefile"`},

@@ -119,6 +119,10 @@ func confinePostgres(trimmed string) (string, error) {
 		if value == "" {
 			continue
 		}
+		// sslrootcert=system is the driver's value for the system CA pool: it names no file, so it is left as it is
+		if strings.EqualFold(key, "sslrootcert") && value == "system" {
+			continue
+		}
 		resolved, err := permitted_paths.Check(value)
 		if err != nil {
 			return "", fmt.Errorf("database: option %q: %w", key, err)

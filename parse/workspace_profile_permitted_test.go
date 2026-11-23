@@ -68,7 +68,7 @@ func TestLoadPowerpipeWorkspaceProfilesPermitted(t *testing.T) {
 			want:    map[string]string{constants.ArgDatabase: "sqlite://" + inside},
 		},
 		{
-			name:    "outside database inherited from a base refused",
+			name:    "outside database in a base refused",
 			setting: permitted,
 			profile: `base = workspace.other` + "\n}\nworkspace \"other\" {\n" + `database = "sqlite://` + outsideDB + `"`,
 			wantErr: "outside the folders " + testPermittedEnv,
