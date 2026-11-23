@@ -30,11 +30,12 @@ func (av *AvailableVersionCache) asTable() (*tablewriter.Table, error) {
 		return nil, nil
 	}
 
-	table := utils.NewASCIITable(os.Stderr) // notifications are written to stderr to avoid interfering with stdout
-	// no headers; rows are left-aligned and, with no width limit set, never wrap (the v1 defaults)
-	if err := table.Bulk(notificationTable); err != nil {
-		return nil, err
-	}
+	table := tablewriter.NewWriter(os.Stderr)  // notifications are written to stderr to avoid interfering with stdout
+	table.SetHeader([]string{})                // no headers please
+	table.SetAlignment(tablewriter.ALIGN_LEFT) // we align to the left
+	table.SetAutoWrapText(false)               // let's not wrap the text
+	table.SetBorder(true)                      // there needs to be a border to provide the dialog feel
+	table.AppendBulk(notificationTable)        // Add Bulk Data
 
 	return table, nil
 }

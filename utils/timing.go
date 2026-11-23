@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/logrusorgru/aurora"
+	"github.com/olekukonko/tablewriter"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
 )
 
@@ -56,10 +57,13 @@ func DisplayProfileData(op io.Writer) {
 			itemData = append(itemData, logEntry.Cumulative.String())
 			data = append(data, itemData)
 		}
-		table := NewASCIITable(op)
-		table.Header([]string{"Operation", "Elapsed", "Cumulative"})
-		_ = table.Bulk(data)
-		_ = table.Render()
+		table := tablewriter.NewWriter(op)
+		table.SetHeader([]string{"Operation", "Elapsed", "Cumulative"})
+		table.SetBorder(true)
+		table.SetReflowDuringAutoWrap(false)
+		table.SetAutoWrapText(false)
+		table.AppendBulk(data)
+		table.Render()
 	}
 }
 

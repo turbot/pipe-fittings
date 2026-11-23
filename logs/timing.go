@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/olekukonko/tablewriter"
-	"github.com/olekukonko/tablewriter/tw"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 type timeLog struct {
@@ -96,9 +94,11 @@ func DisplayProfileData(minTime time.Duration) {
 }
 
 func displayTable(out io.Writer, data [][]string) {
-	// rows wrap at 50 characters, as with tablewriter v0 (the v1 limit includes the 2 padding spaces)
-	table := utils.NewASCIITable(out, tablewriter.WithRowMaxWidth(52), tablewriter.WithRowAutoWrap(tw.WrapNormal))
-	table.Header([]string{"Operation", "Time", "Elapsed", "Cumulative"})
-	_ = table.Bulk(data)
-	_ = table.Render()
+	table := tablewriter.NewWriter(out)
+	table.SetHeader([]string{"Operation", "Time", "Elapsed", "Cumulative"})
+	table.SetBorder(true)
+	table.SetColWidth(50)
+	table.AppendBulk(data)
+	table.SetAutoWrapText(false)
+	table.Render()
 }
