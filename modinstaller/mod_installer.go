@@ -515,7 +515,7 @@ func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfi
 func (i *ModInstaller) installFromTag(dependency *versionmap.ResolvedVersionConstraint) (*modconfig.Mod, error) {
 	// get the temp location to install the mod to
 	dependencyPath := dependency.DependencyPath()
-	destPath, err := i.getDependencyShadowPath(dependencyPath)
+	destPath, err := i.getInstallPath(dependencyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +557,7 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 	// get the temp location to install the mod to
 	// just use the original constraint as the dependency path
 	dependencyPath := modconfig.BuildModDependencyPath(modVersion.Name, dependencyVersion)
-	destPath, err := i.getDependencyShadowPath(dependencyPath)
+	destPath, err := i.getInstallPath(dependencyPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -943,6 +943,16 @@ func (i *ModInstaller) getDependencyShadowPath(dependencyFullName string) (strin
 		return "", fmt.Errorf("invalid dependency '%s': %w", dependencyFullName, err)
 	}
 	return res, nil
+}
+
+// getInstallPath returns the shadow folder a dependency is cloned to, after checking that the folder it is later
+// copied to in the mods folder does not go through a symlink either (a mod's repo can contain one, and the copy
+// would follow it out of the mods folder). Only an install writes to the mods folder, so only an install checks this.
+func (i *ModInstaller) getInstallPath(dependencyFullName string) (string, error) {
+	if _, err := filepaths.ResolveInsideNoSymlinks(i.modsPath, dependencyFullName); err != nil {
+		return "", fmt.Errorf("invalid dependency '%s': %w", dependencyFullName, err)
+	}
+	return i.getDependencyShadowPath(dependencyFullName)
 }
 
 // resolveDependencyPath returns the folder of a dependency under the given install root.

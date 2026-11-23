@@ -274,3 +274,32 @@ func TestModsFolderSymlinkStillResolves(t *testing.T) {
 		t.Errorf("a mods folder holding a symlink was refused: %v", err)
 	}
 }
+
+// a symlink inside a mod installed by an earlier run (so in the mods folder, not the shadow folder) must not
+// lead a child install out of the mods folder when the shadow folder is copied over
+func TestInstallRefusesChildThroughInstalledSymlink(t *testing.T) {
+	i, tmp := newTestInstaller(t)
+	victim := filepath.Join(tmp, "home", "victim")
+	if err := os.MkdirAll(victim, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	parentDir := filepath.Join(i.modsPath, "github.com", "org", "a@v1.0.0")
+	if err := os.MkdirAll(parentDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(tmp, "home"), filepath.Join(parentDir, "link#y")); err != nil {
+		t.Skipf("cannot create symlink: %v", err)
+	}
+
+	c := &modconfig.ModVersionConstraint{Name: "github.com/org/a@v1.0.0/link", BranchName: "y/victim"}
+	_, _, err := i.installFromBranch(context.Background(), c)
+	if err == nil || !strings.Contains(err.Error(), "symbolic link") {
+		t.Fatalf("expected the install to be refused for the symlink, got %v", err)
+	}
+	if _, err := os.Stat(i.shadowDirPath); err == nil {
+		t.Error("nothing should have been cloned")
+	}
+	if entries, _ := os.ReadDir(victim); len(entries) != 0 {
+		t.Errorf("folder outside the mods folder was changed: %v", entries)
+	}
+}
