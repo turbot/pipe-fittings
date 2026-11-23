@@ -48,7 +48,7 @@ sits behind `permitted_paths.Enabled()`.
 
 | Task | Status | Model | Group | Notes |
 |------|--------|-------|-------|-------|
-| task-1-mod-connection-string-checks | pending | sonnet | - | |
+| task-1-mod-connection-string-checks | verified | sonnet | - | commit 044107b |
 | task-2-duckdb-lockdown | pending | opus | - | |
 | task-3-sqlite-attach | pending | sonnet | - | |
 | task-4-routes-test-mod | pending | sonnet | - | |
@@ -116,6 +116,8 @@ its resolved absolute path) and adds refusals, only when the setting is set. Wal
 ## Insights
 
 (The reduce step appends here after each batch. Empty is normal.)
+
+- task 1: `ConfineModConnectionString` rebuilds only the Postgres query; the rest of the connection string, including the password, is kept as written.
 
 ## Definition of done
 
