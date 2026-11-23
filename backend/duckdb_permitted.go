@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"database/sql/driver"
 	"errors"
@@ -40,6 +41,8 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 // duckDBPermittedInit returns the init that locks each DuckDB connection to the permitted folders.
 //
 // The settings it leaves in force are DuckDB globals, shared by every connection to one database instance:
+//   - temp_directory: a folder of its own inside the first permitted folder (duckDBTempDir), so DuckDB's temp
+//     files, and the folder it adds to allowed_directories for them, lie inside the folders;
 //   - allowed_directories: every permitted folder, as written and with its symlinks resolved, each ending in a
 //     separator, as DuckDB matches them as prefixes (so /data/a never admits /data/ab);
 //   - allowed_paths: empty, so no single file outside the folders is let through (a DSN could set it);
@@ -49,7 +52,7 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 //
 // Order. On the instance's first connection (lock_configuration still false) pipe-fittings' own extension
 // setup runs first, because DuckDB refuses to install or load an extension once external access is off; then
-// the two lists, which DuckDB will not change once external access is off; then external access; then the
+// the temp folder and the two lists, which DuckDB will not change once external access is off; then external access; then the
 // lock. Only after this does any other SQL run: the caller's queries, and a duckdbinit script, which its
 // Connect runs after the pool's first connection is locked. A later connection finds the lock in force and
 // does not set anything. Every connection, first or later, then reads the settings back and fails unless all
@@ -58,12 +61,14 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 //
 // DuckDB itself adds its own files when external access is turned off: its temp_directory (where it spills to
 // disk) to allowed_directories, and the database file and its .wal to allowed_paths. The check accepts those
-// only as duckDBOwnFiles says, so a DSN that pointed temp_directory elsewhere cannot open a folder to SQL.
+// only as duckDBOwnFiles says, and fails unless temp_directory lies inside the folders, so neither DuckDB's
+// default (.tmp in the working folder, or <file>.tmp, wherever those lie) nor a DSN's temp_directory can open
+// a folder outside them to SQL.
 //
 // DuckDB matches allowed_directories as text and follows symlinks, so a symlink inside the folders that leads
 // outside them would let SQL read and write the files it leads to. SQL cannot make a symlink, so the folders
 // are searched once here, before any connection opens, and a symlink that leads outside fails the open
-// (duckDBOutwardSymlink).
+// (duckDBOutwardSymlink). The temp folder lies inside a permitted folder, so that search covers it.
 // dbPath is the database file the DSN opens, or "" for an in-memory database.
 func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 	roots, err := permitted_paths.ResolvedRoots()
@@ -77,6 +82,10 @@ func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 		return nil, err
 	}
 	dirs := duckDBAllowedDirectories(roots)
+	tempDir, err := duckDBTempDir(roots)
+	if err != nil {
+		return nil, err
+	}
 	own := duckDBOwnFiles{dbPath: dbPath}
 
 	return func(ctx context.Context, conn driver.Conn) error {
@@ -86,7 +95,7 @@ func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 		}
 		var setErr error
 		if !locked {
-			setErr = duckDBLock(ctx, conn, dirs)
+			setErr = duckDBLock(ctx, conn, tempDir, dirs)
 		}
 		if err := duckDBVerifyLock(ctx, conn, dirs, own); err != nil {
 			// another connection to the same instance may have locked it first, so a failed set is only
@@ -171,13 +180,41 @@ func duckDBLinkStaysInside(link string) bool {
 	return permitted_paths.Within(target)
 }
 
+// duckDBTempDirName is the folder, inside the first permitted folder, that holds each DuckDB database's temp folder
+const duckDBTempDirName = ".duckdb_tmp"
+
+// duckDBTempDir returns the temp folder for one DuckDB database: a folder of its own, not yet made, under
+// duckDBTempDirName in the first of roots that exists (or the first, made if missing). Each database has its
+// own, as DuckDB names its temp files the same way in every process and removes them when it closes. DuckDB
+// makes the folder when it first spills to disk, and removes it again when it closes, as it made it.
+func duckDBTempDir(roots []string) (string, error) {
+	root := roots[0]
+	for _, r := range roots {
+		if fi, err := os.Stat(r); err == nil && fi.IsDir() {
+			root = r
+			break
+		}
+	}
+	parent := filepath.Join(root, duckDBTempDirName)
+	if err := os.MkdirAll(parent, 0o700); err != nil {
+		return "", fmt.Errorf("could not make a DuckDB temp folder inside the folders %s permits: %w", permitted_paths.Setting(), err)
+	}
+	dir := filepath.Join(parent, fmt.Sprintf("%d-%s", os.Getpid(), rand.Text()))
+	if !isPermitted(dir) {
+		// a symlink made at that name since the folders were searched
+		return "", fmt.Errorf("%s does not lie inside the folders %s permits", parent, permitted_paths.Setting())
+	}
+	return dir, nil
+}
+
 // duckDBLock runs the extension setup and sets the lock's settings, in that order
-func duckDBLock(ctx context.Context, conn driver.Conn, dirs []string) error {
+func duckDBLock(ctx context.Context, conn driver.Conn, tempDir string, dirs []string) error {
 	exec := func(query string) error { return execConn(ctx, conn, query) }
 	if err := duckDbExtensionSetup(exec); err != nil {
 		return err
 	}
 	for _, stmt := range []string{
+		"SET temp_directory = " + duckDBQuote(tempDir),
 		fmt.Sprintf("SET allowed_directories = %s", duckDBStringList(dirs)),
 		"SET allowed_paths = []",
 		"SET enable_external_access = false",
@@ -213,6 +250,9 @@ func duckDBVerifyLock(ctx context.Context, conn driver.Conn, dirs []string, own 
 	tempDir, err := duckDBSettingString(ctx, conn, "temp_directory")
 	if err != nil {
 		return err
+	}
+	if tempDir != "" && !isPermitted(tempDir) {
+		return fmt.Errorf("temp_directory is %q, which is outside the folders", tempDir)
 	}
 	if !duckDBListIs(got, dirs, func(dir string) bool { return own.tempDirAllowed(dir, tempDir) }) {
 		return fmt.Errorf("allowed_directories is %q, want %q", got, dirs)
@@ -256,24 +296,18 @@ func duckDBQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
-// duckDBDefaultTempDir is the temp_directory DuckDB uses for an in-memory database: .tmp in the working folder
-const duckDBDefaultTempDir = ".tmp"
-
 // duckDBOwnFiles says which of the entries DuckDB adds itself to its allow lists are accepted
 type duckDBOwnFiles struct {
 	// dbPath is the database file, or "" for an in-memory database
 	dbPath string
 }
 
-// tempDirAllowed reports whether dir, an allowed_directories entry, is DuckDB's own temp directory and that is
-// where DuckDB puts it by default (.tmp for an in-memory database, <file>.tmp for a file) or inside the folders.
-// A temp_directory set anywhere else, for example by a DSN, would open that folder to SQL.
+// tempDirAllowed reports whether dir, an allowed_directories entry, is DuckDB's own temp directory and that lies
+// inside the folders. A temp directory anywhere else (DuckDB's default .tmp in the working folder or <file>.tmp,
+// or one a DSN set) would open that folder to SQL.
 func (o duckDBOwnFiles) tempDirAllowed(dir, tempDir string) bool {
 	if tempDir == "" || duckDBNormPath(dir) != duckDBNormPath(tempDir) {
 		return false
-	}
-	if tempDir == duckDBDefaultTempDir || (o.dbPath != "" && sameFilePath(tempDir, o.dbPath+".tmp")) {
-		return true
 	}
 	return isPermitted(tempDir)
 }

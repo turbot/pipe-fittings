@@ -243,6 +243,9 @@ func TestDuckDBPermittedValueCannotLift(t *testing.T) {
 	for _, dsn := range []string{
 		"duckdb://?enable_external_access=true",
 		DuckDBConnectionStringPrefix + filepath.Join(f.in, "lift.duckdb") + "?enable_external_access=true",
+		// DuckDB adds its temp folder to allowed_directories, so one outside would open that folder: the lock
+		// puts its own in its place
+		"duckdb://?temp_directory=" + f.out,
 	} {
 		db, err := connectDuckDB(t, dsn, 2)
 		if err != nil {
@@ -254,8 +257,6 @@ func TestDuckDBPermittedValueCannotLift(t *testing.T) {
 	for _, dsn := range []string{
 		"duckdb://?lock_configuration=true",
 		DuckDBConnectionStringPrefix + filepath.Join(f.in, "prelocked.duckdb") + "?lock_configuration=true",
-		// DuckDB adds its temp folder to allowed_directories, so one outside would open that folder
-		"duckdb://?temp_directory=" + f.out,
 	} {
 		db, err := connectDuckDB(t, dsn, 2)
 		if err == nil || !strings.Contains(err.Error(), testPermittedEnv) {
@@ -367,6 +368,95 @@ func TestDuckDBPermittedBadSetting(t *testing.T) {
 	if db != nil {
 		t.Error("duckdbinit Connect returned a pool with the error")
 	}
+}
+
+// duckDBDefaultTempDir is the temp_directory DuckDB uses for an in-memory database: .tmp in the working folder
+const duckDBDefaultTempDir = ".tmp"
+
+// TestDuckDBPermittedTempDir shows that an in-memory DuckDB, whose temp folder is by default .tmp in the
+// working folder, keeps its temp folder inside the permitted folders when the working folder lies outside
+// them, so neither .tmp nor a symlink there reaches outside
+func TestDuckDBPermittedTempDir(t *testing.T) {
+	for _, linked := range []bool{false, true} {
+		for _, backend := range []string{"duckdb", "duckdbinit"} {
+			name := backend + " with .tmp a folder"
+			if linked {
+				name = backend + " with .tmp a symlink outside"
+			}
+			t.Run(name, func(t *testing.T) {
+				f := newDuckDBTest(t)
+				work := filepath.Join(filepath.Dir(f.in), "work")
+				if err := os.MkdirAll(work, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				// where .tmp leads: f.out itself through the symlink, else a real folder outside
+				tmpTarget := filepath.Join(work, ".tmp")
+				if linked {
+					if err := os.Symlink(f.out, tmpTarget); err != nil {
+						t.Fatal(err)
+					}
+					tmpTarget = f.out
+				} else {
+					if err := os.MkdirAll(tmpTarget, 0o755); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(filepath.Join(tmpTarget, "b.csv"), []byte("x\n1\n"), 0o600); err != nil {
+						t.Fatal(err)
+					}
+				}
+				t.Chdir(work)
+				permitFolders(t, f.in)
+
+				var db *sql.DB
+				var err error
+				if backend == "duckdb" {
+					db, err = connectDuckDB(t, "duckdb://", 2)
+				} else {
+					db, err = connectDuckDBInit(t, "")
+				}
+				if err != nil {
+					t.Fatalf("Connect: %v", err)
+				}
+				mustFail(t, db, "read_csv in .tmp", "SELECT * FROM read_csv('.tmp/b.csv')")
+				mustFail(t, db, "COPY TO .tmp", "COPY (SELECT 1 AS x) TO '.tmp/plain.csv'")
+				if _, err := os.Stat(filepath.Join(tmpTarget, "plain.csv")); err == nil {
+					t.Errorf("COPY TO wrote %s", filepath.Join(tmpTarget, "plain.csv"))
+				}
+				var tempDir string
+				if err := db.QueryRow("SELECT current_setting('temp_directory')").Scan(&tempDir); err != nil {
+					t.Fatal(err)
+				}
+				if !isPermitted(tempDir) {
+					t.Errorf("temp_directory = %q, want a folder inside %s", tempDir, f.in)
+				}
+				assertLocked(t, db, f)
+			})
+		}
+	}
+
+	t.Run("setting unset", func(t *testing.T) {
+		f := newDuckDBTest(t)
+		work := filepath.Join(filepath.Dir(f.in), "work")
+		if err := os.MkdirAll(work, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(f.out, filepath.Join(work, ".tmp")); err != nil {
+			t.Fatal(err)
+		}
+		t.Chdir(work)
+		if err := setPermittedEnv(t, ""); err != nil {
+			t.Fatal(err)
+		}
+		db, err := connectDuckDB(t, "duckdb://", 2)
+		if err != nil {
+			t.Fatalf("Connect: %v", err)
+		}
+		var tempDir string
+		if err := db.QueryRow("SELECT current_setting('temp_directory')").Scan(&tempDir); err != nil || tempDir != duckDBDefaultTempDir {
+			t.Errorf("temp_directory = %q, %v; want DuckDB's default %q", tempDir, err, duckDBDefaultTempDir)
+		}
+		mustRead(t, db, filepath.Join(".tmp", "b.csv"))
+	})
 }
 
 func noLinks(duckDBTestFolders) map[string]string { return nil }
