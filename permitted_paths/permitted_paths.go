@@ -76,6 +76,17 @@ func Roots() []string {
 	return append([]string(nil), current().roots...)
 }
 
+// ResolvedRoots returns each permitted folder as written and again with its symlinks resolved, for a reader
+// that limits paths by prefix itself (DuckDB's allowed_directories). A setting that could not be read is its
+// error, so the reader fails closed. With no limit set it returns none.
+func ResolvedRoots() ([]string, error) {
+	s := current()
+	if s.err != nil {
+		return nil, s.err
+	}
+	return resolveRoots(s.roots), nil
+}
+
 func read(key string) *state {
 	s := &state{key: key}
 	if key == "" {

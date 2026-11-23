@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/sperr"
 )
 
@@ -49,6 +50,27 @@ func (b *DuckDBInitBackend) Close() error {
 // Connect implements Backend.
 func (b *DuckDBInitBackend) Connect(ctx context.Context, options ...BackendOption) (*sql.DB, error) {
 	config := NewBackendConfig(options)
+	if permitted_paths.Enabled() {
+		// open locked to the permitted folders; the extension setup runs inside the lock's init, and the init
+		// script only after the lock is in force
+		db, err := connectDuckDBPermitted(ctx, "", func(db *sql.DB) {
+			db.SetConnMaxIdleTime(config.MaxConnIdleTime)
+			db.SetConnMaxLifetime(config.MaxConnLifeTime)
+			// for duckdb, limit connections to 1 - DuckDB is designed for single-connection usage
+			db.SetMaxOpenConns(1)
+		})
+		if err != nil {
+			return nil, err
+		}
+		if b.initScript != "" {
+			if err := b.executeInitScript(ctx, db); err != nil {
+				db.Close()
+				return nil, sperr.WrapWithMessage(err, "failed to execute init script")
+			}
+		}
+		return db, nil
+	}
+
 	db, err := sql.Open("duckdb", "")
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to duckdb backend")
