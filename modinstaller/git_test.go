@@ -39,7 +39,7 @@ func TestTransformToGitURL(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := transformToGitURL(tt.input, tt.urlMode)
 			if got != tt.expected {
-				t.Errorf("transformToGitURL(%q, %q) = %q; want %q", tt.input, tt.urlMode, got, tt.expected)
+				t.Errorf("transformToGitURL(%q, %d) = %q; want %q", tt.input, tt.urlMode, got, tt.expected)
 			}
 		})
 	}
