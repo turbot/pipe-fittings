@@ -1,0 +1,223 @@
+{
+  "v": 1,
+  "repo": "turbot/pipe-fittings",
+  "item": {
+    "kind": "pr",
+    "n": 824
+  },
+  "branch": "dependabot/go_modules/go_modules-21d74c3639",
+  "base": {
+    "ref": "origin/develop",
+    "sha": "53f8c1edb9650e5d4e39408a8cb3e3d5b4823e9f"
+  },
+  "head": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+  "pr": "https://github.com/turbot/pipe-fittings/pull/824",
+  "manifest": {
+    "path": ".claude/agent-fleet/inbox-gates.yml",
+    "sha": "9ac3bde3d79cd30adbae855b6d919912c4210221"
+  },
+  "owed": {
+    "computedAt": "2026-11-23T00:16:55.630Z",
+    "diffHash": "f643ba5b2050efa5c4e35b8bf2494cc2ae3f55e9a7e33b3f41a2a90a716a9e05",
+    "scopeUnknown": false,
+    "kinds": [
+      "go"
+    ],
+    "added": [],
+    "skills": [],
+    "items": [
+      {
+        "id": "check:build",
+        "kinds": [
+          "go"
+        ],
+        "run": "go build ./...",
+        "needs": [],
+        "final": false,
+        "ci": false,
+        "carry": {
+          "def": "64b1cb422a45639933dfb2a2ec853b6241603253dc397f290c1fa79a770d1fda",
+          "none": "declares no inputs"
+        }
+      },
+      {
+        "id": "check:fast",
+        "kinds": [
+          "go"
+        ],
+        "run": "go test ./... -timeout 120s",
+        "needs": [],
+        "final": false,
+        "ci": false,
+        "carry": {
+          "def": "b9f13a2e147776f9c9fb1a7a28ee22e9e6b96b094834e6af3a82760872484905",
+          "none": "declares no inputs"
+        }
+      },
+      {
+        "id": "check:lint",
+        "kinds": [
+          "go"
+        ],
+        "run": "d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && GOBIN=\"$d\" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux \"$d/golangci-lint\" run --timeout=15m",
+        "needs": [],
+        "final": false,
+        "ci": false,
+        "carry": {
+          "def": "dc71a51ff1c4ed8cafe2ed359f699a41944730f8d142730c696ecd613346a758",
+          "none": "declares no inputs"
+        }
+      },
+      {
+        "id": "show:test",
+        "kinds": [
+          "go"
+        ],
+        "form": "test"
+      },
+      {
+        "id": "failfirst",
+        "mode": "revert"
+      }
+    ],
+    "paths": [
+      "go.mod",
+      "go.sum",
+      "modinstaller/git_test.go"
+    ],
+    "head": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+    "base": {
+      "ref": "origin/develop",
+      "sha": "53f8c1edb9650e5d4e39408a8cb3e3d5b4823e9f"
+    },
+    "scope": "none",
+    "scopeName": null,
+    "needs": [],
+    "neverRun": [
+      "git tag",
+      "git push --tags",
+      "git push origin --tags",
+      "git push --follow-tags",
+      "git push origin --follow-tags",
+      "gh release",
+      "gh workflow run",
+      "make test",
+      "go clean*"
+    ],
+    "judgement": null,
+    "selfReview": [],
+    "other": []
+  },
+  "rows": [
+    {
+      "id": "sync",
+      "result": "synced",
+      "sha": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+      "from": "490d8107cc941dbbfef9e44fa11ed3fbc0972c16",
+      "mode": "merge",
+      "base": {
+        "ref": "origin/develop",
+        "sha": "53f8c1edb9650e5d4e39408a8cb3e3d5b4823e9f"
+      },
+      "behind": 1,
+      "startedAt": "2026-11-23T00:16:55.371Z",
+      "runId": "webhook-turbot-pipe-fittings-824-2026-11-23T00-16-04-271Z"
+    },
+    {
+      "id": "check:build",
+      "result": "pass",
+      "sha": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+      "command": "go build ./...",
+      "run": "go build ./...",
+      "def": "64b1cb422a45639933dfb2a2ec853b6241603253dc397f290c1fa79a770d1fda",
+      "manifest": "9ac3bde3d79cd30adbae855b6d919912c4210221",
+      "clean": true,
+      "startedAt": "2026-11-23T00:17:31.740Z",
+      "seconds": 0.7,
+      "exit": 0,
+      "log": "build-1.log",
+      "tree": "e7e8b30449a3bbb5f5bd126e71db4ebe2ab0ed4e",
+      "logSha256": "6814dc323d0e0a612793e2502079410fb02be7c29b1021335b2fb55292306d06",
+      "keyNone": "it declares no inputs",
+      "base": {
+        "ref": "origin/develop",
+        "sha": "53f8c1edb9650e5d4e39408a8cb3e3d5b4823e9f"
+      },
+      "behind": 0,
+      "runId": "webhook-turbot-pipe-fittings-824-2026-11-23T00-16-04-271Z"
+    },
+    {
+      "id": "check:fast",
+      "result": "pass",
+      "sha": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+      "command": "go test ./... -timeout 120s",
+      "run": "go test ./... -timeout 120s",
+      "def": "b9f13a2e147776f9c9fb1a7a28ee22e9e6b96b094834e6af3a82760872484905",
+      "manifest": "9ac3bde3d79cd30adbae855b6d919912c4210221",
+      "clean": true,
+      "startedAt": "2026-11-23T00:17:34.038Z",
+      "seconds": 4.4,
+      "exit": 0,
+      "log": "fast-1.log",
+      "tree": "e7e8b30449a3bbb5f5bd126e71db4ebe2ab0ed4e",
+      "logSha256": "0fca06901d6c568bc9d83e398a7c0921c833bcdf24e682451e5d3af38c5432e5",
+      "keyNone": "it declares no inputs",
+      "base": {
+        "ref": "origin/develop",
+        "sha": "53f8c1edb9650e5d4e39408a8cb3e3d5b4823e9f"
+      },
+      "behind": 0,
+      "runId": "webhook-turbot-pipe-fittings-824-2026-11-23T00-16-04-271Z"
+    },
+    {
+      "id": "check:lint",
+      "result": "pass",
+      "sha": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+      "command": "d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && GOBIN=\"$d\" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux \"$d/golangci-lint\" run --timeout=15m",
+      "run": "d=$(mktemp -d) && trap 'rm -rf \"$d\"' EXIT && GOBIN=\"$d\" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux \"$d/golangci-lint\" run --timeout=15m",
+      "def": "dc71a51ff1c4ed8cafe2ed359f699a41944730f8d142730c696ecd613346a758",
+      "manifest": "9ac3bde3d79cd30adbae855b6d919912c4210221",
+      "clean": true,
+      "startedAt": "2026-11-23T00:17:39.973Z",
+      "seconds": 27.2,
+      "exit": 0,
+      "log": "lint-1.log",
+      "tree": "e7e8b30449a3bbb5f5bd126e71db4ebe2ab0ed4e",
+      "logSha256": "38a521703553ecc6a6494f429eda192ee760f64b9cfe3a639fef133f6e2e1800",
+      "keyNone": "it declares no inputs",
+      "base": {
+        "ref": "origin/develop",
+        "sha": "53f8c1edb9650e5d4e39408a8cb3e3d5b4823e9f"
+      },
+      "behind": 0,
+      "runId": "webhook-turbot-pipe-fittings-824-2026-11-23T00-16-04-271Z"
+    },
+    {
+      "id": "failfirst",
+      "result": "skipped",
+      "reason": "Dependency bump, not a bug fix: no behaviour changes. The only code edit is the %q to %d verb in a test failure message so go 1.26 vet accepts it; no assertion changed, so there is no test that fails without it.",
+      "sha": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+      "tree": "e7e8b30449a3bbb5f5bd126e71db4ebe2ab0ed4e",
+      "runId": "webhook-turbot-pipe-fittings-824-2026-11-23T00-16-04-271Z",
+      "startedAt": "2026-11-23T00:18:16.429Z"
+    },
+    {
+      "id": "show:test",
+      "result": "shown",
+      "sha": "5467e7afb4906502c2ea817c209b1c97b71734f1",
+      "cites": [
+        {
+          "test": "modinstaller/git_test.go::TestTransformToGitURL",
+          "role": "happy"
+        },
+        {
+          "test": "modinstaller/git_test.go::TestTransformToGitURL",
+          "role": "unhappy"
+        }
+      ],
+      "tree": "e7e8b30449a3bbb5f5bd126e71db4ebe2ab0ed4e",
+      "runId": "webhook-turbot-pipe-fittings-824-2026-11-23T00-16-04-271Z",
+      "startedAt": "2026-11-23T00:18:18.818Z"
+    }
+  ]
+}
