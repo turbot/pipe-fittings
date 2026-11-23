@@ -1,5 +1,5 @@
 ---
-status: pending
+status: verified
 complexity: high
 model: opus
 depends_on: [1]
