@@ -30,7 +30,8 @@ var EnvUpdateCheck,
 	EnvGitToken,
 	EnvPipesToken,
 	EnvProfile,
-	EnvTempDirMaxMb string
+	EnvTempDirMaxMb,
+	EnvRestrictFileFunctions string
 
 func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	// set prefix
@@ -66,6 +67,8 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvPipesToken = buildEnv("PIPES_TOKEN")
 	EnvProfile = buildEnv("PROFILE")
 	EnvTempDirMaxMb = buildEnv("TEMP_DIR_MAX_MB")
+	// when true, the HCL file functions only read inside the mod (or config) folder they are evaluated for
+	EnvRestrictFileFunctions = buildEnv("RESTRICT_FILE_FUNCTIONS")
 }
 
 // buildEnv is a function to construct an application specific env var key
