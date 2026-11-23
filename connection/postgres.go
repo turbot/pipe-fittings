@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -125,7 +126,7 @@ func (c *PostgresConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString, nil
+		return backend.ConfineModConnectionString(*c.ConnectionString)
 	}
 
 	// db, username, host and port all have default values if not set
@@ -135,7 +136,7 @@ func (c *PostgresConnection) GetConnectionString(opts ...ConnectionStringOpt) (s
 		c.getHost(),
 		c.getPort(),
 		c.Password, c.SslMode)
-	return connString, nil
+	return backend.ConfineModConnectionString(connString)
 }
 
 func (c *PostgresConnection) GetEnv() map[string]cty.Value {

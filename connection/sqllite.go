@@ -87,10 +87,10 @@ func (c *SqliteConnection) GetConnectionString(opts ...ConnectionStringOpt) (str
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString, nil
+		return backend.ConfineModConnectionString(*c.ConnectionString)
 	}
 
-	return fmt.Sprintf("%s%s", backend.SqliteConnectionStringPrefix, c.getFileName()), nil
+	return backend.ConfineModConnectionString(fmt.Sprintf("%s%s", backend.SqliteConnectionStringPrefix, c.getFileName()))
 }
 
 func (c *SqliteConnection) getFileName() any {

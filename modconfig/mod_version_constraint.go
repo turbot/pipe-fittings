@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/versionhelpers"
 	"github.com/zclconf/go-cty/cty"
@@ -103,6 +104,11 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 		}
 	}
 
+	// a database override must stay inside the permitted folders (when they are set)
+	if diags := m.confineDatabase(); diags.HasErrors() {
+		return diags
+	}
+
 	// only 1 of version, branch, file path or tag should be set
 	// Ensure that only one of version, branch, file path, or tag is set.
 	fields := []string{m.VersionString, m.BranchName, m.FilePath, m.Tag}
@@ -142,6 +148,24 @@ func (m *ModVersionConstraint) Initialise(block *hcl.Block) hcl.Diagnostics {
 	m.Tag = m.VersionString
 	// NOTE: clear the version string
 	m.VersionString = ""
+	return nil
+}
+
+// confineDatabase checks the database override of the require block against the permitted folders, and
+// stores the connection string to use, which can differ from the one written (a file path is resolved)
+func (m *ModVersionConstraint) confineDatabase() hcl.Diagnostics {
+	if m.Database == nil {
+		return nil
+	}
+	connectionString, err := backend.ConfineModConnectionString(*m.Database)
+	if err != nil {
+		return hcl.Diagnostics{&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  err.Error(),
+			Subject:  &m.DefRange,
+		}}
+	}
+	m.Database = &connectionString
 	return nil
 }
 
