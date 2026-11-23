@@ -62,13 +62,17 @@ func TestResolveInsideRefusesSymlink(t *testing.T) {
 		t.Skipf("cannot create symlink: %v", err)
 	}
 
-	if got, err := ResolveInside(root, "github.com/org/a@v1.0.0/link#y/victim"); err == nil {
+	if got, err := ResolveInsideNoSymlinks(root, "github.com/org/a@v1.0.0/link#y/victim"); err == nil {
 		t.Errorf("a path through a symlink was accepted: %q", got)
+	}
+	// ResolveInside reads the text only: a folder a person linked in on purpose is still found
+	if _, err := ResolveInside(root, "github.com/org/a@v1.0.0/link#y/victim"); err != nil {
+		t.Errorf("ResolveInside refused a path for a symlink: %v", err)
 	}
 	// a path beside it, or one which does not exist yet, is fine
 	for _, rel := range []string{"github.com/org/a@v1.0.0", "github.com/org/a@v1.0.0/other#y/victim", "github.com/org/new@v2.0.0"} {
-		if _, err := ResolveInside(root, rel); err != nil {
-			t.Errorf("ResolveInside(%q) unexpected error: %v", rel, err)
+		if _, err := ResolveInsideNoSymlinks(root, rel); err != nil {
+			t.Errorf("ResolveInsideNoSymlinks(%q) unexpected error: %v", rel, err)
 		}
 	}
 	// a root which is itself a symlink is the caller's choice and still works
@@ -76,7 +80,7 @@ func TestResolveInsideRefusesSymlink(t *testing.T) {
 	if err := os.Symlink(root, link); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ResolveInside(link, "github.com/org/new@v2.0.0"); err != nil {
+	if _, err := ResolveInsideNoSymlinks(link, "github.com/org/new@v2.0.0"); err != nil {
 		t.Errorf("a root reached through a symlink was refused: %v", err)
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/versionmap"
 )
@@ -221,5 +222,55 @@ func TestInstallRefusesChildThroughSymlink(t *testing.T) {
 	}
 	if b, err := os.ReadFile(sentinel); err != nil || string(b) != "keep" {
 		t.Errorf("file outside the mods folder was changed: %q, %v", b, err)
+	}
+}
+
+// once a local 'path' dependency is no longer required, prune has nothing to delete for it and does not fail
+func TestPruneIgnoresRemovedLocalPathDependency(t *testing.T) {
+	i, tmp := newTestInstaller(t)
+	local := filepath.Join(tmp, "localmod")
+	if err := os.MkdirAll(local, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	lockJSON := `{"root":{"local":{"name":"` + filepath.ToSlash(local) + `","path":"` + filepath.ToSlash(local) + `","alias":"local"}}}`
+	lockPath := filepaths.WorkspaceLockPath(i.workspacePath)
+	if err := os.MkdirAll(filepath.Dir(lockPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(lockPath, []byte(lockJSON), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	lock, err := versionmap.LoadWorkspaceLock(i.workspacePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// the install completes with nothing required: the new lock is empty but shares the installed mods
+	i.installData = NewInstallData(lock, i.workspaceMod)
+	i.installData.Lock = i.installData.NewLock
+
+	unused, err := i.Prune()
+	if err != nil {
+		t.Fatalf("prune failed: %v", err)
+	}
+	if len(unused) != 1 {
+		t.Errorf("expected the local mod to be listed as unreferenced, got %v", unused)
+	}
+	if _, err := os.Stat(local); err != nil {
+		t.Errorf("local mod folder was touched: %v", err)
+	}
+}
+
+// a mods folder with a folder a person has linked in is still readable (a symlink is only refused where cloned)
+func TestModsFolderSymlinkStillResolves(t *testing.T) {
+	i, tmp := newTestInstaller(t)
+	linked := filepath.Join(tmp, "clone")
+	if err := os.MkdirAll(linked, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(linked, filepath.Join(i.modsPath, "github.com")); err != nil {
+		t.Skipf("cannot create symlink: %v", err)
+	}
+	if _, err := i.getDependencyDestPath("github.com/org/a@v1.0.0"); err != nil {
+		t.Errorf("a mods folder holding a symlink was refused: %v", err)
 	}
 }

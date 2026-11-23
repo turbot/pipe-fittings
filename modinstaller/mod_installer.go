@@ -935,8 +935,14 @@ func (i *ModInstaller) getDependencyDestPath(dependencyFullName string) (string,
 
 // build the path of the temp location to copy this dependency to
 // (an error if the dependency name would place it outside the shadow folder)
+// (the shadow folder holds only what was just cloned, and a cloned repo can contain a symlink, so a path
+// going through one is refused too)
 func (i *ModInstaller) getDependencyShadowPath(dependencyFullName string) (string, error) {
-	return resolveDependencyPath(i.shadowDirPath, dependencyFullName)
+	res, err := filepaths.ResolveInsideNoSymlinks(i.shadowDirPath, dependencyFullName)
+	if err != nil {
+		return "", fmt.Errorf("invalid dependency '%s': %w", dependencyFullName, err)
+	}
+	return res, nil
 }
 
 // resolveDependencyPath returns the folder of a dependency under the given install root.

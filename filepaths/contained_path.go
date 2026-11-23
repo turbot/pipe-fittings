@@ -12,8 +12,8 @@ import (
 //
 // rel is untrusted: it is built from a mod name, branch, tag or version read from a mod file or lock file.
 // A rel is refused if it is empty, absolute (or has a volume name or leading separator),
-// has a '..' element (with either kind of separator), holds a NUL byte, cleans to root itself,
-// or goes through a symbolic link that already exists below root.
+// has a '..' element (with either kind of separator), holds a NUL byte, or cleans to root itself.
+// The check is on the text of the path; ResolveInsideNoSymlinks also looks at the disk.
 func ResolveInside(root, rel string) (string, error) {
 	if rel == "" {
 		return "", fmt.Errorf("path is empty")
@@ -38,8 +38,24 @@ func ResolveInside(root, rel string) (string, error) {
 		return "", fmt.Errorf("path '%s' is not inside '%s'", rel, root)
 	}
 
-	// the text is fine, but a symlink on the way (a mod's repo can contain one) would still lead out of root:
-	// refuse the path if any folder or file below root that already exists is a symlink
+	return resolved, nil
+}
+
+// ResolveInsideNoSymlinks is ResolveInside which also refuses a path going through a symbolic link that already
+// exists below root. Use it for a folder which is about to be written to or deleted and where root holds nothing
+// but what was just cloned: a mod's repo can contain a symlink which would lead out of root.
+// (A caller reading a root a person has set up, such as the mods folder, uses ResolveInside, as the person may
+// have linked a mod folder in on purpose.)
+func ResolveInsideNoSymlinks(root, rel string) (string, error) {
+	resolved, err := ResolveInside(root, rel)
+	if err != nil {
+		return "", err
+	}
+	cleanRoot := filepath.Clean(root)
+	check, err := filepath.Rel(cleanRoot, resolved)
+	if err != nil {
+		return "", err
+	}
 	current := cleanRoot
 	for _, element := range strings.Split(check, string(filepath.Separator)) {
 		current = filepath.Join(current, element)

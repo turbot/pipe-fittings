@@ -13,6 +13,11 @@ func (i *ModInstaller) Prune() (versionmap.DependencyVersionListMap, error) {
 	// now delete any mod folders which are not in the lock file
 	for name, versions := range unusedMods {
 		for _, version := range versions {
+			// a local 'path' dependency is not installed under the mods folder: there is nothing to delete
+			// (it is in the list once the lock no longer references it)
+			if version != nil && version.FilePath != "" {
+				continue
+			}
 			depPath, err := i.getDependencyDestPath(modconfig.BuildModDependencyPath(name, version))
 			if err != nil {
 				return nil, err
