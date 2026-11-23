@@ -5,6 +5,15 @@
 // The setting comes from the environment only and is read once, by Load at start-up (or on first use when
 // an app never calls Load). A reader of a path that mod or config content names calls Check on the path
 // before it opens it, and Filter on a listing before it returns it.
+//
+// The setting also covers databases. backend.ConfineModConnectionString checks every database value that mod
+// or .ppc content supplies: a DuckDB or SQLite file must be inside the folders and takes no options,
+// duckdbinit:// is refused, the files a Postgres value names (sslcert, sslkey, sslrootcert, passfile,
+// servicefile) are checked, and MySQL allowAllFiles is refused. The backend then locks every DuckDB it opens
+// to the folders (no access outside them, and the lock cannot be lifted) and makes SQLite refuse an ATTACH of
+// a file outside them, so SQL a mod runs cannot read, write, attach or install outside either. A host that
+// opens its own DuckDB files (for example tailpipe's database and the folders its init script reads) must
+// list their folders in the setting, or the lock refuses them.
 package permitted_paths
 
 import (
