@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/pkg/twwidth"
 	"github.com/olekukonko/tablewriter/tw"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
 	"github.com/turbot/pipe-fittings/v2/utils"
@@ -96,12 +97,19 @@ func DisplayProfileData(minTime time.Duration) {
 }
 
 func displayTable(out io.Writer, data [][]string) {
-	// the Operation column wraps at 50 characters, as with tablewriter v0 (the v1 limit includes the 2 padding spaces).
-	// Only that column has a limit: a wrapped cell loses double spaces, and the Time column needs the one StampMilli puts before days 1-9
+	// The Operation column wraps at 50 characters, as with tablewriter v0 (the v1 limit includes the 2 padding spaces).
+	// v1 collapses runs of spaces in every cell of a column that has a limit, so the limit is set only when an
+	// Operation name needs it, and never on the Time column (StampMilli puts two spaces before days 1-9).
+	// When it is set, runs of spaces in that column collapse.
 	table := utils.NewASCIITable(out, tablewriter.WithRowAutoWrap(tw.WrapNormal))
-	table.Configure(func(cfg *tablewriter.Config) {
-		cfg.Row.ColMaxWidths.PerColumn = tw.Mapper[int, int]{0: 52}
-	})
+	for _, row := range data {
+		if len(row) > 0 && twwidth.Width(row[0]) > 50 {
+			table.Configure(func(cfg *tablewriter.Config) {
+				cfg.Row.ColMaxWidths.PerColumn = tw.Mapper[int, int]{0: 52}
+			})
+			break
+		}
+	}
 	table.Header([]string{"Operation", "Time", "Elapsed", "Cumulative"})
 	_ = table.Bulk(data)
 	_ = table.Render()

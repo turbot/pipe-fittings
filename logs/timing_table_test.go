@@ -64,3 +64,21 @@ func TestDisplayTable_stampMilliSingleDigitDay(t *testing.T) {
 		t.Errorf("unexpected table:\n%s\nexpected:\n%s", buf.String(), expected)
 	}
 }
+
+// an Operation name that needs no wrapping keeps its runs of spaces, as with tablewriter v0
+func TestDisplayTable_shortOperationKeepsSpaces(t *testing.T) {
+	var buf bytes.Buffer
+	displayTable(&buf, [][]string{
+		{"LoadMod start:  mod", "Jan 12 15:04:05.123", "1ms", "1ms"},
+	})
+
+	expected := `+---------------------+---------------------+---------+------------+
+|      OPERATION      |        TIME         | ELAPSED | CUMULATIVE |
++---------------------+---------------------+---------+------------+
+| LoadMod start:  mod | Jan 12 15:04:05.123 | 1ms     | 1ms        |
++---------------------+---------------------+---------+------------+
+`
+	if buf.String() != expected {
+		t.Errorf("unexpected table:\n%s\nexpected:\n%s", buf.String(), expected)
+	}
+}
