@@ -10,11 +10,22 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
-	"github.com/turbot/terraform-components/lang/marks"
 	"github.com/zclconf/go-cty/cty"
 )
 
-const testRestrictEnv = "TEST_APP_RESTRICT_FILE_FUNCTIONS"
+// The tests use only what the package exports to every app (the env var keys and ContextFunctions), so they
+// also build, and fail, without the change.
+const (
+	testAppPrefix   = "TESTAPP_"
+	testRestrictEnv = testAppPrefix + "RESTRICT_FILE_FUNCTIONS"
+	outsideErr      = "path is outside the mod folder"
+)
+
+// fileFunctionNames are the functions whose first argument is the path of one file they read or stat
+var fileFunctionNames = []string{
+	"file", "fileexists", "filebase64", "filebase64sha256", "filebase64sha512",
+	"filemd5", "filesha1", "filesha256", "filesha512",
+}
 
 // fileFuncFixture is a mod folder beside a folder outside it:
 //
@@ -64,12 +75,13 @@ func newFileFuncFixture(t *testing.T) fileFuncFixture {
 	return f
 }
 
-// setRestrict points the app's env var key at a test-only name and sets its value; value "" unsets it
+// setRestrict sets the app's env var keys to a test-only prefix, as an app does at start-up, and sets the
+// setting's value; value "" unsets it
 func setRestrict(t *testing.T, value string) {
 	t.Helper()
-	prev := app_specific.EnvRestrictFileFunctions
-	app_specific.EnvRestrictFileFunctions = testRestrictEnv
-	t.Cleanup(func() { app_specific.EnvRestrictFileFunctions = prev })
+	prev := app_specific.EnvAppPrefix
+	app_specific.SetAppSpecificEnvVarKeys(testAppPrefix)
+	t.Cleanup(func() { app_specific.SetAppSpecificEnvVarKeys(prev) })
 	t.Setenv(testRestrictEnv, value)
 	if value == "" {
 		if err := os.Unsetenv(testRestrictEnv); err != nil {
@@ -103,8 +115,8 @@ func mustRefuse(t *testing.T, baseDir, expr string) {
 	if !diags.HasErrors() {
 		t.Fatalf("%s: expected it to be refused, got %#v", expr, v)
 	}
-	if !strings.Contains(diags.Error(), errOutsideFolder) {
-		t.Fatalf("%s: expected %q in the error, got: %s", expr, errOutsideFolder, diags.Error())
+	if !strings.Contains(diags.Error(), outsideErr) {
+		t.Fatalf("%s: expected %q in the error, got: %s", expr, outsideErr, diags.Error())
 	}
 }
 
@@ -136,7 +148,7 @@ func TestRestrictFileFunctions_On_ReadsInsideTheModFolder(t *testing.T) {
 	}
 
 	// the other single-path functions read inside the folder too
-	for _, name := range singlePathFileFunctions {
+	for _, name := range fileFunctionNames {
 		mustEval(t, f.mod, name+`("docs/x.md")`)
 	}
 
@@ -155,11 +167,11 @@ func TestRestrictFileFunctions_On_ReadsInsideTheModFolder(t *testing.T) {
 	}
 	// a symlink loop fails, and is not read as outside
 	_, loopDiags := eval(t, f.mod, `file("loop")`)
-	if !loopDiags.HasErrors() || strings.Contains(loopDiags.Error(), errOutsideFolder) {
+	if !loopDiags.HasErrors() || strings.Contains(loopDiags.Error(), outsideErr) {
 		t.Errorf(`file("loop"): want a symlink loop error, got: %v`, loopDiags)
 	}
 	_, diags := eval(t, f.mod, `file("docs/missing.md")`)
-	if !diags.HasErrors() || strings.Contains(diags.Error(), errOutsideFolder) {
+	if !diags.HasErrors() || strings.Contains(diags.Error(), outsideErr) {
 		t.Errorf(`file("docs/missing.md"): want a missing-file error, got: %v`, diags)
 	}
 }
@@ -198,7 +210,7 @@ func TestRestrictFileFunctions_On_RefusesPathsOutsideTheModFolder(t *testing.T) 
 		"dang_out",                     // a symlink to a missing file outside
 		"locked_out",                   // a symlink into a folder outside that cannot be searched
 	}
-	for _, name := range singlePathFileFunctions {
+	for _, name := range fileFunctionNames {
 		for _, p := range outsidePaths {
 			mustRefuse(t, f.mod, name+`("`+p+`")`)
 		}
@@ -220,7 +232,7 @@ func TestRestrictFileFunctions_On_SymlinkClimbingPastAMissingPart(t *testing.T) 
 	mustSymlink(t, "lockedin/x/../../link_out", filepath.Join(f.mod, "via_locked"))
 	mustSymlink(t, "../outside/missing/../secret.txt", filepath.Join(f.mod, "via_outside_missing"))
 
-	for _, name := range singlePathFileFunctions {
+	for _, name := range fileFunctionNames {
 		for _, link := range []string{"via_missing", "via_locked", "via_outside_missing"} {
 			v, diags := eval(t, f.mod, name+`("`+link+`")`)
 			if !diags.HasErrors() {
@@ -248,9 +260,12 @@ func TestRestrictFileFunctions_On_ErrorNamesTheCall(t *testing.T) {
 }
 
 func TestRestrictFileFunctions_On_SensitivePathIsRedacted(t *testing.T) {
-	err := confineError("file", "/secret/path", cty.NewValueMarks(marks.Sensitive), os.ErrPermission)
-	if strings.Contains(err.Error(), "/secret/path") || !strings.Contains(err.Error(), "(sensitive value)") {
-		t.Fatalf("want the path redacted, got: %s", err)
+	f := newFileFuncFixture(t)
+	setRestrict(t, "true")
+
+	_, diags := eval(t, f.mod, `file(sensitive("/etc/passwd"))`)
+	if !diags.HasErrors() || strings.Contains(diags.Error(), "/etc/passwd") || !strings.Contains(diags.Error(), "(sensitive value)") {
+		t.Fatalf("want the refusal with the path redacted, got: %v", diags)
 	}
 }
 
@@ -325,23 +340,17 @@ func TestRestrictFileFunctions_Off_BehaviourUnchanged(t *testing.T) {
 	}
 }
 
-func TestRestrictFileFunctionsEnabled(t *testing.T) {
+func TestRestrictFileFunctions_SettingValues(t *testing.T) {
 	for value, want := range map[string]bool{
 		"true": true, "TRUE": true, "1": true,
 		"": false, "false": false, "0": false, "yes": false,
 	} {
+		f := newFileFuncFixture(t)
 		setRestrict(t, value)
-		if got := RestrictFileFunctionsEnabled(); got != want {
-			t.Errorf("value %q: RestrictFileFunctionsEnabled() = %v, want %v", value, got, want)
+		_, diags := eval(t, f.mod, `file("../outside/secret.txt")`)
+		if refused := diags.HasErrors() && strings.Contains(diags.Error(), outsideErr); refused != want {
+			t.Errorf("value %q: refused = %v, want %v (%v)", value, refused, want, diags)
 		}
-	}
-
-	// an app that has not set its env var keys has no setting to read
-	prev := app_specific.EnvRestrictFileFunctions
-	app_specific.EnvRestrictFileFunctions = ""
-	t.Cleanup(func() { app_specific.EnvRestrictFileFunctions = prev })
-	if RestrictFileFunctionsEnabled() {
-		t.Error("RestrictFileFunctionsEnabled() = true with no env var key set")
 	}
 }
 
