@@ -52,7 +52,7 @@ sits behind `permitted_paths.Enabled()`.
 | task-2-duckdb-lockdown | verified | opus | - | commit 1942ca2 |
 | task-3-sqlite-attach | verified | sonnet | - | commit 39598bc |
 | task-4-routes-test-mod | verified | sonnet | - | commit 5270c74 |
-| task-5-final-gate | pending | sonnet | - | |
+| task-5-final-gate | verified | sonnet | - | gates build, fast, lint exit 0 (evidence/task-5.log) |
 
 ## Parallel groups
 
