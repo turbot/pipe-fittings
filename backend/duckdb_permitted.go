@@ -102,10 +102,13 @@ func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 
 // duckDBOutwardSymlink walks every permitted folder, with its symlinks resolved, and returns an error naming
 // the first symlink in it that leads outside the folders (whether or not what it leads to exists), or that
-// cannot be followed. A symlink
-// that leads inside is not followed, as the folder it leads to is walked in its own right. A folder that does
-// not exist has nothing in it; any other error walking a folder fails, as a folder that cannot be listed
-// cannot be shown free of such a symlink.
+// cannot be followed. A symlink that leads inside is not followed, as the folder it leads to is walked in its
+// own right.
+//
+// What DuckDB cannot read through is skipped, as it cannot lead DuckDB anywhere: a folder this process cannot
+// enter, and a symlink loop whose first step stays inside the folders. A folder that does not exist has nothing
+// in it. Any other error fails, so a folder that can be entered but not listed (where DuckDB could reach a
+// symlink by name) fails, as it cannot be shown free of such a symlink.
 func duckDBOutwardSymlink(roots []string) error {
 	for _, root := range roots {
 		resolved, err := permitted_paths.Check(root)
@@ -117,14 +120,22 @@ func duckDBOutwardSymlink(roots []string) error {
 				if path == resolved && errors.Is(err, fs.ErrNotExist) {
 					return fs.SkipAll
 				}
+				if d != nil && d.IsDir() && errors.Is(err, fs.ErrPermission) && !duckDBCanEnter(path) {
+					return fs.SkipDir
+				}
 				return fmt.Errorf("could not search %s for symlinks that lead outside the folders %s permits: %w", path, permitted_paths.Setting(), err)
 			}
 			if d.Type()&os.ModeSymlink == 0 {
 				return nil
 			}
-			if _, err := permitted_paths.Check(path); err != nil {
+			_, err = permitted_paths.Check(path)
+			if errors.Is(err, permitted_paths.ErrSymlinkLoop) && duckDBLinkStaysInside(path) {
+				// DuckDB cannot read through a loop either
+				return nil
+			}
+			if err != nil {
 				var outside *permitted_paths.OutsideError
-				if errors.As(err, &outside) {
+				if errors.As(err, &outside) || errors.Is(err, permitted_paths.ErrSymlinkLoop) {
 					return fmt.Errorf("%s is a symlink that leads outside the folders %s permits, which DuckDB would follow: remove it, or add the folder it leads to to the setting", path, permitted_paths.Setting())
 				}
 				// a symlink that cannot be followed cannot be shown to stay inside
@@ -137,6 +148,27 @@ func duckDBOutwardSymlink(roots []string) error {
 		}
 	}
 	return nil
+}
+
+// duckDBCanEnter reports whether this process can look up a name in the folder dir, which is what DuckDB needs
+// to read anything under it. Looking up dir's own "." entry needs exactly that.
+func duckDBCanEnter(dir string) bool {
+	_, err := os.Lstat(dir + string(filepath.Separator) + ".")
+	return err == nil
+}
+
+// duckDBLinkStaysInside reports whether the symlink link's own target, read as written from the folder holding
+// it, lies inside the folders. A loop that steps outside could be ended there, by a change outside the folders,
+// to lead anywhere.
+func duckDBLinkStaysInside(link string) bool {
+	target, err := os.Readlink(link)
+	if err != nil {
+		return false
+	}
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(filepath.Dir(link), target)
+	}
+	return permitted_paths.Within(target)
 }
 
 // duckDBLock runs the extension setup and sets the lock's settings, in that order

@@ -369,6 +369,8 @@ func TestDuckDBPermittedBadSetting(t *testing.T) {
 	}
 }
 
+func noLinks(duckDBTestFolders) map[string]string { return nil }
+
 // TestDuckDBPermittedSymlinks shows that DuckDB, which matches allowed_directories as text and follows
 // symlinks, opens only when no symlink in the folders leads outside them
 func TestDuckDBPermittedSymlinks(t *testing.T) {
@@ -376,6 +378,9 @@ func TestDuckDBPermittedSymlinks(t *testing.T) {
 		name string
 		// links maps a symlink, relative to the permitted folder, to its target (made from the folders)
 		links func(f duckDBTestFolders) map[string]string
+		// modes sets, after the links are made, the mode of each folder (relative to the permitted folder, made
+		// first if missing); each is given back 0755 when the test ends so its temp folder can be removed
+		modes map[string]os.FileMode
 		// escape is a file, relative to the permitted folder, that would reach outside through a link
 		escape string
 		// wantErr names the symlink the open refuses; "" means the open works and stays locked
@@ -403,6 +408,21 @@ func TestDuckDBPermittedSymlinks(t *testing.T) {
 		{name: "file inside", links: func(f duckDBTestFolders) map[string]string {
 			return map[string]string{"alias.csv": filepath.Join(f.in, "a.csv")}
 		}},
+		// DuckDB cannot read through a folder this process cannot enter, or through a symlink loop, so neither
+		// stops the open
+		{name: "unreadable subfolder", links: noLinks, modes: map[string]os.FileMode{"sub/locked": 0}},
+		{name: "symlink loop", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"loopa": "loopb", "loopb": "loopa"}
+		}},
+		// a folder that can be entered but not listed may hold a symlink DuckDB can reach by name
+		{name: "searchable but unlistable folder", links: noLinks, modes: map[string]os.FileMode{"sub/hidden": 0o111}, wantErr: "hidden"},
+		// the walk goes on past a skipped folder: sub/locked comes before sub/zlink
+		{name: "outward symlink beside an unreadable subfolder", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"sub/zlink": f.out}
+		}, modes: map[string]os.FileMode{"sub/locked": 0}, escape: "sub/zlink/b.csv", wantErr: "zlink"},
+		{name: "loop through a folder outside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"loopa": filepath.Join(f.out, "loopc"), "../out/loopc": filepath.Join(f.in, "loopa")}
+		}, wantErr: "loopa"},
 	}
 	for _, r := range rows {
 		t.Run(r.name, func(t *testing.T) {
@@ -414,6 +434,19 @@ func TestDuckDBPermittedSymlinks(t *testing.T) {
 				if err := os.Symlink(target, filepath.Join(f.in, link)); err != nil {
 					t.Fatal(err)
 				}
+			}
+			for dir, mode := range r.modes {
+				path := filepath.Join(f.in, dir)
+				if err := os.MkdirAll(path, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Chmod(path, mode); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { _ = os.Chmod(path, 0o755) })
+			}
+			if len(r.modes) > 0 && os.Geteuid() == 0 {
+				t.Skip("root enters and lists every folder")
 			}
 			permitFolders(t, f.in)
 

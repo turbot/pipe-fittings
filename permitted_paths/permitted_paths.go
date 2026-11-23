@@ -8,7 +8,8 @@
 //
 // The setting also covers databases. backend.ConfineModConnectionString checks every database value that mod
 // or .ppc content supplies (every connection type that builds a Postgres, DuckDB, SQLite or MySQL string,
-// steampipe included): a DuckDB or SQLite file must be inside the folders and takes no options (only an empty
+// steampipe included; tailpipe's connection type is exempt, as its string is the tailpipe connect output the
+// host builds itself, though the lock below still applies to it): a DuckDB or SQLite file must be inside the folders and takes no options (only an empty
 // value or exactly :memory: is in-memory), duckdbinit:// is refused, the files a Postgres value names
 // (sslcert, sslkey, sslrootcert, passfile) are checked, Postgres servicefile and service are refused (the
 // service file can name files of its own), and MySQL allowAllFiles is refused. The backend then locks every
@@ -253,6 +254,10 @@ type unresolvableError struct {
 func (e *unresolvableError) Error() string { return e.err.Error() }
 func (e *unresolvableError) Unwrap() error { return e.err }
 
+// ErrSymlinkLoop is the error Check returns for a path inside the folders whose symlinks do not end (a loop),
+// which the OS cannot follow either
+var ErrSymlinkLoop = errors.New("too many levels of symbolic links")
+
 // maxSymlinks bounds the symlinks resolvePath follows, as the OS does, so a symlink loop ends
 const maxSymlinks = 255
 
@@ -296,7 +301,7 @@ func resolvePath(path string) (string, error) {
 		}
 		links++
 		if links > maxSymlinks {
-			return "", fmt.Errorf("too many levels of symbolic links")
+			return "", ErrSymlinkLoop
 		}
 		target, err := os.Readlink(next)
 		if err != nil {

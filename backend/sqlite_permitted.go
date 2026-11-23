@@ -52,8 +52,8 @@ func connectSqlitePermitted(ctx context.Context, dsn string, configure func(*sql
 // check judges every path (made absolute, symlinks resolved). A name that starts with file: is a URI, whose
 // real path and options this cannot judge, so it is refused. SQLite passes the name only when the statement
 // writes it as a literal: for an expression or a bound parameter (ATTACH 'a' || 'b', ATTACH ?) the authorizer
-// gets an empty name, which cannot be judged, so an empty name is refused, and with it ATTACH ” (a temporary
-// database). :memory: opens no file and stays allowed, as does every other action.
+// gets an empty name, which cannot be judged, so an empty name is refused, and with it an ATTACH of the empty
+// string, which opens a temporary database. :memory: opens no file and stays allowed, as does every other action.
 //
 // A bad setting fails here, so the open fails closed. A connection without RegisterAuthorizer cannot be
 // locked, and fails its init.
