@@ -1,5 +1,5 @@
 ---
-status: pending
+status: verified
 complexity: medium
 model: sonnet
 depends_on: [2, "1:compile"]

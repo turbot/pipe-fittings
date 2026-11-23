@@ -50,7 +50,7 @@ sits behind `permitted_paths.Enabled()`.
 |------|--------|-------|-------|-------|
 | task-1-mod-connection-string-checks | verified | sonnet | - | commit 044107b |
 | task-2-duckdb-lockdown | verified | opus | - | commit 1942ca2 |
-| task-3-sqlite-attach | pending | sonnet | - | |
+| task-3-sqlite-attach | verified | sonnet | - | commit 39598bc |
 | task-4-routes-test-mod | pending | sonnet | - | |
 | task-5-final-gate | pending | sonnet | - | |
 
@@ -120,6 +120,7 @@ its resolved absolute path) and adds refusals, only when the setting is set. Wal
 - task 1: `ConfineModConnectionString` rebuilds only the Postgres query; the rest of the connection string, including the password, is kept as written.
 - task 2: once external access is off DuckDB adds its own `.tmp` temp folder and the database file plus its `.wal` to the allow list; the check accepts only their defaults or paths inside the permitted folders, so a DSN `temp_directory` outside them fails the open.
 - task 2: `go mod tidy` raised `goccy/go-yaml` v1.11.2 to v1.17.1 (go-duckdb v2.4.3 needs it); later tasks that touch go.mod inherit that bump.
+- task 3: the `sqlite3` driver has no `driver.DriverContext`, so the connector's `dsnConnector` fallback covers it; `VACUUM INTO` and `load_extension` outside/with the setting set are refused by SQLite, but no test in `TestSqlitePermitted*` pins them (task 4 should cover them if it owns SQLite routes).
 
 ## Definition of done
 
