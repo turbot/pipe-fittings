@@ -19,14 +19,26 @@ dependencies. Executors do not re-open them; a fact that contradicts one is a `B
    (`connection` imports `backend`). `permitted_paths` cannot hold it: `backend` will import
    `permitted_paths`, so the reverse is a cycle.
 
-3. **Provenance decides which refusals apply.** "From mod content" means a plain-string `database`
-   value decoded by `parse.ResolveConnectionString` (resource and mod `database`, which hosts call
-   for every resource) and the `database` override in a `require { mod … { database = … } }` block
-   (`ModVersionConstraint.Initialise`). Those go through `ConfineModConnectionString`. A
-   `connection.<type>.<name>` reference, a connection object, a CLI argument (`inputvars`) and a
-   host-built string (tailpipe's `duckdbinit://`) are the host's own and are not subject to the
-   mod-content refusals; the runtime lock (decisions 6 and 7) still applies to every DuckDB and
-   SQLite open.
+3. **Provenance decides which refusals apply.** "From mod content" means:
+   - a plain-string `database` value decoded by `parse.ResolveConnectionString` (resource and mod
+     `database`, which hosts call for every resource);
+   - the `database` override in a `require { mod … { database = … } }` block
+     (`ModVersionConstraint.Initialise`);
+   - every connection from a `.ppc` file. The default config path starts with `.`, which
+     `cmdconfig.GetConfigPath` turns into the mod location, so a mod can ship its own `.ppc` and
+     name it as `connection.<type>.<name>`. pipe-fittings cannot tell a `.ppc` in the mod folder
+     from one in the install folder, so every `.ppc` connection is checked. A host that keeps its
+     own database files lists their folders, as the issue says.
+
+   The first two go through `ConfineModConnectionString` where they are decoded. For `.ppc`
+   connections, the DuckDB, SQLite, Postgres and MySQL connection types pass the string their
+   `GetConnectionString` returns (a `connection_string` value or one built from the fields)
+   through `ConfineModConnectionString`. This covers both the `connection.<type>.<name>` reference
+   and the connection-object branch, because each resolves through `GetConnectionString`.
+   `connection` already imports `backend`, so no cycle. Only strings the host builds in its own
+   code are not mod content: a CLI argument (`inputvars`) and the tailpipe connection type's
+   string (the `tailpipe connect` output, `duckdb://` or `duckdbinit://`). The runtime lock
+   (decisions 6 and 7) still applies to every DuckDB and SQLite open.
 
 4. **DuckDB and SQLite values from mod content, with the setting set:**
    - The remainder after the prefix carrying `?` is refused (options on the value).

@@ -37,8 +37,12 @@ unchanged.
     resource's `database`; `decodeMod` (:53) calls it for the mod's.
   - `modconfig/mod_version_constraint.go:27` `Database *string` (a `require { mod … { database } }`
     override), initialised in `Initialise(block)` at :98.
-  - The `connection.<type>.<name>` branch (:92-100) and the connection-object branch (:108-140) are
-    the host's own and stay unchecked (decision 3).
+  - `.ppc` connections (decision 3): the `connection.<type>.<name>` branch (:92-100) and the
+    connection-object branch (:108-140) both resolve through the connection type's
+    `GetConnectionString`: `connection/duckdb.go:83`, `connection/sqllite.go:84`,
+    `connection/postgres.go:122`, `connection/mysql.go:89`. Each returns `*c.ConnectionString`
+    when set, else a string built from its fields. The check goes on that return value, so both
+    branches and both forms are covered. `connection/tailpipe.go` stays unchecked (host-built).
 - Prefixes: `backend/duckdb_backend.go:15`, `backend/sqlite_backend.go:14`,
   `backend/duckdb_init_backend.go:16`, `backend/postgres_backend.go:23`,
   `backend/mysql_backend.go:17`. Classification today is case-sensitive `strings.HasPrefix` on the
@@ -51,6 +55,7 @@ unchanged.
 
 - `parse/decode.go`
 - `modconfig/mod_version_constraint.go`
+- `connection/duckdb.go`, `connection/sqllite.go`, `connection/postgres.go`, `connection/mysql.go`
 
 ## Files to create
 
@@ -58,6 +63,7 @@ unchanged.
 - `backend/permitted_paths_test.go`
 - `parse/resolve_connection_string_permitted_test.go`
 - `modconfig/mod_version_constraint_permitted_test.go`
+- `connection/permitted_paths_test.go`
 
 ## Sub-agent prompt
 
@@ -81,7 +87,8 @@ unchanged.
 >    Errors name the setting (`permitted_paths.Setting()`) and the option or path, wrap
 >    `*permitted_paths.OutsideError` where `Check` returned one, and never include a whole Postgres
 >    or MySQL string (it can carry a password). Write a doc comment saying it is for values from
->    mod content and why the host's own strings are not passed through it.
+>    mod content (including every `.ppc` connection, decision 3) and why strings the host builds
+>    in code are not passed through it.
 > 2. Create `backend/permitted_paths_test.go` with `TestConfineModConnectionString`: a table over
 >    `t.TempDir()` folders (one permitted, one outside, and a symlink inside the permitted folder
 >    that points outside) with one row per rule: DuckDB inside (rewritten to the resolved path),
@@ -110,7 +117,16 @@ unchanged.
 >    `TestModVersionConstraintDatabasePermitted` (outside refused, inside rewritten, unset unchanged).
 >    If `Initialise` cannot be driven from a test without an app registration, test a small
 >    unexported helper it calls instead and say so in the batch result.
-> 5. Run the `## Verification` commands.
+> 5. In `GetConnectionString` of `connection/duckdb.go`, `connection/sqllite.go`,
+>    `connection/postgres.go` and `connection/mysql.go`, pass the string it returns (the
+>    `ConnectionString` field when set, else the built one) through
+>    `backend.ConfineModConnectionString` and return its error. Leave `connection/tailpipe.go`
+>    unchanged. Add `connection/permitted_paths_test.go` with `TestConnectionPermitted`: for each
+>    of the four types, a connection whose file (or Postgres `sslkey` in its `connection_string`)
+>    is outside is refused, one inside is rewritten to the resolved path, a MySQL
+>    `connection_string` with `allowAllFiles` is refused, and with the setting unset each string
+>    comes back unchanged.
+> 6. Run the `## Verification` commands.
 >
 > Set the frontmatter `status: in-progress` when you begin and `status: done` when
 > the acceptance criteria are met. Commit on the parent branch with subject
@@ -128,18 +144,21 @@ unchanged.
 - [ ] `?` options on a DuckDB/SQLite value, `duckdbinit://`, a Postgres file option outside the
       folders and MySQL `allowAllFiles` are refused from mod content.
 - [ ] A `require` block's `database` override gets the same checks.
+- [ ] A `.ppc` connection (DuckDB, SQLite, Postgres, MySQL), by its fields or its
+      `connection_string`, gets the same checks through `GetConnectionString`.
 - [ ] With the setting unset, every value comes back byte-for-byte unchanged.
 - [ ] No refusal message contains a Postgres or MySQL password.
-- [ ] Tests pass: the three named tests below.
+- [ ] Tests pass: the four named tests below.
 
 ## Verification
 
 ```bash
-go build ./backend/... ./parse/... ./modconfig/...
-go vet ./backend/ ./parse/ ./modconfig/
+go build ./backend/... ./parse/... ./modconfig/... ./connection/...
+go vet ./backend/ ./parse/ ./modconfig/ ./connection/
 bash -o pipefail -c "go test ./backend/ -run '^TestConfineModConnectionString$' -count=1 -v | grep -- '--- PASS: TestConfineModConnectionString'"
 bash -o pipefail -c "go test ./parse/ -run '^TestResolveConnectionStringPermitted$' -count=1 -v | grep -- '--- PASS: TestResolveConnectionStringPermitted'"
 bash -o pipefail -c "go test ./modconfig/ -run 'Permitted' -count=1 -v | grep -- '--- PASS: '"
+bash -o pipefail -c "go test ./connection/ -run '^TestConnectionPermitted$' -count=1 -v | grep -- '--- PASS: TestConnectionPermitted'"
 ```
 
 The checks cannot see whether a host calls `ResolveConnectionString` for its resources; that is
@@ -148,7 +167,7 @@ the host's existing behaviour and task 4 drives a mod through the parser end to 
 ## Out of scope
 
 - Locking DuckDB SQL at open (task 2); SQLite ATTACH (task 3); the test mod (task 4).
-- Checking connection objects, `connection.<type>.<name>` references or CLI values (decision 3).
+- Checking CLI values or the tailpipe connection type's string (decision 3).
 
 ## Definition of done
 

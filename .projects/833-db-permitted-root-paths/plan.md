@@ -38,7 +38,8 @@ repo's build, unit tests and lint clean at the end.
 
 See `decision.md`. In short: reuse `permitted_paths.Check` (#832), never a second parser of the
 setting; the mod-content checks live in `backend/` and run where mod content becomes a connection
-string (`parse.ResolveConnectionString`, `ModVersionConstraint.Initialise`); DuckDB and SQLite are
+string (`parse.ResolveConnectionString`, `ModVersionConstraint.Initialise`, and each `.ppc`
+connection type's `GetConnectionString`, since a mod can ship its own `.ppc`); DuckDB and SQLite are
 locked at open through a driver-agnostic per-connection connector, with no driver imported by
 non-test code; test-only drivers pinned to the versions powerpipe and tailpipe use; every new path
 sits behind `permitted_paths.Enabled()`.

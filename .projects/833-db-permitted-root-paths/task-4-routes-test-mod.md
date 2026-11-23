@@ -36,7 +36,12 @@ route by adding one row. Update the setting's doc comments to say it now covers 
      naming an outside file;
   6. MySQL `allowAllFiles=true`;
   7. mod SQL on DuckDB reading, writing (`COPY … TO`), attaching and installing outside;
-  8. mod SQL on SQLite attaching an outside file.
+  8. mod SQL on SQLite attaching an outside file;
+  9. a `.ppc` file in the mod's folder defining a DuckDB and a SQLite connection whose
+     `file_name` is outside, named by the mod's `database` as `connection.<type>.<name>`
+     (decision 3). Load the `.ppc` with the config loader the hosts use when a test can drive it;
+     else build the connection as the decoder does and say so in the batch result. Set: the
+     connection's `GetConnectionString()` is refused; unset: it returns the outside path unchanged.
   For Postgres and MySQL there is no server in the unit gate, so "works" with the setting unset
   means the parsed value reaches `GetConnectionString()` unchanged; say so in the test's comment.
 - Driving a mod: `parse.ParseModDefinition(modFilePath, evalCtx)` (`parse/mod.go:45`) decodes the
@@ -66,6 +71,7 @@ route by adding one row. Update the setting's doc comments to say it now covers 
 ## Files to create
 
 - `workspace/test_data/permitted_db_routes/mod.pp`
+- `workspace/test_data/permitted_db_routes/connections.ppc`
 - `workspace/test_data/permitted_db_routes/` route `.sql` files (one per SQL route)
 - `backend/permitted_routes_test.go`
 
@@ -77,7 +83,8 @@ route by adding one row. Update the setting's doc comments to say it now covers 
 >
 > Implement the task:
 > 1. Create the test mod `workspace/test_data/permitted_db_routes/`: a `mod.pp` whose mod block's
->    `database` comes from the eval context, and one `.sql` file per SQL route (DuckDB read, write,
+>    `database` comes from the eval context, a `connections.ppc` for route 9, and one `.sql` file
+>    per SQL route (DuckDB read, write,
 >    attach, install outside; SQLite attach outside) that names the outside path through a
 >    placeholder the test fills. Add a short comment at the top of `mod.pp` saying what the mod is
 >    for and that a new route is one row in `TestPermittedDatabaseRoutes`.
