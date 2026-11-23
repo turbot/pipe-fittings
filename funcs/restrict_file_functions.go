@@ -177,6 +177,11 @@ func confinePath(baseDir, path string) (string, error) {
 
 	resolved, err := resolvePath(abs)
 	if err != nil {
+		// a lookup that failed outside the folder is reported as outside, so it cannot tell a mod what exists there
+		var unresolvable *unresolvableError
+		if errors.As(err, &unresolvable) && !isWithin(root, unresolvable.at) {
+			return "", errors.New(errOutsideFolder)
+		}
 		return "", err
 	}
 	if !isWithin(root, resolved) {
@@ -198,6 +203,15 @@ func resolveRoot(baseDir string) (string, error) {
 	}
 	return root, nil
 }
+
+// unresolvableError is a path resolvePath cannot follow past the part at, as the OS cannot either
+type unresolvableError struct {
+	at  string
+	err error
+}
+
+func (e *unresolvableError) Error() string { return e.err.Error() }
+func (e *unresolvableError) Unwrap() error { return e.err }
 
 // maxSymlinks bounds the symlinks resolvePath follows, as the OS does, so a symlink loop ends
 const maxSymlinks = 255
@@ -227,6 +241,13 @@ func resolvePath(path string) (string, error) {
 		next := filepath.Join(resolved, part)
 		fi, err := os.Lstat(next)
 		if err != nil {
+			// a ".." still to come (from a symlink target) would be cleaned away with the part the OS stops
+			// at, leaving a path the OS can open and this function has not resolved: report the failure
+			for _, rest := range pending {
+				if rest == ".." {
+					return "", &unresolvableError{at: next, err: err}
+				}
+			}
 			return filepath.Join(append([]string{next}, pending...)...), nil
 		}
 		if fi.Mode()&os.ModeSymlink == 0 {

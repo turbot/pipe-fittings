@@ -205,6 +205,37 @@ func TestRestrictFileFunctions_On_RefusesPathsOutsideTheModFolder(t *testing.T) 
 	}
 }
 
+// a symlink whose target climbs back with ".." past a part that cannot be looked up must not be cleaned into
+// a path that opens another symlink, unchecked
+func TestRestrictFileFunctions_On_SymlinkClimbingPastAMissingPart(t *testing.T) {
+	f := newFileFuncFixture(t)
+	setRestrict(t, "true")
+	lockedIn := filepath.Join(f.mod, "lockedin")
+	mustMkdir(t, filepath.Join(lockedIn, "x"))
+	if err := os.Chmod(lockedIn, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(lockedIn, 0o755) })
+	mustSymlink(t, "missing/../link_out", filepath.Join(f.mod, "via_missing"))
+	mustSymlink(t, "lockedin/x/../../link_out", filepath.Join(f.mod, "via_locked"))
+	mustSymlink(t, "../outside/missing/../secret.txt", filepath.Join(f.mod, "via_outside_missing"))
+
+	for _, name := range singlePathFileFunctions {
+		for _, link := range []string{"via_missing", "via_locked", "via_outside_missing"} {
+			v, diags := eval(t, f.mod, name+`("`+link+`")`)
+			if !diags.HasErrors() {
+				t.Errorf("%s(%q) = %#v, want an error", name, link, v)
+			}
+		}
+		// a failed lookup outside the folder is reported as outside
+		mustRefuse(t, f.mod, name+`("via_outside_missing")`)
+	}
+	got := setStrings(t, mustEval(t, f.mod, `fileset(".", "via_*")`))
+	if len(got) != 0 {
+		t.Errorf(`fileset(".", "via_*") = %v, want none`, got)
+	}
+}
+
 func TestRestrictFileFunctions_On_ErrorNamesTheCall(t *testing.T) {
 	f := newFileFuncFixture(t)
 	setRestrict(t, "true")
