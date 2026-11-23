@@ -1,6 +1,7 @@
 package filepaths
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -44,5 +45,38 @@ func TestResolveInside(t *testing.T) {
 		if got, err := ResolveInside(root, rel); err == nil {
 			t.Errorf("ResolveInside(%q) = %q, want an error", rel, got)
 		}
+	}
+}
+
+func TestResolveInsideRefusesSymlink(t *testing.T) {
+	tmp := t.TempDir()
+	root := filepath.Join(tmp, "mods")
+	outside := filepath.Join(tmp, "outside")
+	for _, d := range []string{filepath.Join(root, "github.com", "org", "a@v1.0.0"), outside} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// a mod's repo holds a link which leads out of the mods folder
+	if err := os.Symlink(outside, filepath.Join(root, "github.com", "org", "a@v1.0.0", "link#y")); err != nil {
+		t.Skipf("cannot create symlink: %v", err)
+	}
+
+	if got, err := ResolveInside(root, "github.com/org/a@v1.0.0/link#y/victim"); err == nil {
+		t.Errorf("a path through a symlink was accepted: %q", got)
+	}
+	// a path beside it, or one which does not exist yet, is fine
+	for _, rel := range []string{"github.com/org/a@v1.0.0", "github.com/org/a@v1.0.0/other#y/victim", "github.com/org/new@v2.0.0"} {
+		if _, err := ResolveInside(root, rel); err != nil {
+			t.Errorf("ResolveInside(%q) unexpected error: %v", rel, err)
+		}
+	}
+	// a root which is itself a symlink is the caller's choice and still works
+	link := filepath.Join(tmp, "mods-link")
+	if err := os.Symlink(root, link); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ResolveInside(link, "github.com/org/new@v2.0.0"); err != nil {
+		t.Errorf("a root reached through a symlink was refused: %v", err)
 	}
 }

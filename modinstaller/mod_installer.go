@@ -956,8 +956,12 @@ func (i *ModInstaller) validateRequirement(requiredModVersion *modconfig.ModVers
 	if requiredModVersion.FilePath != "" {
 		return nil
 	}
-	if _, err := i.getDependencyDestPath(requiredModVersion.DependencyPath()); err != nil {
-		return fmt.Errorf("cannot install mod '%s': its name, version, branch or tag would place it outside the mods folder: %w", requiredModVersion.Name, err)
+	// a mod is cloned into the shadow folder, then copied to the mods folder: check both
+	dependencyPath := requiredModVersion.DependencyPath()
+	for _, getPath := range []func(string) (string, error){i.getDependencyDestPath, i.getDependencyShadowPath} {
+		if _, err := getPath(dependencyPath); err != nil {
+			return fmt.Errorf("cannot install mod '%s': its name, version, branch or tag would place it outside the mods folder: %w", requiredModVersion.Name, err)
+		}
 	}
 	return nil
 }

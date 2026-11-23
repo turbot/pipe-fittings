@@ -109,7 +109,7 @@ func TestInstallRefusesRequireOutsideModsFolder(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			i, tmp := newTestInstaller(t)
 
-			// a folder an escaping path would land on (and would be deleted before a reinstall)
+			// a folder an escaping path would land on (it would be deleted before a reinstall)
 			outside := filepath.Join(tmp, "outside")
 			sentinel := filepath.Join(outside, "keep.txt")
 			if err := os.MkdirAll(outside, 0o755); err != nil {
@@ -117,10 +117,6 @@ func TestInstallRefusesRequireOutsideModsFolder(t *testing.T) {
 			}
 			if err := os.WriteFile(sentinel, []byte("keep"), 0o600); err != nil {
 				t.Fatal(err)
-			}
-			// the same folder, laid out where a '../' chain from inside the mods folder reaches
-			for _, p := range []string{filepath.Join(i.modsPath, "github.com", "org", "repo#x")} {
-				_ = os.MkdirAll(p, 0o755)
 			}
 
 			i.workspaceMod.Require.Mods = []*modconfig.ModVersionConstraint{c}
@@ -194,5 +190,36 @@ func TestDependencyPathsStayInside(t *testing.T) {
 		if _, err := i.getDependencyDestPath(ok); err != nil {
 			t.Errorf("%s refused: %v", ok, err)
 		}
+	}
+}
+
+// a symlink inside an installed mod's repo must not lead a child dependency out of the mods folder
+func TestInstallRefusesChildThroughSymlink(t *testing.T) {
+	i, tmp := newTestInstaller(t)
+	victim := filepath.Join(tmp, "home", "victim")
+	if err := os.MkdirAll(victim, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sentinel := filepath.Join(victim, "keep.txt")
+	if err := os.WriteFile(sentinel, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	parentDir := filepath.Join(i.shadowDirPath, "github.com", "org", "a@v1.0.0")
+	if err := os.MkdirAll(parentDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(tmp, "home"), filepath.Join(parentDir, "link#y")); err != nil {
+		t.Skipf("cannot create symlink: %v", err)
+	}
+
+	c := &modconfig.ModVersionConstraint{Name: "github.com/org/a@v1.0.0/link", BranchName: "y/victim"}
+	if err := i.validateRequirement(c); err == nil {
+		t.Fatal("expected a require reaching a symlink to be refused")
+	}
+	if _, err := i.getDependencyShadowPath("github.com/org/a@v1.0.0/link#y/victim"); err == nil {
+		t.Fatal("expected the shadow path through a symlink to be refused")
+	}
+	if b, err := os.ReadFile(sentinel); err != nil || string(b) != "keep" {
+		t.Errorf("file outside the mods folder was changed: %q, %v", b, err)
 	}
 }
