@@ -11,7 +11,13 @@ import (
 )
 
 // postgresFileOptions are the connection string options that make the Postgres driver read a file
-var postgresFileOptions = []string{"sslcert", "sslkey", "sslrootcert", "passfile", "servicefile"}
+var postgresFileOptions = []string{"sslcert", "sslkey", "sslrootcert", "passfile"}
+
+// postgresServiceOptions make the Postgres driver read a service file and take settings from it: servicefile
+// names the file, and service picks an entry from it (or from the user's own service file when none is named).
+// The entry can name files of its own (sslcert, sslkey, sslrootcert, passfile) and a password, which the
+// string cannot show, so both are refused rather than checked.
+var postgresServiceOptions = []string{"servicefile", "service"}
 
 // ConfineModConnectionString limits a database connection string that mod content supplies to what
 // <APP>_PERMITTED_ROOT_PATHS permits. It returns the string to use, which may differ from cs, or an error
@@ -24,12 +30,14 @@ var postgresFileOptions = []string{"sslcert", "sslkey", "sslrootcert", "passfile
 // chose those, not the mod, and a host that keeps its own database files lists their folders in the setting.
 //
 // With the setting set:
-//   - DuckDB and SQLite: an in-memory value passes; anything with `?` options or a URI or scheme form
-//     (`file:`, `md:`, `s3://`) is refused; any other value is a file, checked, and rewritten to its
-//     absolute path with symlinks resolved, so the file opened is the file checked
+//   - DuckDB and SQLite: an empty value or exactly `:memory:` is in-memory and passes; anything with `?`
+//     options or a URI or scheme form (`file:`, `md:`, `s3://`, and so `:memory:<name>` too) is refused; any
+//     other value is a file, checked, and rewritten to its absolute path with symlinks resolved, so the file
+//     opened is the file checked
 //   - duckdbinit:// is refused whatever follows
-//   - Postgres: each of sslcert, sslkey, sslrootcert, passfile and servicefile is checked and rewritten
-//     to its resolved path; a string that cannot be parsed is refused
+//   - Postgres: each of sslcert, sslkey, sslrootcert and passfile is checked and rewritten to its resolved
+//     path; servicefile and service are refused whatever their value, as the service file they make the
+//     driver read can name files and a password of its own; a string that cannot be parsed is refused
 //   - MySQL: an allowAllFiles option is refused whatever its value
 //
 // A refusal names the option or the path, never the whole string, which can carry a password.
@@ -60,7 +68,8 @@ func confineFileDatabase(original, trimmed, prefix string) (string, error) {
 	if strings.Contains(rest, "?") {
 		return "", fmt.Errorf("database: option \"?…\" is not allowed while %s is set", permitted_paths.Setting())
 	}
-	if rest == "" || strings.HasPrefix(rest, ":memory:") {
+	// only these two are in-memory: SQLite reads anything else, :memory:/… included, as a file path
+	if rest == "" || rest == ":memory:" {
 		return original, nil
 	}
 	if filepath.VolumeName(rest) == "" {
@@ -91,15 +100,16 @@ func confinePostgres(trimmed string) (string, error) {
 	pairs := strings.Split(u.RawQuery, "&")
 	for i, pair := range pairs {
 		rawKey, rawValue, hasValue := strings.Cut(pair, "=")
-		if !hasValue {
-			continue
-		}
 		key, err := url.QueryUnescape(rawKey)
-		if err != nil || !isPostgresFileOption(key) {
-			if err != nil {
-				// a key that cannot be decoded could still name one of the options
-				return "", fmt.Errorf("database: an option of the postgres connection string cannot be parsed, so %s cannot be applied to it", permitted_paths.Setting())
-			}
+		if err != nil {
+			// a key that cannot be decoded could still name one of the options
+			return "", fmt.Errorf("database: an option of the postgres connection string cannot be parsed, so %s cannot be applied to it", permitted_paths.Setting())
+		}
+		// refused on the key alone: the driver reads the service file even for an empty service
+		if isPostgresOption(postgresServiceOptions, key) {
+			return "", fmt.Errorf("database: option %q is not allowed while %s is set", key, permitted_paths.Setting())
+		}
+		if !hasValue || !isPostgresOption(postgresFileOptions, key) {
 			continue
 		}
 		value, err := url.QueryUnescape(rawValue)
@@ -120,8 +130,8 @@ func confinePostgres(trimmed string) (string, error) {
 	return trimmed[:at+1] + strings.Join(pairs, "&") + trimmed[at+1+len(u.RawQuery):], nil
 }
 
-func isPostgresFileOption(key string) bool {
-	for _, option := range postgresFileOptions {
+func isPostgresOption(options []string, key string) bool {
+	for _, option := range options {
 		if strings.EqualFold(key, option) {
 			return true
 		}

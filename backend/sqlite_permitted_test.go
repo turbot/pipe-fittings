@@ -61,11 +61,18 @@ func TestSqlitePermittedUnset(t *testing.T) {
 // sqliteAttachFails checks that attaching file fails on conn and leaves no file at created
 func sqliteAttachFails(t *testing.T, conn *sql.Conn, what, file, created string) {
 	t.Helper()
-	_, err := conn.ExecContext(context.Background(), "ATTACH '"+file+"' AS x_"+strings.NewReplacer(" ", "_", "-", "_").Replace(what))
+	sqliteAttachExprFails(t, conn, what, "'"+file+"'", created)
+}
+
+// sqliteAttachExprFails checks that ATTACH of the expression expr (with args bound to it) fails on conn and
+// leaves no file at created
+func sqliteAttachExprFails(t *testing.T, conn *sql.Conn, what, expr, created string, args ...any) {
+	t.Helper()
+	_, err := conn.ExecContext(context.Background(), "ATTACH "+expr+" AS x_"+strings.NewReplacer(" ", "_", "-", "_").Replace(what), args...)
 	if err == nil {
-		t.Errorf("%s: ATTACH %s: want an error, got none", what, file)
+		t.Errorf("%s: ATTACH %s: want an error, got none", what, expr)
 	} else if !strings.Contains(err.Error(), "not authorized") {
-		t.Errorf("%s: ATTACH %s: want the authorizer's refusal, got: %v", what, file, err)
+		t.Errorf("%s: ATTACH %s: want the authorizer's refusal, got: %v", what, expr, err)
 	}
 	if created != "" {
 		if _, err := os.Stat(created); err == nil {
@@ -110,6 +117,13 @@ func TestSqlitePermittedAttach(t *testing.T) {
 			link := filepath.Join(f.permitted, "linkdir", "y.db")
 			sqliteAttachFails(t, conn, "symlink", link, filepath.Join(f.outside, "y.db"))
 			sqliteAttachFails(t, conn, "dotdot", filepath.Join(f.permitted, "..", "outside", "z.db"), filepath.Join(f.outside, "z.db"))
+			// SQLite tells the authorizer no file name for an expression or a bound parameter
+			exprFile := filepath.Join(f.outside, "expr.db")
+			dir, base := filepath.Split(exprFile)
+			sqliteAttachExprFails(t, conn, "concatenation", "'"+dir+"' || '"+base+"'", exprFile)
+			paramFile := filepath.Join(f.outside, "param.db")
+			sqliteAttachExprFails(t, conn, "bound parameter", "?", paramFile, paramFile)
+			sqliteAttachExprFails(t, conn, "bound parameter inside", "?", "", filepath.Join(f.permitted, "param.db"))
 
 			inFile := filepath.Join(f.permitted, "in"+string(rune('1'+i))+".db")
 			name := "i" + string(rune('1'+i))

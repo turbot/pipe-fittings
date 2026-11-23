@@ -16,7 +16,7 @@ import (
 const (
 	sqliteOK     = 0  // SQLITE_OK: allow the action
 	sqliteDeny   = 1  // SQLITE_DENY: fail the statement with "not authorized"
-	sqliteAttach = 24 // SQLITE_ATTACH: ATTACH DATABASE; the first argument is the file name as written
+	sqliteAttach = 24 // SQLITE_ATTACH: ATTACH DATABASE; the first argument is the file name when written as a literal, else empty
 )
 
 // sqliteAuthorizerConn is what a SQLite driver connection must have for the lock: mattn/go-sqlite3's
@@ -50,8 +50,10 @@ func connectSqlitePermitted(ctx context.Context, dsn string, configure func(*sql
 // sqlitePermittedInit returns the init that registers, on each new SQLite connection, an authorizer that
 // refuses an ATTACH of a file outside the permitted folders. The file name is judged as the permitted_paths
 // check judges every path (made absolute, symlinks resolved). A name that starts with file: is a URI, whose
-// real path and options this cannot judge, so it is refused. An empty name (a temporary database) and
-// :memory: open no file and stay allowed, as does every other action.
+// real path and options this cannot judge, so it is refused. SQLite passes the name only when the statement
+// writes it as a literal: for an expression or a bound parameter (ATTACH 'a' || 'b', ATTACH ?) the authorizer
+// gets an empty name, which cannot be judged, so an empty name is refused, and with it ATTACH ” (a temporary
+// database). :memory: opens no file and stays allowed, as does every other action.
 //
 // A bad setting fails here, so the open fails closed. A connection without RegisterAuthorizer cannot be
 // locked, and fails its init.
@@ -77,10 +79,11 @@ func sqliteAuthorize(op int, file, _, _ string) int {
 	if op != sqliteAttach {
 		return sqliteOK
 	}
-	if file == "" || file == ":memory:" {
+	if file == ":memory:" {
 		return sqliteOK
 	}
-	if strings.HasPrefix(file, "file:") {
+	// an empty name is an expression or a bound parameter, whose file SQLite has not worked out yet
+	if file == "" || strings.HasPrefix(file, "file:") {
 		return sqliteDeny
 	}
 	if _, err := permitted_paths.Check(file); err != nil {

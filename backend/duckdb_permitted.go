@@ -6,6 +6,8 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -57,6 +59,11 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 // DuckDB itself adds its own files when external access is turned off: its temp_directory (where it spills to
 // disk) to allowed_directories, and the database file and its .wal to allowed_paths. The check accepts those
 // only as duckDBOwnFiles says, so a DSN that pointed temp_directory elsewhere cannot open a folder to SQL.
+//
+// DuckDB matches allowed_directories as text and follows symlinks, so a symlink inside the folders that leads
+// outside them would let SQL read and write the files it leads to. SQL cannot make a symlink, so the folders
+// are searched once here, before any connection opens, and a symlink that leads outside fails the open
+// (duckDBOutwardSymlink).
 // dbPath is the database file the DSN opens, or "" for an in-memory database.
 func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 	roots, err := permitted_paths.ResolvedRoots()
@@ -65,6 +72,9 @@ func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 	}
 	if len(roots) == 0 {
 		return nil, fmt.Errorf("%s names no folder", permitted_paths.Setting())
+	}
+	if err := duckDBOutwardSymlink(permitted_paths.Roots()); err != nil {
+		return nil, err
 	}
 	dirs := duckDBAllowedDirectories(roots)
 	own := duckDBOwnFiles{dbPath: dbPath}
@@ -88,6 +98,45 @@ func duckDBPermittedInit(dbPath string) (ConnInitFunc, error) {
 		}
 		return nil
 	}, nil
+}
+
+// duckDBOutwardSymlink walks every permitted folder, with its symlinks resolved, and returns an error naming
+// the first symlink in it that leads outside the folders (whether or not what it leads to exists), or that
+// cannot be followed. A symlink
+// that leads inside is not followed, as the folder it leads to is walked in its own right. A folder that does
+// not exist has nothing in it; any other error walking a folder fails, as a folder that cannot be listed
+// cannot be shown free of such a symlink.
+func duckDBOutwardSymlink(roots []string) error {
+	for _, root := range roots {
+		resolved, err := permitted_paths.Check(root)
+		if err != nil {
+			return err
+		}
+		err = filepath.WalkDir(resolved, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				if path == resolved && errors.Is(err, fs.ErrNotExist) {
+					return fs.SkipAll
+				}
+				return fmt.Errorf("could not search %s for symlinks that lead outside the folders %s permits: %w", path, permitted_paths.Setting(), err)
+			}
+			if d.Type()&os.ModeSymlink == 0 {
+				return nil
+			}
+			if _, err := permitted_paths.Check(path); err != nil {
+				var outside *permitted_paths.OutsideError
+				if errors.As(err, &outside) {
+					return fmt.Errorf("%s is a symlink that leads outside the folders %s permits, which DuckDB would follow: remove it, or add the folder it leads to to the setting", path, permitted_paths.Setting())
+				}
+				// a symlink that cannot be followed cannot be shown to stay inside
+				return fmt.Errorf("could not follow the symlink %s, so %s cannot be applied to DuckDB: %w", path, permitted_paths.Setting(), err)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // duckDBLock runs the extension setup and sets the lock's settings, in that order

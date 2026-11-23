@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -96,16 +97,17 @@ func (c *SteampipePgConnection) GetConnectionString(opts ...ConnectionStringOpt)
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString, nil
+		return backend.ConfineModConnectionString(*c.ConnectionString)
 	}
 	// db, username, host and port all have default values if not set
-	return buildPostgresConnectionString(
+	connString := buildPostgresConnectionString(
 		c.getDbName(),
 		c.getUserName(),
 		c.getHost(),
 		c.getPort(),
 
-		c.Password, c.SslMode), nil
+		c.Password, c.SslMode)
+	return backend.ConfineModConnectionString(connString)
 }
 
 func (c *SteampipePgConnection) GetEnv() map[string]cty.Value {

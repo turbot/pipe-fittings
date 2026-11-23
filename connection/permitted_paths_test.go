@@ -89,6 +89,13 @@ func TestConnectionPermitted(t *testing.T) {
 			return c
 		}
 	}
+	steampipe := func(f func(c *SteampipePgConnection)) func() ConnectionStringProvider {
+		return func() ConnectionStringProvider {
+			c := NewSteampipePgConnection("sp", declRange).(*SteampipePgConnection)
+			f(c)
+			return c
+		}
+	}
 	mysql := func(f func(c *MysqlConnection)) func() ConnectionStringProvider {
 		return func() ConnectionStringProvider {
 			c := NewMysqlConnection("m", declRange).(*MysqlConnection)
@@ -128,6 +135,15 @@ func TestConnectionPermitted(t *testing.T) {
 			wantErr: `option "sslkey"`, unset: pg("sslkey=" + out("k.pem"))},
 		{name: "postgres sslkey inside", conn: postgres(func(c *PostgresConnection) { c.ConnectionString = ptr(pg("sslkey=" + in("sub/../k.pem"))) }),
 			want: pg("sslkey=" + url.QueryEscape(in("k.pem"))), unset: pg("sslkey=" + in("sub/../k.pem"))},
+		// Steampipe: a Postgres connection by another name
+		{name: "steampipe fields", conn: steampipe(func(c *SteampipePgConnection) {}),
+			want: "postgresql://steampipe@localhost:9193/steampipe", unset: "postgresql://steampipe@localhost:9193/steampipe"},
+		{name: "steampipe sslkey outside", conn: steampipe(func(c *SteampipePgConnection) { c.ConnectionString = ptr(pg("sslkey=" + out("k.pem"))) }),
+			wantErr: `option "sslkey"`, unset: pg("sslkey=" + out("k.pem"))},
+		{name: "steampipe passfile outside", conn: steampipe(func(c *SteampipePgConnection) { c.ConnectionString = ptr(pg("passfile=" + out("pgpass"))) }),
+			wantErr: `option "passfile"`, unset: pg("passfile=" + out("pgpass"))},
+		{name: "steampipe sslcert inside", conn: steampipe(func(c *SteampipePgConnection) { c.ConnectionString = ptr(pg("sslcert=" + in("sub/../c.pem"))) }),
+			want: pg("sslcert=" + url.QueryEscape(in("c.pem"))), unset: pg("sslcert=" + in("sub/../c.pem"))},
 		// MySQL
 		{name: "mysql fields", conn: mysql(func(c *MysqlConnection) {
 			c.Host, c.DbName, c.UserName, c.Password = ptr("db.example.com"), ptr("app"), ptr("alice"), ptr(secret)

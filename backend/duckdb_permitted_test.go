@@ -368,3 +368,101 @@ func TestDuckDBPermittedBadSetting(t *testing.T) {
 		t.Error("duckdbinit Connect returned a pool with the error")
 	}
 }
+
+// TestDuckDBPermittedSymlinks shows that DuckDB, which matches allowed_directories as text and follows
+// symlinks, opens only when no symlink in the folders leads outside them
+func TestDuckDBPermittedSymlinks(t *testing.T) {
+	type row struct {
+		name string
+		// links maps a symlink, relative to the permitted folder, to its target (made from the folders)
+		links func(f duckDBTestFolders) map[string]string
+		// escape is a file, relative to the permitted folder, that would reach outside through a link
+		escape string
+		// wantErr names the symlink the open refuses; "" means the open works and stays locked
+		wantErr string
+	}
+	rows := []row{
+		{name: "folder outside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"linkdir": f.out}
+		}, escape: "linkdir/b.csv", wantErr: "linkdir"},
+		{name: "relative folder outside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"rel": filepath.Join("..", "out")}
+		}, escape: "rel/b.csv", wantErr: "rel"},
+		{name: "nested file outside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"sub/deeper/b.csv": filepath.Join(f.out, "b.csv")}
+		}, escape: "sub/deeper/b.csv", wantErr: "b.csv"},
+		{name: "missing file outside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"new.csv": filepath.Join(f.out, "new.csv")}
+		}, wantErr: "new.csv"},
+		{name: "the sibling folder", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"sib": f.sibling}
+		}, escape: "sib/c.csv", wantErr: "sib"},
+		{name: "folder inside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"inlink": filepath.Join(f.in, "sub")}
+		}},
+		{name: "file inside", links: func(f duckDBTestFolders) map[string]string {
+			return map[string]string{"alias.csv": filepath.Join(f.in, "a.csv")}
+		}},
+	}
+	for _, r := range rows {
+		t.Run(r.name, func(t *testing.T) {
+			f := newDuckDBTest(t)
+			if err := os.MkdirAll(filepath.Join(f.in, "sub", "deeper"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			for link, target := range r.links(f) {
+				if err := os.Symlink(target, filepath.Join(f.in, link)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			permitFolders(t, f.in)
+
+			db, err := connectDuckDB(t, "duckdb://", 2)
+			if r.wantErr == "" {
+				if err != nil {
+					t.Fatalf("Connect: %v", err)
+				}
+				assertLocked(t, db, f)
+				return
+			}
+			if err == nil {
+				if r.escape != "" {
+					var n int
+					if qErr := db.QueryRow("SELECT count(*) FROM read_csv(" + q(filepath.Join(f.in, r.escape)) + ")").Scan(&n); qErr == nil {
+						t.Errorf("read %s outside the folder through a symlink", r.escape)
+					}
+				}
+				t.Fatalf("Connect: want an error naming %q and %s, got none", r.wantErr, testPermittedEnv)
+			}
+			if !strings.Contains(err.Error(), r.wantErr) || !strings.Contains(err.Error(), testPermittedEnv) {
+				t.Errorf("Connect = %v; want an error naming %q and %s", err, r.wantErr, testPermittedEnv)
+			}
+			if db != nil {
+				t.Error("Connect returned a pool with the error")
+			}
+			// duckdbinit opens through the same lock
+			initDB, err := connectDuckDBInit(t, "")
+			if err == nil || !strings.Contains(err.Error(), r.wantErr) {
+				t.Errorf("duckdbinit Connect = %v; want an error naming %q", err, r.wantErr)
+			}
+			if initDB != nil {
+				t.Error("duckdbinit Connect returned a pool with the error")
+			}
+		})
+	}
+
+	t.Run("setting unset", func(t *testing.T) {
+		f := newDuckDBTest(t)
+		if err := os.Symlink(f.out, filepath.Join(f.in, "linkdir")); err != nil {
+			t.Fatal(err)
+		}
+		if err := setPermittedEnv(t, ""); err != nil {
+			t.Fatal(err)
+		}
+		db, err := connectDuckDB(t, "duckdb://", 2)
+		if err != nil {
+			t.Fatalf("Connect: %v", err)
+		}
+		mustRead(t, db, filepath.Join(f.in, "linkdir", "b.csv"))
+	})
+}
