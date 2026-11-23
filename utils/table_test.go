@@ -3,7 +3,14 @@ package utils
 import (
 	"bytes"
 	"testing"
+
+	"github.com/olekukonko/tablewriter/pkg/twwidth"
 )
+
+// the golden strings assume narrow widths; an East Asian locale or RUNEWIDTH_EASTASIAN=1 would widen some runes
+func init() {
+	twwidth.SetEastAsian(false)
+}
 
 // the expected strings are the output of tablewriter v0.0.5 for the same data,
 // with the callers' v0 settings (auto-wrap off, left alignment)

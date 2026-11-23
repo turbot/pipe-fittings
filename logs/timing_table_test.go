@@ -3,7 +3,14 @@ package logs
 import (
 	"bytes"
 	"testing"
+
+	"github.com/olekukonko/tablewriter/pkg/twwidth"
 )
+
+// the golden strings assume narrow widths; an East Asian locale or RUNEWIDTH_EASTASIAN=1 would widen some runes
+func init() {
+	twwidth.SetEastAsian(false)
+}
 
 // the expected strings are the output of tablewriter v0.0.5 for the same data,
 // except that its padding of an over-long column to 50 characters is not reproduced
