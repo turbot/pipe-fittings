@@ -10,7 +10,8 @@
       "off": true
     },
     "dependencies": {
-      "off": true
+      "when": "tue week 1",
+      "mergeByHand": true
     },
     "dependabot-cant-fix": {
       "off": true
