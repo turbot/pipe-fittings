@@ -22,3 +22,16 @@ Rounds 1 to 5 fixed the earlier findings (commits cd93b1f, 9c16364, d5a1e86, 813
 - The fourth round's probe once wrote a file to the real home folder (~/.duckdb/stored_secrets). It was removed; the tests were changed to use a temp HOME.
 - A dependency side-effect was reported (goccy/go-yaml 1.11.2 to 1.17.1, through arrow-go). Confirm it is intended before the PR.
 - Empty .duckdb_tmp folders are left behind after use (per database, inside the first writable folder).
+
+## Round 7 (self-review over the whole branch, at e6483b1)
+
+Round 6's blocking item and tidy items 4 and 5 are fixed at e6483b1. Round 7 found one blocking item
+that needs a person's decision, so the ship is held again (see `BLOCKED-ship.md`).
+
+## Blocking (round 7)
+
+1. backend/duckdb_init_backend.go:66 — with the setting set, a host's DuckDB init script that runs `install` or `load` (tailpipe's connect script does) fails with a permission error, because the lock is applied before the script runs; listing the folders does not help. The issue's promise that listing a host's folders keeps its DuckDB files working is therefore false for this case. Needs a product decision: see BLOCKED-ship.md.
+
+## Needs a person
+
+- The item above (BLOCKED-ship.md).
