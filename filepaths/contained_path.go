@@ -1,7 +1,9 @@
 package filepaths
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,9 +62,12 @@ func ResolveInsideNoSymlinks(root, rel string) (string, error) {
 	for _, element := range strings.Split(check, string(filepath.Separator)) {
 		current = filepath.Join(current, element)
 		info, err := os.Lstat(current)
-		if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
 			// this and everything below it does not exist yet
 			break
+		}
+		if err != nil {
+			return "", fmt.Errorf("cannot check path '%s': %w", rel, err)
 		}
 		if info.Mode()&os.ModeSymlink != 0 {
 			return "", fmt.Errorf("path '%s' goes through a symbolic link", rel)
