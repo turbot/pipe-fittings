@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -59,6 +58,12 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 			return nil, err
 		}
 	}
+	// the lock file is read from disk and may have been edited or come from someone else:
+	// refuse any entry which would place a dependency outside the mods folder
+	if err := validateInstallCache(installCache, filepaths.WorkspaceModPath(workspacePath)); err != nil {
+		slog.Debug("invalid lock file", "lockPath", lockPath, "error", err)
+		return nil, fmt.Errorf("invalid lock file '%s': %w", lockPath, err)
+	}
 	res := &WorkspaceLock{
 		WorkspacePath:       workspacePath,
 		ModInstallationPath: filepaths.WorkspaceModPath(workspacePath),
@@ -75,6 +80,21 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 	res.setMissing()
 
 	return res, nil
+}
+
+// validateInstallCache checks that every (non file path) dependency in the lock sits inside the mods folder
+func validateInstallCache(installCache InstalledDependencyVersionsMap, modsPath string) error {
+	for parent, deps := range installCache {
+		for name, dep := range deps {
+			if dep == nil || dep.ResolvedVersionConstraint == nil || dep.FilePath != "" {
+				continue
+			}
+			if _, err := filepaths.ResolveInside(modsPath, dep.DependencyPath()); err != nil {
+				return fmt.Errorf("dependency '%s' of '%s' would be installed outside the mods folder: %w", name, parent, err)
+			}
+		}
+	}
+	return nil
 }
 
 // getInstalledMods returns a map installed mods, and the versions installed for each
@@ -380,7 +400,11 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 	if modDependency.FilePath != "" {
 		dependencyFilepath = modDependency.FilePath
 	} else {
-		dependencyFilepath = path.Join(l.ModInstallationPath, modDependency.DependencyPath())
+		var err error
+		dependencyFilepath, err = filepaths.ResolveInside(l.ModInstallationPath, modDependency.DependencyPath())
+		if err != nil {
+			return "", fmt.Errorf("dependency mod '%s' would be outside the mods folder: %w", modDependency.DependencyPath(), err)
+		}
 	}
 
 	if filehelpers.DirectoryExists(dependencyFilepath) {

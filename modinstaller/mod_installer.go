@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/Masterminds/semver/v3"
@@ -346,6 +345,11 @@ func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (
 	var errors []error
 
 	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
+		// refuse a mod which would be installed outside the mods folder, before touching anything
+		if err := i.validateRequirement(requiredModVersion); err != nil {
+			errors = append(errors, err)
+			continue
+		}
 		// is this mod targeted by the command (i.e. was the mod name passed as an arg
 		// - or else were no args passed, targeting all mods)
 		commandTargetingMod := i.isCommandTargetingMod(requiredModVersion)
@@ -414,6 +418,10 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
 	for _, childDependency := range dependencyMod.Mod.Require.Mods {
+		if err := i.validateRequirement(childDependency); err != nil {
+			errors = append(errors, err)
+			continue
+		}
 		childDependencyMod, err := i.getModForRequirement(ctx, childDependency, commandTargettingParent)
 		if err != nil {
 			errors = append(errors, err)
@@ -507,7 +515,10 @@ func (i *ModInstaller) install(ctx context.Context, requiredModVersion *modconfi
 func (i *ModInstaller) installFromTag(dependency *versionmap.ResolvedVersionConstraint) (*modconfig.Mod, error) {
 	// get the temp location to install the mod to
 	dependencyPath := dependency.DependencyPath()
-	destPath := i.getDependencyShadowPath(dependencyPath)
+	destPath, err := i.getDependencyShadowPath(dependencyPath)
+	if err != nil {
+		return nil, err
+	}
 
 	// does target dir exist>
 	if _, err := os.Stat(destPath); err == nil {
@@ -546,7 +557,10 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 	// get the temp location to install the mod to
 	// just use the original constraint as the dependency path
 	dependencyPath := modconfig.BuildModDependencyPath(modVersion.Name, dependencyVersion)
-	destPath := i.getDependencyShadowPath(dependencyPath)
+	destPath, err := i.getDependencyShadowPath(dependencyPath)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// does target dir exist>
 	if _, err := os.Stat(destPath); err == nil {
@@ -734,7 +748,10 @@ func (i *ModInstaller) loadDependencyMod(ctx context.Context, modVersion *versio
 func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstallRoot string, dependencyPath string) (*modconfig.Mod, error) {
 	slog.Debug("loadDependencyModFromRoot", "dependencyPath", dependencyPath, "modInstallRoot", modInstallRoot)
 
-	modPath := path.Join(modInstallRoot, dependencyPath)
+	modPath, err := resolveDependencyPath(modInstallRoot, dependencyPath)
+	if err != nil {
+		return nil, err
+	}
 	modDefinition, err := parse.LoadModfile(modPath)
 	if err != nil {
 		// return nil, sperr.WrapWithMessage(err, "failed to load mod definition for %s from %s", dependencyPath, modInstallRoot)
@@ -836,7 +853,10 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 		return "", fmt.Errorf("getLatestCommitForBranch called but Installed version has no branch")
 	}
 	// Open the local repository
-	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
+	modPath, err := i.getDependencyDestPath(installedVersion.DependencyPath())
+	if err != nil {
+		return "", err
+	}
 	repo, err := i.openRepo(modPath)
 	if err != nil {
 		return "", err
@@ -874,7 +894,10 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 	}
 
 	// Open the local repository
-	modPath := path.Join(i.modsPath, installedVersion.DependencyPath())
+	modPath, err := i.getDependencyDestPath(installedVersion.DependencyPath())
+	if err != nil {
+		return "", err
+	}
 	repo, err := i.openRepo(modPath)
 	if err != nil {
 		return "", err
@@ -905,13 +928,38 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 }
 
 // build the path of the temp location to copy this dependency to
-func (i *ModInstaller) getDependencyDestPath(dependencyFullName string) string {
-	return filepath.Join(i.modsPath, dependencyFullName)
+// (an error if the dependency name would place it outside the mods folder)
+func (i *ModInstaller) getDependencyDestPath(dependencyFullName string) (string, error) {
+	return resolveDependencyPath(i.modsPath, dependencyFullName)
 }
 
 // build the path of the temp location to copy this dependency to
-func (i *ModInstaller) getDependencyShadowPath(dependencyFullName string) string {
-	return filepath.Join(i.shadowDirPath, dependencyFullName)
+// (an error if the dependency name would place it outside the shadow folder)
+func (i *ModInstaller) getDependencyShadowPath(dependencyFullName string) (string, error) {
+	return resolveDependencyPath(i.shadowDirPath, dependencyFullName)
+}
+
+// resolveDependencyPath returns the folder of a dependency under the given install root.
+// The dependency name is built from a mod's require block (name, version, branch or tag) or from the
+// lock file, so is untrusted: it must never place the folder outside the root.
+func resolveDependencyPath(installRoot, dependencyFullName string) (string, error) {
+	res, err := filepaths.ResolveInside(installRoot, dependencyFullName)
+	if err != nil {
+		return "", fmt.Errorf("invalid dependency '%s': %w", dependencyFullName, err)
+	}
+	return res, nil
+}
+
+// validateRequirement checks that the folder a required mod would be installed to is inside the mods folder
+// (a local 'path' dependency is not installed so is not checked)
+func (i *ModInstaller) validateRequirement(requiredModVersion *modconfig.ModVersionConstraint) error {
+	if requiredModVersion.FilePath != "" {
+		return nil
+	}
+	if _, err := i.getDependencyDestPath(requiredModVersion.DependencyPath()); err != nil {
+		return fmt.Errorf("cannot install mod '%s': its name, version, branch or tag would place it outside the mods folder: %w", requiredModVersion.Name, err)
+	}
+	return nil
 }
 
 // set the mod dependency path
