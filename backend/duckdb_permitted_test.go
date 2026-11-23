@@ -15,6 +15,7 @@ import (
 
 	_ "github.com/marcboeker/go-duckdb/v2"
 	"github.com/turbot/pipe-fittings/v2/filepaths"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 )
 
 // duckDBTestFolders is
@@ -697,7 +698,8 @@ func TestDuckDBPermittedSymlinkWalkVanish(t *testing.T) {
 
 // TestDuckDBPermittedTempDirReadOnlyRoot shows that a first permitted folder this process cannot write to does
 // not stop DuckDB opening when a later one is writable: the temp folder goes in the writable one, and the open
-// stays locked. Only when no folder is writable does the open fail.
+// stays locked. When no folder is writable the open still succeeds, locked, with temp_directory empty (no
+// spilling to disk), so a read inside works as it does with the setting unset.
 func TestDuckDBPermittedTempDirReadOnlyRoot(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes to every folder")
@@ -705,6 +707,9 @@ func TestDuckDBPermittedTempDirReadOnlyRoot(t *testing.T) {
 	f := newDuckDBTest(t)
 	readOnly := filepath.Join(filepath.Dir(f.in), "readonly")
 	if err := os.MkdirAll(readOnly, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(readOnly, "r.csv"), []byte("x\n1\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Chmod(readOnly, 0o555); err != nil {
@@ -742,12 +747,86 @@ func TestDuckDBPermittedTempDirReadOnlyRoot(t *testing.T) {
 
 	t.Run("no folder writable", func(t *testing.T) {
 		permitFolders(t, readOnly)
-		db, err := connectDuckDB(t, "duckdb://", 2)
-		if err == nil || !strings.Contains(err.Error(), testPermittedEnv) {
-			t.Errorf("Connect = %v; want an error naming the setting", err)
-		}
-		if db != nil {
-			t.Error("Connect returned a pool with the error")
+		for _, backend := range []string{"duckdb", "duckdbinit"} {
+			t.Run(backend, func(t *testing.T) {
+				var db *sql.DB
+				var err error
+				if backend == "duckdb" {
+					db, err = connectDuckDB(t, "duckdb://", 2)
+				} else {
+					db, err = connectDuckDBInit(t, "")
+				}
+				if err != nil {
+					t.Fatalf("Connect: %v", err)
+				}
+				var tempDir string
+				if err := db.QueryRow("SELECT current_setting('temp_directory')").Scan(&tempDir); err != nil {
+					t.Fatal(err)
+				}
+				if tempDir != "" {
+					t.Errorf("temp_directory = %q, want it empty (no spilling to disk)", tempDir)
+				}
+				if _, err := os.Stat(filepath.Join(readOnly, duckDBTempDirName)); err == nil {
+					t.Errorf("%s was made in the read-only folder", duckDBTempDirName)
+				}
+				mustRead(t, db, filepath.Join(readOnly, "r.csv"))
+				outCSV := filepath.Join(f.out, "b.csv")
+				mustFail(t, db, "read_csv outside", "SELECT * FROM read_csv("+q(outCSV)+")")
+				mustFail(t, db, "read_csv in a folder not permitted", "SELECT * FROM read_csv("+q(filepath.Join(f.in, "a.csv"))+")")
+				mustFail(t, db, "COPY TO outside", "COPY (SELECT 1 AS x) TO "+q(filepath.Join(f.out, "copied.csv")))
+				mustFail(t, db, "SET temp_directory", "SET temp_directory = "+q(f.out))
+				mustFail(t, db, "SET enable_external_access", "SET enable_external_access = true")
+				mustFail(t, db, "SET allowed_directories", "SET allowed_directories = ['/']")
+				mustFail(t, db, "SET lock_configuration", "SET lock_configuration = false")
+			})
 		}
 	})
+}
+
+// TestDuckDBPermittedTempDirOutward shows that a duckDBTempDirName folder that is a symlink leading outside the
+// folders (made after the open searched them) fails the open, whether or not what it leads to exists and
+// whether or not its folder is writable: the fallback to no temp folder is only for a folder that cannot be made.
+func TestDuckDBPermittedTempDirOutward(t *testing.T) {
+	for _, row := range []struct {
+		name     string
+		missing  bool
+		readOnly bool
+	}{
+		{name: "to a folder outside"},
+		{name: "to a missing path outside", missing: true},
+		{name: "in a read-only folder", readOnly: true},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			if row.readOnly && os.Geteuid() == 0 {
+				t.Skip("root writes to every folder")
+			}
+			f := newDuckDBTest(t)
+			target := f.out
+			if row.missing {
+				target = filepath.Join(f.out, "missing")
+			}
+			if err := os.Symlink(target, filepath.Join(f.in, duckDBTempDirName)); err != nil {
+				t.Fatal(err)
+			}
+			if row.readOnly {
+				if err := os.Chmod(f.in, 0o555); err != nil {
+					t.Fatal(err)
+				}
+				t.Cleanup(func() { _ = os.Chmod(f.in, 0o755) })
+			}
+			permitFolders(t, f.in)
+			roots, err := permitted_paths.ResolvedRoots()
+			if err != nil {
+				t.Fatal(err)
+			}
+			dir, err := duckDBTempDir(roots)
+			var outside *duckDBTempDirOutsideError
+			if !errors.As(err, &outside) {
+				t.Fatalf("duckDBTempDir = %q, %v; want the outside error", dir, err)
+			}
+			if _, err := connectDuckDB(t, "duckdb://", 2); err == nil {
+				t.Error("Connect succeeded; want it to fail")
+			}
+		})
+	}
 }

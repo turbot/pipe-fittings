@@ -8,11 +8,13 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/constants"
 	"github.com/turbot/pipe-fittings/v2/cty_helpers"
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/options"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/pipes"
 	"github.com/turbot/pipe-fittings/v2/steampipeconfig"
 	"github.com/zclconf/go-cty/cty"
@@ -83,7 +85,46 @@ func (p *PowerpipeWorkspaceProfile) CtyValue() (cty.Value, error) {
 
 func (p *PowerpipeWorkspaceProfile) OnDecoded() hcl.Diagnostics {
 	p.setBaseProperties()
-	return nil
+	return p.confinePaths()
+}
+
+// confinePaths checks the values of the profile that name a database or a folder against
+// <APP>_PERMITTED_ROOT_PATHS (when it is set), and keeps the value to use, which can differ from the one
+// written (a file path is resolved). A profile can come from a .ppc file in the mod folder, so its values
+// are mod content: database is checked as every other database value a mod supplies is
+// (backend.ConfineModConnectionString), and mod_location and a local snapshot_location are checked as paths.
+// A snapshot_location that names a Turbot Pipes workspace is not a path, and is left as it is.
+func (p *PowerpipeWorkspaceProfile) confinePaths() hcl.Diagnostics {
+	var diags hcl.Diagnostics
+	refuse := func(err error) {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  fmt.Sprintf("workspace %s: %s", p.ProfileName, err.Error()),
+			Subject:  &p.DeclRange,
+		})
+	}
+	if p.Database != nil {
+		if connectionString, err := backend.ConfineModConnectionString(*p.Database); err != nil {
+			refuse(err)
+		} else {
+			p.Database = &connectionString
+		}
+	}
+	if p.ModLocation != nil && *p.ModLocation != "" {
+		if resolved, err := permitted_paths.Check(*p.ModLocation); err != nil {
+			refuse(fmt.Errorf("mod_location: %w", err))
+		} else {
+			p.ModLocation = &resolved
+		}
+	}
+	if p.SnapshotLocation != nil && *p.SnapshotLocation != "" && !steampipeconfig.IsPipesWorkspaceIdentifier(*p.SnapshotLocation) {
+		if resolved, err := permitted_paths.Check(*p.SnapshotLocation); err != nil {
+			refuse(fmt.Errorf("snapshot_location: %w", err))
+		} else {
+			p.SnapshotLocation = &resolved
+		}
+	}
+	return diags
 }
 
 func (p *PowerpipeWorkspaceProfile) setBaseProperties() {

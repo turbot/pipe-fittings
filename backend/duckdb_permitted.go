@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -42,7 +43,8 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 //
 // The settings it leaves in force are DuckDB globals, shared by every connection to one database instance:
 //   - temp_directory: a folder of its own inside the first permitted folder it can be made in (duckDBTempDir), so DuckDB's temp
-//     files, and the folder it adds to allowed_directories for them, lie inside the folders;
+//     files, and the folder it adds to allowed_directories for them, lie inside the folders; or empty when no
+//     permitted folder can hold one, so DuckDB does not spill to disk and adds no folder;
 //   - allowed_directories: every permitted folder, as written and with its symlinks resolved, each ending in a
 //     separator, as DuckDB matches them as prefixes (so /data/a never admits /data/ab);
 //   - allowed_paths: empty, so no single file outside the folders is let through (a DSN could set it);
@@ -65,7 +67,7 @@ func connectDuckDBPermitted(ctx context.Context, dsn string, configure func(*sql
 //
 // DuckDB itself adds its own files when external access is turned off: its temp_directory (where it spills to
 // disk) to allowed_directories, and the database file and its .wal to allowed_paths. The check accepts those
-// only as duckDBOwnFiles says, and fails unless temp_directory lies inside the folders, so neither DuckDB's
+// only as duckDBOwnFiles says, and fails unless temp_directory lies inside the folders or is empty, so neither DuckDB's
 // default (.tmp in the working folder, or <file>.tmp, wherever those lie) nor a DSN's temp_directory can open
 // a folder outside them to SQL.
 //
@@ -200,10 +202,13 @@ const duckDBTempDirName = ".duckdb_tmp"
 
 // duckDBTempDir returns the temp folder for one DuckDB database: a folder of its own, not yet made, under
 // duckDBTempDirName in the first of roots where one can be made. Folders that exist are tried first, in order,
-// then the rest, each made if missing; a root this process cannot write to is passed over, and only when none
-// will do does the open fail. Each database has its own temp folder, as DuckDB names its temp files the same
-// way in every process and removes them when it closes. DuckDB makes the folder when it first spills to disk,
-// and removes it again when it closes, as it made it.
+// then the rest, each made if missing; a root this process cannot write to is passed over. When none will do
+// (every permitted folder is read-only, say) it returns "": the lock then sets temp_directory empty, so DuckDB
+// does not spill to disk at all and a query that outgrows memory fails, rather than the open failing for a
+// database that can be read without spilling. A duckDBTempDirName that leads outside the folders still fails
+// the open. Each database has its own temp folder, as DuckDB names its temp files the same way in every
+// process and removes them when it closes. DuckDB makes the folder when it first spills to disk, and removes
+// it again when it closes, as it made it.
 func duckDBTempDir(roots []string) (string, error) {
 	var existing, missing []string
 	for _, r := range roots {
@@ -228,13 +233,20 @@ func duckDBTempDir(roots []string) (string, error) {
 			firstErr = err
 		}
 	}
-	return "", firstErr
+	if firstErr != nil {
+		slog.Debug("no permitted folder can hold a DuckDB temp folder, so DuckDB will not spill to disk", "error", firstErr)
+	}
+	return "", nil
 }
 
 // duckDBTempDirIn returns a temp folder name under duckDBTempDirName in root, once it has shown that the folder
 // can be made there (it makes it and removes it again, so DuckDB still makes and removes it itself)
 func duckDBTempDirIn(root string) (string, error) {
 	parent := filepath.Join(root, duckDBTempDirName)
+	if !isPermitted(parent) {
+		// a symlink made at that name since the folders were searched, whether or not what it leads to exists
+		return "", &duckDBTempDirOutsideError{parent: parent}
+	}
 	if err := os.MkdirAll(parent, 0o700); err != nil {
 		return "", fmt.Errorf("could not make a DuckDB temp folder inside the folders %s permits: %w", permitted_paths.Setting(), err)
 	}
