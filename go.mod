@@ -50,6 +50,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/jedib0t/go-pretty/v6 v6.5.9
 	github.com/marcboeker/go-duckdb/v2 v2.4.3
+	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/sagikazarmark/slog-shim v0.1.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/turbot/pipes-sdk-go v0.12.0

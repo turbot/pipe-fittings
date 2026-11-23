@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/sperr"
 )
 
@@ -28,8 +29,16 @@ func NewSqliteBackend(connString string) (*SqliteBackend, error) {
 }
 
 // Connect implements Backend.
-func (b *SqliteBackend) Connect(_ context.Context, options ...BackendOption) (*sql.DB, error) {
+func (b *SqliteBackend) Connect(ctx context.Context, options ...BackendOption) (*sql.DB, error) {
 	config := NewBackendConfig(options)
+	if permitted_paths.Enabled() {
+		// open so that SQL cannot attach a file outside the permitted folders
+		return connectSqlitePermitted(ctx, b.connectionString, func(db *sql.DB) {
+			db.SetConnMaxIdleTime(config.MaxConnIdleTime)
+			db.SetConnMaxLifetime(config.MaxConnLifeTime)
+			db.SetMaxOpenConns(config.MaxOpenConns)
+		})
+	}
 	db, err := sql.Open("sqlite3", b.connectionString)
 	if err != nil {
 		return nil, sperr.WrapWithMessage(err, "could not connect to sqlite backend")
