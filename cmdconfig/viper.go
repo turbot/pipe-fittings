@@ -9,7 +9,9 @@ import (
 	"github.com/spf13/viper"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/workspace_profile"
 )
 
@@ -20,6 +22,9 @@ func Viper() *viper.Viper {
 
 // BootstrapViper sets up viper with the essential path config (workspace-chdir and install-dir)
 func BootstrapViper[T workspace_profile.WorkspaceProfile](loader *parse.WorkspaceProfileLoader[T], cmd *cobra.Command, opts ...BootstrapOption) {
+	// read the app's PERMITTED_ROOT_PATHS setting once; an entry that is not an absolute path stops the app
+	error_helpers.FailOnError(permitted_paths.Load())
+
 	config := NewBootstrapConfig()
 	for _, opt := range opts {
 		opt(config)

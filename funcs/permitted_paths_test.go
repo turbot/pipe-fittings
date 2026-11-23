@@ -10,15 +10,14 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/v2/app_specific"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/zclconf/go-cty/cty"
 )
 
-// The tests use only what the package exports to every app (the env var keys and ContextFunctions), so they
-// also build, and fail, without the change.
 const (
-	testAppPrefix   = "TESTAPP_"
-	testRestrictEnv = testAppPrefix + "RESTRICT_FILE_FUNCTIONS"
-	outsideErr      = "path is outside the mod folder"
+	testAppPrefix    = "TESTAPP_"
+	testPermittedEnv = testAppPrefix + "PERMITTED_ROOT_PATHS"
+	outsideErr       = "path is outside the folders " + testPermittedEnv + " permits"
 )
 
 // fileFunctionNames are the functions whose first argument is the path of one file they read or stat
@@ -75,18 +74,30 @@ func newFileFuncFixture(t *testing.T) fileFuncFixture {
 	return f
 }
 
-// setRestrict sets the app's env var keys to a test-only prefix, as an app does at start-up, and sets the
-// setting's value; value "" unsets it
-func setRestrict(t *testing.T, value string) {
+// setPermitted sets the app's env var keys to a test-only prefix, as an app does at start-up, sets the
+// setting to value (value "" unsets it) and reads it, as the app does once at start-up
+func setPermitted(t *testing.T, value string) error {
 	t.Helper()
 	prev := app_specific.EnvAppPrefix
 	app_specific.SetAppSpecificEnvVarKeys(testAppPrefix)
-	t.Cleanup(func() { app_specific.SetAppSpecificEnvVarKeys(prev) })
-	t.Setenv(testRestrictEnv, value)
+	t.Cleanup(func() {
+		app_specific.SetAppSpecificEnvVarKeys(prev)
+		permitted_paths.Reset()
+	})
+	t.Setenv(testPermittedEnv, value)
 	if value == "" {
-		if err := os.Unsetenv(testRestrictEnv); err != nil {
+		if err := os.Unsetenv(testPermittedEnv); err != nil {
 			t.Fatal(err)
 		}
+	}
+	return permitted_paths.Load()
+}
+
+// permit limits the file functions to the folders
+func permit(t *testing.T, folders ...string) {
+	t.Helper()
+	if err := setPermitted(t, strings.Join(folders, ",")); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -131,9 +142,9 @@ func setStrings(t *testing.T, v cty.Value) []string {
 	return res
 }
 
-func TestRestrictFileFunctions_On_ReadsInsideTheModFolder(t *testing.T) {
+func TestPermittedPaths_On_ReadsInsideTheModFolder(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 
 	for _, expr := range []string{
 		`file("./docs/x.md")`,
@@ -176,9 +187,9 @@ func TestRestrictFileFunctions_On_ReadsInsideTheModFolder(t *testing.T) {
 	}
 }
 
-func TestRestrictFileFunctions_On_ModFolderReachedThroughASymlink(t *testing.T) {
+func TestPermittedPaths_On_ModFolderReachedThroughASymlink(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 
 	if got := mustEval(t, f.modLink, `file("docs/x.md")`); got.AsString() != "hello" {
 		t.Errorf(`file("docs/x.md") = %q, want "hello"`, got.AsString())
@@ -187,9 +198,9 @@ func TestRestrictFileFunctions_On_ModFolderReachedThroughASymlink(t *testing.T) 
 	mustRefuse(t, f.modLink, `file("link_out")`)
 }
 
-func TestRestrictFileFunctions_On_RefusesPathsOutsideTheModFolder(t *testing.T) {
+func TestPermittedPaths_On_RefusesPathsOutsideTheModFolder(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 
 	outsidePaths := []string{
 		f.secret,                // absolute
@@ -219,9 +230,9 @@ func TestRestrictFileFunctions_On_RefusesPathsOutsideTheModFolder(t *testing.T) 
 
 // a symlink whose target climbs back with ".." past a part that cannot be looked up must not be cleaned into
 // a path that opens another symlink, unchecked
-func TestRestrictFileFunctions_On_SymlinkClimbingPastAMissingPart(t *testing.T) {
+func TestPermittedPaths_On_SymlinkClimbingPastAMissingPart(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 	lockedIn := filepath.Join(f.mod, "lockedin")
 	mustMkdir(t, filepath.Join(lockedIn, "x"))
 	if err := os.Chmod(lockedIn, 0); err != nil {
@@ -248,20 +259,20 @@ func TestRestrictFileFunctions_On_SymlinkClimbingPastAMissingPart(t *testing.T) 
 	}
 }
 
-func TestRestrictFileFunctions_On_ErrorNamesTheCall(t *testing.T) {
+func TestPermittedPaths_On_ErrorNamesTheCall(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 
 	_, diags := eval(t, f.mod, `file("/etc/passwd")`)
-	want := `file("/etc/passwd"): path is outside the mod folder`
+	want := `file("/etc/passwd"): ` + outsideErr
 	if !strings.Contains(diags.Error(), want) {
 		t.Fatalf("want %q in the error, got: %s", want, diags.Error())
 	}
 }
 
-func TestRestrictFileFunctions_On_SensitivePathIsRedacted(t *testing.T) {
+func TestPermittedPaths_On_SensitivePathIsRedacted(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 
 	_, diags := eval(t, f.mod, `file(sensitive("/etc/passwd"))`)
 	if !diags.HasErrors() || strings.Contains(diags.Error(), "/etc/passwd") || !strings.Contains(diags.Error(), "(sensitive value)") {
@@ -269,9 +280,9 @@ func TestRestrictFileFunctions_On_SensitivePathIsRedacted(t *testing.T) {
 	}
 }
 
-func TestRestrictFileFunctions_On_FilesetNeverListsOutside(t *testing.T) {
+func TestPermittedPaths_On_FilesetNeverListsOutside(t *testing.T) {
 	f := newFileFuncFixture(t)
-	setRestrict(t, "true")
+	permit(t, f.mod)
 
 	got := setStrings(t, mustEval(t, f.mod, `fileset(".", "**")`))
 	if !contains(got, "docs/x.md") {
@@ -301,11 +312,15 @@ func TestRestrictFileFunctions_On_FilesetNeverListsOutside(t *testing.T) {
 	mustRefuse(t, f.mod, `fileset("docs", "../../**")`)
 }
 
-func TestRestrictFileFunctions_Off_BehaviourUnchanged(t *testing.T) {
-	for _, value := range []string{"", "false", "0", "yes"} {
+func TestPermittedPaths_Off_BehaviourUnchanged(t *testing.T) {
+	for _, value := range []string{"", "  "} {
 		t.Run("value="+value, func(t *testing.T) {
 			f := newFileFuncFixture(t)
-			setRestrict(t, value)
+			if err := setPermitted(t, value); err != nil {
+				t.Fatal(err)
+			}
+			// the setting #815 shipped on a branch has no effect
+			t.Setenv(testAppPrefix+"RESTRICT_FILE_FUNCTIONS", "true")
 
 			for _, expr := range []string{
 				`file("` + f.secret + `")`,
@@ -340,17 +355,109 @@ func TestRestrictFileFunctions_Off_BehaviourUnchanged(t *testing.T) {
 	}
 }
 
-func TestRestrictFileFunctions_SettingValues(t *testing.T) {
-	for value, want := range map[string]bool{
-		"true": true, "TRUE": true, "1": true,
-		"": false, "false": false, "0": false, "yes": false,
-	} {
-		f := newFileFuncFixture(t)
-		setRestrict(t, value)
-		_, diags := eval(t, f.mod, `file("../outside/secret.txt")`)
-		if refused := diags.HasErrors() && strings.Contains(diags.Error(), outsideErr); refused != want {
-			t.Errorf("value %q: refused = %v, want %v (%v)", value, refused, want, diags)
+func TestPermittedPaths_RelativeEntryIsRefusedAtStartUp(t *testing.T) {
+	f := newFileFuncFixture(t)
+	for _, value := range []string{"mod", f.mod + ",docs", "./mod", "~/mod", f.mod + " , ../outside"} {
+		err := setPermitted(t, value)
+		if err == nil {
+			t.Fatalf("value %q: want an error for the relative entry", value)
 		}
+		for _, want := range []string{testPermittedEnv, "not an absolute path"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("value %q: want %q in the error, got: %v", value, want, err)
+			}
+		}
+	}
+	err := setPermitted(t, "docs")
+	if err == nil || !strings.Contains(err.Error(), `"docs"`) {
+		t.Errorf(`want the error to name the entry "docs", got: %v`, err)
+	}
+	if err := setPermitted(t, " , "); err == nil || !strings.Contains(err.Error(), "names no folder") {
+		t.Errorf("a list of nothing: want a names-no-folder error, got: %v", err)
+	}
+}
+
+// a setting that could not be read is never read as no limit
+func TestPermittedPaths_UnreadableSettingFailsClosed(t *testing.T) {
+	f := newFileFuncFixture(t)
+	if err := setPermitted(t, "docs"); err == nil {
+		t.Fatal("want an error")
+	}
+	_, diags := eval(t, f.mod, `file("docs/x.md")`)
+	if !diags.HasErrors() || !strings.Contains(diags.Error(), testPermittedEnv) {
+		t.Fatalf("want every read refused and the setting named, got: %v", diags)
+	}
+	// and the same when the app never called Load
+	permitted_paths.Reset()
+	_, diags = eval(t, f.mod, `file("docs/x.md")`)
+	if !diags.HasErrors() {
+		t.Fatalf("want every read refused, got: %v", diags)
+	}
+}
+
+func TestPermittedPaths_ListOfFolders(t *testing.T) {
+	f := newFileFuncFixture(t)
+	// spaces round the entries and empty entries are fine
+	if err := setPermitted(t, " "+f.mod+" , ,"+f.outside+","); err != nil {
+		t.Fatal(err)
+	}
+	if got := mustEval(t, f.mod, `file("docs/x.md")`); got.AsString() != "hello" {
+		t.Errorf("got %q", got.AsString())
+	}
+	// the second folder is read too, from the mod and by its absolute path
+	if got := mustEval(t, f.mod, `file("../outside/secret.txt")`); got.AsString() != "tls-key" {
+		t.Errorf("got %q", got.AsString())
+	}
+	if got := mustEval(t, f.mod, `file("`+f.secret+`")`); got.AsString() != "tls-key" {
+		t.Errorf("got %q", got.AsString())
+	}
+	// a folder in neither is refused
+	mustRefuse(t, f.mod, `file("/etc/passwd")`)
+	mustRefuse(t, f.mod, `file("../")`)
+}
+
+// the folder is the permitted one, not the mod: a parent folder lets the mod read its neighbours, and nothing above it
+func TestPermittedPaths_ParentFolderPermitsNeighbours(t *testing.T) {
+	f := newFileFuncFixture(t)
+	permit(t, f.root)
+	for _, expr := range []string{`file("../outside/secret.txt")`, `file("link_out")`} {
+		if got := mustEval(t, f.mod, expr); got.AsString() != "tls-key" {
+			t.Errorf("%s = %q, want tls-key", expr, got.AsString())
+		}
+	}
+	mustEval(t, f.mod, `file("docs/x.md")`)
+	mustRefuse(t, f.mod, `file("/etc/passwd")`)
+	mustRefuse(t, f.mod, `file("../../x")`)
+	mustRefuse(t, f.mod, `file("`+filepath.Dir(f.root)+`/x")`)
+	// a listing across the neighbours
+	got := setStrings(t, mustEval(t, f.mod, `fileset("..", "outside/*")`))
+	if !contains(got, "outside/secret.txt") {
+		t.Errorf(`fileset("..", "outside/*") = %v, want outside/secret.txt`, got)
+	}
+	mustRefuse(t, f.mod, `fileset("../..", "*")`)
+}
+
+// a permitted folder that is itself reached through a symlink, whichever way it is written
+func TestPermittedPaths_FolderThroughASymlink(t *testing.T) {
+	f := newFileFuncFixture(t)
+	permit(t, f.modLink)
+	for _, base := range []string{f.mod, f.modLink} {
+		if got := mustEval(t, base, `file("docs/x.md")`); got.AsString() != "hello" {
+			t.Errorf("base %s: got %q", base, got.AsString())
+		}
+		mustRefuse(t, base, `file("link_out")`)
+		mustRefuse(t, base, `file("../outside/secret.txt")`)
+	}
+}
+
+// a permitted folder holding a symlink out of it still refuses what the link leads to
+func TestPermittedPaths_SymlinkOutOfTheFolderIsRefusedWhateverTheBase(t *testing.T) {
+	f := newFileFuncFixture(t)
+	permit(t, f.mod)
+	// the function's base folder is outside the permitted folder
+	mustRefuse(t, f.outside, `file("secret.txt")`)
+	if got := mustEval(t, f.outside, `file("`+filepath.Join(f.mod, "docs", "x.md")+`")`); got.AsString() != "hello" {
+		t.Errorf("got %q", got.AsString())
 	}
 }
 

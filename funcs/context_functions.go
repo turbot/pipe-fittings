@@ -2,6 +2,7 @@ package funcs
 
 import (
 	"github.com/hashicorp/hcl/v2/ext/tryfunc"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/terraform-components/lang/funcs"
 	ctyyaml "github.com/zclconf/go-cty-yaml"
 	"github.com/zclconf/go-cty/cty"
@@ -12,8 +13,8 @@ import (
 // from `github.com/hashicorp/terraform/internal/lang/functions.go`
 
 // ContextFunctions returns the set of functions that should be used to when evaluating expressions.
-// When the app's RESTRICT_FILE_FUNCTIONS env var is true (see RestrictFileFunctionsEnabled), the file
-// functions only read inside baseDir.
+// When the app's PERMITTED_ROOT_PATHS env var is set (see the permitted_paths package), the file functions
+// only read inside the folders it names; relative paths are read from baseDir.
 func ContextFunctions(baseDir string) map[string]function.Function {
 
 	ctxFuncs := map[string]function.Function{
@@ -137,7 +138,7 @@ func ContextFunctions(baseDir string) map[string]function.Function {
 		"env":              EnvFunc,
 	}
 
-	if RestrictFileFunctionsEnabled() {
+	if permitted_paths.Enabled() {
 		confineFileFunctions(ctxFuncs, baseDir)
 	}
 
