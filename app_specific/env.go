@@ -31,7 +31,7 @@ var EnvUpdateCheck,
 	EnvPipesToken,
 	EnvProfile,
 	EnvTempDirMaxMb,
-	EnvRestrictFileFunctions string
+	EnvPermittedRootPaths string
 
 func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	// set prefix
@@ -67,8 +67,9 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvPipesToken = buildEnv("PIPES_TOKEN")
 	EnvProfile = buildEnv("PROFILE")
 	EnvTempDirMaxMb = buildEnv("TEMP_DIR_MAX_MB")
-	// when true, the HCL file functions only read inside the mod (or config) folder they are evaluated for
-	EnvRestrictFileFunctions = buildEnv("RESTRICT_FILE_FUNCTIONS")
+	// a comma-separated list of absolute folders; when set, the readers that follow it (the HCL file
+	// functions so far) only read inside them. See the permitted_paths package.
+	EnvPermittedRootPaths = buildEnv("PERMITTED_ROOT_PATHS")
 }
 
 // buildEnv is a function to construct an application specific env var key
