@@ -1,0 +1,56 @@
+# What a change to pipe-fittings must run and show before an agent's PR counts as done: the checks
+# CI runs on a PR (golangci-lint, then the unit tests), plus a build of every package.
+#
+# pipe-fittings is a Go library. It has no binary, no UI and no service, so nothing here owes
+# screenshots. The Go proxy serves a tag as soon as it is pushed, so a tag is a release.
+#
+# Left out on purpose:
+# - `make test`: it runs `go clean -testcache` first, which clears the test results of every Go
+#   checkout on the machine, not only this one (see never_run). The fast check runs the same
+#   `go test` without it.
+# - filter/test.sh: it regenerates filter.go with pigeon from a path on one developer's machine,
+#   so it fails anywhere else. The fast check runs the filter package's tests.
+
+ci_is_proof: false
+
+never_run:
+  # A pushed v* tag is a release: the Go proxy serves it at once and it cannot be taken back
+  - git tag
+  - git push --tags
+  - git push origin --tags
+  - git push --follow-tags
+  - git push origin --follow-tags
+  - gh release
+  # Dispatching stale.yaml by hand closes the repo's idle issues and PRs
+  - gh workflow run
+  # These clear caches that every Go checkout on the machine shares
+  - make test
+  - go clean*
+
+checks:
+  build: {run: "go build ./...", cost: 1}
+  # The unit tests. Named fast so that a path no kind below matches (the built-in other kind,
+  # such as a new testdata folder) owes them too.
+  fast: {run: "go test ./... -timeout 120s", cost: 1}
+  # CI runs golangci-lint `latest`; this pins the v2 release that is clean on develop. GOOS=linux
+  # because CI lints on Linux.
+  lint:
+    run: 'd=$(mktemp -d) && trap ''rm -rf "$d"'' EXIT && GOBIN="$d" go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 && GOOS=linux "$d/golangci-lint" run --timeout=15m'
+    cost: 2
+
+kinds:
+  go:
+    paths: ["**/*.go", "go.mod", "go.sum", ".golangci.yaml", "filter/filter.peg"]
+    checks: [build, fast, lint]
+    show: [test]
+  # Fixtures the tests read
+  testdata:
+    paths: ["workspace/test_data/**"]
+    checks: [fast]
+    show: [test]
+  workflows:
+    paths: [".github/**", "Makefile", "filter/test.sh", ".gitattributes", ".gitignore"]
+    show: [none]
+  docs:
+    paths: ["**/*.md", ".claude/**", "LICENSE"]
+    show: [none]
