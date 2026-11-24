@@ -65,7 +65,7 @@ func TestValidateRequirement(t *testing.T) {
 
 	for name, c := range evilConstraints() {
 		t.Run("refuses "+name, func(t *testing.T) {
-			err := i.validateRequirement(c)
+			err := i.validateRequirement(c, i.workspaceMod)
 			if err == nil {
 				t.Fatalf("expected %+v to be refused", c)
 			}
@@ -86,7 +86,7 @@ func TestValidateRequirement(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if err := i.validateRequirement(c); err != nil {
+		if err := i.validateRequirement(c, i.workspaceMod); err != nil {
 			t.Errorf("%s should be accepted: %v", arg, err)
 		}
 	}
@@ -98,7 +98,7 @@ func TestValidateRequirement(t *testing.T) {
 		{Name: "local", FilePath: "../elsewhere"},
 	}
 	for _, c := range accepted {
-		if err := i.validateRequirement(c); err != nil {
+		if err := i.validateRequirement(c, i.workspaceMod); err != nil {
 			t.Errorf("%+v should be accepted: %v", c, err)
 		}
 	}
@@ -214,7 +214,7 @@ func TestInstallRefusesChildThroughSymlink(t *testing.T) {
 	}
 
 	c := &modconfig.ModVersionConstraint{Name: "github.com/org/a@v1.0.0/link", BranchName: "y/victim"}
-	if err := i.validateRequirement(c); err == nil {
+	if err := i.validateRequirement(c, i.workspaceMod); err == nil {
 		t.Fatal("expected a require reaching a symlink to be refused")
 	}
 	if _, err := i.getDependencyShadowPath("github.com/org/a@v1.0.0/link#y/victim"); err == nil {

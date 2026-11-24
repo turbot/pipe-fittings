@@ -20,6 +20,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/plugin"
 	"github.com/turbot/pipe-fittings/v2/sperr"
 	"github.com/turbot/pipe-fittings/v2/utils"
@@ -153,6 +154,11 @@ func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error
 // InstallWorkspaceDependencies installs all dependencies of the workspace mod
 func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err error) {
 	workspaceMod := i.workspaceMod
+	// with <APP>_PERMITTED_ROOT_PATHS set, a workspace holding a symlink that leads outside the permitted folders
+	// installs nothing (checked before the deferred handling below, so --force cannot suppress it)
+	if err := permitted_paths.CheckSymlinks(i.workspacePath); err != nil {
+		return err
+	}
 	defer func() {
 		if err != nil && i.force {
 			// suppress the error since this is a forced install
@@ -346,7 +352,7 @@ func (i *ModInstaller) installMods(ctx context.Context, parent *modconfig.Mod) (
 
 	for _, requiredModVersion := range i.workspaceMod.Require.Mods {
 		// refuse a mod which would be installed outside the mods folder, before touching anything
-		if err := i.validateRequirement(requiredModVersion); err != nil {
+		if err := i.validateRequirement(requiredModVersion, parent); err != nil {
 			errors = append(errors, err)
 			continue
 		}
@@ -418,7 +424,7 @@ func (i *ModInstaller) installModDependenciesRecursively(ctx context.Context, re
 	// to get here we have the dependency mod - either we installed it or it was already installed
 	// recursively install its dependencies
 	for _, childDependency := range dependencyMod.Mod.Require.Mods {
-		if err := i.validateRequirement(childDependency); err != nil {
+		if err := i.validateRequirement(childDependency, dependencyMod.Mod); err != nil {
 			errors = append(errors, err)
 			continue
 		}
@@ -604,19 +610,26 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 
 func (i *ModInstaller) installFromGit(repoName string, gitRefName plumbing.ReferenceName, installPath string) (*git.Repository, error) {
 	// get the mod from git = first try https
-	gitUrl := getGitUrl(repoName, GitUrlModeHTTPS)
+	gitUrl := modGitUrl(repoName, GitUrlModeHTTPS)
 	slog.Debug("installFromGit cloning the repo", gitUrl, gitRefName.String())
 
 	repo, err := i.cloneRepo(gitUrl, gitRefName, installPath)
 
 	if err != nil {
 		// if that failed, try ssh
-		gitUrl := getGitUrl(repoName, GitUrlModeSSH)
+		gitUrl := modGitUrl(repoName, GitUrlModeSSH)
 		slog.Debug(">>> cloning", gitUrl, gitRefName.String())
 		repo, err = i.cloneRepo(gitUrl, gitRefName, installPath)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// with <APP>_PERMITTED_ROOT_PATHS set, a repo holding a symlink that leads outside the permitted folders is
+	// refused before anything reads it, and the clone is removed so a forced install cannot copy it to the mods folder
+	if err := permitted_paths.CheckSymlinks(installPath); err != nil {
+		_ = os.RemoveAll(installPath)
+		return nil, fmt.Errorf("cannot install mod '%s': %w", repoName, err)
 	}
 
 	// verify the cloned repo contains a valid modfile
@@ -636,6 +649,13 @@ func (i *ModInstaller) installFromFilepath(_ context.Context, modVersion *modcon
 	}
 
 	slog.Debug("installing a local file mod", "file location", filePath)
+
+	// (a folder that does not exist leaves the path empty, and the load below reports it)
+	if filePath != "" {
+		if err := checkLocalMod(modVersion.Name, filePath); err != nil {
+			return nil, nil, err
+		}
+	}
 
 	// now load the installed mod and return it
 	modDef, err := parse.LoadModfile(dependencyVersion.FilePath)
@@ -712,6 +732,9 @@ func (i *ModInstaller) loadDependencyMod(ctx context.Context, modVersion *versio
 	var err error
 	// if the mod has a FilePath, just load it
 	if modVersion.DependencyVersion.FilePath != "" {
+		if err := checkLocalMod(modVersion.Name, modVersion.DependencyVersion.FilePath); err != nil {
+			return nil, err
+		}
 		modDefinition, err = parse.LoadModfile(modVersion.DependencyVersion.FilePath)
 		if err != nil {
 			return nil, err
@@ -750,6 +773,9 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 
 	modPath, err := resolveDependencyPath(modInstallRoot, dependencyPath)
 	if err != nil {
+		return nil, err
+	}
+	if err := checkInstalledMod(dependencyPath, modPath); err != nil {
 		return nil, err
 	}
 	modDefinition, err := parse.LoadModfile(modPath)
@@ -857,6 +883,9 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 	if err != nil {
 		return "", err
 	}
+	if err := checkInstalledMod(installedVersion.DependencyPath(), modPath); err != nil {
+		return "", err
+	}
 	repo, err := i.openRepo(modPath)
 	if err != nil {
 		return "", err
@@ -896,6 +925,9 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 	// Open the local repository
 	modPath, err := i.getDependencyDestPath(installedVersion.DependencyPath())
 	if err != nil {
+		return "", err
+	}
+	if err := checkInstalledMod(installedVersion.DependencyPath(), modPath); err != nil {
 		return "", err
 	}
 	repo, err := i.openRepo(modPath)
@@ -966,10 +998,18 @@ func resolveDependencyPath(installRoot, dependencyFullName string) (string, erro
 	return res, nil
 }
 
-// validateRequirement checks that the folder a required mod would be installed to is inside the mods folder
-// (a local 'path' dependency is not installed so is not checked)
-func (i *ModInstaller) validateRequirement(requiredModVersion *modconfig.ModVersionConstraint) error {
+// validateRequirement checks that the folder a required mod would be installed to is inside the mods folder.
+// A local 'path' dependency is not installed under the mods folder: with <APP>_PERMITTED_ROOT_PATHS set, its
+// folder (relative to the parent mod's folder) must be inside the permitted folders.
+func (i *ModInstaller) validateRequirement(requiredModVersion *modconfig.ModVersionConstraint, parent *modconfig.Mod) error {
 	if requiredModVersion.FilePath != "" {
+		filePath := requiredModVersion.FilePath
+		if !filepath.IsAbs(filePath) {
+			filePath = filepath.Join(parent.ModPath, filePath)
+		}
+		if _, err := permitted_paths.Check(filePath); err != nil {
+			return fmt.Errorf("cannot install mod '%s' from its local path: %w", requiredModVersion.Name, err)
+		}
 		return nil
 	}
 	// a mod is cloned into the shadow folder, then copied to the mods folder: check both
@@ -978,6 +1018,31 @@ func (i *ModInstaller) validateRequirement(requiredModVersion *modconfig.ModVers
 		if _, err := getPath(dependencyPath); err != nil {
 			return fmt.Errorf("cannot install mod '%s': its name, version, branch or tag would place it outside the mods folder: %w", requiredModVersion.Name, err)
 		}
+	}
+	return nil
+}
+
+// checkLocalMod refuses, with <APP>_PERMITTED_ROOT_PATHS set, a local 'path' dependency whose folder is outside
+// the permitted folders or holds a symlink that leads outside them
+func checkLocalMod(name, folder string) error {
+	if _, err := permitted_paths.Check(folder); err != nil {
+		return fmt.Errorf("cannot install mod '%s' from its local path: %w", name, err)
+	}
+	if err := permitted_paths.CheckSymlinks(folder); err != nil {
+		return fmt.Errorf("cannot install mod '%s': %w", name, err)
+	}
+	return nil
+}
+
+// checkInstalledMod refuses, with <APP>_PERMITTED_ROOT_PATHS set, to read an installed dependency whose folder
+// is outside the permitted folders or holds a symlink that leads outside them. An install has already walked the
+// whole workspace, but an uninstall or update reads installed mods without that walk.
+func checkInstalledMod(dependencyPath, modPath string) error {
+	if _, err := permitted_paths.Check(modPath); err != nil {
+		return fmt.Errorf("cannot read dependency mod '%s': %w", dependencyPath, err)
+	}
+	if err := permitted_paths.CheckSymlinks(modPath); err != nil {
+		return fmt.Errorf("cannot read dependency mod '%s': %w", dependencyPath, err)
 	}
 	return nil
 }

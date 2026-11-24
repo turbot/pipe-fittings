@@ -208,3 +208,124 @@ func TestOutsideError_ReasonHasNoPath(t *testing.T) {
 		t.Errorf("Error = %q", e.Error())
 	}
 }
+
+// modTree makes a mod folder <root>/in/mod with a file, a subfolder and a link to the file, plus <root>/out/b.txt
+func modTree(t *testing.T) (root, mod string) {
+	t.Helper()
+	root = tree(t)
+	mod = filepath.Join(root, "in", "mod")
+	if err := os.MkdirAll(filepath.Join(mod, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(mod, "mod.pp"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("mod.pp", filepath.Join(mod, "inner")); err != nil {
+		t.Fatal(err)
+	}
+	return root, mod
+}
+
+func TestCheckSymlinks_LinksInsidePass(t *testing.T) {
+	root, mod := modTree(t)
+	if err := set(t, filepath.Join(root, "in")); err != nil {
+		t.Fatal(err)
+	}
+	// to a file in the mod, to a missing file in the mod, to the folders' own files outside the mod, to a folder
+	for link, target := range map[string]string{"sub/up": "../mod.pp", "missing": "nothing.pp", "sibling": "../a.txt", "dir": "sub", "abs": filepath.Join(root, "in", "a.txt")} {
+		if err := os.Symlink(target, filepath.Join(mod, link)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := CheckSymlinks(mod); err != nil {
+		t.Errorf("CheckSymlinks = %v, want nil", err)
+	}
+	// a mod folder given through a link inside the folders is walked where it leads
+	viaLink := filepath.Join(root, "in", "mod_link")
+	if err := os.Symlink("mod", viaLink); err != nil {
+		t.Fatal(err)
+	}
+	if err := CheckSymlinks(viaLink); err != nil {
+		t.Errorf("CheckSymlinks(link to the mod) = %v, want nil", err)
+	}
+	// a missing folder has nothing to check
+	if err := CheckSymlinks(filepath.Join(root, "in", "no_such_mod")); err != nil {
+		t.Errorf("CheckSymlinks(missing) = %v, want nil", err)
+	}
+}
+
+func TestCheckSymlinks_LinkOutsideIsRefusedByName(t *testing.T) {
+	cases := map[string]string{
+		"relative file":    "../../out/b.txt",
+		"absolute file":    "@ROOT@/out/b.txt",
+		"folder":           "../../out",
+		"missing outside":  "../../out/missing.txt",
+		"through a link":   "../link",
+		"nested/deep/link": "../../../../out/b.txt",
+	}
+	for name, target := range cases {
+		t.Run(name, func(t *testing.T) {
+			root, mod := modTree(t)
+			if err := set(t, filepath.Join(root, "in")); err != nil {
+				t.Fatal(err)
+			}
+			link := "evil"
+			if strings.Contains(name, "/") {
+				link = name
+			}
+			if err := os.MkdirAll(filepath.Dir(filepath.Join(mod, link)), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(strings.ReplaceAll(target, "@ROOT@", root), filepath.Join(mod, link)); err != nil {
+				t.Fatal(err)
+			}
+			err := CheckSymlinks(mod)
+			var symlinkErr *SymlinkError
+			var outside *OutsideError
+			if !errors.As(err, &symlinkErr) || !errors.As(err, &outside) {
+				t.Fatalf("CheckSymlinks = %v, want a SymlinkError for a link outside", err)
+			}
+			if symlinkErr.Link != filepath.Join(mod, link) {
+				t.Errorf("Link = %q, want %q", symlinkErr.Link, filepath.Join(mod, link))
+			}
+			if !strings.Contains(err.Error(), filepath.Join(mod, link)) || !strings.Contains(err.Error(), testEnv) {
+				t.Errorf("error %q must name the link and the setting", err)
+			}
+		})
+	}
+}
+
+func TestCheckSymlinks_LoopIsRefused(t *testing.T) {
+	root, mod := modTree(t)
+	if err := set(t, filepath.Join(root, "in")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("loop", filepath.Join(mod, "loop")); err != nil {
+		t.Fatal(err)
+	}
+	err := CheckSymlinks(mod)
+	var symlinkErr *SymlinkError
+	if !errors.As(err, &symlinkErr) || !errors.Is(err, ErrSymlinkLoop) || !strings.Contains(err.Error(), filepath.Join(mod, "loop")) {
+		t.Errorf("CheckSymlinks = %v, want a SymlinkError naming the loop", err)
+	}
+}
+
+func TestCheckSymlinks_UnsetReadsNothing(t *testing.T) {
+	root, mod := modTree(t)
+	if err := os.Symlink("../../out/b.txt", filepath.Join(mod, "evil")); err != nil {
+		t.Fatal(err)
+	}
+	if err := set(t, ""); err != nil {
+		t.Fatal(err)
+	}
+	if err := CheckSymlinks(mod); err != nil {
+		t.Errorf("CheckSymlinks with no limit = %v, want nil", err)
+	}
+	// an unreadable setting fails closed
+	if err := set(t, "relative/x"); err == nil {
+		t.Fatal("want the relative entry refused")
+	}
+	if err := CheckSymlinks(filepath.Join(root, "in")); err == nil {
+		t.Error("CheckSymlinks must fail closed while the setting is unreadable")
+	}
+}

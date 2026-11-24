@@ -13,6 +13,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 )
 
 const WorkspaceLockStructVersion = 20240429
@@ -82,11 +83,18 @@ func LoadWorkspaceLock(workspacePath string) (*WorkspaceLock, error) {
 	return res, nil
 }
 
-// validateInstallCache checks that every (non file path) dependency in the lock sits inside the mods folder
+// validateInstallCache checks that every (non file path) dependency in the lock sits inside the mods folder, and,
+// with <APP>_PERMITTED_ROOT_PATHS set, that every local file path dependency is inside the permitted folders
 func validateInstallCache(installCache InstalledDependencyVersionsMap, modsPath string) error {
 	for parent, deps := range installCache {
 		for name, dep := range deps {
-			if dep == nil || dep.ResolvedVersionConstraint == nil || dep.FilePath != "" {
+			if dep == nil || dep.ResolvedVersionConstraint == nil {
+				continue
+			}
+			if dep.FilePath != "" {
+				if _, err := permitted_paths.Check(dep.FilePath); err != nil {
+					return fmt.Errorf("local dependency '%s' of '%s': %w", name, parent, err)
+				}
 				continue
 			}
 			if _, err := filepaths.ResolveInside(modsPath, dep.DependencyPath()); err != nil {
@@ -405,6 +413,11 @@ func (l *WorkspaceLock) FindInstalledDependency(modDependency *ResolvedVersionCo
 		if err != nil {
 			return "", fmt.Errorf("dependency mod '%s' would be outside the mods folder: %w", modDependency.DependencyPath(), err)
 		}
+	}
+	// the folder is named by the lock file, so with <APP>_PERMITTED_ROOT_PATHS set it must lie inside the
+	// permitted folders, symlinks followed
+	if _, err := permitted_paths.Check(dependencyFilepath); err != nil {
+		return "", fmt.Errorf("dependency mod '%s': %w", modDependency.DependencyPath(), err)
 	}
 
 	if filehelpers.DirectoryExists(dependencyFilepath) {
