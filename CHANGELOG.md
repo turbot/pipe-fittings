@@ -2,6 +2,13 @@
 
 Shared Pipes Component
 
+## v2.10.0 [2026-11-24]
+
+* Add `<APP>_PERMITTED_ROOT_PATHS`, for example `POWERPIPE_PERMITTED_ROOT_PATHS`: a comma-separated list of absolute folders, in the same format as Steampipe's `STEAMPIPE_SDK_PERMITTED_ROOT_PATHS`. When it is set, pipe-fittings keeps these inside the folders: the HCL file functions; the DuckDB and SQLite files, Postgres file options and MySQL `allowAllFiles` in a database value, `.ppc` connection or workspace profile, and a profile's `mod_location` and `snapshot_location`; mod SQL in DuckDB (locked `allowed_directories`, with external access and extension loading off) and SQLite (`ATTACH`); symlinks in mod repos; and `require` and lock-file paths. `duckdbinit://` values, options on DuckDB and SQLite values, and Postgres service files are refused from mods, and so are Tailpipe connections. A relative entry stops the app at start. An app's own file reads must check the setting themselves. When it is unset, nothing changes. ([#837](https://github.com/turbot/pipe-fittings/pull/837), [#840](https://github.com/turbot/pipe-fittings/pull/840), [#841](https://github.com/turbot/pipe-fittings/pull/841))
+* Fix `mod install` so that every dependency stays inside the mods folder. Install now also refuses to write through a symlink, including one that a person has linked into the mods folder; a linked mod still loads. ([#836](https://github.com/turbot/pipe-fittings/pull/836))
+* Move to tablewriter v1.1.5. An app that calls tablewriter itself must move to its v1 API, and an app that uses the Steampipe plugin SDK needs SDK v6.2.2 or later. Table output matches v0's, apart from the edge cases listed in [#838](https://github.com/turbot/pipe-fittings/pull/838). ([#838](https://github.com/turbot/pipe-fittings/pull/838))
+* The module now needs Go 1.26. Update dependencies, including go-git 5.19.2, pgx 5.9.2, grpc 1.83.2, golang.org/x/crypto 0.55.0 and golang.org/x/net 0.58.0. Apps that use pipe-fittings now get at least go-duckdb 2.4.3, go-sqlite3 1.14.52 and go-yaml 1.17.1. ([#821](https://github.com/turbot/pipe-fittings/pull/821), [#824](https://github.com/turbot/pipe-fittings/pull/824), [#840](https://github.com/turbot/pipe-fittings/pull/840))
+
 ## v2.9.5 [2026-11-11]
 
 * Cut memory use when exporting a snapshot. The snapshot is now converted and written one panel at a time, and a panel's rows one row at a time, instead of holding several full copies of it in memory. The exported file is byte for byte the same as before. ([#816](https://github.com/turbot/pipe-fittings/pull/816))
