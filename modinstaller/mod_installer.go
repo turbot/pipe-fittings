@@ -775,6 +775,9 @@ func (i *ModInstaller) loadDependencyModFromRoot(ctx context.Context, modInstall
 	if err != nil {
 		return nil, err
 	}
+	if err := checkInstalledMod(dependencyPath, modPath); err != nil {
+		return nil, err
+	}
 	modDefinition, err := parse.LoadModfile(modPath)
 	if err != nil {
 		// return nil, sperr.WrapWithMessage(err, "failed to load mod definition for %s from %s", dependencyPath, modInstallRoot)
@@ -880,6 +883,9 @@ func (i *ModInstaller) getLatestCommitForBranch(installedVersion *versionmap.Ins
 	if err != nil {
 		return "", err
 	}
+	if err := checkInstalledMod(installedVersion.DependencyPath(), modPath); err != nil {
+		return "", err
+	}
 	repo, err := i.openRepo(modPath)
 	if err != nil {
 		return "", err
@@ -919,6 +925,9 @@ func (i *ModInstaller) getLatestCommitForTag(installedVersion *versionmap.Instal
 	// Open the local repository
 	modPath, err := i.getDependencyDestPath(installedVersion.DependencyPath())
 	if err != nil {
+		return "", err
+	}
+	if err := checkInstalledMod(installedVersion.DependencyPath(), modPath); err != nil {
 		return "", err
 	}
 	repo, err := i.openRepo(modPath)
@@ -1021,6 +1030,19 @@ func checkLocalMod(name, folder string) error {
 	}
 	if err := permitted_paths.CheckSymlinks(folder); err != nil {
 		return fmt.Errorf("cannot install mod '%s': %w", name, err)
+	}
+	return nil
+}
+
+// checkInstalledMod refuses, with <APP>_PERMITTED_ROOT_PATHS set, to read an installed dependency whose folder
+// is outside the permitted folders or holds a symlink that leads outside them. An install has already walked the
+// whole workspace, but an uninstall or update reads installed mods without that walk.
+func checkInstalledMod(dependencyPath, modPath string) error {
+	if _, err := permitted_paths.Check(modPath); err != nil {
+		return fmt.Errorf("cannot read dependency mod '%s': %w", dependencyPath, err)
+	}
+	if err := permitted_paths.CheckSymlinks(modPath); err != nil {
+		return fmt.Errorf("cannot read dependency mod '%s': %w", dependencyPath, err)
 	}
 	return nil
 }

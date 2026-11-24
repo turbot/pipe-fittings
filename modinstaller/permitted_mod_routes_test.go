@@ -385,3 +385,59 @@ func TestValidateRequirementLocalPath(t *testing.T) {
 		}
 	}
 }
+
+// TestPermittedInstalledModRead: a mod installed before the setting was set, whose mod file now links outside the
+// permitted folders, is refused by the reads an uninstall or update makes of installed mods (which do not walk
+// the workspace first, as an install does), naming the link; with the setting unset it is read as before
+func TestPermittedInstalledModRead(t *testing.T) {
+	for setting, permit := range settings() {
+		t.Run(setting, func(t *testing.T) {
+			d := newModRoutesDirs(t, false)
+			d.makeSourceRepo(t, modRoute{kind: "symlink", name: "inside_file.sql", value: "init.sql"})
+			i, err := newRoutesInstaller(t, d.root(), false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cloned := &modconfig.ModVersionConstraint{Name: clonedModName, BranchName: clonedModBranch}
+			i.workspaceMod.Require.Mods = []*modconfig.ModVersionConstraint{cloned}
+			if err := i.installMods(context.Background(), i.workspaceMod); err != nil {
+				t.Fatal(err)
+			}
+			if err := i.installData.Lock.Save(); err != nil {
+				t.Fatal(err)
+			}
+			// the installed mod file becomes a link to a mod outside
+			installed := filepath.Join(i.modsPath, modconfig.BuildModDependencyPath(clonedModName, &modconfig.DependencyVersion{Branch: clonedModBranch}))
+			link := filepath.Join(installed, "mod.pp")
+			if err := os.Remove(link); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(filepath.Join(d.outside, "child", "mod.pp"), link); err != nil {
+				t.Skipf("cannot create symlink: %v", err)
+			}
+			if permit {
+				setModRoutesPermitted(t, d.permitted)
+			}
+
+			// uninstalling another mod reads the installed one, as the install step of an uninstall does
+			un, err := newRoutesInstaller(t, d.root(), false)
+			if err != nil {
+				t.Fatal(err)
+			}
+			un.command = "uninstall"
+			_, err = un.getModForRequirement(context.Background(), cloned, false)
+			r := modRoute{refused: true}
+			assertRoute(t, r, permit, err, link)
+
+			// an update's check for a newer commit opens the installed repo
+			locked, lockErr := un.installData.Lock.FindLockedModVersion(cloned)
+			if lockErr != nil || locked == nil {
+				t.Fatalf("the installed mod is not in the lock: %v", lockErr)
+			}
+			_, err = un.getLatestCommitForBranch(locked)
+			if permit {
+				assertRoute(t, r, permit, err, link)
+			}
+		})
+	}
+}
