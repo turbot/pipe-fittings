@@ -6,10 +6,15 @@
 // an app never calls Load). A reader of a path that mod or config content names calls Check on the path
 // before it opens it, and Filter on a listing before it returns it.
 //
+// The setting covers mods too. A mod, the root mod or a dependency, is refused at install and at load while a
+// symlink in its folder leads outside the folders (CheckSymlinks), as git checks symlinks out as symlinks and
+// every later read would follow them. A dependency's folder, a require block's local `path` and a path the
+// lock file names are checked before anything is cloned, copied or loaded from them.
+//
 // The setting also covers databases. backend.ConfineModConnectionString checks every database value that mod
 // or .ppc content supplies (every connection type that builds a Postgres, DuckDB, SQLite or MySQL string,
-// steampipe included; tailpipe's connection type is exempt, as its string is the tailpipe connect output the
-// host builds itself, though the lock below still applies to it): a DuckDB or SQLite file must be inside the folders and takes no options (only an empty
+// steampipe included; a tailpipe connection is refused, before tailpipe connect runs): a DuckDB or SQLite
+// file must be inside the folders and takes no options (only an empty
 // value or exactly :memory: is in-memory), duckdbinit:// is refused, the files a Postgres value names
 // (sslcert, sslkey, sslrootcert, passfile) are checked, Postgres servicefile and service are refused (the
 // service file can name files of its own), and MySQL allowAllFiles is refused. The backend then locks every
@@ -24,6 +29,7 @@ package permitted_paths
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -221,6 +227,75 @@ func Within(path string) bool {
 		return false
 	}
 	return isWithinAny(resolveRoots(s.roots), abs)
+}
+
+// SymlinkError is a symlink found by CheckSymlinks that leads outside every permitted folder, or that cannot be
+// followed
+type SymlinkError struct {
+	// Link is the symlink's path: the folder as the caller gave it, joined with the link's path inside it
+	Link string
+	// Setting is the name of the env var
+	Setting string
+	// Err is why the link is refused: an *OutsideError, or the error resolving it (a loop, for example)
+	Err error
+}
+
+func (e *SymlinkError) Error() string {
+	var outside *OutsideError
+	if errors.As(e.Err, &outside) {
+		return fmt.Sprintf("symbolic link %q leads outside the folders %s permits", e.Link, e.Setting)
+	}
+	return fmt.Sprintf("symbolic link %q cannot be followed: %v", e.Link, e.Err)
+}
+
+func (e *SymlinkError) Unwrap() error { return e.Err }
+
+// CheckSymlinks returns an error when a symlink anywhere under folder leads outside every permitted folder: a
+// *SymlinkError that names the first such link. A mod's folder is checked with it before the mod is installed or
+// loaded, as a reader that opens a path through the link would read outside the folders, and git checks
+// symlinks out as symlinks. A link that cannot be followed (a loop) is refused too. With no limit set it
+// returns nil and reads nothing.
+//
+// The folder itself is followed if it is a symlink, and is not judged: a caller that took the folder's path
+// from mod content checks it with Check. A link to a folder inside the permitted folders is not walked into:
+// the mod loader's listing does not follow it either, and a path a mod names through it is checked on its own.
+// A missing folder has nothing to check.
+func CheckSymlinks(folder string) error {
+	s := current()
+	if s.err != nil {
+		return s.err
+	}
+	if len(s.roots) == 0 {
+		return nil
+	}
+	abs, err := filepath.Abs(folder)
+	if err != nil {
+		return err
+	}
+	walked, err := filepath.EvalSymlinks(abs)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return filepath.WalkDir(walked, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			// a folder that cannot be read is refused, so a link in it cannot go unchecked
+			return err
+		}
+		if d.Type()&fs.ModeSymlink == 0 {
+			return nil
+		}
+		if _, err := Check(path); err != nil {
+			rel, relErr := filepath.Rel(walked, path)
+			if relErr != nil {
+				rel = path
+			}
+			return &SymlinkError{Link: filepath.Join(folder, rel), Setting: s.key, Err: err}
+		}
+		return nil
+	})
 }
 
 // resolveRoots returns each folder as written and again with its symlinks resolved, so a path counts as inside

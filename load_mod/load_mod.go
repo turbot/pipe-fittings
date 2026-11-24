@@ -14,6 +14,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/parse"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/perr"
 	"github.com/turbot/pipe-fittings/v2/utils"
 )
@@ -30,6 +31,12 @@ func LoadMod(ctx context.Context, modPath string, parseCtx *parse.ModParseContex
 			ew.Error = helpers.ToError(r)
 		}
 	}()
+
+	// with <APP>_PERMITTED_ROOT_PATHS set, a mod (root or dependency) holding a symlink that leads outside the
+	// permitted folders is refused before any of its files is read
+	if ew.Error = permitted_paths.CheckSymlinks(modPath); ew.Error != nil {
+		return nil, ew
+	}
 
 	mod, ew = loadModDefinition(modPath, parseCtx)
 	if ew.Error != nil {
@@ -253,6 +260,11 @@ func LoadModWithFileName(ctx context.Context, modPath, modFile string, parseCtx 
 			errorsAndWarnings = error_helpers.NewErrorsAndWarning(helpers.ToError(r))
 		}
 	}()
+
+	// with <APP>_PERMITTED_ROOT_PATHS set, a mod holding a symlink that leads outside the permitted folders is refused
+	if err := permitted_paths.CheckSymlinks(modPath); err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
+	}
 
 	mod, loadModResult := loadModDefinitionWithFileName(modPath, modFile, parseCtx)
 	if loadModResult.Error != nil {

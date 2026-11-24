@@ -7,6 +7,7 @@ import (
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/turbot/pipe-fittings/v2/utils"
 
 	"github.com/turbot/pipe-fittings/v2/error_helpers"
@@ -50,6 +51,12 @@ func Load(ctx context.Context, workspacePath string, opts ...LoadWorkspaceOption
 		VariableValues:    make(map[string]string),
 		ValidateVariables: true,
 		Mod:               modconfig.NewMod("local", workspacePath, hcl.Range{}),
+	}
+
+	// with <APP>_PERMITTED_ROOT_PATHS set, a workspace holding a symlink that leads outside the permitted folders is
+	// refused before any of its files (the ignore file, the variable files, the mod) is read
+	if err := permitted_paths.CheckSymlinks(workspacePath); err != nil {
+		return nil, error_helpers.NewErrorsAndWarning(err)
 	}
 
 	// check whether the workspace contains a modfile

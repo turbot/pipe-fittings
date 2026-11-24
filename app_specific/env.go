@@ -68,7 +68,9 @@ func SetAppSpecificEnvVarKeys(envAppPrefix string) {
 	EnvProfile = buildEnv("PROFILE")
 	EnvTempDirMaxMb = buildEnv("TEMP_DIR_MAX_MB")
 	// a comma-separated list of absolute folders; when set, the readers that follow it only read inside them:
-	// the HCL file functions, the workspace profile's mod_location and snapshot_location, the database values a
+	// the HCL file functions, the workspace profile's mod_location and snapshot_location, the mods installed and
+	// loaded (a mod holding a symlink that leads outside them is refused, and so is a dependency folder, a require
+	// block's local path or a lock file path outside them), the database values a
 	// mod or a .ppc file supplies (a DuckDB or SQLite file, and
 	// the files a Postgres or MySQL connection string makes the driver read), and the SQL a mod runs on DuckDB
 	// and SQLite (DuckDB is locked to the folders, and SQLite refuses an ATTACH outside them). A host that

@@ -26,8 +26,9 @@ var postgresServiceOptions = []string{"servicefile", "service"}
 // It is for every value a mod or a .ppc file can supply: a mod's or a resource's `database`, a `require`
 // block's `database` override, and every .ppc connection (a mod can ship its own .ppc, and a connection
 // cannot tell a .ppc in the mod folder from one in the install folder). It is not applied to a string the
-// host builds in its own code (a command-line value, or the string `tailpipe connect` returns): the host
-// chose those, not the mod, and a host that keeps its own database files lists their folders in the setting.
+// host builds in its own code (a command-line value): the host chose it, not the mod, and a host that keeps its
+// own database files lists their folders in the setting. A tailpipe connection never reaches it while the
+// setting is set: it is refused before `tailpipe connect` runs.
 //
 // With the setting set:
 //   - DuckDB and SQLite: an empty value or exactly `:memory:` is in-memory and passes; anything with `?`
