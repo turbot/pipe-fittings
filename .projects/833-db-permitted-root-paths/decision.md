@@ -109,3 +109,20 @@ dependencies. Executors do not re-open them; a fact that contradicts one is a `B
 
 11. **Ship as a stack.** `gh stack --help` works on this worker; each task is one layer, landing in
     order.
+
+## Decision: ship
+
+Answer: https://github.com/turbot/pipe-fittings/issues/833#issuecomment-7120535662 (@e-gineer, 2026-11-24).
+
+Choice: the second option in `BLOCKED-ship.md`. With the setting set, a Tailpipe connection is refused before `tailpipe connect` runs, and a `duckdbinit://` string from it gets the same refusal. With the setting unset, Tailpipe connections are unchanged. The first option (load the named extensions before the lock) is #839.
+
+The same reply says no more self-review passes are needed after its listed items: ship it. Anything found later becomes a follow-up issue.
+
+## Decision: work before shipping
+
+From the same reply (url above), each item is owed before the ship gates run:
+
+- [ ] Refuse a `tailpipe` connection, and its `duckdbinit://` string, while the setting is set; add a refused row for it to the route test.
+- [ ] `sslrootcert=system`: leave it unchanged and unchecked, with its test row (already in `backend/permitted_paths_test.go`).
+- [ ] Name #839 under `## Still open` in the PR body.
+- [ ] Name the dependency changes in the PR body: Flowpipe go-sqlite3 1.14.19 → 1.14.52 and go-yaml 1.11.2 → 1.17.1; Steampipe go-yaml 1.16.0 → 1.17.1. Powerpipe and Tailpipe are already newer.
