@@ -106,7 +106,7 @@ func (l *modLocation) names(mods ...string) []string {
 
 func (l *modLocation) lockFile() string { return filepaths.WorkspaceLockPath(l.path) }
 
-// requireBlocks counts the require blocks of mod.pp, and lists the mods in the file
+// requireBlocks counts the require blocks of mod.pp
 func (l *modLocation) requireBlocks(t *testing.T) int {
 	t.Helper()
 	b, err := os.ReadFile(l.modFile)
