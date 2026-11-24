@@ -253,6 +253,29 @@ func TestPermittedDatabaseRoutes(t *testing.T) {
 	}
 }
 
+// TestPermittedTailpipeRouteRefused: a tailpipe connection is refused before `tailpipe connect` runs, with the setting
+// set, and the refusal names the setting. Unset, the connect is attempted; PATH holds no tailpipe, so it fails there,
+// not on the setting. The tailpipe binary is never run.
+func TestPermittedTailpipeRouteRefused(t *testing.T) {
+	t.Run("set", func(t *testing.T) {
+		newRoutesDirs(t, true)
+		conn := connection.NewTailpipeConnection("refused", hcl.Range{}).(*connection.TailpipeConnection)
+		_, err := conn.GetConnectionString()
+		if err == nil || !strings.Contains(err.Error(), routesPermittedEnv) {
+			t.Fatalf("want a refusal naming %s, got: %v", routesPermittedEnv, err)
+		}
+	})
+	t.Run("unset", func(t *testing.T) {
+		newRoutesDirs(t, false)
+		t.Setenv("PATH", t.TempDir())
+		conn := connection.NewTailpipeConnection("unrefused", hcl.Range{}).(*connection.TailpipeConnection)
+		_, err := conn.GetConnectionString()
+		if err == nil || strings.Contains(err.Error(), routesPermittedEnv) {
+			t.Fatalf("want the connect to fail for another reason, got: %v", err)
+		}
+	})
+}
+
 // parseRouteMod parses the copy of the test mod and returns the connection string its database gives
 func parseRouteMod(t *testing.T, row routeRow, d routesDirs) (string, error) {
 	t.Helper()

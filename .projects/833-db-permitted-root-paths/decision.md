@@ -122,7 +122,7 @@ The same reply says no more self-review passes are needed after its listed items
 
 From the same reply (url above), each item is owed before the ship gates run:
 
-- [ ] Refuse a `tailpipe` connection, and its `duckdbinit://` string, while the setting is set; add a refused row for it to the route test.
-- [ ] `sslrootcert=system`: leave it unchanged and unchecked, with its test row (already in `backend/permitted_paths_test.go`).
+- [x] Refuse a `tailpipe` connection, and its `duckdbinit://` string, while the setting is set; add a refused row for it to the route test.
+- [x] `sslrootcert=system`: leave it unchanged and unchecked, with its test row (already in `backend/permitted_paths_test.go`).
 - [ ] Name #839 under `## Still open` in the PR body.
 - [ ] Name the dependency changes in the PR body: Flowpipe go-sqlite3 1.14.19 → 1.14.52 and go-yaml 1.11.2 → 1.17.1; Steampipe go-yaml 1.16.0 → 1.17.1. Powerpipe and Tailpipe are already newer.
