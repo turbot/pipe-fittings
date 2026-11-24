@@ -1,6 +1,7 @@
 package versionmap
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -238,7 +239,14 @@ func (l *WorkspaceLock) Save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepaths.WorkspaceLockPath(l.WorkspacePath), content, 0644) //nolint:gosec // TODO: check file permission
+	lockPath := filepaths.WorkspaceLockPath(l.WorkspacePath)
+	// leave the file alone when it already holds these bytes: a write that changes nothing
+	// still moves the modified time, which a running server reads as 'the mods changed'.
+	// A missing or unreadable file is written as usual
+	if existing, err := os.ReadFile(lockPath); err == nil && bytes.Equal(existing, content) {
+		return nil
+	}
+	return os.WriteFile(lockPath, content, 0644) //nolint:gosec // TODO: check file permission
 }
 
 // Delete deletes the lock file
