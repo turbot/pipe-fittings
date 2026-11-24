@@ -56,7 +56,7 @@ func (i *ModInstaller) updateModFile() error {
 	modData := []byte(helpers.TrimBlankLines(string(contents.Bytes())))
 
 	// replaced by rename, so a reader never sees half a file, and the file keeps its permissions (and a symlink stays a link)
-	return utils.WriteFileAtomic(i.workspaceMod.GetFilePath(), modData, 0644) //nolint:gosec // the permissions of a new file
+	return utils.WriteFileAtomic(i.workspaceMod.GetFilePath(), modData, 0644)
 }
 
 // loads the contents of the mod.sp file and wraps it with a thin wrapper

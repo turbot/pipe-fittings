@@ -248,7 +248,7 @@ func (l *WorkspaceLock) Save() error {
 		return nil
 	}
 	// replaced by rename, so a reader never sees half a file; the file keeps its permissions
-	return utils.WriteFileAtomic(lockPath, content, 0644) //nolint:gosec // the permissions of a new file
+	return utils.WriteFileAtomic(lockPath, content, 0644)
 }
 
 // Delete deletes the lock file

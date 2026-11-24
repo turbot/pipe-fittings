@@ -40,7 +40,7 @@ func lockModLocation(ctx context.Context, workspacePath string) (unlock func(), 
 	if err := os.MkdirAll(filepath.Dir(lockPath), 0o755); err != nil {
 		return nil, fmt.Errorf("could not create the folder for the mod install lock: %w", err)
 	}
-	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644) //nolint:gosec // not a secret, and not read
+	f, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0o644)
 	if err != nil {
 		return nil, fmt.Errorf("could not open the mod install lock '%s': %w", lockPath, err)
 	}
@@ -58,7 +58,7 @@ func lockModLocation(ctx context.Context, workspacePath string) (unlock func(), 
 		}
 		if !told {
 			told = true
-			_, _ = fmt.Fprintf(modLockWaitOutput, "Waiting for another %s mod command on '%s' to finish...\n", app_specific.AppName, workspacePath)
+			_, _ = io.WriteString(modLockWaitOutput, fmt.Sprintf("Waiting for another %s mod command on '%s' to finish...\n", app_specific.AppName, workspacePath))
 		}
 		select {
 		case <-ctx.Done():

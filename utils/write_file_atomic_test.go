@@ -77,7 +77,7 @@ func TestWriteFileAtomicKeepsPermissionsOfExistingFile(t *testing.T) {
 func TestWriteFileAtomicReplacesTheFileByRename(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "mod.pp")
-	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte("old"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	before, err := os.Stat(path)
@@ -103,7 +103,7 @@ func TestWriteFileAtomicKeepsASymlink(t *testing.T) {
 	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(real, []byte("old"), 0o644); err != nil {
+	if err := os.WriteFile(real, []byte("old"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	link := filepath.Join(dir, "mod.pp")
