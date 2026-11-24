@@ -1,0 +1,1 @@
+CREATE TABLE init_ran AS SELECT 1 AS x;

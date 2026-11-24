@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/hcl/v2"
 	"github.com/turbot/go-kit/helpers"
 	typehelpers "github.com/turbot/go-kit/types"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
@@ -92,7 +93,7 @@ func (c *MysqlConnection) GetConnectionString(opts ...ConnectionStringOpt) (stri
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString, nil
+		return backend.ConfineModConnectionString(*c.ConnectionString)
 	}
 
 	db := c.getDbName()
@@ -111,7 +112,7 @@ func (c *MysqlConnection) GetConnectionString(opts ...ConnectionStringOpt) (stri
 	}
 	connString := fmt.Sprintf("mysql://%s@tcp(%s:%d)/%s", userString, host, port, db)
 
-	return connString, nil
+	return backend.ConfineModConnectionString(connString)
 }
 
 func (c *MysqlConnection) GetEnv() map[string]cty.Value {

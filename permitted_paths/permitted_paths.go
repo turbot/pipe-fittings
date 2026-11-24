@@ -5,6 +5,20 @@
 // The setting comes from the environment only and is read once, by Load at start-up (or on first use when
 // an app never calls Load). A reader of a path that mod or config content names calls Check on the path
 // before it opens it, and Filter on a listing before it returns it.
+//
+// The setting also covers databases. backend.ConfineModConnectionString checks every database value that mod
+// or .ppc content supplies (every connection type that builds a Postgres, DuckDB, SQLite or MySQL string,
+// steampipe included; tailpipe's connection type is exempt, as its string is the tailpipe connect output the
+// host builds itself, though the lock below still applies to it): a DuckDB or SQLite file must be inside the folders and takes no options (only an empty
+// value or exactly :memory: is in-memory), duckdbinit:// is refused, the files a Postgres value names
+// (sslcert, sslkey, sslrootcert, passfile) are checked, Postgres servicefile and service are refused (the
+// service file can name files of its own), and MySQL allowAllFiles is refused. The backend then locks every
+// DuckDB it opens to the folders (no access outside them, and the lock cannot be lifted), and refuses to open
+// one while a symlink in the folders leads outside them, as DuckDB would follow it. It makes SQLite refuse an
+// ATTACH of a file outside them, or of a name it cannot judge (an expression or a bound parameter). So SQL a
+// mod runs cannot read, write, attach or install outside either. A host that opens its own DuckDB files (for
+// example tailpipe's database and the folders its init script reads) must list their folders in the setting,
+// or the lock refuses them.
 package permitted_paths
 
 import (
@@ -74,6 +88,17 @@ func Setting() string {
 // Roots returns the permitted folders as written, absolute and clean
 func Roots() []string {
 	return append([]string(nil), current().roots...)
+}
+
+// ResolvedRoots returns each permitted folder as written and again with its symlinks resolved, for a reader
+// that limits paths by prefix itself (DuckDB's allowed_directories). A setting that could not be read is its
+// error, so the reader fails closed. With no limit set it returns none.
+func ResolvedRoots() ([]string, error) {
+	s := current()
+	if s.err != nil {
+		return nil, s.err
+	}
+	return resolveRoots(s.roots), nil
 }
 
 func read(key string) *state {
@@ -229,6 +254,10 @@ type unresolvableError struct {
 func (e *unresolvableError) Error() string { return e.err.Error() }
 func (e *unresolvableError) Unwrap() error { return e.err }
 
+// ErrSymlinkLoop is the error Check returns for a path inside the folders whose symlinks do not end (a loop),
+// which the OS cannot follow either
+var ErrSymlinkLoop = errors.New("too many levels of symbolic links")
+
 // maxSymlinks bounds the symlinks resolvePath follows, as the OS does, so a symlink loop ends
 const maxSymlinks = 255
 
@@ -272,7 +301,7 @@ func resolvePath(path string) (string, error) {
 		}
 		links++
 		if links > maxSymlinks {
-			return "", fmt.Errorf("too many levels of symbolic links")
+			return "", ErrSymlinkLoop
 		}
 		target, err := os.Readlink(next)
 		if err != nil {

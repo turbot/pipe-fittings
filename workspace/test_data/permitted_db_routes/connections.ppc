@@ -1,0 +1,9 @@
+# Route 9: connections a mod's folder ships, whose file is outside the permitted folder. The test names them
+# from the mod's `database` as connection.duckdb.outside_duck and connection.sqlite.outside_lite.
+connection "duckdb" "outside_duck" {
+  file_name = "@OUTSIDE@/ppc.duckdb"
+}
+
+connection "sqlite" "outside_lite" {
+  file_name = "@OUTSIDE@/ppc.sqlite"
+}

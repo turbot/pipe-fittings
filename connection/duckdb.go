@@ -86,10 +86,10 @@ func (c *DuckDbConnection) GetConnectionString(opts ...ConnectionStringOpt) (str
 	}
 
 	if c.ConnectionString != nil {
-		return *c.ConnectionString, nil
+		return backend.ConfineModConnectionString(*c.ConnectionString)
 	}
 
-	return fmt.Sprintf("%s%s", backend.DuckDBConnectionStringPrefix, c.getFileName()), nil
+	return backend.ConfineModConnectionString(fmt.Sprintf("%s%s", backend.DuckDBConnectionStringPrefix, c.getFileName()))
 }
 
 func (c *DuckDbConnection) getFileName() any {

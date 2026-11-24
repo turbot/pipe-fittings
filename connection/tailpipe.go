@@ -17,6 +17,7 @@ import (
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/constants"
+	"github.com/turbot/pipe-fittings/v2/permitted_paths"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -88,6 +89,11 @@ func (c *TailpipeConnection) Validate() hcl.Diagnostics {
 //   - for <= v0.6.x it is duckdb://<db path>
 //   - for >= v0.7.x it is duckdbinit://<init script location>
 func (c *TailpipeConnection) GetConnectionString(opts ...ConnectionStringOpt) (string, error) {
+	// With the permitted-folders setting set, a Tailpipe connection is refused before `tailpipe connect` runs: its
+	// init script loads and installs DuckDB extensions, which the lock on every DuckDB refuses (#839 lifts this)
+	if permitted_paths.Enabled() {
+		return "", fmt.Errorf("tailpipe connections are not allowed while %s is set", permitted_paths.Setting())
+	}
 	for _, opt := range opts {
 		opt(c)
 	}

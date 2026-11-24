@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/turbot/pipe-fittings/v2/app_specific_connection"
+	"github.com/turbot/pipe-fittings/v2/backend"
 	"github.com/turbot/pipe-fittings/v2/connection"
 	"github.com/turbot/pipe-fittings/v2/hclhelpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
@@ -104,7 +105,17 @@ func ResolveConnectionString(content *hcl.BodyContent, evalCtx *hcl.EvalContext)
 	}
 	// check if this is a connection string or a connection
 	if dbValue.Type() == cty.String {
-		csp = connection.NewConnectionString(dbValue.AsString())
+		// a database named in mod content must stay inside the permitted folders (when they are set)
+		connectionString, err := backend.ConfineModConnectionString(dbValue.AsString())
+		if err != nil {
+			return nil, searchPath, searchPathPrefix, hcl.Diagnostics{
+				&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  err.Error(),
+					Subject:  attr.Range.Ptr(),
+				}}
+		}
+		csp = connection.NewConnectionString(connectionString)
 	} else {
 		// if this is a temporary connection, ignore (this will only occur during the variable parsing phase)
 		if dbValue.Type().HasAttribute("temporary") {
