@@ -107,9 +107,9 @@ func TestSaveWritesWhenLockFileMissing(t *testing.T) {
 	}
 }
 
-func TestSaveWritesWhenLockFileCannotBeRead(t *testing.T) {
+func TestSaveReportsErrorWhenLockPathIsDirectory(t *testing.T) {
 	lock, lockPath := newTestLock(t, "v1")
-	// a directory sits where the file should be: it cannot be read as a file, and the write fails loudly
+	// a directory sits where the file should be: the read fails, the write is tried and its error is returned
 	if err := os.Mkdir(lockPath, 0o755); err != nil {
 		t.Fatal(err)
 	}
