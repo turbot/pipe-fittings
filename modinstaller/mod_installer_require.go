@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
+	"github.com/turbot/pipe-fittings/v2/utils"
 	"github.com/zclconf/go-cty/cty"
 )
 
@@ -54,7 +55,8 @@ func (i *ModInstaller) updateModFile() error {
 	// strip blank lines
 	modData := []byte(helpers.TrimBlankLines(string(contents.Bytes())))
 
-	return os.WriteFile(i.workspaceMod.GetFilePath(), modData, 0644) //nolint:gosec // TODO: check file permission
+	// replaced by rename, so a reader never sees half a file, and the file keeps its permissions (and a symlink stays a link)
+	return utils.WriteFileAtomic(i.workspaceMod.GetFilePath(), modData, 0644) //nolint:gosec // the permissions of a new file
 }
 
 // loads the contents of the mod.sp file and wraps it with a thin wrapper

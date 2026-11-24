@@ -38,6 +38,8 @@ type ModInstaller struct {
 	oldRequire *modconfig.Require
 
 	targetMods map[string]*modconfig.ModVersionConstraint
+	// the mod args the command was given, kept so targetMods can be worked out again once the lock is held
+	modArgs []string
 
 	// the final resting place of all dependency mods
 	modsPath string
@@ -78,6 +80,7 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 		// TODO why does powerpipe care about plugins???
 		pluginVersions: opts.PluginVersions,
 		updateStrategy: opts.UpdateStrategy,
+		modArgs:        opts.ModArgs,
 	}
 
 	if require := opts.WorkspaceMod.Require; require != nil {
@@ -109,6 +112,13 @@ func NewModInstaller(opts *InstallOpts) (*ModInstaller, error) {
 
 func (i *ModInstaller) UninstallWorkspaceDependencies(ctx context.Context) error {
 	workspaceMod := i.workspaceMod
+
+	// no other mod command may change this mod location until this one has written mod file and cache
+	unlock, err := i.lockAndRefresh(ctx)
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	// remove required dependencies from the mod file
 	if len(i.targetMods) == 0 {
@@ -159,6 +169,14 @@ func (i *ModInstaller) InstallWorkspaceDependencies(ctx context.Context) (err er
 	if err := permitted_paths.CheckSymlinks(i.workspacePath); err != nil {
 		return err
 	}
+	// no other mod command may change this mod location until this one has written mod file and cache
+	// (taken before the deferred handling below, so --force cannot suppress a failure to get the lock)
+	unlock, lockErr := i.lockAndRefresh(ctx)
+	if lockErr != nil {
+		return lockErr
+	}
+	defer unlock()
+
 	defer func() {
 		if err != nil && i.force {
 			// suppress the error since this is a forced install
