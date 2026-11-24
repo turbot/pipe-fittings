@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -180,7 +181,7 @@ func TestDuckDBPermittedLockdown(t *testing.T) {
 		t.Fatalf("open connections = %d, want 4", open)
 	}
 	for i, conn := range conns {
-		t.Run("connection "+string(rune('1'+i)), func(t *testing.T) { assertLocked(t, conn, f) })
+		t.Run("connection "+strconv.Itoa(i+1), func(t *testing.T) { assertLocked(t, conn, f) })
 	}
 	for _, conn := range conns {
 		_ = conn.Close()

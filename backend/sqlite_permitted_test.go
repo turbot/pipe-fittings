@@ -8,6 +8,7 @@ import (
 	"database/sql/driver"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -110,7 +111,7 @@ func TestSqlitePermittedAttach(t *testing.T) {
 
 	outFile := filepath.Join(f.outside, "x.db")
 	for i, conn := range conns {
-		t.Run("connection "+string(rune('1'+i)), func(t *testing.T) {
+		t.Run("connection "+strconv.Itoa(i+1), func(t *testing.T) {
 			sqliteAttachFails(t, conn, "outside", outFile, outFile)
 			sqliteAttachFails(t, conn, "outside uri", "file:"+outFile+"?mode=rwc", outFile)
 			sqliteAttachFails(t, conn, "uri inside", "file:"+filepath.Join(f.permitted, "u.db"), filepath.Join(f.permitted, "u.db"))
@@ -125,8 +126,8 @@ func TestSqlitePermittedAttach(t *testing.T) {
 			sqliteAttachExprFails(t, conn, "bound parameter", "?", paramFile, paramFile)
 			sqliteAttachExprFails(t, conn, "bound parameter inside", "?", "", filepath.Join(f.permitted, "param.db"))
 
-			inFile := filepath.Join(f.permitted, "in"+string(rune('1'+i))+".db")
-			name := "i" + string(rune('1'+i))
+			inFile := filepath.Join(f.permitted, "in"+strconv.Itoa(i+1)+".db")
+			name := "i" + strconv.Itoa(i+1)
 			if _, err := conn.ExecContext(ctx, "ATTACH '"+inFile+"' AS "+name); err != nil {
 				t.Errorf("ATTACH inside: %v", err)
 			}
