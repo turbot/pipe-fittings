@@ -610,14 +610,14 @@ func (i *ModInstaller) installFromBranch(_ context.Context, modVersion *modconfi
 
 func (i *ModInstaller) installFromGit(repoName string, gitRefName plumbing.ReferenceName, installPath string) (*git.Repository, error) {
 	// get the mod from git = first try https
-	gitUrl := getGitUrl(repoName, GitUrlModeHTTPS)
+	gitUrl := modGitUrl(repoName, GitUrlModeHTTPS)
 	slog.Debug("installFromGit cloning the repo", gitUrl, gitRefName.String())
 
 	repo, err := i.cloneRepo(gitUrl, gitRefName, installPath)
 
 	if err != nil {
 		// if that failed, try ssh
-		gitUrl := getGitUrl(repoName, GitUrlModeSSH)
+		gitUrl := modGitUrl(repoName, GitUrlModeSSH)
 		slog.Debug(">>> cloning", gitUrl, gitRefName.String())
 		repo, err = i.cloneRepo(gitUrl, gitRefName, installPath)
 		if err != nil {

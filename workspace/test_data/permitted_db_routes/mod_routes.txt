@@ -1,0 +1,29 @@
+# The mod routes of this test mod, for TestPermittedModLoadRoutes (load_mod/permitted_mod_routes_test.go) and
+# TestPermittedModInstallRoutes (modinstaller/permitted_mod_routes_test.go): each line is one way a mod can lead
+# a later read out of the permitted folder. A new route is one line here.
+#
+#   <kind> <refused|allowed> <name> <value>
+#
+#   symlink  the test makes a symlink <name> in its copy of this mod, pointing at <value>; the copy is then a
+#            root mod, a dependency, a cloned repo or a local mod
+#   require  this mod requires a mod by its local path <value>, read from this mod's folder
+#   lock     the lock file names a dependency at the local path <value>, which is made absolute from this
+#            mod's folder
+#
+# refused: with the setting set to the folder holding the copy, the install or load fails with an error that
+# names <name> (a symlink) or the path, and nothing is cloned or copied; allowed: it works. With the setting unset
+# every line works. @OUTSIDE@ is a folder that is not permitted, next to the copy, holding secret.sql and a mod
+# in child/; the copy holds a mod in child/ too. @UP@ is enough ../ to climb from wherever the link is to the root
+# of the file system, so @UP@@OUTSIDE@ is a relative link to the outside folder: git (go-git) writes a relative
+# link as it is, where it rewrites an absolute one to stay in the clone.
+symlink allowed inside_file.sql init.sql
+symlink allowed inside_missing.sql missing.sql
+symlink refused outside_file.sql @UP@@OUTSIDE@/secret.sql
+symlink refused outside_dir @UP@@OUTSIDE@
+symlink refused outside_missing.sql @UP@@OUTSIDE@/missing.sql
+symlink refused nested/outside_file.sql @UP@@OUTSIDE@/secret.sql
+require allowed inside_child child
+require refused outside_child @OUTSIDE@/child
+require refused outside_relative ../outside/child
+lock allowed inside_child child
+lock refused outside_child @OUTSIDE@/child

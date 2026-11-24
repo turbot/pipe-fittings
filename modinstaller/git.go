@@ -26,6 +26,9 @@ const (
 	GitUrlModeSSH
 )
 
+// modGitUrl is the URL a mod is cloned from; a test points it at a local repo
+var modGitUrl = getGitUrl
+
 func getGitUrl(modName string, urlMode GitUrlMode) string {
 	return transformToGitURL(modName, urlMode)
 }
