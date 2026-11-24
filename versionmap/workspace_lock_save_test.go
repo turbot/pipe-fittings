@@ -117,3 +117,43 @@ func TestSaveReportsErrorWhenLockPathIsDirectory(t *testing.T) {
 		t.Fatal("expected the failed write to be reported")
 	}
 }
+
+func TestSaveReplacesLockFileByRenameAndKeepsPermissions(t *testing.T) {
+	lock, lockPath := newTestLock(t, "v1")
+	if err := lock.Save(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(lockPath, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.Stat(lockPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	changed, _ := newTestLock(t, "v2")
+	lock.InstallCache = changed.InstallCache
+	if err := lock.Save(); err != nil {
+		t.Fatal(err)
+	}
+
+	after, err := os.Stat(lockPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if os.SameFile(before, after) {
+		t.Error("the lock file was written in place, not replaced")
+	}
+	if after.Mode().Perm() != 0o600 {
+		t.Errorf("permissions = %v, want the old 0600", after.Mode().Perm())
+	}
+	entries, err := os.ReadDir(filepath.Dir(lockPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".tmp") {
+			t.Errorf("temporary file left behind: %s", e.Name())
+		}
+	}
+}

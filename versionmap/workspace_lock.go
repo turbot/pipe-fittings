@@ -15,6 +15,7 @@ import (
 	"github.com/turbot/pipe-fittings/v2/filepaths"
 	"github.com/turbot/pipe-fittings/v2/modconfig"
 	"github.com/turbot/pipe-fittings/v2/permitted_paths"
+	"github.com/turbot/pipe-fittings/v2/utils"
 )
 
 const WorkspaceLockStructVersion = 20240429
@@ -246,7 +247,8 @@ func (l *WorkspaceLock) Save() error {
 	if existing, err := os.ReadFile(lockPath); err == nil && bytes.Equal(existing, content) {
 		return nil
 	}
-	return os.WriteFile(lockPath, content, 0644) //nolint:gosec // TODO: check file permission
+	// replaced by rename, so a reader never sees half a file; the file keeps its permissions
+	return utils.WriteFileAtomic(lockPath, content, 0644)
 }
 
 // Delete deletes the lock file
